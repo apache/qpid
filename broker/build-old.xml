@@ -1,0 +1,265 @@
+<?xml version="1.0"?>
+<!--
+ -
+ - Copyright (c) 2006 The Apache Software Foundation
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -    http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -
+ -->
+
+<!-- AMQPd build file -->
+
+<project name="qpid-broker" default="jar" basedir=".">
+
+    <!-- Global task properties -->
+    <property name="common.root" value="${basedir}/../common"/>
+    <property name="common.lib" value="${common.root}/lib"/>
+    <property name="common.src" value="${common.root}/src"/>
+    <property name="common.resources" value="${common.root}/resources"/>
+
+    <property name="common.generated.java.src" value="${common.root}/generated/java"/>
+
+    <property name="client.classes" value="${basedir}/../client/classes"/>
+    <property name="client.testclasses" value="${basedir}/../client/testclasses"/>
+
+    <property name="broker.root" value="${basedir}"/>
+    <property name="broker.lib" value="${basedir}/lib"/>
+    <property name="broker.src" value="${broker.root}/src"/>
+    <property name="broker.tests" value="${broker.root}/test"/>
+    <property name="broker.classes" value="${broker.root}/classes"/>
+    <property name="broker.testclasses" value="${broker.root}/testclasses"/>
+
+    <property name="broker.dist" value="${basedir}/dist"/>
+    <property name="dam.dist" value="${basedir}/damPackage"/>
+
+    <!-- Path structures used by several tasks -->
+    <path id="amqp.classpath">
+        <fileset dir="${broker.lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${common.lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <pathelement path="${client.classes}"/>
+        <pathelement path="${client.testclasses}"/>
+        <pathelement path="${broker.classes}"/>
+        <pathelement path="${broker.testclasses}"/>
+    </path>
+
+    <!-- Task definitions -->
+
+    <target name="init" description="Initialise the build process">
+        <tstamp>
+            <format property="release" pattern="-dMMMyy" locale="en" timezone="GMT"/>
+        </tstamp>
+
+        <mkdir dir="${broker.classes}"/>
+        <mkdir dir="${broker.testclasses}"/>
+        <mkdir dir="${broker.dist}"/>
+    </target>
+
+    <!-- Remove all built files -->
+    <target name="clean" depends="init" description="Remove all built and generated files">
+        <delete dir="${broker.dist}"/>
+        <!--<delete dir="${generated.java.src}"/>-->
+        <delete dir="${broker.classes}"/>
+        <delete dir="${broker.testclasses}"/>
+    </target>
+
+    <!-- Generate framing source code from protocol specification -->
+    <target name="generate" description="Generates framing source code from protocol specification">
+         <ant dir="../common" target="generate"/>
+    </target>
+
+    <!-- Compile Java -->
+    <target name="compile" depends="init, generate" description="Compile all source files excluding tests">
+        <javac destdir="${broker.classes}" target="1.5" source="1.5" classpathref="amqp.classpath" debug="on">
+            <compilerarg value="-Xlint:unchecked" />
+            <compilerarg value="-Xlint:deprecation" />
+            <src path="${common.src}"/>
+            <src path="${broker.src}"/>
+            <src path="${common.generated.java.src}"/>
+        </javac>
+
+        <copy todir="${broker.classes}">
+            <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+            <fileset dir="${broker.src}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+            <fileset dir="${common.src}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+            <fileset dir="${common.resources}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compiletests" depends="compile" description="Compile all tests">
+        <javac destdir="${broker.testclasses}" target="1.5" source="1.5" classpathref="amqp.classpath" debug="on">
+            <compilerarg value="-Xlint:unchecked"/>
+            <compilerarg value="-Xlint:deprecation"/>
+            <src path="${broker.tests}"/>
+        </javac>
+
+        <copy todir="${broker.testclasses}">
+            <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+            <fileset dir="${broker.tests}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="test" depends="compiletests">
+        <junit fork="yes" showoutput="true" haltonfailure="yes">
+            <test name="org.apache.qpid.server.UnitTests"/>
+            <formatter type="plain"/>
+            <classpath refid="amqp.classpath"/>
+        </junit>
+    </target>
+
+    <!-- Build jar archive -->
+    <target name="jar" depends="compile, compiletests" description="Create Jar files as the distribution">
+        <mkdir dir="${broker.dist}"/>
+        <jar basedir="${broker.classes}" jarfile="${broker.dist}/amqpd.jar"/>
+        <jar basedir="${broker.testclasses}" jarfile="${broker.dist}/amqpd-tests.jar"/>
+    </target>
+
+    <target name="release" depends="jar" description="Create a release package">
+        <!-- create a jar file that will contain classpath entries for all required jars -->
+        <jar jarfile="${broker.dist}/broker-launch.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.apache.qpid.server.Main"/>
+                <attribute name="Class-Path" value="lib/je-3.0.35.jar lib/slf4j-simple.jar lib/log4j-1.2.13.jar lib/mina-core-0.9.5-SNAPSHOT.jar lib/mina-filter-ssl-0.9.5-SNAPSHOT.jar lib/commons-cli-1.0.jar lib/commons-configuration-1.2.jar lib/commons-collections-3.1.jar lib/commons-logging-api.jar lib/commons-logging.jar lib/commons-lang-2.1.jar lib/amqpd.jar lib/amqp-common.jar"/>
+            </manifest>
+        </jar>
+        <!-- create a zip for releasing -->
+        <zip destfile="${broker.dist}/broker.zip">
+            <fileset dir="bin" includes="*.sh,*.bat"/>
+            <fileset file="${broker.dist}/broker-launch.jar" />
+            <zipfileset prefix="etc" dir="etc" includes="*"/>
+            <zipfileset prefix="lib" file="${broker.lib}/bdb/je-3.0.35.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/slf4j/slf4j-simple.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/logging-log4j/log4j-1.2.13.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/mina/mina-core-0.9.5-SNAPSHOT.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/mina/mina-filter-ssl-0.9.5-SNAPSHOT.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-cli/commons-cli-1.0.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-configuration/commons-configuration-1.2.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-collections/commons-collections-3.1.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-logging/commons-logging-api.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-logging/commons-logging.jar"/>
+            <zipfileset prefix="lib" file="${common.lib}/commons-lang/commons-lang-2.1.jar"/>
+            <zipfileset prefix="lib" file="${broker.dist}/amqpd.jar"/>
+            <zipfileset prefix="lib" file="${broker.dist}/amqp-common.jar"/>
+        </zip>
+
+        <tar destfile="${broker.dist}/broker.tar.gz" compression="gzip">
+            <tarfileset dir="bin" includes="*.sh,*.bat"/>
+            <tarfileset file="${broker.dist}/broker-launch.jar" />
+            <tarfileset prefix="etc" dir="etc" includes="*"/>
+            <tarfileset prefix="lib" file="${broker.lib}/bdb/je-3.0.35.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/slf4j/slf4j-simple.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/logging-log4j/log4j-1.2.13.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/mina/mina-core-0.9.5-SNAPSHOT.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/mina/mina-filter-ssl-0.9.5-SNAPSHOT.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-cli/commons-cli-1.0.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-configuration/commons-configuration-1.2.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-collections/commons-collections-3.1.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-logging/commons-logging-api.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-logging/commons-logging.jar"/>
+            <tarfileset prefix="lib" file="${common.lib}/commons-lang/commons-lang-2.1.jar"/>
+            <tarfileset prefix="lib" file="${broker.dist}/amqpd.jar"/>
+            <tarfileset prefix="lib" file="${broker.dist}/amqp-common.jar"/>
+        </tar>
+    </target>
+
+    <!-- @TODO finish this target MM !! -->
+    <target name="damit">
+
+		<property name="tarFileName" value="ams_amq.tar"/>
+		<delete failonerror="false" file="${tarFileName}"/>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${dam.dist}"/>
+		</delete>
+		<mkdir dir="${dam.dist}"/>
+		<copy todir="${dam.dist}">
+			<fileset dir="${basedir}/damPackage">
+				<exclude name="config/gps_domain/applications/gps.ear"/>
+			</fileset>
+		</copy>
+		<!-- Remove CR and EOF characters from shell scripts within the DAM package -->
+		<fixcrlf srcdir="${dam.dist}" eol="lf" eof="remove">
+			<include name="**/*.sh"/>
+			<include name="**/*.startup"/>
+		</fixcrlf>
+
+        <tar tarfile="${tarFileName}">
+			<!-- add everything _except_ shell scripts: rw_r__r__ -->
+			<tarfileset dir="${dam.dist}" mode="644">
+				<exclude name="**/*.sh"/>
+				<exclude name="**/*.startup"/>
+			</tarfileset>
+			<!-- add all shell scripts as executable: rwxr_xr_x -->
+			<tarfileset dir="${dam.dist}" mode="755">
+				<include name="**/*.sh"/>
+				<include name="**/*.startup"/>
+			</tarfileset>
+		</tar>
+
+	</target>
+
+    <target name="javadoc" depends="compile, compiletests" description="Generate javadoc for all broker classes">
+        <mkdir dir="${broker.dist}/docs/api"/>
+        <javadoc sourcepath="${broker.src}" destdir="${broker.dist}/docs/api"
+                 packagenames="org.apache.qpid.*" classpathref="amqp.classpath" author="true"
+                 version="true" windowTitle="AMQPd (Project Qpid) API" doctitle="AMQP Broker API"
+                 footer="See &lt;a href=&quot;http://www.amqp.org&quot;&gt;www.amqp.org&lt;/a&gt; for more information."
+                 use="true" verbose="false"/>
+    </target>
+
+    <target name="RunBroker" depends="compile" description="Run broker">
+        <java classpathref="amqp.classpath" fork="yes" classname="org.apache.qpid.server.Main">
+            <sysproperty key="amqj.logging.level" value="INFO"/>
+            <jvmarg value="-server"/>
+        </java>
+    </target>
+
+    <target name="profile" depends="compile" description="Run broker in Netbeans profiler">
+        <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+        <nbprofiledirect>
+          <classpath refid="amqp.classpath"/>
+        </nbprofiledirect>
+
+        <java classpathref="amqp.classpath" fork="yes" classname="org.apache.qpid.server.Main"
+              dir="${profiler.session.working.dir}"
+              jvm="${profiler.info.jvm}">
+            <sysproperty key="amqj.logging.level" value="INFO"/>
+            <jvmarg value="${profiler.info.jvmargs.agent}"/>
+            <jvmarg line="${profiler.info.jvmargs}"/>
+            <jvmarg value="-server"/>
+            <jvmarg value="-Xmx512m"/>
+            <env key="Path" path="${profiler.info.agentpath}:${env.Path}"/>
+        </java>
+    </target>
+
+    <target name="profile-single" depends="compile" description="Profile File">
+        <fail unless="netbeans.home">This target can only run inside the NetBeans IDE.</fail>
+        <nbprofile classname="${profile.class}">
+            <classpath refid="amqp.classpath"/>
+        </nbprofile>
+    </target>
+</project>

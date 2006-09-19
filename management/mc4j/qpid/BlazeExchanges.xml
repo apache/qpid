@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ -
+ - Copyright (c) 2006 The Apache Software Foundation
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -    http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -
+ -->
+<!DOCTYPE Dashboard PUBLIC "-//MC4J//DTD Dashboard 1.0//EN" "http://mc4j.sourceforge.net/Dashboard_1_0.dtd">
+
+<Dashboard version="1.0" name="Qpid AMQ Exchanges">
+
+  <Description>This dashboard shows the statistics of all Qpid Exchanges.</Description>
+
+  <DashboardMatch type="Global" location="/Qpid/Exchanges">
+      <BeanMatch id="ConnectionBeanList" type="Multiple">
+          <Condition type="BeanObjectNameCondition" filter="type=Exchange"/>
+      </BeanMatch>
+  </DashboardMatch>
+
+  <LayoutManager type="java.awt.BorderLayout"/>
+  <Content>
+
+    <!-- *** The header section displays title and a refresh control *** -->
+    <Component type="javax.swing.JPanel">
+        <Constraint type="BorderConstraints" direction="NORTH"/>
+        <LayoutManager type="java.awt.BorderLayout"/>
+        <Border type="javax.swing.border.EmptyBorder" top="(Literal)2" left="(Literal)5" bottom="(Literal)2" right="(Literal)5"/>
+        <Content>
+            <Component type="javax.swing.JPanel">
+                <Constraint type="BorderConstraints" direction="CENTER"/>
+                <LayoutManager type="java.awt.BorderLayout"/>
+                <Content>
+                    <Component type="javax.swing.JLabel" id="titleLable">
+                        <Constraint type="BorderConstraints" direction="CENTER"/>
+                        <Attribute name="text" value="DashboardName"/>
+                        <Attribute name="font" value="(Literal)SansSerif bold 20"/>
+                        <Attribute name="foreground" value="(Literal)0x666666"/>
+                    </Component>
+                    <Component type="javax.swing.JTextArea">
+                        <Constraint type="BorderConstraints" direction="SOUTH"/>
+                        <Attribute name="text" value="DashboardDescription"/>
+                        <Attribute name="font" value="(Literal)DialogInput bold 14"/>
+                        <Attribute name="opaque" value="(Literal)false"/>
+                        <Attribute name="editable" value="(Literal)false"/>
+                    </Component>
+                </Content>
+            </Component>
+            <Component type="org.mc4j.console.dashboard.components.RefreshControlComponent">
+                <Constraint type="BorderConstraints" direction="EAST"/>
+                <Attribute name="refreshDelay" value="(Literal)1000"/>
+            </Component>
+        </Content>
+    </Component>
+
+
+    <Component type="org.mc4j.console.dashboard.components.AttributeTableComponent">
+        <Attribute name="beanList" value="ConnectionBeanList"/>
+        <Constraint type="BorderConstraints" direction="CENTER"/>
+
+        <Attribute name="background" value="(Literal)0xFFFFFF"/>
+        <Attribute name="preferredSize" value="100,100"/>
+
+        <Attribute name="AttributeName" value="(Literal)Name"/>
+        <Attribute name="AttributeName" value="(Literal)Durable"/>
+        <Attribute name="AttributeName" value="(Literal)Bindings"/>
+    </Component>
+
+
+  </Content>
+</Dashboard>

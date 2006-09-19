@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<!--
+ -
+ - Copyright (c) 2006 The Apache Software Foundation
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -    http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -
+ -->
+
+<project name="qpid-clustered-broker" default="jar" basedir=".">
+
+    <!-- Global task properties -->
+    <property name="common.root" value="${basedir}/../common"/>
+    <property name="common.lib" value="${common.root}/lib"/>
+    <property name="common.src" value="${common.root}/src"/>
+    <property name="common.resources" value="${common.root}/resources"/>
+    <property name="common.classes" value="${common.root}/classes"/>
+
+    <property name="common.generated.java.src" value="${common.root}/generated/java"/>
+
+    <property name="client.root" value="../client"/>
+    <property name="client.lib" value="${client.root}/lib"/>
+    <property name="client.classes" value="${client.root}/classes"/>
+    <property name="client.testclasses" value="${client.root}/testclasses"/>
+
+    <property name="broker.root" value="../broker"/>
+    <property name="broker.lib" value="${broker.root}/lib"/>
+    <property name="broker.src" value="${broker.root}/src"/>
+    <property name="broker.tests" value="${broker.root}/test"/>
+    <property name="broker.classes" value="${broker.root}/classes"/>
+    <property name="broker.testclasses" value="${broker.root}/testclasses"/>
+    <property name="broker.dist" value="${broker.root}/dist"/>
+
+    <property name="cluster.root" value="."/>
+    <property name="cluster.lib" value="${cluster.root}/lib"/>
+    <property name="cluster.src" value="${cluster.root}/src"/>
+    <property name="cluster.tests" value="${cluster.root}/test"/>
+    <property name="cluster.classes" value="${cluster.root}/classes"/>
+    <property name="cluster.testclasses" value="${cluster.root}/testclasses"/>
+    <property name="cluster.dist" value="${cluster.root}/dist"/>
+
+    <!-- Path structures used by several tasks -->
+    <path id="amqp.classpath">
+        <fileset dir="${common.lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${client.lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <pathelement path="${broker.classes}"/>
+        <pathelement path="${client.classes}"/>
+        <pathelement path="${common.classes}"/>
+        <pathelement path="${cluster.classes}"/>
+    </path>
+
+    <!-- Task definitions -->
+
+    <target name="init" description="Initialise the build process">
+        <tstamp>
+            <format property="release" pattern="-dMMMyy" locale="en" timezone="GMT"/>
+        </tstamp>
+
+        <mkdir dir="${cluster.classes}"/>
+        <mkdir dir="${cluster.testclasses}"/>
+        <mkdir dir="${cluster.dist}"/>
+    </target>
+
+    <!-- Remove all built files -->
+    <target name="clean" depends="init" description="Remove all built and generated files">
+        <delete dir="${cluster.dist}"/>
+        <!--<delete dir="${generated.java.src}"/>-->
+        <delete dir="${cluster.classes}"/>
+        <delete dir="${cluster.testclasses}"/>
+    </target>
+
+    <!-- Compile Java -->
+    <target name="compile" depends="init" description="Compile all source files excluding tests">
+        <javac destdir="${cluster.classes}" target="1.5" source="1.5" classpathref="amqp.classpath" debug="on">
+            <src path="${cluster.src}"/>
+        </javac>
+        <javac destdir="${cluster.testclasses}" target="1.5" source="1.5" classpathref="amqp.classpath" debug="on">
+            <src path="${cluster.tests}"/>
+        </javac>
+
+        <copy todir="${cluster.classes}">
+            <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+            <fileset dir="${cluster.src}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+            <fileset dir="${common.src}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+            <fileset dir="${common.resources}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+        </copy>
+    </target>
+
+
+    <target name="compiletests" depends="compile" description="Compile all tests">
+        <javac destdir="${cluster.testclasses}" target="1.5" source="1.5" classpathref="amqp.classpath" debug="on">
+            <src path="${cluster.tests}"/>
+        </javac>
+
+        <copy todir="${cluster.testclasses}">
+            <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+            <fileset dir="${cluster.tests}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/package.html"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- Build jar archive -->
+    <target name="jar" depends="compile, compiletests" description="Create Jar files as the distribution">
+        <mkdir dir="${cluster.dist}"/>
+        <jar basedir="${cluster.classes}" jarfile="${cluster.dist}/cluster.jar"/>
+        <jar basedir="${cluster.testclasses}" jarfile="${cluster.dist}/cluster-tests.jar"/>
+    </target>
+
+
+    <target name="javadoc" depends="compile, compiletests" description="Generate javadoc for all broker classes">
+        <mkdir dir="${cluster.dist}/docs/api"/>
+        <javadoc sourcepath="${cluster.src}" destdir="${cluster.dist}/docs/api"
+                 packagenames="org.apache.qpid.*" classpathref="amqp.classpath" author="true"
+                 version="true" windowTitle="AMQPd (Project Qpid) API" doctitle="AMQP Clustered Broker API"
+                 footer="See &lt;a href=&quot;http://www.amqp.org&quot;&gt;www.amqp.org&lt;/a&gt; for more information."
+                 use="true" verbose="false"/>
+    </target>
+
+</project>
