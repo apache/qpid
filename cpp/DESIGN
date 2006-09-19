@@ -1,0 +1,89 @@
+Qpid C++ AMQP implementation
+=============================
+
+The following is a brief description of the logical design of the
+Qpid C++ code. 
+
+Layout
+
+There are three top level modules. The first two, client and broker,
+containi the code required for an AMQP client and an AMQP broker
+respectively.  The third, common, contains code that is common to both
+client and broker implementations. [Note that at present only the
+client has been started].
+
+Within the common module there are currently four sub-modules.  The
+largest of these is framing, containing the definitions of classes
+corresponding to key AMQP concepts such as frames, content & header
+bodies, particular method bodies etc as well as some interfaces and
+utilities used in the encoding and decoding of the wire protocol.
+
+Two of the other sub-modules in common, io and concurrent, provide
+abstractions of core io and concurrency constructs used in the client
+and broker code.  The intention is to allow these to be implemented in
+different ways.interaction with the wire protocol. At present the
+implementation of the io and concurrency abstractions is based on APR
+(Apache Portable Runtime).  [Note: the io module currently only
+contains the abstractions as seen from the client - the Connector. It
+will in due time likely have the analogous broker-side abstraction -
+the Acceptor].
+
+The final common sub-module is error, containing a simple exception
+definition used in all the error handling.
+
+Client Design
+
+The client module is primarily concerned with presenting the
+functionality offered by AMQP to users through a simple API that
+nevertheless allows all the protocol functionality to be exploited.
+[Note: it is currently nothing like complete in this regard!]
+
+The code in the client module is concerned with the logic of the AMQP
+protocol and interacts with the lower level transport issues through
+the InputHandler and OutputHandler abstractions defined in
+common/framing.  It uses these in conjunction with the Connector
+interface, defined in common/io, for establishing a connection to the
+broker and interacting with it through the sending and receiving of
+messages represented by AMQFrame (defined in common/framing).
+
+The Connector implementation is responsible for connection set up,
+threading strategy and getting data on and off the wire.  It delegates
+to the framing module for encode/decode operations.  The interface
+between the io and the framing modules is primarily through the Buffer
+and AMQFrame classes. 
+
+A Buffer allows 'raw' data to be read or written in terms of the AMQP
+defined 'types' (octet, short, long, long long, short string, long
+string, field table etc.).  AMQP is defined in terms frames with
+specific bodies and the frame (as well as these different bodies) are
+defined in terms of these 'types'.  The AMQFrame class allows a frame
+to be decoded by reading from the supplied buffer, or it allows a
+particular frame to be constructed and then encoded by writing to the
+supplied buffer.  The io layer can then access the raw data that
+'backs' the buffer to either out it on the wire or to populate it from
+the wire.
+
+One minor exception to this is the protocol initiation.  AMQP defines
+a protocol 'header', that is not a frame, and is sent by a client to
+intiate a connection.  The Connector allows (indeed requires) such a
+frame to be passed in to initialise the connection (the Acceptor, when
+defined, will allow an InitiationHandler to be set allowing the broker
+to hook into the connection initiation).  In order to remove
+duplication, the ProtocolInitiation class and the AMQFrame class both
+implement a AMQDataBlock class that defines the encode and decode
+methods.  This allows both types to be treated generically for the
+purposes of encoding.  In decoding, the context determines which type
+is expected and should be used for decoding (this is only relevant to
+the broker).
+
+
+
+              
+                  --------api--------                                     
+                     Client Impl     ...............uses.....
+input handler --> --------- --------- <-- output handler    .
+                     A         |                            .
+                     |         |                      framing utils   
+                     |         V                            .
+                  ------------------- <-- connector         .
+                       IO Layer      ................uses....

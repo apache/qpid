@@ -1,0 +1,72 @@
+<!--
+ -
+ - Copyright (c) 2006 The Apache Software Foundation
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -    http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -
+ -->
+<project name="common">
+
+  <dirname property="project.root" file="${ant.file.common}"/>
+  <property name="project.name" value="qpid"/>
+  <property name="project.version" value="0.9"/>
+  <property name="project.namever" value="${project.name}-${project.version}"/>
+  <property name="client.namever" value="${project.name}-client-${project.version}"/>
+  <property name="build.dir" value="${project.root}/build"/>
+  <!-- <property name="amqp.xml" location="${project.root}/../specs/amqp-8.0.xml"/> -->
+
+  <property name="classes.dir" value="classes"/>
+  <property name="src.dir" value="src"/>
+  <property name="lib.dir" value="lib"/>
+  <property name="doc.dir" value="doc"/>
+  <property name="etc.dir" value="etc"/>
+  <property name="bin.dir" value="bin"/>
+  <property name="src.bin" value="${bin.dir}"/>
+  <property name="launcher.sfx" value="-launch.jar"/>
+
+  <property name="dist.root" value="${build.dir}/dist"/>
+  <property name="dist.dir" value="${dist.root}/${project.namever}"/>
+  <property name="dist.client.dir" value="${dist.dir}/client"/>
+  <property name="dist.bin" value="${dist.dir}/${bin.dir}"/>
+  <property name="dist.lib" value="${dist.dir}/${lib.dir}"/>
+  <property name="dist.doc" value="${dist.dir}/${doc.dir}"/>
+  <property name="dist.etc" value="${dist.dir}/${etc.dir}"/>
+
+  <property name="build.zip" value="${build.dir}/${project.namever}.zip"/>
+  <property name="build.tar" value="${build.dir}/${project.namever}.tar"/>
+  <property name="build.tgz" value="${build.dir}/${project.namever}.tar.gz"/>
+  <property name="build.bz2" value="${build.dir}/${project.namever}.tar.bz2"/>
+
+  <property name="client.zip" value="${build.dir}/${client.namever}.zip"/>
+  <property name="client.tar" value="${build.dir}/${client.namever}.tar"/>
+  <property name="client.tgz" value="${build.dir}/${client.namever}.tar.gz"/>
+  <property name="client.bz2" value="${build.dir}/${client.namever}.tar.bz2"/>
+
+  <property name="java.target" value="1.5"/>
+  <property name="java.source" value="1.5"/>
+
+  <property name="tasks.dir" value="${project.root}/tasks"/>
+  <property name="tasks.classes" value="${tasks.dir}/classes"/>
+  <property name="tasks.src" value="${tasks.dir}/src"/>
+
+  <mkdir dir="${tasks.classes}"/>
+  <javac srcdir="${tasks.src}" destdir="${tasks.classes}"
+         classpath="${java.class.path}"/>
+  <taskdef name="map" classname="org.apache.qpid.tasks.Map"
+           classpath="${tasks.classes}"/>
+
+  <target name="clean-tasks">
+    <delete dir="${tasks.classes}"/>
+  </target>
+
+</project>
