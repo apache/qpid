@@ -82,9 +82,7 @@
         <auto_register>true</auto_register>
     </queue>
     <store>
-        <!--<class>org.apache.qpid.server.store.MemoryMessageStore</class>-->
-        <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-        <environment-path>${work}/bdb</environment-path>
+        <class>org.apache.qpid.server.store.MemoryMessageStore</class>
     </store>
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
