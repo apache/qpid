@@ -1,0 +1,18 @@
+#!/bin/sh
+
+doRun()
+{
+    class=$1
+    shift
+    echo
+    echo ================================================================================
+    echo Running $class
+    ./run.sh $class "$@"
+}
+
+# parameters are: clients messages iterations
+doRun org.apache.qpid.server.queue.SendPerfTest 10 1000 100
+
+doRun org.apache.qpid.server.queue.QueuePerfTest
+
+doRun org.apache.qpid.server.queue.QueueConcurrentPerfTest

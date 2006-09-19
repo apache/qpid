@@ -1,0 +1,48 @@
+= Developer guide to C++ codebase =
+
+== Prerequisites ==
+
+Apache Portable Runtime 1.2.7:  http://apr.apache.org/
+Install in /usr/local/apr or update options.mk if installed elsewhere.
+
+CppUnit: http://cppunit.sourceforge.net
+
+Optional: to generate source code documentation you need:
+ * doxygen: http://sourceforge.net/projects/doxygen/ 
+ * graphviz - http://www.graphviz.org/
+
+== Build and test ==
+
+make
+
+Default target builds and tests everything, see Makefile for other
+targets.
+
+=== Unit tests ===
+Unit tests are built as .so files containing CppUnit plugins. 
+
+DllPlugInTester is provided as part of cppunit. You can use it to run
+any subset of the unit tests. See Makefile for examples.
+
+=== System tests ===
+
+The Python test suite ../python/run_tests is the main set of broker
+system tests.
+
+There are some C++ client test executables built under client/test.
+
+== Doxygen ==
+
+Doxygen generates documentation in several formats from source code
+using special comments. You can use javadoc style comments if you know
+javadoc, if you don't or want to know the fully story on doxygen
+markup see http://www.stack.nl/~dimitri/doxygen/
+
+Even even if the code is completely uncommented, doxygen generates
+UML-esque dependency diagrams that are ''extremely'' useful in navigating
+around the code, especially for newcomers.
+
+To try it out "make doxygen" then open doxygen/html/index.html
+
+
+
