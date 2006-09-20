@@ -36,7 +36,7 @@ public class JNDIBindQueue
 
     public static final String CONNECTION_FACTORY_BINDING = "amq/ConnectionFactory";
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
-    public static final String PROVIDER_URL = "file:/" + DEFAULT_PROVIDER_FILE_PATH;
+    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
 
     Connection _connection = null;
@@ -174,7 +174,7 @@ public class JNDIBindQueue
 
             if (provider.startsWith("file"))
             {
-                File file = new File(provider.substring(provider.indexOf(":/") + 2));
+                File file = new File(provider.substring(provider.indexOf("://") + 3));
                 try
                 {
                     System.out.println("File:" + file.toURL());
