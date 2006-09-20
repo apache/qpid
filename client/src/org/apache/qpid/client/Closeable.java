@@ -17,6 +17,7 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,7 +32,7 @@ public abstract class Closeable
      */
     protected final AtomicBoolean _closed = new AtomicBoolean(false);
 
-    protected void checkNotClosed()
+    protected void checkNotClosed() throws JMSException
     {
         if (_closed.get())
         {

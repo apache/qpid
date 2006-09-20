@@ -658,7 +658,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return null;
     }
 
-    public long getMaximumChannelCount()
+    public long getMaximumChannelCount() throws JMSException
     {
         checkNotClosed();
         return _maximumChannelCount;
@@ -676,7 +676,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void setMaximumChannelCount(long maximumChannelCount)
     {
-        checkNotClosed();
         _maximumChannelCount = maximumChannelCount;
     }
 
@@ -879,7 +878,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
      * The caller must hold the failover mutex before calling this method.
      */
-    public void resubscribeSessions() throws AMQException
+    public void resubscribeSessions() throws JMSException, AMQException
     {
         ArrayList sessions = new ArrayList(_sessions.values());
         _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: remove?
