@@ -28,12 +28,15 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.jms.*;
 import java.util.Hashtable;
+import java.io.File;
+import java.net.MalformedURLException;
 
 public class JNDIBindQueue
 {
 
     public static final String CONNECTION_FACTORY_BINDING = "amq/ConnectionFactory";
-    public static final String PROVIDER_URL = "file:/temp/IBMPerfTestsJNDI";
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "IBMPerfTestsJNDI";
+    public static final String PROVIDER_URL = "file:/" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
 
     Connection _connection = null;
@@ -163,8 +166,38 @@ public class JNDIBindQueue
             }
 
             System.out.println("File System Context Factory\n" +
-                    "Binding Queue:'" + queueName + "' to '" + binding + "'\n" +
-                    "JNDI Provider URL:" + provider);
+                               "Binding Queue:'" + queueName + "' to '" + binding + "'\n" +
+                               "JNDI Provider URL:" + provider);
+
+            if (provider.startsWith("file"))
+            {
+                File file = new File(provider.substring(provider.indexOf(":/") + 2));
+                try
+                {
+                    System.out.println("File:" + file.toURL());
+                }
+                catch (MalformedURLException e)
+                {
+                    System.out.println(e);
+                }
+                if (file.exists() && !file.isDirectory())
+                {
+                    System.out.println("Couldn't make directory file already exists");
+                    System.exit(1);
+                }
+                else
+                {
+                    if (!file.exists())
+                    {
+                        if (!file.mkdirs())
+                        {
+                            System.out.println("Couldn't make directory");
+                            System.exit(1);
+                        }
+                    }
+                }
+            }
+
 
             new JNDIBindQueue(binding, queueName, provider, contextFactory);
 
