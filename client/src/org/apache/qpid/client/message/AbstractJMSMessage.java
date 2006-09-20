@@ -17,16 +17,16 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.commons.collections.map.ReferenceMap;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.JmsNotImplementedException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableKeyEnumeration;
-import org.apache.commons.collections.map.ReferenceMap;
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.mina.common.ByteBuffer;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -175,12 +175,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public Destination getJMSDestination() throws JMSException
     {
         // TODO: implement this once we have sorted out how to figure out the exchange class
-        throw new NotImplementedException();
+        throw new JmsNotImplementedException();
     }
 
     public void setJMSDestination(Destination destination) throws JMSException
     {
-        throw new NotImplementedException();
+        throw new JmsNotImplementedException();
     }
 
     public int getJMSDeliveryMode() throws JMSException
@@ -423,7 +423,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public Object getObjectProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        throw new JMSException("Not implemented yet");
+        throw new JmsNotImplementedException();
     }
 
     public Enumeration getPropertyNames() throws JMSException
