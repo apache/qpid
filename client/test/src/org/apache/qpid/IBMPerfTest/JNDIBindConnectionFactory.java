@@ -18,7 +18,8 @@
 package org.apache.qpid.IBMPerfTest;
 
 import org.apache.qpid.client.AMQConnectionFactory;
-import org.junit.Assert;
+import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -26,7 +27,6 @@ import javax.naming.NamingException;
 import javax.jms.ConnectionFactory;
 import java.util.Hashtable;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 
 public class JNDIBindConnectionFactory
@@ -39,6 +39,8 @@ public class JNDIBindConnectionFactory
 
     public static void main(String[] args)
     {
+        Logger.getRootLogger().setLevel(Level.OFF);
+
         String connectionFactoryBinding = CONNECTION_FACTORY_BINDING;
         String provider = PROVIDER_URL;
         String contextFactory = FSCONTEXT_FACTORY;
@@ -73,14 +75,7 @@ public class JNDIBindConnectionFactory
         if (provider.startsWith("file"))
         {
             File file = new File(provider.substring(provider.indexOf("://") + 3));
-            try
-            {
-                System.out.println("File:" + file.toURL());
-            }
-            catch (MalformedURLException e)
-            {
-                System.out.println(e);
-            }
+
             if (file.exists() && !file.isDirectory())
             {
                 System.out.println("Couldn't make directory file already exists");
@@ -116,7 +111,7 @@ public class JNDIBindConnectionFactory
             // Create the initial context
             Context ctx = new InitialContext(env);
 
-// Create the object to be bound
+            // Create the object to be bound
             ConnectionFactory factory = null;
 
             try
