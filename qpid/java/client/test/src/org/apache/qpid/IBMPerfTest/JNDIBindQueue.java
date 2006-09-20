@@ -21,6 +21,8 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 import org.junit.Assert;
 
 import javax.naming.Context;
@@ -145,6 +147,7 @@ public class JNDIBindQueue
 
     public static void main(String[] args)
     {
+        Logger.getRootLogger().setLevel(Level.OFF);
 
         String provider = JNDIBindQueue.PROVIDER_URL;
         String contextFactory = JNDIBindQueue.FSCONTEXT_FACTORY;
@@ -175,14 +178,7 @@ public class JNDIBindQueue
             if (provider.startsWith("file"))
             {
                 File file = new File(provider.substring(provider.indexOf("://") + 3));
-                try
-                {
-                    System.out.println("File:" + file.toURL());
-                }
-                catch (MalformedURLException e)
-                {
-                    System.out.println(e);
-                }
+
                 if (file.exists() && !file.isDirectory())
                 {
                     System.out.println("Couldn't make directory file already exists");
