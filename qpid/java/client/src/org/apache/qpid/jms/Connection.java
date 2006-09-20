@@ -17,15 +17,14 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.*;
-
+import javax.jms.JMSException;
 
 public interface Connection extends javax.jms.Connection
 {
     /**
      * @return the maximum number of sessions supported by this Connection
      */
-    long getMaximumChannelCount();
+    long getMaximumChannelCount() throws JMSException;
 
     void setConnectionListener(ConnectionListener listener);
 
