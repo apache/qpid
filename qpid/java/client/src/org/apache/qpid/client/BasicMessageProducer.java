@@ -466,13 +466,13 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         return bodies;
     }
 
-    public void setMimeType(String mimeType)
+    public void setMimeType(String mimeType) throws JMSException
     {
         checkNotClosed();
         _mimeType = mimeType;
     }
 
-    public void setEncoding(String encoding) throws UnsupportedEncodingException
+    public void setEncoding(String encoding) throws JMSException, UnsupportedEncodingException
     {
         checkNotClosed();
         _encoding = encoding;

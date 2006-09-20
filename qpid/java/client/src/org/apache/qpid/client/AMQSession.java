@@ -381,11 +381,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    public boolean getTransacted()
-    {
-        checkNotClosed();
-        return _transacted;
-    }
+   public boolean getTransacted() throws JMSException
+   {
+       checkNotClosed();
+       return _transacted;
+   }
 
     public int getAcknowledgeMode() throws JMSException
     {
@@ -680,7 +680,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         return (org.apache.qpid.jms.MessageProducer) new FailoverSupport()
         {
-            public Object operation()
+            public Object operation() throws JMSException
             {
                 checkNotClosed();
 
