@@ -25,12 +25,16 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.jms.ConnectionFactory;
 import java.util.Hashtable;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
 public class JNDIBindConnectionFactory
 {
 
     public static final String CONNECTION_FACTORY_BINDING = "amq/ConnectionFactory";
-    public static final String PROVIDER_URL = "file:/temp/IBMPerfTestsJNDI";
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "IBMPerfTestsJNDI";
+    public static final String PROVIDER_URL = "file:/" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
 
     public static void main(String[] args)
@@ -60,11 +64,40 @@ public class JNDIBindConnectionFactory
         }
         else
         {
-            System.out.println("Using default values: Usage:java JNDIBindConnectionFactory [<Provider URL> [<Connection Factory Binding>] [<JNDI Context Factory>]]");            
+            System.out.println("Using default values: Usage:java JNDIBindConnectionFactory [<Provider URL> [<Connection Factory Binding>] [<JNDI Context Factory>]]");
         }
         System.out.println("File System Context Factory\n" +
-                "Connection Factory Binding:" + connectionFactoryBinding + "\n" +
-                "JNDI Provider URL:" + provider);
+                           "Connection Factory Binding:" + connectionFactoryBinding + "\n" +
+                           "JNDI Provider URL:" + provider);
+
+        if (provider.startsWith("file"))
+        {
+            File file = new File(provider.substring(provider.indexOf(":/") + 2));
+            try
+            {
+                System.out.println("File:" + file.toURL());
+            }
+            catch (MalformedURLException e)
+            {
+                System.out.println(e);
+            }
+            if (file.exists() && !file.isDirectory())
+            {
+                System.out.println("Couldn't make directory file already exists");
+                System.exit(1);
+            }
+            else
+            {
+                if (!file.exists())
+                {
+                    if (!file.mkdirs())
+                    {
+                        System.out.println("Couldn't make directory");
+                        System.exit(1);
+                    }
+                }
+            }
+        }
 
         new JNDIBindConnectionFactory(provider, connectionFactoryBinding, contextFactory);
 
@@ -83,7 +116,7 @@ public class JNDIBindConnectionFactory
             // Create the initial context
             Context ctx = new InitialContext(env);
 
-            // Create the object to be bound
+// Create the object to be bound
             ConnectionFactory factory = null;
 
             try
