@@ -24,6 +24,10 @@ using namespace qpid::concurrent;
 ExchangeRegistry::ExchangeRegistry() : lock(new MonitorImpl()){}
 
 ExchangeRegistry::~ExchangeRegistry(){
+    for (ExchangeMap::iterator i = exchanges.begin(); i != exchanges.end(); ++i)
+    {
+        delete i->second;
+    }
     delete lock;
 }
 
@@ -40,4 +44,14 @@ void ExchangeRegistry::destroy(const string& name){
 
 Exchange* ExchangeRegistry::get(const string& name){
     return exchanges[name];
+}
+
+namespace 
+{
+const std::string empty;
+}
+
+Exchange* ExchangeRegistry::getDefault()
+{
+    return get(empty);
 }

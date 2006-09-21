@@ -27,11 +27,9 @@ LIB_OBJECTS= $(subst src/Broker.o,,$(OBJECTS))
 EXE_OBJECTS= src/Broker.o
 
 
-.PHONY: all clean test
+.PHONY: all clean 
 
 all: $(BROKER)
-
-test:
 	@$(MAKE) -C test all
 
 clean:

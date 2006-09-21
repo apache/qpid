@@ -20,20 +20,15 @@
 # build them in the correct sequence.
 #
 
-include options.mk
-
 UNITTESTS=$(wildcard common/*/test/*.so broker/test/*.so)
 
 .PHONY: all clean doxygen
 
 test:   all
-	@$(MAKE) -C common test
-	@$(MAKE) -C broker test
-	@$(MAKE) -C client test
 	@$(MAKE) runtests
 
 runtests: 
-	$(CPPUNIT_HOME)/bin/DllPlugInTester -t -b $(UNITTESTS)
+	DllPlugInTester -c -b $(UNITTESTS)
 	bin/qpidd >> qpidd.log &
 	cd ../python ; ./run-tests -v -I cpp_failing.txt	
 

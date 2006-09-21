@@ -156,9 +156,9 @@ class QueueTests(TestBase):
 
         #straight-forward case:
         channel.queue_declare(queue="delete-me")
-        channel.basic_publish(exchange="amq.direct", routing_key="delete-me", content=Content("a"))
-        channel.basic_publish(exchange="amq.direct", routing_key="delete-me", content=Content("b"))
-        channel.basic_publish(exchange="amq.direct", routing_key="delete-me", content=Content("c"))        
+        channel.basic_publish(routing_key="delete-me", content=Content("a"))
+        channel.basic_publish(routing_key="delete-me", content=Content("b"))
+        channel.basic_publish(routing_key="delete-me", content=Content("c"))        
         reply = channel.queue_delete(queue="delete-me")
         self.assertEqual(3, reply.message_count)
         #check that it has gone be declaring passively
@@ -189,7 +189,7 @@ class QueueTests(TestBase):
         #create a queue and add a message to it (use default binding):
         channel.queue_declare(queue="delete-me-2")
         channel.queue_declare(queue="delete-me-2", passive="True")
-        channel.basic_publish(exchange="amq.direct", routing_key="delete-me-2", content=Content("message"))
+        channel.basic_publish(routing_key="delete-me-2", content=Content("message"))
 
         #try to delete, but only if empty:
         try:
