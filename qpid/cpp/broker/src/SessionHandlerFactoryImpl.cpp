@@ -22,10 +22,19 @@
 using namespace qpid::broker;
 using namespace qpid::io;
 
+namespace
+{
+const std::string empty;
+const std::string amq_direct("amq.direct");
+const std::string amq_topic("amq.topic");
+const std::string amq_fanout("amq.fanout");
+}
+
 SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeout(_timeout), cleaner(&queues, timeout/10){
-    exchanges.declare(new DirectExchange("amq.direct"));
-    exchanges.declare(new TopicExchange("amq.topic"));
-    exchanges.declare(new FanOutExchange("amq.fanout"));
+    exchanges.declare(new DirectExchange(empty)); // Default exchange.
+    exchanges.declare(new DirectExchange(amq_direct));
+    exchanges.declare(new TopicExchange(amq_topic));
+    exchanges.declare(new FanOutExchange(amq_fanout));
     cleaner.start();
 }
 
@@ -35,6 +44,4 @@ SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt){
 
 SessionHandlerFactoryImpl::~SessionHandlerFactoryImpl(){
     cleaner.stop();
-    exchanges.destroy("amq.direct");
-    exchanges.destroy("amq.topic");    
 }

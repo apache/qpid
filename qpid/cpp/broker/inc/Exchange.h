@@ -25,12 +25,14 @@
 namespace qpid {
 namespace broker {
     class Exchange{
-    public:
-        virtual const string& getName() = 0;
+        const std::string name;
+      public:
+        explicit Exchange(const std::string& name) : name(name) {}
+        virtual ~Exchange(){}
+        std::string getName() { return name; }
         virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
         virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
         virtual void route(Message::shared_ptr& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-        virtual ~Exchange(){}
     };
 }
 }
