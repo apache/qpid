@@ -31,14 +31,12 @@ DEPS = $(SOURCES:.cpp=.d)
 
 GENERATED_OBJECTS = framing/generated/amqp_methods.o
 
-.PHONY: all test clean
+.PHONY: all clean
 
 # We have to do two separate makes to ensure we pick up all generated files.
 all:
 	@$(MAKE) -C framing all
-	@make $(TARGET)
-
-test:
+	@$(MAKE) $(TARGET)
 	@$(MAKE) -C framing test
 
 clean:

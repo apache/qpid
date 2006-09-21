@@ -29,22 +29,19 @@
 namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
-        const string name;
         std::map<string, std::vector<Queue::shared_ptr> > bindings;
         qpid::concurrent::MonitorImpl lock;
 
     public:
         static const std::string typeName;
         
-        DirectExchange(const string& name);
+        DirectExchange(const std::string& name);
         
-        inline virtual const string& getName(){ return name; }
-        
-        virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args);
+        virtual void bind(Queue::shared_ptr queue, const std::string& routingKey, qpid::framing::FieldTable* args);
 
-        virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args);
+        virtual void unbind(Queue::shared_ptr queue, const std::string& routingKey, qpid::framing::FieldTable* args);
 
-        virtual void route(Message::shared_ptr& msg, const string& routingKey, qpid::framing::FieldTable* args);
+        virtual void route(Message::shared_ptr& msg, const std::string& routingKey, qpid::framing::FieldTable* args);
 
         virtual ~DirectExchange();
     };

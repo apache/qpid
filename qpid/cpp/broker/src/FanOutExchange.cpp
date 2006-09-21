@@ -23,7 +23,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::concurrent;
 
-FanOutExchange::FanOutExchange(const string& _name) : name(_name) {}
+FanOutExchange::FanOutExchange(const std::string& name) : Exchange(name) {}
 
 void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
     Locker locker(lock);
