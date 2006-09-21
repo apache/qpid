@@ -23,6 +23,7 @@
 #include <vector>
 #include <exception>
 #include "AMQFrame.h"
+#include "AMQP_ClientProxy.h"
 #include "AMQP_ServerOperations.h"
 #include "AutoDelete.h"
 #include "ExchangeRegistry.h"
@@ -64,6 +65,7 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     qpid::io::SessionContext* context;
+    qpid::framing::AMQP_ClientProxy client;
     QueueRegistry* queues;
     ExchangeRegistry* const exchanges;
     AutoDelete* const cleaner;
