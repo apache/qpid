@@ -11,11 +11,10 @@
   -->
   <xsl:template match="amqp" mode="server_h">
     <xsl:param name="domain-cpp-table"/>
-    <xsl:result-document href="AMQP_Server.h" format="textFormat">
+    <xsl:result-document href="AMQP_ClientProxy.h" format="textFormat">
       <xsl:value-of select="amqp:copyright()"/>
-      <xsl:text>
-#ifndef _AMQP_Server_
-#define _AMQP_Server_
+#ifndef _AMQP_ClientProxy_
+#define _AMQP_ClientProxy_
 
 #include "AMQP_ClientOperations.h"
 #include "FieldTable.h"
@@ -24,14 +23,15 @@
 namespace qpid {
 namespace framing {
 
-class AMQP_Server : virtual public AMQP_ClientOperations
+class AMQP_ClientProxy : virtual public AMQP_ClientOperations
 {
-        OutputHandler* out;
-
     public:
-        AMQP_Server(OutputHandler* _out);
-        virtual ~AMQP_Server() {}&#xA;&#xA;</xsl:text>
-      <xsl:for-each select="class">
+
+        AMQP_ClientProxy(OutputHandler* _out);
+        virtual ~AMQP_ClientProxy() {};
+
+    <!-- inner classes -->
+    <xsl:for-each select="class">
         <xsl:variable name="class" select="amqp:cpp-class-name(@name)"/>
         <xsl:if test="doc">
           <xsl:text>&#xA;/**&#xA;===== Class: </xsl:text><xsl:value-of select="$class"/><xsl:text> =====&#xA;</xsl:text>
@@ -74,15 +74,32 @@ class AMQP_Server : virtual public AMQP_ClientOperations
             <xsl:text> );&#xA;</xsl:text>
           </xsl:if>
         </xsl:for-each>
-        <xsl:text>        }; /* class </xsl:text><xsl:value-of select="$class"/><xsl:text> */&#xA;</xsl:text>
+        <xsl:text>        }; /* class </xsl:text><xsl:value-of select="$class"/> */
       </xsl:for-each>
-      <xsl:text>}; /* class AMQP_Server */
+
+    <!-- Accessors for each nested class instance -->
+    <xsl:for-each select="class">
+        <xsl:value-of select="concat(amqp:cpp-class-name(@name), '&amp; get', amqp:cpp-class-name(@name), '()')"/>;
+    </xsl:for-each>
+
+    private:
+
+    OutputHandler* out;
+
+    <!-- An instance of each nested class -->
+    <xsl:for-each select="class">
+        <xsl:value-of select="concat(amqp:cpp-class-name(@name), ' ', amqp:cpp-name(@name))"/>;
+    </xsl:for-each>
+
+
+
+      }; /* class AMQP_ClientProxy */
 
 } /* namespace framing */
 } /* namespace qpid */
 
-#endif&#xA;</xsl:text>
-    </xsl:result-document>
+#endif
+</xsl:result-document>
   </xsl:template>
 
 
@@ -94,32 +111,39 @@ class AMQP_Server : virtual public AMQP_ClientOperations
   -->
   <xsl:template match="amqp" mode="server_cpp">
     <xsl:param name="domain-cpp-table"/>
-    <xsl:result-document href="AMQP_Server.cpp" format="textFormat">
+    <xsl:result-document href="AMQP_ClientProxy.cpp" format="textFormat">
       <xsl:value-of select="amqp:copyright()"/>
-      <xsl:text>
 
-#include "AMQP_Server.h"
+#include "AMQP_ClientProxy.h"
 
 namespace qpid {
 namespace framing {
 
-AMQP_Server::AMQP_Server(OutputHandler* _out) :
-    out(_out)
+AMQP_ClientProxy::AMQP_ClientProxy(OutputHandler* _out) :
+    out(_out),
+    <!-- Initialisation of each nested class instance -->
+    <xsl:for-each select="class">
+        <xsl:value-of select="concat(amqp:cpp-name(@name), '(_out)')"/>
+        <xsl:if test="position()!=last()">,
+        </xsl:if>
+    </xsl:for-each>
+
 {
-}&#xA;&#xA;</xsl:text>
+}
+
       <xsl:for-each select="class">
         <xsl:variable name="class" select="amqp:cpp-class-name(@name)"/>
         <xsl:text>&#xA;/* ++++++++++ Class: </xsl:text><xsl:value-of select="$class"/><xsl:text> ++++++++++ */
 
-AMQP_Server::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text><xsl:value-of select="$class"/><xsl:text>(OutputHandler* _out) :
+AMQP_ClientProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text><xsl:value-of select="$class"/><xsl:text>(OutputHandler* _out) :
     out(_out)
 {
 }
 
-AMQP_Server::</xsl:text><xsl:value-of select="$class"/><xsl:text>::~</xsl:text><xsl:value-of select="$class"/><xsl:text>() {}&#xA;&#xA;</xsl:text>
+AMQP_ClientProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::~</xsl:text><xsl:value-of select="$class"/><xsl:text>() {}&#xA;&#xA;</xsl:text>
         <xsl:for-each select="method">
           <xsl:if test="chassis[@name='client']">
-            <xsl:text>void AMQP_Server::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text>
+            <xsl:text>void AMQP_ClientProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text>
             <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t channel</xsl:text><xsl:if test="field">
             <xsl:text>,&#xA;                        </xsl:text>
             <xsl:for-each select="field">
@@ -145,8 +169,16 @@ AMQP_Server::</xsl:text><xsl:value-of select="$class"/><xsl:text>::~</xsl:text><
           </xsl:if>
         </xsl:for-each>
       </xsl:for-each>
-      <xsl:text>
 
+    <!-- Accessors for each nested class instance -->
+    <xsl:for-each select="class">
+        <xsl:value-of select="concat('AMQP_ClientProxy::', amqp:cpp-class-name(@name), '&amp; AMQP_ClientProxy::get', amqp:cpp-class-name(@name), '()')"/>{
+        <xsl:value-of select="concat('    return ', amqp:cpp-name(@name))"/>;
+        }
+
+    </xsl:for-each>
+
+      <xsl:text>
 } /* namespace framing */
 } /* namespace qpid */&#xA;</xsl:text>
     </xsl:result-document>
