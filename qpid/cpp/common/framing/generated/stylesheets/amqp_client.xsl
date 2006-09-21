@@ -11,11 +11,11 @@
   -->
   <xsl:template match="amqp" mode="client_h">
     <xsl:param name="domain-cpp-table"/>
-    <xsl:result-document href="AMQP_Client.h" format="textFormat">
+    <xsl:result-document href="AMQP_ServerProxy.h" format="textFormat">
       <xsl:value-of select="amqp:copyright()"/>
       <xsl:text>
-#ifndef _AMQP_Client_
-#define _AMQP_Client_
+#ifndef _AMQP_ServerProxy_
+#define _AMQP_ServerProxy_
 
 #include "AMQP_ServerOperations.h"
 #include "FieldTable.h"
@@ -24,13 +24,13 @@
 namespace qpid {
 namespace framing {
 
-class AMQP_Client : virtual public AMQP_ServerOperations
+class AMQP_ServerProxy : virtual public AMQP_ServerOperations
 {
         OutputHandler* out;
 
     public:
-        AMQP_Client(OutputHandler* _out);
-        virtual ~AMQP_Client() {}&#xA;&#xA;</xsl:text>
+        AMQP_ServerProxy(OutputHandler* _out);
+        virtual ~AMQP_ServerProxy() {}&#xA;&#xA;</xsl:text>
       <xsl:for-each select="class">
         <xsl:variable name="class" select="amqp:cpp-class-name(@name)"/>
         <xsl:if test="doc">
@@ -76,7 +76,7 @@ class AMQP_Client : virtual public AMQP_ServerOperations
         </xsl:for-each>
         <xsl:text>        }; /* class </xsl:text><xsl:value-of select="$class"/><xsl:text> */&#xA;</xsl:text>
       </xsl:for-each>
-      <xsl:text>}; /* class AMQP_Client */
+      <xsl:text>}; /* class AMQP_ServerProxy */
 
 } /* namespace framing */
 } /* namespace qpid */
@@ -94,16 +94,16 @@ class AMQP_Client : virtual public AMQP_ServerOperations
   -->
   <xsl:template match="amqp" mode="client_cpp">
     <xsl:param name="domain-cpp-table"/>
-    <xsl:result-document href="AMQP_Client.cpp" format="textFormat">
+    <xsl:result-document href="AMQP_ServerProxy.cpp" format="textFormat">
       <xsl:value-of select="amqp:copyright()"/>
       <xsl:text>
 
-#include "AMQP_Client.h"
+#include "AMQP_ServerProxy.h"
 
 namespace qpid {
 namespace framing {
 
-AMQP_Client::AMQP_Client(OutputHandler* _out) :
+AMQP_ServerProxy::AMQP_ServerProxy(OutputHandler* _out) :
     out(_out)
 {
 }&#xA;&#xA;</xsl:text>
@@ -111,15 +111,15 @@ AMQP_Client::AMQP_Client(OutputHandler* _out) :
         <xsl:variable name="class" select="amqp:cpp-class-name(@name)"/>
         <xsl:text>&#xA;/* ++++++++++ Class: </xsl:text><xsl:value-of select="$class"/><xsl:text> ++++++++++ */
 
-AMQP_Client::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text><xsl:value-of select="$class"/><xsl:text>(OutputHandler* _out) :
+AMQP_ServerProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text><xsl:value-of select="$class"/><xsl:text>(OutputHandler* _out) :
     out(_out)
 {
 }
 
-AMQP_Client::</xsl:text><xsl:value-of select="$class"/><xsl:text>::~</xsl:text><xsl:value-of select="$class"/><xsl:text>() {}&#xA;&#xA;</xsl:text>
+AMQP_ServerProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::~</xsl:text><xsl:value-of select="$class"/><xsl:text>() {}&#xA;&#xA;</xsl:text>
         <xsl:for-each select="method">
           <xsl:if test="chassis[@name='server']">
-            <xsl:text>void AMQP_Client::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text>
+            <xsl:text>void AMQP_ServerProxy::</xsl:text><xsl:value-of select="$class"/><xsl:text>::</xsl:text>
             <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t channel</xsl:text><xsl:if test="field">
             <xsl:text>,&#xA;                        </xsl:text>
             <xsl:for-each select="field">
