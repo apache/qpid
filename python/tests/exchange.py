@@ -57,9 +57,25 @@ class StandardExchangeVerifier:
         self.channel.queue_bind(queue="q", exchange=ex)
         self.queue_declare(queue="p") 
         self.channel.queue_bind(queue="p", exchange=ex)
-        self.assertPublishConsume(exchange=ex, queue=["q","p"])
+        for qname in ["q", "p"]: self.assertPublishGet(self.consume(qname), ex)
 
-    
+    def verifyTopicExchange(self, ex):
+        """Verify that ex behaves like a topic exchange"""
+        self.queue_declare(queue="a")
+        self.channel.queue_bind(queue="a", exchange=ex, routing_key="a.#.b.*")
+        q = self.consume("a")
+        self.assertPublishGet(q, ex, "a.b.x")
+        self.assertPublishGet(q, ex, "a.x.b.x")
+        self.assertPublishGet(q, ex, "a.x.x.b.x")
+
+        # Shouldn't match
+        self.channel.basic_publish(exchange=ex, routing_key="a.b")        
+        self.channel.basic_publish(exchange=ex, routing_key="a.b.x.y")        
+        self.channel.basic_publish(exchange=ex, routing_key="x.a.b.x")        
+        self.channel.basic_publish(exchange=ex, routing_key="a.b")
+        self.assert_(q.empty())
+
+
 class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
     """
     The server SHOULD implement these standard exchange types: topic, headers.
@@ -76,6 +92,11 @@ class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
         """Declare and test a fanout exchange"""
         self.exchange_declare(0, exchange="f", type="fanout")
         self.verifyFanOutExchange("f")
+
+    def testTopic(self):
+        """Declare and test a topic exchange"""
+        self.exchange_declare(0, exchange="t", type="topic")
+        self.verifyTopicExchange("t")
         
 
 class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
@@ -88,24 +109,17 @@ class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
     exchange instance (amq.fanout, amq.direct, and amq.topic, amq.headers if
     those types are defined).
     """
-    # TODO aconway 2006-09-01: Add tests for 3.1.3.1:
-    # - Test auto binding by q name
-    # - Test the nameless "default publish" exchange.
-    # - Auto created amq.fanout exchange
-
     def testAmqDirect(self): self.verifyDirectExchange("amq.direct")
 
     def testAmqFanOut(self): self.verifyFanOutExchange("amq.fanout")
 
-    def testAmqTopic(self): 
-        self.exchange_declare(0, exchange="amq.topic", passive="true")
-        # TODO aconway 2006-09-14: verify topic behavior
+    def testAmqTopic(self):  self.verifyTopicExchange("amq.topic")
         
     def testAmqHeaders(self): 
         self.exchange_declare(0, exchange="amq.headers", passive="true")
         # TODO aconway 2006-09-14: verify headers behavior
 
-class DefaultExchangeRuleTests(TestBase):
+class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
     """
     The server MUST predeclare a direct exchange to act as the default exchange
     for content Publish methods and for default queue bindings.
@@ -115,6 +129,12 @@ class DefaultExchangeRuleTests(TestBase):
     routing key but without specifying the exchange name, then ensuring that
     the message arrives in the queue correctly.
     """
+    def testDefaultExchange(self):
+        # Test automatic binding by queue name.
+        self.queue_declare(queue="d")
+        self.assertPublishConsume(queue="d", routing_key="d")
+        # Test explicit bind to default queue
+        self.verifyDirectExchange("")
 
 
 class DefaultAccessRuleTests(TestBase):
@@ -123,7 +143,7 @@ class DefaultAccessRuleTests(TestBase):
     by specifying an empty exchange name in the Queue.Bind and content Publish
     methods.
     """
-
+    # TODO aconway 2006-09-18: fill this in.
 
 class ExtensionsRuleTests(TestBase):
     """

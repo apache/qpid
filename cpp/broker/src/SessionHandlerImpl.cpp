@@ -256,7 +256,7 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
 	if (queue_created.second) { // This is a new queue
 	    parent->channels[channel]->setDefaultQueue(queue);
 	    //add default binding:
-	    parent->exchanges->get("amq.direct")->bind(queue, name, 0);
+	    parent->exchanges->getDefault()->bind(queue, name, 0);
 	    if(exclusive){
 		parent->exclusiveQueues.push_back(queue);
 	    } else if(autoDelete){
@@ -280,7 +280,7 @@ void SessionHandlerImpl::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t tic
     Queue::shared_ptr queue = parent->getQueue(queueName, channel);
     Exchange* exchange = parent->exchanges->get(exchangeName);
     if(exchange){
-        if(routingKey.size() == 0 && queueName.size() == 0) routingKey = queue->getName();
+        if(routingKey.empty() && queueName.empty()) routingKey = queue->getName();
         exchange->bind(queue, routingKey, &arguments);
         if(!nowait) parent->client.getQueue().bindOk(channel);    
     }else{
@@ -361,7 +361,7 @@ void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t 
                                                    string& exchange, string& routingKey, 
                                                    bool mandatory, bool immediate){
 
-    Message* msg = new Message(parent, exchange.length() ? exchange : "amq.direct", routingKey, mandatory, immediate);
+    Message* msg = new Message(parent, exchange, routingKey, mandatory, immediate);
     parent->channels[channel]->handlePublish(msg);
 } 
         

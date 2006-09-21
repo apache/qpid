@@ -1,4 +1,4 @@
- #l
+ #
  # Copyright (c) 2006 The Apache Software Foundation
  #
  # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,29 +21,25 @@ COMMON_HOME = ${QPID_CPP_HOME}/common
 TOOLS_DIR = ${QPID_CPP_HOME}/tools
 LIB_DIR = ${QPID_CPP_HOME}/lib
 BIN_DIR = ${QPID_CPP_HOME}/bin
-APR_HOME= /usr
-BOOST_HOME= /usr
-CPPUNIT_HOME= /usr
+APR_HOME = /usr/local/apr
 
 # Compile flags
-DEBUG = -g
+DEBUG = -ggdb3
 # _USE_APR_IO_ set when APR IO build is desired.
 OPT   = -D _USE_APR_IO_ #-O3 
 APR_INCLUDES=-I ${APR_HOME}/include/apr-1/ 
-BOOST_INCLUDES=-I ${BOOST_HOME}/include/boost-1_33_1
-CPPUNIT_INCLUDES=-I ${CPPUNIT_HOME}/include
-COMMON_INCLUDES = -I ${COMMON_HOME}/framing/inc -I ${COMMON_HOME}/framing/generated -I ${COMMON_HOME}/concurrent/inc -I ${COMMON_HOME}/io/inc -I ${COMMON_HOME}/error/inc -I $(COMMON_HOME)/utils/inc ${APR_INCLUDES} ${BOOST_INCLUDES} ${CPPUNIT_INCLUDES}
+COMMON_INCLUDES = -I ${COMMON_HOME}/framing/inc -I ${COMMON_HOME}/framing/generated -I ${COMMON_HOME}/concurrent/inc -I ${COMMON_HOME}/io/inc -I ${COMMON_HOME}/error/inc -I $(COMMON_HOME)/utils/inc ${APR_INCLUDES}
 SRC_INCLUDES = $(COMMON_INCLUDES) -I inc
 TEST_INCLUDES = $(COMMON_INCLUDES) -I ../inc
 INCLUDES=$(SRC_INCLUDES)	# Default to src
 CXXFLAGS = $(DEBUG) $(OPT) -MMD -fpic $(INCLUDES) 
 
+# General link flags
+LDFLAGS= -L $(LIB_DIR) -L ${APR_HOME}/lib $(RPATH)
+
 # TODO aconway 2006-09-12: This is not something we want in a release
 # but it's useful for development.
 RPATH= -Wl,-rpath,$(CURDIR)/$(LIB_DIR)
-
-# General link flags
-LDFLAGS= -L $(LIB_DIR) -L ${APR_HOME}/lib -L ${BOOST_HOME}/lib -L ${CPPUNIT_HOME}/lib $(RPATH)
 
 # Libraries and executables. Use absolute paths so exes can find
 # libs wherever they are run. TODO: Proper library management.

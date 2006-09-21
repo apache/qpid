@@ -25,13 +25,15 @@
 namespace qpid {
 namespace broker {
     class ExchangeRegistry{
-        std::map<string, Exchange*> exchanges;
+        typedef std::map<string, Exchange*> ExchangeMap;
+        ExchangeMap exchanges;
         qpid::concurrent::Monitor* lock;
     public:
         ExchangeRegistry();
         void declare(Exchange* exchange);
         void destroy(const string& name);
         Exchange* get(const string& name);
+        Exchange* getDefault();
         inline qpid::concurrent::Monitor* getLock(){ return lock; }
         ~ExchangeRegistry();
     };

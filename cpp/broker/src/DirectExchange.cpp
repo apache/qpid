@@ -22,7 +22,7 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DirectExchange::DirectExchange(const string& _name) : name(_name) {
+DirectExchange::DirectExchange(const string& name) : Exchange(name) {
 
 }
 
@@ -59,7 +59,7 @@ void DirectExchange::route(Message::shared_ptr& msg, const string& routingKey, F
         (*i)->deliver(msg);
     }
     if(!count){
-        std::cout << "WARNING: DirectExchange " << name << " could not route message with key " << routingKey << std::endl;
+        std::cout << "WARNING: DirectExchange " << getName() << " could not route message with key " << routingKey << std::endl;
     }
     lock.release();
 }

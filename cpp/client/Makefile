@@ -25,11 +25,9 @@ SOURCES := $(wildcard src/*.cpp)
 OBJECTS := $(subst .cpp,.o,$(SOURCES))
 CLIENT_LIB=$(LIB_DIR)/libqpid_client.so.1.0
 
-.PHONY: all test clean 
+.PHONY: all clean 
 
 all: $(CLIENT_LIB)
-
-test:
 	@$(MAKE) -C test all
 
 clean:
