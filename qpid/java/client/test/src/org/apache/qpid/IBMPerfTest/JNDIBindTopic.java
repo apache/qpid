@@ -33,9 +33,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 
 public class JNDIBindTopic
-{
-
-    public static final String CONNECTION_FACTORY_BINDING = "amq/ConnectionFactory";
+{    
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 

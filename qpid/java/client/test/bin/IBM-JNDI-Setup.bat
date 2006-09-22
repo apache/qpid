@@ -18,7 +18,7 @@
 REM Script to run the Qpid Java Broker
 
 set CMD="IBM-JNDI-Setup.bat"
-set JAVACLASS=org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory
+set JAVACLASS=
 
 rem Guess QPID_HOME if not defined
 set CURRENT_DIR=%cd%
@@ -52,7 +52,13 @@ goto exit
 set CLIENT_TEST_CLASSES=%QPID_HOME%\lib\client-test-launch.jar
 
 echo on
-"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" %JAVACLASS%
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindQueue amq.Queue   direct://amq.direct//IBMPerfQueue1
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic1  topic://amq.topic/IBMPerfTopic1/
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic2  topic://amq.topic/IBMPerfTopic2/
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic3  topic://amq.topic/IBMPerfTopic3/
+
+
 
 :end
 
