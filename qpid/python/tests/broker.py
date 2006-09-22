@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from qpid.client import Closed
 from qpid.queue import Empty
 from qpid.content import Content
 from qpid.testlib import testrunner, TestBase
@@ -82,3 +83,20 @@ class BrokerTests(TestBase):
         msg = queue.get(timeout=5)
         self.assert_(msg.content.body == body)
 
+    def test_invalid_channel(self):
+        other = self.connect()
+        channel = other.channel(200)
+        try:
+            channel.queue_declare(exclusive=True)
+            self.fail("Expected error on queue_declare for invalid channel")
+        except Closed, e:
+            self.assertConnectionException(504, e.args[0])
+        
+        channel = self.client.channel(200)
+        channel.channel_open()
+        channel.channel_close()
+        try:
+            channel.queue_declare(exclusive=True)
+            self.fail("Expected error on queue_declare for closed channel")
+        except Closed, e:
+            self.assertConnectionException(504, e.args[0])

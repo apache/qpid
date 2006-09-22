@@ -113,3 +113,27 @@ class BasicTests(TestBase):
         except Closed, e:
             self.assertConnectionException(530, e.args[0])
 
+    def test_basic_cancel(self):
+        """
+        Test compliance of the basic.cancel method
+        """
+        channel = self.channel
+        #setup, declare a queue:
+        channel.queue_declare(queue="test-queue-4", exclusive=True)
+        channel.basic_consume(consumer_tag="my-consumer", queue="test-queue-4")
+        channel.basic_publish(routing_key="test-queue-4", content=Content("One"))
+
+        #cancel should stop messages being delivered
+        channel.basic_cancel(consumer_tag="my-consumer")
+        channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
+        myqueue = self.client.queue("my-consumer")
+        msg = myqueue.get(timeout=1)
+        self.assertEqual("One", msg.content.body)
+        try:
+            msg = myqueue.get(timeout=1) 
+            self.fail("Got message after cancellation: " + msg)
+        except Empty: None
+
+        #cancellation of non-existant consumers should be handled without error
+        channel.basic_cancel(consumer_tag="my-consumer")
+        channel.basic_cancel(consumer_tag="this-never-existed")
