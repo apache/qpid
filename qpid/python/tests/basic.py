@@ -34,8 +34,8 @@ class BasicTests(TestBase):
         channel.basic_consume(consumer_tag="local_excluded", queue="test-queue-1b", no_local=True)
 
         #send a message
-        channel.basic_publish(exchange="amq.direct", routing_key="test-queue-1a", content=Content("consume_no_local"))
-        channel.basic_publish(exchange="amq.direct", routing_key="test-queue-1b", content=Content("consume_no_local"))
+        channel.basic_publish(routing_key="test-queue-1a", content=Content("consume_no_local"))
+        channel.basic_publish(routing_key="test-queue-1b", content=Content("consume_no_local"))
 
         #check the queues of the two consumers
         excluded = self.client.queue("local_excluded")
