@@ -57,11 +57,14 @@ void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool excl
 }
 
 void Channel::cancel(string& tag){
-    ConsumerImpl* c = consumers[tag];
-    if(c){
-        c->cancel();
-        consumers.erase(tag);
-        delete c;
+    consumer_iterator i = consumers.find(tag);
+    if(i != consumers.end()){
+        ConsumerImpl* c = i->second;
+        consumers.erase(i);
+        if(c){
+            c->cancel();
+            delete c;
+        }
     }
 }
 
@@ -69,9 +72,11 @@ void Channel::close(){
     //cancel all consumers
     for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin() ){
         ConsumerImpl* c = i->second;
-        c->cancel();
         consumers.erase(i);
-        delete c;
+        if(c){
+            c->cancel();
+            delete c;
+        }
     }
 }
 

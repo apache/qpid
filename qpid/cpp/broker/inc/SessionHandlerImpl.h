@@ -87,6 +87,7 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
     void handleContent(u_int16_t channel, qpid::framing::AMQContentBody::shared_ptr body);
     void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
 
+    Channel* getChannel(u_int16_t channel);
     /**
      * Get named queue, never returns 0.
      * @return: named queue or default queue for channel if name=""
@@ -96,7 +97,7 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
     Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
 
     Exchange* findExchange(const string& name);
-
+    
   public:
     SessionHandlerImpl(qpid::io::SessionContext* context, QueueRegistry* queues, 
                        ExchangeRegistry* exchanges, AutoDelete* cleaner, const u_int32_t timeout);
