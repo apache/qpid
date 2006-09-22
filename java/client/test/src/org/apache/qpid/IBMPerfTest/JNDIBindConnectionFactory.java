@@ -32,7 +32,7 @@ import java.net.MalformedURLException;
 public class JNDIBindConnectionFactory
 {
 
-    public static final String CONNECTION_FACTORY_BINDING = "amq/ConnectionFactory";
+    public static final String CONNECTION_FACTORY_BINDING = "amq.ConnectionFactory";
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
@@ -47,11 +47,11 @@ public class JNDIBindConnectionFactory
 
         if (args.length > 0)
         {
-            provider = args[0];
+            connectionFactoryBinding = args[0];
 
             if (args.length > 1)
             {
-                connectionFactoryBinding = args[1];
+                provider = args[1];
 
                 if (args.length > 2)
                 {
@@ -66,7 +66,7 @@ public class JNDIBindConnectionFactory
         }
         else
         {
-            System.out.println("Using default values: Usage:java JNDIBindConnectionFactory [<Provider URL> [<Connection Factory Binding>] [<JNDI Context Factory>]]");
+            System.out.println("Using default values: Usage:java JNDIBindConnectionFactory [<Connection Factory Binding>] [<Provider URL>] [<JNDI Context Factory>]");
         }
         System.out.println("File System Context Factory\n" +
                            "Connection Factory Binding:" + connectionFactoryBinding + "\n" +
