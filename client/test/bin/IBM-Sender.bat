@@ -18,7 +18,7 @@
 REM Script to run the Qpid Java Broker
 
 set CMD="IBM-Sender.bat"
-set JAVACLASS=JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:/C:/temp/IBMPerfTestsJNDI/ -cf amq/ConnectionFactory  -d amq/Queue -tc jms.r11.Sender -ms $MSGSIZE -mg 1000000 %*
+set JAVACLASS=JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:/C:/temp/IBMPerfTestsJNDI/ -cf amq.ConnectionFactory  -d amq.Queue -tc jms.r11.Sender -ms $MSGSIZE -mg 1000000 %*
 
 rem Guess QPID_HOME if not defined
 set CURRENT_DIR=%cd%
