@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-qpid-run JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:/C:/temp/IBMPerfTestsJNDI/ -cf amq/ConnectionFactory  -d amq/Queue -tc jms.r11.PutGet -nt 6 $*
+qpid-run JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:/C:/temp/IBMPerfTestsJNDI/ -cf amq.ConnectionFactory  -d amq.Queue -tc jms.r11.PutGet -nt 6 $*
