@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindQueue amq/Queue   direct://amq.direct//IBMPerfQueue1
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq/Topic1  topic://amq.topic/IBMPerfTopic1/
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq/Topic2  topic://amq.topic/IBMPerfTopic2/
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq/Topic3  topic://amq.topic/IBMPerfTopic3/
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq/Topic4  topic://amq.topic/IBMPerfTopic4/
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory amq.ConnectionFactorty
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindQueue amq.Queue   direct://amq.direct//IBMPerfQueue1
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic1  topic://amq.topic/IBMPerfTopic1/
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic2  topic://amq.topic/IBMPerfTopic2/
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic3  topic://amq.topic/IBMPerfTopic3/
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic4  topic://amq.topic/IBMPerfTopic4/
