@@ -57,13 +57,10 @@ class Peer:
     thread.start_new_thread(self.reader, ())
     thread.start_new_thread(self.worker, ())
 
-  def fatal(message=None):
-    """Call when an unexpected exception occurs that will kill a thread.
-
-    In this case it's better to crash the process than to continue in
-    an invalid state with a missing thread."""
+  def fatal(self, message=None):
+    """Call when an unexpected exception occurs that will kill a thread."""
     if message: print >> sys.stderr, message
-    traceback.print_exc()
+    self.close("Fatal error: %s\n%s" % (message or "", traceback.format_exc()))
     
   def reader(self):
     try:
