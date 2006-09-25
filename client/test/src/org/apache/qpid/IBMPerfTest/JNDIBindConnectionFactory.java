@@ -17,17 +17,16 @@
  */
 package org.apache.qpid.IBMPerfTest;
 
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQConnectionFactory;
 
+import javax.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.jms.ConnectionFactory;
-import java.util.Hashtable;
 import java.io.File;
-import java.net.MalformedURLException;
+import java.util.Hashtable;
 
 public class JNDIBindConnectionFactory
 {
@@ -36,6 +35,13 @@ public class JNDIBindConnectionFactory
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
+    public static final String DEFAULT_CONNECTION_URL = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
+
+    private static void printUsage()
+    {
+        System.out.println("Using default values: Usage:java JNDIBindConnectionFactory <connection url> [<Connection Factory Binding>] [<Provider URL>] [<JNDI Context Factory>]");
+
+    }
 
     public static void main(String[] args)
     {
@@ -44,18 +50,28 @@ public class JNDIBindConnectionFactory
         String connectionFactoryBinding = CONNECTION_FACTORY_BINDING;
         String provider = PROVIDER_URL;
         String contextFactory = FSCONTEXT_FACTORY;
-
-        if (args.length > 0)
+        if (args.length == 0)
         {
-            connectionFactoryBinding = args[0];
+            printUsage();
+            System.exit(1);
+        }
 
-            if (args.length > 1)
+        String connectionURL = args[0];
+
+        System.out.println("Using Connection:" + connectionURL + "\n");
+
+
+        if (args.length > 1)
+        {
+            connectionFactoryBinding = args[1];
+
+            if (args.length > 2)
             {
-                provider = args[1];
+                provider = args[2];
 
-                if (args.length > 2)
+                if (args.length > 3)
                 {
-                    contextFactory = args[2];
+                    contextFactory = args[3];
                 }
             }
             else
@@ -66,9 +82,12 @@ public class JNDIBindConnectionFactory
         }
         else
         {
-            System.out.println("Using default values: Usage:java JNDIBindConnectionFactory [<Connection Factory Binding>] [<Provider URL>] [<JNDI Context Factory>]");
+            printUsage();
         }
+
+
         System.out.println("File System Context Factory\n" +
+                           "Connection:" + connectionURL + "\n" +
                            "Connection Factory Binding:" + connectionFactoryBinding + "\n" +
                            "JNDI Provider URL:" + provider);
 
@@ -94,11 +113,11 @@ public class JNDIBindConnectionFactory
             }
         }
 
-        new JNDIBindConnectionFactory(provider, connectionFactoryBinding, contextFactory);
+        new JNDIBindConnectionFactory(provider, connectionFactoryBinding, contextFactory, connectionURL);
 
     }
 
-    public JNDIBindConnectionFactory(String provider, String binding, String contextFactory)
+    public JNDIBindConnectionFactory(String provider, String binding, String contextFactory, String CONNECTION_URL)
     {
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
@@ -116,7 +135,7 @@ public class JNDIBindConnectionFactory
 
             try
             {
-                factory = new AMQConnectionFactory("amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'");
+                factory = new AMQConnectionFactory(CONNECTION_URL);
 
 
                 try
