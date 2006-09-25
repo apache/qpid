@@ -21,6 +21,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
@@ -30,6 +32,8 @@ import javax.jms.ObjectMessage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.ArrayList;
+
+import junit.framework.JUnit4TestAdapter;
 
 public class ObjectMessageTest implements MessageListener
 {
@@ -181,7 +185,7 @@ public class ObjectMessageTest implements MessageListener
 
     public static void main(String[] argv) throws Exception
     {
-        String broker = argv.length > 0 ? argv[0] : "localhost:5672";
+        String broker = argv.length > 0 ? argv[0] : "vm://:1";
         if("-help".equals(broker))
         {
             System.out.println("Usage: <broker>");
@@ -244,4 +248,5 @@ public class ObjectMessageTest implements MessageListener
     {
         return in + System.currentTimeMillis();
     }
+
 }
