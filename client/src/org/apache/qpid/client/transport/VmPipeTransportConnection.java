@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.transport;
+package org.apache.qpid.client.transport;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;

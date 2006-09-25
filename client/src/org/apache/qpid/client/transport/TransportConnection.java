@@ -27,8 +27,8 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.transport.VmPipeTransportConnection;
 import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+
 
 import java.io.IOException;
 import java.util.HashMap;
