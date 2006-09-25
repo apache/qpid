@@ -52,7 +52,7 @@ goto exit
 set CLIENT_TEST_CLASSES=%QPID_HOME%\lib\client-test-launch.jar
 
 echo on
-"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory
+"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory amqp://guest:guest@clientid/testpath?brokerlist='vm://:1' amq.VMConnectionFactory
 "%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindQueue amq.Queue   direct://amq.direct//IBMPerfQueue1
 "%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic1  topic://amq.topic/IBMPerfTopic1/
 "%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%CLIENT_TEST_CLASSES%" org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic2  topic://amq.topic/IBMPerfTopic2/
