@@ -22,6 +22,7 @@ import org.apache.qpid.jms.BrokerDetails;
 
 public interface FailoverMethod
 {
+    public static final String SINGLE_BROKER = "singlebroker";
     public static final String ROUND_ROBIN = "roundrobin";
     public static final String RANDOM = "random";
     /**

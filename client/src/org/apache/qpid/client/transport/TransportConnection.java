@@ -17,14 +17,29 @@
  */
 package org.apache.qpid.client.transport;
 
+import org.apache.log4j.Logger;
 import org.apache.mina.common.IoConnector;
+import org.apache.mina.common.IoHandlerAdapter;
+import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.socket.nio.SocketConnector;
+import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
+import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.pool.ReadWriteThreadModel;
+import org.apache.qpid.transport.VmPipeTransportConnection;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up
  * the underlying connector, which currently always uses TCP/IP sockets. It creates the
  * "protocol handler" which deals with MINA protocol events.
- *
+ * <p/>
  * Could be extended in future to support different transport types by turning this into concrete class/interface
  * combo.
  */
@@ -32,40 +47,214 @@ public class TransportConnection
 {
     private static ITransportConnection _instance;
 
+    private static Map _inVmPipeAddress = new HashMap();
+    private static VmPipeAcceptor _acceptor;
+    private static int _currentInstance = -1;
+    private static int _currentVMPort = -1;
+
+    private static final int TCP = 0;
+    private static final int VM = 1;
+
+    private static Logger _logger = Logger.getLogger(TransportConnection.class);
+
+    private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
+
     static
     {
-        if (Boolean.getBoolean("amqj.useBlockingIo"))
+        _acceptor = new VmPipeAcceptor();
+
+        IoServiceConfig config = _acceptor.getDefaultConfig();
+
+        config.setThreadModel(new ReadWriteThreadModel());
+    }
+
+    public static ITransportConnection getInstance() throws AMQTransportConnectionException
+    {
+        AMQBrokerDetails details = new AMQBrokerDetails();
+        details.setTransport(BrokerDetails.TCP);
+        return getInstance(details);
+    }
+
+    public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
+    {
+        int transport = getTransport(details.getTransport());
+
+        if (transport == -1)
+
         {
-            _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory() {
-                public IoConnector newSocketConnector() {
-                    return new org.apache.qpid.bio.SocketConnector(); // blocking connector
+            throw new AMQNoTransportForProtocolException(details);
+        }
+
+        if (transport == _currentInstance)
+
+        {
+            if (transport == VM)
+            {
+                if (_currentVMPort == details.getPort())
+                {
+                    return _instance;
                 }
-            });
+            }
+            else
+            {
+                return _instance;
+            }
+        }
+
+        _currentInstance = transport;
+
+        switch (transport)
+
+        {
+            case TCP:
+                if (Boolean.getBoolean("amqj.useBlockingIo"))
+                {
+                    _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                    {
+                        public IoConnector newSocketConnector()
+                        {
+                            return new org.apache.qpid.bio.SocketConnector(); // blocking connector
+                        }
+                    });
+                }
+                else
+                {
+                    _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                    {
+                        public IoConnector newSocketConnector()
+                        {
+                            SocketConnector result = new SocketConnector(); // non-blocking connector
+
+                            // Don't have the connector's worker thread wait around for other connections (we only use
+                            // one SocketConnector per connection at the moment anyway). This allows short-running
+                            // clients (like unit tests) to complete quickly.
+                            result.setWorkerTimeout(0L);
+
+                            return result;
+                        }
+                    });
+
+                }
+                break;
+            case VM:
+            {
+                _instance = getVMTransport(details, Boolean.getBoolean("amqj.NoAutoCreateVMBroker"));
+                break;
+            }
+        }
+
+        return _instance;
+    }
+
+    private static int getTransport(String transport)
+    {
+        if (transport.equals(BrokerDetails.TCP))
+        {
+            return TCP;
+        }
+
+        if (transport.equals(BrokerDetails.VM))
+        {
+            return VM;
+        }
+
+        return -1;
+    }
+
+    private static ITransportConnection getVMTransport(BrokerDetails details, boolean noAutoCreate) throws AMQVMBrokerCreationException
+    {
+        int port = details.getPort();
+
+        if (!_inVmPipeAddress.containsKey(port))
+        {
+            if (noAutoCreate)
+            {
+                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
+            }
+            else
+            {
+                createVMBroker(port);
+            }
+        }
+
+        return new VmPipeTransportConnection(port);
+    }
+
+
+    public static void createVMBroker(int port) throws AMQVMBrokerCreationException
+    {
+
+
+        if (!_inVmPipeAddress.containsKey(port))
+        {
+            _logger.info("Creating InVM Qpid.AMQP listening on port " + port);
+
+            try
+            {
+                VmPipeAddress pipe = new VmPipeAddress(port);
+
+                String protocolProviderClass = System.getProperty("amqj.protocolprovider.class", DEFAULT_QPID_SERVER);
+                _logger.info("Creating Qpid protocol provider: " + protocolProviderClass);
+
+                // can't use introspection to get Provider as it is a server class.
+                // need to go straight to IoHandlerAdapter but that requries the queues and exchange from the ApplicationRegistry which we can't access.
+
+                //get right constructor and pass in instancec ID - "port"
+                IoHandlerAdapter provider;
+                try
+                {
+                    Class[] cnstr = {Integer.class};
+                    Object[] params = {port};
+                    provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
+                }
+                catch (Exception e)
+                {
+                    _logger.info("Unable to create InVM Qpid.AMQP on port " + port);
+                    _logger.info(e);
+                    throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
+                }
+
+                _acceptor.bind(pipe, provider);
+
+                _inVmPipeAddress.put(port, pipe);
+                _logger.info("Created InVM Qpid.AMQP listening on port " + port);
+            }
+            catch (IOException e)
+            {
+                throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
+            }
         }
         else
         {
-            _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory() {
-                public IoConnector newSocketConnector() {
-                    SocketConnector result = new SocketConnector(); // non-blocking connector
+            _logger.info("InVM Qpid.AMQP on port " + port + " already exits.");
+        }
 
-                    // Don't have the connector's worker thread wait around for other connections (we only use
-                    // one SocketConnector per connection at the moment anyway). This allows short-running
-                    // clients (like unit tests) to complete quickly.
-                    result.setWorkerTimeout(0L);
+    }
 
-                    return result;
-                }
-            });
+    public static void killAllVMBrokers()
+    {
+        _logger.info("Killing all VM Brokers");
+        _acceptor.unbindAll();
+
+        Iterator keys = _inVmPipeAddress.keySet().iterator();
+
+        while (keys.hasNext())
+        {
+            int id = (Integer) keys.next();
+            _inVmPipeAddress.remove(id);
+        }
+
+    }
+
+    public static void killVMBroker(int port)
+    {
+        VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
+        if (pipe != null)
+        {
+            _logger.info("Killing VM Broker:" + port);
+            _acceptor.unbind(pipe);
+            _inVmPipeAddress.remove(port);
         }
     }
 
-    public static void setInstance(ITransportConnection transport)
-    {
-        _instance = transport;
-    }
-
-    public static ITransportConnection getInstance()
-    {
-        return _instance;
-    }
 }
