@@ -26,7 +26,7 @@ class Message:
 
   def __len__(self):
     l = len(self.fields)
-    if method.content:
+    if self.method.content:
       l += 1
     return len(self.fields)
 
