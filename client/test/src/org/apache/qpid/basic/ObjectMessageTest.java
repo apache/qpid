@@ -23,7 +23,6 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ObjectMessageTest extends VmOrRemoteTestCase implements MessageListener
+public class ObjectMessageTest implements MessageListener
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -44,11 +43,12 @@ public class ObjectMessageTest extends VmOrRemoteTestCase implements MessageList
     private final List<JMSObjectMessage> received = new ArrayList<JMSObjectMessage>();
     private final List<Payload> messages = new ArrayList<Payload>();
     private int _count = 100;
+    public String _connectionString = "vm://:1";
 
     @Before
     public void init() throws Exception
     {
-        String broker = getConnectionString();
+        String broker = _connectionString;
         init(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
@@ -190,7 +190,7 @@ public class ObjectMessageTest extends VmOrRemoteTestCase implements MessageList
     public static void main(String[] argv) throws Exception
     {
         ObjectMessageTest test = new ObjectMessageTest();
-        test.setConnectionString(argv.length == 0 ? "localhost:5672" : argv[0]);
+        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
         test.init();
         if (argv.length > 1)
         {

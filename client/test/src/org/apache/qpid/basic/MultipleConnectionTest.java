@@ -22,7 +22,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.junit.Test;
 
 import javax.jms.*;
@@ -30,8 +29,10 @@ import javax.jms.*;
 /**
  * This is a slow test.
  */
-public class MultipleConnectionTest extends VmOrRemoteTestCase
+public class MultipleConnectionTest
 {
+    public static String _connectionString="vm://:1";
+
     private static class Receiver
     {
         private AMQConnection _connection;
@@ -158,20 +159,20 @@ public class MultipleConnectionTest extends VmOrRemoteTestCase
 
     public static void main(String[] argv) throws Exception
     {
-        String broker = argv.length > 0 ? argv[0] : "localhost:5672";
+        String broker = argv.length > 0 ? argv[0] : "vm://:1";
 
         int connections = 7;
         int sessions = 2;
 
         MultipleConnectionTest test = new MultipleConnectionTest();
-        test.setConnectionString(broker);
+        test._connectionString = broker;
         test.test();
     }
 
     @Test
     public void test() throws Exception
     {
-        String broker = getConnectionString();
+        String broker = _connectionString;
         int messages = 10;
 
         AMQTopic topic = new AMQTopic("amq.topic");

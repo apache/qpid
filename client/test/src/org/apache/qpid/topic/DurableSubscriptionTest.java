@@ -20,13 +20,15 @@ package org.apache.qpid.topic;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
-import org.apache.qpid.vmbroker.VmPipeBroker;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -36,13 +38,33 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.TopicSubscriber;
 
-public class DurableSubscriptionTest extends VmOrRemoteTestCase
+public class DurableSubscriptionTest
 {
+
+          @Before
+    public void startVmBrokers()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create VM Broker");
+        }
+    }
+
+    @After
+    public void stopVmBrokers()
+    {
+        TransportConnection.killVMBroker(1);
+    }
+
     @Test
     public void unsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);
@@ -84,7 +106,7 @@ public class DurableSubscriptionTest extends VmOrRemoteTestCase
     public void durability() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);
