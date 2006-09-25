@@ -35,7 +35,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.util.AveragedRun;
-import org.apache.qpid.server.util.NullApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.TimedRun;
 
 import java.util.ArrayList;
@@ -77,7 +77,7 @@ public class SendPerfTest extends TimedRun
 
     public static void main(String[] argv) throws Exception
     {
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
+        ApplicationRegistry.initialise(new TestApplicationRegistry());
         int clients = Integer.parseInt(argv[0]);
         int messages = Integer.parseInt(argv[1]);
         int iterations = Integer.parseInt(argv[2]);

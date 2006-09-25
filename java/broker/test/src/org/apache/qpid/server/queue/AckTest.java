@@ -28,7 +28,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.util.NullApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.log4j.Logger;
 
 import java.util.Iterator;
@@ -55,7 +55,7 @@ public class AckTest
 
     public AckTest() throws Exception
     {
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
+        ApplicationRegistry.initialise(new TestApplicationRegistry());
     }
 
     @Before

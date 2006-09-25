@@ -27,8 +27,9 @@ import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
+import org.apache.qpid.server.security.auth.NullAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 
@@ -48,6 +49,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     private MessageStore _messageStore;
 
+
     public NullApplicationRegistry()
     {
         super(new MapConfiguration(new HashMap()));
@@ -60,7 +62,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _exchangeFactory = new DefaultExchangeFactory();
         _exchangeRegistry = new DefaultExchangeRegistry(_exchangeFactory);
         _authenticationManager = new NullAuthenticationManager();
-        _messageStore = new TestableMemoryMessageStore();
+        _messageStore = new MemoryMessageStore();
+        ((MemoryMessageStore)_messageStore).configure();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
     }
