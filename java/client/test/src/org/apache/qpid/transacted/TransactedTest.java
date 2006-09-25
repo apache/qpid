@@ -21,16 +21,18 @@ import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
 
 import javax.jms.*;
 
-public class TransactedTest extends VmOrRemoteTestCase
+public class TransactedTest
 {
     private AMQQueue queue1;
     private AMQQueue queue2;
@@ -52,20 +54,28 @@ public class TransactedTest extends VmOrRemoteTestCase
     @Before
     public void setup() throws Exception
     {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create VM Broker");
+        }
+
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
 
-        con = new AMQConnection("localhost:5672", "guest", "guest", "TransactedTest", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
         session = con.createSession(true, 0);
         consumer = session.createConsumer(queue1);
         producer = session.createProducer(queue2);
         con.start();
 
-        prepCon = new AMQConnection("localhost:5672", "guest", "guest", "PrepConnection", "/test");
+        prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "/test");
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer = prepSession.createProducer(queue1);
         prepCon.start();
-
 
         //add some messages
         prepProducer.send(prepSession.createTextMessage("A"));
@@ -73,7 +83,7 @@ public class TransactedTest extends VmOrRemoteTestCase
         prepProducer.send(prepSession.createTextMessage("C"));
 
 
-        testCon = new AMQConnection("localhost:5672", "guest", "guest", "TestConnection", "/test");
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
@@ -86,6 +96,8 @@ public class TransactedTest extends VmOrRemoteTestCase
         con.close();
         testCon.close();
         prepCon.close();
+
+        TransportConnection.killVMBroker(1);
     }
 
     @Test

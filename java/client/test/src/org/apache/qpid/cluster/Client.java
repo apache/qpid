@@ -117,6 +117,8 @@ public class Client
     public static void main(String[] argv) throws AMQException, JMSException, InterruptedException, URLSyntaxException
     {
         //assume args describe the set of brokers to try
-        new Client(new AMQConnection(argv[0], "guest", "guest", argv[1], "/test"), argv[1]);
+
+        String clientName = argv.length > 1 ? argv[1] : "testClient";
+        new Client(new AMQConnection(argv.length > 0 ? argv[0] : "vm://:1", "guest", "guest", clientName, "/test"), clientName);
     }
 }

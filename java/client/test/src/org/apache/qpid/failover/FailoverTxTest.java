@@ -21,8 +21,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
+import org.junit.Assert;
 
 import javax.jms.*;
+import javax.jms.IllegalStateException;
 
 public class FailoverTxTest implements ConnectionListener
 {
@@ -38,7 +40,8 @@ public class FailoverTxTest implements ConnectionListener
         Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Destination queue = session.createTemporaryQueue();
 
-        session.createConsumer(queue).setMessageListener(new MessageListener() {
+        session.createConsumer(queue).setMessageListener(new MessageListener()
+        {
             public void onMessage(Message message)
             {
                 try
@@ -47,7 +50,7 @@ public class FailoverTxTest implements ConnectionListener
                 }
                 catch (JMSException e)
                 {
-                   error(e);
+                    error(e);
                 }
             }
         });
@@ -71,12 +74,15 @@ public class FailoverTxTest implements ConnectionListener
                 TextMessage msg = session.createTextMessage("Tx=" + i + " msg=" + j);
                 _log.info("sending message = " + msg.getText());
                 producer.send(msg);
-                try {
+                try
+                {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e)
+                {
                     throw new RuntimeException("Someone interrupted me!", e);
                 }
-             }
+            }
             session.commit();
         }
     }
@@ -91,7 +97,7 @@ public class FailoverTxTest implements ConnectionListener
     {
         System.out.println("Stopping...");
         try
-        {
+        {                                                            
             _connection.close();
         }
         catch (JMSException e)
@@ -128,19 +134,46 @@ public class FailoverTxTest implements ConnectionListener
 
     public static void main(final String[] argv) throws Exception
     {
-        try {
+        int[] creationOrder = {1, 2, 3};
+        int[] killingOrder = {1, 2, 3};
+        long delayBeforeKillingStart = 2000;
+        long delayBetweenCullings = 2000;
+        boolean recreateBrokers = true;
+        long delayBeforeReCreationStart = 4000;
+        long delayBetweenRecreates = 3000;
+
+        FailoverBrokerTester tester = new FailoverBrokerTester(creationOrder, killingOrder, delayBeforeKillingStart, delayBetweenCullings,
+                                                               recreateBrokers, delayBeforeReCreationStart, delayBetweenRecreates);
+
+        try
+        {
             final String clientId = "failover" + System.currentTimeMillis();
             final String defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
-                        "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";
+                                      "?brokerlist='vm://:1;vm://:2;vm://:3'&failover='roundrobin?cyclecount='2''";
 
             System.out.println("url = [" + defaultUrl + "]");
 
             System.out.println("connection url = [" + new AMQConnectionURL(defaultUrl) + "]");
 
-            final String url = argv.length == 0? defaultUrl : argv[0];
+            final String url = argv.length == 0 ? defaultUrl : argv[0];
             new FailoverTxTest(url);
-        } catch (Throwable t) {
-            _log.error("test failed", t);
+
+        }
+        catch (Throwable t)
+        {
+
+            if (t instanceof IllegalStateException)
+            {
+                t.getMessage().endsWith("has been closed");
+            }
+            else
+            {
+                Assert.fail("Unexpected Exception occured:" + t.getMessage());
+            }
+        }
+        finally
+        {
+            tester.stopTesting();
         }
     }
 }

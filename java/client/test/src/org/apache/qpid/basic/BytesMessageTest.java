@@ -23,7 +23,6 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.apache.mina.common.ByteBuffer;
 import org.junit.Test;
 
@@ -32,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class BytesMessageTest extends VmOrRemoteTestCase implements MessageListener
+public class BytesMessageTest implements MessageListener
 {
     private Connection _connection;
     private Destination _destination;
@@ -40,10 +39,11 @@ public class BytesMessageTest extends VmOrRemoteTestCase implements MessageListe
     private final List<JMSBytesMessage> received = new ArrayList<JMSBytesMessage>();
     private final List<byte[]> messages = new ArrayList<byte[]>();
     private int _count = 100;
+    public String _connectionString = "vm://:1";
 
     void init() throws Exception
     {
-        init(new AMQConnection(getConnectionString(), "guest", "guest", randomize("Client"), "/test_path"));
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
     void init(AMQConnection connection) throws Exception
@@ -182,7 +182,7 @@ public class BytesMessageTest extends VmOrRemoteTestCase implements MessageListe
         final int count;
         if (argv.length == 0)
         {
-            connectionString = "localhost:5672";
+            connectionString = "vm://:1";
             count = 100;
         }
         else
@@ -195,7 +195,7 @@ public class BytesMessageTest extends VmOrRemoteTestCase implements MessageListe
         System.out.println("count = " + count);
 
         BytesMessageTest test = new BytesMessageTest();
-        test.setConnectionString(connectionString);
+        test._connectionString = connectionString;
         test._count = count;
         test.test();
     }
