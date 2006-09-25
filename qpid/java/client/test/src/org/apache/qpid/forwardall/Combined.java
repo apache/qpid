@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Assert;
 import org.junit.After;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 
 /**
