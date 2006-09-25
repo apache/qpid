@@ -23,6 +23,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.ssl.BogusSSLContextFactory;
 import org.apache.log4j.Logger;
@@ -45,7 +46,7 @@ import java.io.IOException;
  * the state for the connection.
  *
  */
-public class AMQPFastProtocolHandler  extends IoHandlerAdapter implements ProtocolVersionList
+public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList
 {
     private static final Logger _logger = Logger.getLogger(AMQPFastProtocolHandler.class);
 
@@ -62,6 +63,15 @@ public class AMQPFastProtocolHandler  extends IoHandlerAdapter implements Protoc
     private final ExchangeRegistry _exchangeRegistry;
 
     private boolean _useSSL;
+
+    public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
+    {
+        IApplicationRegistry registry = ApplicationRegistry.getInstance(applicationRegistryInstance);
+
+        _queueRegistry = registry.getQueueRegistry();
+        _exchangeRegistry = registry.getExchangeRegistry();
+        _logger.debug("AMQPFastProtocolHandler created");
+    }
 
     public AMQPFastProtocolHandler(QueueRegistry queueRegistry,
                                    ExchangeRegistry exchangeRegistry)

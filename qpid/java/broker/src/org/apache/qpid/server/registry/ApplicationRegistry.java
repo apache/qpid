@@ -22,33 +22,58 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.Configurator;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
  * construction and caching of configurable objects.
- *
+ * <p/>
  * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
- *
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private static IApplicationRegistry _instance;
+    private static Map _instanceMap = new HashMap();
 
     private final Map<Class<?>, Object> _configuredObjects = new HashMap<Class<?>, Object>();
 
     protected final Configuration _configuration;
 
+    public static final int DEFAULT_INSTANCE = 0;
+    public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
+
+    static
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
+    }
+
     private static class ShutdownService implements Runnable
     {
         public void run()
         {
-            _logger.info("Shutting down application registry...");
+            _logger.info("Shutting down application registries...");
             try
             {
-                _instance.getMessageStore().close();
+                synchronized (ApplicationRegistry.class)
+                {
+                    Iterator keyIterator = _instanceMap.keySet().iterator();
+
+                    while (keyIterator.hasNext())
+                    {
+                        int key = (Integer) keyIterator.next();
+                        IApplicationRegistry instance = (IApplicationRegistry) _instanceMap.get(key);
+
+                        if ((instance != null))
+                        {
+                            if (instance.getMessageStore() != null)
+                            {
+                                instance.getMessageStore().close();
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -59,10 +84,48 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
-        _instance = instance;
-        instance.initialise();
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
+        initialise(instance, DEFAULT_INSTANCE);
     }
+
+    public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
+    {
+        if (instance != null)
+        {
+            _logger.info("Initialising Application Registry:" + instanceID);
+            _instanceMap.put(instanceID, instance);
+
+            try
+            {
+                instance.initialise();
+            }
+            catch (Exception e)
+            {
+                _instanceMap.remove(instanceID);
+                throw e;
+            }
+        }
+        else
+        {
+            remove(instanceID);
+        }
+    }
+
+    public static void remove(int instanceID)
+    {
+        try
+        {
+            ((IApplicationRegistry) _instanceMap.get(instanceID)).getMessageStore().close();
+        }
+        catch (Exception e)
+        {
+
+        }
+        finally
+        {
+            _instanceMap.remove(instanceID);
+        }
+    }
+
 
     protected ApplicationRegistry(Configuration configuration)
     {
@@ -71,13 +134,33 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance()
     {
-        if (_instance == null)
+        return getInstance(DEFAULT_INSTANCE);
+    }
+
+    public static IApplicationRegistry getInstance(int instanceID)
+    {
+        IApplicationRegistry instance = (IApplicationRegistry) _instanceMap.get(instanceID);
+
+        if (instance == null)
         {
-            throw new RuntimeException("Application registry not initialised");
+            try
+            {
+                _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + DEFAULT_APPLICATION_REGISTRY + " : Instance:" + instanceID);
+                IApplicationRegistry registry = (IApplicationRegistry) Class.forName(DEFAULT_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
+                ApplicationRegistry.initialise(registry, instanceID);
+                _logger.info("Initialised Application Registry:" + instanceID);
+                return registry;
+            }
+            catch (Exception e)
+            {
+                _logger.error("Error configuring application: " + e, e);
+                //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
+                throw new RuntimeException("Unable to create Application Registry");
+            }
         }
         else
         {
-            return _instance;
+            return instance;
         }
     }
 

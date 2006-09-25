@@ -21,7 +21,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import junit.framework.JUnit4TestAdapter;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTest
@@ -29,7 +29,7 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTest
     @Before
     public void init() throws Exception
     {
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
+        ApplicationRegistry.initialise(new TestApplicationRegistry());
     }
 
     @Test
