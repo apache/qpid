@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.server.security.auth;
 
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;

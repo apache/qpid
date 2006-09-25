@@ -45,6 +45,12 @@ public class MemoryMessageStore implements MessageStore
 
     private final AtomicLong _messageId = new AtomicLong(1);
 
+    public void configure()
+    {
+        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash table");
+        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(DEFAULT_HASHTABLE_CAPACITY);        
+    }
+
     public void configure(String base, Configuration config)
     {
         int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);

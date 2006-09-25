@@ -22,7 +22,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.AMQException;
 
 class MessageTestHelper
@@ -31,7 +31,7 @@ class MessageTestHelper
 
     MessageTestHelper() throws Exception
     {
-        ApplicationRegistry.initialise(new NullApplicationRegistry());
+        ApplicationRegistry.initialise(new TestApplicationRegistry());
     }
 
     AMQMessage message() throws AMQException
