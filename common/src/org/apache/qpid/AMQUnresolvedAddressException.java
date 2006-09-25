@@ -19,8 +19,16 @@ package org.apache.qpid;
 
 public class AMQUnresolvedAddressException extends AMQException
 {
-    public AMQUnresolvedAddressException(String message)
+    String _broker;
+
+    public AMQUnresolvedAddressException(String message, String broker)
     {
         super(message);
+        _broker = broker;
+    }
+
+    public String toString()
+    {
+        return super.toString() + " Broker, \"" + _broker +"\"";
     }
 }
