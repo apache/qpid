@@ -17,23 +17,46 @@
  */
 package org.apache.qpid.requestreply1;
 
-import org.apache.qpid.vmbroker.VmPipeBroker;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.Assert;
+import org.junit.After;
 import org.apache.log4j.Logger;
 import junit.framework.JUnit4TestAdapter;
 
-public class VmRequestReply extends VmPipeBroker
+public class VmRequestReply
 {
     private static final Logger _logger = Logger.getLogger(VmRequestReply.class);
+
+    @Before
+    public void startVmBrokers()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create VM Broker");
+        }
+    }
+
+    @After
+    public void stopVmBrokers()
+    {
+        TransportConnection.killVMBroker(1);
+    }
 
     @Test
     public void simpleClient() throws Exception
     {
-        ServiceProvidingClient serviceProvider = new ServiceProvidingClient("tcp://foo:123", "guest", "guest",
+        ServiceProvidingClient serviceProvider = new ServiceProvidingClient("vm://:1", "guest", "guest",
                                                                             "serviceProvidingClient", "/test",
                                                                             "serviceQ");
 
-        ServiceRequestingClient serviceRequester = new ServiceRequestingClient("tcp://foo:123", "myClient", "guest", "guest",
+        ServiceRequestingClient serviceRequester = new ServiceRequestingClient("vm://:1", "myClient", "guest", "guest",
                                                                                "/test", "serviceQ", 5000, 512);
 
         serviceProvider.run();
@@ -58,7 +81,6 @@ public class VmRequestReply extends VmPipeBroker
         VmRequestReply rr = new VmRequestReply();
         try
         {
-            rr.initialiseBroker();
             rr.simpleClient();
         }
         catch (Exception e)

@@ -20,15 +20,18 @@ package org.apache.qpid.ack;
 import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
 
 import javax.jms.*;
 
-public class RecoverTest extends VmOrRemoteTestCase
+public class RecoverTest
 {
     private static final Logger _logger = Logger.getLogger(RecoverTest.class);
 
@@ -38,16 +41,22 @@ public class RecoverTest extends VmOrRemoteTestCase
         DOMConfigurator.configure("broker/etc/log4j.xml");
     }
 
+    @After
+    public void stopVmBroker()
+    {
+       TransportConnection.killVMBroker(1);
+    }
+
     @Test
     public void recoverResendsMsgs() throws Exception
     {
-        Connection con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = new AMQQueue("someQ", "someQ", false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
 
-        Connection con2 = new AMQConnection("bar", 2, "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -56,6 +65,8 @@ public class RecoverTest extends VmOrRemoteTestCase
         producer.send(producerSession.createTextMessage("msg2"));
         producer.send(producerSession.createTextMessage("msg3"));
         producer.send(producerSession.createTextMessage("msg4"));
+
+        con2.close();
 
         _logger.info("Starting connection");
         con.start();
@@ -87,6 +98,9 @@ public class RecoverTest extends VmOrRemoteTestCase
         tm = (TextMessage) consumer.receiveNoWait();
         Assert.assertNull(tm);
         _logger.info("No messages redelivered as is expected");
+
+        con.close();
+
     }
 
     public static junit.framework.Test suite()

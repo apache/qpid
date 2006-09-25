@@ -20,17 +20,20 @@ package org.apache.qpid.ack;
 import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 import javax.jms.*;
 
-public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
+public class DisconnectAndRedeliverTest
 {
     private static final Logger _logger = Logger.getLogger(DisconnectAndRedeliverTest.class);
 
@@ -40,21 +43,30 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         DOMConfigurator.configure("broker/etc/log4j.xml");
     }
 
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
+    }
+
     /**
      * This tests that when there are unacknowledged messages on a channel they are requeued for delivery when
      * the channel is closed.
+     *
      * @throws Exception
      */
     @Test
     public void disconnectRedeliversMessages() throws Exception
     {
-        Connection con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue = new AMQQueue("someQ", "someQ", false, false);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
 
-        Connection con2 = new AMQConnection("bar", 2, "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -63,6 +75,8 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         producer.send(producerSession.createTextMessage("msg2"));
         producer.send(producerSession.createTextMessage("msg3"));
         producer.send(producerSession.createTextMessage("msg4"));
+
+        con2.close();
 
         _logger.info("Starting connection");
         con.start();
@@ -75,7 +89,7 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         _logger.info("Received all four messages. About to disconnect and reconnect");
 
         con.close();
-        con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
         consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = consumerSession.createConsumer(queue);
 
@@ -85,8 +99,10 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         tm = (TextMessage) consumer.receive(3000);
         Assert.assertEquals(tm.getText(), "msg2");
 
+
         tm = (TextMessage) consumer.receive(3000);
         Assert.assertEquals(tm.getText(), "msg3");
+
 
         tm = (TextMessage) consumer.receive(3000);
         Assert.assertEquals(tm.getText(), "msg4");
@@ -96,7 +112,7 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
 
         con.close();
 
-        con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
         consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = consumerSession.createConsumer(queue);
         _logger.info("Starting third consumer connection");
@@ -105,23 +121,38 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         Assert.assertNull(tm);
         _logger.info("No messages redelivered as is expected");
         con.close();
+
+        con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        consumer = consumerSession.createConsumer(queue);
+        _logger.info("Starting fourth consumer connection");
+        con.start();
+        tm = (TextMessage) consumer.receive(3000);
+        Assert.assertNull(tm);
+        _logger.info("No messages redelivered as is expected");
+        con.close();
+
+        _logger.info("Actually:" + store.getMessageMap().size());
+        //  Assert.assertTrue(store.getMessageMap().size() == 0);
     }
 
     /**
      * Tests that unacknowledged messages are thrown away when the channel is closed and they cannot be
      * requeued (due perhaps to the queue being deleted).
+     *
      * @throws Exception
      */
     @Test
     public void disconnectWithTransientQueueThrowsAwayMessages() throws Exception
     {
-        Connection con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
 
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = new AMQQueue("someQ", "someQ", false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
 
-        Connection con2 = new AMQConnection("bar", 2, "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -130,6 +161,8 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         producer.send(producerSession.createTextMessage("msg2"));
         producer.send(producerSession.createTextMessage("msg3"));
         producer.send(producerSession.createTextMessage("msg4"));
+
+        con2.close();
 
         _logger.info("Starting connection");
         con.start();
@@ -142,7 +175,7 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         _logger.info("Received all four messages. About to disconnect and reconnect");
 
         con.close();
-        con = new AMQConnection("foo", 1, "guest", "guest", "consumer1", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
         consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = consumerSession.createConsumer(queue);
 
@@ -152,7 +185,8 @@ public class DisconnectAndRedeliverTest extends VmOrRemoteTestCase
         tm = (TextMessage) consumer.receiveNoWait();
         Assert.assertNull(tm);
         _logger.info("No messages redelivered as is expected");
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
+
+        _logger.info("Actually:" + store.getMessageMap().size());
         Assert.assertTrue(store.getMessageMap().size() == 0);
         con.close();
     }

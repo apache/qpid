@@ -22,26 +22,30 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
+import org.junit.After;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-public class SessionStartTest extends VmOrRemoteTestCase implements MessageListener
+public class SessionStartTest implements MessageListener
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
     private int count;
+    public String _connectionString = "vm://:1";  
 
     @Before
     public void init() throws Exception
     {
-        String broker = getConnectionString();
-        init(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"));
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -97,7 +101,7 @@ public class SessionStartTest extends VmOrRemoteTestCase implements MessageListe
     public static void main(String[] argv) throws Exception
     {
         SessionStartTest test = new SessionStartTest();
-        test.setConnectionString(argv.length == 0 ? "localhost:5672" : argv[0]);
+        test._connectionString = argv.length == 0 ? "localhost:5672" : argv[0];
         test.init();
         test.test();
     }

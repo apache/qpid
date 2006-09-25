@@ -20,7 +20,6 @@ package org.apache.qpid.client.channelclose;
 import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
@@ -45,7 +44,7 @@ import java.util.List;
  * 3. Since client does not have an exception listener, currently all sessions are
  *    closed.
  */
-public class ChannelCloseOkTest extends VmOrRemoteTestCase
+public class ChannelCloseOkTest
 {
     private Connection _connection;
     private Destination _destination1;
@@ -56,11 +55,12 @@ public class ChannelCloseOkTest extends VmOrRemoteTestCase
     private final List<Message> _received2 = new ArrayList<Message>();
 
     private final static Logger _log = Logger.getLogger(ChannelCloseOkTest.class);
+    public String _connectionString = "vm://:1";
 
     @Before
     public void init() throws Exception
     {
-        _connection = new AMQConnection(getConnectionString(), "guest", "guest", randomize("Client"), "/test_path");
+        _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
         _destination1 = new AMQQueue("q1", true);
         _destination2 = new AMQQueue("q2", true);
         _session1 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

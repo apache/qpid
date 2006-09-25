@@ -18,27 +18,32 @@
 package org.apache.qpid.forwardall;
 
 import junit.framework.JUnit4TestAdapter;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.Assert;
+import org.junit.After;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
 
 /**
  * Runs the Service's and Client parts of the test in the same process
  * as the broker
  */
-public class Combined extends VmOrRemoteTestCase
+public class Combined
 {
     @Test
     public void forwardAll() throws Exception
     {
         int services = 2;
-        ServiceCreator.start("tcp://ignore:1234", services);
+        ServiceCreator.start("vm://:1", services);
 
         //give them time to get registered etc.
         System.out.println("Services started, waiting for them to initialise...");
         Thread.sleep(5 * 1000);
         System.out.println("Starting client...");
 
-        new Client("tcp://ignore:1234", services).waitUntilComplete();
+        new Client("vm://:1", services).waitUntilComplete();
 
         System.out.println("Completed successfully!");
     }

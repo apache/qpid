@@ -21,11 +21,10 @@ import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-public class TestManyConnections extends VmOrRemoteTestCase
+public class TestManyConnections
 {
     private static final Logger _log = Logger.getLogger(TestManyConnections.class);
 
@@ -44,7 +43,7 @@ public class TestManyConnections extends VmOrRemoteTestCase
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < count; i++)
         {
-            createConnection(i, "tcp://foo", "myClient" + i, "guest", "guest", "/test");
+            createConnection(i, "vm://:1", "myClient" + i, "guest", "guest", "/test");
         }
         long endTime = System.currentTimeMillis();
         _log.info("Time to create " + count + " connections: " + (endTime - startTime) +
