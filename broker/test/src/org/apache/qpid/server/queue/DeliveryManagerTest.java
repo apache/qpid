@@ -21,8 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.AMQException;
 import junit.framework.JUnit4TestAdapter;
 
