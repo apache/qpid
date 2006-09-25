@@ -23,7 +23,6 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableTest;
@@ -36,7 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
-public class FieldTableMessageTest extends VmOrRemoteTestCase implements MessageListener
+public class FieldTableMessageTest implements MessageListener
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -44,11 +43,12 @@ public class FieldTableMessageTest extends VmOrRemoteTestCase implements Message
     private final ArrayList<JMSBytesMessage> received = new ArrayList<JMSBytesMessage>();
     private FieldTable _expected;
     private int _count = 10;
+    public String _connectionString = "vm://:1";
 
     @Before
     public void init() throws Exception
     {
-        init(new AMQConnection(getConnectionString(), "guest", "guest", randomize("Client"), "/test_path"));
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -143,7 +143,7 @@ public class FieldTableMessageTest extends VmOrRemoteTestCase implements Message
     public static void main(String[] argv) throws Exception
     {
         FieldTableMessageTest test = new FieldTableMessageTest();
-        test.setConnectionString((argv.length == 0 ? "localhost:5672" : argv[0]));
+        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
         test.init();
         test._count = argv.length > 1 ? Integer.parseInt(argv[1]) : 5;
         test.test();
