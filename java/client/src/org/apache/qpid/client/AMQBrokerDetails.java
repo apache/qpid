@@ -289,7 +289,7 @@ public class AMQBrokerDetails implements BrokerDetails
             return _options.get(OPTIONS_SSL).equalsIgnoreCase("true");
         }
 
-        return false;
+        return USE_SSL_DEFAULT;
     }
 
     public void useSSL(boolean ssl)

@@ -157,7 +157,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void sessionClosed(IoSession session) throws Exception
     {
-        //todo server just closes session with no warning if auth fails.
         if (_connection.isClosed())
         {
             _logger.info("Session closed called by client");
