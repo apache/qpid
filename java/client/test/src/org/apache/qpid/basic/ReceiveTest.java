@@ -22,30 +22,25 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.testutil.VmOrRemoteTestCase;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
 import javax.jms.MessageConsumer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
-public class ReceiveTest extends VmOrRemoteTestCase
+public class ReceiveTest
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
     private MessageConsumer _consumer;
 
+    public String _connectionString = "vm://:1";
+    
     @Before
     public void init() throws Exception
     {
-        String broker = getConnectionString();
+        String broker = _connectionString;
         init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "/test_path"));
     }
 
@@ -73,7 +68,7 @@ public class ReceiveTest extends VmOrRemoteTestCase
     public static void main(String[] argv) throws Exception
     {
         ReceiveTest test = new ReceiveTest();
-        test.setConnectionString(argv.length == 0 ? "localhost:5672" : argv[0]);
+        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
         test.init();
         test.test();
     }
