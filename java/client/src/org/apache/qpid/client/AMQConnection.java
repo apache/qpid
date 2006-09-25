@@ -186,7 +186,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         Exception lastException = new Exception();
         lastException.initCause(new ConnectException());
 
-        while (lastException != null && lastException.getCause() instanceof ConnectException && _failoverPolicy.failoverAllowed())
+        while (lastException != null && checkException(lastException) && _failoverPolicy.failoverAllowed())
         {
             try
             {
@@ -198,8 +198,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 lastException = e;
 
                 _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(), e.getCause());
-                _logger.info(e);
-                _logger.info(e.getCause());
             }
         }
 
@@ -259,13 +257,25 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 if (lastException instanceof UnresolvedAddressException)
                 {
-                    e = new AMQUnresolvedAddressException(message);
+                    e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString());
                 }
                 e.initCause(lastException);
             }
 
             throw e;
         }
+    }
+
+    protected boolean checkException(Throwable thrown)
+    {
+        Throwable cause = thrown.getCause();
+
+        if (cause == null)
+        {
+            cause = thrown;
+        }
+
+        return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
     }
 
     protected AMQConnection(String username, String password, String clientName, String virtualHost)
@@ -280,7 +290,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         try
         {
-            TransportConnection.getInstance().connect(_protocolHandler, brokerDetail);
+            TransportConnection.getInstance(brokerDetail).connect(_protocolHandler, brokerDetail);
             // this blocks until the connection has been set up or when an error
             // has prevented the connection being set up
             _protocolHandler.attainState(AMQState.CONNECTION_OPEN);
@@ -387,7 +397,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     // open it, so that there is no window where we could receive data on the channel and not be set
                     // up to handle it appropriately.
                     AMQSession session = new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode,
-                            prefetch);
+                                                        prefetch);
                     _protocolHandler.addSessionByChannel(channelId, session);
                     registerSession(channelId, session);
 
@@ -405,7 +415,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     }
                     finally
                     {
-                        if (!success) {
+                        if (!success)
+                        {
                             _protocolHandler.removeSessionByChannel(channelId);
                             deregisterSession(channelId);
                         }

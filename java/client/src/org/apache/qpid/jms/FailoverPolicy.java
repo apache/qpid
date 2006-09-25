@@ -75,24 +75,31 @@ public class FailoverPolicy
                 //todo write a random connection Failover
             }
 */
-            if (failoverMethod.equals(FailoverMethod.ROUND_ROBIN))
+            if (failoverMethod.equals(FailoverMethod.SINGLE_BROKER))
             {
                 method = new FailoverRoundRobinServers(connectionDetails);
             }
             else
             {
-                try
+                if (failoverMethod.equals(FailoverMethod.ROUND_ROBIN))
                 {
-                    Class[] constructorSpec = {ConnectionURL.class};
-                    Object [] params = {connectionDetails};
-
-                    method = (FailoverMethod) ClassLoader.getSystemClassLoader().
-                            loadClass(failoverMethod).
-                            getConstructor(constructorSpec).newInstance(params);
+                    method = new FailoverRoundRobinServers(connectionDetails);
                 }
-                catch (Exception cnfe)
+                else
                 {
-                    throw new IllegalArgumentException("Unknown failover method:" + failoverMethod);
+                    try
+                    {
+                        Class[] constructorSpec = {ConnectionURL.class};
+                        Object [] params = {connectionDetails};
+
+                        method = (FailoverMethod) ClassLoader.getSystemClassLoader().
+                                loadClass(failoverMethod).
+                                getConstructor(constructorSpec).newInstance(params);
+                    }
+                    catch (Exception cnfe)
+                    {
+                        throw new IllegalArgumentException("Unknown failover method:" + failoverMethod);
+                    }
                 }
             }
         }
@@ -149,14 +156,17 @@ public class FailoverPolicy
 
 
             }
-            else if ((now - _lastFailTime) >= DEFAULT_FAILOVER_TIMEOUT)
-            {
-                _logger.info("Failover timeout");
-                return false;
-            }
             else
             {
-                _lastMethodTime = now;
+                if ((now - _lastFailTime) >= DEFAULT_FAILOVER_TIMEOUT)
+                {
+                    _logger.info("Failover timeout");
+                    return false;
+                }
+                else
+                {
+                    _lastMethodTime = now;
+                }
             }
         }
         else
