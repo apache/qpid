@@ -28,29 +28,40 @@ public interface BrokerDetails
     public static final String OPTIONS_SSL = ConnectionURL.OPTIONS_SSL;
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final int DEFAULT_PORT = 5672;
-    public static final String DEFAULT_TRANSPORT = "tcp";
+
+    public static final String TCP = "tcp";
+    public static final String VM = "vm";
+
+    public static final String DEFAULT_TRANSPORT = TCP;
 
     public static final String URL_FORMAT_EXAMPLE =
-            "<transport>://<hostname>[:<port Default=\""+DEFAULT_PORT+"\">][?<option>='<value>'[,<option>='<value>']]";
+            "<transport>://<hostname>[:<port Default=\"" + DEFAULT_PORT + "\">][?<option>='<value>'[,<option>='<value>']]";
 
     public static final long DEFAULT_CONNECT_TIMEOUT = 30000L;
+    public static final boolean USE_SSL_DEFAULT = false;
 
     String getHost();
+
     void setHost(String host);
 
     int getPort();
+
     void setPort(int port);
 
     String getTransport();
+
     void setTransport(String transport);
 
     boolean useSSL();
+
     void useSSL(boolean ssl);
 
     String getOption(String key);
-    void setOption(String key,String value);
+
+    void setOption(String key, String value);
 
     long getTimeout();
+
     void setTimeout(long timeout);
 
     String toString();
