@@ -18,18 +18,18 @@
 package org.apache.qpid.ack;
 
 import junit.framework.JUnit4TestAdapter;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 
 import javax.jms.*;
 
@@ -49,6 +49,13 @@ public class DisconnectAndRedeliverTest
         TransportConnection.killVMBroker(1);
     }
 
+    @Before
+    public void configureApplicationRegistry() throws Exception
+    {
+        ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
+    }
+
+
     /**
      * This tests that when there are unacknowledged messages on a channel they are requeued for delivery when
      * the channel is closed.
@@ -60,7 +67,7 @@ public class DisconnectAndRedeliverTest
     {
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
 
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance(1).getMessageStore();
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue = new AMQQueue("someQ", "someQ", false, false);
@@ -147,7 +154,7 @@ public class DisconnectAndRedeliverTest
     {
 
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance(1).getMessageStore();
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = new AMQQueue("someQ", "someQ", false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
