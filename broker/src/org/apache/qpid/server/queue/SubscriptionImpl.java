@@ -19,12 +19,12 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
 
 /**
  * Encapsulation of a supscription to a queue.
@@ -70,7 +70,8 @@ public class SubscriptionImpl implements Subscription
         throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
-        if (channel == null) {
+        if (channel == null)
+        {
             throw new NullPointerException("channel not found in protocol session");
         }
 
@@ -99,8 +100,8 @@ public class SubscriptionImpl implements Subscription
     private boolean equals(SubscriptionImpl psc)
     {
         return sessionKey.equals(psc.sessionKey)
-                && psc.channel == channel
-                && psc.consumerTag.equals(consumerTag);
+               && psc.channel == channel
+               && psc.consumerTag.equals(consumerTag);
     }
 
     public int hashCode()
@@ -113,18 +114,25 @@ public class SubscriptionImpl implements Subscription
         return "[channel=" + channel + ", consumerTag=" + consumerTag + ", session=" + protocolSession.getKey() + "]";
     }
 
+    /**
+     * This method can be called by each of the publisher threads.
+     * As a result all changes to the channel object must be thread safe.
+     *
+     * @param msg
+     * @param queue
+     * @throws AMQException
+     */
     public void send(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         if (msg != null)
         {
-            final long deliveryTag = channel.getNextDeliveryTag();
+            long deliveryTag = channel.prepareNewMessageForDelivery(_acks,msg,consumerTag,queue);
+
             ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
             AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
-            if (_acks)
-            {
-                channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
-            }
+
             protocolSession.writeFrame(frame);
+
             // if we do not need to wait for client acknowledgements we can decrement
             // the reference count immediately
             if (!_acks)

@@ -17,19 +17,21 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import javax.management.openmbean.*;
-import javax.management.MBeanException;
 import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.openmbean.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 public class DestNameExchange extends AbstractExchange
 {
@@ -117,12 +119,14 @@ public class DestNameExchange extends AbstractExchange
         }
 
         public void createBinding(String queueName, String binding)
-            throws JMException
+                throws JMException
         {
             AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
 
             if (queue == null)
+            {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            }
 
             try
             {
@@ -147,7 +151,7 @@ public class DestNameExchange extends AbstractExchange
     {
         assert queue != null;
         assert routingKey != null;
-        if(!_index.add(routingKey, queue))
+        if (!_index.add(routingKey, queue))
         {
             _logger.debug("Queue " + queue + " is already registered with routing key " + routingKey);
         }
@@ -195,7 +199,7 @@ public class DestNameExchange extends AbstractExchange
                 _logger.debug("Publishing message to queue " + queues);
             }
 
-            for(AMQQueue q :queues)
+            for (AMQQueue q : queues)
             {
                 q.deliver(payload);
             }
