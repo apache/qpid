@@ -137,3 +137,104 @@ class BasicTests(TestBase):
         #cancellation of non-existant consumers should be handled without error
         channel.basic_cancel(consumer_tag="my-consumer")
         channel.basic_cancel(consumer_tag="this-never-existed")
+
+
+    def test_basic_ack(self):
+        """
+        Test basic ack/recover behaviour
+        """
+        channel = self.channel
+        channel.queue_declare(queue="test-ack-queue")
+        
+        reply = channel.basic_consume(queue="test-ack-queue", no_ack=False)
+        queue = self.client.queue(reply.consumer_tag)
+
+        channel.basic_publish(routing_key="test-ack-queue", content=Content("One"))
+        channel.basic_publish(routing_key="test-ack-queue", content=Content("Two"))
+        channel.basic_publish(routing_key="test-ack-queue", content=Content("Three"))
+        channel.basic_publish(routing_key="test-ack-queue", content=Content("Four"))
+        channel.basic_publish(routing_key="test-ack-queue", content=Content("Five"))
+                
+        msg1 = queue.get(timeout=1)
+        msg2 = queue.get(timeout=1)
+        msg3 = queue.get(timeout=1)
+        msg4 = queue.get(timeout=1)
+        msg5 = queue.get(timeout=1)
+        
+        self.assertEqual("One", msg1.content.body)
+        self.assertEqual("Two", msg2.content.body)
+        self.assertEqual("Three", msg3.content.body)
+        self.assertEqual("Four", msg4.content.body)
+        self.assertEqual("Five", msg5.content.body)
+
+        channel.basic_ack(delivery_tag=msg2.delivery_tag, multiple=True)  #One & Two
+        channel.basic_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
+
+        channel.basic_recover(requeue=False)
+        
+        msg3b = queue.get(timeout=1)
+        msg5b = queue.get(timeout=1)
+        
+        self.assertEqual("Three", msg3b.content.body)
+        self.assertEqual("Five", msg5b.content.body)
+
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message: " + extra.content.body)
+        except Empty: None
+
+    def test_basic_recover_requeue(self):
+        """
+        Test requeing on recovery
+        """
+        channel = self.channel
+        channel.queue_declare(queue="test-requeue")
+        
+        subscription = channel.basic_consume(queue="test-requeue", no_ack=False)
+        queue = self.client.queue(subscription.consumer_tag)
+
+        channel.basic_publish(routing_key="test-requeue", content=Content("One"))
+        channel.basic_publish(routing_key="test-requeue", content=Content("Two"))
+        channel.basic_publish(routing_key="test-requeue", content=Content("Three"))
+        channel.basic_publish(routing_key="test-requeue", content=Content("Four"))
+        channel.basic_publish(routing_key="test-requeue", content=Content("Five"))
+                
+        msg1 = queue.get(timeout=1)
+        msg2 = queue.get(timeout=1)
+        msg3 = queue.get(timeout=1)
+        msg4 = queue.get(timeout=1)
+        msg5 = queue.get(timeout=1)
+        
+        self.assertEqual("One", msg1.content.body)
+        self.assertEqual("Two", msg2.content.body)
+        self.assertEqual("Three", msg3.content.body)
+        self.assertEqual("Four", msg4.content.body)
+        self.assertEqual("Five", msg5.content.body)
+
+        channel.basic_ack(delivery_tag=msg2.delivery_tag, multiple=True)  #One & Two
+        channel.basic_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
+
+        channel.basic_cancel(consumer_tag=subscription.consumer_tag)
+        subscription2 = channel.basic_consume(queue="test-requeue")
+        queue2 = self.client.queue(subscription2.consumer_tag)
+
+        channel.basic_recover(requeue=True)
+        
+        msg3b = queue2.get(timeout=1)
+        msg5b = queue2.get(timeout=1)
+        
+        self.assertEqual("Three", msg3b.content.body)
+        self.assertEqual("Five", msg5b.content.body)
+
+        self.assertTrue(msg3b.redelivered)
+        self.assertTrue(msg5b.redelivered)
+
+        try:
+            extra = queue2.get(timeout=1)
+            self.fail("Got unexpected message in second queue: " + extra.content.body)
+        except Empty: None
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in original queue: " + extra.content.body)
+        except Empty: None
+        
