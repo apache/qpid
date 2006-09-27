@@ -173,7 +173,6 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
 
 void Channel::recover(bool requeue){
     if(requeue){
-        //TODO: need to set redelivered flag
         for_each(unacknowledged.begin(), unacknowledged.end(), Requeue());
         unacknowledged.clear();
     }else{
@@ -188,6 +187,7 @@ bool Channel::MatchAck::operator()(AckRecord& record) const{
 }
 
 void Channel::Requeue::operator()(AckRecord& record) const{
+    record.msg->redeliver();
     record.queue->deliver(record.msg);
 }
 

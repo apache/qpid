@@ -39,6 +39,7 @@ namespace qpid {
             string routingKey;
             const bool mandatory;
             const bool immediate;
+            bool redelivered;
             qpid::framing::AMQHeaderBody::shared_ptr header;
             content_list content;
 
@@ -61,6 +62,7 @@ namespace qpid {
             void deliver(qpid::framing::OutputHandler* out, int channel, 
                          string& consumerTag, u_int64_t deliveryTag, 
                          u_int32_t framesize);
+            void redeliver();
 
             friend bool route(Message::shared_ptr& msg, ExchangeRegistry* registry);
 
