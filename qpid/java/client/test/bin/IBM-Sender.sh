@@ -16,4 +16,4 @@
 #
 
 export MSGSIZE=100
-qpid-run JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:/C:/temp/IBMPerfTestsJNDI/ -cf amq.ConnectionFactory  -d amq.Queue -tc jms.r11.Sender -ms $MSGSIZE -mg 1000000  $*
+qpid-run JMSPerfHarness -pc JNDI -ii com.sun.jndi.fscontext.RefFSContextFactory -iu file:///tmp/IBMPerfTestsJNDI/ -cf amq.ConnectionFactory  -d amq.Queue -tc jms.r11.Sender -ms $MSGSIZE -mg 1000000  $*
