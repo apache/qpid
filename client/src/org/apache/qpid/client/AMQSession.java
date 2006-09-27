@@ -402,6 +402,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             //need to send ack for messages delivered to consumers so far
             for(Iterator i = _consumers.values().iterator(); i.hasNext();)
             {
+                //Sends acknowledgement to server
                 ((BasicMessageConsumer) i.next()).acknowledgeLastDelivered();
             }
 
