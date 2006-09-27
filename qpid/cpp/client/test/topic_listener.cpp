@@ -129,7 +129,7 @@ void Listener::report(){
     report << "Received " << count << " messages in " << time << " ms.";
     Message msg;
     msg.setData(report.str());
-    channel->publish(msg, Exchange::DEFAULT_DIRECT_EXCHANGE, responseQueue);
+    channel->publish(msg, string(""), responseQueue);
     if(transactional){
         channel->commit();
     }

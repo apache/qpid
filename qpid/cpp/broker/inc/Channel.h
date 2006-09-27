@@ -18,6 +18,7 @@
 #ifndef _Channel_
 #define _Channel_
 
+#include <algorithm>
 #include <map>
 #include "AMQContentBody.h"
 #include "AMQHeaderBody.h"
@@ -35,17 +36,52 @@ namespace qpid {
         class Channel{
         private:
             class ConsumerImpl : public virtual Consumer{
-                ConnectionToken* const connection;
                 Channel* parent;
                 string tag;
                 Queue::shared_ptr queue;
+                ConnectionToken* const connection;
+                const bool ackExpected;
             public:
-                ConsumerImpl(Channel* parent, string& tag, Queue::shared_ptr queue, ConnectionToken* const connection);
+                ConsumerImpl(Channel* parent, string& tag, Queue::shared_ptr queue, ConnectionToken* const connection, bool ack);
                 virtual bool deliver(Message::shared_ptr& msg);            
                 void cancel();
             };
 
             typedef std::map<string,ConsumerImpl*>::iterator consumer_iterator; 
+
+            struct AckRecord{
+                Message::shared_ptr msg;
+                Queue::shared_ptr queue;
+                string consumerTag;
+                u_int64_t deliveryTag;
+
+                AckRecord(Message::shared_ptr _msg, Queue::shared_ptr _queue, 
+                          string _consumerTag, u_int64_t _deliveryTag) : msg(_msg), 
+                                                                        queue(_queue), 
+                                                                        consumerTag(_consumerTag),
+                                                                        deliveryTag(_deliveryTag){}
+            };
+
+            typedef std::vector<AckRecord>::iterator ack_iterator; 
+
+            class MatchAck{
+                const u_int64_t tag;
+            public:
+                MatchAck(u_int64_t tag);
+                bool operator()(AckRecord& record) const;
+            };
+
+            class Requeue{
+            public:
+                void operator()(AckRecord& record) const;
+            };
+
+            class Redeliver{
+                Channel* const channel;
+            public:
+                Redeliver(Channel* const channel);
+                void operator()(AckRecord& record) const;
+            };
 
             const int id;
             qpid::framing::OutputHandler* out;
@@ -58,8 +94,10 @@ namespace qpid {
             u_int32_t framesize;
             Message::shared_ptr message;
             NameGenerator tagGenerator;
+            std::vector<AckRecord> unacknowledged;
+            qpid::concurrent::MonitorImpl deliveryLock;
 
-            void deliver(Message::shared_ptr& msg, string& tag);            
+            void deliver(Message::shared_ptr& msg, string& tag, Queue::shared_ptr& queue, bool ackExpected);            
             void publish(ExchangeRegistry* exchanges);
         
         public:
@@ -79,6 +117,8 @@ namespace qpid {
             void close();
             void commit();
             void rollback();
+            void ack(u_int64_t deliveryTag, bool multiple);
+            void recover(bool requeue);
         };
     }
 }
