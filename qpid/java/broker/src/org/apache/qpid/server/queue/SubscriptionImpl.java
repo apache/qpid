@@ -53,13 +53,13 @@ public class SubscriptionImpl implements Subscription
     public static class Factory implements SubscriptionFactory
     {
         public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks)
-            throws AMQException
+                throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag, acks);
         }
 
         public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
-            throws AMQException
+                throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag);
         }
@@ -67,7 +67,7 @@ public class SubscriptionImpl implements Subscription
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
                             String consumerTag, boolean acks)
-        throws AMQException
+            throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
         if (channel == null)
@@ -84,7 +84,7 @@ public class SubscriptionImpl implements Subscription
 
     public SubscriptionImpl(int channel, AMQProtocolSession protocolSession,
                             String consumerTag)
-        throws AMQException
+            throws AMQException
     {
         this(channel, protocolSession, consumerTag, false);
     }
@@ -126,13 +126,20 @@ public class SubscriptionImpl implements Subscription
     {
         if (msg != null)
         {
-            long deliveryTag = channel.prepareNewMessageForDelivery(_acks,msg,consumerTag,queue);
+            synchronized(channel)
+            {
+                long deliveryTag = channel.getNextDeliveryTag();
 
-            ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-            AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
+                if (_acks)
+                {
+                    channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                }
 
-            protocolSession.writeFrame(frame);
+                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+                AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
 
+                protocolSession.writeFrame(frame);
+            }
             // if we do not need to wait for client acknowledgements we can decrement
             // the reference count immediately
             if (!_acks)
@@ -160,6 +167,7 @@ public class SubscriptionImpl implements Subscription
 
     /**
      * Callback indicating that a queue has been deleted.
+     *
      * @param queue
      */
     public void queueDeleted(AMQQueue queue)
