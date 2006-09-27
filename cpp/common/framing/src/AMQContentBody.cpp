@@ -16,6 +16,7 @@
  *
  */
 #include "AMQContentBody.h"
+#include <iostream>
 
 qpid::framing::AMQContentBody::AMQContentBody(){
 }
@@ -33,3 +34,7 @@ void qpid::framing::AMQContentBody::decode(Buffer& buffer, u_int32_t size){
     buffer.getRawData(data, size);
 }
 
+void qpid::framing::AMQContentBody::print(std::ostream& out) const
+{
+    out << "content (" << size() << " bytes)";
+}

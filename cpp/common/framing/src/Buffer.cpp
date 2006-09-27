@@ -16,6 +16,7 @@
  *
  */
 #include "Buffer.h"
+#include "FieldTable.h" 
 
 qpid::framing::Buffer::Buffer(int _size) : size(_size), position(0), limit(_size){
     data = new char[size];

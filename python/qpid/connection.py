@@ -20,7 +20,7 @@ to read and write Frame objects. This could be used by a client,
 server, or even a proxy implementation.
 """
 
-import socket, codec
+import socket, codec,logging
 from cStringIO import StringIO
 from spec import load, pythonize
 from codec import EOF
@@ -240,8 +240,10 @@ class Header(Payload):
     properties = {}
     for b, f in zip(bits, klass.fields):
       if b:
-        properties[f.name] = c.decode(f.type)
-
+        # Note: decode returns a unicode u'' string but only
+        # plain '' strings can be used as keywords so we need to
+        # stringify the names.
+        properties[str(f.name)] = c.decode(f.type)
     return Header(klass, weight, size, **properties)
 
   def __str__(self):
