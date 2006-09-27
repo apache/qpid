@@ -32,7 +32,8 @@ Message::Message(const ConnectionToken* const _publisher,
                                                      exchange(_exchange),
                                                      routingKey(_routingKey), 
                                                      mandatory(_mandatory),
-                                                     immediate(_immediate){
+                                                     immediate(_immediate),
+                                                     redelivered(false){
 
 }
 
@@ -51,11 +52,15 @@ bool Message::isComplete(){
     return header.get() && (header->getContentSize() == contentSize());
 }
 
+void Message::redeliver(){
+    redelivered = true;
+}
+
 void Message::deliver(OutputHandler* out, int channel, 
                       string& consumerTag, u_int64_t deliveryTag, 
                       u_int32_t framesize){
 
-    out->send(new AMQFrame(channel, new BasicDeliverBody(consumerTag, deliveryTag, false, exchange, routingKey)));
+    out->send(new AMQFrame(channel, new BasicDeliverBody(consumerTag, deliveryTag, redelivered, exchange, routingKey)));
     AMQBody::shared_ptr headerBody = static_pointer_cast<AMQBody, AMQHeaderBody>(header);
     out->send(new AMQFrame(channel, headerBody));
     for(content_iterator i = content.begin(); i != content.end(); i++){
