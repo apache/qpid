@@ -27,18 +27,20 @@ namespace qpid {
 
         class AMQBody
         {
-        public:
+          public:
             typedef std::tr1::shared_ptr<AMQBody> shared_ptr;
 
+            virtual ~AMQBody();
             virtual u_int32_t size() const = 0;
             virtual u_int8_t type() const = 0;
             virtual void encode(Buffer& buffer) const = 0;
             virtual void decode(Buffer& buffer, u_int32_t size) = 0;
-            inline virtual ~AMQBody(){}
+            virtual void print(std::ostream& out) const;
         };
 
-        enum body_types {METHOD_BODY = 1, HEADER_BODY = 2, CONTENT_BODY = 3, HEARTBEAT_BODY = 8};
+        std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
 
+        enum body_types {METHOD_BODY = 1, HEADER_BODY = 2, CONTENT_BODY = 3, HEARTBEAT_BODY = 8};
     }
 }
 

@@ -40,12 +40,14 @@ public:
     AMQHeaderBody();
     inline u_int8_t type() const { return HEADER_BODY; }
     HeaderProperties* getProperties(){ return properties; }
+    const HeaderProperties* getProperties() const { return properties; }
     inline u_int64_t getContentSize() const { return contentSize; }
     inline void setContentSize(u_int64_t size) { contentSize = size; }
     virtual ~AMQHeaderBody();
     virtual u_int32_t size() const;
     virtual void encode(Buffer& buffer) const;
     virtual void decode(Buffer& buffer, u_int32_t size);
+    virtual void print(std::ostream& out) const;
 };
 
 }

@@ -16,13 +16,14 @@
  *
  */
 #include "amqp_types.h"
-#include "FieldTable.h" 
 
 #ifndef _Buffer_
 #define _Buffer_
 
 namespace qpid {
 namespace framing {
+
+class FieldTable;
 
 class Buffer
 {

@@ -22,15 +22,19 @@
 
 UNITTESTS=$(wildcard common/*/test/*.so broker/test/*.so)
 
-.PHONY: all clean doxygen
+.PHONY: all test unittest pythontest runtests clean doxygen
 
-test:   all
-	@$(MAKE) runtests
+test:   all runtests
 
-runtests: 
+unittest: 
 	DllPlugInTester -c -b $(UNITTESTS)
+
+pythontest:
 	bin/qpidd >> qpidd.log &
 	cd ../python ; ./run-tests -v -I cpp_failing.txt	
+
+runtests:
+	$(MAKE) -k unittest pythontest
 
 all:
 	@$(MAKE) -C common all

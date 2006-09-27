@@ -16,112 +16,133 @@
  *
  */
 #include "FieldTable.h"
-#include "NamedValue.h"
 #include "QpidError.h"
 #include "Buffer.h"
 #include "Value.h"
+#include <assert.h>
 
-qpid::framing::FieldTable::~FieldTable(){
-    int count(values.size());
-    for(int i = 0; i < count; i++){
-	delete values[i];
-    }
-}
+namespace qpid {
+namespace framing {
 
-u_int32_t qpid::framing::FieldTable::size() const {
+FieldTable::~FieldTable() {}
+
+u_int32_t FieldTable::size() const {
     u_int32_t size(4);
-    int count(values.size());
-    for(int i = 0; i < count; i++){
-	size += values[i]->size();
+    for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
+        // 2 = shortstr_len_byyte + type_char_byte
+	size += 2 + (i->first).size() + (i->second)->size();
     }
     return size;
 }
 
-int qpid::framing::FieldTable::count() const {
+int FieldTable::count() const {
     return values.size();
 }
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const FieldTable& t){
-    out << "field_table{}";
-    return out;
+namespace 
+{
+std::ostream& operator<<(std::ostream& out, const FieldTable::ValueMap::value_type& i) {
+    return out << i.first << ":" << *i.second;
+}
 }
 
-void qpid::framing::FieldTable::setString(const std::string& name, const std::string& value){
-    setValue(name, new StringValue(value));
-}
-
-void qpid::framing::FieldTable::setInt(const std::string& name, int value){
-    setValue(name, new IntegerValue(value));
-}
-
-void qpid::framing::FieldTable::setTimestamp(const std::string& name, u_int64_t value){
-    setValue(name, new TimeValue(value));
-}
-
-void qpid::framing::FieldTable::setTable(const std::string& name, const FieldTable& value){
-    setValue(name, new FieldTableValue(value));
-}
-
-std::string qpid::framing::FieldTable::getString(const std::string& name){
-    StringValue* val = dynamic_cast<StringValue*>(getValue(name));
-    return (val == 0 ? "" : val->getValue());
-}
-
-int qpid::framing::FieldTable::getInt(const std::string& name){
-    IntegerValue* val = dynamic_cast<IntegerValue*>(getValue(name));
-    return (val == 0 ? 0 : val->getValue());
-}
-
-u_int64_t qpid::framing::FieldTable::getTimestamp(const std::string& name){
-    TimeValue* val = dynamic_cast<TimeValue*>(getValue(name));
-    return (val == 0 ? 0 : val->getValue());
-}
-
-void qpid::framing::FieldTable::getTable(const std::string& name, FieldTable& value){
-    FieldTableValue* val = dynamic_cast<FieldTableValue*>(getValue(name));
-    if(val != 0) value = val->getValue();
-}
-
-qpid::framing::NamedValue* qpid::framing::FieldTable::find(const std::string& name) const{
-    int count(values.size());
-    for(int i = 0; i < count; i++){
-	if(values[i]->getName() == name) return values[i];
+std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
+    out << "field_table{";
+    FieldTable::ValueMap::const_iterator i = t.getMap().begin();
+    if (i != t.getMap().end()) out << *i++;
+    while (i != t.getMap().end()) 
+    {
+        out << "," << *i++;
     }
-    return 0;
+    return out << "}";
 }
 
-qpid::framing::Value* qpid::framing::FieldTable::getValue(const std::string& name) const{
-    NamedValue* val = find(name);
-    return val == 0 ? 0 : val->getValue();
+void FieldTable::setString(const std::string& name, const std::string& value){
+    values[name] = ValuePtr(new StringValue(value));
 }
 
-void qpid::framing::FieldTable::setValue(const std::string& name, Value* value){
-    NamedValue* val = find(name);
-    if(val == 0){
-	val = new NamedValue(name, value);
-	values.push_back(val);
-    }else{
-	Value* old = val->getValue();
-	if(old != 0) delete old;
-	val->setValue(value);
-    }
+void FieldTable::setInt(const std::string& name, int value){
+    values[name] = ValuePtr(new IntegerValue(value));
 }
 
-void qpid::framing::FieldTable::encode(Buffer& buffer) const{
+void FieldTable::setTimestamp(const std::string& name, u_int64_t value){
+    values[name] = ValuePtr(new TimeValue(value));
+}
+
+void FieldTable::setTable(const std::string& name, const FieldTable& value){
+    values[name] = ValuePtr(new FieldTableValue(value));
+}
+
+namespace {
+// TODO aconway 2006-09-26: This is messy. Revisit the field table
+// and Value classes with a traits-based approach.
+//
+template <class T> T default_value() { return T(); }
+template <> int default_value<int>() { return 0; }
+template <> u_int64_t default_value<u_int64_t>() { return 0; }
+}
+
+template <class T>
+T FieldTable::getValue(const std::string& name) const
+{
+    ValueMap::const_iterator i = values.find(name);
+    if (i == values.end()) return default_value<T>();
+    const ValueOps<T> *vt = dynamic_cast<const ValueOps<T>*>(i->second.get());
+    return vt->getValue();
+}
+
+std::string FieldTable::getString(const std::string& name) const {
+    return getValue<std::string>(name);
+}
+
+int FieldTable::getInt(const std::string& name) const {
+    return getValue<int>(name);
+}
+
+u_int64_t FieldTable::getTimestamp(const std::string& name) const {
+    return getValue<u_int64_t>(name);
+}
+
+void FieldTable::getTable(const std::string& name, FieldTable& value) const {
+    value = getValue<FieldTable>(name);
+}
+
+void FieldTable::encode(Buffer& buffer) const{
     buffer.putLong(size() - 4);
-    int count(values.size());
-    for(int i = 0; i < count; i++){
-	values[i]->encode(buffer);
+    for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
+        buffer.putShortString(i->first);
+        buffer.putOctet(i->second->getType());
+	i->second->encode(buffer);
     }
 }
 
-void qpid::framing::FieldTable::decode(Buffer& buffer){
+void FieldTable::decode(Buffer& buffer){
     u_int32_t size = buffer.getLong();
     int leftover = buffer.available() - size;
     
     while(buffer.available() > leftover){
-	NamedValue* value = new NamedValue();
-	value->decode(buffer);
-	values.push_back(value);
+        std::string name;
+        buffer.getShortString(name);
+        std::auto_ptr<Value> value(Value::decode_value(buffer));
+        values[name] = ValuePtr(value.release());
     }    
+}
+
+
+bool FieldTable::operator==(const FieldTable& x) const {
+    if (values.size() != x.values.size()) return false;
+    for (ValueMap::const_iterator i =  values.begin(); i != values.end(); ++i) {
+        ValueMap::const_iterator j = x.values.find(i->first);
+        if (j == x.values.end()) return false;
+        if (*(i->second) != *(j->second)) return false;
+    }
+    return true;
+}
+
+void FieldTable::erase(const std::string& name) 
+{
+    values.erase(values.find(name));
+}
+
+}
 }
