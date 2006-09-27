@@ -474,18 +474,6 @@ public class AMQChannel implements Managable
         }
     }
 
-    public synchronized long prepareNewMessageForDelivery(boolean acks, AMQMessage msg, String consumerTag, AMQQueue queue)
-    {
-        long deliveryTag = getNextDeliveryTag();
-
-        if (acks)
-        {
-            addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
-        }
-
-        return deliveryTag;
-    }
-
     /**
      * Acknowledge one or more messages.
      *
