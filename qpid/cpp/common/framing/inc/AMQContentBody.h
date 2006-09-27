@@ -40,6 +40,7 @@ public:
     u_int32_t size() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer, u_int32_t size);
+    void print(std::ostream& out) const;
 };
 
 }

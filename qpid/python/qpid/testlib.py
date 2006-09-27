@@ -22,7 +22,7 @@ import sys, re, unittest, os, random, logging
 import qpid.client, qpid.spec
 import Queue
 from getopt import getopt, GetoptError
-
+from qpid.content import Content
 
 def findmodules(root):
     """Find potential python modules under directory root"""
@@ -161,10 +161,6 @@ class TestBase(unittest.TestCase):
         self.channel.channel_open()
 
     def tearDown(self):
-        # TODO aconway 2006-09-05: Wrong behaviour here, we should
-        # close all open channels (checking for exceptions on the
-        # channesl) then open a channel to clean up qs and exs,
-        # finally close that channel.
         for ch, q in self.queues:
             ch.queue_delete(queue=q)
         for ch, ex in self.exchanges:
@@ -186,13 +182,11 @@ class TestBase(unittest.TestCase):
                          arguments={}):
         channel = channel or self.channel
         reply = channel.exchange_declare(ticket, exchange, type, passive, durable, auto_delete, internal, nowait, arguments)
-        # TODO aconway 2006-09-14: Don't add exchange on failure.
         self.exchanges.append((channel,exchange))
         return reply
 
     def uniqueString(self):
         """Generate a unique string, unique for this TestBase instance"""
-        # TODO aconway 2006-09-20: Not thread safe.
         if not "uniqueCounter" in dir(self): self.uniqueCounter = 1;
         return "Test Message " + str(self.uniqueCounter)
         
@@ -208,22 +202,24 @@ class TestBase(unittest.TestCase):
             self.fail("Queue is not empty.")
         except Queue.Empty: None              # Ignore
 
-    def assertPublishGet(self, queue, exchange="", routing_key=""):
+    def assertPublishGet(self, queue, exchange="", routing_key="", properties=None):
         """
         Publish to exchange and assert queue.get() returns the same message.
         """
         body = self.uniqueString()
         self.channel.basic_publish(exchange=exchange,
-                                   content=qpid.content.Content(body),
+                                   content=Content(body, properties=properties),
                                    routing_key=routing_key)
-        self.assertEqual(body, queue.get(timeout=2).content.body)
+        msg = queue.get(timeout=1)    
+        self.assertEqual(body, msg.content.body)
+        if (properties): self.assertEqual(properties, msg.content.properties)
         
-    def assertPublishConsume(self, queue="", exchange="", routing_key=""):
+    def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
         Publish a message and consume it, assert it comes back intact.
         Return the Queue object used to consume.
         """
-        self.assertPublishGet(self.consume(queue), exchange, routing_key)
+        self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
     def assertChannelException(self, expectedCode, message): 
         self.assertEqual(message.method.klass.name, "channel")

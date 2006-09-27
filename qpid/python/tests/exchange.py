@@ -20,21 +20,10 @@ Tests for exchange behaviour.
 Test classes ending in 'RuleTests' are derived from rules in amqp.xml.
 """
 
-import logging, Queue
+import Queue, logging
 from qpid.testlib import TestBase
 from qpid.content import Content
 
-
-# TODO aconway 2006-09-01: Investigate and add tests as appropriate.
-# Observered on C++:
-#
-# No exception raised for basic_consume on non-existent queue name.
-# No exception for basic_publish with bad routing key.
-# No exception for binding to non-existent exchange?
-# queue_bind hangs with invalid exchange name
-# 
-# Do server exceptions get propagated properly?
-# Do Java exceptions propagate with any data (or just Closed())
 
 class StandardExchangeVerifier:
     """Verifies standard exchange behavior.
@@ -67,7 +56,6 @@ class StandardExchangeVerifier:
         self.assertPublishGet(q, ex, "a.b.x")
         self.assertPublishGet(q, ex, "a.x.b.x")
         self.assertPublishGet(q, ex, "a.x.x.b.x")
-
         # Shouldn't match
         self.channel.basic_publish(exchange=ex, routing_key="a.b")        
         self.channel.basic_publish(exchange=ex, routing_key="a.b.x.y")        
@@ -75,6 +63,16 @@ class StandardExchangeVerifier:
         self.channel.basic_publish(exchange=ex, routing_key="a.b")
         self.assert_(q.empty())
 
+    def verifyHeadersExchange(self, ex):
+        """Verify that ex is a headers exchange"""
+        self.queue_declare(queue="q")
+        self.channel.queue_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
+        q = self.consume("q")
+        headers = {"name":"fred", "age":3}
+        self.assertPublishGet(q, exchange=ex, properties={'headers':headers})
+        self.channel.basic_publish(exchange=ex) # No headers, won't deliver
+        self.assertEmpty(q);                 
+        
 
 class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
     """
@@ -97,6 +95,11 @@ class RecommendedTypesRuleTests(TestBase, StandardExchangeVerifier):
         """Declare and test a topic exchange"""
         self.exchange_declare(0, exchange="t", type="topic")
         self.verifyTopicExchange("t")
+
+    def testHeaders(self):
+        """Declare and test a headers exchange"""
+        self.exchange_declare(0, exchange="h", type="headers")
+        self.verifyHeadersExchange("h")
         
 
 class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
@@ -106,7 +109,7 @@ class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
     exchange instance is amq. followed by the exchange type name.
     
     Client creates a temporary queue and attempts to bind to each required
-    exchange instance (amq.fanout, amq.direct, and amq.topic, amq.headers if
+    exchange instance (amq.fanout, amq.direct, and amq.topic, amq.match if
     those types are defined).
     """
     def testAmqDirect(self): self.verifyDirectExchange("amq.direct")
@@ -115,9 +118,7 @@ class RequiredInstancesRuleTests(TestBase, StandardExchangeVerifier):
 
     def testAmqTopic(self):  self.verifyTopicExchange("amq.topic")
         
-    def testAmqHeaders(self): 
-        self.exchange_declare(0, exchange="amq.headers", passive="true")
-        # TODO aconway 2006-09-14: verify headers behavior
+    def testAmqMatch(self): self.verifyHeadersExchange("amq.match")
 
 class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
     """
@@ -137,13 +138,14 @@ class DefaultExchangeRuleTests(TestBase, StandardExchangeVerifier):
         self.verifyDirectExchange("")
 
 
+# TODO aconway 2006-09-27: Fill in empty tests:
+
 class DefaultAccessRuleTests(TestBase):
     """
     The server MUST NOT allow clients to access the default exchange except
     by specifying an empty exchange name in the Queue.Bind and content Publish
     methods.
     """
-    # TODO aconway 2006-09-18: fill this in.
 
 class ExtensionsRuleTests(TestBase):
     """
@@ -251,4 +253,42 @@ class DeleteMethodExchangeFieldExistsRuleTests(TestBase):
     The client MUST NOT attempt to delete an exchange that does not exist.
     """
 
+
+class HeadersExchangeTests(TestBase):
+    """
+    Tests for headers exchange functionality.
+    """
+    def setUp(self):
+        TestBase.setUp(self)
+        self.queue_declare(queue="q")
+        self.q = self.consume("q")
+
+    def myAssertPublishGet(self, headers):
+        self.assertPublishGet(self.q, exchange="amq.match", properties={'headers':headers})
+
+    def myBasicPublish(self, headers):
+        self.channel.basic_publish(exchange="amq.match", content=Content("foobar", properties={'headers':headers}))
+        
+    def testMatchAll(self):
+        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
+        self.myAssertPublishGet({"name":"fred", "age":3})
+        self.myAssertPublishGet({"name":"fred", "age":3, "extra":"ignoreme"})
+        
+        # None of these should match
+        self.myBasicPublish({})
+        self.myBasicPublish({"name":"barney"})
+        self.myBasicPublish({"name":10})
+        self.myBasicPublish({"name":"fred", "age":2})
+        self.assertEmpty(self.q)
+
+    def testMatchAny(self):
+        self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'any', "name":"fred", "age":3})
+        self.myAssertPublishGet({"name":"fred"})
+        self.myAssertPublishGet({"name":"fred", "ignoreme":10})
+        self.myAssertPublishGet({"ignoreme":10, "age":3})
+
+        # Wont match
+        self.myBasicPublish({})
+        self.myBasicPublish({"irrelevant":0})
+        self.assertEmpty(self.q)
 

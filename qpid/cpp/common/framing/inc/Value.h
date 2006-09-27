@@ -26,84 +26,135 @@
 namespace qpid {
 namespace framing {
 
-    class Buffer;
+class Buffer;
 
-    class Value{
-    public:
-	inline virtual ~Value(){}
-	virtual u_int32_t size() const = 0;
-	virtual char getType() const = 0;
-	virtual void encode(Buffer& buffer) = 0;
-	virtual void decode(Buffer& buffer) = 0;
-    };
+/**
+ * Represents a decimal value.
+ * No arithmetic functionality for now, we only care about encoding/decoding.
+ */
+struct Decimal {
+    u_int32_t value;
+    u_int8_t decimals;
 
-    class StringValue : public virtual Value{
-	string value;
-	
-    public:
-	inline StringValue(const string& v) : value(v){}
-        inline StringValue(){}
-	inline string getValue(){ return value; }
-	~StringValue(){}
-	inline virtual u_int32_t size() const { return 4 + value.length(); }
-	inline virtual char getType() const { return 'S'; }
-	virtual void encode(Buffer& buffer);
-	virtual void decode(Buffer& buffer);
-    };
+    Decimal(u_int32_t value_=0, u_int8_t decimals_=0) : value(value_), decimals(decimals_) {}
+    bool operator==(const Decimal& d) const {
+        return decimals == d.decimals && value == d.value;
+    }
+    bool operator!=(const Decimal& d) const { return !(*this == d); }
+};
 
-    class IntegerValue : public virtual Value{
-	int value;
-    public:
-	inline IntegerValue(int v) : value(v){}
-	inline IntegerValue(){}
-	inline int getValue(){ return value; }
-	~IntegerValue(){}
-	inline virtual u_int32_t size() const { return 4; }
-	inline virtual char getType() const { return 'I'; }
-	virtual void encode(Buffer& buffer);
-	virtual void decode(Buffer& buffer);
-    };
+std::ostream& operator<<(std::ostream& out, const Decimal& d);
 
-    class TimeValue : public virtual Value{
-	u_int64_t value;
-    public:
-	inline TimeValue(int v) : value(v){}
-	inline TimeValue(){}
-	inline u_int64_t getValue(){ return value; }
-	~TimeValue(){}
-	inline virtual u_int32_t size() const { return 8; }
-	inline virtual char getType() const { return 'T'; }
-	virtual void encode(Buffer& buffer);
-	virtual void decode(Buffer& buffer);
-    };
+/**
+ * Polymorpic base class for values.
+ */
+class Value {
+  public:
+    virtual ~Value();
+    virtual u_int32_t size() const = 0;
+    virtual char getType() const = 0;
+    virtual void encode(Buffer& buffer) = 0;
+    virtual void decode(Buffer& buffer) = 0;
+    virtual bool operator==(const Value&) const = 0;
+    bool operator!=(const Value& v) const { return !(*this == v); }
+    virtual void print(std::ostream& out) const = 0;
 
-    class DecimalValue : public virtual Value{
-	u_int8_t decimals;
-	u_int32_t value;
-    public:
-	inline DecimalValue(int v) : value(v){}
-	inline DecimalValue(){}
-	~DecimalValue(){}
-	inline virtual u_int32_t size() const { return 5; }
-	inline virtual char getType() const { return 'D'; }
-	virtual void encode(Buffer& buffer);
-	virtual void decode(Buffer& buffer);
-    };
+    /** Create a new value by decoding from the buffer */
+    static std::auto_ptr<Value> decode_value(Buffer& buffer);
+};
 
-    class FieldTableValue : public virtual Value{
-	FieldTable value;
-    public:
-	inline FieldTableValue(const FieldTable& v) : value(v){}
-	inline FieldTableValue(){}
-	inline FieldTable getValue(){ return value; }
-	~FieldTableValue(){}
-	inline virtual u_int32_t size() const { return 4 + value.size(); }
-	inline virtual char getType() const { return 'F'; }
-	virtual void encode(Buffer& buffer);
-	virtual void decode(Buffer& buffer);
-    };
-}
-}
+std::ostream& operator<<(std::ostream& out, const Value& d);
 
+
+/**
+ * Template for common operations on Value sub-classes.
+ */
+template <class T>
+class ValueOps : public Value
+{
+  protected:
+    T value;
+  public:
+    ValueOps() {}
+    ValueOps(const T& v) : value(v) {}
+    const T& getValue() const { return value; }
+    T& getValue() { return value; }
+
+    virtual bool operator==(const Value& v) const {
+        const ValueOps<T>* vo = dynamic_cast<const ValueOps<T>*>(&v);
+        if (vo == 0) return false;
+        else return value == vo->value;
+    }
+
+    void print(std::ostream& out) const { out << value; }
+};
+
+
+class StringValue : public ValueOps<std::string> {
+  public:
+    StringValue(const std::string& v) : ValueOps<std::string>(v) {}
+    StringValue() {}
+    virtual u_int32_t size() const { return 4 + value.length(); }
+    virtual char getType() const { return 'S'; }
+    virtual void encode(Buffer& buffer);
+    virtual void decode(Buffer& buffer);
+};
+
+class IntegerValue : public ValueOps<int> {
+  public:
+    IntegerValue(int v) : ValueOps<int>(v) {}
+    IntegerValue(){}
+    virtual u_int32_t size() const { return 4; }
+    virtual char getType() const { return 'I'; }
+    virtual void encode(Buffer& buffer);
+    virtual void decode(Buffer& buffer);
+};
+
+class TimeValue : public ValueOps<u_int64_t> {
+  public:
+    TimeValue(u_int64_t v) : ValueOps<u_int64_t>(v){}
+    TimeValue(){}
+    virtual u_int32_t size() const { return 8; }
+    virtual char getType() const { return 'T'; }
+    virtual void encode(Buffer& buffer);
+    virtual void decode(Buffer& buffer);
+};
+
+class DecimalValue : public ValueOps<Decimal> {
+  public:
+    DecimalValue(const Decimal& d) : ValueOps<Decimal>(d) {} 
+    DecimalValue(u_int32_t value_=0, u_int8_t decimals_=0) :
+        ValueOps<Decimal>(Decimal(value_, decimals_)){}
+    virtual u_int32_t size() const { return 5; }
+    virtual char getType() const { return 'D'; }
+    virtual void encode(Buffer& buffer);
+    virtual void decode(Buffer& buffer);
+};
+
+
+class FieldTableValue : public ValueOps<FieldTable> {
+  public:
+    FieldTableValue(const FieldTable& v) : ValueOps<FieldTable>(v){}
+    FieldTableValue(){}
+    virtual u_int32_t size() const { return 4 + value.size(); }
+    virtual char getType() const { return 'F'; }
+    virtual void encode(Buffer& buffer);
+    virtual void decode(Buffer& buffer);
+};
+
+class EmptyValue : public Value {
+  public:
+    ~EmptyValue();
+    virtual u_int32_t size() const { return 0; }
+    virtual char getType() const { return 0; }
+    virtual void encode(Buffer& buffer) {}
+    virtual void decode(Buffer& buffer) {}
+    virtual bool operator==(const Value& v) const {
+        return dynamic_cast<const EmptyValue*>(&v);
+    }
+    virtual void print(std::ostream& out) const;
+};
+
+}} // qpid::framing
 
 #endif

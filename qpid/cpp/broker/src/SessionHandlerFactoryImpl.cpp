@@ -18,6 +18,7 @@
 #include "SessionHandlerFactoryImpl.h"
 #include "SessionHandlerImpl.h"
 #include "FanOutExchange.h"
+#include "HeadersExchange.h"
 
 using namespace qpid::broker;
 using namespace qpid::io;
@@ -28,6 +29,7 @@ const std::string empty;
 const std::string amq_direct("amq.direct");
 const std::string amq_topic("amq.topic");
 const std::string amq_fanout("amq.fanout");
+const std::string amq_match("amq.match");
 }
 
 SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeout(_timeout), cleaner(&queues, timeout/10){
@@ -35,6 +37,7 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeo
     exchanges.declare(new DirectExchange(amq_direct));
     exchanges.declare(new TopicExchange(amq_topic));
     exchanges.declare(new FanOutExchange(amq_fanout));
+    exchanges.declare(new HeadersExchange(amq_match));
     cleaner.start();
 }
 

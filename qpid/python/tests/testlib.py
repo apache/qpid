@@ -52,3 +52,12 @@ class TestBaseTest(TestBase):
             self.fail("assertEmpty did not assert on non-empty queue")
         except AssertionError: None     # Ignore
 
+    def testMessageProperties(self):
+        """Verify properties are passed with message"""
+        props={"headers":{"x":1, "y":2}}
+        self.queue_declare(queue="q")
+        q = self.consume("q")
+        self.assertPublishGet(q, routing_key="q", properties=props)
+
+
+

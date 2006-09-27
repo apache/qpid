@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -126,21 +127,8 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
 
 std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t){
     out << "Frame[channel=" << t.channel << "; ";
-    if(t.body.get() == 0){
-	out << "empty";
-    }else if(t.body->type() == METHOD_BODY){
-	(dynamic_cast<AMQMethodBody*>(t.body.get()))->print(out);
-    }else if(t.body->type() == HEADER_BODY){
-	out << "header, content_size=" << 
-            (dynamic_cast<AMQHeaderBody*>(t.body.get()))->getContentSize() 
-            << " (" << t.body->size() << " bytes)";
-    }else if(t.body->type() == CONTENT_BODY){
-	out << "content (" << t.body->size() << " bytes)";
-    }else if(t.body->type() == HEARTBEAT_BODY){
-	out << "heartbeat";
-    }else{
-	out << "unknown type, " << t.body->type();
-    }
+    if (t.body.get() == 0) out << "empty";
+    else out << *t.body;
     out << "]";
     return out;
 }

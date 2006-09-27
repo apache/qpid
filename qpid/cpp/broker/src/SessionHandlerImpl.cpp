@@ -18,6 +18,8 @@
 #include <iostream>
 #include "SessionHandlerImpl.h"
 #include "FanOutExchange.h"
+#include "TopicExchange.h"
+#include "HeadersExchange.h"
 #include "assert.h"
 
 using namespace std::tr1;
@@ -223,7 +225,9 @@ void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16
     if(!passive && (
            type != TopicExchange::typeName &&
            type != DirectExchange::typeName &&
-           type != FanOutExchange::typeName)
+           type != FanOutExchange::typeName &&
+           type != HeadersExchange::typeName
+       )
         )
     {
         throw ChannelException(540, "Exchange type not implemented: " + type);
@@ -237,6 +241,8 @@ void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16
             parent->exchanges->declare(new DirectExchange(exchange));
         }else if(type == FanOutExchange::typeName){
             parent->exchanges->declare(new DirectExchange(exchange));
+        }else if (type == HeadersExchange::typeName) {
+            parent->exchanges->declare(new HeadersExchange(exchange));
         }
     }
     parent->exchanges->getLock()->release();

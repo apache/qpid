@@ -58,3 +58,16 @@ void qpid::framing::AMQHeaderBody::createProperties(int classId){
 	THROW_QPID_ERROR(FRAMING_ERROR, "Unknown header class");
     }
 }
+
+void qpid::framing::AMQHeaderBody::print(std::ostream& out) const
+{
+    out << "header, content_size=" << getContentSize() 
+        << " (" << size() << " bytes)" << ", headers=" ;
+    // TODO aconway 2006-09-26: Hack to see headers.
+    // Should write proper op << for BasicHeaderProperties.
+    // 
+    const BasicHeaderProperties* props =
+        dynamic_cast<const BasicHeaderProperties*>(getProperties());
+    // TODO aconway 2006-09-26: Lose the static cast, fix BasicHeaderProperties
+    if (props) out << const_cast<BasicHeaderProperties*>(props)->getHeaders();
+}
