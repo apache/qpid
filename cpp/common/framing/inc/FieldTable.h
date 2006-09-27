@@ -17,6 +17,8 @@
  */
 #include <iostream>
 #include <vector>
+#include <tr1/memory>
+#include <tr1/unordered_map>
 #include "amqp_types.h"
 
 #ifndef _FieldTable_
@@ -25,42 +27,50 @@
 namespace qpid {
 namespace framing {
 
-    class NamedValue;
-    class Value;
-    class Buffer;
+class Value;
+class Buffer;
 
-    class FieldTable
-    {
-	std::vector<NamedValue*> values;
-	NamedValue* find(const std::string& name) const;
+class FieldTable
+{
+  public:
+    typedef std::tr1::shared_ptr<Value> ValuePtr;
+    typedef std::tr1::unordered_map<std::string, ValuePtr> ValueMap;
 
-	Value* getValue(const std::string& name) const;
-	void setValue(const std::string& name, Value* value);
+    ~FieldTable();
+    u_int32_t size() const;
+    int count() const;
+    void setString(const std::string& name, const std::string& value);
+    void setInt(const std::string& name, int value);
+    void setTimestamp(const std::string& name, u_int64_t value);
+    void setTable(const std::string& name, const FieldTable& value);
+    //void setDecimal(string& name, xxx& value);
+    std::string getString(const std::string& name) const;
+    int getInt(const std::string& name) const;
+    u_int64_t getTimestamp(const std::string& name) const;
+    void getTable(const std::string& name, FieldTable& value) const;
+    //void getDecimal(string& name, xxx& value);
+    void erase(const std::string& name);
+    
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer);
 
-    public:
-	~FieldTable();
-	u_int32_t size() const;
-	int count() const;
-	void setString(const std::string& name, const std::string& value);
-	void setInt(const std::string& name, int value);
-	void setTimestamp(const std::string& name, u_int64_t value);
-	void setTable(const std::string& name, const FieldTable& value);
-	//void setDecimal(string& name, xxx& value);
-        std::string getString(const std::string& name);
-	int getInt(const std::string& name);
-	u_int64_t getTimestamp(const std::string& name);
-	void getTable(const std::string& name, FieldTable& value);
-	//void getDecimal(string& name, xxx& value);
+    bool operator==(const FieldTable& other) const;
 
-	void encode(Buffer& buffer) const;
-	void decode(Buffer& buffer);
+    // TODO aconway 2006-09-26: Yeuch! Rework FieldTable to  have
+    // a map-like interface.
+    const ValueMap& getMap() const { return values; }
+    ValueMap& getMap() { return values; }
+    
+        
+  private:
+  friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
+    ValueMap values;
+    template<class T> T getValue(const std::string& name) const;
+};
 
-	friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
-    };
-
-    class FieldNotFoundException{};
-    class UnknownFieldName : public FieldNotFoundException{};
-    class IncorrectFieldType : public FieldNotFoundException{};
+class FieldNotFoundException{};
+class UnknownFieldName : public FieldNotFoundException{};
+class IncorrectFieldType : public FieldNotFoundException{};
 }
 }
 

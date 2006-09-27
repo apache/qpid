@@ -146,7 +146,6 @@ class Channel:
   def invoke(self, method, args, content = None):
     if self.closed:
       raise Closed(self.reason)
-
     frame = Frame(self.id, Method(method, *args))
     self.outgoing.put(frame)
 
@@ -181,7 +180,7 @@ class Channel:
 
   def write_content(self, klass, content, queue):
     size = content.size()
-    header = Frame(self.id, Header(klass, content.weight(), size))
+    header = Frame(self.id, Header(klass, content.weight(), size, **content.properties))
     queue.put(header)
     for child in content.children:
       self.write_content(klass, child, queue)
