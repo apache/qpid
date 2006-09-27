@@ -230,7 +230,7 @@ public class AMQProtocolSession implements ProtocolVersionList
         }
         if (msg.isAllBodyDataReceived())
         {
-            deliverMessageToAMQSession(channelId,  msg);
+            deliverMessageToAMQSession(channelId, msg);
         }
     }
 
@@ -260,8 +260,8 @@ public class AMQProtocolSession implements ProtocolVersionList
 
     public void writeFrame(AMQDataBlock frame, boolean wait)
     {
-        WriteFuture f =_minaProtocolSession.write(frame);
-        if(wait)
+        WriteFuture f = _minaProtocolSession.write(frame);
+        if (wait)
         {
             f.join();
         }
@@ -269,7 +269,7 @@ public class AMQProtocolSession implements ProtocolVersionList
 
     public void addSessionByChannel(int channelId, AMQSession session)
     {
-        if (channelId <=0)
+        if (channelId <= 0)
         {
             throw new IllegalArgumentException("Attempt to register a session with a channel id <= zero");
         }
@@ -283,7 +283,7 @@ public class AMQProtocolSession implements ProtocolVersionList
 
     public void removeSessionByChannel(int channelId)
     {
-        if (channelId <=0)
+        if (channelId <= 0)
         {
             throw new IllegalArgumentException("Attempt to deregister a session with a channel id <= zero");
         }
@@ -299,7 +299,7 @@ public class AMQProtocolSession implements ProtocolVersionList
     {
         _logger.debug("closeSession called on protocol session for session " + session.getChannelId());
         final int channelId = session.getChannelId();
-        if (channelId <=0)
+        if (channelId <= 0)
         {
             throw new IllegalArgumentException("Attempt to close a channel with id < 0");
         }

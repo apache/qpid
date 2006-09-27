@@ -17,13 +17,13 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -122,10 +122,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     void resubscribe() throws AMQException
     {
-         if (_destination != null)
-         {
-             declareDestination(_destination);
-         }
+        if (_destination != null)
+        {
+            declareDestination(_destination);
+        }
     }
 
     private void declareDestination(AMQDestination destination)
@@ -330,16 +330,17 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if (!(destination instanceof AMQDestination))
         {
             throw new JMSException("Unsupported destination class: " +
-                                   (destination != null?destination.getClass():null));
+                                   (destination != null ? destination.getClass() : null));
         }
         declareDestination((AMQDestination)destination);
     }
 
     protected void sendImpl(AMQDestination destination, AbstractJMSMessage message, int deliveryMode, int priority,
-                          long timeToLive, boolean mandatory, boolean immediate) throws JMSException
+                            long timeToLive, boolean mandatory, boolean immediate) throws JMSException
     {
         sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
     }
+
     /**
      * The caller of this method must hold the failover mutex.
      * @param destination
@@ -352,7 +353,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
      * @throws JMSException
      */
     protected void sendImpl(AMQDestination destination, AbstractJMSMessage message, int deliveryMode, int priority,
-                          long timeToLive, boolean mandatory, boolean immediate, boolean wait) throws JMSException
+                            long timeToLive, boolean mandatory, boolean immediate, boolean wait) throws JMSException
     {
         AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId, 0, destination.getExchangeName(),
                                                                 destination.getRoutingKey(), mandatory, immediate);
@@ -366,10 +367,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         //
         // Very nasty temporary hack for GRM-206. Will be altered ASAP.
         //
-        if(message instanceof JMSBytesMessage)
+        if (message instanceof JMSBytesMessage)
         {
             JMSBytesMessage msg = (JMSBytesMessage) message;
-            if(!msg.isReadable())
+            if (!msg.isReadable())
             {
                 msg.reset();
             }
@@ -442,7 +443,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         int dataLength = payload.remaining();
         final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
         int lastFrame = (dataLength % framePayloadMax) > 0 ? 1 : 0;
-        int frameCount = (int) (dataLength/framePayloadMax) + lastFrame;
+        int frameCount = (int) (dataLength / framePayloadMax) + lastFrame;
         final ContentBody[] bodies = new ContentBody[frameCount];
 
         if (frameCount == 1)

@@ -17,21 +17,20 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.AMQException;
-import org.apache.log4j.Logger;
-import org.apache.commons.configuration.Configuration;
 
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A simple message store that stores the messages in a threadsafe structure in memory.
- *
  */
 public class MemoryMessageStore implements MessageStore
 {
@@ -48,7 +47,7 @@ public class MemoryMessageStore implements MessageStore
     public void configure()
     {
         _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash table");
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(DEFAULT_HASHTABLE_CAPACITY);        
+        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
     public void configure(String base, Configuration config)
@@ -65,7 +64,7 @@ public class MemoryMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        if(_messageMap != null)
+        if (_messageMap != null)
         {
             _messageMap.clear();
             _messageMap = null;
