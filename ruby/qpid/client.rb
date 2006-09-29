@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-require "peer"
 require "thread"
-require "queue"
+require "qpid/peer"
+require "qpid/queue"
 
 module Qpid
 

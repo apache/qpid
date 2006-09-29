@@ -15,7 +15,7 @@
 #
 
 require "socket"
-require "codec"
+require "qpid/codec"
 
 include Codec
 
