@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-require "spec"
+require "qpid/spec"
 
 spec = Spec.load(File.new($*[0]))
 
