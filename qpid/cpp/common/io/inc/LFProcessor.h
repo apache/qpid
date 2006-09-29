@@ -23,7 +23,6 @@
 #include <vector>
 #include "APRMonitor.h"
 #include "APRThreadFactory.h"
-#include "IOSession.h"
 #include "Runnable.h"
 
 namespace qpid {
