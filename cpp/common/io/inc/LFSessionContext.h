@@ -28,7 +28,6 @@
 #include "APRMonitor.h"
 #include "APRSocket.h"
 #include "Buffer.h"
-#include "IOSession.h"
 #include "LFProcessor.h"
 #include "SessionContext.h"
 #include "SessionHandler.h"
@@ -37,7 +36,7 @@ namespace qpid {
 namespace io {
 
 
-    class LFSessionContext : public virtual SessionContext, public virtual IOSession
+    class LFSessionContext : public virtual SessionContext
     {
         const bool debug;
         APRSocket socket;
@@ -71,8 +70,8 @@ namespace io {
         ~LFSessionContext();
         virtual void send(qpid::framing::AMQFrame* frame);
         virtual void close();        
-        virtual void read();
-        virtual void write();
+        void read();
+        void write();
         void init(SessionHandler* handler);
         void startProcessing();
         void stopProcessing();
