@@ -14,11 +14,10 @@
 # limitations under the License.
 #
 
-require "rexml/document"
 require "set"
-require "fields"
-require "traverse"
-require "delegate"
+require "rexml/document"
+require "qpid/fields"
+require "qpid/traverse"
 
 module Spec
 
