@@ -15,9 +15,9 @@
 #
 
 require "thread"
-require "queue"
-require "connection"
-require "fields"
+require "qpid/queue"
+require "qpid/connection"
+require "qpid/fields"
 
 module Qpid
 
