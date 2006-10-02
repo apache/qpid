@@ -218,8 +218,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             }
             if ((_propertyFlags & (1 << 6)) > 0)
             {
-                EncodingUtils.writeUnsignedInteger(buffer, 0/*timestamp msb*/);
-                EncodingUtils.writeUnsignedInteger(buffer, _timestamp);
+                EncodingUtils.writeTimestamp(buffer, _timestamp);
             }
             if ((_propertyFlags & (1 << 5)) > 0)
             {
@@ -301,9 +300,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             }
             if ((_propertyFlags & (1 << 6)) > 0)
             {
-                // Discard msb from AMQ timestamp
-                buffer.getUnsignedInt();
-                _timestamp = buffer.getUnsignedInt();
+                _timestamp = EncodingUtils.readTimestamp(buffer);
             }
             if ((_propertyFlags & (1 << 5)) > 0)
             {
