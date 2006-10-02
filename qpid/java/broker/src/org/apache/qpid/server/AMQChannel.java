@@ -23,9 +23,6 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.exchange.MessageRouter;
-import org.apache.qpid.server.management.DefaultManagedObject;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -33,8 +30,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
 
-import javax.management.JMException;
-import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.util.Iterator;
@@ -45,16 +40,13 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-
-public class AMQChannel implements Managable
+public class AMQChannel
 {
     public static final int DEFAULT_PREFETCH = 5000;
 
     private static final Logger _log = Logger.getLogger(AMQChannel.class);
 
     private final int _channelId;
-
-    private final String _channelName;
 
     private boolean _transactional;
 
@@ -102,83 +94,6 @@ public class AMQChannel implements Managable
 
     private final TxnBuffer _txnBuffer;
 
-    private final AMQChannelMBean _managedObject;
-
-    public ManagedObject getManagedObject()
-    {
-        return _managedObject;
-    }
-
-    /**
-     * MBean interface for the implementation AMQChannelMBean
-     */
-    public interface AMQChannelMBeanMBean extends ManagedChannel
-    {
-
-    }
-
-    /**
-     * AMQChannelMBean.  It implements the management interface exposed for
-     * monitoring and managing the channel.
-     */
-    public final class AMQChannelMBean extends DefaultManagedObject implements AMQChannelMBeanMBean
-    {
-        public AMQChannelMBean()
-        {
-            super(ManagedChannel.class, ManagedChannel.TYPE);
-        }
-
-        public String getObjectInstanceName()
-        {
-            return _channelName;
-        }
-
-        public boolean isTransactional()
-        {
-            return _transactional;
-        }
-
-        public int getUnacknowledgedMessageCount()
-        {
-            return _unacknowledgedMessageMap.size();
-        }
-
-        public void commitTransactions() throws JMException
-        {
-            try
-            {
-                if (_transactional)
-                {
-                    _txnBuffer.commit();
-                }
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        public void rollbackTransactions() throws JMException
-        {
-            if (_transactional)
-            {
-                synchronized(_txnBuffer)
-                {
-                    try
-                    {
-                        _txnBuffer.rollback();
-                    }
-                    catch (AMQException ex)
-                    {
-                        throw new MBeanException(ex, ex.toString());
-                    }
-                }
-            }
-        }
-
-    } // End of MBean class
-
-
     public static class UnacknowledgedMessage
     {
         public final AMQMessage message;
@@ -206,14 +121,10 @@ public class AMQChannel implements Managable
             throws AMQException
     {
         _channelId = channelId;
-        _channelName = _channelId + "-" + this.hashCode();
         _prefetchCount = DEFAULT_PREFETCH;
         _messageStore = messageStore;
         _exchanges = exchanges;
         _txnBuffer = new TxnBuffer(_messageStore);
-
-        _managedObject = new AMQChannelMBean();
-        _managedObject.register();
     }
 
     public int getChannelId()
@@ -370,7 +281,6 @@ public class AMQChannel implements Managable
         }
         unsubscribeAllConsumers(session);
         requeue();
-        _managedObject.unregister();
     }
 
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
