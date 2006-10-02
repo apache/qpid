@@ -255,6 +255,12 @@ public class EncodingUtils
             writeUnsignedInteger(buffer, 0);
         }
     }
+    
+    public static void writeTimestamp(ByteBuffer buffer, long timestamp)
+    {
+        writeUnsignedInteger(buffer, 0/*timestamp msb*/);
+        writeUnsignedInteger(buffer, timestamp);
+    }
 
     public static boolean[] readBooleans(ByteBuffer buffer)
     {
@@ -345,6 +351,13 @@ public class EncodingUtils
             buffer.get(result);
             return result;
         }
+    }
+    
+    public static long readTimestamp(ByteBuffer buffer)
+    {
+        // Discard msb from AMQ timestamp
+        buffer.getUnsignedInt();
+        return buffer.getUnsignedInt();
     }
 
     // Will barf with a NPE on a null input. Not sure whether it should return null or
