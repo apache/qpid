@@ -26,9 +26,7 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.management.DefaultManagedObject;
-import org.apache.qpid.server.management.ManagedBroker;
-import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.*;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -48,10 +46,12 @@ import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 
-import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+import javax.management.MalformedObjectNameException;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -430,32 +430,33 @@ public class Main implements ProtocolVersionList
         }
     }
 
-    private void createAndRegisterBrokerMBean()
-        throws AMQException
+    private void createAndRegisterBrokerMBean() throws AMQException
     {
-        new AMQBrokerManager().register();
+        try
+        {
+            new AMQBrokerManager().register();
+        }
+        catch (NotCompliantMBeanException ex)
+        {
+            throw new AMQException("Exception occured in creating AMQBrokerManager MBean.");    
+        }
     }
 
-    /**
-     * MBean interface for the implementation AMQBrokerManager.
-     */
-    public interface AMQBrokerManagerMBean extends ManagedBroker
-    {
-
-    }
     /**
      * AMQPBrokerMBean implements the broker management interface and exposes the
      * Broker level management features like creating and deleting exchanges and queue.
      */
-    private final class AMQBrokerManager extends DefaultManagedObject
-                                         implements AMQBrokerManagerMBean
+    @MBeanDescription("This MBean exposes the broker level management features")
+    private final class AMQBrokerManager extends AMQManagedObject
+                                         implements ManagedBroker
     {
         private final QueueRegistry    _queueRegistry;
         private final ExchangeRegistry _exchangeRegistry;
         private final ExchangeFactory  _exchangeFactory;
         private final MessageStore     _messageStore;
 
-        protected AMQBrokerManager()
+        @MBeanConstructor("Creates the Broker Manager MBean")
+        protected AMQBrokerManager()  throws NotCompliantMBeanException
         {
             super(ManagedBroker.class, ManagedBroker.TYPE);
 

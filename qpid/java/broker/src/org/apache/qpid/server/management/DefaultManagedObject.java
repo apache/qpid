@@ -20,22 +20,27 @@ package org.apache.qpid.server.management;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import javax.management.ObjectName;
+import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+import javax.management.StandardMBean;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful
  * to extend this class rather than implementing ManagedObject from scratch.
  *
  */
-public abstract class DefaultManagedObject implements ManagedObject
+public abstract class DefaultManagedObject extends StandardMBean implements ManagedObject
 {
     private Class<?> _managementInterface;
 
     private String _typeName;
 
     protected DefaultManagedObject(Class<?> managementInterface, String typeName)
+        throws NotCompliantMBeanException
     {
+        super(managementInterface);
         _managementInterface = managementInterface;
         _typeName = typeName;
     }
@@ -50,13 +55,18 @@ public abstract class DefaultManagedObject implements ManagedObject
         return _managementInterface;
     }
 
+    public ManagedObject getParentObject()
+    {
+        return null;
+    }
+
     public void register() throws AMQException
     {
         try
         {
             ApplicationRegistry.getInstance().getManagedObjectRegistry().registerObject(this);
         }
-        catch (Exception e)
+        catch (JMException e)
         {
             throw new AMQException("Error registering managed object " + this + ": " + e, e);
         }
@@ -68,7 +78,7 @@ public abstract class DefaultManagedObject implements ManagedObject
         {
             ApplicationRegistry.getInstance().getManagedObjectRegistry().unregisterObject(this);
         }
-        catch (Exception e)
+        catch (JMException e)
         {
             throw new AMQException("Error unregistering managed object: " + this + ": " + e, e);
         }
@@ -87,15 +97,47 @@ public abstract class DefaultManagedObject implements ManagedObject
     public ObjectName getObjectName()
         throws MalformedObjectNameException
     {
-        String name = jmxEncode(new StringBuffer(getObjectInstanceName()), 0).toString();
+        String name = getObjectInstanceName();
         StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
-        objectName.append(":type=").append(getType());
-        objectName.append(",name=").append(name);
+
+        objectName.append(":type=");
+        objectName.append(getHierarchicalType(this));
+
+        objectName.append(",");
+        objectName.append(getHierarchicalName(this));
+        objectName.append("name=").append(name);
 
         return new ObjectName(objectName.toString());
     }
 
-    private static StringBuffer jmxEncode(StringBuffer jmxName, int attrPos)
+    private String getHierarchicalType(ManagedObject obj)
+    {
+        String parentType = null;
+        if (obj.getParentObject() != null)
+        {
+            parentType = getHierarchicalType(obj.getParentObject()).toString();
+            return parentType + "." + obj.getType();
+        }
+        else
+            return obj.getType();
+    }
+
+    private String getHierarchicalName(ManagedObject obj)
+    {
+        String parentName = null;
+        if (obj.getParentObject() != null)
+        {
+            parentName = obj.getParentObject().getType() + "=" +
+                         obj.getParentObject().getObjectInstanceName() + ","+
+                         getHierarchicalName(obj.getParentObject());
+
+            return parentName;
+        }
+        else
+            return "";
+    }
+
+    protected static StringBuffer jmxEncode(StringBuffer jmxName, int attrPos)
     {
         for (int i = attrPos; i < jmxName.length(); i++)
         {

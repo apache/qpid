@@ -21,17 +21,20 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
-import javax.management.openmbean.*;
-import javax.management.MBeanNotificationInfo;
-import javax.management.AttributeChangeNotification;
-import javax.management.Notification;
 import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.MBeanNotificationInfo;
+import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
+import javax.management.monitor.MonitorNotification;
+import javax.management.openmbean.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +100,7 @@ public class AMQQueue implements Managable
     /**
      * max allowed number of messages on a queue.
      */
-    private long _maxAllowedMessageCount = 0;
+    private Integer _maxAllowedMessageCount = 0;
 
     /**
      * max allowed size in bytes for all the messages combined together in a queue.
@@ -110,19 +113,15 @@ public class AMQQueue implements Managable
     private long _totalMessagesReceived = 0;
 
     /**
-     * MBean interface for the implementation AMQQueueMBean.
-     * This is required for making the implementation a compliant MBean.
-     */
-    public interface AMQQueueMBeanMBean extends ManagedQueue
-    {
-
-    }
-    /**
      * MBean class for AMQQueue. It implements all the management features exposed
      * for an AMQQueue.
      */
-    private final class AMQQueueMBean extends AMQManagedObject implements AMQQueueMBeanMBean
+    @MBeanDescription("Management Interface for AMQQueue")
+    private final class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     {
+        private String _queueName = null;
+        //private MBeanInfo _mbeanInfo;
+
         // AMQ message attribute names exposed.
         private String[] _msgAttributeNames = { "MessageId",
                                                 "Redelivered",
@@ -149,7 +148,8 @@ public class AMQQueue implements Managable
         private CompositeType _contentBodyType = null;
         private TabularType   _contentBodyListType = null;
 
-        public AMQQueueMBean()
+        @MBeanConstructor("Creates an MBean exposing an AMQQueue.")
+        public AMQQueueMBean() throws NotCompliantMBeanException
         {
             super(ManagedQueue.class, ManagedQueue.TYPE);
             init();
@@ -157,6 +157,7 @@ public class AMQQueue implements Managable
 
         private void init()
         {
+            _queueName = jmxEncode(new StringBuffer(_name), 0).toString();
             try
             {
                 _contentType[0]  = SimpleType.INTEGER;
@@ -195,7 +196,7 @@ public class AMQQueue implements Managable
 
         public String getObjectInstanceName()
         {
-            return _name;
+            return _queueName;
         }
 
         public String getName()
@@ -218,52 +219,52 @@ public class AMQQueue implements Managable
             return _autoDelete;
         }
 
-        public int getMessageCount()
+        public Integer getMessageCount()
         {
             return _deliveryMgr.getQueueMessageCount();
         }
 
-        public long getMaximumMessageSize()
+        public Long getMaximumMessageSize()
         {
             return _maxAllowedMessageSize;
         }
 
-        public void setMaximumMessageSize(long value)
+        public void setMaximumMessageSize(Long value)
         {
             _maxAllowedMessageSize = value;
         }
 
-        public int getConsumerCount()
+        public Integer getConsumerCount()
         {
             return _subscribers.size();
         }
 
-        public int getActiveConsumerCount()
+        public Integer getActiveConsumerCount()
         {
-            return _subscribers.getWeight();
+             return _subscribers.getWeight();
         }
 
-        public long getReceivedMessageCount()
+        public Long getReceivedMessageCount()
         {
             return _totalMessagesReceived;
         }
 
-        public long getMaximumMessageCount()
+        public Integer getMaximumMessageCount()
         {
             return _maxAllowedMessageCount;
         }
 
-        public void setMaximumMessageCount( long value)
+        public void setMaximumMessageCount(Integer value)
         {
             _maxAllowedMessageCount = value;
         }
 
-        public long getQueueDepth()
+        public Long getQueueDepth()
         {
             return _queueDepth;
         }
 
-        public void setQueueDepth(long value)
+        public void setQueueDepth(Long value)
         {
            _queueDepth = value;
         }
@@ -275,11 +276,11 @@ public class AMQQueue implements Managable
             if (getMessageCount() >= getMaximumMessageCount())
             {
                 Notification n = new Notification(
-                        "Warning",
+                        MonitorNotification.THRESHOLD_VALUE_EXCEEDED,
                         this,
                         ++_notificationSequenceNumber,
                         System.currentTimeMillis(),
-                        "Queue has reached its size limit and is now full.");
+                        "MessageCount = " + getMessageCount() + ", Queue has reached its size limit and is now full.");
 
                 _broadcaster.sendNotification(n);
             }
@@ -394,12 +395,13 @@ public class AMQQueue implements Managable
          * Creates all the notifications this MBean can send.
          * @return Notifications broadcasted by this MBean.
          */
+        @Override
         public MBeanNotificationInfo[] getNotificationInfo()
         {
             String[] notificationTypes = new String[]
-                                {AttributeChangeNotification.ATTRIBUTE_CHANGE};
-            String name = AttributeChangeNotification.class.getName();
-            String description = "An attribute of this MBean has changed";
+                                {MonitorNotification.THRESHOLD_VALUE_EXCEEDED};
+            String name = MonitorNotification.class.getName();
+            String description = "An attribute of this MBean has reached threshold value";
             MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes,
                                                                     name,
                                                                     description);
@@ -480,12 +482,23 @@ public class AMQQueue implements Managable
         _autoDelete = autoDelete;
         _queueRegistry = queueRegistry;
         _asyncDelivery = asyncDelivery;
-        _managedObject = new AMQQueueMBean();
+        _managedObject = createMBean();
         _managedObject.register();
-
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
         _deliveryMgr = new DeliveryManager(_subscribers, this);
+    }
+
+    private AMQQueueMBean createMBean() throws AMQException
+    {
+        try
+        {
+            return new AMQQueueMBean();
+        }
+        catch(NotCompliantMBeanException ex)
+        {
+            throw new AMQException("AMQQueue MBean creation has failed.", ex);
+        }
     }
 
     public String getName()
