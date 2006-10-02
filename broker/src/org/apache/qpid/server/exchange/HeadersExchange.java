@@ -22,9 +22,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.MBeanConstructor;
 
 import javax.management.openmbean.*;
 import javax.management.ServiceNotFoundException;
+import javax.management.NotCompliantMBeanException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -68,6 +71,7 @@ public class HeadersExchange extends AbstractExchange
      * HeadersExchangeMBean class implements the management interface for the
      * Header Exchanges.
      */
+    @MBeanDescription("Management Bean for Headers Exchange")
     private final class HeadersExchangeMBean extends ExchangeMBean
     {
         private String[]   _bindingItemNames = {"Queue", "HeaderBinding"};
@@ -79,7 +83,8 @@ public class HeadersExchange extends AbstractExchange
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
-        public HeadersExchangeMBean()
+        @MBeanConstructor("Creates an MBean for AMQ Headers exchange")
+        public HeadersExchangeMBean()  throws NotCompliantMBeanException
         {
             super();
             init();
@@ -197,9 +202,17 @@ public class HeadersExchange extends AbstractExchange
         return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
     }
 
-    protected ExchangeMBean createMBean()
+    protected ExchangeMBean createMBean() throws AMQException
     {
-        return new HeadersExchangeMBean();
+        try
+        {
+            return new HeadersExchangeMBean();
+        }
+        catch (NotCompliantMBeanException ex)
+        {
+            _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
+            throw new AMQException("Exception occured in creating the HeadersExchangeMBean", ex);
+        }
     }
 
     private static class Registration

@@ -17,8 +17,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import javax.management.openmbean.TabularData;
+import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.server.management.MBeanOperation;
+import org.apache.qpid.server.management.MBeanOperationParameter;
+
 import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
+import javax.management.openmbean.TabularData;
 import java.io.IOException;
 
 /**
@@ -36,6 +41,7 @@ public interface ManagedQueue
      * @return the name of the managedQueue.
      * @throws IOException
      */
+    @MBeanAttribute(name="Name", description = "Name of the " + TYPE)
     String getName() throws IOException;
 
     /**
@@ -43,6 +49,7 @@ public interface ManagedQueue
      * @return true if this ManagedQueue is a durable queue.
      * @throws IOException
      */
+    @MBeanAttribute(name="Durable", description = "true if the AMQQueue is durable")
     boolean isDurable() throws IOException;
 
     /**
@@ -50,6 +57,7 @@ public interface ManagedQueue
      * @return the owner's name.
      * @throws IOException
      */
+    @MBeanAttribute(name="Owner", description = "Owner")
     String getOwner() throws IOException;
 
     /**
@@ -57,15 +65,17 @@ public interface ManagedQueue
      * @return  true if the ManagedQueue is set to AutoDelete.
      * @throws IOException
      */
+    @MBeanAttribute(name="AutoDelete", description = "true if the AMQQueue is AutoDelete")
     boolean isAutoDelete() throws IOException;
 
     /**
-     * Gets the total number of messages on the queue, which are yet to be
-     * delivered to the consumer(s).
+     * Total number of messages on the queue, which are yet to be delivered to the consumer(s).
      * @return number of undelivered message in the Queue.
      * @throws IOException
      */
-    int getMessageCount() throws IOException;
+    @MBeanAttribute(name="MessageCount",
+                         description = "Total number of undelivered messages on the queue")
+    Integer getMessageCount() throws IOException;
 
     /**
      * Returns the maximum size of a message (in bytes) allowed to be accepted by the
@@ -76,7 +86,7 @@ public interface ManagedQueue
      *         ManagedQueue.
      * @throws IOException
      */
-    long getMaximumMessageSize() throws IOException;
+    Long getMaximumMessageSize() throws IOException;
 
     /**
      * Sets the maximum size of the message (in bytes) that is allowed to be
@@ -84,28 +94,34 @@ public interface ManagedQueue
      * @param bytes  maximum size of message.
      * @throws IOException
      */
-    void setMaximumMessageSize(long bytes) throws IOException;
+    @MBeanAttribute(name="MaximumMessageSize",
+                         description="Maximum size of a message in bytes allowed for this Queue")
+    void setMaximumMessageSize(Long bytes) throws IOException;
 
     /**
      * Returns the total number of subscribers to the queue.
      * @return the number of subscribers.
      * @throws IOException
      */
-    int getConsumerCount() throws IOException;
+    @MBeanAttribute(name="ConsumerCount", description="The total number of subscribers to the queue")
+    Integer getConsumerCount() throws IOException;
 
     /**
      *  Returns the total number of active subscribers to the queue.
      * @return the number of active subscribers
      * @throws IOException
      */
-    int getActiveConsumerCount() throws IOException;
+    @MBeanAttribute(name="ActiveConsumerCount", description="The total number of active subscribers to the queue")
+    Integer getActiveConsumerCount() throws IOException;
 
     /**
      * Tells the total number of messages receieved by the queue since startup.
      * @return total number of messages received.
      * @throws IOException
      */
-    long getReceivedMessageCount() throws IOException;
+    @MBeanAttribute(name="ReceivedMessageCount",
+                         description="The total number of messages receieved by the queue since startup")
+    Long getReceivedMessageCount() throws IOException;
 
     /**
      * Tells the maximum number of messages that can be stored in the queue.
@@ -114,14 +130,16 @@ public interface ManagedQueue
      * @return maximum muber of message allowed to be stored in the queue.
      * @throws IOException
      */
-    long getMaximumMessageCount() throws IOException;
+    Integer getMaximumMessageCount() throws IOException;
 
     /**
      * Sets the maximum number of messages allowed to be stored in the queue.
      * @param value  the maximum number of messages allowed to be stored in the queue.
      * @throws IOException
      */
-    void setMaximumMessageCount(long value) throws IOException;
+    @MBeanAttribute(name="MaximumMessageCount",
+                         description="The maximum number of messages allowed to be stored in the queue")
+    void setMaximumMessageCount(Integer value) throws IOException;
 
     /**
      * Tells the maximum size of all the messages combined together,
@@ -131,7 +149,7 @@ public interface ManagedQueue
      * @return maximum size of the all the messages allowed for the queue.
      * @throws IOException
      */
-    long getQueueDepth() throws IOException;
+    Long getQueueDepth() throws IOException;
 
     /**
      * Sets the maximum size of all the messages together, that can be stored
@@ -139,7 +157,9 @@ public interface ManagedQueue
      * @param value
      * @throws IOException
      */
-    void setQueueDepth(long value) throws IOException;
+    @MBeanAttribute(name="QueueDepth",
+                         description="The size of all the messages together, that can be stored in the queue")
+    void setQueueDepth(Long value) throws IOException;
 
 
 
@@ -155,7 +175,10 @@ public interface ManagedQueue
      * @throws IOException
      * @throws JMException
      */
-    TabularData viewMessages(int fromIndex, int toIndex)
+    @MBeanOperation(name="viewMessages",
+                         description="shows messages in this queue with given indexes. eg. from index 1 - 100")
+    TabularData viewMessages(@MBeanOperationParameter(name="from index", description="from index")int fromIndex,
+                             @MBeanOperationParameter(name="to index", description="to index")int toIndex)
         throws IOException, JMException;
 
     /**
@@ -163,15 +186,19 @@ public interface ManagedQueue
      * @throws IOException
      * @throws JMException
      */
-    void deleteMessageFromTop()
-         throws IOException, JMException;
+    @MBeanOperation(name="deleteMessageFromTop",
+                         description="Deletes the first message from top",
+                         impact= MBeanOperationInfo.ACTION)
+    void deleteMessageFromTop() throws IOException, JMException;
 
     /**
-     * Clears the queue by deleting all the messages from the queue.
+     * Clears the queue by deleting all the undelivered messages from the queue.
      * @throws IOException
      * @throws JMException
      */
-    void clearQueue()
-        throws IOException, JMException;
+    @MBeanOperation(name="clearQueue",
+                         description="Clears the queue by deleting all the undelivered messages from the queue",
+                         impact= MBeanOperationInfo.ACTION)
+    void clearQueue() throws IOException, JMException;
 
 }

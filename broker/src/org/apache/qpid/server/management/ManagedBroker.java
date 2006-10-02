@@ -19,6 +19,7 @@
 package org.apache.qpid.server.management;
 
 import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
 import java.io.IOException;
 
 /**
@@ -41,7 +42,12 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    void createNewExchange(String name, String type, boolean durable, boolean passive)
+    @MBeanOperation(name="createNewExchange", description="Creates a new Exchange",
+                         impact= MBeanOperationInfo.ACTION)
+    void createNewExchange(@MBeanOperationParameter(name="name", description="Name of the new exchange")String name,
+                           @MBeanOperationParameter(name="excahnge type", description="Type of the exchange")String type,
+                           @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable,
+                           @MBeanOperationParameter(name="passive", description="true of the Exchange should be passive")boolean passive)
         throws IOException, JMException;
 
     /**
@@ -51,7 +57,10 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    void unregisterExchange(String exchange)
+    @MBeanOperation(name="unregisterExchange",
+                         description="Unregisters all the related channels and queuebindings of this exchange",
+                         impact= MBeanOperationInfo.ACTION)
+    void unregisterExchange(@MBeanOperationParameter(name="exchange name", description="Name of the exchange")String exchange)
         throws IOException, JMException;
 
     /**
@@ -63,7 +72,12 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    void createQueue(String queueName, boolean durable, String owner, boolean autoDelete)
+    @MBeanOperation(name="createQueue", description="Create a new Queue on the Broker server",
+                         impact= MBeanOperationInfo.ACTION)
+    void createQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
+                     @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable,
+                     @MBeanOperationParameter(name="owner", description="Owner name")String owner,
+                     @MBeanOperationParameter(name="autoDelete", description="true if the queue should be auto delete") boolean autoDelete)
         throws IOException, JMException;
 
     /**
@@ -73,6 +87,9 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    void deleteQueue(String queueName)
+    @MBeanOperation(name="deleteQueue",
+                         description="Unregisters the Queue bindings, removes the subscriptions and deletes the queue",
+                         impact= MBeanOperationInfo.ACTION)
+    void deleteQueue(@MBeanOperationParameter(name="queue name", description="Name of the queue")String queueName)
         throws IOException, JMException;
 }

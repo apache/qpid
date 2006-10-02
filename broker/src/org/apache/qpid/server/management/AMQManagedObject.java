@@ -18,6 +18,9 @@
 package org.apache.qpid.server.management;
 
 import javax.management.ListenerNotFoundException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanNotificationInfo;
+import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationFilter;
@@ -42,11 +45,32 @@ public abstract class AMQManagedObject extends DefaultManagedObject
      */
     protected long _notificationSequenceNumber = 0;
 
+    protected MBeanInfo _mbeanInfo;
+
     protected AMQManagedObject(Class<?> managementInterface, String typeName)
+        throws NotCompliantMBeanException
     {
-         super(managementInterface, typeName);
+        super(managementInterface, typeName);
+        buildMBeanInfo();
+    }
+
+    @Override
+    public MBeanInfo getMBeanInfo()
+    {
+        return _mbeanInfo;
     }
     
+    private void buildMBeanInfo() throws NotCompliantMBeanException
+    {
+        _mbeanInfo = new MBeanInfo(this.getClass().getName(),
+                      MBeanIntrospector.getMBeanDescription(this.getClass()),
+                      MBeanIntrospector.getMBeanAttributesInfo(getManagementInterface()),
+                      MBeanIntrospector.getMBeanConstructorsInfo(this.getClass()),
+                      MBeanIntrospector.getMBeanOperationsInfo(getManagementInterface()),
+                      this.getNotificationInfo());
+    }
+
+
 
     // notification broadcaster implementation
 
@@ -62,4 +86,9 @@ public abstract class AMQManagedObject extends DefaultManagedObject
     {
         _broadcaster.removeNotificationListener(listener);
     }
+
+    public MBeanNotificationInfo[] getNotificationInfo()
+    {
+        return null;
+    } 
 }

@@ -21,15 +21,17 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
 import javax.management.openmbean.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +47,7 @@ public class DestNameExchange extends AbstractExchange
     /**
      * MBean class implementing the management interfaces.
      */
+    @MBeanDescription("Management Bean for Direct Exchange")
     private final class DestNameExchangeMBean extends ExchangeMBean
     {
         private String[]   _bindingItemNames = {"BindingKey", "QueueNames"};
@@ -56,7 +59,8 @@ public class DestNameExchange extends AbstractExchange
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
-        public DestNameExchangeMBean()
+        @MBeanConstructor("Creates an MBean for AMQ direct exchange")
+        public DestNameExchangeMBean()  throws NotCompliantMBeanException
         {
             super();
             init();
@@ -142,9 +146,17 @@ public class DestNameExchange extends AbstractExchange
     }// End of MBean class
 
 
-    protected ExchangeMBean createMBean()
+    protected ExchangeMBean createMBean() throws AMQException
     {
-        return new DestNameExchangeMBean();
+        try
+        {
+            return new DestNameExchangeMBean();
+        }
+        catch (NotCompliantMBeanException ex)
+        {
+            _logger.error("Exception occured in creating the DestNameExchenge", ex);
+            throw new AMQException("Exception occured in creating the DestNameExchenge", ex);
+        }
     }
 
     public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
