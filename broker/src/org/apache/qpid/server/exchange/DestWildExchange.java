@@ -24,10 +24,13 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.MBeanConstructor;
 
 import javax.management.openmbean.*;
 import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,7 @@ public class DestWildExchange extends AbstractExchange
      *  DestWildExchangeMBean class implements the management interface for the
      *  Topic exchanges.
      */
+    @MBeanDescription("Management Bean for Topic Exchange")
     private final class DestWildExchangeMBean extends ExchangeMBean
     {
         private String[]   _bindingItemNames = {"BindingKey", "QueueNames"};
@@ -55,7 +59,8 @@ public class DestWildExchange extends AbstractExchange
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
-        public DestWildExchangeMBean()
+        @MBeanConstructor("Creates an MBean for AMQ topic exchange")
+        public DestWildExchangeMBean()  throws NotCompliantMBeanException
         {
             super();
             init();
@@ -203,8 +208,16 @@ public class DestWildExchange extends AbstractExchange
         }
     }
 
-    protected ExchangeMBean createMBean()
+    protected ExchangeMBean createMBean()  throws AMQException
     {
-        return new DestWildExchangeMBean();
+        try
+        {
+            return new DestWildExchangeMBean();
+        }
+        catch (NotCompliantMBeanException ex)
+        {
+            _logger.error("Exception occured in creating the DestWildExchenge", ex);
+            throw new AMQException("Exception occured in creating the DestWildExchenge", ex);
+        }
     }
 }

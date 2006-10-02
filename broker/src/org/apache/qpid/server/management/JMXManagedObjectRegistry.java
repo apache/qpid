@@ -21,8 +21,6 @@ import org.apache.log4j.Logger;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
-import javax.management.StandardMBean;
 import java.lang.management.ManagementFactory;
 
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
@@ -40,22 +38,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     public void registerObject(ManagedObject managedObject) throws JMException
     {
-        try
-        {
-             _mbeanServer.registerMBean(managedObject, managedObject.getObjectName());
-        }
-        catch(NotCompliantMBeanException ex)
-        {
-        // The following is a hack due to a silly change to StandardMBean in JDK 1.6
-        // They have added in generics to get compile time safety which reduces the
-        // flexibility
-            Object o = managedObject;
-            Class<Object> clazz = (Class<Object>) managedObject.getManagementInterface();
-            StandardMBean mbean = new StandardMBean(o, clazz);
-
-            _mbeanServer.registerMBean(mbean, managedObject.getObjectName());
-        }
-
+         _mbeanServer.registerMBean(managedObject, managedObject.getObjectName());
     }
 
     public void unregisterObject(ManagedObject managedObject) throws JMException
