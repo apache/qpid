@@ -18,9 +18,11 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.management.DefaultManagedObject;
+import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
+
+import javax.management.NotCompliantMBeanException;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
@@ -42,9 +44,9 @@ public abstract class AbstractExchange implements Exchange, Managable
      * management intrerface for exchanges. Any implementaion of an
      * Exchange MBean should extend this class.
      */
-    protected abstract class ExchangeMBean extends DefaultManagedObject implements ManagedExchange
+    protected abstract class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     {
-        public ExchangeMBean()
+        public ExchangeMBean() throws NotCompliantMBeanException
         {
             super(ManagedExchange.class, ManagedExchange.TYPE);
         }
@@ -59,7 +61,7 @@ public abstract class AbstractExchange implements Exchange, Managable
             return _name;
         }
 
-        public int getTicketNo()
+        public Integer getTicketNo()
         {
             return _ticket;
         }
@@ -86,7 +88,7 @@ public abstract class AbstractExchange implements Exchange, Managable
      * called during initialisation (template method pattern).
      * @return the MBean
      */
-    protected abstract ExchangeMBean createMBean();
+    protected abstract ExchangeMBean createMBean() throws AMQException;
 
     public void initialise(String name, boolean durable, int ticket, boolean autoDelete) throws AMQException
     {

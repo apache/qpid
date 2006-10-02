@@ -18,11 +18,15 @@
 
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.server.management.MBeanOperation;
 
 import javax.management.openmbean.TabularData;
-import javax.management.openmbean.OpenDataException;
+import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
 import java.util.Date;
+import java.io.IOException;
 
 /**
  * The management interface exposed to allow management of Connections.
@@ -34,28 +38,46 @@ public interface ManagedConnection
     static final String TYPE = "Connection";
 
     /**
+     * channel details of all the channels opened for this connection.
+     * @return general channel details
+     * @throws IOException
+     * @throws JMException
+     */
+    @MBeanAttribute(name="Channels",
+                         description="channel details of all the channels opened for this connection")
+    TabularData getChannels() throws IOException, JMException;
+
+    /**
      * Tells the last time, the IO operation was done.
      * @return last IO time.
      */
+    @MBeanAttribute(name="LastIOTime",
+                         description="The last time, the IO operation was done")
     Date getLastIoTime();
 
     /**
      * Tells the remote address of this connection.
      * @return  remote address
      */
+    @MBeanAttribute(name="RemoteAddress",
+                         description="The remote address of this connection")
     String getRemoteAddress();
 
     /**
      * Tells the total number of bytes written till now.
      * @return number of bytes written.
      */
-    long getWrittenBytes();
+    @MBeanAttribute(name="WrittenBytes",
+                         description="The total number of bytes written till now")
+    Long getWrittenBytes();
 
     /**
      * Tells the total number of bytes read till now.
      * @return number of bytes read.
      */
-    long getReadBytes();
+    @MBeanAttribute(name="ReadBytes",
+                         description="The total number of bytes read till now")
+    Long getReadBytes();
 
     /**
      * Tells the maximum number of channels that can be opened using
@@ -63,30 +85,54 @@ public interface ManagedConnection
      * taking required action is there are more channels being created.
      * @return maximum number of channels allowed to be created.
      */
-    long getMaximumNumberOfAllowedChannels();
+    @MBeanAttribute(name="MaximumNumberOfAllowedChannels",
+                         description="The maximum number of channels that can be opened using this connection")
+    Long getMaximumNumberOfAllowedChannels();
 
     /**
      * Sets the maximum number of channels allowed to be created using
      * this connection.
      * @param value
      */
-    void setMaximumNumberOfAllowedChannels(long value);
+    void setMaximumNumberOfAllowedChannels(Long value);
 
     //********** Operations *****************//
 
     /**
-     * Returns channel details of all the channels opened for this connection.
-     * @return  channel details.
+     * Closes all the related channels and unregisters this connection from managed objects.
      */
-    TabularData viewChannels() throws OpenDataException;
-
-    /**
-     * Closes all the channels and unregisters this connection from managed objects.
-     */
+    @MBeanOperation(name="closeConnection",
+                         description="Closes this connection and all related channels",
+                         impact= MBeanOperationInfo.ACTION)
     void closeConnection() throws Exception;
 
     /**
      * Unsubscribes the consumers and unregisters the channel from managed objects.
      */
-    void closeChannel(int channelId) throws Exception;
+    @MBeanOperation(name="closeChannel",
+                         description="Closes the channel with given channeld and" +
+                                     "connected consumers will be unsubscribed",
+                         impact= MBeanOperationInfo.ACTION)
+    void closeChannel(@MBeanOperationParameter(name="channel Id", description="channel Id")int channelId)
+        throws Exception;
+
+    /**
+     * Commits the transactions if the channel is transactional.
+     * @param channelId
+     * @throws JMException
+     */
+    @MBeanOperation(name="commitTransaction",
+                         description="Commits the transactions for given channelID, if the channel is transactional",
+                         impact= MBeanOperationInfo.ACTION)
+    void commitTransactions(@MBeanOperationParameter(name="channel Id", description="channel Id")int channelId) throws JMException;
+
+    /**
+     * Rollsback the transactions if the channel is transactional.
+     * @param channelId
+     * @throws JMException
+     */
+    @MBeanOperation(name="rollbackTransactions",
+                         description="Rollsback the transactions for given channelId, if the channel is transactional",
+                         impact= MBeanOperationInfo.ACTION)
+    void rollbackTransactions(@MBeanOperationParameter(name="channel Id", description="channel Id")int channelId) throws JMException;
 }

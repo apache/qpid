@@ -40,6 +40,8 @@ public interface ManagedObject
 
     Class<?> getManagementInterface();
 
+    ManagedObject getParentObject();
+
     void register() throws AMQException;
 
     void unregister() throws AMQException;
