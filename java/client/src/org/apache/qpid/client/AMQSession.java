@@ -220,6 +220,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _channelId = channelId;
         _messageFactoryRegistry = messageFactoryRegistry;
         _defaultPrefetch = defaultPrefetch;
+        if (_acknowledgeMode == NO_ACKNOWLEDGE)
+        {
         _queue = new FlowControllingBlockingQueue(_defaultPrefetch,
             new FlowControllingBlockingQueue.ThresholdListener()
             {
@@ -241,6 +243,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     }
                 }
             });
+        }
+        else
+        {
+             _queue = new FlowControllingBlockingQueue(_defaultPrefetch,null);
+        }
     }
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode)

@@ -63,11 +63,14 @@ public class FlowControllingBlockingQueue
     public Object take() throws InterruptedException
     {
         Object o = _queue.take();
-        synchronized (_listener)
+        if (_listener != null)
         {
-            if (--_count == (_flowControlThreshold - 1))
+            synchronized(_listener)
             {
-                _listener.underThreshold(_count);
+                if (--_count == (_flowControlThreshold - 1))
+                {
+                    _listener.underThreshold(_count);
+                }
             }
         }
         return o;
@@ -76,12 +79,16 @@ public class FlowControllingBlockingQueue
     public void add(Object o)
     {
         _queue.add(o);
-        synchronized (_listener)
+        if (_listener != null)
         {
-            if (++_count == _flowControlThreshold)
+            synchronized(_listener)
             {
-                _listener.aboveThreshold(_count);
+                if (++_count == _flowControlThreshold)
+                {
+                    _listener.aboveThreshold(_count);
+                }
             }
         }
     }
 }
+
