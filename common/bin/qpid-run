@@ -28,6 +28,10 @@ die() {
   exit 1
 }
 
+if [ -z $AMQJ_LOGGING_LEVEL ]; then
+    export AMQJ_LOGGING_LEVEL=info
+fi
+
 if [ -z "$QPID_HOME" ]; then
   die "QPID_HOME must be set"
 fi
@@ -171,6 +175,6 @@ if $cygwin; then
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $JAVA_MEM -DQPID_HOME=$QPID_HOME $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $JAVA_MEM -Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH
