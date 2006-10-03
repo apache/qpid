@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-qpid-run org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory  amqp://guest:guest@clientid/testpath?brokerlist=\'tcp://10.0.0.1\' amq.VMConnectionFactory
+qpid-run org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory  amqp://guest:guest@clientid/testpath?brokerlist=\'tcp://localhost\' amq.ConnectionFactory
 qpid-run org.apache.qpid.IBMPerfTest.JNDIBindConnectionFactory  amqp://guest:guest@clientid/testpath?brokerlist=\'vm://:1\' amq.VMConnectionFactory
 qpid-run org.apache.qpid.IBMPerfTest.JNDIBindQueue amq.Queue   direct://amq.direct//IBMPerfQueue1
 qpid-run org.apache.qpid.IBMPerfTest.JNDIBindTopic amq.Topic1  topic://amq.topic/IBMPerfTopic1/
