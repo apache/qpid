@@ -45,7 +45,7 @@ public class TxnBuffer
     {
         if (_persistentMessageRecevied)
         {
-            _log.info("Begin Transaction.");
+            _log.debug("Begin Transaction.");
             _store.beginTran();
         }
         boolean failed = true;
@@ -64,12 +64,12 @@ public class TxnBuffer
             {
                 if (failed)
                 {
-                    _log.info("Transaction Failed");
+                    _log.debug("Transaction Failed");
                     _store.abortTran();
                 }
                 else
                 {
-                    _log.info("Transaction Succeeded");
+                    _log.debug("Transaction Succeeded");
                     _store.commitTran();
                 }
             }
