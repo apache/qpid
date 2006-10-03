@@ -20,6 +20,7 @@ package org.apache.qpid.IBMPerfTest;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.ConnectionFactory;
 import javax.naming.Context;
@@ -163,7 +164,11 @@ public class JNDIBindConnectionFactory
 
                 System.out.println("JNDI FS Context:" + provider);
             }
-            catch (Exception amqe)
+            catch (NamingException amqe)
+            {
+
+            }
+            catch (URLSyntaxException e)
             {
 
             }
