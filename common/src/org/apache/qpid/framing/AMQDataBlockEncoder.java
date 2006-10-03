@@ -20,8 +20,8 @@ package org.apache.qpid.framing;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
+import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +48,7 @@ public class AMQDataBlockEncoder implements MessageEncoder
 
         if (_logger.isDebugEnabled())
         {
-        	_logger.debug("Encoded frame byte-buffer is '" + EncodingUtils.convertToHexString(buffer) + "'");
+            _logger.debug("Encoded frame byte-buffer is '" + EncodingUtils.convertToHexString(buffer) + "'");
         }
 
         buffer.flip();
