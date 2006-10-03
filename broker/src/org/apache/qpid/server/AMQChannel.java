@@ -199,6 +199,12 @@ public class AMQChannel
     {
         if (_transactional)
         {
+            //don't create a transaction unless needed
+            if(_currentMessage.isPersistent())
+            {
+                _txnBuffer.setPersistentMessageRecevied();
+            }
+
             //don't route this until commit
             _txnBuffer.enlist(new Publish(_currentMessage));
             _currentMessage = null;
@@ -603,6 +609,11 @@ public class AMQChannel
         Publish(AMQMessage msg)
         {
             _msg = msg;
+        }
+
+        public boolean isPersistent() throws AMQException
+        {
+            return _msg.isPersistent();
         }
 
         public void commit() throws AMQException
