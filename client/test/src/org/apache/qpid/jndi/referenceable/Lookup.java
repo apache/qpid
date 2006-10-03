@@ -17,22 +17,25 @@
  */
 package org.apache.qpid.jndi.referenceable;
 
-import javax.naming.*;
 import javax.jms.Connection;
 import javax.jms.JMSException;
-
-import java.util.Properties;
-import java.io.InputStream;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Looksup a reference from a JNDI source.
  * Given a properties file with the JNDI information and a binding string.
  */
-class Lookup
+public class Lookup
 {
     private static final String USAGE = "USAGE: java lookup <JNDI Properties file> -b <binding>";
+    private Properties _properties;
+    private Object _object;
 
     public Lookup(String propertiesFile, String bindingValue) throws NamingException
     {
@@ -56,33 +59,33 @@ class Lookup
             Properties properties = new Properties();
             properties.load(inputStream);
 
-            // Create the initial context
-            Context ctx = new InitialContext(properties);
-
-            // Perform the binds
-            Object obj = ctx.lookup(bindingValue);
-
-            if (obj instanceof Connection)
-            {
-                try
-                {
-                    ((Connection) obj).close();
-                }
-                catch (JMSException jmse)
-                {
-                    ;
-                }
-            }
-
-            System.out.println(bindingValue + " bound to " + obj);
-
-            // Close the context when we're done
-            ctx.close();
+            _properties = properties;
+            lookup(bindingValue);
         }
         catch (IOException ioe)
         {
             System.out.println("Unable to access properties file:" + propertiesFile + " Due to:" + ioe);
         }
+    }
+
+    public Object lookup(String bindingValue) throws NamingException
+    {
+
+        // Create the initial context
+        Context ctx = new InitialContext(_properties);
+
+        // Perform the binds
+        _object = ctx.lookup(bindingValue);
+
+        // Close the context when we're done
+        ctx.close();
+
+        return getObject();
+    }
+
+    public Object getObject()
+    {
+        return _object;
     }
 
     private static String parse(String[] args, int index, String what)
@@ -159,7 +162,21 @@ class Lookup
                     System.out.print("Looking up:" + binding);
                     try
                     {
-                        new Lookup(args[0], binding);
+                        Lookup l = new Lookup(args[0], binding);
+
+                        Object object = l.getObject();
+
+                        if (object instanceof Connection)
+                        {
+                            try
+                            {
+                                ((Connection) object).close();
+                            }
+                            catch (JMSException jmse)
+                            {
+                                ;
+                            }
+                        }
                     }
                     catch (NamingException nabe)
                     {
