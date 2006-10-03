@@ -337,6 +337,8 @@ public class AMQMessage
         {
             throw new AMQException("Cannot determine delivery mode of message. Content header not found.");
         }
+
+        //todo remove literal values to a constant file such as AMQConstants in common
         return _contentHeaderBody.properties instanceof BasicContentHeaderProperties
                 &&((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
     }
