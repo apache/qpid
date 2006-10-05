@@ -54,7 +54,7 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
 
         AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
         channel.setSuspended(!body.active);
-        _logger.info("Channel.Flow for channel " + evt.getChannelId() + ", active=" + body.active);
+        _logger.debug("Channel.Flow for channel " + evt.getChannelId() + ", active=" + body.active);
 
         AMQFrame response = ChannelFlowOkBody.createAMQFrame(evt.getChannelId(), body.active);
         protocolSession.writeFrame(response);
