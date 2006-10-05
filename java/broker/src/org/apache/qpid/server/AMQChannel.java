@@ -518,7 +518,7 @@ public class AMQChannel
         {
             if (wasSuspended)
             {
-                _log.info("Unsuspending channel " + this);
+                _log.debug("Unsuspending channel " + this);
                 //may need to deliver queued messages
                 for (AMQQueue q : _consumerTag2QueueMap.values())
                 {
@@ -527,7 +527,7 @@ public class AMQChannel
             }
             else
             {
-                _log.info("Suspending channel " + this);
+                _log.debug("Suspending channel " + this);
             }
         }
     }
