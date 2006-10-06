@@ -75,6 +75,6 @@ public class ReceiveTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(SessionStartTest.class);
+        return new JUnit4TestAdapter(ReceiveTest.class);
     }
 }
