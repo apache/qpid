@@ -283,54 +283,6 @@ public class AMQMessage
         }
     }
 
-    /**
-     * Used to requeue a message (on delivery where an acknowledgement is
-     * expected). This will move it to the end of the queue.
-     */
-    public void requeue(AMQQueue queue) throws AMQException
-    {
-        if(isPersistent() && queue.isDurable())
-        {
-            if(!_store.inTran())
-            {
-                //if not already in tran, want to be so this is atomic
-                _store.beginTran();
-                try
-                {
-                    requeueImpl(queue);
-                    _store.commitTran();
-                }
-                catch(AMQException e)
-                {
-                    _store.abortTran();
-                }
-            }
-            else
-            {
-                //May already be in tran (e.g. if this is called during delivery
-                //resulting from a commit).
-                requeueImpl(queue);
-            }
-        }
-    }
-
-    private void requeueImpl(AMQQueue queue) throws AMQException
-    {
-        try
-        {
-            _store.dequeueMessage(queue.getName(), _messageId);
-            _store.enqueueMessage(queue.getName(), _messageId);
-        }
-        catch(AMQException e)
-        {
-            throw e;
-        }
-        catch(Throwable t)
-        {
-            throw new AMQException("Failure on requeue of message", t);
-        }
-    }
-
     public boolean isPersistent() throws AMQException
     {
         if(_contentHeaderBody == null)
