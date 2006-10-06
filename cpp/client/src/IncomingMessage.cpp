@@ -53,7 +53,7 @@ bool IncomingMessage::isResponse(){
     return response;
 }
 
-string& IncomingMessage::getConsumerTag(){
+const string& IncomingMessage::getConsumerTag(){
     if(!isDelivery()) THROW_QPID_ERROR(CLIENT_ERROR, "Consumer tag only valid for delivery");
     return delivered->getConsumerTag();
 }

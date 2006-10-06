@@ -23,8 +23,8 @@
     <xsl:choose>
 	 <xsl:when test="$t='octet'">u_int8_t</xsl:when> 		 		 
 	 <xsl:when test="$t='short'">u_int16_t</xsl:when> 		 		 
-	 <xsl:when test="$t='shortstr'">string&amp;</xsl:when> 		 		 
-	 <xsl:when test="$t='longstr'">string&amp;</xsl:when> 		 		 
+	 <xsl:when test="$t='shortstr'">const string&amp;</xsl:when> 		 		 
+	 <xsl:when test="$t='longstr'">const string&amp;</xsl:when> 		 		 
 	 <xsl:when test="$t='bit'">bool</xsl:when> 		 		 
 	 <xsl:when test="$t='long'">u_int32_t</xsl:when> 		 		 
 	 <xsl:when test="$t='longlong'">u_int64_t</xsl:when> 		 		 
