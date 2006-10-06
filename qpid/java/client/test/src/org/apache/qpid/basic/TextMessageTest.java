@@ -26,10 +26,7 @@ import org.apache.qpid.client.message.JMSTextMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
+import javax.jms.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,12 +34,12 @@ import java.util.List;
 public class TextMessageTest implements MessageListener
 {
     private AMQConnection _connection;
-    private AMQDestination _destination;
+    private Destination _destination;
     private AMQSession _session;
     private final List<JMSTextMessage> received = new ArrayList<JMSTextMessage>();
     private final List<String> messages = new ArrayList<String>();
     private int _count = 100;
-    public String _connectionString ="vm://:1";
+    public String _connectionString = "vm://:1";
 
     @Before
     public void init() throws Exception
@@ -52,14 +49,15 @@ public class TextMessageTest implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(randomize("TextMessageTest"), true));
+        Destination destination = new AMQQueue(randomize("TextMessageTest"), true);
+        init(connection, destination);
     }
 
-    private void init(AMQConnection connection, AMQDestination destination) throws Exception
+    private void init(AMQConnection connection, Destination destination) throws Exception
     {
         _connection = connection;
         _destination = destination;
-        _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _session = (AMQSession) connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
         //set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
@@ -171,6 +169,6 @@ public class TextMessageTest implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(SessionStartTest.class);
+        return new JUnit4TestAdapter(TextMessageTest.class);
     }
 }
