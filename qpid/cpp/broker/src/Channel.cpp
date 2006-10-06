@@ -126,38 +126,17 @@ void Channel::ConsumerImpl::cancel(){
     if(queue) queue->cancel(this);
 }
 
+void Channel::checkMessage(const std::string& text){
+    if(!message.get()){
+        THROW_QPID_ERROR(PROTOCOL_ERROR + 504, text);
+    }
+}
+
 void Channel::handlePublish(Message* msg){
     if(message.get()){
         THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got publish before previous content was completed.");
     }
     message = Message::shared_ptr(msg);
-}
-
-void Channel::handleHeader(AMQHeaderBody::shared_ptr header, ExchangeRegistry* exchanges){
-    if(!message.get()){
-        THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got header before publish.");
-    }
-    message->setHeader(header);
-    if(message->isComplete()){
-        publish(exchanges);
-    }
-}
-
-void Channel::handleContent(AMQContentBody::shared_ptr content, ExchangeRegistry* exchanges){
-    if(!message.get()){
-        THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got content before publish.");
-    }
-    message->addContent(content);
-    if(message->isComplete()){
-        publish(exchanges);
-    }
-}
-
-void Channel::publish(ExchangeRegistry* exchanges){
-    if(!route(message, exchanges)){
-        std::cout << "WARNING: Could not route message." << std::endl;
-    }
-    message.reset();
 }
 
 void Channel::ack(u_int64_t deliveryTag, bool multiple){

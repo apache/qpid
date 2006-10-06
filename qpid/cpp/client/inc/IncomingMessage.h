@@ -47,7 +47,7 @@ namespace client {
 	bool isReturn();
 	bool isDelivery();
 	bool isResponse();
-	string& getConsumerTag();//only relevant if isDelivery()
+	const string& getConsumerTag();//only relevant if isDelivery()
 	qpid::framing::AMQHeaderBody::shared_ptr& getHeader();
         u_int64_t getDeliveryTag();
 	void getData(string& data);
