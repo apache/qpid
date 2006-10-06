@@ -18,8 +18,9 @@
 #include <iostream>
 #include "SessionHandlerImpl.h"
 #include "FanOutExchange.h"
-#include "TopicExchange.h"
 #include "HeadersExchange.h"
+#include "Router.h"
+#include "TopicExchange.h"
 #include "assert.h"
 
 using namespace std::tr1;
@@ -153,11 +154,11 @@ void SessionHandlerImpl::closed(){
 }
 
 void SessionHandlerImpl::handleHeader(u_int16_t channel, AMQHeaderBody::shared_ptr body){
-    getChannel(channel)->handleHeader(body, exchanges);
+    getChannel(channel)->handleHeader(body, Router(*exchanges));
 }
 
 void SessionHandlerImpl::handleContent(u_int16_t channel, AMQContentBody::shared_ptr body){
-    getChannel(channel)->handleContent(body, exchanges);
+    getChannel(channel)->handleContent(body, Router(*exchanges));
 }
 
 void SessionHandlerImpl::handleHeartbeat(AMQHeartbeatBody::shared_ptr body){

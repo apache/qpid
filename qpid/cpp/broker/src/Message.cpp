@@ -90,13 +90,3 @@ const ConnectionToken* const Message::getPublisher(){
     return publisher;
 }
 
-bool qpid::broker::route(Message::shared_ptr& msg, ExchangeRegistry* registry){
-    Exchange* exchange = registry->get(msg->exchange);
-    if(exchange){
-        exchange->route(msg, msg->routingKey, &(msg->getHeaderProperties()->getHeaders()));
-        return true;
-    }else{
-        return false;
-    }
-}
-

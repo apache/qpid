@@ -29,14 +29,19 @@
 namespace qpid {
     namespace broker {
         class ExchangeRegistry;
-
+ 
+        /**
+         * Represents an AMQP message, i.e. a header body, a list of
+         * content bodies and some details about the publication
+         * request.
+         */
         class Message{
             typedef std::vector<qpid::framing::AMQContentBody::shared_ptr> content_list;
             typedef content_list::iterator content_iterator;
 
             const ConnectionToken* const publisher;
-            string exchange;
-            string routingKey;
+            const string exchange;
+            const string routingKey;
             const bool mandatory;
             const bool immediate;
             bool redelivered;
@@ -44,8 +49,6 @@ namespace qpid {
             content_list content;
 
             u_int64_t contentSize();
-            qpid::framing::BasicHeaderProperties* getHeaderProperties();
-    
 
         public:
             typedef std::tr1::shared_ptr<Message> shared_ptr;
@@ -64,10 +67,10 @@ namespace qpid {
                          u_int32_t framesize);
             void redeliver();
 
-            friend bool route(Message::shared_ptr& msg, ExchangeRegistry* registry);
-
+            qpid::framing::BasicHeaderProperties* getHeaderProperties();
+            const string& getRoutingKey() const { return routingKey; }
+            const string& getExchange() const { return exchange; }
         };
-        bool route(Message::shared_ptr& msg, ExchangeRegistry* registry);
     }
 }
 
