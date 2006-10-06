@@ -147,12 +147,6 @@ public class SubscriptionImpl implements Subscription
                 msg.decrementReference();
                 msg.dequeue(queue);
             }
-            else
-            {
-                //move the msg to the back of the persistently recorded queue while
-                //witing for ack
-                msg.requeue(queue);
-            }
         }
         else
         {
