@@ -385,7 +385,11 @@ void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t 
 void SessionHandlerImpl::BasicHandlerImpl::get(u_int16_t channel, u_int16_t ticket, string& queue, bool noAck){} 
         
 void SessionHandlerImpl::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple){
-    parent->getChannel(channel)->ack(deliveryTag, multiple);
+    try{
+        parent->getChannel(channel)->ack(deliveryTag, multiple);
+    }catch(InvalidAckException& e){
+        throw ConnectionException(530, "Received ack for unrecognised delivery tag");
+    }
 } 
         
 void SessionHandlerImpl::BasicHandlerImpl::reject(u_int16_t channel, u_int64_t deliveryTag, bool requeue){} 
