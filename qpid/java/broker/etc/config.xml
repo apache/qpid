@@ -18,7 +18,7 @@
  -->
 <broker>
     <prefix>${QPID_HOME}</prefix>
-    <work>${prefix}/work</work>
+    <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
         <ssl>false</ssl>
