@@ -33,7 +33,7 @@ public:
     typedef std::tr1::shared_ptr<AMQContentBody> shared_ptr;
 
     AMQContentBody();
-    AMQContentBody(string& data);
+    AMQContentBody(const string& data);
     inline virtual ~AMQContentBody(){}
     inline u_int8_t type() const { return CONTENT_BODY; };
     inline string& getData(){ return data; }

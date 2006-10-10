@@ -47,8 +47,7 @@ namespace qpid {
             bool redelivered;
             qpid::framing::AMQHeaderBody::shared_ptr header;
             content_list content;
-
-            u_int64_t contentSize();
+            u_int64_t size;
 
         public:
             typedef std::tr1::shared_ptr<Message> shared_ptr;
@@ -70,6 +69,8 @@ namespace qpid {
             qpid::framing::BasicHeaderProperties* getHeaderProperties();
             const string& getRoutingKey() const { return routingKey; }
             const string& getExchange() const { return exchange; }
+            u_int64_t contentSize() const{ return size; }
+
         };
     }
 }
