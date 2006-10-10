@@ -36,6 +36,11 @@ if [ -z "$QPID_HOME" ]; then
   die "QPID_HOME must be set"
 fi
 
+if [ -z "$QPID_WORK" ]; then
+    echo Setting QPID_WORK to $HOME as default
+    QPID_WORK=$HOME
+fi
+
 program=$(basename $0)
 sourced=${BASH_SOURCE[0]}
 if [[ -z ${sourced:-''} ]]; then
@@ -172,9 +177,10 @@ done
 if $cygwin; then
   QPID_HOME=$(cygpath -w $QPID_HOME)
   CLASSPATH=$(cygpath -w -p $CLASSPATH)
+  QPID_WORK=$(cygpath -w $QPID_WORK)
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $JAVA_MEM -Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $JAVA_MEM -Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME -DQPID_WORK=$QPID_WORK $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH
