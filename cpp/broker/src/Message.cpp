@@ -33,7 +33,8 @@ Message::Message(const ConnectionToken* const _publisher,
                                                      routingKey(_routingKey), 
                                                      mandatory(_mandatory),
                                                      immediate(_immediate),
-                                                     redelivered(false){
+                                                     redelivered(false),
+                                                     size(0){
 
 }
 
@@ -46,6 +47,7 @@ void Message::setHeader(AMQHeaderBody::shared_ptr header){
 
 void Message::addContent(AMQContentBody::shared_ptr data){
     content.push_back(data);
+    size += data->size();    
 }
 
 bool Message::isComplete(){
@@ -76,14 +78,6 @@ void Message::deliver(OutputHandler* out, int channel,
 
 BasicHeaderProperties* Message::getHeaderProperties(){
     return dynamic_cast<BasicHeaderProperties*>(header->getProperties());
-}
-
-u_int64_t Message::contentSize(){
-    u_int64_t size(0);
-    for(content_iterator i = content.begin(); i != content.end(); i++){
-        size += (*i)->size();
-    }
-    return size;
 }
 
 const ConnectionToken* const Message::getPublisher(){
