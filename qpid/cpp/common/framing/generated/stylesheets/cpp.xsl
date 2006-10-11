@@ -122,7 +122,7 @@ public:
     }
     </xsl:if>
 
-    inline void encodeContent(Buffer&amp; buffer) const
+    inline void encodeContent(Buffer&amp; <xsl:if test="$f/field">buffer</xsl:if>) const
     {
         <xsl:if test="$f/field[@type='bit']">        
 	    u_int8_t flags = 0;
@@ -140,11 +140,8 @@ public:
         </xsl:for-each>		 
     }
 
-    inline void decodeContent(Buffer&amp; buffer)
+    inline void decodeContent(Buffer&amp; <xsl:if test="$f/field">buffer</xsl:if>)
     {
-       <xsl:if test="$f/field[@type='bit']">
-	  u_int8_t maxbit = <xsl:value-of select="$f/@bit-field-count"/>;
-       </xsl:if>
         <xsl:for-each select="$f/field">
             <xsl:choose>
 		<xsl:when test="@type = 'bit' and @boolean-index = 1">

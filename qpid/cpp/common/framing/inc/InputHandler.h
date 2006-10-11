@@ -27,6 +27,7 @@ namespace framing {
 
     class InputHandler{
     public:
+        virtual ~InputHandler();
 	virtual void received(AMQFrame* frame) = 0;
     };
 

@@ -27,16 +27,16 @@ class FieldTable;
 
 class Buffer
 {
-    const int size;
+    const u_int32_t size;
     char* data;
-    int position;
-    int limit;
-    int r_position;
-    int r_limit;
+    u_int32_t position;
+    u_int32_t limit;
+    u_int32_t r_position;
+    u_int32_t r_limit;
 
 public:
 
-    Buffer(int size);
+    Buffer(u_int32_t size);
     ~Buffer();
 
     void flip();
@@ -44,9 +44,9 @@ public:
     void compact();
     void record();
     void restore();
-    int available();
+    u_int32_t available();
     char* start();
-    void move(int bytes);
+    void move(u_int32_t bytes);
     
     void putOctet(u_int8_t i);
     void putShort(u_int16_t i);

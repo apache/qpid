@@ -7,7 +7,7 @@
   ===============================
   Template: client_handler_impl_h
   ===============================
-  Template to generate the AMQP_ServerHandlerImpl class header file.
+  Template to generate the AMQP_ClientHandlerImpl class header file.
   -->
   <xsl:template match="amqp" mode="client_handler_impl_h">
     <xsl:param name="domain-cpp-table"/>
@@ -122,7 +122,7 @@ class AMQP_ClientHandlerImpl : virtual public AMQP_ClientOperations
   =================================
   Template: client_handler_impl_cpp
   =================================
-  Template to generate the AMQP_ServerHandlerImpl class stubs.
+  Template to generate the AMQP_ClientHandlerImpl class stubs.
   -->
   <xsl:template match="amqp" mode="client_handler_impl_cpp">
     <xsl:param name="domain-cpp-table"/>
@@ -163,12 +163,12 @@ AMQP_ClientHandlerImpl::~AMQP_ClientHandlerImpl()
         <xsl:for-each select="method">
           <xsl:if test="chassis[@name='client']">
             <xsl:text>void AMQP_ClientHandlerImpl::</xsl:text><xsl:value-of select="$class"/><xsl:text>HandlerImpl::</xsl:text>
-            <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t channel</xsl:text>
+            <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t /*channel*/</xsl:text>
             <xsl:if test="field">
               <xsl:text>,&#xA;                        </xsl:text>
               <xsl:for-each select="field">
                 <xsl:variable name="domain-cpp-type" select="amqp:cpp-lookup(@domain, $domain-cpp-table)"/>
-                <xsl:value-of select="concat($domain-cpp-type, amqp:cpp-arg-ref($domain-cpp-type), ' ', amqp:cpp-name(@name))"/>
+                <xsl:value-of select="concat($domain-cpp-type, amqp:cpp-arg-ref($domain-cpp-type), ' /*', amqp:cpp-name(@name), '*/')"/>
                 <xsl:if test="position()!=last()">
                   <xsl:text>,&#xA;                        </xsl:text>
                 </xsl:if>

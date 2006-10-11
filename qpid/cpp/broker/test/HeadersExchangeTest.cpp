@@ -19,10 +19,7 @@
 #include "HeadersExchange.h"
 #include "FieldTable.h"
 #include "Value.h"
-#include <cppunit/TestCase.h>
-#include <cppunit/TextTestRunner.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/plugin/TestPlugIn.h>
+#include <qpid_test_plugin.h>
 
 using namespace qpid::broker;
 using namespace qpid::framing;

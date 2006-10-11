@@ -26,15 +26,18 @@ using namespace qpid::concurrent;
 using namespace qpid::framing;
 using qpid::QpidError;
 
-APRConnector::APRConnector(bool _debug, u_int32_t buffer_size) : closed(true), debug(_debug), 
-                                                                 idleIn(0), idleOut(0), timeout(0),
-                                                                 timeoutHandler(0),
-                                                                 shutdownHandler(0),
-                                                                 lastIn(0), lastOut(0),
-                                                                 receive_buffer_size(buffer_size),
-                                                                 send_buffer_size(buffer_size),
-                                                                 inbuf(receive_buffer_size), 
-                                                                 outbuf(send_buffer_size){
+APRConnector::APRConnector(bool _debug, u_int32_t buffer_size) :
+    debug(_debug), 
+    receive_buffer_size(buffer_size),
+    send_buffer_size(buffer_size),
+    closed(true),
+    lastIn(0), lastOut(0),
+    timeout(0),
+    idleIn(0), idleOut(0), 
+    timeoutHandler(0),
+    shutdownHandler(0),
+    inbuf(receive_buffer_size), 
+    outbuf(send_buffer_size){
 
     APRBase::increment();
 
@@ -104,7 +107,7 @@ void APRConnector::writeBlock(AMQDataBlock* data){
     writeLock->release();
 }
 
-void APRConnector::writeToSocket(char* data, int available){
+void APRConnector::writeToSocket(char* data, size_t available){
     apr_size_t bytes(available);
     apr_size_t written(0);
     while(written < available && !closed){

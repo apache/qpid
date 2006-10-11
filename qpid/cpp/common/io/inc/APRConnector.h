@@ -68,7 +68,7 @@ namespace io {
 
         void checkIdle(apr_status_t status);
 	void writeBlock(qpid::framing::AMQDataBlock* data);
-	void writeToSocket(char* data, int available);
+	void writeToSocket(char* data, size_t available);
         void setSocketTimeout();
 
 	void run();

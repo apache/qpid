@@ -33,8 +33,8 @@ public:
     virtual ~AMQHeartbeatBody();
     inline u_int32_t size() const { return 0; }
     inline u_int8_t type() const { return HEARTBEAT_BODY; }
-    inline void encode(Buffer& buffer) const {}
-    inline void decode(Buffer& buffer, u_int32_t size) {}
+    inline void encode(Buffer& ) const {}
+    inline void decode(Buffer& , u_int32_t /*size*/) {}
     virtual void print(std::ostream& out) const;
 };
 

@@ -47,6 +47,7 @@ size_t Tokens::Hash::operator()(const Tokens& p) const {
     for (Tokens::const_iterator i = p.begin(); i != p.end(); ++i) {
         hash += std::tr1::hash<std::string>()(*i);
     }
+    return hash;
 }
 
 TopicPattern& TopicPattern::operator=(const Tokens& tokens) {
@@ -119,7 +120,7 @@ bool TopicPattern::match(const Tokens& target)  const
     return do_match(begin(), end(), target.begin(), target.end());
 }
 
-TopicExchange::TopicExchange(const string& name) : Exchange(name) { }
+TopicExchange::TopicExchange(const string& _name) : Exchange(_name) { }
 
 void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
     lock.acquire();
@@ -129,7 +130,7 @@ void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fiel
     lock.release();
 }
 
-void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     BindingMap::iterator bi = bindings.find(TopicPattern(routingKey));
     Queue::vector& qv(bi->second);
@@ -142,7 +143,7 @@ void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, Fi
 }
 
 
-void TopicExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* args){
+void TopicExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(routingKey)) {

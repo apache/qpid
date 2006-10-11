@@ -24,15 +24,26 @@ BIN_DIR = ${QPID_CPP_HOME}/bin
 APR_HOME = /usr/local/apr
 
 # Compile flags
-DEBUG = -ggdb3
+DEBUG = -ggdb3 -O0
+OPTIMIZE =
 # _USE_APR_IO_ set when APR IO build is desired.
-OPT   = -D _USE_APR_IO_ #-O3 
+DEFINES   = -D _USE_APR_IO_
 APR_INCLUDES=-I ${APR_HOME}/include/apr-1/ 
 COMMON_INCLUDES = -I ${COMMON_HOME}/framing/inc -I ${COMMON_HOME}/framing/generated -I ${COMMON_HOME}/concurrent/inc -I ${COMMON_HOME}/io/inc -I ${COMMON_HOME}/error/inc -I $(COMMON_HOME)/utils/inc ${APR_INCLUDES}
 SRC_INCLUDES = $(COMMON_INCLUDES) -I inc
-TEST_INCLUDES = $(COMMON_INCLUDES) -I ../inc
+TEST_INCLUDES = $(COMMON_INCLUDES) -I ../inc -I $(QPID_CPP_HOME)/test/include
 INCLUDES=$(SRC_INCLUDES)	# Default to src
-CXXFLAGS = $(DEBUG) $(OPT) -MMD -fpic $(INCLUDES) 
+
+# Warnings: Enable as many as possible, keep the code clean. Please
+# do not disable warnings or remove -Werror without discussing on
+# qpid-dev list.
+# 
+# The following warnings deliberately omitted, they warn on valid code.
+# -Wno-unreachable-code -Wpadded
+# 
+WARN  = -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Winline 
+
+CXXFLAGS = $(DEBUG) $(OPTIMIZE) $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) 
 
 # General link flags
 LDFLAGS= -L $(LIB_DIR) -L ${APR_HOME}/lib $(RPATH)

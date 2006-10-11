@@ -29,12 +29,12 @@ IncomingMessage::IncomingMessage(BasicGetOkBody::shared_ptr intro): response(int
 IncomingMessage::~IncomingMessage(){
 }
 
-void IncomingMessage::setHeader(AMQHeaderBody::shared_ptr header){
-    this->header = header;
+void IncomingMessage::setHeader(AMQHeaderBody::shared_ptr _header){
+    this->header = _header;
 }
 
-void IncomingMessage::addContent(AMQContentBody::shared_ptr content){
-    this->content.push_back(content);
+void IncomingMessage::addContent(AMQContentBody::shared_ptr _content){
+    this->content.push_back(_content);
 }
 
 bool IncomingMessage::isComplete(){
@@ -75,10 +75,10 @@ void IncomingMessage::getData(string& s){
     }
 }
 
-long IncomingMessage::contentSize(){
-    long size(0);
-    int count(content.size());
-    for(int i = 0; i < count; i++){
+u_int64_t IncomingMessage::contentSize(){
+    u_int64_t size(0);
+    u_int64_t count(content.size());
+    for(u_int64_t i = 0; i < count; i++){
 	size += content[i]->size();
     }
     return size;

@@ -26,11 +26,16 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::concurrent;
 
-Channel::Channel(bool _transactional, u_int16_t _prefetch) : id(0), incoming(0), con(0), out(0), 
-                                                             prefetch(_prefetch), 
-                                                             transactional(_transactional), 
-                                                             dispatcher(0),
-                                                             closed(true){
+Channel::Channel(bool _transactional, u_int16_t _prefetch) :
+    id(0),
+    con(0), 
+    dispatcher(0),
+    out(0), 
+    incoming(0),
+    closed(true),
+    prefetch(_prefetch), 
+    transactional(_transactional)
+{
     threadFactory = new ThreadFactoryImpl();
     dispatchMonitor = new MonitorImpl();
     retrievalMonitor = new MonitorImpl();
@@ -46,8 +51,8 @@ Channel::~Channel(){
     delete threadFactory;
 }
 
-void Channel::setPrefetch(u_int16_t prefetch){
-    this->prefetch = prefetch;
+void Channel::setPrefetch(u_int16_t _prefetch){
+    prefetch = _prefetch;
     if(con != 0 && out != 0){
         setQos();
     }
@@ -114,7 +119,9 @@ void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch)
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
     string e = exchange.getName();
     string q = queue.getName();
-    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(0, q, e, (string&) key,!synch, (FieldTable&) args));
+    // TODO aconway 2006-10-10: not const correct, get rid of const_cast.
+    // 
+    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(0, q, e, key,!synch, const_cast<FieldTable&>(args)));
     if(synch){
         sendAndReceive(frame, queue_bind_ok);
     }else{
@@ -160,7 +167,6 @@ void Channel::cancel(std::string& tag, bool synch){
 }
 
 void Channel::cancelAll(){
-    int count(consumers.size());
     for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin()){
         Consumer* c = i->second;
         if((c->ackMode == LAZY_ACK || c->ackMode == AUTO_ACK) && c->lastDeliveryTag > 0){
@@ -306,7 +312,7 @@ void Channel::handleContent(AMQContentBody::shared_ptr body){
     }           
 }
     
-void Channel::handleHeartbeat(AMQHeartbeatBody::shared_ptr body){
+void Channel::handleHeartbeat(AMQHeartbeatBody::shared_ptr /*body*/){
     THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Channel received heartbeat");
 }
 

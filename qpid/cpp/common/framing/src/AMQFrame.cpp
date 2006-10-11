@@ -63,33 +63,13 @@ bool AMQFrame::decode(Buffer& buffer)
 {    
     if(buffer.available() < 7) return false;
     buffer.record();
-    u_int8_t type = buffer.getOctet();
-    channel = buffer.getShort();
-    u_int32_t size = buffer.getLong();
-    if(buffer.available() < size + 1){
+    u_int32_t bufSize = decodeHead(buffer);
+
+    if(buffer.available() < bufSize + 1){
         buffer.restore();
         return false;
     }
-    switch(type)
-    {
-    case METHOD_BODY:
-	body = createMethodBody(buffer);
-	break;
-    case HEADER_BODY: 
-	body = AMQBody::shared_ptr(new AMQHeaderBody()); 
-	break;
-    case CONTENT_BODY: 
-	body = AMQBody::shared_ptr(new AMQContentBody()); 
-	break;
-    case HEARTBEAT_BODY: 
-	body = AMQBody::shared_ptr(new AMQHeartbeatBody()); 
-	break;
-    default:
-	string msg("Unknown body type: ");
-	msg += type;
-	THROW_QPID_ERROR(FRAMING_ERROR, msg);
-    }
-    body->decode(buffer, size);
+    decodeBody(buffer, bufSize);
     u_int8_t end = buffer.getOctet();
     if(end != 0xCE) THROW_QPID_ERROR(FRAMING_ERROR, "Frame end not found");
     return true;
@@ -101,7 +81,7 @@ u_int32_t AMQFrame::decodeHead(Buffer& buffer){
     return buffer.getLong();
 }
 
-void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
+void AMQFrame::decodeBody(Buffer& buffer, uint32_t bufSize)
 {    
     switch(type)
     {
@@ -122,7 +102,7 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
 	msg += type;
 	THROW_QPID_ERROR(FRAMING_ERROR, msg);
     }
-    body->decode(buffer, size);
+    body->decode(buffer, bufSize);
 }
 
 std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t){

@@ -27,12 +27,12 @@ namespace framing {
 FieldTable::~FieldTable() {}
 
 u_int32_t FieldTable::size() const {
-    u_int32_t size(4);
+    u_int32_t len(4);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // 2 = shortstr_len_byyte + type_char_byte
-	size += 2 + (i->first).size() + (i->second)->size();
+	len += 2 + (i->first).size() + (i->second)->size();
     }
-    return size;
+    return len;
 }
 
 int FieldTable::count() const {
@@ -74,9 +74,6 @@ void FieldTable::setTable(const std::string& name, const FieldTable& value){
 }
 
 namespace {
-// TODO aconway 2006-09-26: This is messy. Revisit the field table
-// and Value classes with a traits-based approach.
-//
 template <class T> T default_value() { return T(); }
 template <> int default_value<int>() { return 0; }
 template <> u_int64_t default_value<u_int64_t>() { return 0; }
@@ -117,9 +114,11 @@ void FieldTable::encode(Buffer& buffer) const{
 }
 
 void FieldTable::decode(Buffer& buffer){
-    u_int32_t size = buffer.getLong();
-    int leftover = buffer.available() - size;
-    
+    u_int32_t len = buffer.getLong();
+    u_int32_t available = buffer.available();
+    if (available < len)
+        THROW_QPID_ERROR(FRAMING_ERROR, "Not enough data for  field table.");
+    u_int32_t leftover = available - len;
     while(buffer.available() > leftover){
         std::string name;
         buffer.getShortString(name);

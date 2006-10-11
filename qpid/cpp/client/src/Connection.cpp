@@ -37,9 +37,9 @@ Connection::~Connection(){
     delete connector;
 }
 
-void Connection::open(const std::string& host, int port, const std::string& uid, const std::string& pwd, const std::string& virtualhost){
-    this->host = host;
-    this->port = port;
+void Connection::open(const std::string& _host, int _port, const std::string& uid, const std::string& pwd, const std::string& virtualhost){
+    host = _host;
+    port = _port;
     connector->setInputHandler(this);
     connector->setTimeoutHandler(this);
     connector->setShutdownHandler(this);
@@ -181,15 +181,15 @@ void Connection::handleMethod(AMQMethodBody::shared_ptr body){
     }
 }
     
-void Connection::handleHeader(AMQHeaderBody::shared_ptr body){
+void Connection::handleHeader(AMQHeaderBody::shared_ptr /*body*/){
     error(504, "Channel error: received header body with channel 0.");
 }
     
-void Connection::handleContent(AMQContentBody::shared_ptr body){
+void Connection::handleContent(AMQContentBody::shared_ptr /*body*/){
     error(504, "Channel error: received content body with channel 0.");
 }
     
-void Connection::handleHeartbeat(AMQHeartbeatBody::shared_ptr body){
+void Connection::handleHeartbeat(AMQHeartbeatBody::shared_ptr /*body*/){
 }
 
 void Connection::sendAndReceive(AMQFrame* frame, const AMQMethodBody& body){
@@ -204,7 +204,7 @@ void Connection::error(int code, const string& msg, int classid, int methodid){
         std::cout << " [" << methodid << ":" << classid << "]";
     }
     std::cout << std::endl;
-    sendAndReceive(new AMQFrame(0, new ConnectionCloseBody(code, (string&) msg, classid, methodid)), connection_close_ok);
+    sendAndReceive(new AMQFrame(0, new ConnectionCloseBody(code, msg, classid, methodid)), connection_close_ok);
     connector->close();
 }
 

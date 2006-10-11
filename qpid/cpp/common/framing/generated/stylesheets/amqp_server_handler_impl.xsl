@@ -163,12 +163,12 @@ AMQP_ServerHandlerImpl::~AMQP_ServerHandlerImpl()
         <xsl:for-each select="method">
           <xsl:if test="chassis[@name='server']">
             <xsl:text>void AMQP_ServerHandlerImpl::</xsl:text><xsl:value-of select="$class"/><xsl:text>HandlerImpl::</xsl:text>
-            <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t channel</xsl:text>
+            <xsl:value-of select="amqp:cpp-name(@name)"/><xsl:text>( u_int16_t /*channel*/</xsl:text>
             <xsl:if test="field">
               <xsl:text>,&#xA;                        </xsl:text>
               <xsl:for-each select="field">
                 <xsl:variable name="domain-cpp-type" select="amqp:cpp-lookup(@domain, $domain-cpp-table)"/>
-                <xsl:value-of select="concat($domain-cpp-type, amqp:cpp-arg-ref($domain-cpp-type), ' ', amqp:cpp-name(@name))"/>
+                <xsl:value-of select="concat($domain-cpp-type, amqp:cpp-arg-ref($domain-cpp-type), ' /*', amqp:cpp-name(@name), '*/')"/>
                 <xsl:if test="position()!=last()">
                   <xsl:text>,&#xA;                        </xsl:text>
                 </xsl:if>

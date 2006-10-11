@@ -33,21 +33,20 @@ SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context,
                                        QueueRegistry* _queues, 
                                        ExchangeRegistry* _exchanges, 
                                        AutoDelete* _cleaner,
-                                       const u_int32_t _timeout) : context(_context), 
-                                                                   queues(_queues), 
-                                                                   exchanges(_exchanges),
-                                                                   cleaner(_cleaner),
-                                                                   timeout(_timeout),
-                                                                   channelHandler(new ChannelHandlerImpl(this)),
-                                                                   connectionHandler(new ConnectionHandlerImpl(this)),
-                                                                   basicHandler(new BasicHandlerImpl(this)),
-                                                                   exchangeHandler(new ExchangeHandlerImpl(this)),
-                                                                   queueHandler(new QueueHandlerImpl(this)),
-                                                                   client(context),
-                                                                   framemax(65536), 
-                                                                   heartbeat(0){
-
-}
+                                       const u_int32_t _timeout) :
+    context(_context), 
+    client(context),
+    queues(_queues), 
+    exchanges(_exchanges),
+    cleaner(_cleaner),
+    timeout(_timeout),
+    connectionHandler(new ConnectionHandlerImpl(this)),
+    channelHandler(new ChannelHandlerImpl(this)),
+    basicHandler(new BasicHandlerImpl(this)),
+    exchangeHandler(new ExchangeHandlerImpl(this)),
+    queueHandler(new QueueHandlerImpl(this)),
+    framemax(65536), 
+    heartbeat(0) {}
 
 SessionHandlerImpl::~SessionHandlerImpl(){
     // TODO aconway 2006-09-07: Should be auto_ptr or plain members.
@@ -123,7 +122,7 @@ void SessionHandlerImpl::received(qpid::framing::AMQFrame* frame){
     }
 }
 
-void SessionHandlerImpl::initiated(qpid::framing::ProtocolInitiation* header){
+void SessionHandlerImpl::initiated(qpid::framing::ProtocolInitiation* /*header*/){
     //send connection start
     FieldTable properties;
     string mechanisms("PLAIN");
@@ -161,51 +160,53 @@ void SessionHandlerImpl::handleContent(u_int16_t channel, AMQContentBody::shared
     getChannel(channel)->handleContent(body, Router(*exchanges));
 }
 
-void SessionHandlerImpl::handleHeartbeat(AMQHeartbeatBody::shared_ptr body){
+void SessionHandlerImpl::handleHeartbeat(AMQHeartbeatBody::shared_ptr /*body*/){
     std::cout << "SessionHandlerImpl::handleHeartbeat()" << std::endl;
 }
         
-void SessionHandlerImpl::ConnectionHandlerImpl::startOk(u_int16_t channel, FieldTable& clientProperties, string& mechanism, 
-                                    string& response, string& locale){
+void SessionHandlerImpl::ConnectionHandlerImpl::startOk(
+    u_int16_t /*channel*/, FieldTable& /*clientProperties*/, string& /*mechanism*/, 
+    string& /*response*/, string& /*locale*/){
 
     parent->client.getConnection().tune(0, 100, parent->framemax, parent->heartbeat);
 }
         
-void SessionHandlerImpl::ConnectionHandlerImpl::secureOk(u_int16_t channel, string& response){}
+void SessionHandlerImpl::ConnectionHandlerImpl::secureOk(u_int16_t /*channel*/, string& /*response*/){}
         
-void SessionHandlerImpl::ConnectionHandlerImpl::tuneOk(u_int16_t channel, u_int16_t channelmax, u_int32_t framemax, u_int16_t heartbeat){
+void SessionHandlerImpl::ConnectionHandlerImpl::tuneOk(u_int16_t /*channel*/, u_int16_t /*channelmax*/, u_int32_t framemax, u_int16_t heartbeat){
     parent->framemax = framemax;
     parent->heartbeat = heartbeat;
 }
         
-void SessionHandlerImpl::ConnectionHandlerImpl::open(u_int16_t channel, string& virtualHost, string& capabilities, bool insist){
+void SessionHandlerImpl::ConnectionHandlerImpl::open(u_int16_t /*channel*/, string& /*virtualHost*/, string& /*capabilities*/, bool /*insist*/){
     string knownhosts;
     parent->client.getConnection().openOk(0, knownhosts);
 }
         
-void SessionHandlerImpl::ConnectionHandlerImpl::close(u_int16_t channel, u_int16_t replyCode, string& replyText, 
-                                                      u_int16_t classId, u_int16_t methodId){
-
+void SessionHandlerImpl::ConnectionHandlerImpl::close(
+    u_int16_t /*channel*/, u_int16_t /*replyCode*/, string& /*replyText*/, 
+    u_int16_t /*classId*/, u_int16_t /*methodId*/)
+{
     parent->client.getConnection().closeOk(0);
     parent->context->close();
 } 
         
-void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t channel){
+void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
     parent->context->close();
 } 
               
 
 
-void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, string& outOfBand){
+void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, string& /*outOfBand*/){
     parent->channels[channel] = new Channel(parent->context, channel, parent->framemax);
     parent->client.getChannel().openOk(channel);
 } 
         
-void SessionHandlerImpl::ChannelHandlerImpl::flow(u_int16_t channel, bool active){}         
-void SessionHandlerImpl::ChannelHandlerImpl::flowOk(u_int16_t channel, bool active){} 
+void SessionHandlerImpl::ChannelHandlerImpl::flow(u_int16_t /*channel*/, bool /*active*/){}         
+void SessionHandlerImpl::ChannelHandlerImpl::flowOk(u_int16_t /*channel*/, bool /*active*/){} 
         
-void SessionHandlerImpl::ChannelHandlerImpl::close(u_int16_t channel, u_int16_t replyCode, string& replyText, 
-                                                   u_int16_t classId, u_int16_t methodId){
+void SessionHandlerImpl::ChannelHandlerImpl::close(u_int16_t channel, u_int16_t /*replyCode*/, string& /*replyText*/, 
+                                                   u_int16_t /*classId*/, u_int16_t /*methodId*/){
     Channel* c = parent->getChannel(channel);
     if(c){
         parent->channels.erase(channel);
@@ -215,13 +216,13 @@ void SessionHandlerImpl::ChannelHandlerImpl::close(u_int16_t channel, u_int16_t 
     }
 } 
         
-void SessionHandlerImpl::ChannelHandlerImpl::closeOk(u_int16_t channel){} 
+void SessionHandlerImpl::ChannelHandlerImpl::closeOk(u_int16_t /*channel*/){} 
               
 
 
-void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16_t ticket, string& exchange, string& type, 
-                                                      bool passive, bool durable, bool autoDelete, bool internal, bool nowait, 
-                                                      FieldTable& arguments){
+void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, string& exchange, string& type, 
+                                                      bool passive, bool /*durable*/, bool /*autoDelete*/, bool /*internal*/, bool nowait, 
+                                                      FieldTable& /*arguments*/){
 
     if(!passive && (
            type != TopicExchange::typeName &&
@@ -252,7 +253,7 @@ void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16
     }
 } 
         
-void SessionHandlerImpl::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16_t ticket, string& exchange, bool ifUnused, bool nowait){
+void SessionHandlerImpl::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, string& exchange, bool /*ifUnused*/, bool nowait){
     //TODO: implement unused
     parent->exchanges->getLock()->acquire();
     parent->exchanges->destroy(exchange);
@@ -260,9 +261,9 @@ void SessionHandlerImpl::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16
     if(!nowait) parent->client.getExchange().deleteOk(channel);
 } 
 
-void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t ticket, string& name, 
+void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, string& name, 
                                                    bool passive, bool durable, bool exclusive, 
-                                                   bool autoDelete, bool nowait, FieldTable& arguments){
+                                                   bool autoDelete, bool nowait, FieldTable& /*arguments*/){
     Queue::shared_ptr queue;
     if (passive && !name.empty()) {
 	queue = parent->getQueue(name, channel);
@@ -290,7 +291,7 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
     }
 } 
         
-void SessionHandlerImpl::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t ticket, string& queueName, 
+void SessionHandlerImpl::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t /*ticket*/, string& queueName, 
                                                 string& exchangeName, string& routingKey, bool nowait, 
                                                 FieldTable& arguments){
 
@@ -305,14 +306,14 @@ void SessionHandlerImpl::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t tic
     }
 } 
         
-void SessionHandlerImpl::QueueHandlerImpl::purge(u_int16_t channel, u_int16_t ticket, string& queueName, bool nowait){
+void SessionHandlerImpl::QueueHandlerImpl::purge(u_int16_t channel, u_int16_t /*ticket*/, string& queueName, bool nowait){
 
     Queue::shared_ptr queue = parent->getQueue(queueName, channel);
     int count = queue->purge();
     if(!nowait) parent->client.getQueue().purgeOk(channel, count);
 } 
         
-void SessionHandlerImpl::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t ticket, string& queue, 
+void SessionHandlerImpl::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, string& queue, 
                                                    bool ifUnused, bool ifEmpty, bool nowait){
     ChannelException error(0, "");
     int count(0);
@@ -336,14 +337,14 @@ void SessionHandlerImpl::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t 
         
 
 
-void SessionHandlerImpl::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool global){
+void SessionHandlerImpl::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool /*global*/){
     //TODO: handle global
     parent->getChannel(channel)->setPrefetchSize(prefetchSize);
     parent->getChannel(channel)->setPrefetchCount(prefetchCount);
     parent->client.getBasic().qosOk(channel);
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::consume(u_int16_t channelId, u_int16_t ticket, 
+void SessionHandlerImpl::BasicHandlerImpl::consume(u_int16_t channelId, u_int16_t /*ticket*/, 
                                                    string& queueName, string& consumerTag, 
                                                    bool noLocal, bool noAck, bool exclusive, 
                                                    bool nowait){
@@ -372,7 +373,7 @@ void SessionHandlerImpl::BasicHandlerImpl::cancel(u_int16_t channel, string& con
     if(!nowait) parent->client.getBasic().cancelOk(channel, consumerTag);
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t ticket, 
+void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t /*ticket*/, 
                                                    string& exchange, string& routingKey, 
                                                    bool mandatory, bool immediate){
 
@@ -380,7 +381,7 @@ void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t 
     parent->getChannel(channel)->handlePublish(msg);
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t ticket, string& queueName, bool noAck){
+void SessionHandlerImpl::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t /*ticket*/, string& queueName, bool noAck){
     Queue::shared_ptr queue = parent->getQueue(queueName, channelId);    
     if(!parent->getChannel(channelId)->get(queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
@@ -396,7 +397,7 @@ void SessionHandlerImpl::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deli
     }
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::reject(u_int16_t channel, u_int64_t deliveryTag, bool requeue){} 
+void SessionHandlerImpl::BasicHandlerImpl::reject(u_int16_t /*channel*/, u_int64_t /*deliveryTag*/, bool /*requeue*/){} 
         
 void SessionHandlerImpl::BasicHandlerImpl::recover(u_int16_t channel, bool requeue){
     parent->getChannel(channel)->recover(requeue);
