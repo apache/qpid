@@ -49,6 +49,9 @@ namespace qpid {
             content_list content;
             u_int64_t size;
 
+            void sendContent(qpid::framing::OutputHandler* out, 
+                             int channel, u_int32_t framesize);
+
         public:
             typedef std::tr1::shared_ptr<Message> shared_ptr;
 
@@ -61,9 +64,16 @@ namespace qpid {
             bool isComplete();
             const ConnectionToken* const getPublisher();
 
-            void deliver(qpid::framing::OutputHandler* out, int channel, 
-                         string& consumerTag, u_int64_t deliveryTag, 
+            void deliver(qpid::framing::OutputHandler* out, 
+                         int channel, 
+                         const string& consumerTag, 
+                         u_int64_t deliveryTag, 
                          u_int32_t framesize);
+            void sendGetOk(qpid::framing::OutputHandler* out, 
+                           int channel, 
+                           u_int32_t messageCount,
+                           u_int64_t deliveryTag, 
+                           u_int32_t framesize);
             void redeliver();
 
             qpid::framing::BasicHeaderProperties* getHeaderProperties();

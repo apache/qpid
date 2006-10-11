@@ -47,12 +47,14 @@ public:
 class QueueTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(QueueTest);
-    CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST(testConsumers);
+    CPPUNIT_TEST(testBinding);
+    CPPUNIT_TEST(testRegistry);
+    CPPUNIT_TEST(testDequeue);
     CPPUNIT_TEST_SUITE_END();
 
   public:
-    void testMe() 
-    {
+    void testConsumers(){
         Queue::shared_ptr queue(new Queue("my_queue", true, true));
     
         //Test adding consumers:
@@ -82,7 +84,10 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(u_int32_t(1), queue->getConsumerCount());
         queue->cancel(&c2);
         CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getConsumerCount());
+    }
 
+    void testBinding(){
+        Queue::shared_ptr queue(new Queue("my_queue", true, true));
         //Test bindings:
         TestBinding a;
         TestBinding b;
@@ -93,7 +98,9 @@ class QueueTest : public CppUnit::TestCase
 
         CPPUNIT_ASSERT(a.isCancelled());
         CPPUNIT_ASSERT(b.isCancelled());
+    }
 
+    void testRegistry(){
         //Test use of queues in registry:
         QueueRegistry registry;
         registry.declare("queue1", true, true);
@@ -111,6 +118,40 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(!registry.find("queue1"));
         CPPUNIT_ASSERT(!registry.find("queue2"));
         CPPUNIT_ASSERT(!registry.find("queue3"));
+    }
+
+    void testDequeue(){
+        Queue::shared_ptr queue(new Queue("my_queue", true, true));
+
+        Message::shared_ptr msg1 = Message::shared_ptr(new Message(0, "e", "A", true, true));
+        Message::shared_ptr msg2 = Message::shared_ptr(new Message(0, "e", "B", true, true));
+        Message::shared_ptr msg3 = Message::shared_ptr(new Message(0, "e", "C", true, true));
+        Message::shared_ptr received;
+
+        queue->deliver(msg1);
+        queue->deliver(msg2);
+        queue->deliver(msg3);
+
+        CPPUNIT_ASSERT_EQUAL(u_int32_t(3), queue->getMessageCount());
+        
+        received = queue->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
+        CPPUNIT_ASSERT_EQUAL(u_int32_t(2), queue->getMessageCount());
+
+        received = queue->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg2.get(), received.get());
+        CPPUNIT_ASSERT_EQUAL(u_int32_t(1), queue->getMessageCount());
+
+        TestConsumer consumer; 
+        queue->consume(&consumer);
+        queue->dispatch();
+        CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer.last.get());
+        CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getMessageCount());
+
+        received = queue->dequeue();
+        CPPUNIT_ASSERT(!received);
+        CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getMessageCount());
+        
     }
 };
 

@@ -60,12 +60,24 @@ namespace qpid {
                 Queue::shared_ptr queue;
                 string consumerTag;
                 u_int64_t deliveryTag;
+                bool pull;
 
-                AckRecord(Message::shared_ptr _msg, Queue::shared_ptr _queue, 
-                          string _consumerTag, u_int64_t _deliveryTag) : msg(_msg), 
-                                                                        queue(_queue), 
-                                                                        consumerTag(_consumerTag),
-                                                                        deliveryTag(_deliveryTag){}
+                AckRecord(Message::shared_ptr _msg, 
+                          Queue::shared_ptr _queue, 
+                          const string _consumerTag, 
+                          const u_int64_t _deliveryTag) : msg(_msg), 
+                                                          queue(_queue), 
+                                                          consumerTag(_consumerTag),
+                                                          deliveryTag(_deliveryTag),
+                                                          pull(false){}
+
+                AckRecord(Message::shared_ptr _msg, 
+                          Queue::shared_ptr _queue, 
+                          const u_int64_t _deliveryTag) : msg(_msg), 
+                                                          queue(_queue), 
+                                                          consumerTag(""),
+                                                          deliveryTag(_deliveryTag),
+                                                          pull(true){}
             };
 
             typedef std::vector<AckRecord>::iterator ack_iterator; 
@@ -89,12 +101,14 @@ namespace qpid {
                 void operator()(AckRecord& record) const;
             };
 
-            class AddSize{
+            class CalculatePrefetch{
                 u_int32_t size;
+                u_int16_t count;
             public:
-                AddSize();
+                CalculatePrefetch();
                 void operator()(AckRecord& record);
                 u_int32_t getSize();
+                u_int16_t getCount();
             };
 
             const int id;
@@ -106,6 +120,7 @@ namespace qpid {
             u_int32_t prefetchSize;    
             u_int16_t prefetchCount;    
             u_int32_t outstandingSize;    
+            u_int16_t outstandingCount;    
             u_int32_t framesize;
             Message::shared_ptr message;
             NameGenerator tagGenerator;
@@ -136,6 +151,7 @@ namespace qpid {
             bool exists(const string& consumerTag);
             void consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection = 0);
             void cancel(const string& tag);
+            bool get(Queue::shared_ptr queue, bool ackExpected);
             void begin();
             void close();
             void commit();
