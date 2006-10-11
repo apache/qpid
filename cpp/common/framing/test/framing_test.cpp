@@ -19,10 +19,7 @@
 #include "ConnectionRedirectBody.h"
 #include <iostream>
 #include <sstream>
-#include <cppunit/TestCase.h>
-#include <cppunit/TextTestRunner.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/plugin/TestPlugIn.h>
+#include <qpid_test_plugin.h>
 #include <typeinfo>
 
 using namespace qpid::framing;

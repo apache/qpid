@@ -24,7 +24,7 @@ void qpid::framing::AMQMethodBody::encode(Buffer& buffer) const{
     encodeContent(buffer);
 }
 
-void qpid::framing::AMQMethodBody::decode(Buffer& buffer, u_int32_t size){
+void qpid::framing::AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/){
     decodeContent(buffer);
 }
 
@@ -32,7 +32,7 @@ bool qpid::framing::AMQMethodBody::match(AMQMethodBody* other) const{
     return other != 0 && other->amqpClassId() == amqpClassId() && other->amqpMethodId() == amqpMethodId();
 }
 
-void qpid::framing::AMQMethodBody::invoke(AMQP_ServerOperations& target, u_int16_t channel){
+void qpid::framing::AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channel*/){
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }
 

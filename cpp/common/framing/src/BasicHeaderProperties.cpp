@@ -23,23 +23,23 @@ qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(0),
 qpid::framing::BasicHeaderProperties::~BasicHeaderProperties(){}
 
 u_int32_t qpid::framing::BasicHeaderProperties::size() const{
-    u_int32_t size = 2;//flags
-    if(contentType.length() > 0) size += contentType.length() + 1;
-    if(contentEncoding.length() > 0) size += contentEncoding.length() + 1;
-    if(headers.count() > 0) size += headers.size();
-    if(deliveryMode != 0) size += 1;
-    if(priority != 0) size += 1;
-    if(correlationId.length() > 0) size += correlationId.length() + 1;
-    if(replyTo.length() > 0) size += replyTo.length() + 1;
-    if(expiration.length() > 0) size += expiration.length() + 1;
-    if(messageId.length() > 0) size += messageId.length() + 1;
-    if(timestamp != 0) size += 8;
-    if(type.length() > 0) size += type.length() + 1;
-    if(userId.length() > 0) size += userId.length() + 1;
-    if(appId.length() > 0) size += appId.length() + 1;
-    if(clusterId.length() > 0) size += clusterId.length() + 1;
+    u_int32_t bytes = 2;//flags
+    if(contentType.length() > 0) bytes += contentType.length() + 1;
+    if(contentEncoding.length() > 0) bytes += contentEncoding.length() + 1;
+    if(headers.count() > 0) bytes += headers.size();
+    if(deliveryMode != 0) bytes += 1;
+    if(priority != 0) bytes += 1;
+    if(correlationId.length() > 0) bytes += correlationId.length() + 1;
+    if(replyTo.length() > 0) bytes += replyTo.length() + 1;
+    if(expiration.length() > 0) bytes += expiration.length() + 1;
+    if(messageId.length() > 0) bytes += messageId.length() + 1;
+    if(timestamp != 0) bytes += 8;
+    if(type.length() > 0) bytes += type.length() + 1;
+    if(userId.length() > 0) bytes += userId.length() + 1;
+    if(appId.length() > 0) bytes += appId.length() + 1;
+    if(clusterId.length() > 0) bytes += clusterId.length() + 1;
 
-    return size;
+    return bytes;
 }
 
 void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer) const{
@@ -62,9 +62,8 @@ void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer)
     if(clusterId.length() > 0) buffer.putShortString(clusterId);    
 }
 
-void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer, u_int32_t size){
+void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer, u_int32_t /*size*/){
     u_int16_t flags = buffer.getShort();
-    int shift = 15;
     if(flags & (1 << 15)) buffer.getShortString(contentType);
     if(flags & (1 << 14)) buffer.getShortString(contentEncoding);
     if(flags & (1 << 13)) buffer.getFieldTable(headers);
@@ -83,7 +82,6 @@ void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer,
 
 u_int16_t qpid::framing::BasicHeaderProperties::getFlags() const{
     u_int16_t flags(0);
-    int shift = 15;
     if(contentType.length() > 0)     flags |= (1 << 15);
     if(contentEncoding.length() > 0) flags |= (1 << 14);
     if(headers.count() > 0)          flags |= (1 << 13);

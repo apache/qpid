@@ -22,7 +22,7 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DirectExchange::DirectExchange(const string& name) : Exchange(name) {
+DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {
 
 }
 
@@ -37,7 +37,7 @@ void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fie
     lock.release();
 }
 
-void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
 
@@ -51,7 +51,7 @@ void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, F
     lock.release();
 }
 
-void DirectExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* args){
+void DirectExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     int count(0);

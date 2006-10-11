@@ -23,7 +23,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::concurrent;
 
-FanOutExchange::FanOutExchange(const std::string& name) : Exchange(name) {}
+FanOutExchange::FanOutExchange(const std::string& _name) : Exchange(_name) {}
 
 void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
     Locker locker(lock);
@@ -35,7 +35,7 @@ void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fie
     }
 }
 
-void FanOutExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, FieldTable* /*args*/){
     Locker locker(lock);
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i != bindings.end()) {
@@ -44,7 +44,7 @@ void FanOutExchange::unbind(Queue::shared_ptr queue, const string& routingKey, F
     }
 }
 
-void FanOutExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* args){
+void FanOutExchange::route(Message::shared_ptr& msg, const string& /*routingKey*/, FieldTable* /*args*/){
     Locker locker(lock);
     for(Queue::vector::iterator i = bindings.begin(); i != bindings.end(); ++i){
         (*i)->deliver(msg);

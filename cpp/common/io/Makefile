@@ -16,10 +16,6 @@
 
 QPID_HOME = ../../..
 include ${QPID_HOME}/cpp/options.mk
-
-# Compiler flags
-CXXFLAGS = ${DEBUG} ${OPT} -MMD -I inc  -I ../concurrent/inc -I ../error/inc -I ../framing/inc -I ../framing/generated -I ${APR_HOME}/include/apr-1/
-
 SOURCES := $(wildcard src/*.cpp)
 OBJECTS := $(subst .cpp,.o,$(SOURCES))
 DEPS := $(subst .cpp,.d,$(SOURCES))

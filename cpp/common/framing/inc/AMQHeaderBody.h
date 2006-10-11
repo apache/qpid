@@ -42,7 +42,7 @@ public:
     HeaderProperties* getProperties(){ return properties; }
     const HeaderProperties* getProperties() const { return properties; }
     inline u_int64_t getContentSize() const { return contentSize; }
-    inline void setContentSize(u_int64_t size) { contentSize = size; }
+    inline void setContentSize(u_int64_t _size) { contentSize = _size; }
     virtual ~AMQHeaderBody();
     virtual u_int32_t size() const;
     virtual void encode(Buffer& buffer) const;

@@ -22,13 +22,11 @@
 
 using namespace qpid::concurrent;
 
-APRThreadPool::APRThreadPool(int _size) : size(_size), factory(new APRThreadFactory()), 
-                                          deleteFactory(true), running(false){
+APRThreadPool::APRThreadPool(int _size) : deleteFactory(true), size(_size), factory(new APRThreadFactory()), running(false){
     worker = new Worker(this);
 }
 
-APRThreadPool::APRThreadPool(int _size, ThreadFactory* _factory) : size(_size), factory(_factory), 
-                                                                   deleteFactory(false), running(false){
+APRThreadPool::APRThreadPool(int _size, ThreadFactory* _factory) :     deleteFactory(false), size(_size), factory(_factory), running(false){
     worker = new Worker(this);
 }
 

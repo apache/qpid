@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2006 The Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +14,6 @@
  * limitations under the License.
  *
  */
-#include <string>
 
-#ifndef _ReturnedMessageHandler_
-#define _ReturnedMessageHandler_
-
-#include "Message.h"
-
-namespace qpid {
-namespace client {
-
-    class ReturnedMessageHandler{
-    public:
-        virtual ~ReturnedMessageHandler();
-	virtual void returned(Message& msg) = 0;
-    };
-
-}
-}
-
-
-#endif
+#include "Runnable.h"
+qpid::concurrent::Runnable::~Runnable() {}

@@ -18,7 +18,9 @@
 #include "HeadersExchange.h"
 #include "ExchangeBinding.h"
 #include "Value.h"
+#include "QpidError.h"
 #include <algorithm>
+
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -28,38 +30,36 @@ using namespace qpid::concurrent;
 // The current search algorithm really sucks.
 // Fieldtables are heavy, maybe use shared_ptr to do handle-body.
 
-namespace qpid {
-namespace broker {
+using namespace qpid::broker;
 
 namespace {
-const std::string all("all");
-const std::string any("any");
-const std::string x_match("x-match");
+    const std::string all("all");
+    const std::string any("any");
+    const std::string x_match("x-match");
 }
 
-HeadersExchange::HeadersExchange(const string& name) : Exchange(name) { }
+HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
 
 void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
     std::cout << "HeadersExchange::bind" << std::endl;
     Locker locker(lock);
     std::string what = args->getString("x-match");
-    // TODO aconway 2006-09-26: throw an exception for invalid bindings.
-    if (what != all && what != any) return; // Invalid.
+    if (what != all && what != any) {
+        THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
+    }
     bindings.push_back(Binding(*args, queue));
     queue->bound(new ExchangeBinding(this, queue, routingKey, args));
 }
 
-void HeadersExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    Locker locker(lock);;
-    for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if (i->first == *args) {
-            bindings.erase(i);
-        }
-    }
+void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, FieldTable* args){
+    Locker locker(lock);
+    Bindings::iterator i =
+        std::find(bindings.begin(),bindings.end(), Binding(*args, queue));
+    if (i != bindings.end()) bindings.erase(i);
 }
 
 
-void HeadersExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* args){
+void HeadersExchange::route(Message::shared_ptr& msg, const string& /*routingKey*/, FieldTable* args){
     std::cout << "route: " << *args << std::endl;
     Locker locker(lock);;
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
@@ -70,12 +70,13 @@ void HeadersExchange::route(Message::shared_ptr& msg, const string& routingKey, 
 HeadersExchange::~HeadersExchange() {}
 
 const std::string HeadersExchange::typeName("headers");
+
 namespace 
 {
 
-bool match_values(const Value& bind, const Value& msg) {
-    return  dynamic_cast<const EmptyValue*>(&bind) || bind == msg;
-}
+    bool match_values(const Value& bind, const Value& msg) {
+        return  dynamic_cast<const EmptyValue*>(&bind) || bind == msg;
+    }
 
 }
 
@@ -115,5 +116,5 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
     }
 }
 
-}}
+
 

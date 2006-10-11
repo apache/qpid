@@ -39,8 +39,8 @@ void qpid::client::ResponseHandler::waitForResponse(){
     monitor->release();
 }
 
-void qpid::client::ResponseHandler::signalResponse(qpid::framing::AMQMethodBody::shared_ptr response){
-    this->response = response;
+void qpid::client::ResponseHandler::signalResponse(qpid::framing::AMQMethodBody::shared_ptr _response){
+    response = _response;
     monitor->acquire();
     waiting = false;
     monitor->notify();

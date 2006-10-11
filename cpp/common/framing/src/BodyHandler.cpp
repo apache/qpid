@@ -21,6 +21,8 @@
 using namespace qpid::framing;
 using namespace std::tr1;
 
+BodyHandler::~BodyHandler() {}
+
 void BodyHandler::handleBody(AMQBody::shared_ptr& body){
 
     switch(body->type())

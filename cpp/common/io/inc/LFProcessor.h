@@ -48,12 +48,12 @@ namespace io {
         const apr_pollfd_t* signalledFDs;
         int count;
         const int workerCount;
+        bool hasLeader;
         qpid::concurrent::Thread** const workers;
         qpid::concurrent::APRMonitor leadLock;
         qpid::concurrent::APRMonitor countLock;
         qpid::concurrent::APRThreadFactory factory;
         std::vector<LFSessionContext*> sessions;
-        bool hasLeader;
         volatile bool stopped;
 
         const apr_pollfd_t* getNextEvent();

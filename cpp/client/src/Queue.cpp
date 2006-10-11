@@ -30,8 +30,8 @@ const std::string& qpid::client::Queue::getName() const{
     return name;
 }
 
-void qpid::client::Queue::setName(const std::string& name){
-    this->name = name;
+void qpid::client::Queue::setName(const std::string& _name){
+    name = _name;
 }
 
 bool qpid::client::Queue::isAutoDelete() const{

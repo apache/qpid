@@ -24,10 +24,11 @@ using namespace qpid::concurrent;
 using namespace qpid::framing;
 using namespace qpid::io;
 
-BlockingAPRAcceptor::BlockingAPRAcceptor(bool _debug, int c) : connectionBacklog(c),
-                                                             threadFactory(new APRThreadFactory()),
-                                                             debug(_debug){
-    
+BlockingAPRAcceptor::BlockingAPRAcceptor(bool _debug, int c) :
+    debug(_debug),
+    threadFactory(new APRThreadFactory()),
+    connectionBacklog(c)
+{
     APRBase::increment();
     CHECK_APR_SUCCESS(apr_pool_create(&apr_pool, NULL));
 }

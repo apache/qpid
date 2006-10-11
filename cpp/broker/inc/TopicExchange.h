@@ -57,7 +57,7 @@ class TopicPattern : public Tokens
     TopicPattern(const Tokens& tokens) { operator=(tokens); }
     TopicPattern(const std::string& str) { operator=(str); }
     TopicPattern& operator=(const Tokens&);
-    TopicPattern& operator=(const std::string& str) { operator=(Tokens(str)); }
+    TopicPattern& operator=(const std::string& str) { return operator=(Tokens(str)); }
     
     /** Match a topic */
     bool match(const std::string& topic) { return match(Tokens(topic)); }

@@ -66,7 +66,7 @@ class AMQP_ServerOperations
               <xsl:value-of select="amqp:process-docs(doc)"/>
               <xsl:text>*/&#xA;</xsl:text>
             </xsl:if>
-            <xsl:for-each select="rule">/**
+            <xsl:for-each select="rule">
               <xsl:text>&#xA;/**&#xA;</xsl:text>
               <xsl:text>Rule "</xsl:text><xsl:value-of select="@name"/><xsl:text>":&#xA;</xsl:text>
               <xsl:value-of select="amqp:process-docs(doc)"/>
