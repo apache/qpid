@@ -338,7 +338,6 @@ void SessionHandlerImpl::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t 
 
 void SessionHandlerImpl::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool global){
     //TODO: handle global
-    //TODO: channel doesn't do anything with these qos parameters yet
     parent->getChannel(channel)->setPrefetchSize(prefetchSize);
     parent->getChannel(channel)->setPrefetchCount(prefetchCount);
     parent->client.getBasic().qosOk(channel);
@@ -349,7 +348,6 @@ void SessionHandlerImpl::BasicHandlerImpl::consume(u_int16_t channelId, u_int16_
                                                    bool noLocal, bool noAck, bool exclusive, 
                                                    bool nowait){
     
-    //TODO: implement nolocal
     Queue::shared_ptr queue = parent->getQueue(queueName, channelId);    
     Channel* channel = parent->channels[channelId];
     if(!consumerTag.empty() && channel->exists(consumerTag)){
@@ -382,7 +380,13 @@ void SessionHandlerImpl::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t 
     parent->getChannel(channel)->handlePublish(msg);
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::get(u_int16_t channel, u_int16_t ticket, string& queue, bool noAck){} 
+void SessionHandlerImpl::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t ticket, string& queueName, bool noAck){
+    Queue::shared_ptr queue = parent->getQueue(queueName, channelId);    
+    if(!parent->getChannel(channelId)->get(queue, !noAck)){
+        string clusterId;//not used, part of an imatix hack
+        parent->client.getBasic().getEmpty(channelId, clusterId);
+    }
+} 
         
 void SessionHandlerImpl::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple){
     try{
