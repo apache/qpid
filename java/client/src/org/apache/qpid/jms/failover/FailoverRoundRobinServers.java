@@ -239,6 +239,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
         sb.append(_serverRetries);
         sb.append("\nCurrent Retry:");
         sb.append(_currentServerRetry);
+        sb.append("\nCurrent Broker:");
+        sb.append(_currentBrokerIndex);
         sb.append("\n");
 
         for(int i=0; i < _connectionDetails.getBrokerCount() ; i++)
