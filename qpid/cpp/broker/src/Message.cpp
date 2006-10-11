@@ -59,10 +59,24 @@ void Message::redeliver(){
 }
 
 void Message::deliver(OutputHandler* out, int channel, 
-                      string& consumerTag, u_int64_t deliveryTag, 
+                      const string& consumerTag, u_int64_t deliveryTag, 
                       u_int32_t framesize){
 
     out->send(new AMQFrame(channel, new BasicDeliverBody(consumerTag, deliveryTag, redelivered, exchange, routingKey)));
+    sendContent(out, channel, framesize);
+}
+
+void Message::sendGetOk(OutputHandler* out, 
+         int channel, 
+         u_int32_t messageCount,
+         u_int64_t deliveryTag, 
+         u_int32_t framesize){
+
+    out->send(new AMQFrame(channel, new BasicGetOkBody(deliveryTag, redelivered, exchange, routingKey, messageCount)));
+    sendContent(out, channel, framesize);
+}
+
+void Message::sendContent(OutputHandler* out, int channel, u_int32_t framesize){
     AMQBody::shared_ptr headerBody = static_pointer_cast<AMQBody, AMQHeaderBody>(header);
     out->send(new AMQFrame(channel, headerBody));
     for(content_iterator i = content.begin(); i != content.end(); i++){
