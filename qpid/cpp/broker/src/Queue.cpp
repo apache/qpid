@@ -122,7 +122,13 @@ void Queue::cancel(Consumer* c){
 }
 
 Message::shared_ptr Queue::dequeue(){
-
+    Locker locker(lock);
+    Message::shared_ptr msg;
+    if(!messages.empty()){
+        msg = messages.front();
+        messages.pop();
+    }
+    return msg;
 }
 
 u_int32_t Queue::purge(){

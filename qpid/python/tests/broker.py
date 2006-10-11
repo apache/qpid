@@ -45,8 +45,6 @@ class BrokerTests(TestBase):
         msg = self.client.queue(ctag).get(timeout = 5)
         ch.basic_ack(delivery_tag = msg.delivery_tag)
         self.assert_(msg.content.body == body)
-
-        # TODO: Ensure we get a failure if an ack consumer doesn't ack.
         
     def test_basic_delivery_immediate(self):
         """
