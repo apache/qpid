@@ -138,7 +138,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         // we only add the SSL filter where we have an SSL connection
         if (_useSSL)
         {
-            //todo FIXME: Bogus context cannot be used in production.
+            //FIXME: Bogus context cannot be used in production.
             SSLFilter sslFilter = new SSLFilter(BogusSSLContextFactory.getInstance(false));
             sslFilter.setUseClientMode(true);
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
@@ -189,6 +189,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             else
             {
                 _logger.info("Failover not allowed by policy.");
+
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug(_connection.getFailoverPolicy().toString());
+                }
 
                 if (_failoverState != FailoverState.IN_PROGRESS)
                 {
@@ -305,7 +310,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 _logger.debug("Method frame received: " + frame);
             }
 
-            final AMQMethodEvent evt = new AMQMethodEvent(frame.channel, (AMQMethodBody)frame.bodyFrame, _protocolSession);
+            final AMQMethodEvent evt = new AMQMethodEvent(frame.channel, (AMQMethodBody) frame.bodyFrame, _protocolSession);
             try
             {
                 boolean wasAnyoneInterested = false;
@@ -429,7 +434,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass) throws AMQException
     {
         return writeCommandFrameAndWaitForReply(frame,
-            new SpecificMethodFrameListener(frame.channel, responseClass));
+                                                new SpecificMethodFrameListener(frame.channel, responseClass));
     }
 
     /**
@@ -438,7 +443,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * consumer(s) on that session.
      *
      * @param channelId the channel id of the session
-     * @param session the session instance.
+     * @param session   the session instance.
      */
     public void addSessionByChannel(int channelId, AMQSession session)
     {
