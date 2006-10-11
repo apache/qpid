@@ -27,7 +27,7 @@ namespace broker {
     class Exchange{
         const std::string name;
       public:
-        explicit Exchange(const std::string& name) : name(name) {}
+        explicit Exchange(const std::string& _name) : name(_name) {}
         virtual ~Exchange(){}
         std::string getName() { return name; }
         virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;

@@ -30,8 +30,8 @@ u_int32_t qpid::framing::AMQContentBody::size() const{
 void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
     buffer.putRawData(data);
 }
-void qpid::framing::AMQContentBody::decode(Buffer& buffer, u_int32_t size){
-    buffer.getRawData(data, size);
+void qpid::framing::AMQContentBody::decode(Buffer& buffer, u_int32_t _size){
+    buffer.getRawData(data, _size);
 }
 
 void qpid::framing::AMQContentBody::print(std::ostream& out) const

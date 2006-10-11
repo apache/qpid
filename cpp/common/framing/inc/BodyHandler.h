@@ -30,6 +30,7 @@ namespace framing {
 
     class BodyHandler{
     public:
+        virtual ~BodyHandler();
 	virtual void handleMethod(AMQMethodBody::shared_ptr body) = 0;
 	virtual void handleHeader(AMQHeaderBody::shared_ptr body) = 0;
 	virtual void handleContent(AMQContentBody::shared_ptr body) = 0;

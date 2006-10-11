@@ -147,8 +147,8 @@ class EmptyValue : public Value {
     ~EmptyValue();
     virtual u_int32_t size() const { return 0; }
     virtual char getType() const { return 0; }
-    virtual void encode(Buffer& buffer) {}
-    virtual void decode(Buffer& buffer) {}
+    virtual void encode(Buffer& ) {}
+    virtual void decode(Buffer& ) {}
     virtual bool operator==(const Value& v) const {
         return dynamic_cast<const EmptyValue*>(&v);
     }

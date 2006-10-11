@@ -41,8 +41,8 @@ Message::Message(const ConnectionToken* const _publisher,
 Message::~Message(){
 }
 
-void Message::setHeader(AMQHeaderBody::shared_ptr header){
-    this->header = header;
+void Message::setHeader(AMQHeaderBody::shared_ptr _header){
+    this->header = _header;
 }
 
 void Message::addContent(AMQContentBody::shared_ptr data){

@@ -25,15 +25,17 @@ using namespace qpid::io;
 using namespace qpid::concurrent;
 using qpid::QpidError;
 
-LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout) : size(_size), 
-                                                                                    timeout(_timeout), 
-                                                                                    signalledCount(0),
-                                                                                    current(0),
-                                                                                    count(0),
-                                                                                    hasLeader(false),
-                                                                                    workerCount(_workers),
-                                                                                    workers(new Thread*[_workers]),
-                                                                                    stopped(false){
+LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout) :
+    size(_size),
+    timeout(_timeout), 
+    signalledCount(0),
+    current(0),
+    count(0),
+    workerCount(_workers),
+    hasLeader(false),
+    workers(new Thread*[_workers]),
+    stopped(false)
+{
 
     CHECK_APR_SUCCESS(apr_pollset_create(&pollset, size, pool, APR_POLLSET_THREADSAFE));
     //create & start the required number of threads
@@ -87,17 +89,13 @@ void LFProcessor::update(const apr_pollfd_t* const fd){
 }
 
 bool LFProcessor::full(){
-    countLock.acquire();
-    bool full = count == size; 
-    countLock.release();
-    return full;
+    Locker locker(countLock);
+    return count == size; 
 }
 
 bool LFProcessor::empty(){
-    countLock.acquire();
-    bool empty = count == 0; 
-    countLock.release();
-    return empty;
+    Locker locker(countLock);
+    return count == 0; 
 }
 
 void LFProcessor::poll(){

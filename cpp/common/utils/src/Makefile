@@ -13,13 +13,10 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  #
-##### Options #####
+
 QPID_HOME = ../../../..
-
-include ${QPID_HOME}/cpp/options.mk
-
-##### Compiler flags #####
-CXXFLAGS = -I ../inc -I ${APR_HOME}/include/apr-1/
+include $(QPID_HOME)/cpp/options.mk
+INCLUDES=$(TEST_INCLUDES)
 
 ##### Targets #####
 # Add additional source files to SOURCE LIST to include them in the build.

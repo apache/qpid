@@ -32,7 +32,7 @@ namespace io {
     {
         
     public:
-	ConnectorImpl(bool debug = false, u_int32_t buffer_size = 1024):APRConnector(debug,buffer_size){};
+	ConnectorImpl(bool _debug = false, u_int32_t buffer_size = 1024):APRConnector(_debug,buffer_size){};
 	virtual ~ConnectorImpl(){};
     };
 #else
@@ -40,7 +40,7 @@ namespace io {
     {
         
     public:
-	ConnectorImpl(bool debug = false, u_int32_t buffer_size = 1024):LConnector(debug, buffer_size){};
+	ConnectorImpl(bool _debug = false, u_int32_t buffer_size = 1024):LConnector(_debug, buffer_size){};
 	virtual ~ConnectorImpl(){};
     };
 

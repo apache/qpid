@@ -125,11 +125,11 @@ void Listener::shutdown(){
 void Listener::report(){
     apr_time_t finish = apr_time_as_msec(apr_time_now());
     apr_time_t time = finish - start;
-    std::stringstream report;
-    report << "Received " << count << " messages in " << time << " ms.";
+    std::stringstream reportstr;
+    reportstr << "Received " << count << " messages in " << time << " ms.";
     Message msg;
-    msg.setData(report.str());
-    channel->publish(msg, string(""), responseQueue);
+    msg.setData(reportstr.str());
+    channel->publish(msg, string(), responseQueue);
     if(transactional){
         channel->commit();
     }

@@ -21,12 +21,12 @@
 using namespace qpid::concurrent;
 using namespace qpid::io;
 
-LFAcceptor::LFAcceptor(bool _debug, int c, int worker_threads, int m) : processor(aprPool.pool, worker_threads, 1000, 5000000),
-                                                                        connectionBacklog(c),
-                                                                        max_connections_per_processor(m), 
-                                                                        debug(_debug){
-
-}
+LFAcceptor::LFAcceptor(bool _debug, int c, int worker_threads, int m) :
+    processor(aprPool.pool, worker_threads, 1000, 5000000),
+    max_connections_per_processor(m), 
+    debug(_debug),
+    connectionBacklog(c)
+{ }
 
 
 void LFAcceptor::bind(int port, SessionHandlerFactory* factory){

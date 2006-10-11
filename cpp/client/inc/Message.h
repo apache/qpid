@@ -38,10 +38,10 @@ namespace client {
 	~Message();
 	
 	inline std::string getData(){ return data; }
-	inline void setData(const std::string& data){ this->data = data; }
+	inline void setData(const std::string& _data){ data = _data; }
 
 	inline bool isRedelivered(){ return redelivered; }
-	inline void setRedelivered(bool redelivered){ this->redelivered = redelivered; }
+	inline void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
 
         inline u_int64_t getDeliveryTag(){ return deliveryTag; }
 

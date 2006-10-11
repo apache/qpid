@@ -27,6 +27,7 @@ namespace client {
 
     class MessageListener{
     public:
+        virtual ~MessageListener();
 	virtual void received(Message& msg) = 0;
     };
 

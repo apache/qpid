@@ -17,7 +17,7 @@
  */
 #include "APRBase.h"
 #include "APRSocket.h"
-
+#include <assert.h>
 #include <iostream>
 
 using namespace qpid::io;
@@ -45,6 +45,8 @@ void APRSocket::write(qpid::framing::Buffer& buffer){
     do{
         bytes = buffer.available();
         apr_status_t s = apr_socket_send(socket, buffer.start(), &bytes);
+        // TODO aconway 2006-10-05: better error handling
+        assert(s == 0);
         buffer.move(bytes);    
     }while(bytes > 0);
 }

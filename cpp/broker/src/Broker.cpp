@@ -87,6 +87,6 @@ Acceptor* createAcceptor(Configuration& config){
     throw Configuration::ParseException("Unrecognised acceptor: " + type);
 }
 
-void handle_signal(int signal){
+void handle_signal(int /*signal*/){
     std::cout << "Shutting down..." << std::endl;
 }

@@ -16,6 +16,7 @@
  *
  */
 #include "Configuration.h"
+#include <string.h>
 
 using namespace qpid::broker;
 using namespace std;
@@ -191,5 +192,5 @@ bool Configuration::BoolOption::needsValue() const {
 }
 
 void Configuration::BoolOption::setValue(const std::string& _value){
-    value = true;
+    value = strcasecmp(_value.c_str(), "true") == 0;
 }

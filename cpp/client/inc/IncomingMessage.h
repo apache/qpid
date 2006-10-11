@@ -35,7 +35,7 @@ namespace client {
 	qpid::framing::AMQHeaderBody::shared_ptr header;
 	std::vector<qpid::framing::AMQContentBody::shared_ptr> content;
 
-	long contentSize();
+	u_int64_t contentSize();
     public:
 	IncomingMessage(qpid::framing::BasicDeliverBody::shared_ptr intro);
 	IncomingMessage(qpid::framing::BasicReturnBody::shared_ptr intro);

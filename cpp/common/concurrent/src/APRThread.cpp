@@ -27,7 +27,7 @@ void* APR_THREAD_FUNC ExecRunnable(apr_thread_t* thread, void *data){
     return NULL;
 } 
 
-APRThread::APRThread(apr_pool_t* _pool, Runnable* _runnable) : pool(_pool), runnable(_runnable){}
+APRThread::APRThread(apr_pool_t* _pool, Runnable* _runnable) : runnable(_runnable), pool(_pool) {}
 
 APRThread::~APRThread(){
 }
