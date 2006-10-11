@@ -20,10 +20,7 @@
 #include "ExchangeRegistry.h"
 #include "Message.h"
 #include "Router.h"
-#include <cppunit/TestCase.h>
-#include <cppunit/TextTestRunner.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/plugin/TestPlugIn.h>
+#include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>
 
@@ -38,16 +35,14 @@ struct TestExchange : public Exchange{
 
     TestExchange() : Exchange("test"), args(0) {}
     
-    void bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    }
+    void bind(Queue::shared_ptr /*queue*/, const string& /*routingKey*/, FieldTable* /*args*/){}
 
-    void unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    }
+    void unbind(Queue::shared_ptr /*queue*/, const string& /*routingKey*/, FieldTable* /*args*/){ }
 
-    void route(Message::shared_ptr& msg, const string& routingKey, FieldTable* args){
-        this->msg = msg;
-        this->routingKey = routingKey;
-        this->args = args;
+    void route(Message::shared_ptr& _msg, const string& _routingKey, FieldTable* _args){
+        msg = _msg;
+        routingKey = _routingKey;
+        args = _args;
     }
 };
 

@@ -36,7 +36,7 @@ class SimpleListener : public virtual MessageListener{
 public:
     inline SimpleListener(Monitor* _monitor) : monitor(_monitor){}
 
-    inline virtual void received(Message& msg){
+    inline virtual void received(Message& /*msg*/){
 	std::cout << "Received message " /**<< msg **/<< std::endl;
 	monitor->acquire();
 	monitor->notify();
@@ -44,7 +44,7 @@ public:
     }
 };
 
-int main(int argc, char** argv)
+int main(int argc, char**)
 {
     try{               
 	Connection con(argc > 1);

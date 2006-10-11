@@ -17,10 +17,7 @@
  */
 #include "APRBase.h"
 #include "Message.h"
-#include <cppunit/TestCase.h>
-#include <cppunit/TextTestRunner.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/plugin/TestPlugIn.h>
+#include <qpid_test_plugin.h>
 #include <iostream>
 
 using namespace qpid::broker;

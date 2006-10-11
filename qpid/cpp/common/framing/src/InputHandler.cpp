@@ -15,24 +15,7 @@
  * limitations under the License.
  *
  */
-#include <string>
 
-#ifndef _ReturnedMessageHandler_
-#define _ReturnedMessageHandler_
+#include "InputHandler.h"
 
-#include "Message.h"
-
-namespace qpid {
-namespace client {
-
-    class ReturnedMessageHandler{
-    public:
-        virtual ~ReturnedMessageHandler();
-	virtual void returned(Message& msg) = 0;
-    };
-
-}
-}
-
-
-#endif
+qpid::framing::InputHandler::~InputHandler() {}

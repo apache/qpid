@@ -91,7 +91,6 @@ void qpid::concurrent::check(apr_status_t status, const std::string& file, const
 std::string qpid::concurrent::get_desc(apr_status_t status){
     const int size = 50;
     char tmp[size];
-    std::string msg(apr_strerror(status, tmp, size));
-    return msg;
+    return std::string(apr_strerror(status, tmp, size));
 }
 

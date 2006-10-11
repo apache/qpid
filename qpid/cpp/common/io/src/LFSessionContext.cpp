@@ -26,17 +26,19 @@ using namespace qpid::framing;
 
 LFSessionContext::LFSessionContext(apr_pool_t* _pool, apr_socket_t* _socket, 
                                    LFProcessor* const _processor,
-                                   bool _debug) : socket(_socket),
-                                                  processor(_processor),
-                                                  initiated(false),
-                                                  processing(false),
-                                                  closing(false),
-                                                  in(32768),
-                                                  out(32768),
-                                                  reading(0),
-                                                  writing(0),
-                                                  debug(_debug){
-
+                                   bool _debug) :
+    debug(_debug),
+    socket(_socket),
+    initiated(false),
+    in(32768),
+    out(32768),
+    processor(_processor),
+    processing(false),
+    closing(false),
+    reading(0),
+    writing(0)
+{
+    
     fd.p = _pool;
     fd.desc_type = APR_POLL_SOCKET;
     fd.reqevents = APR_POLLIN;
@@ -63,9 +65,9 @@ void LFSessionContext::read(){
             handler->received(&frame);
         }
     }else{
-        ProtocolInitiation init;
-        if(init.decode(in)){
-            handler->initiated(&init);
+        ProtocolInitiation protocolInit;
+        if(protocolInit.decode(in)){
+            handler->initiated(&protocolInit);
             initiated = true;
             if(debug) std::cout << "INIT [" << &socket << "]" << std::endl;
         }
@@ -173,8 +175,8 @@ void LFSessionContext::shutdown(){
     handleClose();
 }
 
-void LFSessionContext::init(SessionHandler* handler){
-    this->handler = handler;
+void LFSessionContext::init(SessionHandler* _handler){
+    handler = _handler;
     processor->add(&fd);
 }
 

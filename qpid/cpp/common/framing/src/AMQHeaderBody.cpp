@@ -41,12 +41,12 @@ void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {
     properties->encode(buffer);
 }
 
-void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, u_int32_t size){
+void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, u_int32_t bufSize){
     u_int16_t classId = buffer.getShort();
     weight = buffer.getShort();
     contentSize = buffer.getLongLong();
     createProperties(classId);
-    properties->decode(buffer, size - 12);
+    properties->decode(buffer, bufSize - 12);
 }
 
 void qpid::framing::AMQHeaderBody::createProperties(int classId){

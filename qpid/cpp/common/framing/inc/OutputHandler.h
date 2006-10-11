@@ -27,6 +27,7 @@ namespace framing {
 
     class OutputHandler{
     public:
+        virtual ~OutputHandler();
 	virtual void send(AMQFrame* frame) = 0;
     };
 

@@ -26,16 +26,17 @@ using namespace qpid::framing;
 using namespace qpid::concurrent;
 
 
-Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize) : out(_out), 
-                                                                       id(_id), 
-                                                                       prefetchCount(0),
-                                                                       prefetchSize(0),
-                                                                       outstandingSize(0),
-                                                                       outstandingCount(0),
-                                                                       framesize(_framesize),
-                                                                       transactional(false),
-                                                                       deliveryTag(1),
-                                                                       tagGenerator("sgen"){}
+Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize) :
+    id(_id), 
+    out(_out), 
+    deliveryTag(1),
+    transactional(false),
+    prefetchSize(0),
+    prefetchCount(0),
+    outstandingSize(0),
+    outstandingCount(0),
+    framesize(_framesize),
+    tagGenerator("sgen"){}
 
 Channel::~Channel(){
 }
@@ -156,10 +157,10 @@ void Channel::handlePublish(Message* msg){
     message = Message::shared_ptr(msg);
 }
 
-void Channel::ack(u_int64_t deliveryTag, bool multiple){
+void Channel::ack(u_int64_t _deliveryTag, bool multiple){
     Locker locker(deliveryLock);//need to synchronize with possible concurrent delivery
     
-    ack_iterator i = find_if(unacknowledged.begin(), unacknowledged.end(), MatchAck(deliveryTag));
+    ack_iterator i = find_if(unacknowledged.begin(), unacknowledged.end(), MatchAck(_deliveryTag));
     if(i == unacknowledged.end()){
         throw InvalidAckException();
     }else if(multiple){        
@@ -178,8 +179,8 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
 
     //if the prefetch limit had previously been reached, there may
     //be messages that can be now be delivered
-    for(consumer_iterator i = consumers.begin(); i != consumers.end(); i++){
-        i->second->requestDispatch();
+    for(consumer_iterator j = consumers.begin(); j != consumers.end(); j++){
+        j->second->requestDispatch();
     }
 }
 

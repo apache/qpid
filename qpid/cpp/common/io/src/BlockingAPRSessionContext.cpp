@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+#include <assert.h>
 #include <iostream>
 #include "BlockingAPRSessionContext.h"
 #include "BlockingAPRAcceptor.h"
@@ -32,10 +33,10 @@ BlockingAPRSessionContext::BlockingAPRSessionContext(apr_socket_t* _socket,
                                                      bool _debug) 
     : socket(_socket), 
       debug(_debug),
-      inbuf(65536),
-      outbuf(65536),
       handler(0),
       acceptor(_acceptor),
+      inbuf(65536),
+      outbuf(65536),
       closed(false){
 
     reader = new Reader(this);
@@ -73,9 +74,9 @@ void BlockingAPRSessionContext::read(){
 		inbuf.flip();
 		
                 if(!initiated){
-                    ProtocolInitiation* init = new ProtocolInitiation();
-                    if(init->decode(inbuf)){
-                        handler->initiated(init);
+                    ProtocolInitiation* protocolInit = new ProtocolInitiation();
+                    if(protocolInit->decode(inbuf)){
+                        handler->initiated(protocolInit);
                         if(debug) std::cout << "RECV: [" << &socket << "]: Initialised " << std::endl; 
                         initiated = true;
                     }
@@ -122,6 +123,7 @@ void BlockingAPRSessionContext::write(){
             apr_size_t bytes = available;
             while(available > written){
                 apr_status_t s = apr_socket_send(socket, data + written, &bytes);
+                assert(s == 0); // TODO aconway 2006-10-05: Error Handling.
                 written += bytes;
                 bytes = available - written;
             }
@@ -146,9 +148,8 @@ void BlockingAPRSessionContext::send(AMQFrame* frame){
     }
 }
 
-void BlockingAPRSessionContext::init(SessionHandler* handler){
-    this->handler = handler;
-    //start the threads
+void BlockingAPRSessionContext::init(SessionHandler* _handler){
+    handler = _handler;
     rThread->start();
     wThread->start();
 }

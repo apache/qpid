@@ -70,20 +70,20 @@ namespace framing {
 	inline string& getAppId(){ return appId; }
 	inline string& getClusterId(){ return clusterId; }
 
-	void inline setContentType(string& type){ contentType = type; }
+	void inline setContentType(string& _type){ contentType = _type; }
 	void inline setContentEncoding(string& encoding){ contentEncoding = encoding; }
-	void inline setHeaders(FieldTable& headers){ this->headers = headers; }
+	void inline setHeaders(FieldTable& _headers){ headers = _headers; }
 	void inline setDeliveryMode(u_int8_t mode){ deliveryMode = mode; }
-	void inline setPriority(u_int8_t priority){ this->priority = priority; }
-	void inline setCorrelationId(string& correlationId){ this->correlationId = correlationId; }
-	void inline setReplyTo(string& replyTo){ this->replyTo = replyTo;}
-	void inline setExpiration(string&  expiration){ this->expiration = expiration; }
-	void inline setMessageId(string& messageId){ this->messageId = messageId; }
-	void inline setTimestamp(u_int64_t timestamp){ this->timestamp = timestamp; }
-	void inline setType(string& type){ this->type = type; }
-	void inline setUserId(string& userId){ this->userId = userId; }
-	void inline setAppId(string& appId){this->appId = appId; }
-	void inline setClusterId(string& clusterId){ this->clusterId = clusterId; }
+	void inline setPriority(u_int8_t _priority){ priority = _priority; }
+	void inline setCorrelationId(string& _correlationId){ correlationId = _correlationId; }
+	void inline setReplyTo(string& _replyTo){ replyTo = _replyTo;}
+	void inline setExpiration(string&  _expiration){ expiration = _expiration; }
+	void inline setMessageId(string& _messageId){ messageId = _messageId; }
+	void inline setTimestamp(u_int64_t _timestamp){ timestamp = _timestamp; }
+	void inline setType(string& _type){ type = _type; }
+	void inline setUserId(string& _userId){ userId = _userId; }
+	void inline setAppId(string& _appId){appId = _appId; }
+	void inline setClusterId(string& _clusterId){ clusterId = _clusterId; }
     };
 
 }

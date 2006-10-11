@@ -22,16 +22,17 @@
 using namespace qpid::broker;
 using namespace qpid::concurrent;
 
-Queue::Queue(const string& _name, bool _durable, u_int32_t _autodelete, const ConnectionToken* const _owner) : name(_name), 
-                                                                                                               durable(_durable), 
-                                                                                                               autodelete(_autodelete),
-                                                                                                               owner(_owner), 
-                                                                                                               queueing(false),
-                                                                                                               dispatching(false),
-                                                                                                               next(0),
-                                                                                                               lastUsed(0),
-                                                                                                               exclusive(0){
-
+Queue::Queue(const string& _name, bool _durable, u_int32_t _autodelete, const ConnectionToken* const _owner) :
+    name(_name), 
+    autodelete(_autodelete),
+    durable(_durable), 
+    owner(_owner), 
+    queueing(false),
+    dispatching(false),
+    next(0),
+    lastUsed(0),
+    exclusive(0)
+{
     if(autodelete) lastUsed = apr_time_as_msec(apr_time_now());
 }
 
