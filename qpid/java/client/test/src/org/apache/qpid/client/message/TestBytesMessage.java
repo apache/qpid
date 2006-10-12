@@ -23,6 +23,7 @@ import org.junit.Assert;
 
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageEOFException;
 
 public class TestBytesMessage
 {
@@ -83,6 +84,209 @@ public class TestBytesMessage
     {
         JMSBytesMessage bm = new JMSBytesMessage();
         bm.writeObject(null);
+    }
+
+    @Test
+    public void testReadBoolean() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeBoolean(true);
+        bm.reset();
+        boolean result = bm.readBoolean();
+        Assert.assertTrue(result);        
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFByte() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)1);
+        bm.reset();
+        bm.readByte();
+        // should throw
+        bm.readByte();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFUnsignedByte() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)1);
+        bm.reset();
+        bm.readByte();
+        // should throw
+        bm.readUnsignedByte();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFBoolean() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeBoolean(true);
+        bm.reset();
+        bm.readBoolean();
+        // should throw
+        bm.readBoolean();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFChar() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeChar('A');
+        bm.reset();
+        bm.readChar();
+        // should throw
+        bm.readChar();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFDouble() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeDouble(1.3d);
+        bm.reset();
+        bm.readDouble();
+        // should throw
+        bm.readDouble();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFFloat() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeFloat(1.3f);
+        bm.reset();
+        bm.readFloat();
+        // should throw
+        bm.readFloat();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFInt() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeInt(99);
+        bm.reset();
+        bm.readInt();
+        // should throw
+        bm.readInt();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFLong() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeLong(4L);
+        bm.reset();
+        bm.readLong();
+        // should throw
+        bm.readLong();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFShort() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeShort((short)4);
+        bm.reset();
+        bm.readShort();
+        // should throw
+        bm.readShort();
+    }
+
+    @Test(expected=MessageEOFException.class)
+    public void testEOFUnsignedShort() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeShort((short)4);
+        bm.reset();
+        bm.readUnsignedShort();
+        // should throw
+        bm.readUnsignedShort();
+    }
+
+    /**
+     * Tests that the readBytes() method populates the passed in array
+     * correctly
+     * @throws Exception
+     */
+    @Test
+    public void testReadBytes() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)3);
+        bm.writeByte((byte)4);
+        bm.reset();
+        byte[] result = new byte[2];
+        int count = bm.readBytes(result);
+        Assert.assertEquals((byte)3, result[0]);
+        Assert.assertEquals((byte)4, result[1]);
+        Assert.assertEquals(2, count);
+    }
+
+    @Test
+    public void testReadBytesEOF() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)3);
+        bm.writeByte((byte)4);
+        bm.reset();
+        byte[] result = new byte[2];
+        bm.readBytes(result);
+        int count = bm.readBytes(result);
+        Assert.assertEquals(-1, count);
+    }
+
+    @Test
+    public void testReadBytesWithLargerArray() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)3);
+        bm.writeByte((byte)4);
+        bm.reset();
+        byte[] result = new byte[3];
+        int count = bm.readBytes(result);
+        Assert.assertEquals(2, count);
+        Assert.assertEquals((byte)3, result[0]);
+        Assert.assertEquals((byte)4, result[1]);
+        Assert.assertEquals((byte)0, result[2]);
+    }
+
+    @Test
+    public void testReadBytesWithCount() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.writeByte((byte)3);
+        bm.writeByte((byte)4);
+        bm.writeByte((byte)5);
+        bm.reset();
+        byte[] result = new byte[3];
+        int count = bm.readBytes(result, 2);
+        Assert.assertEquals(2, count);
+        Assert.assertEquals((byte)3, result[0]);
+        Assert.assertEquals((byte)4, result[1]);
+        Assert.assertEquals((byte)0, result[2]);
+    }
+
+    @Test
+    public void testToBodyString() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        final String testText = "This is a test";
+        bm.writeUTF(testText);
+        bm.reset();
+        String result = bm.toBodyString();
+        Assert.assertEquals(testText, result);
+    }
+
+    @Test
+    public void testToBodyStringWithNull() throws Exception
+    {
+        JMSBytesMessage bm = new JMSBytesMessage();
+        bm.reset();
+        String result = bm.toBodyString();
+        Assert.assertNull(result);
     }
 
     public static junit.framework.Test suite()

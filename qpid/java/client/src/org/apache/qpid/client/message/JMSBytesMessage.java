@@ -25,6 +25,7 @@ import org.apache.mina.common.ByteBuffer;
 import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageEOFException;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.CharacterCodingException;
@@ -141,6 +142,19 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         }
     }
 
+    /**
+     * Check that there is at least a certain number of bytes available to read
+     * @param len the number of bytes
+     * @throws MessageEOFException if there are less than len bytes available to read
+     */
+    private void checkAvailable(int len) throws MessageEOFException
+    {
+        if (_data.remaining() < len)
+        {
+            throw new MessageEOFException("Unable to read " + len + " bytes");
+        }
+    }
+
     private void checkWritable() throws MessageNotWriteableException
     {
         if (_readable)
@@ -152,66 +166,84 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
     public boolean readBoolean() throws JMSException
     {
         checkReadable();
+        checkAvailable(1);
         return _data.get() != 0;
     }
 
     public byte readByte() throws JMSException
     {
         checkReadable();
+        checkAvailable(1);
         return _data.get();
     }
 
     public int readUnsignedByte() throws JMSException
     {
         checkReadable();
+        checkAvailable(1);
         return _data.getUnsigned();
     }
 
     public short readShort() throws JMSException
     {
         checkReadable();
+        checkAvailable(2);
         return _data.getShort();
     }
 
     public int readUnsignedShort() throws JMSException
     {
         checkReadable();
+        checkAvailable(2);
         return _data.getUnsignedShort();
     }
 
+    /**
+     * Note that this method reads a unicode character as two bytes from the stream
+     * @return the character read from the stream
+     * @throws JMSException
+     */
     public char readChar() throws JMSException
     {
         checkReadable();
+        checkAvailable(2);
         return _data.getChar();
     }
 
     public int readInt() throws JMSException
     {
         checkReadable();
+        checkAvailable(4);
         return _data.getInt();
     }
 
     public long readLong() throws JMSException
     {
         checkReadable();
+        checkAvailable(8);
         return _data.getLong();
     }
 
     public float readFloat() throws JMSException
     {
         checkReadable();
+        checkAvailable(4);
         return _data.getFloat();
     }
 
     public double readDouble() throws JMSException
     {
         checkReadable();
+        checkAvailable(8);
         return _data.getDouble();
     }
 
     public String readUTF() throws JMSException
     {
         checkReadable();
+        // we check only for one byte since theoretically the string could be only a
+        // single byte when using UTF-8 encoding
+        checkAvailable(1);
         try
         {
             return _data.getString(Charset.forName("UTF-8").newDecoder());
@@ -232,8 +264,15 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         }
         checkReadable();
         int count = (_data.remaining() >= bytes.length ? bytes.length : _data.remaining());
-        _data.get(bytes, 0, count);
-        return count;
+        if (count == 0)
+        {
+            return -1;
+        }
+        else
+        {
+            _data.get(bytes, 0, count);
+            return count;
+        }
     }
 
     public int readBytes(byte[] bytes, int maxLength) throws JMSException
@@ -248,8 +287,15 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         }
         checkReadable();
         int count = (_data.remaining() >= maxLength ? maxLength : _data.remaining());
-        _data.get(bytes, 0, count);
-        return count;
+        if (count == 0)
+        {
+            return -1;
+        }
+        else
+        {
+            _data.get(bytes, 0, count);
+            return count;
+        }
     }
 
     public void writeBoolean(boolean b) throws JMSException
