@@ -124,7 +124,7 @@ Channel::ConsumerImpl::ConsumerImpl(Channel* _parent, string& _tag,
 }
 
 bool Channel::ConsumerImpl::deliver(Message::shared_ptr& msg){
-    if(connection != msg->getPublisher()){//check for no_local
+    if(!connection || connection != msg->getPublisher()){//check for no_local
         if(ackExpected && !parent->checkPrefetch(msg)){
             blocked = true;
         }else{

@@ -108,7 +108,7 @@ class ChannelTest : public CppUnit::TestCase
         msg->addContent(body);
 
         Queue::shared_ptr queue(new Queue("my_queue"));
-        ConnectionToken* owner;
+        ConnectionToken* owner(0);
         string tag("no_ack");
         channel.consume(tag, queue, false, false, owner);
 
