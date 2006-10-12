@@ -67,7 +67,7 @@ public class ChannelCloseOkTest
         _session1.createConsumer(_destination1).setMessageListener(new MessageListener() {
             public void onMessage(Message message)
             {
-                _log.info("consumer 1 got message [" + getTextMessage(message) + "]");
+                _log.debug("consumer 1 got message [" + getTextMessage(message) + "]");
                 synchronized (_received1)
                 {
                     _received1.add(message);
@@ -79,7 +79,7 @@ public class ChannelCloseOkTest
         _session2.createConsumer(_destination2).setMessageListener(new MessageListener() {
             public void onMessage(Message message)
             {
-                _log.info("consumer 2 got message [" +  getTextMessage(message) + "]");
+                _log.debug("consumer 2 got message [" +  getTextMessage(message) + "]");
                 synchronized (_received2)
                 {
                     _received2.add(message);
@@ -170,7 +170,7 @@ public class ChannelCloseOkTest
 
     private void send(Session session, Destination destination, String message) throws JMSException
     {
-        _log.info("sending message " + message);
+        _log.debug("sending message " + message);
         MessageProducer producer1 = session.createProducer(destination);
         producer1.send(session.createTextMessage(message));
     }
