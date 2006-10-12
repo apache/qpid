@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.vmbroker;
+package org.apache.qpid.client.vmbroker;
 
 import org.apache.qpid.client.transport.AMQTransportConnectionException;
 

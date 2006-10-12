@@ -175,15 +175,9 @@ public class WriterTest implements Runnable
     public void startWriter() throws IOException, InterruptedException
     {
         IoConnector ioConnector = null;
-        boolean useMultithreadedIoProcessor = Boolean.getBoolean("qpid.io.multithreaded");
-        if (useMultithreadedIoProcessor)
-        {
-            ioConnector = new org.apache.qpid.nio.SocketConnector();
-        }
-        else
-        {
-            ioConnector = new SocketConnector();
-        }
+
+        ioConnector = new SocketConnector();
+        
         SocketConnectorConfig cfg = (SocketConnectorConfig) ioConnector.getDefaultConfig();
         cfg.setThreadModel(ThreadModel.MANUAL);
         SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();

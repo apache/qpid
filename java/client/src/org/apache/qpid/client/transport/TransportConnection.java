@@ -27,7 +27,7 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 
 
 import java.io.IOException;
@@ -107,34 +107,20 @@ public class TransportConnection
 
         {
             case TCP:
-                if (Boolean.getBoolean("amqj.useBlockingIo"))
+                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                 {
-                    _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                    public IoConnector newSocketConnector()
                     {
-                        public IoConnector newSocketConnector()
-                        {
-                            return new org.apache.qpid.bio.SocketConnector(); // blocking connector
-                        }
-                    });
-                }
-                else
-                {
-                    _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
-                    {
-                        public IoConnector newSocketConnector()
-                        {
-                            SocketConnector result = new SocketConnector(); // non-blocking connector
+                        SocketConnector result = new SocketConnector(); // non-blocking connector
 
-                            // Don't have the connector's worker thread wait around for other connections (we only use
-                            // one SocketConnector per connection at the moment anyway). This allows short-running
-                            // clients (like unit tests) to complete quickly.
-                            result.setWorkerTimeout(0L);
+                        // Don't have the connector's worker thread wait around for other connections (we only use
+                        // one SocketConnector per connection at the moment anyway). This allows short-running
+                        // clients (like unit tests) to complete quickly.
+                        result.setWorkerTimeout(0);
 
-                            return result;
-                        }
-                    });
-
-                }
+                        return result;
+                    }
+                });
                 break;
             case VM:
             {
