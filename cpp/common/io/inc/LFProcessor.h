@@ -104,7 +104,11 @@ namespace io {
          * Start processing.
          */
         void start();
-
+        /**
+         * Is processing stopped?
+         */
+        bool isStopped();
+        
 	~LFProcessor();
     };
 

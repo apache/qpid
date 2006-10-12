@@ -21,7 +21,7 @@
 QPID_HOME=../..
 include $(QPID_HOME)/cpp/options.mk
 TARGET = $(LIB_DIR)/libqpid_common.so.1.0
-SOURCES = $(wildcard */src/*.cpp framing/generated/*.cpp)
+SOURCES = $(wildcard */src/*.cpp framing/generated/*.cpp error/*.cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
 DEPS = $(SOURCES:.cpp=.d)
 

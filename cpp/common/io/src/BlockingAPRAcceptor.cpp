@@ -33,14 +33,25 @@ BlockingAPRAcceptor::BlockingAPRAcceptor(bool _debug, int c) :
     CHECK_APR_SUCCESS(apr_pool_create(&apr_pool, NULL));
 }
 
-void BlockingAPRAcceptor::bind(int port, SessionHandlerFactory* factory){
+int16_t BlockingAPRAcceptor::bind(int16_t _port){
     apr_sockaddr_t* address;
-    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, port, APR_IPV4_ADDR_OK, apr_pool));
+    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, _port, APR_IPV4_ADDR_OK, apr_pool));
     CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, apr_pool));
     CHECK_APR_SUCCESS(apr_socket_bind(socket, address));
     CHECK_APR_SUCCESS(apr_socket_listen(socket, connectionBacklog));
+    return getPort();
+}
+
+int16_t BlockingAPRAcceptor::getPort() const {
+    apr_sockaddr_t* address;
+    CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
+    return address->port;
+}
+
+void BlockingAPRAcceptor::run(SessionHandlerFactory* factory) 
+{
     running = true;
-    std::cout << "Listening on port " << port << "..." << std::endl;
+    std::cout << "Listening on port " << getPort() << "..." << std::endl;
     while(running){
         apr_socket_t* client;
         apr_status_t status = apr_socket_accept(&client, socket, apr_pool);
@@ -61,11 +72,20 @@ void BlockingAPRAcceptor::bind(int port, SessionHandlerFactory* factory){
             }
         }
     }
-    for(iterator i = sessions.begin(); i < sessions.end(); i++){
-        (*i)->shutdown();
-    }
+    shutdown();
+}
 
-    CHECK_APR_SUCCESS(apr_socket_close(socket));
+void BlockingAPRAcceptor::shutdown() 
+{
+    // TODO aconway 2006-10-12: Not thread safe.
+    if (running) 
+    {
+        running = false;
+        apr_socket_close(socket); // Don't check, exception safety.
+        for(iterator i = sessions.begin(); i < sessions.end(); i++){
+            (*i)->shutdown();
+        }
+    }
 }
 
 BlockingAPRAcceptor::~BlockingAPRAcceptor(){
@@ -77,6 +97,5 @@ BlockingAPRAcceptor::~BlockingAPRAcceptor(){
 
 void BlockingAPRAcceptor::closed(BlockingAPRSessionContext* session){
     sessions.erase(find(sessions.begin(), sessions.end(), session));
-    delete this;
 }
 
