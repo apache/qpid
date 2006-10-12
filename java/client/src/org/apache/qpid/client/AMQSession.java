@@ -785,6 +785,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         declareExchange(name, type, _connection.getProtocolHandler());
     }
 
+    public void declareExchangeSynch(String name, String type) throws AMQException
+    {
+        AMQFrame frame = ExchangeDeclareBody.createAMQFrame(_channelId, 0, name, type, false, false, false, false, false, null);
+        _connection.getProtocolHandler().syncWrite(frame, ExchangeDeclareOkBody.class);
+    }
+
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler)
     {
         declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), protocolHandler);
