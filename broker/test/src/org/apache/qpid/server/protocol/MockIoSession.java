@@ -49,6 +49,11 @@ public class MockIoSession implements IoSession
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public IoServiceConfig getServiceConfig()
+    {
+        return null;
+    }
+
     public IoHandler getHandler()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
