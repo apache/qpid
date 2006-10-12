@@ -25,6 +25,9 @@ using namespace qpid::io;
 using namespace qpid::concurrent;
 using qpid::QpidError;
 
+// TODO aconway 2006-10-12: stopped is read outside locks.
+//
+
 LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout) :
     size(_size),
     timeout(_timeout), 
@@ -46,6 +49,7 @@ LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout
 
 
 LFProcessor::~LFProcessor(){
+    if (!stopped) stop();
     for(int i = 0; i < workerCount; i++){
         delete workers[i];
     }

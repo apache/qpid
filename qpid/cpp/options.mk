@@ -30,7 +30,7 @@ OPTIMIZE =
 DEFINES   = -D _USE_APR_IO_
 APR_INCLUDES=-I ${APR_HOME}/include/apr-1/ 
 COMMON_INCLUDES = -I ${COMMON_HOME}/framing/inc -I ${COMMON_HOME}/framing/generated -I ${COMMON_HOME}/concurrent/inc -I ${COMMON_HOME}/io/inc -I ${COMMON_HOME}/error/inc -I $(COMMON_HOME)/utils/inc ${APR_INCLUDES}
-SRC_INCLUDES = $(COMMON_INCLUDES) -I inc
+SRC_INCLUDES = $(COMMON_INCLUDES) -I inc 
 TEST_INCLUDES = $(COMMON_INCLUDES) -I ../inc -I $(QPID_CPP_HOME)/test/include
 INCLUDES=$(SRC_INCLUDES)	# Default to src
 

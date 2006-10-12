@@ -15,39 +15,7 @@
  * limitations under the License.
  *
  */
-#ifndef _Acceptor_
-#define _Acceptor_
 
-#include "SessionHandlerFactory.h"
+#include "Acceptor.h"
 
-namespace qpid {
-namespace io {
-
-    class Acceptor
-    {
-    public:
-        /**
-         * Bind to port.
-         * @param port Port to bind to, 0 to bind to dynamically chosen port.
-         * @return The local bound port.
-         */
-        virtual int16_t bind(int16_t port) = 0;
-
-        /**
-         * Run the acceptor.
-         */
-        virtual void run(SessionHandlerFactory* factory) = 0;
-
-        /**
-         * Shut down the acceptor.
-         */
-        virtual void shutdown() = 0;
-        
-	virtual ~Acceptor();
-    };
-
-}
-}
-
-
-#endif
+qpid::io::Acceptor::~Acceptor() {}
