@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Assert;
 import org.junit.After;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 
 /**
  * Runs the Service's and Client parts of the test in the same process
