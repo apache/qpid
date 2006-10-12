@@ -19,7 +19,7 @@ package org.apache.qpid.failover;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 
 public class FailoverBrokerTester implements Runnable
 {

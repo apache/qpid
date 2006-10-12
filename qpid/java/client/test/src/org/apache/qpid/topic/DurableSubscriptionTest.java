@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
