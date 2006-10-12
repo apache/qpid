@@ -18,7 +18,7 @@
 package org.apache.qpid.pool;
 
 import org.apache.mina.common.IoFilterChain;
-import org.apache.mina.common.ReferenceCountingIoFilter;
+import org.apache.mina.filter.ReferenceCountingIoFilter;
 import org.apache.mina.common.ThreadModel;
 
 public class ReadWriteThreadModel implements ThreadModel
