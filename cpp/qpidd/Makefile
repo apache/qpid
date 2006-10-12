@@ -15,25 +15,28 @@
 #
 
 #
-# Build broker library.
+# Build qpidd broker daemon executable.
 #
 
 QPID_HOME = ../..
-include ${QPID_HOME}/cpp/options.mk
-TARGET=$(BROKER_LIB)
+include $(QPID_HOME)/cpp/options.mk
+TARGET=$(BROKER)
 SOURCES= $(wildcard src/*.cpp)
 OBJECTS= $(subst .cpp,.o,$(SOURCES))
 
-.PHONY: all clean 
+
+.PHONY: all clean test
 
 all: $(TARGET)
+
+test:
 	@$(MAKE) -C test all
 
 clean:
-	-@rm -f $(TARGET) ${OBJECTS} src/*.d 
+	-@rm -f $(OBJECTS) src/*.d $(TARGET) 
 	@$(MAKE) -C test clean
 
 $(TARGET): $(OBJECTS)
-	$(CXX) -shared -o $@ $(LDFLAGS) $(OBJECTS)  -lapr-1 $(COMMON_LIB) $(LIBDIR)
+	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) -lapr-1 $(COMMON_LIB) $(BROKER_LIB)
 
 -include $(SOURCES:.cpp=.d)

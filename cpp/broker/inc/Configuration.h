@@ -21,11 +21,12 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include "Exception.h"
 
 namespace qpid {
     namespace broker {
         class Configuration{
-            class Option{
+            class Option {
                 const std::string flag;
                 const std::string name;
                 const std::string desc;
@@ -56,6 +57,7 @@ namespace qpid {
                 int getValue() const;
                 virtual bool needsValue() const;
                 virtual void setValue(const std::string& value);
+                virtual void setValue(int _value) { value = _value; }
             };
 
             class StringOption : public Option{
@@ -82,6 +84,7 @@ namespace qpid {
                 bool getValue() const;
                 virtual bool needsValue() const;
                 virtual void setValue(const std::string& value);
+                virtual void setValue(bool _value) { value = _value; }
             };
 
             BoolOption trace;
@@ -96,10 +99,9 @@ namespace qpid {
             std::vector<Option*> options;
 
         public:
-            class ParseException{
-            public:
-                const std::string& error;
-                ParseException(const std::string& _error) : error(_error) {}
+            class ParseException : public Exception {
+              public:
+                ParseException(const std::string& msg) : Exception(msg) {}
             };
 
 
@@ -108,13 +110,21 @@ namespace qpid {
 
             void parse(int argc, char** argv);
 
-            bool isHelp();
-            bool isTrace();
-            int getPort();
-            int getWorkerThreads();
-            int getMaxConnections();
-            int getConnectionBacklog();
-            const std::string& getAcceptor();
+            bool isHelp() const;
+            bool isTrace() const;
+            int getPort() const;
+            int getWorkerThreads() const;
+            int getMaxConnections() const;
+            int getConnectionBacklog() const;
+            std::string getAcceptor() const;
+
+            void setHelp(bool b) { help.setValue(b); }
+            void setTrace(bool b) { trace.setValue(b); }
+            void setPort(int i) { port.setValue(i); }
+            void setWorkerThreads(int i) { workerThreads.setValue(i); }
+            void setMaxConnections(int i) { maxConnections.setValue(i); }
+            void setConnectionBacklog(int i) { connectionBacklog.setValue(i); }
+            void setAcceptor(const std::string& val) { acceptor.setValue(val); }
 
             void usage();
         };

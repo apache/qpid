@@ -16,14 +16,6 @@
  *
  */
 
-#include "QpidError.h"
-#include <ostream>
+#include "Exception.h"
 
-std::ostream& operator <<(std::ostream& out, const QpidError& error) 
-{
-    out << "Qpid Error [" << error.code << "] " << error.msg
-        << " (" << error.file << ":" << error.line << ")";
-    return out;
-}
-
-
+qpid::Exception::~Exception() throw() {}

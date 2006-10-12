@@ -61,31 +61,31 @@ void Configuration::usage(){
     }
 }
 
-bool Configuration::isHelp(){
+bool Configuration::isHelp() const {
     return help.getValue();
 }
 
-bool Configuration::isTrace(){
+bool Configuration::isTrace() const {
     return trace.getValue();
 }
 
-int Configuration::getPort(){
+int Configuration::getPort() const {
     return port.getValue();
 }
 
-int Configuration::getWorkerThreads(){
+int Configuration::getWorkerThreads() const {
     return workerThreads.getValue();
 }
 
-int Configuration::getMaxConnections(){
+int Configuration::getMaxConnections() const {
     return maxConnections.getValue();
 }
 
-int Configuration::getConnectionBacklog(){
+int Configuration::getConnectionBacklog() const {
     return connectionBacklog.getValue();
 }
 
-const string& Configuration::getAcceptor(){
+string Configuration::getAcceptor() const {
     return acceptor.getValue();
 }
 

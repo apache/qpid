@@ -1,5 +1,3 @@
-#ifndef __QpidError__
-#define __QpidError__
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -17,30 +15,18 @@
  * limitations under the License.
  *
  */
-#include <string>
-#include "Exception.h"
 
-namespace qpid {
+#include "QpidError.h"
+#include <sstream>
 
-    class QpidError : public Exception { 
-      public:
-        const int code;
-        const std::string msg;
-        const std::string file;
-        const int line;
+using namespace qpid;
 
-        QpidError(int _code, const std::string& _msg, const std::string& _file, int _line) throw();
-        ~QpidError() throw();
-    };
-
-#define THROW_QPID_ERROR(A, B) throw QpidError(A, B, __FILE__, __LINE__)
-
+QpidError::QpidError(int _code, const std::string& _msg, const std::string& _file, int _line) throw()
+    : code(_code), msg(_msg), file(_file), line(_line) 
+{
+    std::ostringstream os;
+    os << "QpidError(" << code << ") " << msg << " (" << file << ":" << line << ")";
+    whatStr = os.str();
 }
 
-#define PROTOCOL_ERROR 10000
-#define APR_ERROR 20000
-#define FRAMING_ERROR 30000
-#define CLIENT_ERROR 40000
-#define INTERNAL_ERROR 50000
-
-#endif
+QpidError::~QpidError() throw() {}
