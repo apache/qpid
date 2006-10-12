@@ -21,6 +21,7 @@
 #
 
 UNITTESTS=$(wildcard common/*/test/*.so broker/test/*.so)
+SUBDIRS=common broker qpidd client
 
 .PHONY: all test unittest pythontest runtests clean doxygen
 
@@ -37,14 +38,10 @@ runtests:
 	$(MAKE) -k unittest pythontest
 
 all:
-	@$(MAKE) -C common all
-	@$(MAKE) -C broker all
-	@$(MAKE) -C client all
+	@for DIR in $(SUBDIRS) ; do $(MAKE) -C $$DIR all ; done
 
 clean:
-	@$(MAKE) -C common clean
-	@$(MAKE) -C broker clean
-	@$(MAKE) -C client clean
+	@for DIR in $(SUBDIRS) ; do $(MAKE) -C $$DIR clean ; done
 	@$(MAKE) -C doxygen clean
 	-@rm qpidd.log 
 

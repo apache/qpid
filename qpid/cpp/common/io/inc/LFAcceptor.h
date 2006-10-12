@@ -48,7 +48,7 @@ namespace io {
 
         APRPool aprPool;
         LFProcessor processor;
-
+        apr_socket_t* socket;
         const int max_connections_per_processor;
         const bool debug;
         const int connectionBacklog;
@@ -60,7 +60,10 @@ namespace io {
                    int connectionBacklog = 10, 
                    int worker_threads = 5, 
                    int max_connections_per_processor = 500);
-        virtual void bind(int port, SessionHandlerFactory* factory);
+        virtual int16_t bind(int16_t port);
+        virtual int16_t getPort() const;
+        virtual void run(SessionHandlerFactory* factory);
+        virtual void shutdown();
 	virtual ~LFAcceptor();
     };
 

@@ -29,18 +29,26 @@ LFAcceptor::LFAcceptor(bool _debug, int c, int worker_threads, int m) :
 { }
 
 
-void LFAcceptor::bind(int port, SessionHandlerFactory* factory){
-    apr_socket_t* socket;
+int16_t LFAcceptor::bind(int16_t _port){
     apr_sockaddr_t* address;
-    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, port, APR_IPV4_ADDR_OK, aprPool.pool));
+    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, _port, APR_IPV4_ADDR_OK, aprPool.pool));
     CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, aprPool.pool));
     CHECK_APR_SUCCESS(apr_socket_opt_set(socket, APR_SO_REUSEADDR, 1));
     CHECK_APR_SUCCESS(apr_socket_bind(socket, address));
     CHECK_APR_SUCCESS(apr_socket_listen(socket, connectionBacklog));
+    return getPort();
+}
+
+int16_t LFAcceptor::getPort() const {
+    apr_sockaddr_t* address;
+    CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
+    return address->port;
+}
+
+void LFAcceptor::run(SessionHandlerFactory* factory) {
     running = true;
     processor.start();
-
-    std::cout << "Listening on port " << port << "..." << std::endl;
+    std::cout << "Listening on port " << getPort() << "..." << std::endl;
     while(running){
         apr_socket_t* client;
         apr_status_t status = apr_socket_accept(&client, socket, aprPool.pool);
@@ -60,14 +68,20 @@ void LFAcceptor::bind(int port, SessionHandlerFactory* factory){
             }
         }
     }
+    shutdown();
+}
 
-    processor.stop();
-    CHECK_APR_SUCCESS(apr_socket_close(socket));
+void LFAcceptor::shutdown() {
+    // TODO aconway 2006-10-12: Cleanup, this is not thread safe.
+    if (running) {
+        running = false;
+        processor.stop();
+        CHECK_APR_SUCCESS(apr_socket_close(socket));
+    }
 }
 
 
-LFAcceptor::~LFAcceptor(){
-}
+LFAcceptor::~LFAcceptor(){}
 
 LFAcceptor::APRPool::APRPool(){
     APRBase::increment();

@@ -7,6 +7,8 @@ Install in /usr/local/apr or update options.mk if installed elsewhere.
 
 CppUnit: http://cppunit.sourceforge.net
 
+boost: http://www.boost.org
+
 Optional: to generate source code documentation you need:
  * doxygen: http://sourceforge.net/projects/doxygen/ 
  * graphviz - http://www.graphviz.org/

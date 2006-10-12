@@ -47,10 +47,13 @@ namespace io {
 	apr_socket_t* socket;
         const int connectionBacklog;
         volatile bool running;
-
+        
     public:
 	BlockingAPRAcceptor(bool debug = false, int connectionBacklog = 10);
-        virtual void bind(int port, SessionHandlerFactory* factory);
+        virtual int16_t bind(int16_t port);
+        virtual int16_t getPort() const;
+        virtual void run(SessionHandlerFactory* factory);
+        virtual void shutdown();
 	virtual ~BlockingAPRAcceptor();
         void closed(BlockingAPRSessionContext* session);
     };
