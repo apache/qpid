@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -68,9 +69,11 @@ public class DisconnectAndRedeliverTest
 
         TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
 
-        Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Session consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue = new AMQQueue("someQ", "someQ", false, false);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
+        //force synch to ensure the consumer has resulted in a bound queue
+        ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -103,15 +106,15 @@ public class DisconnectAndRedeliverTest
         con.start();
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals(tm.getText(), "msg2");
+        Assert.assertEquals("msg2", tm.getText());
 
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals(tm.getText(), "msg3");
+        Assert.assertEquals("msg3", tm.getText());
 
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals(tm.getText(), "msg4");
+        Assert.assertEquals("msg4", tm.getText());
 
         _logger.info("Received redelivery of three messages. Acknowledging last message");
         tm.acknowledge();
@@ -157,6 +160,8 @@ public class DisconnectAndRedeliverTest
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = new AMQQueue("someQ", "someQ", false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
+        //force synch to ensure the consumer has resulted in a bound queue
+        ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
