@@ -22,7 +22,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

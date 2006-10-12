@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.requestreply1;
 
-import org.apache.qpid.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.junit.Test;
 import org.junit.Before;
