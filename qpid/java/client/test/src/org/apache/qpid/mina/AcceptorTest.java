@@ -71,16 +71,9 @@ public class AcceptorTest
     @Test
     public void startAcceptor() throws IOException
     {
-        boolean useMultithreadedIoProcessor = Boolean.getBoolean("qpid.io.multithreaded");
         IoAcceptor acceptor = null;
-        if (useMultithreadedIoProcessor)
-        {
-            acceptor = new org.apache.qpid.nio.SocketAcceptor();
-        }
-        else
-        {
-            acceptor = new SocketAcceptor();
-        }
+        acceptor = new SocketAcceptor();
+        
         SocketAcceptorConfig config = (SocketAcceptorConfig) acceptor.getDefaultConfig();
         SocketSessionConfig sc = (SocketSessionConfig) config.getSessionConfig();
         sc.setTcpNoDelay(true);
