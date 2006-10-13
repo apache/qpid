@@ -28,11 +28,11 @@ import java.io.IOException;
  * Unbinds a reference from a JNDI source.
  * Given a properties file with the JNDI information and a binding string.
  */
-class UnBind
+public class Unbind
 {
     private static final String USAGE = "USAGE: java unbind <JNDI Properties file> -b <binding>";
 
-    public UnBind(String propertiesFile, String bindingValue) throws NamingException
+    public Unbind(String propertiesFile, String bindingValue) throws NamingException
     {
         // Set up the environment for creating the initial context
         String qpid_home = System.getProperty("QPID_HOME");
@@ -143,7 +143,7 @@ class UnBind
                     System.out.print("UnBinding:" + binding);
                     try
                     {
-                        new UnBind(args[0], binding);
+                        new Unbind(args[0], binding);
                         System.out.println(" ..Successful");
                     }
                     catch (NamingException nabe)
