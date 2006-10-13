@@ -18,15 +18,22 @@
 package org.apache.qpid.jndi.referenceabletest;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.url.URLSyntaxException;
 import org.junit.Assert;
 
-import javax.jms.*;
-import javax.naming.*;
-
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Session;
+import javax.jms.Topic;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameAlreadyBoundException;
+import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
+import java.io.File;
 import java.util.Hashtable;
 
 /**
@@ -41,11 +48,12 @@ import java.util.Hashtable;
  */
 class Bind
 {
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
+    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     String _connectionFactoryString = "";
 
-    String _connectionString = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
-
+    String _connectionString = "amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'";
     Topic _topic = null;
 
     boolean _bound = false;
@@ -54,13 +62,35 @@ class Bind
     {
         this(false);
     }
+
     public Bind(boolean output) throws NameAlreadyBoundException, NoInitialContextException
     {
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.fscontext.RefFSContextFactory");
-        env.put(Context.PROVIDER_URL, "file:/temp/qpid-jndi-test");
+        env.put(Context.PROVIDER_URL, PROVIDER_URL);
+
+
+        File file = new File(PROVIDER_URL.substring(PROVIDER_URL.indexOf("://") + 3));
+
+        if (file.exists() && !file.isDirectory())
+        {
+            System.out.println("Couldn't make directory file already exists");
+            return;
+        }
+        else
+        {
+            if (!file.exists())
+            {
+                if (!file.mkdirs())
+                {
+                    System.out.println("Couldn't make directory");
+                    return;
+                }
+            }
+        }
+
 
         try
         {
@@ -93,7 +123,6 @@ class Bind
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 _topic = session.createTopic("Fruity");
-
             }
             catch (JMSException jmse)
             {
@@ -129,15 +158,14 @@ class Bind
             System.out.println("Operation failed: " + e);
             if (e instanceof NameAlreadyBoundException)
             {
-                throw (NameAlreadyBoundException) e;
+                throw(NameAlreadyBoundException) e;
             }
 
             if (e instanceof NoInitialContextException)
             {
-                throw (NoInitialContextException) e;
+                throw(NoInitialContextException) e;
             }
         }
-
     }
 
     public String connectionFactoryValue()

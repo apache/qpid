@@ -17,11 +17,14 @@
  */
 package org.apache.qpid.jndi.referenceabletest;
 
-import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQTopic;
 
-import javax.naming.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.io.File;
 import java.util.Hashtable;
 
 
@@ -37,6 +40,9 @@ import java.util.Hashtable;
  */
 class Lookup
 {
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
+    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+
     AMQTopic _topic = null;
     AMQConnection _connection = null;
     AMQConnectionFactory _connectionFactory = null;
@@ -47,7 +53,26 @@ class Lookup
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.fscontext.RefFSContextFactory");
-        env.put(Context.PROVIDER_URL, "file:/temp/qpid-jndi-test");
+        env.put(Context.PROVIDER_URL, PROVIDER_URL);
+
+        File file = new File(PROVIDER_URL.substring(PROVIDER_URL.indexOf("://") + 3));
+
+        if (file.exists() && !file.isDirectory())
+        {
+            System.out.println("Couldn't make directory file already exists");
+            return;
+        }
+        else
+        {
+            if (!file.exists())
+            {
+                if (!file.mkdirs())
+                {
+                    System.out.println("Couldn't make directory");
+                    return;
+                }
+            }
+        }
 
         try
         {
@@ -70,10 +95,9 @@ class Lookup
         }
     }
 
-
     public String connectionFactoryValue()
     {
-        return ((AMQConnection) _connectionFactory.getConnectionURL()).toURL();
+        return _connectionFactory.getConnectionURL().toString();
     }
 
     public String connectionValue()
@@ -85,7 +109,6 @@ class Lookup
     {
         return _topic.toURL();
     }
-
 
     public static void main(String[] args)
     {
