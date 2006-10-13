@@ -33,7 +33,7 @@
         <enabled>true</enabled>
     </management>
     <advanced>
-        <filterchain enableExecutorPool="false"/>
+        <filterchain enableExecutorPool="true"/>
         <enablePooledAllocator>false</enablePooledAllocator>
         <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
