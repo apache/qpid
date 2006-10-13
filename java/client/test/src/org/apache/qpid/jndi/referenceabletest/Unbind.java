@@ -17,7 +17,10 @@
  */
 package org.apache.qpid.jndi.referenceabletest;
 
-import javax.naming.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
 import java.io.File;
 import java.util.Hashtable;
 
@@ -33,7 +36,8 @@ import java.util.Hashtable;
  */
 class Unbind
 {
-
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
+    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     boolean _unbound = false;
 
@@ -49,7 +53,26 @@ class Unbind
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.fscontext.RefFSContextFactory");
-        env.put(Context.PROVIDER_URL, "file:/temp/qpid-jndi-test");
+        env.put(Context.PROVIDER_URL, PROVIDER_URL);
+
+        File file = new File(PROVIDER_URL.substring(PROVIDER_URL.indexOf("://") + 3));
+
+        if (file.exists() && !file.isDirectory())
+        {
+            System.out.println("Couldn't make directory file already exists");
+            return;
+        }
+        else
+        {
+            if (!file.exists())
+            {
+                if (!file.mkdirs())
+                {
+                    System.out.println("Couldn't make directory");
+                    return;
+                }
+            }
+        }
 
         try
         {
