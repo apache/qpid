@@ -1,5 +1,7 @@
 = Developer guide to C++ codebase =
 
+See DESIGN for design notes, Makefile comment for build system notes.
+
 == Prerequisites ==
 
 Apache Portable Runtime 1.2.7:  http://apr.apache.org/
