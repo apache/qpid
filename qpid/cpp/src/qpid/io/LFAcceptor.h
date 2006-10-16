@@ -19,9 +19,9 @@
 #define _LFAcceptor_
 
 #include <vector>
-#include "apr_network_io.h"
-#include "apr_poll.h"
-#include "apr_time.h"
+#include "apr-1/apr_network_io.h"
+#include "apr-1/apr_poll.h"
+#include "apr-1/apr_time.h"
 
 #include "qpid/io/Acceptor.h"
 #include "qpid/concurrent/APRMonitor.h"

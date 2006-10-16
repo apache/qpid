@@ -17,7 +17,7 @@
  */
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Configuration.h"
-#include "apr_signal.h"
+#include "apr-1/apr_signal.h"
 #include <iostream>
 #include <memory>
 

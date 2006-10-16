@@ -21,7 +21,7 @@
 #include <vector>
 #include <queue>
 #include "memory.h"
-#include "apr_time.h"
+#include "apr-1/apr_time.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/broker/Binding.h"
 #include "qpid/broker/ConnectionToken.h"
