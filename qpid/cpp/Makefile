@@ -42,9 +42,14 @@
 
 include options.mk
 
-.PHONY: test all unittest pythontest
+.PHONY: test all all-nogen generate unittest pythontest
 
-test: all unittest pythontest
+test: all unittest # pythontest
+
+# Must run this as two separate make processes to pick up generated files.
+all:
+	$(MAKE) generate
+	$(MAKE) all-nogen
 
 ## Generaged code
 
@@ -52,17 +57,11 @@ SPEC        := $(CURDIR)/../specs/amqp-8.0.xml
 XSL         := code_gen.xsl framing.xsl
 STYLESHEETS := $(XSL:%=$(CURDIR)/etc/stylesheets/%)
 TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
-
-# Restart make if code is re-generated to get proper dependencies.
-# Remove "clean" to avoid infinite loop.
-REMAKE := exec $(MAKE) $(MAKECMDGOALS:clean=)
+generate: gen/timestamp
 gen/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
 	mkdir -p gen/qpid/framing
 	echo > gen/timestamp
 	cd gen/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ;	done
-	@echo "*** Re-generated code, re-starting make ***"
-	$(REMAKE)
-
 gen $(wildcard gen/qpid/framing/*.cpp): gen/timestamp
 
 ## Libraries
@@ -76,7 +75,7 @@ COMMON_DIRS := qpid/concurrent qpid/framing qpid/io qpid
 COMMON_SRC  := $(wildcard gen/qpid/framing/*.cpp $(COMMON_DIRS:%=src/%/*.cpp))
 $(COMMON_LIB): gen/timestamp $(COMMON_SRC:.cpp=.o)
 	$(LIB_CMD) $(COMMON_SRC:.cpp=.o)
-all: $(COMMON_LIB)
+all-nogen: $(COMMON_LIB)
 UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 
 # Client library.
@@ -84,7 +83,7 @@ CLIENT_LIB  := lib/libqpid_client.so.1.0
 CLIENT_SRC  := $(wildcard src/qpid/client/*.cpp)
 $(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) $(CURDIR)/$(COMMON_LIB)
 	$(LIB_CMD) $^
-all: $(CLIENT_LIB) 
+all-nogen: $(CLIENT_LIB) 
 UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 
 # Broker library.
@@ -92,7 +91,7 @@ BROKER_LIB  := lib/libqpid_broker.so.1.0
 BROKER_SRC  := $(wildcard src/qpid/broker/*.cpp)
 $(BROKER_LIB): $(BROKER_SRC:.cpp=.o)  $(CURDIR)/$(COMMON_LIB)
 	$(LIB_CMD) $^
-all: $(BROKER_LIB)
+all-nogen: $(BROKER_LIB)
 UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 
 # Implicit rule for unit test plugin libraries.
@@ -101,7 +100,7 @@ UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 
 ## Client tests
 
-all: $(wildcard test/client/*.cpp:.cpp=)
+all-nogen: $(wildcard test/client/*.cpp:.cpp=)
 test/client/%: test/client/%.cpp
 	$(CXX) -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 $(LINK_WITH_$(LIB)) $(LINK_WITH_$(LIB)_DEPS)
 
@@ -109,7 +108,7 @@ test/client/%: test/client/%.cpp
 
 bin/qpidd: src/qpidd.o $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
 	$(CXX) -o $@ $(LDFLAGS) -lapr-1 $^ 
-all: bin/qpidd
+all-nogen: bin/qpidd
 
 ## Run unit tests.
 unittest: $(UNITTESTS:.cpp=.so)
