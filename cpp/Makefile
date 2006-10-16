@@ -44,7 +44,7 @@ include options.mk
 
 .PHONY: test all all-nogen generate unittest pythontest
 
-test: all unittest # pythontest
+test: all unittest pythontest
 
 # Must run this as two separate make processes to pick up generated files.
 all:
