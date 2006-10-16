@@ -13,37 +13,125 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ----------------------------------------------------------------
 #
-# Master make file for c++ Qpid project (AMQP)
+# Makefile for Qpid C++ project.
+# 
+# Build system principles
+#  * Single Makefile (see http://www.apache.org/licenses/LICENSE-2.0)
+#  * Build from directories, no explicit source lists in Makefile.
+#  * Corresponding .cpp and .h files in same directory for easy editing.
+#  * Source directory structure mirrors C++ namespaces.
 #
-# Calls the makefiles in the various subdirectories in order to
-# build them in the correct sequence.
+# Source directories:
+#  * src/ -  .h and .cpp source files, directories mirror namespaces.
+#  * test/ 
+#   * unit/ - unit tests (cppunit plugins), directories mirror namespaces.
+#   * include/ - .h files used by tests
+#   * client/ - sources for client test executables.
+#  * etc/ - Non-c++ resources, e.g. stylesheets.
+#  * gen/ - generated code
+#
+# Output directories: 
+#  * gen/ - (created by make) generated code 
+#  * bin/ lib/ - exes & libraries.
+#
+# NOTE: always use := rather than = unless you have a specific need
+# for delayed evaluation. See the link for details.
 #
 
-UNITTESTS=$(wildcard common/*/test/*.so broker/test/*.so)
-SUBDIRS=common broker qpidd client
+include options.mk
 
-.PHONY: all test unittest pythontest runtests clean doxygen
+.PHONY: test all unittest pythontest
 
-test:   all runtests
+test: all unittest pythontest
 
-unittest: 
-	DllPlugInTester -c -b $(UNITTESTS)
+## Generaged code
 
-pythontest:
-	bin/qpidd >> qpidd.log &
+SPEC        := $(CURDIR)/../specs/amqp-8.0.xml
+XSL         := code_gen.xsl framing.xsl
+STYLESHEETS := $(XSL:%=$(CURDIR)/etc/stylesheets/%)
+TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
+
+.PHONY: generate 
+
+generate: gen/timestamp
+
+# Restart make if code is re-generated to get proper dependencies.
+# Remove "clean" to avoid infinite loop.
+REMAKE := exec $(MAKE) $(MAKECMDGOALS:clean=)
+gen/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
+	mkdir -p gen/qpid/framing
+	echo > gen/timestamp
+	cd gen/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ;	done
+	@echo "*** Re-generated code, re-starting make ***"
+	$(REMAKE)
+
+gen $(wildcard gen/qpid/framing/*.cpp): gen/timestamp
+
+## Libraries
+
+# Library command, late evaluated for $@
+LIB_CMD = $(CXX) -shared -o $@ $(LDFLAGS) $(CXXFLAGS) -lapr-1 
+
+# Common library.
+COMMON_LIB  := lib/libqpid_common.so.1.0
+COMMON_DIRS := qpid/concurrent qpid/framing qpid/io qpid
+COMMON_SRC  := $(wildcard gen/qpid/framing/*.cpp $(COMMON_DIRS:%=src/%/*.cpp))
+$(COMMON_LIB): generate $(COMMON_SRC:.cpp=.o)
+	$(LIB_CMD) $(COMMON_SRC:.cpp=.o)
+all: $(COMMON_LIB)
+UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
+
+# Client library.
+CLIENT_LIB  := lib/libqpid_client.so.1.0
+CLIENT_SRC  := $(wildcard src/qpid/client/*.cpp)
+$(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) $(COMMON_LIB)
+	$(LIB_CMD) $^
+all: $(CLIENT_LIB) 
+UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
+
+# Broker library.
+BROKER_LIB  := lib/libqpid_broker.so.1.0
+BROKER_SRC  := $(wildcard src/qpid/broker/*.cpp)
+$(BROKER_LIB): $(BROKER_SRC:.cpp=.o)  $(COMMON_LIB)
+	$(LIB_CMD) $^
+all: $(BROKER_LIB)
+UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
+
+# Implicit rule for unit test plugin libraries.
+%Test.so: %Test.cpp 
+	$(CXX) -shared -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 -lcppunit $(COMMON_LIB) $(BROKER_LIB)
+
+## Client tests
+
+all: $(wildcard test/client/*.cpp:.cpp=)
+test/client/%: test/client/%.cpp
+	$(CXX) -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 $(LINK_WITH_$(LIB)) $(LINK_WITH_$(LIB)_DEPS)
+
+## Daemon executable
+
+bin/qpidd: src/qpidd.o $(COMMON_LIB) $(BROKER_LIB)
+	$(CXX) -o $@ $(LDFLAGS) -lapr-1 $^ 
+all: bin/qpidd
+
+## Run unit tests.
+unittest: $(UNITTESTS:.cpp=.so)
+	DllPlugInTester -c -b $(UNITTESTS:.cpp=.so)
+
+## Run python tests
+pythontest: bin/qpidd
+	bin/qpidd > qpidd.log &
 	cd ../python ; ./run-tests -v -I cpp_failing.txt	
 
-runtests:
-	$(MAKE) -k unittest pythontest
+## Doxygen documentation.
+doxygen: doxygen/doxygen.cfg $(SOURCES)
+	cd doxygen && doxygen doxygen.cfg
 
-all:
-	@for DIR in $(SUBDIRS) ; do $(MAKE) -C $$DIR all ; done
+## Cleanup
+clean::
+	rm -f bin/* lib/* qpidd.log
+	rm -rf gen
+	rm -f `find src test -name '*.o' -o -name '*.d' -o -name '*.so'` 
 
-clean:
-	@for DIR in $(SUBDIRS) ; do $(MAKE) -C $$DIR clean ; done
-	@$(MAKE) -C doxygen clean
-	-@rm qpidd.log 
 
-doxygen:
-	@$(MAKE) -C doxygen all
