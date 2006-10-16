@@ -20,16 +20,16 @@
 
 #include <algorithm>
 #include <map>
-#include "./qpid/framing/AMQContentBody.h"
-#include "./qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/BasicPublishBody.h"
-#include "./qpid/broker/Binding.h"
-#include "./qpid/broker/Consumer.h"
-#include "./qpid/broker/Message.h"
-#include "./qpid/concurrent/MonitorImpl.h"
-#include "./qpid/broker/NameGenerator.h"
-#include "./qpid/framing/OutputHandler.h"
-#include "./qpid/broker/Queue.h"
+#include "qpid/broker/Binding.h"
+#include "qpid/broker/Consumer.h"
+#include "qpid/broker/Message.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/NameGenerator.h"
+#include "qpid/framing/OutputHandler.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
     namespace broker {

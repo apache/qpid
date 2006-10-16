@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "./memory.h"
+#include "memory.h"
 #include "qpid/framing/BodyHandler.h"
 
 using namespace qpid::framing;

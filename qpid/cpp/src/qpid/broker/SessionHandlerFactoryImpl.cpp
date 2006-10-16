@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/SessionHandlerFactoryImpl.h"
-#include "./qpid/broker/SessionHandlerImpl.h"
-#include "./qpid/broker/FanOutExchange.h"
-#include "./qpid/broker/HeadersExchange.h"
+#include "qpid/broker/SessionHandlerFactoryImpl.h"
+#include "qpid/broker/SessionHandlerImpl.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/HeadersExchange.h"
 
 using namespace qpid::broker;
 using namespace qpid::io;

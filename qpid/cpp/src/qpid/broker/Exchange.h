@@ -18,9 +18,9 @@
 #ifndef _Exchange_
 #define _Exchange_
 
-#include "./qpid/framing/FieldTable.h"
-#include "./qpid/broker/Message.h"
-#include "./qpid/broker/Queue.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {

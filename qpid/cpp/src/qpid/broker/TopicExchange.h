@@ -20,11 +20,11 @@
 
 #include <tr1/unordered_map>
 #include <vector>
-#include "./qpid/broker/Exchange.h"
-#include "./qpid/framing/FieldTable.h"
-#include "./qpid/broker/Message.h"
-#include "./qpid/concurrent/MonitorImpl.h"
-#include "./qpid/broker/Queue.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/broker/Message.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {

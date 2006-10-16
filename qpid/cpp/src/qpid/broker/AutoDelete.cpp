@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/AutoDelete.h"
+#include "qpid/broker/AutoDelete.h"
 
 using namespace qpid::broker;
 

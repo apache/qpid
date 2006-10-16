@@ -53,10 +53,6 @@ XSL         := code_gen.xsl framing.xsl
 STYLESHEETS := $(XSL:%=$(CURDIR)/etc/stylesheets/%)
 TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
 
-.PHONY: generate 
-
-generate: gen/timestamp
-
 # Restart make if code is re-generated to get proper dependencies.
 # Remove "clean" to avoid infinite loop.
 REMAKE := exec $(MAKE) $(MAKECMDGOALS:clean=)
@@ -78,7 +74,7 @@ LIB_CMD = $(CXX) -shared -o $@ $(LDFLAGS) $(CXXFLAGS) -lapr-1
 COMMON_LIB  := lib/libqpid_common.so.1.0
 COMMON_DIRS := qpid/concurrent qpid/framing qpid/io qpid
 COMMON_SRC  := $(wildcard gen/qpid/framing/*.cpp $(COMMON_DIRS:%=src/%/*.cpp))
-$(COMMON_LIB): generate $(COMMON_SRC:.cpp=.o)
+$(COMMON_LIB): gen/timestamp $(COMMON_SRC:.cpp=.o)
 	$(LIB_CMD) $(COMMON_SRC:.cpp=.o)
 all: $(COMMON_LIB)
 UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))

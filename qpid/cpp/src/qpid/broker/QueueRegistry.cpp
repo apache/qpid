@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/QueueRegistry.h"
-#include "./qpid/concurrent/MonitorImpl.h"
-#include "./qpid/broker/SessionHandlerImpl.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/SessionHandlerImpl.h"
 #include <sstream>
 #include <assert.h>
 
