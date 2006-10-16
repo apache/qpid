@@ -17,13 +17,13 @@
  */
 #include <iostream>
 #include <memory>
-#include "./qpid/broker/Broker.h"
-#include "./qpid/io/Acceptor.h"
-#include "./qpid/broker/Configuration.h"
-#include "./qpid/QpidError.h"
-#include "./qpid/broker/SessionHandlerFactoryImpl.h"
-#include "./qpid/io/BlockingAPRAcceptor.h"
-#include "./qpid/io/LFAcceptor.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/io/Acceptor.h"
+#include "qpid/broker/Configuration.h"
+#include "qpid/QpidError.h"
+#include "qpid/broker/SessionHandlerFactoryImpl.h"
+#include "qpid/io/BlockingAPRAcceptor.h"
+#include "qpid/io/LFAcceptor.h"
 
 
 using namespace qpid::broker;

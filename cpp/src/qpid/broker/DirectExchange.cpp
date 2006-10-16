@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/DirectExchange.h"
-#include "./qpid/broker/ExchangeBinding.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/ExchangeBinding.h"
 #include <iostream>
 
 using namespace qpid::broker;

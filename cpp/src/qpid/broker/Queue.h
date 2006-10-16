@@ -20,14 +20,14 @@
 
 #include <vector>
 #include <queue>
-#include "./memory.h"
+#include "memory.h"
 #include "apr_time.h"
-#include "./qpid/framing/amqp_types.h"
-#include "./qpid/broker/Binding.h"
-#include "./qpid/broker/ConnectionToken.h"
-#include "./qpid/broker/Consumer.h"
-#include "./qpid/broker/Message.h"
-#include "./qpid/concurrent/MonitorImpl.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/broker/Binding.h"
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/Consumer.h"
+#include "qpid/broker/Message.h"
+#include "qpid/concurrent/MonitorImpl.h"
 
 namespace qpid {
     namespace broker {

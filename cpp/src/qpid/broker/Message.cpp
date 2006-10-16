@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-#include "./qpid/concurrent/MonitorImpl.h"
-#include "./qpid/broker/Message.h"
-#include "./qpid/broker/ExchangeRegistry.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/ExchangeRegistry.h"
 #include <iostream>
 
 using namespace std::tr1;//for *_pointer_cast methods

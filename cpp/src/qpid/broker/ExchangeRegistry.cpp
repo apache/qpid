@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/ExchangeRegistry.h"
-#include "./qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/concurrent/MonitorImpl.h"
 
 using namespace qpid::broker;
 using namespace qpid::concurrent;

@@ -1,4 +1,4 @@
-#include "../../src/qpid/framing/Value.h"
+#include "qpid/framing/Value.h"
 #include <qpid_test_plugin.h>
 
 using namespace qpid::framing;

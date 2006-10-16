@@ -16,10 +16,10 @@
  *
  */
 
-#include "../../src/qpid/broker/DirectExchange.h"
-#include "../../src/qpid/broker/Exchange.h"
-#include "../../src/qpid/broker/Queue.h"
-#include "../../src/qpid/broker/TopicExchange.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/TopicExchange.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 

@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "../../src/qpid/concurrent/APRBase.h"
-#include "../../src/qpid/broker/Message.h"
+#include "qpid/concurrent/APRBase.h"
+#include "qpid/broker/Message.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 
