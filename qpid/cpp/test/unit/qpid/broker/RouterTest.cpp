@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
-#include "../../src/qpid/broker/Channel.h"
-#include "../../src/qpid/broker/Exchange.h"
-#include "../../src/qpid/broker/ExchangeRegistry.h"
-#include "../../src/qpid/broker/Message.h"
-#include "../../src/qpid/broker/Router.h"
+#include "qpid/broker/Channel.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Router.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>

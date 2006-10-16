@@ -20,10 +20,10 @@
 
 #include <iostream>
 #include <queue>
-#include "./qpid/concurrent/MonitorImpl.h"
-#include "./qpid/broker/Queue.h"
-#include "./qpid/broker/QueueRegistry.h"
-#include "./qpid/concurrent/ThreadFactoryImpl.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/concurrent/ThreadFactoryImpl.h"
 
 namespace qpid {
     namespace broker{
