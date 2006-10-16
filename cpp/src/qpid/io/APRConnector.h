@@ -18,8 +18,8 @@
 #ifndef _APRConnector_
 #define _APRConnector_
 
-#include "apr_network_io.h"
-#include "apr_time.h"
+#include "apr-1/apr_network_io.h"
+#include "apr-1/apr_time.h"
 
 #include "qpid/framing/InputHandler.h"
 #include "qpid/framing/OutputHandler.h"

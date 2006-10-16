@@ -18,7 +18,7 @@
 #ifndef _APRThread_
 #define _APRThread_
 
-#include "apr_thread_proc.h"
+#include "apr-1/apr_thread_proc.h"
 #include "qpid/concurrent/APRThread.h"
 #include "qpid/concurrent/Runnable.h"
 #include "qpid/concurrent/Thread.h"
