@@ -18,7 +18,7 @@
 ## External dependencies:
 
 # Add location for headers and libraries of any external dependencies here
-EXTRA_INCLUDES := -I/usr/local/apr/include/apr-1
+EXTRA_INCLUDES := -I/usr/local/apr/include
 EXTRA_LIBDIRS := -L/usr/local/apr/lib
 
 ## Compile flags

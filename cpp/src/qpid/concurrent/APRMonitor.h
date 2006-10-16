@@ -18,8 +18,8 @@
 #ifndef _APRMonitor_
 #define _APRMonitor_
 
-#include "apr_thread_mutex.h"
-#include "apr_thread_cond.h"
+#include "apr-1/apr_thread_mutex.h"
+#include "apr-1/apr_thread_cond.h"
 #include "qpid/concurrent/Monitor.h"
 
 namespace qpid {
