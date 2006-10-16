@@ -18,7 +18,7 @@
 #ifndef _NameGenerator_
 #define _NameGenerator_
 
-#include "./qpid/broker/Message.h"
+#include "qpid/broker/Message.h"
 
 namespace qpid {
     namespace broker {

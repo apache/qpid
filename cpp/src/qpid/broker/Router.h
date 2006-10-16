@@ -18,8 +18,8 @@
 #ifndef _Router_
 #define _Router_
 
-#include "./qpid/broker/ExchangeRegistry.h"
-#include "./qpid/broker/Message.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/Message.h"
 
 /**
  * A routing functor

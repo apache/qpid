@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "../../src/qpid/framing/amqp_framing.h"
-#include "ConnectionRedirectBody.h"
+#include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/ConnectionRedirectBody.h"
 #include <iostream>
 #include <sstream>
 #include <qpid_test_plugin.h>

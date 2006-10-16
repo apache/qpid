@@ -19,10 +19,10 @@
  *
  */
 
-#include "./qpid/io/Acceptor.h"
-#include "./qpid/broker/Configuration.h"
-#include "./qpid/concurrent/Runnable.h"
-#include "./qpid/broker/SessionHandlerFactoryImpl.h"
+#include "qpid/io/Acceptor.h"
+#include "qpid/broker/Configuration.h"
+#include "qpid/concurrent/Runnable.h"
+#include "qpid/broker/SessionHandlerFactoryImpl.h"
 #include <boost/noncopyable.hpp>
 #include <tr1/memory>
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "./memory.h"
+#include "memory.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
 

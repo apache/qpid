@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "../../src/qpid/broker/Queue.h"
-#include "../../src/qpid/broker/QueueRegistry.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueRegistry.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/Router.h"
+#include "qpid/broker/Router.h"
 
 using namespace qpid::broker;
 

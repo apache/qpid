@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "../../src/qpid/broker/Channel.h"
-#include "../../src/qpid/broker/Message.h"
+#include "qpid/broker/Channel.h"
+#include "qpid/broker/Message.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>

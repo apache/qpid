@@ -18,14 +18,14 @@
 #ifndef _SessionHandlerFactoryImpl_
 #define _SessionHandlerFactoryImpl_
 
-#include "./qpid/framing/AMQFrame.h"
-#include "./qpid/broker/AutoDelete.h"
-#include "./qpid/broker/DirectExchange.h"
-#include "./qpid/broker/ExchangeRegistry.h"
-#include "./qpid/framing/ProtocolInitiation.h"
-#include "./qpid/broker/QueueRegistry.h"
-#include "./qpid/io/SessionHandlerFactory.h"
-#include "./qpid/io/TimeoutHandler.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/broker/AutoDelete.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/io/SessionHandlerFactory.h"
+#include "qpid/io/TimeoutHandler.h"
 
 namespace qpid {
     namespace broker {

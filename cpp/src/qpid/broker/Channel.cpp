@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/Channel.h"
-#include "./qpid/QpidError.h"
+#include "qpid/broker/Channel.h"
+#include "qpid/QpidError.h"
 #include <iostream>
 #include <sstream>
 #include <assert.h>

@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/Queue.h"
-#include "./qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/concurrent/MonitorImpl.h"
 #include <iostream>
 
 using namespace qpid::broker;

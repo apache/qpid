@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "./qpid/broker/FanOutExchange.h"
-#include "./qpid/broker/ExchangeBinding.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/ExchangeBinding.h"
 #include <algorithm>
 
 using namespace qpid::broker;
