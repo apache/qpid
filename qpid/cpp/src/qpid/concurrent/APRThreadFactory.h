@@ -18,7 +18,7 @@
 #ifndef _APRThreadFactory_
 #define _APRThreadFactory_
 
-#include "apr_thread_proc.h"
+#include "apr-1/apr_thread_proc.h"
 
 #include "qpid/concurrent/APRThread.h"
 #include "qpid/concurrent/Thread.h"

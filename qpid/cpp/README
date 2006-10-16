@@ -4,16 +4,16 @@ See DESIGN for design notes, Makefile comment for build system notes.
 
 == Prerequisites ==
 
-Apache Portable Runtime 1.2.7:  http://apr.apache.org/
-Install in /usr/local/apr or update options.mk if installed elsewhere.
-
-CppUnit: http://cppunit.sourceforge.net
-
-boost: http://www.boost.org
+Required to build:
+ * Apache Portable Runtime 1.2.7:  http://apr.apache.org/
+ * CppUnit: http://cppunit.sourceforge.net
+ * boost: http://www.boost.org
 
 Optional: to generate source code documentation you need:
  * doxygen: http://sourceforge.net/projects/doxygen/ 
  * graphviz - http://www.graphviz.org/
+
+On Fedora: yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
 
 == Build and test ==
 

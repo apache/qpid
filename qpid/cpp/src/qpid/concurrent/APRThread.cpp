@@ -17,7 +17,7 @@
  */
 #include "qpid/concurrent/APRBase.h"
 #include "qpid/concurrent/APRThread.h"
-#include "apr_portable.h"
+#include "apr-1/apr_portable.h"
 
 using namespace qpid::concurrent;
 
