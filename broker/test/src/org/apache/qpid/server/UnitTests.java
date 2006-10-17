@@ -28,6 +28,7 @@ import org.junit.runners.Suite;
         org.apache.qpid.server.protocol.UnitTests.class,
         org.apache.qpid.server.queue.UnitTests.class,
         org.apache.qpid.server.store.UnitTests.class,
+        org.apache.qpid.server.txn.UnitTests.class,
         org.apache.qpid.server.util.UnitTests.class
         })
 public class UnitTests

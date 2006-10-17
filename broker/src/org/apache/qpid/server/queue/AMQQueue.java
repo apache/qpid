@@ -27,6 +27,8 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.txn.TxnBuffer;
+import org.apache.qpid.server.txn.TxnOp;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -610,11 +612,55 @@ public class AMQQueue implements Managable
 
     public void deliver(AMQMessage msg) throws AMQException
     {
-        msg.enqueue(this);
-        _deliveryMgr.deliver(getName(), msg);
-        updateReceivedMessageCount();
+        TxnBuffer buffer = msg.getTxnBuffer();
+        if(buffer == null)
+        {
+            //non-transactional
+            record(msg);
+            process(msg);
+        }
+        else
+        {
+            buffer.enlist(new Deliver(msg));
+        }
     }
 
+    private void record(AMQMessage msg) throws AMQException
+    {
+        msg.enqueue(this);
+        msg.incrementReference();
+    }
+
+    private void process(AMQMessage msg) throws FailedDequeueException
+    {
+        _deliveryMgr.deliver(getName(), msg);
+        try
+        {
+            msg.checkDeliveredToConsumer();
+            updateReceivedMessageCount();
+        }
+        catch(NoConsumersException e)
+        {
+            // as this message will be returned, it should be removed
+            // from the queue:
+            dequeue(msg);
+        }
+
+    }
+
+    void dequeue(AMQMessage msg) throws FailedDequeueException
+    {
+        try
+        {
+            msg.decrementReference();                
+            msg.dequeue(this);
+        }
+        catch(AMQException e)
+        {
+            throw new FailedDequeueException(_name, e);
+        }
+    }
+    
     public void deliverAsync()
     {
         _deliveryMgr.processAsync(_asyncDelivery);
@@ -664,4 +710,49 @@ public class AMQQueue implements Managable
             _logger.debug(MessageFormat.format(msg, args));
         }
     }
+
+    private class Deliver implements TxnOp
+    {
+        private final AMQMessage _msg;
+
+        Deliver(AMQMessage msg)
+        {
+            _msg = msg;
+        }
+
+        public void prepare() throws AMQException
+        {
+            record(_msg);
+        }
+
+        public void undoPrepare()
+        {
+        }
+
+        public void commit()
+        {
+            try
+            {
+                process(_msg);
+            }
+            catch(FailedDequeueException e)
+            {
+                //TODO: is there anything else we can do here? I think not...
+                _logger.error("Error during commit of a queue delivery: " + e, e);
+            }
+        }
+
+        public void rollback()
+        {
+            try
+            {
+                _msg.decrementReference();
+            }
+            catch (AMQException e)
+            {
+                _logger.error("Error rolling back a queue delivery: " + e, e);
+            }
+        }
+    }
+
 }
