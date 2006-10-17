@@ -138,7 +138,9 @@ public class DeliveryManagerTest extends MessageTestHelper
     @Test (expected=NoConsumersException.class)
     public void noConsumers() throws AMQException
     {
-        _mgr.deliver("Me", message(true));
+        AMQMessage msg = message(true);
+        _mgr.deliver("Me", msg);
+        msg.checkDeliveredToConsumer();        
     }
 
     @Test (expected=NoConsumersException.class)
@@ -147,7 +149,9 @@ public class DeliveryManagerTest extends MessageTestHelper
         TestSubscription s = new TestSubscription("A");
         _subscriptions.addSubscriber(s);
         s.setSuspended(true);
-        _mgr.deliver("Me", message(true));
+        AMQMessage msg = message(true);
+        _mgr.deliver("Me", msg);
+        msg.checkDeliveredToConsumer();
     }
 
     public static junit.framework.Test suite()

@@ -20,6 +20,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxCommitOkBody;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -46,8 +47,10 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
 
         try{
-            protocolSession.getChannel(evt.getChannelId()).commit();
-            protocolSession.writeFrame(TxCommitOkBody.createAMQFrame(evt.getChannelId()));        
+            AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+            channel.commit();
+            protocolSession.writeFrame(TxCommitOkBody.createAMQFrame(evt.getChannelId()));
+            channel.processReturns(protocolSession);            
         }catch(AMQException e){
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());
         }

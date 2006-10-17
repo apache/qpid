@@ -19,8 +19,33 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.AMQException;
 
+/**
+ * This provides the abstraction of an individual operation within a
+ * transaction. It is used by the TxnBuffer class.
+ */
 public interface TxnOp
 {
-    public void commit() throws AMQException;
+    /**
+     * Do the part of the operation that updates persistent state 
+     */
+    public void prepare() throws AMQException;
+    /**
+     * Complete the operation started by prepare. Can now update in
+     * memory state or make netork transfers.
+     */
+    public void commit();
+    /**
+     * This is not the same as rollback. Unfortunately the use of an
+     * in memory reference count as a locking mechanism and a test for
+     * whether a message should be deleted means that as things are,
+     * handling an acknowledgement unavoidably alters both memory and
+     * persistent state on prepare. This is needed to 'compensate' or
+     * undo the in-memory change if the peristent update of later ops
+     * fails.
+     */
+    public void undoPrepare();
+    /**
+     * Rolls back the operation.
+     */
     public void rollback();
 }

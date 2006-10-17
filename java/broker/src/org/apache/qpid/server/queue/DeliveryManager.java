@@ -72,8 +72,16 @@ class DeliveryManager
     {
         if (_queueing)
         {
-            _messages.offer(msg);
-            return true;
+            if(msg.isImmediate())
+            {
+                //can't enqueue messages for whom immediate delivery is required
+                return false;
+            }
+            else
+            {
+                _messages.offer(msg);
+                return true;
+            }
         }
         else
         {
@@ -147,20 +155,17 @@ class DeliveryManager
                 //We don't synchronize access to subscribers so need to re-check
                 if (next != null)
                 {
-                    try
-                    {
-                        next.send(poll(), _queue);
-                    }
-                    catch (AMQException e)
-                    {
-                        _log.error("Unable to deliver message: " + e, e);
-                    }
+                    next.send(poll(), _queue);
                 }
                 else
                 {
                     hasSubscribers = false;
                 }
             }
+        }
+        catch (FailedDequeueException e)
+        {
+            _log.error("Unable to deliver message as dequeue failed: " + e, e);
         }
         finally
         {
@@ -211,10 +216,10 @@ class DeliveryManager
      * @param msg  the message to deliver
      * @throws NoConsumersException if there are no active subscribers to deliver
      *                              the message to
+     * @throws FailedDequeueException if the message could not be dequeued
      */
-    void deliver(String name, AMQMessage msg) throws AMQException
+    void deliver(String name, AMQMessage msg) throws FailedDequeueException
     {
-        msg.incrementReference();
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))
         {
@@ -222,11 +227,7 @@ class DeliveryManager
             Subscription s =  _subscriptions.nextSubscriber(msg);
             if (s == null)
             {
-                if (msg.isImmediate())
-                {
-                    throw msg.getNoConsumersException(name);
-                }
-                else
+                if (!msg.isImmediate())
                 {
                     // no subscribers yet so enter 'queueing' mode and queue this message
                     startQueueing(msg);
@@ -235,19 +236,7 @@ class DeliveryManager
             else
             {
                 s.send(msg, _queue);
-            }
-        }
-
-        else
-        {
-            if (msg.isImmediate())
-            {
-                //todo check with spec to see if enqueing for immediate client delivery is ok.
-                Subscription s = _subscriptions.nextSubscriber(msg);
-                if (s == null)
-                {
-                    throw msg.getNoConsumersException(name);
-                }
+                msg.setDeliveredToConsumer();
             }
         }
     }
