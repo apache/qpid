@@ -26,7 +26,7 @@
 namespace qpid {
 namespace concurrent {
 
-    class APRThread : public virtual Thread
+    class APRThread : public Thread
     {
 	const Runnable* runnable;
 	apr_pool_t* pool;
