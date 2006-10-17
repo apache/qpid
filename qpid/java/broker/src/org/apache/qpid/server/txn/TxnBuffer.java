@@ -24,9 +24,13 @@ import org.apache.qpid.server.store.MessageStore;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holds a list of TxnOp instance representing transactional
+ * operations. 
+ */
 public class TxnBuffer
 {
-    private boolean _persistentMessageRecevied = false;
+    private boolean _containsPersistentChanges = false;
     private final MessageStore _store;
     private final List<TxnOp> _ops = new ArrayList<TxnOp>();
     private static final Logger _log = Logger.getLogger(TxnBuffer.class);
@@ -36,45 +40,64 @@ public class TxnBuffer
         _store = store;
     }
 
-    public void setPersistentMessageRecevied()
+    public void containsPersistentChanges()
     {
-        _persistentMessageRecevied = true;
+        _containsPersistentChanges = true;
     }
 
     public void commit() throws AMQException
     {
-        if (_persistentMessageRecevied)
+        if (_containsPersistentChanges)
         {
             _log.debug("Begin Transaction.");
             _store.beginTran();
-        }
-        boolean failed = true;
-        try
-        {
-            for (TxnOp op : _ops)
+            if(prepare())
             {
-                op.commit();
-            }
-            _ops.clear();
-            failed = false;
-        }
-        finally
-        {
-            if (_persistentMessageRecevied)
-            {
-                if (failed)
+                _log.debug("Transaction Succeeded");
+                _store.commitTran();
+                for (TxnOp op : _ops)
                 {
-                    _log.debug("Transaction Failed");
-                    _store.abortTran();
-                }
-                else
-                {
-                    _log.debug("Transaction Succeeded");
-                    _store.commitTran();
+                    op.commit();
                 }
             }
+            else
+            {
+                _log.debug("Transaction Failed");
+                _store.abortTran();
+            }
+        }else{
+            if(prepare())
+            {
+                for (TxnOp op : _ops)
+                {
+                    op.commit();
+                }
+            }            
         }
+        _ops.clear();
     }
+
+    private boolean prepare() 
+    {        
+        for (int i = 0; i < _ops.size(); i++)
+        {
+            TxnOp op = _ops.get(i);
+            try
+            {
+                op.prepare();
+            }
+            catch(Exception e)
+            {
+                //compensate previously prepared ops
+                for(int j = 0; j < i; j++)
+                {
+                    _ops.get(j).undoPrepare();
+                }    
+                return false;
+            }
+        }
+        return true;
+    }   
 
     public void rollback() throws AMQException
     {
@@ -88,5 +111,10 @@ public class TxnBuffer
     public void enlist(TxnOp op)
     {
         _ops.add(op);
+    }
+
+    public void cancel(TxnOp op)
+    {
+        _ops.remove(op);
     }
 }

@@ -15,30 +15,18 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.client;
+package org.apache.qpid.transacted;
 
 import junit.framework.JUnit4TestAdapter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-/**
- * All client unit tests - even one in packages like org.apache.qpid.ack.
- */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({
-        org.apache.qpid.ack.UnitTests.class,
-        org.apache.qpid.basic.UnitTests.class,
-        org.apache.qpid.client.channelclose.UnitTests.class,
-        org.apache.qpid.client.message.UnitTests.class,
-        org.apache.qpid.forwardall.UnitTests.class,
-        org.apache.qpid.destinationurl.UnitTests.class,
-        org.apache.qpid.jndi.referenceabletest.UnitTests.class,
-        org.apache.qpid.transacted.UnitTests.class
-        })
-public class AllClientUnitTests
+@Suite.SuiteClasses({TransactedTest.class})
+public class UnitTests
 {
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(AllClientUnitTests.class);
+        return new JUnit4TestAdapter(UnitTests.class);
     }
 }

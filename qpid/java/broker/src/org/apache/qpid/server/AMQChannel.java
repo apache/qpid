@@ -19,6 +19,7 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -26,16 +27,20 @@ import org.apache.qpid.server.exchange.MessageRouter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.NoConsumersException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
+import org.apache.qpid.server.util.OrderedMapHelper;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -93,6 +98,8 @@ public class AMQChannel
     private final MessageRouter _exchanges;
 
     private final TxnBuffer _txnBuffer;
+
+    private final List<AMQDataBlock> _returns = new LinkedList<AMQDataBlock>();
 
     public static class UnacknowledgedMessage
     {
@@ -202,18 +209,53 @@ public class AMQChannel
             //don't create a transaction unless needed
             if(_currentMessage.isPersistent())
             {
-                _txnBuffer.setPersistentMessageRecevied();
+                _txnBuffer.containsPersistentChanges();
             }
 
-            //don't route this until commit
-            _txnBuffer.enlist(new Publish(_currentMessage));
-            _currentMessage = null;
+            //A publication will result in the enlisting of several
+            //TxnOps. The first is an op that will store the message.
+            //Following that (and ordering is important), an op will
+            //be added for every queue onto which the message is
+            //enqueued. Finally a cleanup op will be added to decrement
+            //the reference associated with the routing.
+            Store storeOp = new Store(_currentMessage);
+            _txnBuffer.enlist(storeOp);
+            _currentMessage.setTxnBuffer(_txnBuffer);
+            try
+            {
+                _exchanges.routeContent(_currentMessage);
+                _txnBuffer.enlist(new Cleanup(_currentMessage));
+            }
+            catch(RequiredDeliveryException e)
+            {
+                //Can only be due to the mandatory flag, as no attempt
+                //has yet been made to deliver the message. The
+                //message will thus not have been delivered to any
+                //queue so we can return the message (without killing
+                //the transaction) and for efficiency remove the store
+                //operation from the buffer.
+                _txnBuffer.cancel(storeOp);
+                throw e;
+            }
+            finally
+            {
+                _currentMessage = null;
+            }
         }
         else
         {
-            _exchanges.routeContent(_currentMessage);
-            _currentMessage.decrementReference();
-            _currentMessage = null;
+            try
+            {
+                _exchanges.routeContent(_currentMessage);
+                //following check implements the functionality
+                //required by the 'immediate' flag:
+                _currentMessage.checkDeliveredToConsumer();
+            }
+            finally
+            {    
+                _currentMessage.decrementReference();
+                _currentMessage = null;
+            }
         }
     }
 
@@ -402,8 +444,14 @@ public class AMQChannel
     {
         if (_transactional)
         {
-            //don't handle this until commit
-            _txnBuffer.enlist(new Ack(deliveryTag, multiple));
+            try
+            {
+                _txnBuffer.enlist(new Ack(getUnackedMessageFinder().getValues(deliveryTag, multiple)));
+            }
+            catch(NoSuchElementException e)
+            {
+                throw new AMQException("Received ack for unrecognised delivery tag: " + deliveryTag);
+            }
         }
         else
         {
@@ -540,6 +588,7 @@ public class AMQChannel
     public void commit() throws AMQException
     {
         _txnBuffer.commit();
+        //TODO: may need to return 'immediate' messages at this point
     }
 
     public void rollback() throws AMQException
@@ -578,20 +627,74 @@ public class AMQChannel
         return _defaultQueue;
     }
 
+    public void processReturns(AMQProtocolSession session)
+    {
+        for(AMQDataBlock block : _returns)
+        {
+            session.writeFrame(block);
+        }
+        _returns.clear();
+    }
+
+    private OrderedMapHelper<Long, UnacknowledgedMessage> getUnackedMessageFinder()
+    { 
+        return new OrderedMapHelper<Long, UnacknowledgedMessage>(_unacknowledgedMessageMap, _unacknowledgedMessageMapLock, 0L);
+    }
+
+
     private class Ack implements TxnOp
     {
-        private final long _msgId;
-        private final boolean _multi;
+        private final Map<Long, UnacknowledgedMessage> _unacked;
 
-        Ack(long msgId, boolean multi)
+        Ack(Map<Long, UnacknowledgedMessage> unacked) throws AMQException
         {
-            _msgId = msgId;
-            _multi = multi;
+            _unacked = unacked;
+
+            //if any of the messages in unacked are persistent the txn
+            //buffer must be marked as persistent:
+            for(UnacknowledgedMessage msg : _unacked.values())
+            {
+                if(msg.message.isPersistent())
+                {
+                    _txnBuffer.containsPersistentChanges();
+                    break;
+                }
+            }
         }
 
-        public void commit() throws AMQException
+        public void prepare() throws AMQException
         {
-            handleAcknowledgement(_msgId, _multi);
+            //make persistent changes, i.e. dequeue and decrementReference
+            for(UnacknowledgedMessage msg : _unacked.values())
+            {
+                msg.discard();
+            }
+        }
+
+        public void undoPrepare()
+        {
+            //decrementReference is annoyingly untransactional (due to
+            //in memory counter) so if we failed in prepare for full
+            //txn, this op will have to compensate by fixing the count
+            //in memory (persistent changes will be rolled back by store) 
+            for(UnacknowledgedMessage msg : _unacked.values())
+            {
+
+                msg.message.incrementReference();
+            }            
+        }
+
+        public void commit()
+        {
+            //remove the unacked messages from the channels map
+            synchronized(_unacknowledgedMessageMapLock)
+            {
+                for(long tag : _unacked.keySet())
+                {
+                    _unacknowledgedMessageMap.remove(tag);
+                }
+            }
+            
         }
 
         public void rollback()
@@ -599,39 +702,75 @@ public class AMQChannel
         }
     }
 
-    //TODO:
-    //implement a scheme whereby messages can be stored on disk
-    //until commit, then reloaded...
-    private class Publish implements TxnOp
+    private class Store implements TxnOp
     {
+        //just use this to do a store of the message during the
+        //prepare phase. Any enqueueing etc is done by TxnOps enlisted
+        //by the queues themselves.
         private final AMQMessage _msg;
 
-        Publish(AMQMessage msg)
+        Store(AMQMessage msg)
         {
             _msg = msg;
         }
 
-        public boolean isPersistent() throws AMQException
+        public void prepare() throws AMQException
         {
-            return _msg.isPersistent();
+            _msg.storeMessage();
+            //the routers reference can now be released
+            _msg.decrementReference();
         }
 
-        public void commit() throws AMQException
+        public void undoPrepare()
         {
-            _exchanges.routeContent(_msg);
-            _msg.decrementReference();
+        }
+
+        public void commit()
+        {
         }
 
         public void rollback()
         {
+        }
+    }
+
+    private class Cleanup implements TxnOp
+    {
+        private final AMQMessage _msg;
+
+        Cleanup(AMQMessage msg)
+        {
+            _msg = msg;
+        }
+
+        public void prepare() throws AMQException
+        {
+            //the routers reference can now be released
+            _msg.decrementReference();
             try
             {
-                _msg.decrementReference();
+                _msg.checkDeliveredToConsumer();
             }
-            catch (AMQException e)
+            catch(NoConsumersException e)
             {
-                _log.error("Error rolling back a publish request: " + e, e);
+                //TODO: store this for delivery after the commit-ok
+                _returns.add(e.getReturnMessage(_channelId));
             }
+        }
+
+        public void undoPrepare()
+        {
+            //don't need to do anything here, if the store's txn failed
+            //when processing prepare then the message was not stored
+            //or enqueued on any queues and can be discarded
+        }
+
+        public void commit()
+        {
+        }
+
+        public void rollback()
+        {
         }
     }
 
