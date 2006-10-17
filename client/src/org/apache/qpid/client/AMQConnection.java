@@ -17,34 +17,44 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.failover.FailoverSupport;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.jms.*;
+import org.apache.qpid.framing.BasicQosBody;
+import org.apache.qpid.framing.BasicQosOkBody;
+import org.apache.qpid.framing.ChannelOpenBody;
+import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.TxSelectBody;
+import org.apache.qpid.framing.TxSelectOkBody;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Connection;
-
-import org.apache.log4j.Logger;
+import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.FailoverPolicy;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.naming.Reference;
 import javax.naming.NamingException;
-import javax.naming.StringRefAddr;
+import javax.naming.Reference;
 import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
@@ -129,8 +139,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
-                username + ":" + password + "@" + clientName +
-                virtualHost + "?brokerlist='" + broker + "'"));
+                                  username + ":" + password + "@" + clientName +
+                                  virtualHost + "?brokerlist='" + broker + "'"));
     }
 
     public AMQConnection(String host, int port, String username, String password,
@@ -143,14 +153,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(useSSL ?
-                ConnectionURL.AMQ_PROTOCOL + "://" +
-                        username + ":" + password + "@" + clientName +
-                        virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
-                        + "," + ConnectionURL.OPTIONS_SSL + "='true'" :
-                ConnectionURL.AMQ_PROTOCOL + "://" +
-                        username + ":" + password + "@" + clientName +
-                        virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
-                        + "," + ConnectionURL.OPTIONS_SSL + "='false'"
+                                  ConnectionURL.AMQ_PROTOCOL + "://" +
+                                  username + ":" + password + "@" + clientName +
+                                  virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
+                                  + "," + ConnectionURL.OPTIONS_SSL + "='true'" :
+                                                                                ConnectionURL.AMQ_PROTOCOL + "://" +
+                                                                                username + ":" + password + "@" + clientName +
+                                                                                virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
+                                                                                + "," + ConnectionURL.OPTIONS_SSL + "='false'"
         ));
     }
 
@@ -369,11 +379,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public Session createSession(final boolean transacted, final int acknowledgeMode) throws JMSException
     {
-        return createSession(transacted, acknowledgeMode, AMQSession.DEFAULT_PREFETCH);
+        return createSession(transacted, acknowledgeMode, AMQSession.DEFAULT_PREFETCH_HIGH_MARK);
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetch) throws JMSException
+    {
+        return createSession(transacted, acknowledgeMode, prefetch, prefetch);
+    }
+
+    public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
+                                                     final int prefetchHigh, final int prefetchLow) throws JMSException
     {
         checkNotClosed();
         if (channelLimitReached())
@@ -397,14 +413,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     // open it, so that there is no window where we could receive data on the channel and not be set
                     // up to handle it appropriately.
                     AMQSession session = new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode,
-                                                        prefetch);
+                                                        prefetchHigh, prefetchLow);
                     _protocolHandler.addSessionByChannel(channelId, session);
                     registerSession(channelId, session);
 
                     boolean success = false;
                     try
                     {
-                        createChannelOverWire(channelId, prefetch, transacted);
+                        createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
                         success = true;
                     }
                     catch (AMQException e)
@@ -432,13 +448,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    private void createChannelOverWire(int channelId, int prefetch, boolean transacted)
+    private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException
     {
         _protocolHandler.syncWrite(
                 ChannelOpenBody.createAMQFrame(channelId, null), ChannelOpenOkBody.class);
+
+        //todo send low water mark when protocol allows.
         _protocolHandler.syncWrite(
-                BasicQosBody.createAMQFrame(channelId, 0, prefetch, false),
+                BasicQosBody.createAMQFrame(channelId, 0, prefetchHigh, false),
                 BasicQosOkBody.class);
 
         if (transacted)
@@ -451,11 +469,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    private void reopenChannel(int channelId, int prefetch, boolean transacted) throws AMQException
+    private void reopenChannel(int channelId, int prefetchHigh, int prefetchLow, boolean transacted) throws AMQException
     {
         try
         {
-            createChannelOverWire(channelId, prefetch, transacted);
+            createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
         }
         catch (AMQException e)
         {
@@ -559,7 +577,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close() throws JMSException
     {
-        synchronized (getFailoverMutex())
+        synchronized(getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
@@ -897,7 +915,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             AMQSession s = (AMQSession) it.next();
             _protocolHandler.addSessionByChannel(s.getChannelId(), s);
-            reopenChannel(s.getChannelId(), s.getDefaultPrefetch(), s.getTransacted());
+            reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
             s.resubscribe();
         }
     }

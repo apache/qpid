@@ -28,7 +28,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p/>
  * This implementation is <b>only</b> safe where we have a single thread adding
  * items and a single (different) thread removing items.
- *
  */
 public class FlowControllingBlockingQueue
 {
@@ -37,7 +36,8 @@ public class FlowControllingBlockingQueue
      */
     private final BlockingQueue _queue = new LinkedBlockingQueue();
 
-    private final int _flowControlThreshold;
+    private final int _flowControlHighThreshold;
+    private final int _flowControlLowThreshold;
 
     private final ThresholdListener _listener;
 
@@ -56,7 +56,13 @@ public class FlowControllingBlockingQueue
 
     public FlowControllingBlockingQueue(int threshold, ThresholdListener listener)
     {
-        _flowControlThreshold = threshold;
+        this(threshold, threshold, listener);
+    }
+
+    public FlowControllingBlockingQueue(int highThreshold, int lowThreshold, ThresholdListener listener)
+    {
+        _flowControlHighThreshold = highThreshold;
+        _flowControlLowThreshold = lowThreshold;
         _listener = listener;
     }
 
@@ -67,7 +73,7 @@ public class FlowControllingBlockingQueue
         {
             synchronized(_listener)
             {
-                if (--_count == (_flowControlThreshold - 1))
+                if (_count-- == _flowControlLowThreshold)
                 {
                     _listener.underThreshold(_count);
                 }
@@ -83,7 +89,7 @@ public class FlowControllingBlockingQueue
         {
             synchronized(_listener)
             {
-                if (++_count == _flowControlThreshold)
+                if (++_count == _flowControlHighThreshold)
                 {
                     _listener.aboveThreshold(_count);
                 }
