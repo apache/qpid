@@ -48,6 +48,16 @@ public interface Session extends javax.jms.Session
     int getDefaultPrefetch();
 
     /**
+     * @return the High water prefetch value used by default for consumers created on this session.
+     */
+    int getDefaultPrefetchHigh();
+
+    /**
+     * @return the Low water prefetch value used by default for consumers created on this session.
+     */
+    int getDefaultPrefetchLow();
+
+    /**
      * Create a producer
      * @param destination
      * @param mandatory the value of the mandatory flag used by default on the producer
