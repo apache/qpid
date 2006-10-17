@@ -43,7 +43,7 @@ public class ChannelFlowTest implements MessageListener
 
     ChannelFlowTest(AMQConnection connection, AMQDestination destination) throws Exception
     {
-        AMQSession session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE, 50);
+        AMQSession session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE, 50,25);
 
         //set up a slow consumer
         session.createConsumer(destination).setMessageListener(this);
