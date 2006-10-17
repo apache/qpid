@@ -45,12 +45,9 @@ public class JNDIReferenceableTest
         Bind b = null;
         try
         {
-
-
             try
             {
                 b = new Bind();
-
             }
             catch (NameAlreadyBoundException e)
             {
@@ -69,7 +66,6 @@ public class JNDIReferenceableTest
                 {
                     Assert.fail("Unable to clear bound objects for test.");
                 }
-
             }
         }
         catch (NoInitialContextException e)
@@ -99,10 +95,8 @@ public class JNDIReferenceableTest
 
     }
 
-    public static junit.framework.Test suite
-            ()
+    public static junit.framework.Test suite()
     {
         return new JUnit4TestAdapter(JNDIReferenceableTest.class);
     }
-
 }

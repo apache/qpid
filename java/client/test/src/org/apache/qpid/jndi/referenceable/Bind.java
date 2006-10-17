@@ -33,7 +33,7 @@ import java.io.IOException;
  * Binds a reference from a JNDI source.
  * Given a properties file with the JNDI information and a binding string.
  */
-class Bind
+public class Bind
 {
     private static final String USAGE="USAGE: java bind <JNDI Properties file> -cf <url> <binding> | -c <url> <binding> [-t <topic Name> <binding>] [-q <queue Name> <binding>]";
     public Bind(String propertiesFile, String bindingURL, Referenceable reference) throws NameAlreadyBoundException, NoInitialContextException

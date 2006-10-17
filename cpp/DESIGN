@@ -1,37 +1,27 @@
 Qpid C++ AMQP implementation
 =============================
 
-The following is a brief description of the logical design of the
-Qpid C++ code. 
+= Project layout =
 
-Layout
+For Build system design see comment at start of Makefile.
 
-There are three top level modules. The first two, client and broker,
-containi the code required for an AMQP client and an AMQP broker
-respectively.  The third, common, contains code that is common to both
-client and broker implementations. [Note that at present only the
-client has been started].
+Project contains:
+ * Client library (lib/libqpid_client): src/qpid/client
+ * Broker library (lib/libqpid_broker): src/qpid/broker
+ * Common classes
+  * src/qpid/concurrent: concurrecy 
+  * src/qpid/framing: wire encoding/decoding
+  * src/qpid/io: reading/writing 
+  * src/qpid/Exception.cpp, QpidError.cpp: Exception classes.
+ * Qpid Daemon (bin/qpidd): src/qpidd.cpp
 
-Within the common module there are currently four sub-modules.  The
-largest of these is framing, containing the definitions of classes
-corresponding to key AMQP concepts such as frames, content & header
-bodies, particular method bodies etc as well as some interfaces and
-utilities used in the encoding and decoding of the wire protocol.
+Unit tests in test/unit: each *Test.cpp builds a CppUnit plugin.
 
-Two of the other sub-modules in common, io and concurrent, provide
-abstractions of core io and concurrency constructs used in the client
-and broker code.  The intention is to allow these to be implemented in
-different ways.interaction with the wire protocol. At present the
-implementation of the io and concurrency abstractions is based on APR
-(Apache Portable Runtime).  [Note: the io module currently only
-contains the abstractions as seen from the client - the Connector. It
-will in due time likely have the analogous broker-side abstraction -
-the Acceptor].
+Client tests in test/client: each *.cpp builds a test executable.
 
-The final common sub-module is error, containing a simple exception
-definition used in all the error handling.
+Test utilities: test/include
 
-Client Design
+= Client Design =
 
 The client module is primarily concerned with presenting the
 functionality offered by AMQP to users through a simple API that

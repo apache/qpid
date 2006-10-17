@@ -40,6 +40,13 @@ public class NoConsumersException extends RequiredDeliveryException
         super("Immediate delivery to " + queue + " is not possible.", publishBody, contentHeaderBody, contentBodies);
     }
 
+    public NoConsumersException(BasicPublishBody publishBody,
+                                ContentHeaderBody contentHeaderBody,
+                                List<ContentBody> contentBodies)
+    {
+        super("Immediate delivery is not possible.", publishBody, contentHeaderBody, contentBodies);
+    }
+
     public int getReplyCode()
     {
         return AMQConstant.NO_CONSUMERS.getCode();

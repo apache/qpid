@@ -29,6 +29,11 @@ class TestSession implements IoSession
         return null;  //TODO
     }
 
+    public IoServiceConfig getServiceConfig()
+    {
+        return null;  //TODO        
+    }
+
     public IoHandler getHandler()
     {
         return null;  //TODO

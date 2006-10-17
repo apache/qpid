@@ -32,7 +32,8 @@ import org.junit.runners.Suite;
         org.apache.qpid.client.message.UnitTests.class,
         org.apache.qpid.forwardall.UnitTests.class,
         org.apache.qpid.destinationurl.UnitTests.class,
-        org.apache.qpid.jndi.referenceabletest.UnitTests.class
+        org.apache.qpid.jndi.referenceabletest.UnitTests.class,
+        org.apache.qpid.transacted.UnitTests.class
         })
 public class AllClientUnitTests
 {

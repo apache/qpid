@@ -27,6 +27,8 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.txn.TxnBuffer;
+import org.apache.qpid.server.txn.TxnOp;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -93,19 +95,19 @@ public class AMQQueue implements Managable
     private final AMQQueueMBean _managedObject;
 
     /**
-     * max allowed size of a single message.
+     * max allowed size of a single message(in KBytes).
      */
-    private long _maxAllowedMessageSize = 0;
+    private long _maxAllowedMessageSize = 10000;    // 10 MB
 
     /**
      * max allowed number of messages on a queue.
      */
-    private Integer _maxAllowedMessageCount = 0;
+    private Integer _maxAllowedMessageCount = 10000;
 
     /**
-     * max allowed size in bytes for all the messages combined together in a queue.
+     * max allowed size in  KBytes for all the messages combined together in a queue.
      */
-    private long _queueDepth = 0;
+    private long _queueDepth = 10000000;  //   10 GB
 
     /**
      * total messages received by the queue since startup.
@@ -264,26 +266,81 @@ public class AMQQueue implements Managable
             return _queueDepth;
         }
 
+        // Sets the queue depth, the max queue size
         public void setQueueDepth(Long value)
         {
            _queueDepth = value;
         }
 
+        // Returns the size of messages in the queue
+        public Long getQueueSize()
+        {
+            List<AMQMessage> list = _deliveryMgr.getMessages();
+            if (list.size() == 0)
+                return 0l;
+
+            long queueSize = 0;
+            for (AMQMessage message : list)
+            {
+                queueSize = queueSize + getMessageSize(message);
+            }
+            return new Long(Math.round(queueSize/100));
+        }
         // Operations
 
-        private void checkForNotification()
+        // calculates the size of an AMQMessage
+        private long getMessageSize(AMQMessage msg)
         {
-            if (getMessageCount() >= getMaximumMessageCount())
+            if (msg == null)
+                return 0l;
+
+            List<ContentBody> cBodies = msg.getContentBodies();
+            long messageSize = 0;
+            for (ContentBody body : cBodies)
             {
-                Notification n = new Notification(
+                if (body != null)
+                    messageSize = messageSize + body.getSize();
+            }
+            return messageSize;
+        }
+
+        // Checks if there is any notification to be send to the listeners
+        private void checkForNotification(AMQMessage msg)
+        {
+            // Check for message count
+            Integer msgCount = getMessageCount();
+            if (msgCount >= getMaximumMessageCount())
+            {
+                notifyClients("MessageCount = " + msgCount + ", Queue has reached its size limit and is now full.");
+            }
+
+            // Check for received message size
+            long messageSize = getMessageSize(msg);
+            if (messageSize >= getMaximumMessageSize())
+            {
+                notifyClients("MessageSize = " + messageSize + ", Message size (MessageID="+ msg.getMessageId() +
+                                ")is higher than the threshold value");
+            }
+
+            // Check for queue size in bytes
+            long queueSize = getQueueSize();
+            if (queueSize >= getQueueDepth())
+            {
+                notifyClients("QueueSize = " + queueSize + ", Queue size has reached the threshold value");
+            }
+        }
+
+        // Send the notification to the listeners
+        private void notifyClients(String notificationMsg)
+        {
+            Notification n = new Notification(
                         MonitorNotification.THRESHOLD_VALUE_EXCEEDED,
                         this,
                         ++_notificationSequenceNumber,
                         System.currentTimeMillis(),
-                        "MessageCount = " + getMessageCount() + ", Queue has reached its size limit and is now full.");
+                        notificationMsg);
 
                 _broadcaster.sendNotification(n);
-            }
         }
 
         public void deleteMessageFromTop() throws JMException
@@ -610,9 +667,53 @@ public class AMQQueue implements Managable
 
     public void deliver(AMQMessage msg) throws AMQException
     {
+        TxnBuffer buffer = msg.getTxnBuffer();
+        if(buffer == null)
+        {
+            //non-transactional
+            record(msg);
+            process(msg);
+        }
+        else
+        {
+            buffer.enlist(new Deliver(msg));
+        }
+    }
+
+    private void record(AMQMessage msg) throws AMQException
+    {
         msg.enqueue(this);
+        msg.incrementReference();
+    }
+
+    private void process(AMQMessage msg) throws FailedDequeueException
+    {
         _deliveryMgr.deliver(getName(), msg);
-        updateReceivedMessageCount();
+        updateReceivedMessageCount(msg);
+        try
+        {
+            msg.checkDeliveredToConsumer();
+            updateReceivedMessageCount(msg);
+        }
+        catch(NoConsumersException e)
+        {
+            // as this message will be returned, it should be removed
+            // from the queue:
+            dequeue(msg);
+        }
+    }
+
+    void dequeue(AMQMessage msg) throws FailedDequeueException
+    {
+        try
+        {
+            msg.decrementReference();
+            msg.dequeue(this);
+        }
+        catch(AMQException e)
+        {
+            throw new FailedDequeueException(_name, e);
+        }
     }
 
     public void deliverAsync()
@@ -625,10 +726,10 @@ public class AMQQueue implements Managable
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount()
+    protected void updateReceivedMessageCount(AMQMessage msg)
     {
         _totalMessagesReceived++;
-        _managedObject.checkForNotification();
+        _managedObject.checkForNotification(msg);
     }
 
     public boolean equals(Object o)
@@ -664,4 +765,49 @@ public class AMQQueue implements Managable
             _logger.debug(MessageFormat.format(msg, args));
         }
     }
+
+    private class Deliver implements TxnOp
+    {
+        private final AMQMessage _msg;
+
+        Deliver(AMQMessage msg)
+        {
+            _msg = msg;
+        }
+
+        public void prepare() throws AMQException
+        {
+            record(_msg);
+        }
+
+        public void undoPrepare()
+        {
+        }
+
+        public void commit()
+        {
+            try
+            {
+                process(_msg);
+            }
+            catch(FailedDequeueException e)
+            {
+                //TODO: is there anything else we can do here? I think not...
+                _logger.error("Error during commit of a queue delivery: " + e, e);
+            }
+        }
+
+        public void rollback()
+        {
+            try
+            {
+                _msg.decrementReference();
+            }
+            catch (AMQException e)
+            {
+                _logger.error("Error rolling back a queue delivery: " + e, e);
+            }
+        }
+    }
+
 }

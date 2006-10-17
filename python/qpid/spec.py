@@ -204,6 +204,8 @@ class Method(Metadata):
     code += "  return self.invoke(%s" % Method.METHOD
     if argnames:
       code += ", (%s,)" % argnames
+    else:
+      code += ", ()" 
     if self.content:
       code += ", content"
     code += ")"
