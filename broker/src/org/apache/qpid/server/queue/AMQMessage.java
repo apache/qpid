@@ -19,8 +19,9 @@ package org.apache.qpid.server.queue;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.*;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.AMQException;
 
 import java.util.ArrayList;
@@ -61,17 +62,44 @@ public class AMQMessage
      */
     private transient final MessageStore _store;
 
+    /**
+     * For non transactional publishes, a message can be stored as
+     * soon as it is complete. For transactional messages it doesnt
+     * need to be stored until the transaction is committed.
+     */
+    private boolean _storeWhenComplete;
+
+    /**
+     * TxnBuffer for transactionally published messages
+     */
+    private TxnBuffer _txnBuffer;
+
+    /**
+     * Flag to indicate whether message has been delivered to a
+     * consumer. Used in implementing return functionality for
+     * messages published with the 'immediate' flag.
+     */
+    private boolean _deliveredToConsumer;
+
+
     public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody)
+    {
+        this(messageStore, publishBody, true);
+    }
+
+    public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody, boolean storeWhenComplete)
     {
         _messageId = messageStore.getNewMessageId();
         _publishBody = publishBody;
         _store = messageStore;
         _contentBodies = new LinkedList<ContentBody>();
+        _storeWhenComplete = storeWhenComplete;
     }
 
     public AMQMessage(MessageStore store, long messageId, BasicPublishBody publishBody,
                       ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
             throws AMQException
+    
     {
         _publishBody = publishBody;
         _contentHeaderBody = contentHeaderBody;
@@ -93,7 +121,7 @@ public class AMQMessage
         this(msg._store, msg._messageId, msg._publishBody, msg._contentHeaderBody, msg._contentBodies);
     }
 
-    private void storeMessage() throws AMQException
+    public void storeMessage() throws AMQException
     {
         if (isPersistent())
         {
@@ -149,7 +177,7 @@ public class AMQMessage
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _contentHeaderBody = contentHeaderBody;
-        if (isAllContentReceived())
+        if (_storeWhenComplete && isAllContentReceived())
         {
             storeMessage();
         }
@@ -169,7 +197,7 @@ public class AMQMessage
     {
         _contentBodies.add(contentBody);
         _bodyLengthReceived += contentBody.getSize();
-        if (isAllContentReceived())
+        if (_storeWhenComplete && isAllContentReceived())
         {
             storeMessage();
         }
@@ -293,5 +321,36 @@ public class AMQMessage
         //todo remove literal values to a constant file such as AMQConstants in common
         return _contentHeaderBody.properties instanceof BasicContentHeaderProperties
                 &&((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+    }
+
+    public void setTxnBuffer(TxnBuffer buffer)
+    {
+        _txnBuffer = buffer;
+    }
+
+    public TxnBuffer getTxnBuffer()
+    {
+        return _txnBuffer;
+    }
+
+    /**
+     * Called to enforce the 'immediate' flag. 
+     * @throws NoConsumersException if the message is marked for
+     * immediate delivery but has not been marked as delivered to a
+     * consumer
+     */
+    public void checkDeliveredToConsumer() throws NoConsumersException{
+        if(isImmediate() && !_deliveredToConsumer)
+        {
+            throw new NoConsumersException(_publishBody, _contentHeaderBody, _contentBodies);
+        }
+    }
+
+    /**
+     * Called when this message is delivered to a consumer. (used to
+     * implement the 'immediate' flag functionality).
+     */
+    public void setDeliveredToConsumer(){
+        _deliveredToConsumer = true;
     }
 }

@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({LoggingProxyTest.class})
+@Suite.SuiteClasses({LoggingProxyTest.class, OrderedMapHelperTest.class})
 public class UnitTests
 {
     public static junit.framework.Test suite()

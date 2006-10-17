@@ -122,10 +122,23 @@ public class SubscriptionImpl implements Subscription
      * @param queue
      * @throws AMQException
      */
-    public void send(AMQMessage msg, AMQQueue queue) throws AMQException
+    public void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
     {
         if (msg != null)
         {
+            // if we do not need to wait for client acknowledgements
+            // we can decrement the reference count immediately. 
+            
+            // By doing this _before_ the send we ensure that it
+            // doesn't get sent if it can't be dequeued, preventing
+            // duplicate delivery on recovery.
+
+            // The send may of course still fail, in which case, as
+            // the message is unacked, it will be lost.
+            if (!_acks)
+            {
+                queue.dequeue(msg);
+            }
             synchronized(channel)
             {
                 long deliveryTag = channel.getNextDeliveryTag();
@@ -139,13 +152,6 @@ public class SubscriptionImpl implements Subscription
                 AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
 
                 protocolSession.writeFrame(frame);
-            }
-            // if we do not need to wait for client acknowledgements we can decrement
-            // the reference count immediately
-            if (!_acks)
-            {
-                msg.decrementReference();
-                msg.dequeue(queue);
             }
         }
         else
