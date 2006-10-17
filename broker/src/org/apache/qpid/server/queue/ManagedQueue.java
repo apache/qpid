@@ -78,7 +78,7 @@ public interface ManagedQueue
     Integer getMessageCount() throws IOException;
 
     /**
-     * Returns the maximum size of a message (in bytes) allowed to be accepted by the
+     * Returns the maximum size of a message (in kbytes) allowed to be accepted by the
      * ManagedQueue. This is useful in setting notifications or taking
      * appropriate action, if the size of the message received is more than
      * the allowed size.
@@ -89,14 +89,14 @@ public interface ManagedQueue
     Long getMaximumMessageSize() throws IOException;
 
     /**
-     * Sets the maximum size of the message (in bytes) that is allowed to be
+     * Sets the maximum size of the message (in kbytes) that is allowed to be
      * accepted by the Queue.
-     * @param bytes  maximum size of message.
+     * @param size  maximum size of message.
      * @throws IOException
      */
     @MBeanAttribute(name="MaximumMessageSize",
-                         description="Maximum size of a message in bytes allowed for this Queue")
-    void setMaximumMessageSize(Long bytes) throws IOException;
+                         description="Maximum size(KB) of a message allowed for this Queue")
+    void setMaximumMessageSize(Long size) throws IOException;
 
     /**
      * Returns the total number of subscribers to the queue.
@@ -142,6 +142,14 @@ public interface ManagedQueue
     void setMaximumMessageCount(Integer value) throws IOException;
 
     /**
+     * Size of messages in the queue
+     * @return
+     * @throws IOException
+     */
+    @MBeanAttribute(name="QueueSize", description="Size of messages(KB) in the queue")
+    Long getQueueSize() throws IOException;
+
+    /**
      * Tells the maximum size of all the messages combined together,
      * that can be stored in the queue. This is useful for setting notifications
      * or taking required action if the size of messages stored in the queue
@@ -158,7 +166,7 @@ public interface ManagedQueue
      * @throws IOException
      */
     @MBeanAttribute(name="QueueDepth",
-                         description="The size of all the messages together, that can be stored in the queue")
+                         description="The size(KB) of all the messages together, that can be stored in the queue")
     void setQueueDepth(Long value) throws IOException;
 
 
