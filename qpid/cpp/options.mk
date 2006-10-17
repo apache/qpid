@@ -23,7 +23,7 @@ EXTRA_LIBDIRS := -L/usr/local/apr/lib
 
 ## Compile flags
 
-DEBUG := -ggdb3
+DEBUG := -ggdb3 -O0
 
 # _USE_APR_IO_ set when APR IO build is desired.
 DEFINES := -D _USE_APR_IO_

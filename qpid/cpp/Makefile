@@ -81,16 +81,16 @@ UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 # Client library.
 CLIENT_LIB  := lib/libqpid_client.so.1.0
 CLIENT_SRC  := $(wildcard src/qpid/client/*.cpp)
-$(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) $(CURDIR)/$(COMMON_LIB)
-	$(LIB_CMD) $^
+$(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) 
+	$(LIB_CMD) $^ $(CURDIR)/$(COMMON_LIB)
 all-nogen: $(CLIENT_LIB) 
 UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 
 # Broker library.
 BROKER_LIB  := lib/libqpid_broker.so.1.0
 BROKER_SRC  := $(wildcard src/qpid/broker/*.cpp)
-$(BROKER_LIB): $(BROKER_SRC:.cpp=.o)  $(CURDIR)/$(COMMON_LIB)
-	$(LIB_CMD) $^
+$(BROKER_LIB): $(BROKER_SRC:.cpp=.o)  
+	$(LIB_CMD) $^ $(CURDIR)/$(COMMON_LIB)
 all-nogen: $(BROKER_LIB)
 UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 
@@ -106,8 +106,8 @@ test/client/%: test/client/%.cpp
 
 ## Daemon executable
 
-bin/qpidd: src/qpidd.o $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
-	$(CXX) -o $@ $(LDFLAGS) -lapr-1 $^ 
+bin/qpidd: src/qpidd.o $(CURDIR)/$(COMMON_LIB)
+	$(CXX) -o $@ $(CXXFLAGS) $(LDFLAGS) -lapr-1 $^  $(CURDIR)/$(BROKER_LIB)
 all-nogen: bin/qpidd
 
 ## Run unit tests.
