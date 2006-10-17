@@ -123,6 +123,9 @@ pythontest: bin/qpidd
 doxygen: doxygen/doxygen.cfg $(SOURCES)
 	cd doxygen && doxygen doxygen.cfg
 
+## #include dependencies
+-include $(shell find src test -name '*.d')
+
 ## Cleanup
 clean::
 	rm -f bin/* lib/* qpidd.log
