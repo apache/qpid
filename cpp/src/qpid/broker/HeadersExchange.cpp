@@ -41,7 +41,6 @@ namespace {
 HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
 
 void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    std::cout << "HeadersExchange::bind" << std::endl;
     Locker locker(lock);
     std::string what = args->getString("x-match");
     if (what != all && what != any) {
@@ -60,7 +59,6 @@ void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey
 
 
 void HeadersExchange::route(Message::shared_ptr& msg, const string& /*routingKey*/, FieldTable* args){
-    std::cout << "route: " << *args << std::endl;
     Locker locker(lock);;
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (match(i->first, *args)) i->second->deliver(msg);
