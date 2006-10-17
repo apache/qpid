@@ -19,11 +19,18 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 
-public interface Subscription
+/**
+ * Signals that the dequeue of a message from a queue failed
+ */
+public class FailedDequeueException extends AMQException
 {
-    void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException;
+    public FailedDequeueException(String queue)
+    {
+        super("Failed to dequeue message from " + queue);
+    }
 
-    boolean isSuspended();
-
-    void queueDeleted(AMQQueue queue);
+    public FailedDequeueException(String queue, AMQException e)
+    {
+        super("Failed to dequeue message from " + queue, e);
+    }
 }
