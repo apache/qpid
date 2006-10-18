@@ -17,10 +17,15 @@
  */
 package org.apache.qpid.headers;
 
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.FieldTable;
 
-import javax.jms.*;
+import javax.jms.BytesMessage;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.TextMessage;
 
 /**
  */
@@ -46,7 +51,7 @@ class MessageFactory
         }
         _session = session;
         _payload = new byte[payloadSize];
-        for(int i = 0; i < _payload.length; i++)
+        for (int i = 0; i < _payload.length; i++)
         {
             _payload[i] = (byte) DATA[i % DATA.length];
         }
@@ -156,7 +161,7 @@ class MessageFactory
 
     private static Message setHeaders(Message m, String[] headers) throws JMSException
     {
-        for(int i = 0; i < headers.length; i++)
+        for (int i = 0; i < headers.length; i++)
         {
             // the value in GRM is 5 bytes
             m.setStringProperty(headers[i], "value");
