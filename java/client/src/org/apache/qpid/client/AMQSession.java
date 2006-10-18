@@ -35,12 +35,12 @@ import org.apache.qpid.url.URLSyntaxException;
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.text.MessageFormat;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -720,18 +720,18 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
-        return createConsumer(destination, _defaultPrefetchHighMark, false, false, null);
+        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, null);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
-        return createConsumer(destination, _defaultPrefetchHighMark, false, false, messageSelector);
+        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, messageSelector);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
             throws JMSException
     {
-        return createConsumer(destination, _defaultPrefetchHighMark, noLocal, false, messageSelector);
+        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false, messageSelector);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -740,7 +740,18 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           boolean exclusive,
                                           String selector) throws JMSException
     {
-        return createConsumer(destination, prefetch, noLocal, exclusive, selector, null);
+        return createConsumer(destination, prefetch, prefetch, noLocal, exclusive, selector, null);
+    }
+
+
+    public MessageConsumer createConsumer(Destination destination,
+                                          int prefetchHigh,
+                                          int prefetchLow,
+                                          boolean noLocal,
+                                          boolean exclusive,
+                                          String selector) throws JMSException
+    {
+        return createConsumer(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -750,12 +761,25 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector,
                                           FieldTable rawSelector) throws JMSException
     {
-        return createConsumerImpl(destination, prefetch, noLocal, exclusive,
+        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive,
+                                  selector, rawSelector);
+    }
+
+    public MessageConsumer createConsumer(Destination destination,
+                                          int prefetchHigh,
+                                          int prefetchLow,
+                                          boolean noLocal,
+                                          boolean exclusive,
+                                          String selector,
+                                          FieldTable rawSelector) throws JMSException
+    {
+        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive,
                                   selector, rawSelector);
     }
 
     protected MessageConsumer createConsumerImpl(final Destination destination,
-                                                 final int prefetch,
+                                                 final int prefetchHigh,
+                                                 final int prefetchLow,
                                                  final boolean noLocal,
                                                  final boolean exclusive,
                                                  final String selector,
@@ -780,7 +804,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 BasicMessageConsumer consumer = new BasicMessageConsumer(_channelId, _connection, amqd, selector, noLocal,
                                                                          _messageFactoryRegistry, AMQSession.this,
-                                                                         protocolHandler, ft, prefetch, exclusive,
+                                                                         protocolHandler, ft, prefetchHigh, prefetchLow, exclusive,
                                                                          _acknowledgeMode);
 
                 try
@@ -862,9 +886,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param queueName
      * @return the consumer tag generated by the broker
      */
-    private String consumeFromQueue(String queueName, AMQProtocolHandler protocolHandler, int prefetch,
+    private String consumeFromQueue(String queueName, AMQProtocolHandler protocolHandler, int prefetchHigh, int prefetchLow,
                                     boolean noLocal, boolean exclusive, int acknowledgeMode) throws AMQException
     {
+        //fixme prefetch values are not used here. Do we need to have them as parametsrs?
         //need to generate a consumer tag on the client so we can exploit the nowait flag
         String tag = Integer.toString(_nextTag++);
 
@@ -1118,8 +1143,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
 
-        String consumerTag = consumeFromQueue(queueName, protocolHandler, consumer.getPrefetch(), consumer.isNoLocal(),
-                                              consumer.isExclusive(), consumer.getAcknowledgeMode());
+        String consumerTag = consumeFromQueue(queueName, protocolHandler, consumer.getPrefetchHigh(), consumer.getPrefetchLow(),
+                                              consumer.isNoLocal(), consumer.isExclusive(), consumer.getAcknowledgeMode());
 
         consumer.setConsumerTag(consumerTag);
         _consumers.put(consumerTag, consumer);

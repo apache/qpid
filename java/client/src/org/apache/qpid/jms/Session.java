@@ -42,6 +42,13 @@ public interface Session extends javax.jms.Session
                                    boolean exclusive,
                                    String selector) throws JMSException;
 
+       MessageConsumer createConsumer(Destination destination,
+                                   int prefetchHigh,
+                                   int prefetchLow,
+                                   boolean noLocal,
+                                   boolean exclusive,
+                                   String selector) throws JMSException;
+
     /**
      * @return the prefetch value used by default for consumers created on this session.
      */
