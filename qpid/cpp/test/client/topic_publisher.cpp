@@ -15,17 +15,17 @@
  * limitations under the License.
  *
  */
-#include <iostream>
-#include <cstdlib>
+#include "qpid/QpidError.h"
+#include "qpid/client/Channel.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/Exchange.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/client/Queue.h"
+#include "qpid/concurrent/MonitorImpl.h"
 #include "unistd.h"
-#include "apr_time.h"
-#include "MonitorImpl.h"
-#include "QpidError.h"
-#include "Channel.h"
-#include "Connection.h"
-#include "Exchange.h"
-#include "MessageListener.h"
-#include "Queue.h"
+#include <apr-1/apr_time.h>
+#include <cstdlib>
+#include <iostream>
 
 using namespace qpid::client;
 using namespace qpid::concurrent;

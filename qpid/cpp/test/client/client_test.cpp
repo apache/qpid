@@ -17,15 +17,13 @@
  */
 #include <iostream>
 
-#include "QpidError.h"
-#include "Channel.h"
-#include "Connection.h"
-#include "FieldTable.h"
-#include "Message.h"
-#include "MessageListener.h"
-
-#include "MonitorImpl.h"
-
+#include "qpid/QpidError.h"
+#include "qpid/client/Channel.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/framing/FieldTable.h"
 
 using namespace qpid::client;
 using namespace qpid::concurrent;
