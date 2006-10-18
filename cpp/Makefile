@@ -99,10 +99,10 @@ UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 	$(CXX) -shared -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 -lcppunit $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
 
 ## Client tests
-
-all-nogen: $(wildcard test/client/*.cpp:.cpp=)
+CLIENT_TEST_SRC := $(wildcard test/client/*.cpp)
+all-nogen: $(CLIENT_TEST_SRC:.cpp=)
 test/client/%: test/client/%.cpp
-	$(CXX) -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 $(LINK_WITH_$(LIB)) $(LINK_WITH_$(LIB)_DEPS)
+	$(CXX) -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1  $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(CLIENT_LIB)
 
 ## Daemon executable
 
