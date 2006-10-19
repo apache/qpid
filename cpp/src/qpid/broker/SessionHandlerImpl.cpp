@@ -48,14 +48,7 @@ SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context,
     framemax(65536), 
     heartbeat(0) {}
 
-SessionHandlerImpl::~SessionHandlerImpl(){
-    // TODO aconway 2006-09-07: Should be auto_ptr or plain members.
-    delete channelHandler;
-    delete connectionHandler;
-    delete basicHandler;
-    delete exchangeHandler;
-    delete queueHandler;
-}
+SessionHandlerImpl::~SessionHandlerImpl(){}
 
 Channel* SessionHandlerImpl::getChannel(u_int16_t channel){
     channel_iterator i = channels.find(channel);

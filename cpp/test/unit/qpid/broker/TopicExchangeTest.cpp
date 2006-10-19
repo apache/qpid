@@ -17,8 +17,6 @@ Tokens makeTokens(char** begin, char** end)
 #define TOKENS(a) makeTokens(a, a + LEN(a))
 
 // Allow CPPUNIT_EQUALS to print a Tokens.
-// TODO aconway 2006-09-19: Make it a template and put it in a shared test lib.
-//
 CppUnit::OStringStream& operator <<(CppUnit::OStringStream& out, const Tokens& v)
 {
     out << "[ ";
