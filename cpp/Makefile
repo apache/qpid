@@ -44,7 +44,7 @@ include options.mk
 
 .PHONY: test all all-nogen generate unittest pythontest
 
-test: all unittest pythontest
+test: unittest pythontest
 
 # Must run this as two separate make processes to pick up generated files.
 all:
@@ -81,21 +81,21 @@ UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 # Client library.
 CLIENT_LIB  := lib/libqpid_client.so.1.0
 CLIENT_SRC  := $(wildcard src/qpid/client/*.cpp)
-$(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) 
-	$(LIB_CMD) $^ $(CURDIR)/$(COMMON_LIB)
+$(CLIENT_LIB): $(CLIENT_SRC:.cpp=.o) $(CURDIR)/$(COMMON_LIB)
+	$(LIB_CMD) $^ 
 all-nogen: $(CLIENT_LIB) 
 UNITTESTS := $(UNITTESTS) $(wildcard $(COMMON_DIRS:%=test/unit/%/*Test.cpp))
 
 # Broker library.
 BROKER_LIB  := lib/libqpid_broker.so.1.0
 BROKER_SRC  := $(wildcard src/qpid/broker/*.cpp)
-$(BROKER_LIB): $(BROKER_SRC:.cpp=.o)  
-	$(LIB_CMD) $^ $(CURDIR)/$(COMMON_LIB)
+$(BROKER_LIB): $(BROKER_SRC:.cpp=.o) $(CURDIR)/$(COMMON_LIB)
+	$(LIB_CMD) $^ 
 all-nogen: $(BROKER_LIB)
 UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 
 # Implicit rule for unit test plugin libraries.
-%Test.so: %Test.cpp 
+%Test.so: %Test.cpp $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
 	$(CXX) -shared -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 -lcppunit $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
 
 ## Client tests
@@ -106,16 +106,16 @@ test/client/%: test/client/%.cpp
 
 ## Daemon executable
 
-bin/qpidd: src/qpidd.o $(CURDIR)/$(COMMON_LIB)
-	$(CXX) -o $@ $(CXXFLAGS) $(LDFLAGS) -lapr-1 $^  $(CURDIR)/$(BROKER_LIB)
+bin/qpidd: src/qpidd.o $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
+	$(CXX) -o $@ $(CXXFLAGS) $(LDFLAGS) -lapr-1 $^ 
 all-nogen: bin/qpidd
 
 ## Run unit tests.
-unittest: $(UNITTESTS:.cpp=.so)
+unittest: all 
 	DllPlugInTester -c -b $(UNITTESTS:.cpp=.so)
 
 ## Run python tests
-pythontest: bin/qpidd
+pythontest: all
 	bin/qpidd > qpidd.log &
 	cd ../python ; ./run-tests -v -I cpp_failing.txt	
 
