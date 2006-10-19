@@ -120,6 +120,7 @@ public class TransactedTest
         expect("Z", testConsumer2.receive(1000));
 
         assertTrue(null == testConsumer1.receive(1000));
+        assertTrue(null == testConsumer2.receive(1000));
     }
 
     @Test
@@ -140,6 +141,7 @@ public class TransactedTest
         expect("B", consumer.receive(1000));
         expect("C", consumer.receive(1000));
 
+        assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
     }
 
