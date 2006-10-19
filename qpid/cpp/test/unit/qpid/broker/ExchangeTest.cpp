@@ -34,8 +34,6 @@ class ExchangeTest : public CppUnit::TestCase
 
   public:
 
-    // TODO aconway 2006-09-12: Need more detailed tests.
-
     void testMe() 
     {
         Queue::shared_ptr queue(new Queue("queue", true, true));
@@ -56,7 +54,6 @@ class ExchangeTest : public CppUnit::TestCase
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);
 
-        // TODO aconway 2006-09-12: TODO Why no assertions?
     }
 };
     

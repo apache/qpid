@@ -119,9 +119,7 @@ void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch)
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
     string e = exchange.getName();
     string q = queue.getName();
-    // TODO aconway 2006-10-10: not const correct, get rid of const_cast.
-    // 
-    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(0, q, e, key,!synch, const_cast<FieldTable&>(args)));
+    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(0, q, e, key,!synch, args));
     if(synch){
         sendAndReceive(frame, queue_bind_ok);
     }else{

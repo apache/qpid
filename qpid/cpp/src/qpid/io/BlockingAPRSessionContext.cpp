@@ -122,8 +122,7 @@ void BlockingAPRSessionContext::write(){
             int written = 0;
             apr_size_t bytes = available;
             while(available > written){
-                apr_status_t s = apr_socket_send(socket, data + written, &bytes);
-                assert(s == 0); // TODO aconway 2006-10-05: Error Handling.
+                apr_socket_send(socket, data + written, &bytes);
                 written += bytes;
                 bytes = available - written;
             }
