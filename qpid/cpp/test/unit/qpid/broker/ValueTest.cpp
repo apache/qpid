@@ -4,18 +4,6 @@
 using namespace qpid::framing;
 
 
-// Allow CPPUNIT_EQUALS to print a Tokens.
-// TODO aconway 2006-09-19: Make it a template and put it in a shared test lib.
-//
-template <class T>
-CppUnit::OStringStream& operator <<(CppUnit::OStringStream& out,
-                                    const ValueOps<T>& v)
-{
-    out << v.getValue();
-    return out;
-}
-
-
 class ValueTest : public CppUnit::TestCase 
 {
     CPPUNIT_TEST_SUITE(ValueTest);

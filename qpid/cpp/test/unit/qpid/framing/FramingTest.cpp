@@ -15,16 +15,14 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/ConnectionRedirectBody.h"
+#include "qpid/framing/amqp_framing.h"
 #include <iostream>
-#include <sstream>
 #include <qpid_test_plugin.h>
+#include <sstream>
 #include <typeinfo>
 
 using namespace qpid::framing;
-
-// TODO aconway 2006-09-12: Why do we  need explicit qpid::framing:: below?
 
 template <class T>
 std::string tostring(const T& x) 
@@ -42,8 +40,8 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testConnectionRedirectBody);
     CPPUNIT_TEST(testAccessRequestBody);
     CPPUNIT_TEST(testBasicConsumeBody);
-    CPPUNIT_TEST(ConnectionRedirectBody);
-    CPPUNIT_TEST(BasicConsumeOkBody);
+    CPPUNIT_TEST(testConnectionRedirectBodyFrame);
+    CPPUNIT_TEST(testBasicConsumeOkBodyFrame);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -78,10 +76,10 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        qpid::framing::ConnectionRedirectBody in(a, b);
+        ConnectionRedirectBody in(a, b);
         in.encodeContent(buffer);
         buffer.flip(); 
-        qpid::framing::ConnectionRedirectBody out;
+        ConnectionRedirectBody out;
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -110,11 +108,11 @@ class FramingTest : public CppUnit::TestCase
     }
     
 
-    void ConnectionRedirectBody()
+    void testConnectionRedirectBodyFrame()
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        AMQFrame in(999, new qpid::framing::ConnectionRedirectBody(a, b));
+        AMQFrame in(999, new ConnectionRedirectBody(a, b));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -122,10 +120,10 @@ class FramingTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
-    void BasicConsumeOkBody()
+    void testBasicConsumeOkBodyFrame()
     {
         std::string s = "hostA";
-        AMQFrame in(999, new qpid::framing::BasicConsumeOkBody(s));
+        AMQFrame in(999, new BasicConsumeOkBody(s));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;

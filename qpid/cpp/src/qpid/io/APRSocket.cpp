@@ -45,7 +45,6 @@ void APRSocket::write(qpid::framing::Buffer& buffer){
     do{
         bytes = buffer.available();
         apr_socket_send(socket, buffer.start(), &bytes);
-        // TODO aconway 2006-10-05: why don't we check status here?
         buffer.move(bytes);    
     }while(bytes > 0);
 }
