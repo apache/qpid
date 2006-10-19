@@ -15,18 +15,18 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.server.queue;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.qpid.AMQException;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({LoggingProxyTest.class})
-public class UnitTests
+/**
+ * Signals that the removal of a message once its refcount reached
+ * zero failed.
+ */
+public class MessageCleanupException extends AMQException
 {
-    public static junit.framework.Test suite()
+    public MessageCleanupException(long messageId, AMQException e)
     {
-        return new JUnit4TestAdapter(UnitTests.class);
+        super("Failed to cleanup message with id " + messageId, e);
     }
 }

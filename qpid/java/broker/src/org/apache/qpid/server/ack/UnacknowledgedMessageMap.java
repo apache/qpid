@@ -15,18 +15,13 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.server.ack;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.util.List;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({LoggingProxyTest.class})
-public class UnitTests
+public interface UnacknowledgedMessageMap
 {
-    public static junit.framework.Test suite()
-    {
-        return new JUnit4TestAdapter(UnitTests.class);
-    }
+    public void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
+    public void remove(List<UnacknowledgedMessage> msgs);
 }
+
