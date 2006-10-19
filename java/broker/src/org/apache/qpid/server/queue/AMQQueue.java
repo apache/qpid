@@ -707,8 +707,16 @@ public class AMQQueue implements Managable
     {
         try
         {
-            msg.decrementReference();
             msg.dequeue(this);
+            msg.decrementReference();
+        }
+        catch(MessageCleanupException e)
+        {
+            //Message was dequeued, but could notthen be deleted
+            //though it is no longer referenced. This should be very
+            //rare and can be detected and cleaned up on recovery or
+            //done through some form of manual intervention.
+            _logger.error(e, e);
         }
         catch(AMQException e)
         {
@@ -777,7 +785,8 @@ public class AMQQueue implements Managable
 
         public void prepare() throws AMQException
         {
-            record(_msg);
+            //do the persistent part of the record()
+            _msg.enqueue(AMQQueue.this);
         }
 
         public void undoPrepare()
@@ -786,6 +795,9 @@ public class AMQQueue implements Managable
 
         public void commit()
         {
+            //do the memeory part of the record()
+            _msg.incrementReference();
+            //then process the message
             try
             {
                 process(_msg);
@@ -799,14 +811,6 @@ public class AMQQueue implements Managable
 
         public void rollback()
         {
-            try
-            {
-                _msg.decrementReference();
-            }
-            catch (AMQException e)
-            {
-                _logger.error("Error rolling back a queue delivery: " + e, e);
-            }
         }
     }
 

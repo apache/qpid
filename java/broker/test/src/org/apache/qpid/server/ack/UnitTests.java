@@ -15,14 +15,16 @@
  * limitations under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.server.ack;
 
 import junit.framework.JUnit4TestAdapter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({LoggingProxyTest.class})
+@Suite.SuiteClasses({
+        TxAckTest.class
+})
 public class UnitTests
 {
     public static junit.framework.Test suite()

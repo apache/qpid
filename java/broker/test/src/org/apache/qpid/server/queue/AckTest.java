@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
@@ -93,15 +94,15 @@ public class AckTest
         final int msgCount = 10;
         publishMessages(msgCount);
 
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount);
 
-        Iterator<Map.Entry<Long, AMQChannel.UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
         for (int i = 1; i <= map.size(); i++)
         {
-            Map.Entry<Long, AMQChannel.UnacknowledgedMessage> entry = it.next();
+            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
             assertTrue(entry.getKey() == i);
-            AMQChannel.UnacknowledgedMessage unackedMsg = entry.getValue();
+            UnacknowledgedMessage unackedMsg = entry.getValue();
             assertTrue(unackedMsg.queue == _queue);
         }
         assertTrue(_messageStore.getMessageMap().size() == msgCount);
@@ -118,7 +119,7 @@ public class AckTest
         final int msgCount = 10;
         publishMessages(msgCount);
 
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
         assertTrue(_messageStore.getMessageMap().size() == 0);
     }
@@ -135,16 +136,16 @@ public class AckTest
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(5, false);
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount - 1);
 
-        Iterator<Map.Entry<Long, AMQChannel.UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
         int i = 1;
         while (i <= map.size())
         {
-            Map.Entry<Long, AMQChannel.UnacknowledgedMessage> entry = it.next();
+            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
             assertTrue(entry.getKey() == i);
-            AMQChannel.UnacknowledgedMessage unackedMsg = entry.getValue();
+            UnacknowledgedMessage unackedMsg = entry.getValue();
             assertTrue(unackedMsg.queue == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
@@ -166,16 +167,16 @@ public class AckTest
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(5, true);
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 5);
 
-        Iterator<Map.Entry<Long, AMQChannel.UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
         int i = 1;
         while (i <= map.size())
         {
-            Map.Entry<Long, AMQChannel.UnacknowledgedMessage> entry = it.next();
+            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
             assertTrue(entry.getKey() == i + 5);
-            AMQChannel.UnacknowledgedMessage unackedMsg = entry.getValue();
+            UnacknowledgedMessage unackedMsg = entry.getValue();
             assertTrue(unackedMsg.queue == _queue);
             ++i;
         }
@@ -193,16 +194,16 @@ public class AckTest
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(0, true);
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
 
-        Iterator<Map.Entry<Long, AMQChannel.UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
         int i = 1;
         while (i <= map.size())
         {
-            Map.Entry<Long, AMQChannel.UnacknowledgedMessage> entry = it.next();
+            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
             assertTrue(entry.getKey() == i + 5);
-            AMQChannel.UnacknowledgedMessage unackedMsg = entry.getValue();
+            UnacknowledgedMessage unackedMsg = entry.getValue();
             assertTrue(unackedMsg.queue == _queue);
             ++i;
         }
@@ -221,7 +222,7 @@ public class AckTest
         // at this point we should have sent out only 5 messages with a further 5 queued
         // up in the channel which should be suspended
         assertTrue(_subscription.isSuspended());
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 5);
         _channel.acknowledgeMessage(5, true);
         assertTrue(!_subscription.isSuspended());

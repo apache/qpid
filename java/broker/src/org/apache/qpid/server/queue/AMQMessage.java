@@ -255,7 +255,7 @@ public class AMQMessage
      * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
      */
-    public void decrementReference() throws AMQException
+    public void decrementReference() throws MessageCleanupException
     {
         // note that the operation of decrementing the reference count and then removing the message does not
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
@@ -263,7 +263,16 @@ public class AMQMessage
         // not relying on the all the increments having taken place before the delivery manager decrements.
         if (_referenceCount.decrementAndGet() == 0)
         {
-            _store.removeMessage(_messageId);
+            try
+            {
+                _store.removeMessage(_messageId);
+            }
+            catch(AMQException e)
+            {
+                //to maintain consistency, we revert the count
+                incrementReference();
+                throw new MessageCleanupException(_messageId, e);
+            }
         }
     }
 
