@@ -47,6 +47,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class AMQProtocolSession implements ProtocolVersionList
 {
+
+    private static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
+
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
 
     public static final String PROTOCOL_INITIATION_RECEIVED = "ProtocolInitiatiionReceived";
@@ -58,6 +61,8 @@ public class AMQProtocolSession implements ProtocolVersionList
     private static final String SASL_CLIENT = "SASLClient";
 
     private final IoSession _minaProtocolSession;
+
+    private WriteFuture _lastWriteFuture;
 
     /**
      * The handler from which this session was created and which is used to handle protocol events.
@@ -255,7 +260,7 @@ public class AMQProtocolSession implements ProtocolVersionList
      */
     public void writeFrame(AMQDataBlock frame)
     {
-        _minaProtocolSession.write(frame);
+        writeFrame(frame, false);
     }
 
     public void writeFrame(AMQDataBlock frame, boolean wait)
@@ -264,6 +269,10 @@ public class AMQProtocolSession implements ProtocolVersionList
         if (wait)
         {
             f.join();
+        }
+        else
+        {
+            _lastWriteFuture = f;
         }
     }
 
@@ -342,6 +351,12 @@ public class AMQProtocolSession implements ProtocolVersionList
 
     public void closeProtocolSession()
     {
+        _logger.debug("Waiting for last write to join.");
+        if (_lastWriteFuture != null)
+        {
+            _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
+        }
+
         _logger.debug("Closing protocol session");
         final CloseFuture future = _minaProtocolSession.close();
         future.join();
