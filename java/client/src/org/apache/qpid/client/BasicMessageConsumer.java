@@ -91,9 +91,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     private FieldTable _rawSelectorFieldTable;
 
     /**
-     * We store the prefetch field in order to be able to reuse it when resubscribing in the event of failover
+     * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of failover
      */
-    private int _prefetch;
+    private int _prefetchHigh;
+
+    /**
+     * We store the low water prefetch field in order to be able to reuse it when resubscribing in the event of failover
+     */
+    private int _prefetchLow;
 
     /**
      * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
@@ -118,10 +123,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private long _lastDeliveryTag;
 
+    /**
+     * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode.
+     * Enabled when _outstannding number of msgs >= _prefetchHigh and disabled at < _prefetchLow
+     */
+    private boolean _dups_ok_acknowledge_send;
+
     BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
                          boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
-                         AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable, int prefetch,
-                         boolean exclusive, int acknowledgeMode)
+                         AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
+                         int prefetchHigh, int prefetchLow, boolean exclusive, int acknowledgeMode)
     {
         _channelId = channelId;
         _connection = connection;
@@ -132,7 +143,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _session = session;
         _protocolHandler = protocolHandler;
         _rawSelectorFieldTable = rawSelectorFieldTable;
-        _prefetch = prefetch;
+        _prefetchHigh = prefetchHigh;
+        _prefetchLow = prefetchLow;
         _exclusive = exclusive;
         _acknowledgeMode = acknowledgeMode;
     }
@@ -232,7 +244,17 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public int getPrefetch()
     {
-        return _prefetch;
+        return _prefetchHigh;
+    }
+
+    public int getPrefetchHigh()
+    {
+        return _prefetchHigh;
+    }
+
+    public int getPrefetchLow()
+    {
+        return _prefetchLow;
     }
 
     public boolean isNoLocal()
@@ -309,10 +331,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /**
      * We can get back either a Message or an exception from the queue. This method examines the argument and deals
      * with it by throwing it (if an exception) or returning it (in any other case).
+     *
      * @param o
      * @return a message only if o is a Message
      * @throws JMSException if the argument is a throwable. If it is a JMSException it is rethrown as is, but if not
-     * a JMSException is created with the linked exception set appropriately
+     *                      a JMSException is created with the linked exception set appropriately
      */
     private AbstractJMSMessage returnMessageOrThrow(Object o)
             throws JMSException
@@ -335,7 +358,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
@@ -370,8 +393,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /**
      * Called from the AMQSession when a message has arrived for this consumer. This methods handles both the case
      * of a message listener or a synchronous receive() caller.
+     *
      * @param messageFrame the raw unprocessed mesage
-     * @param channelId channel on which this message was sent
+     * @param channelId    channel on which this message was sent
      */
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
     {
@@ -435,7 +459,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         switch (_acknowledgeMode)
         {
             case Session.DUPS_OK_ACKNOWLEDGE:
-                if (++_outstanding >= _prefetch)
+                if (++_outstanding >= _prefetchHigh)
+                {
+                    _dups_ok_acknowledge_send = true;
+                }
+                if (_outstanding <= _prefetchLow)
+                {
+                    _dups_ok_acknowledge_send = false;
+                }
+
+                if (_dups_ok_acknowledge_send)
                 {
                     _session.acknowledgeMessage(msg.getDeliveryTag(), true);
                 }

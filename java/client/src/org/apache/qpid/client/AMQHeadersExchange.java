@@ -18,12 +18,18 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.url.BindingURL;
 
 /**
  * A destination backed by a headers exchange
  */
 public class AMQHeadersExchange extends AMQDestination
 {
+    public AMQHeadersExchange(BindingURL binding)
+    {
+        this(binding.getExchangeName());
+    }
+
     public AMQHeadersExchange(String queueName)
     {
         super(queueName, ExchangeDefaults.HEADERS_EXCHANGE_CLASS, queueName, true, true, null);
