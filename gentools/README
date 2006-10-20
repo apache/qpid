@@ -21,7 +21,7 @@ out.java/: Output folder for generated Java files (will be created with use of -
 templ.cpp/: (Future:) Templates for C++ code generation.
 out.cpp/: Output folder for generated C++ files (will be created with use of -c flag on command-line).
 
-For a mor detaild description of the generator, see the Qpid Wiki (http://wiki.apache.org/qpid/AMQPVersion).
+For a more detaild description of the generator, see the Qpid Wiki (http://cwiki.apache.org/confluence/display/qpid/Multiple+AMQP+Version+Support).
 
 Please send comments and bugs to me (kim.vdriet [at] redhat.com) or via the Apache Qpid list (qpid-dev [at] incubator.apache.org).
 
