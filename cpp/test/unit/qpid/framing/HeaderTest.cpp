@@ -31,9 +31,6 @@ class HeaderTest : public CppUnit::TestCase
 
 public:
 
-    // TODO aconway 2006-09-12: Need more detailed tests,
-    // need tests to assert something!
-    // 
     void testGenericProperties() 
     {
         AMQHeaderBody body(BASIC);

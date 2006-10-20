@@ -28,7 +28,7 @@
 	 <xsl:when test="$t='bit'">bool</xsl:when> 		 		 
 	 <xsl:when test="$t='long'">u_int32_t</xsl:when> 		 		 
 	 <xsl:when test="$t='longlong'">u_int64_t</xsl:when> 		 		 
-	 <xsl:when test="$t='table'">FieldTable&amp;</xsl:when> 		 		 
+	 <xsl:when test="$t='table'">const FieldTable&amp;</xsl:when> 		 		 
          <xsl:otherwise>Object /*WARNING: undefined type*/</xsl:otherwise>
     </xsl:choose>
 </xsl:function>
