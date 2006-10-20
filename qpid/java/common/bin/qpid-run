@@ -15,6 +15,12 @@
 # limitations under the License.
 #
 
+# Test if we're running on cygwin.
+cygwin=false
+if [[ "$(uname -a | fgrep Cygwin)" != "" ]]; then
+  cygwin=true
+fi
+
 die() {
   if [[ $1 = -usage ]]; then
     shift
@@ -93,11 +99,6 @@ usage() {
       sed "s/-run:\(.*\)=\*/-run:\1=<value>/" |\
       sed "s/^--$//"
 }
-
-cygwin=false
-if [[ "$(uname -a | fgrep Cygwin)" != "" ]]; then
-  cygwin=true
-fi
 
 export EXTERNAL_CLASSPATH=$CLASSPATH
 unset CLASSPATH
