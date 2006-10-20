@@ -41,6 +41,42 @@ if [ -z "$QPID_WORK" ]; then
     QPID_WORK=$HOME
 fi
 
+if $cygwin; then
+  QPID_HOME=$(cygpath -w $QPID_HOME)
+  QPID_WORK=$(cygpath -w $QPID_WORK)
+fi
+
+#Set the default system properties that we'll use now that they have
+#all been initialised
+SYSTEM_PROPS="-Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME -DQPID_WORK=$QPID_WORK"
+
+#If logprefix or logsuffix set to use PID make that happen
+#Otherwise just pass the value through for these props
+#Using X character to avoid probs with empty strings
+if [ -n "$QPID_LOG_PREFIX" ]; then
+    if [ "X$QPID_LOG_PREFIX" = "XPID" ]; then
+        echo Using pid in qpid log name prefix
+        LOG_PREFIX=" -Dlogprefix=$$"
+    else
+        echo Using qpid logprefix property
+        LOG_PREFIX=" -Dlogprefix=$QPID_LOG_PREFIX"
+    fi
+    SYSTEM_PROPS+=$LOG_PREFIX
+fi
+
+if [ -n "$QPID_LOG_SUFFIX" ]; then
+    if [ "X$QPID_LOG_SUFFIX" = "XPID" ]; then
+        echo Using pid in qpid log name suffix
+        LOG_SUFFIX=" -Dlogsuffix=$$"
+    else
+        echo Using qpig logsuffix property
+        LOG_SUFFIX=" -Dlogsuffix=$QPID_LOG_SUFFIX"
+    fi
+    SYSTEM_PROPS+=$LOG_SUFFIX
+fi
+
+echo System Properties set to $SYSTEM_PROPS
+
 program=$(basename $0)
 sourced=${BASH_SOURCE[0]}
 if [[ -z ${sourced:-''} ]]; then
@@ -175,12 +211,10 @@ for arg in "${RUN_ARGS[@]}"; do
 done
 
 if $cygwin; then
-  QPID_HOME=$(cygpath -w $QPID_HOME)
   CLASSPATH=$(cygpath -w -p $CLASSPATH)
-  QPID_WORK=$(cygpath -w $QPID_WORK)
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $JAVA_MEM -Damqj.logging.level=$AMQJ_LOGGING_LEVEL -DQPID_HOME=$QPID_HOME -DQPID_WORK=$QPID_WORK $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH
