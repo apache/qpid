@@ -32,7 +32,7 @@ public class ContentBody extends AMQBody
 
     public int getSize()
     {
-        return (payload == null?0:payload.limit());
+        return (payload == null ? 0 : payload.limit());
     }
 
     public void writePayload(ByteBuffer buffer)
@@ -49,8 +49,27 @@ public class ContentBody extends AMQBody
         if (size > 0)
         {
             payload = buffer.slice();
-            payload.limit((int)size);
-            buffer.skip((int)size);            
+            payload.limit((int) size);
+            buffer.skip((int) size);
+        }
+
+    }
+
+    public void reduceBufferToFit()
+    {
+        if (payload != null && (payload.remaining() < payload.capacity() / 2))
+        {
+            int size = payload.limit();
+            ByteBuffer newPayload = ByteBuffer.allocate(size);
+
+            newPayload.put(payload);
+            newPayload.position(0);
+            newPayload.limit(size);
+
+            //reduce reference count on payload
+            payload.release();
+
+            payload = newPayload;
         }
     }
 
