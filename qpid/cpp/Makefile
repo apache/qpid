@@ -113,6 +113,7 @@ all-nogen: bin/qpidd
 ## Run unit tests.
 unittest: all 
 	DllPlugInTester -c -b $(UNITTESTS:.cpp=.so)
+all-nogen: $(UNITTESTS:.cpp=.so)
 
 ## Run python tests
 pythontest: all
