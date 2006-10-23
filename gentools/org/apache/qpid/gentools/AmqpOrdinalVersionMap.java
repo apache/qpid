@@ -3,7 +3,7 @@ package org.apache.qpid.gentools;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
-public class AmqpOrdinalMap extends TreeMap<Integer, AmqpVersionSet>
+public class AmqpOrdinalVersionMap extends TreeMap<Integer, AmqpVersionSet>
 {
 
 }
