@@ -601,7 +601,7 @@ public class JavaGenerator extends Generator
 		return sb.toString();		
 	}
 
-	protected String generateIndexInitializer(String mapName, AmqpOrdinalMap indexMap, int indentSize)
+	protected String generateIndexInitializer(String mapName, AmqpOrdinalVersionMap indexMap, int indentSize)
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();

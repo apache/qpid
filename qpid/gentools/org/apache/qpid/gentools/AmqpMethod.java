@@ -29,7 +29,7 @@ public class AmqpMethod implements Printable, NodeAware
 	public AmqpVersionSet versionSet;
 	public AmqpFieldMap fieldMap;
 	public String name;
-	public AmqpOrdinalMap indexMap;
+	public AmqpOrdinalVersionMap indexMap;
 	
 	public AmqpMethod(String name, LanguageConverter converter)
 	{
@@ -37,7 +37,7 @@ public class AmqpMethod implements Printable, NodeAware
 		this.converter = converter;
 		versionSet = new AmqpVersionSet();
 		fieldMap = new AmqpFieldMap();
-		indexMap = new AmqpOrdinalMap();
+		indexMap = new AmqpOrdinalVersionMap();
 	}
 
 	public void addFromNode(Node methodNode, int ordinal, AmqpVersion version)

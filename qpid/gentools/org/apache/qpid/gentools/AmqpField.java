@@ -20,7 +20,6 @@ package org.apache.qpid.gentools;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.TreeMap;
 
 import org.w3c.dom.Node;
 
@@ -28,8 +27,8 @@ public class AmqpField implements Printable, NodeAware
 {
 	public LanguageConverter converter;
 	public AmqpVersionSet versionSet;
-	public TreeMap<String, AmqpVersionSet> domainMap;
-	public AmqpOrdinalMap ordinalMap;
+	public AmqpDomainVersionMap domainMap;
+	public AmqpOrdinalVersionMap ordinalMap;
 	public String name;
 	
 	public AmqpField(String name, LanguageConverter converter)
@@ -37,8 +36,8 @@ public class AmqpField implements Printable, NodeAware
 		this.name = name;
 		this.converter = converter;
 		versionSet = new AmqpVersionSet();
-		domainMap = new TreeMap<String, AmqpVersionSet>();
-		ordinalMap = new AmqpOrdinalMap();
+		domainMap = new AmqpDomainVersionMap();
+		ordinalMap = new AmqpOrdinalVersionMap();
 	}
 
 	public void addFromNode(Node fieldNode, int ordinal, AmqpVersion version)
