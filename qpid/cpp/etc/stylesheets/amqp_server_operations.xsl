@@ -94,11 +94,12 @@ class AMQP_ServerOperations
         <xsl:text>        }; /* class </xsl:text><xsl:value-of select="$class"/><xsl:text> */&#xA;</xsl:text>
       </xsl:for-each>
 
+      <xsl:text>&#xA;</xsl:text>
       <xsl:for-each select="class">
         <xsl:variable name="class" select="concat(amqp:cpp-class-name(@name), 'Handler')"/>
         <xsl:text>        virtual AMQP_ServerOperations::</xsl:text>
         <xsl:value-of select="$class"/><xsl:text>* get</xsl:text><xsl:value-of select="$class"/>
-        <xsl:text>() = 0;</xsl:text>
+        <xsl:text>() = 0;&#xA;</xsl:text>
       </xsl:for-each>
 
       <xsl:text>}; /* class AMQP_ServerOperations */
