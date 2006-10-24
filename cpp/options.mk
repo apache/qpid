@@ -23,7 +23,10 @@ EXTRA_LIBDIRS := -L/usr/local/apr/lib
 
 ## Compile flags
 
-DEBUG := -ggdb3 -O0
+# Release vs. debug flags, default to debug
+DEBUG   := -ggdb3
+RELEASE := -O3 -DNDEBUG
+BUILD := DEBUG
 
 # _USE_APR_IO_ set when APR IO build is desired.
 DEFINES := -D _USE_APR_IO_
@@ -33,11 +36,12 @@ DEFINES := -D _USE_APR_IO_
 # qpid-dev list.
 # 
 # The following warnings deliberately omitted, they warn on valid code.
-# -Wno-unreachable-code -Wpadded
+# -Wno-unreachable-code -Wpadded -Winline
 # 
-WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Winline 
+WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch
+
 INCLUDES :=  -Isrc -Igen $(EXTRA_INCLUDES) 
-CXXFLAGS := $(DEBUG) $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES)
+CXXFLAGS := $($(BUILD)) $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES)
 ## Link flags
 # Allow exes to find libs without env changes. Remove for release builds.
 LDFLAGS := -Llib $(EXTRA_LIBDIRS) 
