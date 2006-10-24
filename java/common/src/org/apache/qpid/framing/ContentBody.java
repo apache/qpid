@@ -63,8 +63,7 @@ public class ContentBody extends AMQBody
             ByteBuffer newPayload = ByteBuffer.allocate(size);
 
             newPayload.put(payload);
-            newPayload.position(0);
-            newPayload.limit(size);
+            newPayload.flip();
 
             //reduce reference count on payload
             payload.release();
