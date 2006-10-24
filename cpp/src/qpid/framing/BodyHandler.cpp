@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
-#include "memory.h"
+#include <boost/shared_ptr.hpp>
 #include "qpid/framing/BodyHandler.h"
 
 using namespace qpid::framing;
-using namespace std::tr1;
+using namespace boost;
 
 BodyHandler::~BodyHandler() {}
 

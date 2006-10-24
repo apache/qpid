@@ -68,7 +68,7 @@ class <xsl:value-of select="$f/@name"/> : virtual public AMQMethodBody
     </xsl:for-each> 
 
 public:
-    typedef std::tr1::shared_ptr&lt;<xsl:value-of select="$f/@name"/>&gt; shared_ptr;   
+    typedef boost::shared_ptr&lt;<xsl:value-of select="$f/@name"/>&gt; shared_ptr;   
 
     virtual ~<xsl:value-of select="$f/@name"/>() {}
 

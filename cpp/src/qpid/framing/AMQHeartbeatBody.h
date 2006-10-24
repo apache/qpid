@@ -28,7 +28,7 @@ namespace framing {
 class AMQHeartbeatBody : virtual public AMQBody
 {
 public:
-    typedef std::tr1::shared_ptr<AMQHeartbeatBody> shared_ptr;
+    typedef boost::shared_ptr<AMQHeartbeatBody> shared_ptr;
 
     virtual ~AMQHeartbeatBody();
     inline u_int32_t size() const { return 0; }

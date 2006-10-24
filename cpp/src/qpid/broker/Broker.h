@@ -24,7 +24,7 @@
 #include "qpid/concurrent/Runnable.h"
 #include "qpid/broker/SessionHandlerFactoryImpl.h"
 #include <boost/noncopyable.hpp>
-#include <tr1/memory>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
     namespace broker {
@@ -42,7 +42,7 @@ namespace qpid {
             static const int16_t DEFAULT_PORT;
             
             virtual ~Broker();
-            typedef std::tr1::shared_ptr<Broker> shared_ptr;
+            typedef boost::shared_ptr<Broker> shared_ptr;
 
             /**
              * Create a broker.
