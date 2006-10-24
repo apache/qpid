@@ -17,28 +17,35 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.configuration.Configured;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.util.ConcurrentLinkedQueueNoSize;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Manages delivery of messages on behalf of a queue
- *
  */
-class DeliveryManager
+public class DeliveryManager
 {
     private static final Logger _log = Logger.getLogger(DeliveryManager.class);
 
+    @Configured(path = "advanced.compressBufferOnQueue",
+                defaultValue = "false")
+    public boolean compressBufferOnQueue;
     /**
      * Holds any queued messages
      */
-    private final Queue<AMQMessage> _messages = new LinkedList<AMQMessage>();
+    private final Queue<AMQMessage> _messages = new ConcurrentLinkedQueueNoSize<AMQMessage>();
+    //private int _messageCount;
     /**
      * Ensures that only one asynchronous task is running for this manager at
      * any time.
@@ -50,50 +57,95 @@ class DeliveryManager
     private final SubscriptionManager _subscriptions;
 
     /**
-     * An indication of the mode we are in. If this is true then messages are
-     * being queued up in _messages for asynchronous delivery. If it is false
-     * then messages can be delivered directly as they come in.
-     */
-    private boolean _queueing;
-
-    /**
      * A reference to the queue we are delivering messages for. We need this to be able
      * to pass the code that handles acknowledgements a handle on the queue.
      */
     private final AMQQueue _queue;
 
+
+    private volatile int _queueSize = 0;
+
     DeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
     {
+        //Set values from configuration
+        Configurator.configure(this);
+
+        if (compressBufferOnQueue)
+        {
+            _log.info("Compressing Buffers on queue.");
+        }
+
         _subscriptions = subscriptions;
         _queue = queue;
     }
 
-    private synchronized boolean enqueue(AMQMessage msg)
+    /**
+     * @return boolean if we are queueing
+     */
+    private boolean queueing()
     {
-        if (_queueing)
+        return getMessageCount() != 0;
+    }
+
+
+    /**
+     * @param msg to enqueue
+     * @return true if we are queue this message
+     */
+    private boolean enqueue(AMQMessage msg)
+    {
+        if (msg.isImmediate())
         {
-            if(msg.isImmediate())
+            return false;
+        }
+        else
+        {
+            if (queueing())
             {
-                //can't enqueue messages for whom immediate delivery is required
-                return false;
+                return addMessageToQueue(msg);
             }
             else
             {
+                return false;
+            }
+        }
+    }
+
+    private void startQueueing(AMQMessage msg)
+    {
+        if (!msg.isImmediate())
+        {
+            addMessageToQueue(msg);
+        }
+    }
+
+    private boolean addMessageToQueue(AMQMessage msg)
+    {
+        // Shrink the ContentBodies to their actual size to save memory.
+        // synchronize to ensure this msg is the next one to get added.
+        if (compressBufferOnQueue)
+        {
+            synchronized(_messages)
+            {
+                Iterator it = msg.getContentBodies().iterator();
+                while (it.hasNext())
+                {
+                    ContentBody cb = (ContentBody) it.next();
+                    cb.reduceBufferToFit();
+                }
+
                 _messages.offer(msg);
-                return true;
+                _queueSize++;
             }
         }
         else
         {
-            return false;
+            _messages.offer(msg);
+            _queueSize++;
         }
+        return true;
     }
 
-    private synchronized void startQueueing(AMQMessage msg)
-    {
-        _queueing = true;
-        enqueue(msg);
-    }
 
     /**
      * Determines whether there are queued messages. Sets _queueing to false if
@@ -101,20 +153,27 @@ class DeliveryManager
      *
      * @return true if there are queued messages
      */
-    private synchronized boolean hasQueuedMessages()
+    private boolean hasQueuedMessages()
     {
-        boolean empty = _messages.isEmpty();
-        if (empty)
-        {
-            _queueing = false;
-        }
-        return !empty;
+        return getMessageCount() != 0;
     }
 
-    public synchronized int getQueueMessageCount()
+    public int getQueueMessageCount()
+    {
+        return getMessageCount();
+    }
+
+    /**
+     * This is an EXPENSIVE opperation to perform with a ConcurrentLinkedQueue as it must run the queue to determine size.
+     *
+     * @return int the number of messages in the delivery queue.
+     */
+
+    private int getMessageCount()
     {
         return _messages.size();
     }
+
 
     protected synchronized List<AMQMessage> getMessages()
     {
@@ -151,7 +210,9 @@ class DeliveryManager
             boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
             while (hasQueuedMessages() && hasSubscribers)
             {
-                Subscription next =  _subscriptions.nextSubscriber(peek());
+                // _log.debug("Have messages(" + _messages.size() + ") and subscribers");
+                Subscription next = _subscriptions.nextSubscriber(peek());
+
                 //We don't synchronize access to subscribers so need to re-check
                 if (next != null)
                 {
@@ -169,19 +230,23 @@ class DeliveryManager
         }
         finally
         {
+            _log.debug("End of processQueue: (" + _queueSize + ")" + " subscribers:" + _subscriptions.hasActiveSubscribers());
             _processing.set(false);
         }
     }
 
-    private synchronized AMQMessage peek()
+    private AMQMessage peek()
     {
         return _messages.peek();
     }
 
-    private synchronized AMQMessage poll()
+    private AMQMessage poll()
     {
+        _queueSize--;
         return _messages.poll();
     }
+
+    Runner asyncDelivery = new Runner();
 
     /**
      * Requests that the delivery manager start processing the queue asynchronously
@@ -197,12 +262,16 @@ class DeliveryManager
      */
     void processAsync(Executor executor)
     {
+        _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + _queueSize + ")" +
+                   " Active:" + _subscriptions.hasActiveSubscribers() +
+                   " Processing:" + _processing.get());
+
         if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
         {
             //are we already running? if so, don't re-run
             if (_processing.compareAndSet(false, true))
             {
-                executor.execute(new Runner());
+                executor.execute(asyncDelivery);
             }
         }
     }
@@ -214,8 +283,6 @@ class DeliveryManager
      *
      * @param name the name of the entity on whose behalf we are delivering the message
      * @param msg  the message to deliver
-     * @throws NoConsumersException if there are no active subscribers to deliver
-     *                              the message to
      * @throws FailedDequeueException if the message could not be dequeued
      */
     void deliver(String name, AMQMessage msg) throws FailedDequeueException
@@ -224,11 +291,27 @@ class DeliveryManager
         if (!enqueue(msg))
         {
             // not queueing so deliver message to 'next' subscriber
-            Subscription s =  _subscriptions.nextSubscriber(msg);
+            Subscription s = _subscriptions.nextSubscriber(msg);
             if (s == null)
             {
                 if (!msg.isImmediate())
                 {
+                    if (_subscriptions instanceof SubscriptionSet)
+                    {
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Start Queueing messages Active Subs:" + _subscriptions.hasActiveSubscribers()
+                                       + " Size :" + ((SubscriptionSet) _subscriptions).size()
+                                       + " Empty :" + ((SubscriptionSet) _subscriptions).isEmpty());
+                        }
+                    }
+                    else
+                    {
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Start Queueing messages Active Subs:" + _subscriptions.hasActiveSubscribers());
+                        }
+                    }
                     // no subscribers yet so enter 'queueing' mode and queue this message
                     startQueueing(msg);
                 }
