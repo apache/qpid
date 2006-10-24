@@ -21,7 +21,7 @@
 #include <iostream>
 #include <memory>
 
-using namespace std::tr1;
+using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::concurrent;

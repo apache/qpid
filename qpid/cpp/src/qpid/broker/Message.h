@@ -18,7 +18,7 @@
 #ifndef _Message_
 #define _Message_
 
-#include "memory.h"
+#include <boost/shared_ptr.hpp>
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/BasicHeaderProperties.h"
@@ -53,7 +53,7 @@ namespace qpid {
                              int channel, u_int32_t framesize);
 
         public:
-            typedef std::tr1::shared_ptr<Message> shared_ptr;
+            typedef boost::shared_ptr<Message> shared_ptr;
 
             Message(const ConnectionToken* const publisher, 
                     const string& exchange, const string& routingKey, 

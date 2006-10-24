@@ -30,7 +30,7 @@ namespace framing {
 class AMQMethodBody : virtual public AMQBody
 {
 public:
-    typedef std::tr1::shared_ptr<AMQMethodBody> shared_ptr;
+    typedef boost::shared_ptr<AMQMethodBody> shared_ptr;
 
     inline u_int8_t type() const { return METHOD_BODY; }
     inline u_int32_t size() const { return 4 + bodySize(); }

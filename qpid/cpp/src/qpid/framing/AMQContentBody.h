@@ -30,7 +30,7 @@ class AMQContentBody : virtual public AMQBody
     string data;
 
 public:
-    typedef std::tr1::shared_ptr<AMQContentBody> shared_ptr;
+    typedef boost::shared_ptr<AMQContentBody> shared_ptr;
 
     AMQContentBody();
     AMQContentBody(const string& data);

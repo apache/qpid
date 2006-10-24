@@ -18,7 +18,7 @@
 #ifndef _TopicExchange_
 #define _TopicExchange_
 
-#include <tr1/unordered_map>
+#include <map>
 #include <vector>
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
@@ -37,13 +37,14 @@ class Tokens : public std::vector<std::string> {
 
     /** Tokenize s, provides automatic conversion of string to Tokens */
     Tokens(const std::string& s) { operator=(s); }
-    /** Tokenize s */
+    /** Tokenizing assignment operator s */
     Tokens & operator=(const std::string& s);
-
-    struct Hash { size_t operator()(const Tokens&) const; };
-    typedef std::equal_to<Tokens> Equal;
+    
+  private:
+    size_t hash;
 };
 
+        
 /**
  * Tokens that have been normalized as a pattern and can be matched
  * with topic Tokens.  Normalized meands all sequences of mixed * and
@@ -68,7 +69,7 @@ class TopicPattern : public Tokens
 };
 
 class TopicExchange : public virtual Exchange{
-    typedef std::tr1::unordered_map<TopicPattern, Queue::vector, TopicPattern::Hash> BindingMap;
+    typedef std::map<TopicPattern, Queue::vector> BindingMap;
     BindingMap bindings;
     qpid::concurrent::MonitorImpl lock;
 
