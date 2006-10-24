@@ -37,6 +37,7 @@
         <enablePooledAllocator>false</enablePooledAllocator>
         <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
+        <compressBufferOnQueue>false</compressBufferOnQueue>
     </advanced>
     <security>
         <principal-databases>
