@@ -76,7 +76,7 @@ class ChannelTest : public CppUnit::TestCase
         Channel channel(0, 0, 0);
         CPPUNIT_ASSERT(!channel.exists("my_consumer"));
 
-        ConnectionToken* owner;
+        ConnectionToken* owner = 0;
         string tag("my_consumer");
         channel.consume(tag, queue, false, false, owner);
         string tagA;
