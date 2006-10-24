@@ -20,7 +20,7 @@
 
 #include <vector>
 #include <queue>
-#include "memory.h"
+#include <boost/shared_ptr.hpp>
 #include "apr-1/apr_time.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/broker/Binding.h"
@@ -63,7 +63,7 @@ namespace qpid {
 
         public:
             
-            typedef std::tr1::shared_ptr<Queue> shared_ptr;
+            typedef boost::shared_ptr<Queue> shared_ptr;
 
             typedef std::vector<shared_ptr> vector;
 	    

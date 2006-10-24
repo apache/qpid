@@ -20,11 +20,10 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include <iostream>
 
-using namespace std::tr1;//for *_pointer_cast methods
+using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::concurrent;
-
 
 Message::Message(const ConnectionToken* const _publisher, 
                  const string& _exchange, const string& _routingKey, 
@@ -34,12 +33,9 @@ Message::Message(const ConnectionToken* const _publisher,
                                                      mandatory(_mandatory),
                                                      immediate(_immediate),
                                                      redelivered(false),
-                                                     size(0){
+                                                     size(0) {}
 
-}
-
-Message::~Message(){
-}
+Message::~Message(){}
 
 void Message::setHeader(AMQHeaderBody::shared_ptr _header){
     this->header = _header;
@@ -61,7 +57,6 @@ void Message::redeliver(){
 void Message::deliver(OutputHandler* out, int channel, 
                       const string& consumerTag, u_int64_t deliveryTag, 
                       u_int32_t framesize){
-
     out->send(new AMQFrame(channel, new BasicDeliverBody(consumerTag, deliveryTag, redelivered, exchange, routingKey)));
     sendContent(out, channel, framesize);
 }
