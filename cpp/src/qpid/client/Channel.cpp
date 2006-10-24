@@ -21,7 +21,7 @@
 #include "qpid/client/Message.h"
 #include "qpid/QpidError.h"
 
-using namespace std::tr1;//to use dynamic_pointer_cast
+using namespace boost;          //to use dynamic_pointer_cast
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::concurrent;

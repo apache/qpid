@@ -68,7 +68,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
 
     responses.receive(connection_tune);
 
-    ConnectionTuneBody::shared_ptr proposal = std::tr1::dynamic_pointer_cast<ConnectionTuneBody, AMQMethodBody>(responses.getResponse());
+    ConnectionTuneBody::shared_ptr proposal = boost::dynamic_pointer_cast<ConnectionTuneBody, AMQMethodBody>(responses.getResponse());
     out->send(new AMQFrame(0, new ConnectionTuneOkBody(proposal->getChannelMax(), max_frame_size, proposal->getHeartbeat())));
 
     u_int16_t heartbeat = proposal->getHeartbeat();
@@ -86,7 +86,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
         //ok
     }else if(responses.validate(connection_redirect)){
         //ignore for now
-        ConnectionRedirectBody::shared_ptr redirect(std::tr1::dynamic_pointer_cast<ConnectionRedirectBody, AMQMethodBody>(responses.getResponse()));
+        ConnectionRedirectBody::shared_ptr redirect(boost::dynamic_pointer_cast<ConnectionRedirectBody, AMQMethodBody>(responses.getResponse()));
         std::cout << "Received redirection to " << redirect->getHost() << std::endl;
     }else{
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Bad response");

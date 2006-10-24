@@ -34,7 +34,7 @@ class AMQHeaderBody : virtual public AMQBody
 
     void createProperties(int classId);
 public:
-    typedef std::tr1::shared_ptr<AMQHeaderBody> shared_ptr;
+    typedef boost::shared_ptr<AMQHeaderBody> shared_ptr;
 
     AMQHeaderBody(int classId);
     AMQHeaderBody();

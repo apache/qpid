@@ -60,8 +60,8 @@ TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
 generate: gen/timestamp
 gen/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
 	mkdir -p gen/qpid/framing
-	echo > gen/timestamp
-	cd gen/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ;	done
+	( cd gen/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ; done ) && echo > gen/timestamp
+
 gen $(wildcard gen/qpid/framing/*.cpp): gen/timestamp
 
 ## Libraries

@@ -41,14 +41,6 @@ Tokens& Tokens::operator=(const std::string& s) {
     }
     return *this;
 }
-    
-size_t Tokens::Hash::operator()(const Tokens& p) const {
-    size_t hash = 0;
-    for (Tokens::const_iterator i = p.begin(); i != p.end(); ++i) {
-        hash += std::tr1::hash<std::string>()(*i);
-    }
-    return hash;
-}
 
 TopicPattern& TopicPattern::operator=(const Tokens& tokens) {
     Tokens::operator=(tokens);

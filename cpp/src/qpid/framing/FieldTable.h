@@ -17,8 +17,8 @@
  */
 #include <iostream>
 #include <vector>
-#include <tr1/memory>
-#include <tr1/unordered_map>
+#include <boost/shared_ptr.hpp>
+#include <map>
 #include "qpid/framing/amqp_types.h"
 
 #ifndef _FieldTable_
@@ -33,8 +33,8 @@ class Buffer;
 class FieldTable
 {
   public:
-    typedef std::tr1::shared_ptr<Value> ValuePtr;
-    typedef std::tr1::unordered_map<std::string, ValuePtr> ValueMap;
+    typedef boost::shared_ptr<Value> ValuePtr;
+    typedef std::map<std::string, ValuePtr> ValueMap;
 
     ~FieldTable();
     u_int32_t size() const;
@@ -61,7 +61,6 @@ class FieldTable
     const ValueMap& getMap() const { return values; }
     ValueMap& getMap() { return values; }
     
-        
   private:
   friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
     ValueMap values;

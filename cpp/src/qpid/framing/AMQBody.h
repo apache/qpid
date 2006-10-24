@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "memory.h"
+#include <boost/shared_ptr.hpp>
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
 
@@ -28,7 +28,7 @@ namespace qpid {
         class AMQBody
         {
           public:
-            typedef std::tr1::shared_ptr<AMQBody> shared_ptr;
+            typedef boost::shared_ptr<AMQBody> shared_ptr;
 
             virtual ~AMQBody();
             virtual u_int32_t size() const = 0;

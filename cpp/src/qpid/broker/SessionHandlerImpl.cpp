@@ -23,7 +23,7 @@
 #include "qpid/broker/TopicExchange.h"
 #include "assert.h"
 
-using namespace std::tr1;
+using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::io;
 using namespace qpid::framing;
