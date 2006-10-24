@@ -102,8 +102,8 @@ bool LFProcessor::empty(){
     return count == 0; 
 }
 
-void LFProcessor::poll(){
-    apr_status_t status;
+void LFProcessor::poll() {
+    apr_status_t status = APR_EGENERAL;
     do{
         current = 0;
         if(!stopped){

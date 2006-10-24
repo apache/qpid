@@ -5,22 +5,25 @@ See DESIGN for design notes, Makefile comment for build system notes.
 == Prerequisites ==
 
 Required to build:
- * Apache Portable Runtime 1.2.7:  http://apr.apache.org/
- * CppUnit: http://cppunit.sourceforge.net
- * boost: http://www.boost.org
+ * Apache Portable Runtime 1.2.7:  http://apr.apache.org
+ * CppUnit 1.11.4: http://cppunit.sourceforge.net
+ * boost 1.33.1: http://www.boost.org
 
 Optional: to generate source code documentation you need:
- * doxygen: http://sourceforge.net/projects/doxygen/ 
- * graphviz - http://www.graphviz.org/
+ * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/ 
+ * graphviz 2.8: http://www.graphviz.org/
 
-On Fedora: yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
+If you use yum to install packages:
+# yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
 
 == Build and test ==
+For a debug build:
+> make
+For an optimized release build:
+> make BUILD=RELEASE
 
-make
-
-Default target builds and tests everything, see Makefile for other
-targets.
+The default target "test" builds everything and runs all tests. See
+the Makefile for more targets.
 
 === Unit tests ===
 Unit tests are built as .so files containing CppUnit plugins. 
