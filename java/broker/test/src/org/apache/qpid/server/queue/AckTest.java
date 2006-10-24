@@ -248,7 +248,7 @@ public class AckTest
         // which have not bee received so will be queued up in the channel
         // which should be suspended
         assertTrue(_subscription.isSuspended());
-        Map<Long, AMQChannel.UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == highMark);
 
         //acknowledge messages so we are just above lowMark
