@@ -136,7 +136,7 @@ public abstract class Generator implements LanguageConverter
 		this.genDir = genDir.getAbsolutePath();
 
 		// Use all model-level templates
-		for (int t = 0; t < classTemplateList.size(); t++)
+		for (int t = 0; t < modelTemplateList.size(); t++)
 		{
 			processTemplate(modelTemplateList.get(t), null, null, null);
 		}
@@ -389,7 +389,8 @@ public abstract class Generator implements LanguageConverter
 		while (line != null)
 		{
 			// Strip lines starting with '#' in template - treat these lines as template comments
-			if (line.length() > 0 && line.charAt(0) != '#')
+//			if (line.length() > 0 && line.charAt(0) != '#') // Bad idea - '#' used in C/C++ files (#include)!
+			if (line.length() > 0)
 				sb.append(line + Utils.lineSeparator);
 			else
 				sb.append(Utils.lineSeparator);

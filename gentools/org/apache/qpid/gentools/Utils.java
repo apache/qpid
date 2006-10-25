@@ -40,18 +40,12 @@ public class Utils
 	public final static String ATTRIBUTE_TYPE = "type"; // For compatibility with AMQP 8.0
 	
 	public final static String ELEMENT_AMQP = "amqp";
+	public final static String ELEMENT_CHASSIS = "chassis";
 	public final static String ELEMENT_CLASS = "class";
 	public final static String ELEMENT_DOMAIN = "domain";
 	public final static String ELEMENT_METHOD = "method";
 	public final static String ELEMENT_FIELD = "field";
 	public final static String ELEMENT_VERSION = "version";
-
-	// Version functions
-	
-//	public static String createVersionKey(int major, int minor)
-//	{
-//		return major + "-" + minor;
-//	}
 	
 	// Attribute functions
 	
@@ -70,47 +64,6 @@ public class Utils
 	{
 		return Integer.parseInt(getNamedAttribute(n, attrName));
 	}
-
-//	public static boolean containsAttribute(Node n, String attrName)
-//	{
-//		try { getNamedAttribute(n, attrName); }
-//		catch (AmqpParseException e) { return false; }
-//		return true;
-//	}
-//
-//	public static boolean containsAttributeValue(Node n, String attrName, String attrValue)
-//	{
-//		try { return getNamedAttribute(n, attrName).compareTo(attrValue) == 0; }
-//		catch (AmqpParseException e) { return false; }
-//	}
-//
-//	public static boolean containsAttributeValue(Node n, String attrName, int attrValue)
-//	{
-//		try { return Integer.parseInt(getNamedAttribute(n, attrName)) == attrValue; }
-//		catch (AmqpParseException e) { return false; }
-//	}
-//	
-//	public static void createNamedAttribute(Document doc, NamedNodeMap nnm, String attrName, String attrValue)
-//	{
-//		Attr a = doc.createAttribute(attrName);
-//		a.setNodeValue(attrValue);
-//		nnm.setNamedItem(a);
-//	}
-//	
-//	public static void createNamedAttribute(Document doc, NamedNodeMap nnm, String attrName, int attrValue)
-//	{
-//		createNamedAttribute(doc, nnm, attrName, Integer.toString(attrValue));
-//	}
-//	
-//	public static void createNamedAttribute(Node n, String attrName, String attrValue)
-//	{
-//		createNamedAttribute(n.getOwnerDocument(), n.getAttributes(), attrName, attrValue);
-//	}
-//	
-//	public static void createNamedAttribute(Node n, String attrName, int attrValue)
-//	{
-//		createNamedAttribute(n, attrName, Integer.toString(attrValue));
-//	}
 	
 	// Element functions
 	
@@ -126,69 +79,7 @@ public class Utils
 		throw new AmqpParseException("Node \"" + n.getNodeName() +
 				"\" does not contain child element \"" + eltName + "\".");
 	}
-	
-//	public static boolean containsChild(Node n, String eltName)
-//	{
-//		try { findChild(n, eltName); }
-//		catch(AmqpParseException e) { return false; }
-//		return true;
-//	}
-//	
-//	public static Node findNamedChild(Node n, String eltName, String nameAttrVal) throws AmqpParseException
-//	{
-//		NodeList nl = n.getChildNodes();
-//		for (int i=0; i<nl.getLength(); i++)
-//		{
-//			Node cn = nl.item(i);
-//			if (cn.getNodeName().compareTo(eltName) == 0)
-//				if (Utils.getNamedAttribute(cn, "name").compareTo(nameAttrVal) == 0)
-//					return cn;
-//		}
-//		throw new AmqpParseException("Node \"" + n.getNodeName() +
-//				"\" does not contain child element \"" + eltName + "\".");
-//	}
-//	
-//	public static boolean containsNamedChild(Node n, String eltName, String nameAttrVal)
-//	{
-//		try { findNamedChild(n, eltName, nameAttrVal); }
-//		catch(AmqpParseException e) { return false; }
-//		return true;
-//	}
-	
-	// Map functions
-
-	
-//	protected static Vector<AmqpVersion> buildVersionMap(Node n)throws AmqpParseException
-//	{
-//		Vector<AmqpVersion> versionList = new Vector<AmqpVersion>();
-//		NodeList nl = n.getChildNodes();
-//		for (int i=0; i<nl.getLength(); i++)
-//		{
-//			Node cn = nl.item(i);
-//			if (cn.getNodeName().compareTo(AmqpXmlParser.ELEMENT_VERSION) == 0)
-//			{
-//				AmqpVersion ver = new AmqpVersion();
-//				ver.major = Utils.getNamedIntegerAttribute(cn, "major");
-//				ver.minor = Utils.getNamedIntegerAttribute(cn, "minor");
-//				versionList.add(ver);
-//			}
-//		}
-//		return versionList;
-//	}
-//	
-//	protected static Vector<AmqpField> buildFieldMap(Node n)throws AmqpParseException
-//	{
-//		Vector<AmqpField> fieldList = new Vector<AmqpField>();
-//		NodeList nl = n.getChildNodes();
-//		for (int i=0; i<nl.getLength(); i++)
-//		{
-//			Node c = nl.item(i);
-//			if (c.getNodeName().compareTo(AmqpXmlParser.ELEMENT_FIELD) == 0)
-//				fieldList.add(new AmqpField(c));
-//		}
-//		return fieldList;
-//	}
-	
+		
 	// String functions
 	
 	public static String firstUpper(String str)
