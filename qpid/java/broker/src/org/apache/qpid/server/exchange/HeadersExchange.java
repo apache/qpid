@@ -19,20 +19,23 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import javax.management.openmbean.*;
-import javax.management.ServiceNotFoundException;
+import javax.management.JMException;
 import javax.management.NotCompliantMBeanException;
-import java.util.concurrent.CopyOnWriteArrayList;
+import javax.management.openmbean.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -76,7 +79,7 @@ public class HeadersExchange extends AbstractExchange
     {
         private String[]   _bindingItemNames = {"Queue", "HeaderBinding"};
         private String[]   _bindingItemDescriptions = {"Queue Name", "Header attribute bindings"};
-        private String[]   _bindingItemIndexNames = {"Queue"};
+        private String[]   _bindingItemIndexNames = {"HeaderBinding"};
         private OpenType[] _bindingItemTypes = new OpenType[2];
 
         private CompositeType      _bindingDataType = null;
@@ -97,15 +100,15 @@ public class HeadersExchange extends AbstractExchange
             try
             {
                 _bindingItemTypes[0] = SimpleType.STRING;
-                _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);;
+                _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
 
                 _bindingDataType = new CompositeType("QueueAndHeaderAttributesBinding",
-                                             "Queue and header attributes binding",
+                                             "Queue name and header bindings",
                                              _bindingItemNames,
                                              _bindingItemDescriptions,
                                              _bindingItemTypes);
                 _bindinglistDataType = new TabularType("HeaderBindings",
-                                             "List of queues and related header attribute bindings",
+                                             "List of queue bindings for " + getName(),
                                              _bindingDataType,
                                              _bindingItemIndexNames);
             }
@@ -148,10 +151,36 @@ public class HeadersExchange extends AbstractExchange
             return _bindingList;
         }
 
-        public void createBinding(String QueueName, String binding)
-            throws ServiceNotFoundException
+        /**
+         * Creates bindings. Binding pattern is as follows-
+         * <attributename>=<value>,<attributename>=<value>,...
+         * @param queueName
+         * @param binding
+         * @throws JMException
+         */
+        public void createBinding(String queueName, String binding)
+            throws JMException
         {
-            throw new ServiceNotFoundException("This service is not supported by \"" + this.getName() + "\"");
+            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+
+            if (queue == null)
+            {
+                throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            }
+
+            String[] bindings  = binding.split(",");
+            FieldTable fieldTable = new FieldTable();
+            for (int i = 0; i < bindings.length; i++)
+            {
+                String[] keyAndValue = bindings[i].split("=");
+                if (keyAndValue == null || keyAndValue.length < 2)
+                {
+                    throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
+                }
+                fieldTable.put(keyAndValue[0], keyAndValue[1]);
+            }
+
+            _bindings.add(new Registration(new HeadersBinding(fieldTable), queue));
         }
 
     } // End of MBean class
