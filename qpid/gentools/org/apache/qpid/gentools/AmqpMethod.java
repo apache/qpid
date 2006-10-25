@@ -30,6 +30,8 @@ public class AmqpMethod implements Printable, NodeAware
 	public AmqpFieldMap fieldMap;
 	public String name;
 	public AmqpOrdinalVersionMap indexMap;
+	public boolean clientMethodFlag; // Method called on client (<chassis name="server"> in XML)
+	public boolean serverMethodFlag; // Method called on server (<chassis name="client"> in XML)
 	
 	public AmqpMethod(String name, LanguageConverter converter)
 	{
@@ -38,6 +40,8 @@ public class AmqpMethod implements Printable, NodeAware
 		versionSet = new AmqpVersionSet();
 		fieldMap = new AmqpFieldMap();
 		indexMap = new AmqpOrdinalVersionMap();
+		clientMethodFlag = false;
+		serverMethodFlag = false;
 	}
 
 	public void addFromNode(Node methodNode, int ordinal, AmqpVersion version)
@@ -70,6 +74,14 @@ public class AmqpMethod implements Printable, NodeAware
 				}
 				thisField.addFromNode(child, fieldCntr++, version);				
 			}
+			if (child.getNodeName().compareTo(Utils.ELEMENT_CHASSIS) == 0)
+			{
+				String chassisName = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME);
+				if (chassisName.compareTo("server") == 0)
+					clientMethodFlag = true;
+				else if (chassisName.compareTo("client") == 0)
+					serverMethodFlag = true;
+			}
 		}	
 	}
 	
@@ -77,7 +89,8 @@ public class AmqpMethod implements Printable, NodeAware
 	{
 		String margin = Utils.createSpaces(marginSize);
 		String tab = Utils.createSpaces(tabSize);
-		out.println(margin + "[M] " + name + ": " + versionSet);
+		out.println(margin + "[M] " + name + " {" + (serverMethodFlag ? "S" : ".") +
+			(clientMethodFlag ? "C" : ".") + "}" + ": " + versionSet);
 		
 		Iterator<Integer> iItr = indexMap.keySet().iterator();
 		while (iItr.hasNext())
