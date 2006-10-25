@@ -78,12 +78,12 @@ public class DestNameExchange extends AbstractExchange
                 _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
 
                 _bindingDataType = new CompositeType("QueueBinding",
-                                             "Queue and binding keye",
+                                             "Binding key and bound Queue names",
                                              _bindingItemNames,
                                              _bindingItemDescriptions,
                                              _bindingItemTypes);
                 _bindinglistDataType = new TabularType("Bindings",
-                                             "List of queues and binding keys",
+                                             "List of queue bindings for " + getName() ,
                                              _bindingDataType,
                                              _bindingItemIndexNames);
             }

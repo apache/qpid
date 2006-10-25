@@ -85,8 +85,6 @@ public interface ManagedConnection
      * taking required action is there are more channels being created.
      * @return maximum number of channels allowed to be created.
      */
-    @MBeanAttribute(name="MaximumNumberOfAllowedChannels",
-                         description="The maximum number of channels that can be opened using this connection")
     Long getMaximumNumberOfAllowedChannels();
 
     /**
@@ -94,6 +92,8 @@ public interface ManagedConnection
      * this connection.
      * @param value
      */
+    @MBeanAttribute(name="MaximumNumberOfAllowedChannels",
+                             description="The maximum number of channels that can be opened using this connection")    
     void setMaximumNumberOfAllowedChannels(Long value);
 
     //********** Operations *****************//
