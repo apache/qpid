@@ -178,13 +178,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             try
             {
                 _channelType = new CompositeType("channel",
-                                              "a Channel",
+                                              "Channel Details",
                                               _channelAtttibuteNames,
                                               _channelAttributeDescriptions,
                                               _channelAttributeTypes);
 
                 _channelsType = new TabularType("channelsType",
-                                       "List of available channelsType",
+                                       "List of available channels",
                                        _channelType,
                                        _indexNames);
             }
