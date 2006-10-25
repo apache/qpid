@@ -45,7 +45,7 @@ class Event
         this.data = data;
         if (type == EventType.EXCEPTION)
         {
-            _log.error("Exception event constructed: " + data, (Exception) data);
+            _log.error("Exception event constructed: " + data, (Throwable) data);
         }
     }
 
