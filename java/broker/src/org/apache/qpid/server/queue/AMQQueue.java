@@ -144,7 +144,7 @@ public class AMQQueue implements Managable
         private TabularType _messagelistDataType = null;
 
         private String[] _contentNames = {"SerialNumber", "ContentBody"};
-        private String[] _contentDesc = {"SerialNumber", "Message Content"};
+        private String[] _contentDesc = {"Serial Number", "Content Body"};
         private String[] _contentIndex = {"SerialNumber"};
         private OpenType[] _contentType = new OpenType[2];
         private CompositeType _contentBodyType = null;
@@ -165,12 +165,12 @@ public class AMQQueue implements Managable
                 _contentType[0] = SimpleType.INTEGER;
                 _contentType[1] = new ArrayType(1, SimpleType.BYTE);
                 _contentBodyType = new CompositeType("Content",
-                                                     "Message body content",
+                                                     "Content",
                                                      _contentNames,
                                                      _contentDesc,
                                                      _contentType);
                 _contentBodyListType = new TabularType("MessageContents",
-                                                       "MessageContent",
+                                                       "Message Contents",
                                                        _contentBodyType,
                                                        _contentIndex);
 
@@ -699,7 +699,6 @@ public class AMQQueue implements Managable
     private void process(AMQMessage msg) throws FailedDequeueException
     {
         _deliveryMgr.deliver(getName(), msg);
-        updateReceivedMessageCount(msg);
         try
         {
             msg.checkDeliveredToConsumer();
