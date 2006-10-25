@@ -96,13 +96,15 @@ UNITTESTS := $(UNITTESTS) $(wildcard test/unit/qpid/broker/*Test.cpp)
 
 # Implicit rule for unit test plugin libraries.
 %Test.so: %Test.cpp $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
-	$(CXX) -shared -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1 -lcppunit $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
+	$(CXX) -shared -o $@ $< $(CXXFLAGS)  -Itest/include $(LDFLAGS) -lapr-1 -lcppunit $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(BROKER_LIB)
 
 ## Client tests
 CLIENT_TEST_SRC := $(wildcard test/client/*.cpp)
 all-nogen: $(CLIENT_TEST_SRC:.cpp=)
+clean::
+	rm -f $(CLIENT_TEST_SRC:.cpp=)
 test/client/%: test/client/%.cpp
-	$(CXX) -o $@ $< $($(LIB)_FLAGS) -Itest/include $(CXXFLAGS) $(LDFLAGS) -lapr-1  $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(CLIENT_LIB)
+	$(CXX) -o $@ $< $(CXXFLAGS) -Itest/include $(LDFLAGS) -lapr-1  $(CURDIR)/$(COMMON_LIB) $(CURDIR)/$(CLIENT_LIB)
 
 ## Daemon executable
 
@@ -127,10 +129,9 @@ doxygen: doxygen/doxygen.cfg $(SOURCES)
 ## #include dependencies
 -include $(shell find src test -name '*.d')
 
-## Cleanup
+## General cleanup
 clean::
 	rm -f bin/* lib/* qpidd.log
 	rm -rf gen
-	rm -f `find src test -name '*.o' -o -name '*.d' -o -name '*.so'` 
-
+	rm -f `find src test -name '*.o' -o -name '*.d' -o -name '*.so'`
 
