@@ -62,16 +62,33 @@ public class Main
 		if (args[0].compareToIgnoreCase("-c") == 0)
 		{
 			// *** C++ generation ***
+			System.out.println("C++ generation mode.");
 			generator = new CppGenerator(versionSet);
 			domainMap = new AmqpDomainMap(generator);
 			model = new AmqpModel(generator);			
-//			classTemplateFiles = new File[]{ new File("templ.cpp/PropertyContentHeaderClass.tmpl") };
-//			methodTemplateFiles = new File[]{ new File("templ.cpp/MethodBodyClass.tmpl") };
+			modelTemplateFiles = new File[]{
+				new File("templ.cpp/AMQP_ServerOperations.h.tmpl"),
+				new File("templ.cpp/AMQP_ClientOperations.h.tmpl"),
+				new File("templ.cpp/AMQP_ServerProxy.h.tmpl"),
+				new File("templ.cpp/AMQP_ClientProxy.h.tmpl"),
+				new File("templ.cpp/AMQP_ServerProxy.cpp.tmpl"),
+				new File("templ.cpp/AMQP_ClientProxy.cpp.tmpl"),
+				new File("templ.cpp/AMQP_ServerHandlerImpl.h.tmpl"),
+				new File("templ.cpp/AMQP_ClientHandlerImpl.h.tmpl"),
+				new File("templ.cpp/AMQP_ServerHandlerImpl.cpp.tmpl"),
+				new File("templ.cpp/AMQP_ClientHandlerImpl.cpp.tmpl"),
+				new File("templ.cpp/amqp_methods.h.tmpl"),
+				new File("templ.cpp/amqp_methods.cpp.tmpl")
+				};
+			methodTemplateFiles = new File[]{
+				new File("templ.cpp/MethodBodyClass.h.tmpl")
+				};
 			outDir += ".cpp";
 		}
 		else if (args[0].compareToIgnoreCase("-j") == 0)
 		{
 			// *** Java generation ***
+			System.out.println("Java generation mode.");
 			generator = new JavaGenerator(versionSet);
 			domainMap = new AmqpDomainMap(generator);
 			model = new AmqpModel(generator);		
@@ -88,15 +105,21 @@ public class Main
 			System.err.println("ERROR: Required argument specifying language (C++ [-c] or Java [-j]) missing.");
 			usage();		
 		}
+
+		if (modelTemplateFiles.length == 0 && classTemplateFiles.length == 0 &&
+			methodTemplateFiles.length == 0 && fieldTemplateFiles.length == 0)
+			System.err.println("  WARNING: No template files.");
+		
 		
 		// 1. Suck in all the XML spec files provided on the command line.
+		System.out.println("Analyzing XML Specification files:");
 		for (int i=1; i<args.length; i++)
 		{
 			File f = new File(args[i]);
 			if (f.exists())
 			{
 				// 1a. Initialize dom
-				System.out.print("File: " + args[i]);
+				System.out.print("  \"" + args[i] + "\":");
 				Document doc = docBuilder.parse(new File(args[i]));
 				Node amqpNode = Utils.findChild(doc, Utils.ELEMENT_AMQP);
 				
@@ -164,5 +187,17 @@ public class Main
 		System.out.println("             -j flags Java generation.");
 		System.out.println("             filename is a space-separated list of files to be parsed.");
 		System.exit(0);
+	}
+	
+	public static String ListTemplateList(File[] list)
+	{
+		StringBuffer sb = new StringBuffer();
+		for (int i=0; i<list.length; i++)
+		{
+			if (i != 0)
+				sb.append(", ");
+			sb.append(list[i].getName());
+		}
+		return sb.toString();
 	}
 }
