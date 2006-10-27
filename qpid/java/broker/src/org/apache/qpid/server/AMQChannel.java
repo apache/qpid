@@ -313,11 +313,6 @@ public class AMQChannel
         {
             q.unregisterProtocolSession(session, _channelId, consumerTag);
         }
-        else
-        {
-            throw new AMQException(_log, "Consumer tag " + consumerTag + " not known to channel " +
-                                         _channelId);
-        }
     }
 
     /**
