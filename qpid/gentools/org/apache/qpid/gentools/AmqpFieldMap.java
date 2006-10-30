@@ -24,22 +24,62 @@ import java.util.Iterator;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
-public class AmqpFieldMap extends TreeMap<String, AmqpField>
+public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionConsistencyCheck
 {
 	public AmqpFieldMap getFieldMapForOrdinal(int ordinal)
 	{
 		AmqpFieldMap newMap = new AmqpFieldMap();
-		Iterator<String> i = keySet().iterator();
-		while (i.hasNext())
+		Iterator<String> fItr = keySet().iterator();
+		while (fItr.hasNext())
 		{
-			String fieldName = i.next();
-			AmqpField field = get(fieldName);
+			AmqpField field = get(fItr.next());
 			TreeMap<Integer, AmqpVersionSet> ordinalMap = field.ordinalMap;
 			AmqpVersionSet ordinalVersions = ordinalMap.get(ordinal);
 			if (ordinalVersions != null)
-				newMap.put(fieldName, field);
+				newMap.put(field.name, field);
 		}
 		return newMap;
+	}
+	
+	public AmqpOrdinalFieldMap getMapForVersion(AmqpVersion version)
+	{
+		AmqpOrdinalFieldMap ordinalFieldMap = new AmqpOrdinalFieldMap();
+		Iterator<String> fItr = keySet().iterator();
+		while (fItr.hasNext())
+		{
+			AmqpField field = get(fItr.next());
+			if (version == null || field.versionSet.contains(version))
+			{
+				String domain = "";
+				boolean dFound = false;
+				Iterator<String> dItr = field.domainMap.keySet().iterator();
+				while (dItr.hasNext() && !dFound)
+				{
+					domain = dItr.next();
+					AmqpVersionSet versionSet = field.domainMap.get(domain);
+					if (version == null || versionSet.contains(version))
+						dFound = true;
+				}
+				
+				int ordinal = -1;
+				boolean oFound = false;
+				Iterator<Integer> oItr = field.ordinalMap.keySet().iterator();
+				while (oItr.hasNext() && !oFound)
+				{
+					ordinal = oItr.next();
+					AmqpVersionSet versionSet = field.ordinalMap.get(ordinal);
+					if (version == null || versionSet.contains(version))
+						oFound = true;
+				}
+				
+				if (dFound && oFound)
+				{
+					String[] fieldDomainPair = {field.name, domain};
+					ordinalFieldMap.put(ordinal, fieldDomainPair);
+				}
+			}
+		}
+		return ordinalFieldMap;
 	}
 	
 	public boolean isDomainConsistent(Generator generator, AmqpVersionSet versionSet)
@@ -267,5 +307,17 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField>
 			sb.append(bitGenerateMethod.invoke(codeGenerator, bitFieldList, size(),
 				indentSize, tabSize));
 		return sb.toString();		
+	}
+	
+	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+	{
+		Iterator<String> fItr = keySet().iterator();
+		while (fItr.hasNext())
+		{
+			AmqpField field = get(fItr.next());
+			if (!field.isVersionConsistent(globalVersionSet))
+				return false;
+		}
+		return true;
 	}
 }
