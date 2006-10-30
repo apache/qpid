@@ -9,23 +9,60 @@ Required to build:
  * CppUnit 1.11.4: http://cppunit.sourceforge.net
  * boost 1.33.1: http://www.boost.org
 
-Optional: to generate source code documentation you need:
+Optional: to generate documentation from source code comments you need:
  * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/ 
  * graphviz 2.8: http://www.graphviz.org/
 
 If you use yum to install packages:
 # yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
 
-== Build and test ==
-For a debug build:
-> make
-For an optimized release build:
-> make BUILD=RELEASE
+== Building ==
 
-The default target "test" builds everything and runs all tests. See
-the Makefile for more targets.
+You can have mutltiple builds in the same working copy. 
+For example for a release build using APR platform:
+
+  make PLATFORM=apr TYPE=release
+
+This will create build/apr-release containing the bin/ lib/ and test/ subdirs.
+
+To set your preferred default create file options-local.mk with
+PLATFORM=<my platform>
+TYPE=<my type>
+
+Generated code goes in build/gen and is shared between all builds.
+
+All other build output is under build/<build name>/
+ * bin/ lib/ - executables and libraries.
+ * test/ - test executables, directories with unit test .so plugins.
+ * obj/ - compiled .o files.
+ * include - exported header files
+
+Main targets:
+ * test: (default) build & run all tests
+ * all: build all
+ * usage: this message
+ * unittest: run unit tests
+ * pythontest: run python tests.
+ * doxygen: generate documentation in build/html
+ * clean: cleans the current build only. Does not clean generated code.
+ * spotless: cleans up all build output and removes the build directory.
+
+The source tree is structured as follows:
+ * src/ - .h and .cpp source files, directories mirror namespaces.
+ * etc/ - Non-c++ resources, e.g. stylesheets.
+ * test/ 
+  * unit/ - unit tests (cppunit plugins), directories mirror namespaces.
+  * include/ - .h files used by tests
+  * client/ - sources for client test executables.
+
+Build system principles:
+ * Single Makefile (see http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html)
+ * Calculate sources from directories, no explicit source lists.
+ * Corresponding .cpp and .h files in same directory for easy editing.
+ * Source directory structure mirrors C++ namespaces.
 
 === Unit tests ===
+
 Unit tests are built as .so files containing CppUnit plugins. 
 
 DllPlugInTester is provided as part of cppunit. You can use it to run
