@@ -17,7 +17,6 @@
  */
 #include "qpid/concurrent/MonitorImpl.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/ExchangeRegistry.h"
 #include <iostream>
 
 using namespace boost;

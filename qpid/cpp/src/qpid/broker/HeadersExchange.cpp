@@ -58,10 +58,10 @@ void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey
 }
 
 
-void HeadersExchange::route(Message::shared_ptr& msg, const string& /*routingKey*/, FieldTable* args){
+void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, FieldTable* args){
     Locker locker(lock);;
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if (match(i->first, *args)) i->second->deliver(msg);
+        if (match(i->first, *args)) msg.deliverTo(i->second);
     }
 }
 

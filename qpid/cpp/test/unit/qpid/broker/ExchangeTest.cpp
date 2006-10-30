@@ -16,6 +16,7 @@
  *
  */
 
+#include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Queue.h"
@@ -50,7 +51,8 @@ class ExchangeTest : public CppUnit::TestCase
         queue.reset();
         queue2.reset();
 
-        Message::shared_ptr msg = Message::shared_ptr(new Message(0, "e", "A", true, true));
+        Message::shared_ptr msgPtr(new Message(0, "e", "A", true, true));
+        DeliverableMessage msg(msgPtr);
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);
 
