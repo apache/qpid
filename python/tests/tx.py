@@ -110,9 +110,8 @@ class TxTests(TestBase):
         channel.basic_publish(routing_key=key, exchange="amq.direct", content=Content("Message 6"))
         channel.basic_publish(routing_key=topic, exchange="amq.topic", content=Content("Message 7"))
 
-
         channel.tx_select()
-        
+
         #consume and ack messages
         sub_a = channel.basic_consume(queue=name_a, no_ack=False)
         queue_a = self.client.queue(sub_a.consumer_tag)
@@ -141,3 +140,31 @@ class TxTests(TestBase):
         channel.basic_publish(routing_key=name_a, content=Content("TxMessage 7"))
 
         return queue_a, queue_b, queue_c
+
+    def test_commit_overlapping_acks(self):
+        """
+        Test that logically 'overlapping' acks do not cause errors on commit
+        """
+        channel = self.channel
+        channel.queue_declare(queue="commit-overlapping", exclusive=True)
+        for i in range(1, 10):
+            channel.basic_publish(routing_key="commit-overlapping", content=Content("Message %d" % i))
+
+        
+        channel.tx_select()
+
+        sub = channel.basic_consume(queue="commit-overlapping", no_ack=False)
+        queue = self.client.queue(sub.consumer_tag)
+        for i in range(1, 10):
+            msg = queue.get(timeout=1)
+            self.assertEqual("Message %d" % i, msg.content.body)
+            if i in [3, 6, 10]:
+                channel.basic_ack(delivery_tag=msg.delivery_tag)    
+                
+        channel.tx_commit()
+
+        #check all have been acked:
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message: " + extra.content.body)
+        except Empty: None
