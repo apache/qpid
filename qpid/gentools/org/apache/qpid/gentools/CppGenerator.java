@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.gentools;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,7 +27,12 @@ import java.util.TreeMap;
 
 public class CppGenerator extends Generator
 {
-	static String cr = Utils.lineSeparator;
+	protected static final String cr = Utils.lineSeparator;
+	protected static final String versionNamespaceStartToken = "${version_namespace_start}";
+	protected static final String versionNamespaceEndToken = "${version_namespace_end}";
+	protected static final int FIELD_NAME = 0;
+	protected static final int FIELD_DOMAIN = 1;
+
 	
 	private class DomainInfo
 	{
@@ -44,130 +51,6 @@ public class CppGenerator extends Generator
 	}
 	
 	private static TreeMap<String, DomainInfo> typeMap = new TreeMap<String, DomainInfo>();
-
-	// Methods used for generation of code snippets called from the field map parsers
-	
-	// MessageBody methods
-	static private Method declarationGenerateMethod;
-	static private Method mangledDeclarationGenerateMethod;
-	static private Method mbGetGenerateMethod;
-	static private Method mbMangledGetGenerateMethod;
-	static private Method mbParamListGenerateMethod;
-	static private Method mbMangledParamListGenerateMethod;
-	static private Method mbParamDeclareListGenerateMethod;
-	static private Method mbMangledParamDeclareListGenerateMethod;
-	static private Method mbParamInitListGenerateMethod;
-	static private Method mbMangledParamInitListGenerateMethod;
-	
-	static private Method mbPrintGenerateMethod;
-	static private Method mbBitPrintGenerateMethod;
-	static private Method mbSizeGenerateMethod;
-	static private Method mbBitSizeGenerateMethod;
-	static private Method mbEncodeGenerateMethod;
-	static private Method mbBitEncodeGenerateMethod;
-	static private Method mbDecodeGenerateMethod;
-	static private Method mbBitDecodeGenerateMethod;
-
-	static 
-	{
-		// *******************************
-		// Methods for MessageBody classes
-		// *******************************
-		
-		// Methods for AmqpFieldMap.parseFieldMap()
-		
-		try { declarationGenerateMethod = CppGenerator.class.getDeclaredMethod(
-		    "generateFieldDeclaration", String.class, AmqpField.class,
-			AmqpVersionSet.class, int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mangledDeclarationGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMangledFieldDeclaration", AmqpField.class,
-			int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbGetGenerateMethod = CppGenerator.class.getDeclaredMethod(
-		    "generateMbGetMethod", String.class, AmqpField.class,
-			AmqpVersionSet.class, int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbMangledGetGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbMangledGetMethod", AmqpField.class,
-			int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-
-		try { mbParamListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbParamList", String.class, AmqpField.class,
-			AmqpVersionSet.class, int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbMangledParamListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbMangledParamList", AmqpField.class,
-			int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-
-		try { mbParamDeclareListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbParamDeclareList", String.class, AmqpField.class,
-			AmqpVersionSet.class, int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbMangledParamDeclareListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbMangledParamDeclareList", AmqpField.class,
-			int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-
-		try { mbParamInitListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbParamInitList", String.class, AmqpField.class,
-			AmqpVersionSet.class, int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbMangledParamInitListGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbMangledParamInitList", AmqpField.class,
-			int.class, int.class, boolean.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		// Methods for  AmqpFieldMap.parseFieldMapOrdinally()
-		
-		try { mbPrintGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbFieldPrint", String.class, String.class,
-			int.class, int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbBitPrintGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbBitFieldPrint", ArrayList.class, int.class,
-			int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-		
-		try { mbSizeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbFieldSize", String.class, String.class,
-			int.class, int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-			
-		try { mbBitSizeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbBitArrayFieldSize", ArrayList.class, int.class,
-			int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-			
-		try { mbEncodeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbFieldEncode", String.class, String.class,
-			int.class, int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-			
-		try { mbBitEncodeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbBitFieldEncode", ArrayList.class, int.class,
-			int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-			
-		try { mbDecodeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbFieldDecode", String.class, String.class,
-			int.class, int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-			
-		try { mbBitDecodeGenerateMethod = CppGenerator.class.getDeclaredMethod(
-			"generateMbBitFieldDecode", ArrayList.class, int.class,
-			int.class, int.class); }
-		catch (NoSuchMethodException e) { e.printStackTrace(); }
-	}
 	
 	public CppGenerator(AmqpVersionSet versionList)
 	{
@@ -251,12 +134,13 @@ public class CppGenerator extends Generator
 	{
 		String domainType = globalDomainMap.getDomainType(domainName, version);
 		if (domainType == null)
-			throw new AmqpTypeMappingException("Domain type \"" + domainName + "\" not found in C++ typemap.");
+			throw new AmqpTypeMappingException("Domain type \"" + domainName +
+				"\" not found in C++ typemap.");
 		return typeMap.get(domainType).type;
 	}
 	
 	// === Abstract methods from class Generator - C++-specific implementation ===
-
+	
 	@Override
 	protected String prepareFilename(String filenameTemplate, AmqpClass thisClass, AmqpMethod method,
 			AmqpField field)
@@ -270,9 +154,115 @@ public class CppGenerator extends Generator
 			replaceToken(sb, "${FIELD}", field.name);
 		return sb.toString();
 	}
+	
+	@Override
+	protected void processTemplate(String[] template)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+   	{
+		processTemplate(template, null, null, null);
+  	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+	{
+		processTemplate(template, thisClass, null, null);
+	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass,
+		AmqpMethod method)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+	{
+		StringBuffer sb = new StringBuffer(template[templateStringIndex]);
+		String filename = prepareFilename(getTemplateFileName(sb), thisClass, method, null);
+		boolean templateProcessedFlag = false;
+		
+		// If method is not version consistent, create a namespace for each version
+		// i.e. copy the bit between the versionNamespaceStartToken and versionNamespaceEndToken
+		// once for each namespace.
+		if (method != null)
+		{
+			if (!method.isVersionConsistent(globalVersionSet))
+			{
+				int namespaceStartIndex = sb.indexOf(versionNamespaceStartToken);
+				int namespaceEndIndex = sb.indexOf(versionNamespaceEndToken) +
+					versionNamespaceEndToken.length();
+				if (namespaceStartIndex >= 0 && namespaceEndIndex >= 0 &&
+					namespaceStartIndex <= namespaceEndIndex)
+				{
+					String namespaceSpan = sb.substring(namespaceStartIndex, namespaceEndIndex) + cr;
+					sb.delete(namespaceStartIndex, namespaceEndIndex);
+					Iterator<AmqpVersion> vItr = method.versionSet.iterator();
+					while (vItr.hasNext())
+					{
+						AmqpVersion version = vItr.next();
+						StringBuffer nssb = new StringBuffer(namespaceSpan);
+						processTemplate(nssb, thisClass, method, null, template[templateFileNameIndex],
+							version);
+						sb.insert(namespaceStartIndex, nssb);
+					}
+				}
+				templateProcessedFlag = true;
+			}
+		}
+		// Remove any remaining namespace tags
+		int nsTokenIndex = sb.indexOf(versionNamespaceStartToken);
+		while (nsTokenIndex > 0)
+		{
+			sb.delete(nsTokenIndex, nsTokenIndex + versionNamespaceStartToken.length());
+			nsTokenIndex = sb.indexOf(versionNamespaceStartToken);
+		}
+		nsTokenIndex = sb.indexOf(versionNamespaceEndToken);
+		while (nsTokenIndex > 0)
+		{
+			sb.delete(nsTokenIndex, nsTokenIndex + versionNamespaceEndToken.length());
+			nsTokenIndex = sb.indexOf(versionNamespaceEndToken);
+		}
+		
+		if (!templateProcessedFlag)
+		{
+			processTemplate(sb, thisClass, method, null, template[templateFileNameIndex], null);
+		}
+		writeTargetFile(sb, new File(genDir + Utils.fileSeparator + filename));
+		generatedFileCounter ++;
+	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass, AmqpMethod method,
+		AmqpField field)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException, IllegalAccessException,
+	       	InvocationTargetException
+	{
+		StringBuffer sb = new StringBuffer(template[templateStringIndex]);
+		String filename = prepareFilename(getTemplateFileName(sb), thisClass, method, field);
+		processTemplate(sb, thisClass, method, field, template[templateFileNameIndex], null);		
+		writeTargetFile(sb, new File(genDir + Utils.fileSeparator + filename));
+		generatedFileCounter ++;
+	}
+	
+	protected void processTemplate(StringBuffer sb, AmqpClass thisClass, AmqpMethod method,
+		AmqpField field, String templateFileName, AmqpVersion version)
+		throws InvocationTargetException, IllegalAccessException, AmqpTypeMappingException
+	{
+		try { processAllLists(sb, thisClass, method, version); }
+		catch (AmqpTemplateException e)
+		{
+			System.out.println("WARNING: " + templateFileName + ": " + e.getMessage());
+		}
+		try { processAllTokens(sb, thisClass, method, field, version); }
+		catch (AmqpTemplateException e)
+		{
+			System.out.println("WARNING: " + templateFileName + ": " + e.getMessage());
+		}
+	}
 
 	@Override
-	protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field)
+	protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field,
+		AmqpVersion version)
 	    throws AmqpTemplateException
 	{
 		if (token.compareTo("${GENERATOR}") == 0)
@@ -280,16 +270,26 @@ public class CppGenerator extends Generator
 		if (token.compareTo("${CLASS}") == 0 && thisClass != null)
 			return thisClass.name;
 		if (token.compareTo("${CLASS_ID_INIT}") == 0 && thisClass != null)
-			return generateIndexInitializer("classIdMap", thisClass.indexMap, 12);
+		{
+			if (version == null)
+				return String.valueOf(thisClass.indexMap.firstKey());
+			return getIndex(thisClass.indexMap, version);
+		}
 		if (token.compareTo("${METHOD}") == 0 && method != null)
 			return method.name;
 		if (token.compareTo("${METHOD_ID_INIT}") == 0 && method != null)
-			return generateIndexInitializer("methodIdMap", method.indexMap, 12);
+		{
+			if (version == null)
+				return String.valueOf(method.indexMap.firstKey());
+			return getIndex(method.indexMap, version);
+		}
 		if (token.compareTo("${FIELD}") == 0 && field != null)
 			return field.name;
+		if (token.compareTo(versionNamespaceStartToken) == 0 && version != null)
+			return "namespace ver_" + version.getMajor() + "_" + version.getMinor() + cr + "{";
+		if (token.compareTo(versionNamespaceEndToken) == 0 && version != null)
+			return "} // namespace ver_" + version.getMajor() + "_" + version.getMinor();
 		
-//		if (token.compareTo("${mb_get_class_id}") == 0 || token.compareTo("${mb_get_method_id}") == 0)
-//			return("/* === TODO === */");
 		throw new AmqpTemplateException("Template token " + token + " unknown.");	
 	}
 	
@@ -309,7 +309,7 @@ public class CppGenerator extends Generator
 	
 	@Override
 	protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
-		AmqpFieldMap fieldMap)
+		AmqpFieldMap fieldMap, AmqpVersion version)
         throws AmqpTypeMappingException, AmqpTemplateException, IllegalAccessException,
     	InvocationTargetException
 	{
@@ -323,48 +323,39 @@ public class CppGenerator extends Generator
 		// Field declarations - common to MethodBody and PropertyContentHeader classes
 		if (token.compareTo("${mb_field_declaration}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMap(declarationGenerateMethod,
-				mangledDeclarationGenerateMethod, 4, 4, this);
+			codeSnippet = generateFieldDeclarations(fieldMap, version, 4);
 		}
 		else if (token.compareTo("${mb_field_get_method}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMap(mbGetGenerateMethod,
-				mbMangledGetGenerateMethod, 4, 4, this);
+			codeSnippet = generateFieldGetMethods(fieldMap, version, 4);
 		}
 		else if (token.compareTo("${mb_field_print}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMapOrdinally(mbPrintGenerateMethod,
-				mbBitPrintGenerateMethod, 8, 4, this);
+			codeSnippet = generatePrintMethodContents(fieldMap, version, 8);
 		}
 		else if (token.compareTo("${mb_body_size}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMapOrdinally(mbSizeGenerateMethod,
-				mbBitSizeGenerateMethod, 8, 4, this);
+			codeSnippet = generateBodySizeMethodContents(fieldMap, version, 8);
 		}
 		else if (token.compareTo("${mb_encode}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMapOrdinally(mbEncodeGenerateMethod,
-				mbBitEncodeGenerateMethod, 8, 4, this);
+			codeSnippet = generateEncodeMethodContents(fieldMap, version, 8);
 		}
 		else if (token.compareTo("${mb_decode}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMapOrdinally(mbDecodeGenerateMethod,
-				mbBitDecodeGenerateMethod, 8, 4, this);
+			codeSnippet = generateDecodeMethodContents(fieldMap, version, 8);
 		}
 		else if (token.compareTo("${mb_field_list}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMap(mbParamListGenerateMethod,
-				mbMangledParamListGenerateMethod, 8, 4, this);
+			codeSnippet = generateFieldList(fieldMap, version, false, false, 8);
 		}
 		else if (token.compareTo("${mb_field_list_initializer}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMap(mbParamInitListGenerateMethod,
-					mbMangledParamInitListGenerateMethod, 8, 4, this);
+			codeSnippet = generateFieldList(fieldMap, version, false, true, 8);
 		}
 		else if (token.compareTo("${mb_field_list_declare}") == 0)
 		{
-			codeSnippet = fieldMap.parseFieldMap(mbParamDeclareListGenerateMethod,
-					mbMangledParamDeclareListGenerateMethod, 8, 4, this);
+			codeSnippet = generateFieldList(fieldMap, version, true, false, 8);
 		}
 		
 		else // Oops!
@@ -380,224 +371,219 @@ public class CppGenerator extends Generator
 
 	// Common methods
 
-	protected String generateIndexInitializer(String mapName, AmqpOrdinalVersionMap indexMap,
-		int indentSize)
+	protected String getIndex(AmqpOrdinalVersionMap indexMap, AmqpVersion version)
+	throws AmqpTemplateException
 	{
-		String indent = Utils.createSpaces(indentSize);
-		StringBuffer sb = new StringBuffer();
-		
 		Iterator<Integer> iItr = indexMap.keySet().iterator();
 		while (iItr.hasNext())
 		{
 			int index = iItr.next();
 			AmqpVersionSet versionSet = indexMap.get(index);
-			Iterator<AmqpVersion> vItr = versionSet.iterator();
-			while (vItr.hasNext())
+			if (versionSet.contains(version))
+				return String.valueOf(index);
+		}
+		throw new AmqpTemplateException("Unable to find index for version " + version); 
+	}
+	
+	protected String generateFieldDeclarations(AmqpFieldMap fieldMap, AmqpVersion version, int indentSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		Iterator<String> fItr = fieldMap.keySet().iterator();
+		while(fItr.hasNext())
+		{
+			AmqpField fieldDetails = fieldMap.get(fItr.next());
+			if (version == null) // Version consistent - there *should* be only one domain
 			{
-				AmqpVersion version = vItr.next();
-				sb.append(indent + mapName + "[\"" + version.toString() + "\"] = " +
-					index + ";" + cr);
+				String domainName =  fieldDetails.domainMap.firstKey();
+				String codeType = getGeneratedType(domainName, globalVersionSet.first());
+				sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
+			}
+			else
+			{
+				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
+				while (dItr.hasNext())
+				{
+					String domainName = dItr.next();
+					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
+					if (versionSet.contains(version))
+					{
+						String codeType = getGeneratedType(domainName, version);
+						sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
+					}
+				}
+			}
+		}
+		return sb.toString();
+	}
+	
+	protected String generateFieldGetMethods(AmqpFieldMap fieldMap, AmqpVersion version, int indentSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		Iterator<String> fItr = fieldMap.keySet().iterator();
+		while(fItr.hasNext())
+		{
+			AmqpField fieldDetails = fieldMap.get(fItr.next());
+			if (version == null) // Version consistent - there *should* be only one domain
+			{
+				String domainName =  fieldDetails.domainMap.firstKey();
+				String codeType = getGeneratedType(domainName, globalVersionSet.first());
+				sb.append(indent + "inline " + setRef(codeType) + " get" +
+					Utils.firstUpper(fieldDetails.name) + "() { return " +
+					fieldDetails.name + "; }" + cr);
+			}
+			else
+			{
+				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
+				while (dItr.hasNext())
+				{
+					String domainName = dItr.next();
+					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
+					if (versionSet.contains(version))
+					{
+						String codeType = getGeneratedType(domainName, version);
+						sb.append(indent + "inline " + setRef(codeType) + " get" +
+								Utils.firstUpper(fieldDetails.name) + "() { return " +
+								fieldDetails.name + "; }" + cr);
+					}
+				}
+			}
+		}
+		return sb.toString();
+	}
+	
+	protected String generatePrintMethodContents(AmqpFieldMap fieldMap, AmqpVersion version, int indentSize)
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		Iterator<String> fItr = fieldMap.keySet().iterator();
+		boolean firstFlag = true;
+		while(fItr.hasNext())
+		{
+			String fieldName = fItr.next();
+			AmqpField fieldDetails = fieldMap.get(fieldName);
+			if (version == null || fieldDetails.versionSet.contains(version))
+			{
+				sb.append(indent + "out << \"");
+				if (!firstFlag)
+					sb.append("; ");
+				sb.append(fieldName + "=\" << " + fieldName + ";" + cr);
+				firstFlag = false;
 			}
 		}
 		return sb.toString();		
 	}
-
-	protected String generateFieldDeclaration(String codeType, AmqpField field,
-		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
-	{
-		return Utils.createSpaces(indentSize) + codeType + " " + field.name +
-			"; /* AMQP version(s): " + versionSet + " */" + cr;
-	}
-
-	protected String generateMangledFieldDeclaration(AmqpField field, int indentSize,
-		int tabSize, boolean nextFlag)
-	    throws AmqpTypeMappingException
-	{
-		String indent = Utils.createSpaces(indentSize);
-		StringBuffer sb = new StringBuffer();
-		Iterator<String> dItr = field.domainMap.keySet().iterator();
-		int domainCntr = 0;
-		while (dItr.hasNext())
-		{
-			String domainName = dItr.next();
-			AmqpVersionSet versionSet = field.domainMap.get(domainName);
-			String codeType = getGeneratedType(domainName, versionSet.first());
-			sb.append(indent + codeType + " " + field.name + "_" + (domainCntr++) +
-				"; /* AMQP Version(s): " + versionSet + " */" + cr);
-		}
-		return sb.toString();		
-	}
 	
-	protected String generateMbGetMethod(String codeType, AmqpField field,
-		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
-	{
-		String indent = Utils.createSpaces(indentSize);
-			return indent + "inline " + setRef(codeType) + " get" +
-				Utils.firstUpper(field.name) + "() { return " + field.name +
-				"; } /* AMQP Version(s): " + versionSet + " */" + cr;
-	}
-		
-	protected String generateMbMangledGetMethod(AmqpField field, int indentSize,
-		int tabSize, boolean nextFlag)
+	protected String generateBodySizeMethodContents(AmqpFieldMap fieldMap, AmqpVersion version,
+		int indentSize)
 		throws AmqpTypeMappingException
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
-		Iterator<String> dItr = field.domainMap.keySet().iterator();
-		int domainCntr = 0;
-		while (dItr.hasNext())
+		ArrayList<String> bitFieldList = new ArrayList<String>();
+		AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version);
+		Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
+		int ordinal = 0;
+		while (oItr.hasNext())
 		{
-			String domainName = dItr.next();
-			AmqpVersionSet versionSet = field.domainMap.get(domainName);
-			String codeType = getGeneratedType(domainName, versionSet.first());
-			sb.append(indent + "inline " + setRef(codeType) + " get" +
-				Utils.firstUpper(field.name) + "() { return " + field.name + "_" +
-				domainCntr++ + "; } /* AMQP Version(s): " + versionSet +
-				" */" + cr);
-		}
-		return sb.toString();		
-	}
-	
-	protected String generateMbParamList(String codeType, AmqpField field,
-		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
-	{
-		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, false, false);
-	}
-	
-	protected String generateMbMangledParamList(AmqpField field, int indentSize,
-		int tabSize, boolean nextFlag)
-		throws AmqpTypeMappingException
-	{
-		return mbMangledParamList(field, indentSize, nextFlag, false, false);
-	}
-	
-	protected String generateMbParamDeclareList(String codeType, AmqpField field,
-		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
-	{
-		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, true, false);
-	}
-	
-	protected String generateMbMangledParamDeclareList(AmqpField field, int indentSize,
-		int tabSize, boolean nextFlag)
-		throws AmqpTypeMappingException
-	{
-		return mbMangledParamList(field, indentSize, nextFlag, true, false);
-	}
-	
-	protected String generateMbParamInitList(String codeType, AmqpField field,
-		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
-	{
-		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, false, true);
-	}
-	
-	protected String generateMbMangledParamInitList(AmqpField field, int indentSize,
-		int tabSize, boolean nextFlag)
-		throws AmqpTypeMappingException
-	{
-		return mbMangledParamList(field, indentSize, nextFlag, false, true);
-	}
-	
-	protected String mbParamList(String codeType, AmqpField field, AmqpVersionSet versionSet,
-		int indentSize, boolean nextFlag, boolean defineFlag, boolean initializerFlag)
-		{
-			return Utils.createSpaces(indentSize) + (defineFlag ? codeType + " " : "") +
-				(initializerFlag ? "this." : "") + field.name +
-				(initializerFlag ? "(" + field.name + ")" : "") +
-				(nextFlag ? "," : "") + " /* AMQP version(s): " + versionSet + " */" + cr;
-		}
-	
-	protected String mbMangledParamList(AmqpField field, int indentSize,
-		boolean nextFlag, boolean defineFlag, boolean initializerFlag)
-		throws AmqpTypeMappingException
-	{
-		StringBuffer sb = new StringBuffer();
-		Iterator<String> dItr = field.domainMap.keySet().iterator();
-		int domainCntr = 0;
-		while (dItr.hasNext())
-		{
-			String domainName = dItr.next();
-			AmqpVersionSet versionSet = field.domainMap.get(domainName);
-			String codeType = getGeneratedType(domainName, versionSet.first());
-			sb.append(Utils.createSpaces(indentSize) + (defineFlag ? codeType + " " : "") +
-				(initializerFlag ? "this." : "") + field.name + "_" + domainCntr +
-				(initializerFlag ? "(" + field.name + "_" + domainCntr + ")" : "") +
-				(nextFlag ? "," : "") + " /* AMQP version(s): " + versionSet + " */" + cr);
-			domainCntr++;
-		}
-		return sb.toString();		
-	}
-	
-	protected String generateMbFieldPrint(String domain, String fieldName,
-		int ordinal, int indentSize, int tabSize)
-	{
-		String indent = Utils.createSpaces(indentSize);
-		StringBuffer sb = new StringBuffer(indent + "out << \"");
-		if (ordinal == 0)
-			sb.append(": \"");
-		else
-			sb.append("; \"");
-		sb.append(" << \"" + fieldName + "=\" << " + fieldName + ";" + cr);		
-		return sb.toString();
-	}
-	
-	protected String generateMbBitFieldPrint(ArrayList<String> bitFieldList,
-		int ordinal, int indentSize, int tabSize)
-	{
-		String indent = Utils.createSpaces(indentSize);
-		StringBuffer sb = new StringBuffer();
-		for (int i=0; i<bitFieldList.size(); i++)
-		{
-			String bitFieldName = bitFieldList.get(i);
-			sb.append(indent + "out << \"");
-			if (ordinal-bitFieldList.size()+i == 0)
-				sb.append(": \"");
+			ordinal = oItr.next();
+			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
+			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
+			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			
+			// Defer bit types by adding them to an array. When the first non-bit type is
+			// encountered, then handle the bits. This allows consecutive bits to be placed
+			// into the same byte(s) - 8 bits to the byte.
+			if (domainType.compareTo("bit") == 0)
+			{
+				bitFieldList.add(fieldDomainPair[FIELD_NAME]);
+			}
 			else
-				sb.append("; \"");
-			sb.append(" << \"" + bitFieldName + "=\" << (" + bitFieldName +
-				" ? \"T\" : \"F\");" + cr);
-		}		
-		return sb.toString();
+			{
+				if (bitFieldList.size() > 0) // Handle accumulated bit types (if any)
+				{
+					sb.append(generateBitArrayBodySizeMethodContents(bitFieldList, ordinal, indentSize));
+				}
+				sb.append(indent + "size += " +
+					typeMap.get(domainType).size.replaceAll("#", fieldDomainPair[FIELD_NAME]) +
+				    "; /* " + fieldDomainPair[FIELD_NAME] + ": " +
+				    domainType + " */" + cr);
+			}
+		}
+		if (bitFieldList.size() > 0) // Handle any remaining accumulated bit types
+		{
+			sb.append(generateBitArrayBodySizeMethodContents(bitFieldList, ordinal, indentSize));
+		}
+		return sb.toString();				
 	}
 
-	protected String generateMbFieldSize(String domainType, String fieldName,
-		int ordinal, int indentSize, int tabSize)
+	protected String generateBitArrayBodySizeMethodContents(ArrayList<String> bitFieldList,
+		int ordinal, int indentSize)
 	{
-		StringBuffer sb = new StringBuffer();
-		sb.append(Utils.createSpaces(indentSize) + "size += " +
-			typeMap.get(domainType).size.replaceAll("#", fieldName) +
-			"; /* " + fieldName + ": " + domainType + " */" + cr);
-		return sb.toString();
-	}
-	
-	protected String generateMbBitArrayFieldSize(ArrayList<String> bitFieldList,
-		int ordinal, int indentSize, int tabSize)
-	{
-		StringBuffer sb = new StringBuffer();
 		int numBytes = ((bitFieldList.size() - 1) / 8) + 1;
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
 		String comment = bitFieldList.size() == 1 ?
 			bitFieldList.get(0) + ": bit" :
 			"Combinded bits: " + bitFieldList;
-		sb.append(Utils.createSpaces(indentSize) + "size += " +
+		sb.append(indent + "size += " +
 			typeMap.get("bit").size.replaceAll("~", String.valueOf(numBytes)) +
 			"; /* " + comment + " */" + cr);
-		return sb.toString();
+		bitFieldList.clear();		
+		return sb.toString();				
 	}
-
-	protected String generateMbFieldEncode(String domain, String fieldName,
-		int ordinal, int indentSize, int tabSize)
-	{
-		StringBuffer sb = new StringBuffer();
-		sb.append(Utils.createSpaces(indentSize) +
-			typeMap.get(domain).encodeExpression.replaceAll("#", fieldName) +
-			"; /* " + fieldName + ": " + domain + " */" + cr);
-		return sb.toString();
-	}
-
-	protected String generateMbBitFieldEncode(ArrayList<String> bitFieldList,
-		int ordinal, int indentSize, int tabSize)
+	
+	protected String generateEncodeMethodContents(AmqpFieldMap fieldMap, AmqpVersion version,
+		int indentSize)
+		throws AmqpTypeMappingException
 	{
 		String indent = Utils.createSpaces(indentSize);
-		int numBytes = (bitFieldList.size() - 1)/8 + 1;
+		StringBuffer sb = new StringBuffer();
+		ArrayList<String> bitFieldList = new ArrayList<String>();
+		AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version);
+		Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
+		int ordinal = 0;
+		while (oItr.hasNext())
+		{
+			ordinal = oItr.next();
+			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
+			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
+			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			
+			// Defer bit types by adding them to an array. When the first non-bit type is
+			// encountered, then handle the bits. This allows consecutive bits to be placed
+			// into the same byte(s) - 8 bits to the byte.
+			if (domainType.compareTo("bit") == 0)
+			{
+				bitFieldList.add(fieldDomainPair[FIELD_NAME]);
+			}
+			else
+			{
+				if (bitFieldList.size() > 0) // Handle accumulated bit types (if any)
+				{
+					sb.append(generateBitEncodeMethodContents(bitFieldList, ordinal, indentSize));
+				}
+				sb.append(indent +
+					typeMap.get(domainType).encodeExpression.replaceAll("#", fieldDomainPair[FIELD_NAME]) +
+					"; /* " + fieldDomainPair[FIELD_NAME] + ": " + domainType + " */"+ cr);
+			}
+		}
+		if (bitFieldList.size() > 0) // Handle any remaining accumulated bit types
+		{
+			sb.append(generateBitEncodeMethodContents(bitFieldList, ordinal, indentSize));
+		}
+		
+		return sb.toString();				
+	}
+	
+	protected String generateBitEncodeMethodContents(ArrayList<String> bitFieldList, int ordinal,
+		int indentSize)
+	{
+		int numBytes = ((bitFieldList.size() - 1) / 8) + 1;
+		String indent = Utils.createSpaces(indentSize);
 		String bitArrayName = "flags_" + ordinal;
 		StringBuffer sb = new StringBuffer(indent + "u_int8_t[" + numBytes + "] " +
 			bitArrayName + " = {0};" +
@@ -613,28 +599,62 @@ public class CppGenerator extends Generator
 		for (int i=0; i<numBytes; i++)
 		{
 			sb.append(indent + "buffer.putOctet(" + bitArrayName + "[" + i + "]);" + cr);
-		}
-		return sb.toString();
+		}	
+		bitFieldList.clear();		
+		return sb.toString();				
 	}
 
-	protected String generateMbFieldDecode(String domain, String fieldName,
-		int ordinal, int indentSize, int tabSize)
-	{
-		StringBuffer sb = new StringBuffer();
-		sb.append(Utils.createSpaces(indentSize) +
-			typeMap.get(domain).decodeExpression.replaceAll("#", fieldName) +
-			"; /* " + fieldName + ": " + domain + " */" + cr);
-		return sb.toString();
-	}
-
-	protected String generateMbBitFieldDecode(ArrayList<String> bitFieldList,
-		int ordinal, int indentSize, int tabSize)
+	protected String generateDecodeMethodContents(AmqpFieldMap fieldMap, AmqpVersion version,
+		int indentSize)
+		throws AmqpTypeMappingException
 	{
 		String indent = Utils.createSpaces(indentSize);
-		int numBytes = (bitFieldList.size() - 1)/8 + 1;
+		StringBuffer sb = new StringBuffer();
+		ArrayList<String> bitFieldList = new ArrayList<String>();
+		AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version);
+		Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
+		int ordinal = 0;
+		while (oItr.hasNext())
+		{
+			ordinal = oItr.next();
+			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
+			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
+			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			
+			// Defer bit types by adding them to an array. When the first non-bit type is
+			// encountered, then handle the bits. This allows consecutive bits to be placed
+			// into the same byte(s) - 8 bits to the byte.
+			if (domainType.compareTo("bit") == 0)
+			{
+				bitFieldList.add(fieldDomainPair[FIELD_NAME]);
+			}
+			else
+			{
+				if (bitFieldList.size() > 0) // Handle accumulated bit types (if any)
+				{
+					sb.append(generateBitDecodeMethodContents(bitFieldList, ordinal, indentSize));
+				}
+				sb.append(indent +
+					typeMap.get(domainType).decodeExpression.replaceAll("#", fieldDomainPair[FIELD_NAME]) +
+						"; /* " + fieldDomainPair[FIELD_NAME] + ": " + domainType + " */" + cr);
+			}
+		}
+		if (bitFieldList.size() > 0) // Handle any remaining accumulated bit types
+		{
+			sb.append(generateBitDecodeMethodContents(bitFieldList, ordinal, indentSize));
+		}
+		
+		return sb.toString();				
+	}
+	
+	protected String generateBitDecodeMethodContents(ArrayList<String> bitFieldList, int ordinal,
+		int indentSize)
+	{
+		int numBytes = ((bitFieldList.size() - 1) / 8) + 1;
+		String indent = Utils.createSpaces(indentSize);
 		String bitArrayName = "flags_" + ordinal;
 		StringBuffer sb = new StringBuffer(indent + "u_int8_t[" + numBytes + "] " +
-			bitArrayName + ";" + cr);
+			bitArrayName + ";" + cr);	
 		for (int i=0; i<numBytes; i++)
 		{
 			sb.append(indent + "buffer.getOctet(" + bitArrayName + "[" + i + "]);" + cr);
@@ -647,8 +667,98 @@ public class CppGenerator extends Generator
 				bitArrayName + "[" + byteIndex + "]; /* " + bitFieldList.get(i) +
 				": bit */" + cr);
 		}
-		return sb.toString();
+		bitFieldList.clear();		
+		return sb.toString();				
 	}
+	
+	protected String generateFieldList(AmqpFieldMap fieldMap, AmqpVersion version, boolean defineFlag,
+		boolean initializerFlag, int indentSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version);
+		Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
+		int ordinal = 0;
+		while (oItr.hasNext())
+		{
+			ordinal = oItr.next();
+			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
+			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
+			String codeType = getGeneratedType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			sb.append(indent + (defineFlag ? codeType + " " : "") +
+				fieldDomainPair[FIELD_NAME] + (initializerFlag ? "(" + fieldDomainPair[FIELD_NAME] + ")" : "") +
+				(oItr.hasNext() ? "," : "") + cr);
+		}
+		return sb.toString();				
+	}
+//	protected String generateMbParamList(String codeType, AmqpField field,
+//		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
+//	{
+//		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, false, false);
+//	}
+//	
+//	protected String generateMbMangledParamList(AmqpField field, int indentSize,
+//		int tabSize, boolean nextFlag)
+//		throws AmqpTypeMappingException
+//	{
+//		return mbMangledParamList(field, indentSize, nextFlag, false, false);
+//	}
+//	
+//	protected String generateMbParamDeclareList(String codeType, AmqpField field,
+//		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
+//	{
+//		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, true, false);
+//	}
+//	
+//	protected String generateMbMangledParamDeclareList(AmqpField field, int indentSize,
+//		int tabSize, boolean nextFlag)
+//		throws AmqpTypeMappingException
+//	{
+//		return mbMangledParamList(field, indentSize, nextFlag, true, false);
+//	}
+//	
+//	protected String generateMbParamInitList(String codeType, AmqpField field,
+//		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
+//	{
+//		return mbParamList(codeType, field, versionSet, indentSize, nextFlag, false, true);
+//	}
+//	
+//	protected String generateMbMangledParamInitList(AmqpField field, int indentSize,
+//		int tabSize, boolean nextFlag)
+//		throws AmqpTypeMappingException
+//	{
+//		return mbMangledParamList(field, indentSize, nextFlag, false, true);
+//	}
+//	
+//	protected String mbParamList(String codeType, AmqpField field, AmqpVersionSet versionSet,
+//		int indentSize, boolean nextFlag, boolean defineFlag, boolean initializerFlag)
+//		{
+//			return Utils.createSpaces(indentSize) + (defineFlag ? codeType + " " : "") +
+//				field.name + (initializerFlag ? "(" + field.name + ")" : "") +
+//				(nextFlag ? "," : "") + " /* AMQP version(s): " + versionSet + " */" + cr;
+//		}
+//	
+//	protected String mbMangledParamList(AmqpField field, int indentSize,
+//		boolean nextFlag, boolean defineFlag, boolean initializerFlag)
+//		throws AmqpTypeMappingException
+//	{
+//		StringBuffer sb = new StringBuffer();
+//		Iterator<String> dItr = field.domainMap.keySet().iterator();
+//		int domainCntr = 0;
+//		while (dItr.hasNext())
+//		{
+//			String domainName = dItr.next();
+//			AmqpVersionSet versionSet = field.domainMap.get(domainName);
+//			String codeType = getGeneratedType(domainName, versionSet.first());
+//			sb.append(Utils.createSpaces(indentSize) + (defineFlag ? codeType + " " : "") +
+//				field.name + "_" + domainCntr +
+//				(initializerFlag ? "(" + field.name + "_" + domainCntr + ")" : "") +
+//				(nextFlag ? "," : "") + " /* AMQP version(s): " + versionSet + " */" + cr);
+//			domainCntr++;
+//		}
+//		return sb.toString();		
+//	}
 	
 	private String setRef(String codeType)
 	{

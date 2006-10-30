@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.gentools;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -358,7 +360,7 @@ public class JavaGenerator extends Generator
 
 	
 	// === Abstract methods from class Generator - Java-specific implementations ===
-
+	
 	@Override
 	protected String prepareFilename(String filenameTemplate, AmqpClass thisClass, AmqpMethod method,
 			AmqpField field)
@@ -372,9 +374,64 @@ public class JavaGenerator extends Generator
 			replaceToken(sb, "${FIELD}", field.name);
 		return sb.toString();
 	}
+	
+	@Override
+	protected void processTemplate(String[] template)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+   	{
+		processTemplate(template, null, null, null);
+  	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+	{
+		processTemplate(template, thisClass, null, null);
+	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass,
+		AmqpMethod method)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+	{
+		processTemplate(template, thisClass, method, null);
+	}
+	
+	@Override
+	protected void processTemplate(String[] template, AmqpClass thisClass,
+		AmqpMethod method, AmqpField field)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException
+	{
+		StringBuffer sb = new StringBuffer(template[1]);
+		String filename = prepareFilename(getTemplateFileName(sb), thisClass, method, field);
+		processTemplate(sb, thisClass, method, field, template[templateFileNameIndex], null);
+		writeTargetFile(sb, new File(genDir + Utils.fileSeparator + filename));
+		generatedFileCounter ++;
+	}
+	
+	protected void processTemplate(StringBuffer sb, AmqpClass thisClass, AmqpMethod method,
+			AmqpField field, String templateFileName, AmqpVersion version)
+			throws InvocationTargetException, IllegalAccessException, AmqpTypeMappingException
+		{
+			try { processAllLists(sb, thisClass, method, version); }
+			catch (AmqpTemplateException e)
+			{
+				System.out.println("WARNING: " + templateFileName + ": " + e.getMessage());
+			}
+			try { processAllTokens(sb, thisClass, method, field, version); }
+			catch (AmqpTemplateException e)
+			{
+				System.out.println("WARNING: " + templateFileName + ": " + e.getMessage());
+			}
+		}
 
 	@Override
-	protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field)
+	protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field,
+		AmqpVersion version)
 	    throws AmqpTemplateException
 	{
 		if (token.compareTo("${GENERATOR}") == 0)
@@ -463,7 +520,7 @@ public class JavaGenerator extends Generator
 	
 	@Override
 	protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
-		AmqpFieldMap fieldMap)
+		AmqpFieldMap fieldMap, AmqpVersion version)
 	    throws AmqpTypeMappingException, AmqpTemplateException, IllegalAccessException,
 	    	InvocationTargetException
 	{
