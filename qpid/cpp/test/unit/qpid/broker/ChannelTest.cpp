@@ -26,14 +26,6 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::concurrent;
 
-struct DummyRouter{
-    Message::shared_ptr last;
-
-    void operator()(Message::shared_ptr& msg){
-       last = msg;
-    }
-};
-
 struct DummyHandler : OutputHandler{
     std::vector<AMQFrame*> frames; 
 
@@ -46,30 +38,11 @@ struct DummyHandler : OutputHandler{
 class ChannelTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(ChannelTest);
-    CPPUNIT_TEST(testIncoming);
     CPPUNIT_TEST(testConsumerMgmt);
     CPPUNIT_TEST(testDeliveryNoAck);
     CPPUNIT_TEST_SUITE_END();
 
   public:
-
-    void testIncoming(){
-        Channel channel(0, 0, 10000);
-        string routingKey("my_routing_key");
-        channel.handlePublish(new Message(0, "test", routingKey, false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(14);
-        string data1("abcdefg");
-        string data2("hijklmn");
-        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
-        AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
-
-        CPPUNIT_ASSERT(!channel.handleHeader(header, DummyRouter()).last);
-        CPPUNIT_ASSERT(!channel.handleContent(part1, DummyRouter()).last);
-        DummyRouter router = channel.handleContent(part2, DummyRouter());
-        CPPUNIT_ASSERT(router.last);
-        CPPUNIT_ASSERT_EQUAL(routingKey, router.last->getRoutingKey());
-    }
 
     void testConsumerMgmt(){
         Queue::shared_ptr queue(new Queue("my_queue"));

@@ -19,16 +19,16 @@
 #define _Message_
 
 #include <boost/shared_ptr.hpp>
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/TxBuffer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/BasicHeaderProperties.h"
 #include "qpid/framing/BasicPublishBody.h"
-#include "qpid/broker/ConnectionToken.h"
 #include "qpid/framing/OutputHandler.h"
 
 namespace qpid {
     namespace broker {
-        class ExchangeRegistry;
  
         /**
          * Represents an AMQP message, i.e. a header body, a list of
@@ -48,6 +48,7 @@ namespace qpid {
             qpid::framing::AMQHeaderBody::shared_ptr header;
             content_list content;
             u_int64_t size;
+            TxBuffer* tx;
 
             void sendContent(qpid::framing::OutputHandler* out, 
                              int channel, u_int32_t framesize);
@@ -79,8 +80,9 @@ namespace qpid {
             qpid::framing::BasicHeaderProperties* getHeaderProperties();
             const string& getRoutingKey() const { return routingKey; }
             const string& getExchange() const { return exchange; }
-            u_int64_t contentSize() const{ return size; }
-
+            u_int64_t contentSize() const { return size; }
+            TxBuffer* getTx() const { return tx; }
+            void setTx(TxBuffer* _tx) { tx = _tx; }
         };
     }
 }

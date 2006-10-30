@@ -71,11 +71,12 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
     AutoDelete* const cleaner;
     const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
 
-    std::auto_ptr<ConnectionHandler> connectionHandler;
-    std::auto_ptr<ChannelHandler> channelHandler;
     std::auto_ptr<BasicHandler> basicHandler;
+    std::auto_ptr<ChannelHandler> channelHandler;
+    std::auto_ptr<ConnectionHandler> connectionHandler;
     std::auto_ptr<ExchangeHandler> exchangeHandler;
     std::auto_ptr<QueueHandler> queueHandler;
+    std::auto_ptr<TxHandler> txHandler;
 
     std::map<u_int16_t, Channel*> channels;
     std::vector<Queue::shared_ptr> exclusiveQueues;
@@ -212,18 +213,29 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
         virtual ~BasicHandlerImpl(){}
     };
 
+    class TxHandlerImpl : public virtual TxHandler{
+        SessionHandlerImpl* parent;
+    public:
+        TxHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        virtual ~TxHandlerImpl() {}
+        virtual void select(u_int16_t channel);
+        virtual void commit(u_int16_t channel);
+        virtual void rollback(u_int16_t channel);
+    };
+
+
     inline virtual ChannelHandler* getChannelHandler(){ return channelHandler.get(); }
     inline virtual ConnectionHandler* getConnectionHandler(){ return connectionHandler.get(); }
     inline virtual BasicHandler* getBasicHandler(){ return basicHandler.get(); }
     inline virtual ExchangeHandler* getExchangeHandler(){ return exchangeHandler.get(); }
     inline virtual QueueHandler* getQueueHandler(){ return queueHandler.get(); }
+    inline virtual TxHandler* getTxHandler(){ return txHandler.get(); }       
  
-    inline virtual AccessHandler* getAccessHandler(){ return 0; }       
-    inline virtual FileHandler* getFileHandler(){ return 0; }       
-    inline virtual StreamHandler* getStreamHandler(){ return 0; }       
-    inline virtual TxHandler* getTxHandler(){ return 0; }       
-    inline virtual DtxHandler* getDtxHandler(){ return 0; }       
-    inline virtual TunnelHandler* getTunnelHandler(){ return 0; }       
+    inline virtual AccessHandler* getAccessHandler(){ throw ConnectionException(540, "Access class not implemented"); }       
+    inline virtual FileHandler* getFileHandler(){ throw ConnectionException(540, "File class not implemented"); }       
+    inline virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
+    inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
+    inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); }       
 };
 
 }

@@ -135,13 +135,13 @@ void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, Fi
 }
 
 
-void TopicExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* /*args*/){
+void TopicExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(routingKey)) {
             Queue::vector& qv(i->second);
             for(Queue::vector::iterator j = qv.begin(); j != qv.end(); j++){
-                (*j)->deliver(msg);
+                msg.deliverTo(*j);
             }
         }
     }

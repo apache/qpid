@@ -42,7 +42,7 @@ class FanOutExchange : public virtual Exchange {
 
     virtual void unbind(Queue::shared_ptr queue, const std::string& routingKey, qpid::framing::FieldTable* args);
 
-    virtual void route(Message::shared_ptr& msg, const std::string& routingKey, qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg, const std::string& routingKey, qpid::framing::FieldTable* args);
 
     virtual ~FanOutExchange();
 };

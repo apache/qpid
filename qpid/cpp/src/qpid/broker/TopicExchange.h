@@ -82,7 +82,7 @@ class TopicExchange : public virtual Exchange{
 
     virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args);
 
-    virtual void route(Message::shared_ptr& msg, const string& routingKey, qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args);
 
     virtual ~TopicExchange();
 };

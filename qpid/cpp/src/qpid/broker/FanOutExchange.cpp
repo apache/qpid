@@ -44,10 +44,10 @@ void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
     }
 }
 
-void FanOutExchange::route(Message::shared_ptr& msg, const string& /*routingKey*/, FieldTable* /*args*/){
+void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, FieldTable* /*args*/){
     Locker locker(lock);
     for(Queue::vector::iterator i = bindings.begin(); i != bindings.end(); ++i){
-        (*i)->deliver(msg);
+        msg.deliverTo(*i);
     }
 }
 

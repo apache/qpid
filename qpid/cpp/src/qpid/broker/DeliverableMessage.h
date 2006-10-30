@@ -15,26 +15,23 @@
  * limitations under the License.
  *
  */
-#ifndef _Exchange_
-#define _Exchange_
+#ifndef _DeliverableMessage_
+#define _DeliverableMessage_
 
 #include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
-#include "qpid/framing/FieldTable.h"
 
 namespace qpid {
-namespace broker {
-    class Exchange{
-        const std::string name;
-      public:
-        explicit Exchange(const std::string& _name) : name(_name) {}
-        virtual ~Exchange(){}
-        std::string getName() { return name; }
-        virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-        virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-        virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-    };
-}
+    namespace broker {
+        class DeliverableMessage : public Deliverable{
+            Message::shared_ptr msg;
+        public:
+            DeliverableMessage(Message::shared_ptr& msg);
+            virtual void deliverTo(Queue::shared_ptr& queue);
+            virtual ~DeliverableMessage(){}
+        };
+    }
 }
 
 
