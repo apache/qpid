@@ -23,7 +23,7 @@ import java.util.Iterator;
 
 import org.w3c.dom.Node;
 
-public class AmqpField implements Printable, NodeAware
+public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 {
 	public LanguageConverter converter;
 	public AmqpVersionSet versionSet;
@@ -124,5 +124,16 @@ public class AmqpField implements Printable, NodeAware
 			AmqpVersionSet versionList = domainMap.get(domainKey);
 			out.println(margin + "  [D] " + domainKey + " : " + versionList.toString());
 		}
+	}
+	
+	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+	{
+		if (!versionSet.equals(globalVersionSet))
+			return false;
+		if (!domainMap.isVersionConsistent(globalVersionSet))
+			return false;
+		if (!ordinalMap.isVersionConsistent(globalVersionSet))
+			return false;
+		return true;
 	}
 }

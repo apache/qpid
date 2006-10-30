@@ -26,7 +26,7 @@ import org.w3c.dom.NodeList;
 public class AmqpClass implements Printable, NodeAware
 {
 	public LanguageConverter converter;
-	public AmqpVersionSet versionList;
+	public AmqpVersionSet versionSet;
 	public AmqpFieldMap fieldMap;
 	public AmqpMethodMap methodMap;
 	public String name;
@@ -36,7 +36,7 @@ public class AmqpClass implements Printable, NodeAware
 	{
 		this.name = name;
 		this.converter = converter;
-		versionList = new AmqpVersionSet();
+		versionSet = new AmqpVersionSet();
 		fieldMap = new AmqpFieldMap();
 		methodMap = new AmqpMethodMap();
 		indexMap = new AmqpOrdinalVersionMap();
@@ -45,7 +45,7 @@ public class AmqpClass implements Printable, NodeAware
 	public void addFromNode(Node classNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
-		versionList.add(version);
+		versionSet.add(version);
 		int index = Utils.getNamedIntegerAttribute(classNode, "index");
 		AmqpVersionSet versionSet = indexMap.get(index);
 		if (versionSet != null)
@@ -92,7 +92,7 @@ public class AmqpClass implements Printable, NodeAware
 	{
 		String margin = Utils.createSpaces(marginSize);
 		String tab = Utils.createSpaces(tabSize);
-		out.println(margin + "[C] " + name + ": " + versionList);
+		out.println(margin + "[C] " + name + ": " + versionSet);
 		
 		Iterator<Integer> iItr = indexMap.keySet().iterator();
 		while (iItr.hasNext())

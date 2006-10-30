@@ -23,15 +23,15 @@ import java.util.Iterator;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class AmqpMethod implements Printable, NodeAware
+public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 {
 	public LanguageConverter converter;
 	public AmqpVersionSet versionSet;
 	public AmqpFieldMap fieldMap;
 	public String name;
 	public AmqpOrdinalVersionMap indexMap;
-	public boolean clientMethodFlag; // Method called on client (<chassis name="server"> in XML)
-	public boolean serverMethodFlag; // Method called on server (<chassis name="client"> in XML)
+	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
+	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
 	
 	public AmqpMethod(String name, LanguageConverter converter)
 	{
@@ -40,13 +40,15 @@ public class AmqpMethod implements Printable, NodeAware
 		versionSet = new AmqpVersionSet();
 		fieldMap = new AmqpFieldMap();
 		indexMap = new AmqpOrdinalVersionMap();
-		clientMethodFlag = false;
-		serverMethodFlag = false;
+		clientMethodFlagMap = new AmqpFlagMap();
+		serverMethodFlagMap = new AmqpFlagMap();
 	}
 
 	public void addFromNode(Node methodNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
+		boolean serverChassisFlag = false;
+		boolean clientChassisFlag = false;
 		versionSet.add(version);
 		int index = Utils.getNamedIntegerAttribute(methodNode, "index");
 		AmqpVersionSet versionSet = indexMap.get(index);
@@ -78,19 +80,21 @@ public class AmqpMethod implements Printable, NodeAware
 			{
 				String chassisName = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME);
 				if (chassisName.compareTo("server") == 0)
-					clientMethodFlag = true;
+					serverChassisFlag = true;
 				else if (chassisName.compareTo("client") == 0)
-					serverMethodFlag = true;
+					clientChassisFlag = true;
 			}
-		}	
+		}
+		processChassisFlags(serverChassisFlag, clientChassisFlag, version);
 	}
 	
 	public void print(PrintStream out, int marginSize, int tabSize)
 	{
 		String margin = Utils.createSpaces(marginSize);
 		String tab = Utils.createSpaces(tabSize);
-		out.println(margin + "[M] " + name + " {" + (serverMethodFlag ? "S" : ".") +
-			(clientMethodFlag ? "C" : ".") + "}" + ": " + versionSet);
+		out.println(margin + "[M] " + name + " {" + (serverMethodFlagMap.isSet() ? "S " +
+			serverMethodFlagMap + (clientMethodFlagMap.isSet() ? ", " : "") : "") +
+			(clientMethodFlagMap.isSet() ? "C " + clientMethodFlagMap : "") + "}" + ": " + versionSet);
 		
 		Iterator<Integer> iItr = indexMap.keySet().iterator();
 		while (iItr.hasNext())
@@ -106,5 +110,43 @@ public class AmqpMethod implements Printable, NodeAware
 			AmqpField thisField = fieldMap.get(sItr.next());
 			thisField.print(out, marginSize + tabSize, tabSize);
 		}
+	}
+	
+	protected void processChassisFlags(boolean serverFlag, boolean clientFlag, AmqpVersion version)
+	{
+		AmqpVersionSet versionSet = serverMethodFlagMap.get(serverFlag);
+		if (versionSet != null)
+			versionSet.add(version);
+		else
+		{
+			versionSet = new AmqpVersionSet();
+			versionSet.add(version);
+			serverMethodFlagMap.put(serverFlag, versionSet);
+		}
+		
+		versionSet = clientMethodFlagMap.get(clientFlag);
+		if (versionSet != null)
+			versionSet.add(version);
+		else
+		{
+			versionSet = new AmqpVersionSet();
+			versionSet.add(version);
+			clientMethodFlagMap.put(clientFlag, versionSet);
+		}		
+	}
+	
+	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+	{
+		if (!versionSet.equals(globalVersionSet))
+			return false;
+		if (!clientMethodFlagMap.isVersionConsistent(globalVersionSet))
+			return false;
+		if (!serverMethodFlagMap.isVersionConsistent(globalVersionSet))
+			return false;
+		if (!indexMap.isVersionConsistent(globalVersionSet))
+			return false;
+		if (!fieldMap.isVersionConsistent(globalVersionSet))
+			return false;
+		return true;
 	}
 }

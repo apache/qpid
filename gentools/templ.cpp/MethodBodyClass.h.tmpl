@@ -36,26 +36,18 @@
 #ifndef _${CLASS}${METHOD}Body_
 #define _${CLASS}${METHOD}Body_
 
-namespace qpid {
-namespace framing {
+namespace qpid
+{
+namespace framing
+{
+${version_namespace_start}
  
 class ${CLASS}${METHOD}Body : virtual public AMQMethodBody
 {
-	static std::map<std::string, int> classIdMap;
-	static std::map<std::string, int> methodIdMap;
-	static void initMaps()
-	{
-		if (classIdMap.empty())
-		{
-${CLASS_ID_INIT}
-		}
-		if (methodIdMap.empty())
-		{
-${METHOD_ID_INIT}
-		}
-	}
+	const int classId = ${CLASS_ID_INIT};
+	const int methodId = ${METHOD_ID_INIT};
 	
-	/* Method field declarations */
+	// Method field declarations
 
 %{FLIST} ${mb_field_declaration}
      
@@ -63,33 +55,40 @@ ${METHOD_ID_INIT}
 public:
     typedef std::tr1::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
 
-	${CLASS}${METHOD}Body(u_int_8 major, u_int_8 minor)
-	{
-		super(major, minor);
-		initMaps();
-	}
+	// Constructors and destructors
+	
+    inline ${CLASS}${METHOD}Body(
+%{FLIST} ${mb_field_list_declare}
+	) :
+%{FLIST} ${mb_field_list_initializer}
+    {}
+
+    inline ${CLASS}${METHOD}Body() {}
+
+	${CLASS}${METHOD}Body() {}
+	
     virtual ~${CLASS}${METHOD}Body() {}
+    
+    // Attribute get methods
 
 %{FLIST} ${mb_field_get_method}
 
+    // Helper methods
+    
     inline void print(std::ostream& out) const
     {
-	    out << "${CLASS}${METHOD}";
+	    out << "${CLASS}${METHOD}: ";
 %{FLIST} ${mb_field_print}
     }
 
     inline u_int16_t amqpClassId() const
     {
-    	std::stringstream ss;
-    	ss << major << "-" << minor;
-    	return classIdMap[ss.str()];
+    	return classId;
     }
     
     inline u_int16_t amqpMethodId() const
     {
-    	std::stringstream ss;
-    	ss << major << "-" << minor;
-    	return methodIdMap[ss.str()];
+    	return methodId;
     }
 
     inline u_int32_t bodySize() const
@@ -115,25 +114,11 @@ public:
 %{FLIST} ${mb_field_list}
 		);
     }
+}; // class ${CLASS}${METHOD}Body
 
-    inline BasicConsumeBody(
-%{FLIST} ${mb_field_list_declare}
-	) :
-%{FLIST} ${mb_field_list_initializer}
-    {
-    }
-
-    inline BasicConsumeBody()
-    {
-    }
-}; /* class ${CLASS}${METHOD}Body */
-
-// Static member declarations
-std::map<string, int> ${CLASS}${METHOD}Body::classIdMap;
-std::map<string, int> ${CLASS}${METHOD}Body::methodIdMap;
-
-} /* namespace framing */
-} /* namespace qpid */
+${version_namespace_end}
+} // namespace framing
+} // namespace qpid
 
 #endif
 
