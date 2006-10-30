@@ -51,12 +51,12 @@ void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, F
     lock.release();
 }
 
-void DirectExchange::route(Message::shared_ptr& msg, const string& routingKey, FieldTable* /*args*/){
+void DirectExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
     lock.acquire();
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     int count(0);
     for(std::vector<Queue::shared_ptr>::iterator i = queues.begin(); i != queues.end(); i++, count++){
-        (*i)->deliver(msg);
+        msg.deliverTo(*i);
     }
     if(!count){
         std::cout << "WARNING: DirectExchange " << getName() << " could not route message with key " << routingKey << std::endl;

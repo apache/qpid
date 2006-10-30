@@ -31,6 +31,7 @@
 
 namespace qpid {
     namespace broker {
+        class MessageStore;
 
         /**
          * Thrown when exclusive access would be violated.
@@ -47,6 +48,7 @@ namespace qpid {
             const string name;
             const u_int32_t autodelete;
             const bool durable;
+            MessageStore* const store;
             const ConnectionToken* const owner;
             std::vector<Consumer*> consumers;
             std::queue<Binding*> bindings;
@@ -67,7 +69,9 @@ namespace qpid {
 
             typedef std::vector<shared_ptr> vector;
 	    
-            Queue(const string& name, bool durable = false, u_int32_t autodelete = 0, const ConnectionToken* const owner = 0);
+            Queue(const string& name, bool durable = false, u_int32_t autodelete = 0, 
+                  MessageStore* const store = 0, 
+                  const ConnectionToken* const owner = 0);
             ~Queue();
             /**
              * Informs the queue of a binding that should be cancelled on
@@ -75,12 +79,15 @@ namespace qpid {
              */
             void bound(Binding* b);
             /**
-             * Delivers a message to the queue from where it will be
-             * dispatched to immediately to a consumer if one is
-             * available or stored for dequeue or later dispatch if
-             * not.
+             * Delivers a message to the queue. Will record it as
+             * enqueued if persistent then process it.
              */
             void deliver(Message::shared_ptr& msg);
+            /**
+             * Dispatches the messages immediately to a consumer if
+             * one is available or stores it for later if not.
+             */
+            void process(Message::shared_ptr& msg);
             /**
              * Dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
@@ -98,6 +105,9 @@ namespace qpid {
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
             bool canAutoDelete() const;
+
+            void enqueue(Message::shared_ptr& msg, const string * const xid);
+            void dequeue(Message::shared_ptr& msg, const string * const xid);
         };
     }
 }
