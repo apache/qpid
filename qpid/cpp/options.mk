@@ -14,6 +14,38 @@
  # limitations under the License.
  #
 
+## Build platform and type.
+
+# Default type
+TYPE := debug
+# Known platforms
+PLATFORMS := apr
+# TODO aconway 2006-10-30: Remove Default platform when there's more than 1.
+PLATFORM := apr
+
+# Local options, may override PLATFORM and/or TYPE
+-include options-local.mk
+
+DUMMY := $(if $(filter $(PLATFORM),$(PLATFORMS)),OK,$(error PLATFORM is not set. Use 'make PLATFORM=<name>' or create file options-local.mk with PLATFORM=<name>. Valid names: $(PLATFORMS)))
+DUMMY := $(if $(filter $(TYPE),debug release),OK,$(error TYPE must be 'debug' or 'release'))
+
+
+## Platform specific options
+
+# apr: Apache Portable Runtime.
+CXXFLAGS_apr := -D_USE_APR_IO_ -I/usr/local/apr/include
+LDFLAGS_apr  := -L/usr/local/apr/lib -lapr-1 
+
+## Build directories.
+
+BUILD=$(PLATFORM)-$(TYPE)
+GENDIR:=build/gen
+BINDIR:=build/$(BUILD)/bin
+LIBDIR:=build/$(BUILD)/lib
+OBJDIR:=build/$(BUILD)/obj
+TESTDIR:=build/$(BUILD)/test
+
+BUILDDIRS:= $(BINDIR) $(LIBDIR) $(OBJDIR) $(TESTDIR) $(GENDIR)
 
 ## External dependencies:
 
@@ -23,13 +55,9 @@ EXTRA_LIBDIRS := -L/usr/local/apr/lib
 
 ## Compile flags
 
-# Release vs. debug flags, default to debug
+# Release vs. debug flags.
 DEBUG   := -ggdb3
 RELEASE := -O3 -DNDEBUG
-BUILD := DEBUG
-
-# _USE_APR_IO_ set when APR IO build is desired.
-DEFINES := -D _USE_APR_IO_
 
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
@@ -40,8 +68,16 @@ DEFINES := -D _USE_APR_IO_
 # 
 WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch
 
-INCLUDES :=  -Isrc -Igen $(EXTRA_INCLUDES) 
-CXXFLAGS := $($(BUILD)) $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES)
-## Link flags
-# Allow exes to find libs without env changes. Remove for release builds.
-LDFLAGS := -Llib $(EXTRA_LIBDIRS) 
+INCLUDES :=  -Isrc -I$(GENDIR) $(EXTRA_INCLUDES)
+LDFLAGS := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
+CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM))
+
+## Macros for linking, must be late evaluated
+
+# $(call OBJ_FROM,root,subdirs)
+OBJ_FROM = $(foreach sub,$2,$(patsubst $1/%.cpp,$(OBJDIR)/%.o,$(wildcard $1/$(sub)/*.cpp)))
+# $(call LIBFILE,name,version)
+LIBFILE =$(CURDIR)/$(LIBDIR)/libqpid_$1.so.$2
+
+LIB_COMMAND = 	mkdir -p $(dir $@) && $(CXX) -shared -o $@ $(LDFLAGS) $(CXXFLAGS) $^
+
