@@ -15,18 +15,34 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/Router.h"
+#include "qpid/broker/TxBuffer.h"
 
 using namespace qpid::broker;
 
-Router::Router(ExchangeRegistry& _registry) : registry(_registry){}
-
-void Router::operator()(Message::shared_ptr& msg){
-    Exchange* exchange = registry.get(msg->getExchange());
-    if(exchange){
-        exchange->route(msg, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
-    }else{
-        std::cout << "WARNING: Could not route message, unknown exchange: " << msg->getExchange() << std::endl;
+bool TxBuffer::prepare(TransactionalStore* const store){
+    if(store) store->begin();
+    for(op_iterator i = ops.begin(); i < ops.end(); i++){
+        if(!(*i)->prepare()){
+            if(store) store->abort();
+            return false;
+        }
     }
+    if(store) store->commit();
+    return true;
+}
 
+void TxBuffer::commit(){
+    for(op_iterator i = ops.begin(); i < ops.end(); i++){
+        (*i)->commit();
+    }
+}
+
+void TxBuffer::rollback(){
+    for(op_iterator i = ops.begin(); i < ops.end(); i++){
+        (*i)->rollback();
+    }
+}
+
+void TxBuffer::enlist(TxOp* const op){
+    ops.push_back(op);
 }

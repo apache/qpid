@@ -15,25 +15,30 @@
  * limitations under the License.
  *
  */
-#ifndef _Router_
-#define _Router_
+#include "qpid/concurrent/APRBase.h"
+#include <qpid_test_plugin.h>
+#include <iostream>
 
-#include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/broker/Message.h"
+using namespace qpid::concurrent;
 
-/**
- * A routing functor
- */
-namespace qpid {
-    namespace broker {
-        class Router{
-            ExchangeRegistry& registry;
-        public:
-            Router(ExchangeRegistry& registry);
-            void operator()(Message::shared_ptr& msg);
-        };
+class APRBaseTest : public CppUnit::TestCase  
+{
+    CPPUNIT_TEST_SUITE(APRBaseTest);
+    CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST_SUITE_END();
+
+  public:
+
+    void testMe() 
+    {
+        APRBase::increment();
+        APRBase::increment();
+        APRBase::decrement();
+        APRBase::decrement();
     }
-}
+};
 
+// Make this test suite a plugin.
+CPPUNIT_PLUGIN_IMPLEMENT();
+CPPUNIT_TEST_SUITE_REGISTRATION(APRBaseTest);
 
-#endif

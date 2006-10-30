@@ -191,6 +191,8 @@ bool Configuration::BoolOption::needsValue() const {
     return false;
 }
 
-void Configuration::BoolOption::setValue(const std::string& _value){
-    value = strcasecmp(_value.c_str(), "true") == 0;
+void Configuration::BoolOption::setValue(const std::string& /*not required*/){
+    //BoolOptions have no value. The fact that the option is specified
+    //implies the value is true.
+    value = true;
 }

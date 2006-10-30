@@ -46,7 +46,9 @@ class QueueRegistry{
      * @return The queue and a boolean flag which is true if the queue
      * was created by this declare call false if it already existed.
      */
-    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, u_int32_t autodelete = 0, const ConnectionToken* const owner = 0);
+    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, u_int32_t autodelete = 0, 
+                                               MessageStore* const _store = 0,
+                                               const ConnectionToken* const owner = 0);
 
     /**
      * Destroy the named queue.
