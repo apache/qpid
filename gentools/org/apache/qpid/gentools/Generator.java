@@ -26,13 +26,14 @@ import java.io.LineNumberReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Set;
 
 public abstract class Generator implements LanguageConverter
 {
 	// This string is reproduced in every generated file as a comment
 	// TODO: Tie the version info into the build system.
 	protected static final String generatorInfo = "Qpid Gentools v.0.1";
+	protected static final int templateFileNameIndex = 0;
+	protected static final int templateStringIndex = 1;
 	
 	protected ArrayList<String[]> modelTemplateList;
 	protected ArrayList<String[]> classTemplateList;
@@ -126,6 +127,25 @@ public abstract class Generator implements LanguageConverter
 			}
 		}
 	}
+
+	abstract protected String prepareFilename(String filenameTemplate, AmqpClass thisClass, AmqpMethod method,
+		AmqpField field);
+
+	abstract protected String processToken(String token, AmqpClass thisClass, AmqpMethod method,
+		AmqpField field, AmqpVersion version)
+	    throws AmqpTemplateException;
+	
+	abstract protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
+        throws AmqpTemplateException;
+	
+	abstract protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
+        throws AmqpTemplateException;
+	
+	abstract protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+		AmqpFieldMap fieldMap, AmqpVersion version)
+        throws AmqpTypeMappingException, AmqpTemplateException, IllegalAccessException,
+        	InvocationTargetException;
+
 	
 	public void generate(File genDir)
 	    throws TargetDirectoryException, IOException, AmqpTypeMappingException,
@@ -138,12 +158,11 @@ public abstract class Generator implements LanguageConverter
 		// Use all model-level templates
 		for (int t = 0; t < modelTemplateList.size(); t++)
 		{
-			processTemplate(modelTemplateList.get(t), null, null, null);
+			processTemplate(modelTemplateList.get(t));
 		}
 		
 		// Cycle through classes
-		Set<String> ckeys = model.classMap.keySet();
-		Iterator<String> citr = ckeys.iterator();
+		Iterator<String> citr = model.classMap.keySet().iterator();
 		while (citr.hasNext())
 		{
 			String className = citr.next();
@@ -152,12 +171,11 @@ public abstract class Generator implements LanguageConverter
 			// Use all class-level templates
 			for (int c = 0; c < classTemplateList.size(); c++)
 			{
-				processTemplate(classTemplateList.get(c), thisClass, null, null);
+				processTemplate(classTemplateList.get(c), thisClass);
 			}
 			
 			// Cycle through all methods
-			Set<String> mkeys = thisClass.methodMap.keySet();
-			Iterator<String> mitr = mkeys.iterator();
+			Iterator<String> mitr = thisClass.methodMap.keySet().iterator();
 			while (mitr.hasNext())
 			{
 				String methodName = mitr.next();
@@ -166,12 +184,11 @@ public abstract class Generator implements LanguageConverter
 				// Use all method-level templates
 				for (int m = 0; m < methodTemplateList.size(); m++)
 				{
-					processTemplate(methodTemplateList.get(m), thisClass, method, null);
+					processTemplate(methodTemplateList.get(m), thisClass, method);
 				}
 				
 				// Cycle through all fields
-				Set<String> fkeys = method.fieldMap.keySet();
-				Iterator<String> fitr = fkeys.iterator();
+				Iterator<String> fitr = method.fieldMap.keySet().iterator();
 				while (fitr.hasNext())
 				{
 					String fieldName = fitr.next();
@@ -186,23 +203,6 @@ public abstract class Generator implements LanguageConverter
 			}
 		}
 	}
-
-	abstract protected String prepareFilename(String filenameTemplate, AmqpClass thisClass, AmqpMethod method,
-		AmqpField field);
-
-	abstract protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field)
-	    throws AmqpTemplateException;
-	
-	abstract protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
-        throws AmqpTemplateException;
-	
-	abstract protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
-        throws AmqpTemplateException;
-	
-	abstract protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
-		AmqpFieldMap fieldMap)
-        throws AmqpTypeMappingException, AmqpTemplateException, IllegalAccessException,
-        	InvocationTargetException;
 	
 	protected void processVersionList(StringBuffer sb, int tokStart, int tokEnd)
 	    throws AmqpTypeMappingException
@@ -223,27 +223,27 @@ public abstract class Generator implements LanguageConverter
 		}							
 	}
 
-	// TODO: This could be a little more elegant - overload this for the various combinations
-	// of call instead of passing nulls.
-	protected void processTemplate(String[] template, AmqpClass thisClass, AmqpMethod method, AmqpField field)
-        throws IOException, AmqpTemplateException, AmqpTypeMappingException, IllegalAccessException,
-        	InvocationTargetException
-    {
-		StringBuffer sb = new StringBuffer(template[1]);
-		String filename = prepareFilename(getTemplateFileName(sb), thisClass, method, field);
-		try { processAllLists(sb, thisClass, method); }
-		catch (AmqpTemplateException e)
-		{
-			System.out.println("WARNING: " + template[0] + ": " + e.getMessage());
-		}
-		try { processAllTokens(sb, thisClass, method, field); }
-		catch (AmqpTemplateException e)
-		{
-			System.out.println("WARNING: " + template[0] + ": " + e.getMessage());
-		}
-		writeTargetFile(sb, new File(genDir + Utils.fileSeparator + filename));
-		generatedFileCounter ++;
-    }
+	// Model-level template processing
+	abstract protected void processTemplate(String[] template)
+        throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+        	IllegalAccessException, InvocationTargetException;
+	
+	// Class-level template processing
+	abstract protected void processTemplate(String[] template, AmqpClass thisClass)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	        IllegalAccessException, InvocationTargetException;
+	
+	// Method-level template processing
+	abstract protected void processTemplate(String[] template, AmqpClass thisClass,
+		AmqpMethod method)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException;
+	
+	// Field-level template processing
+	abstract protected void processTemplate(String[] template, AmqpClass thisClass,
+		AmqpMethod method, AmqpField field)
+	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
+	    	IllegalAccessException, InvocationTargetException;
 	
 	// Helper functions common to all generators
 	
@@ -268,7 +268,7 @@ public abstract class Generator implements LanguageConverter
 			
 	}
 
-	protected void processAllLists(StringBuffer sb, AmqpClass thisClass, AmqpMethod method)
+	protected void processAllLists(StringBuffer sb, AmqpClass thisClass, AmqpMethod method, AmqpVersion version)
 	    throws AmqpTemplateException, AmqpTypeMappingException, IllegalAccessException,
 	    	InvocationTargetException
 	{
@@ -297,7 +297,8 @@ public abstract class Generator implements LanguageConverter
 					// If this is called from a class-level template, we assume that the
 					// class field list is required. In this case, method will be null.
 					processFieldList(sb, lstart, lend + 1,
-						(method == null ? thisClass.fieldMap : method.fieldMap));
+						(method == null ? thisClass.fieldMap : method.fieldMap),
+						version);
 				}
 				else
 				{
@@ -309,7 +310,8 @@ public abstract class Generator implements LanguageConverter
 		}		
 	}
 	
-	protected void processAllTokens(StringBuffer sb, AmqpClass thisClass, AmqpMethod method, AmqpField field)
+	protected void processAllTokens(StringBuffer sb, AmqpClass thisClass, AmqpMethod method, AmqpField field,
+		AmqpVersion version)
         throws AmqpTemplateException
 	{
 		int lstart = sb.indexOf("${");
@@ -319,7 +321,7 @@ public abstract class Generator implements LanguageConverter
 			if (lend > 0)
 			{
 				String token = sb.substring(lstart, lend + 1);
-				replaceToken(sb, lstart, token, processToken(token, thisClass, method, field));
+				replaceToken(sb, lstart, token, processToken(token, thisClass, method, field, version));
 			}
 			lstart = sb.indexOf("${", lstart);
 		}			
