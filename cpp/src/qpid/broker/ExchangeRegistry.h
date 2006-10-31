@@ -20,22 +20,21 @@
 
 #include <map>
 #include "qpid/broker/Exchange.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/concurrent/MonitorImpl.h"
 
 namespace qpid {
 namespace broker {
+    struct UnknownExchangeTypeException{};
+
     class ExchangeRegistry{
-        typedef std::map<string, Exchange*> ExchangeMap;
+        typedef std::map<string, Exchange::shared_ptr> ExchangeMap;
         ExchangeMap exchanges;
-        qpid::concurrent::Monitor* lock;
+        qpid::concurrent::MonitorImpl lock;
     public:
-        ExchangeRegistry();
-        void declare(Exchange* exchange);
+        std::pair<Exchange::shared_ptr, bool> declare(const string& name, const string& type) throw(UnknownExchangeTypeException);
         void destroy(const string& name);
-        Exchange* get(const string& name);
-        Exchange* getDefault();
-        inline qpid::concurrent::Monitor* getLock(){ return lock; }
-        ~ExchangeRegistry();
+        Exchange::shared_ptr get(const string& name);
+        Exchange::shared_ptr getDefault();
     };
 }
 }

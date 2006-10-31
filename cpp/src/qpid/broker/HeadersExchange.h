@@ -40,6 +40,8 @@ class HeadersExchange : public virtual Exchange {
     static const std::string typeName;
 
     HeadersExchange(const string& name);
+    
+    virtual std::string getType(){ return typeName; }            
         
     virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args);
 

@@ -16,33 +16,46 @@
  *
  */
 #include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/HeadersExchange.h"
+#include "qpid/broker/TopicExchange.h"
 
 using namespace qpid::broker;
 using namespace qpid::concurrent;
+using std::pair;
 
-ExchangeRegistry::ExchangeRegistry() : lock(new MonitorImpl()){}
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) throw(UnknownExchangeTypeException){
+    Locker locker(lock);
+    ExchangeMap::iterator i =  exchanges.find(name);
+    if (i == exchanges.end()) {
+	Exchange::shared_ptr exchange;
 
-ExchangeRegistry::~ExchangeRegistry(){
-    for (ExchangeMap::iterator i = exchanges.begin(); i != exchanges.end(); ++i)
-    {
-        delete i->second;
+        if(type == TopicExchange::typeName){
+            exchange = Exchange::shared_ptr(new TopicExchange(name));
+        }else if(type == DirectExchange::typeName){
+            exchange = Exchange::shared_ptr(new DirectExchange(name));
+        }else if(type == FanOutExchange::typeName){
+            exchange = Exchange::shared_ptr(new FanOutExchange(name));
+        }else if (type == HeadersExchange::typeName) {
+            exchange = Exchange::shared_ptr(new HeadersExchange(name));
+        }else{
+            throw UnknownExchangeTypeException();    
+        }
+	exchanges[name] = exchange;
+	return std::pair<Exchange::shared_ptr, bool>(exchange, true);
+    } else {
+	return std::pair<Exchange::shared_ptr, bool>(i->second, false);
     }
-    delete lock;
-}
-
-void ExchangeRegistry::declare(Exchange* exchange){
-    exchanges[exchange->getName()] = exchange;
 }
 
 void ExchangeRegistry::destroy(const string& name){
-    if(exchanges[name]){
-        delete exchanges[name];
-        exchanges.erase(name);
-    }
+    Locker locker(lock);
+    exchanges.erase(name);
 }
 
-Exchange* ExchangeRegistry::get(const string& name){
+Exchange::shared_ptr ExchangeRegistry::get(const string& name){
+    Locker locker(lock);
     return exchanges[name];
 }
 
@@ -51,7 +64,7 @@ namespace
 const std::string empty;
 }
 
-Exchange* ExchangeRegistry::getDefault()
+Exchange::shared_ptr ExchangeRegistry::getDefault()
 {
     return get(empty);
 }
