@@ -16,25 +16,33 @@
  -
  -->
 <project name="Client Tests" default="build">
-  <property name="module.depends" value="client broker broker/test common"/>
-  <property name="module.dist" value="true"/>
+    <property name="module.depends" value="client broker broker/test common"/>
+    <property name="module.dist" value="true"/>
 
-  <import file="../../module.xml"/>
+    <import file="../../module.xml"/>
 
-  <target name="test" depends="build">
-    <junit fork="yes" showoutput="true" haltonfailure="yes">
-      <test name="org.apache.qpid.client.AllClientUnitTests"/>
-      <formatter type="plain"/>
-      <classpath refid="module.class.path"/>
-    </junit>
-  </target>
+    <target name="test" depends="build">
+        <junit fork="yes" showoutput="true" haltonfailure="yes">
+            <test name="org.apache.qpid.client.AllClientUnitTests"/>
+            <formatter type="plain"/>
+            <classpath refid="module.class.path"/>
+        </junit>
+    </target>
 
-  <target name="xmltest" depends="build">
-      <junit fork="yes" showoutput="true" haltonfailure="no">
-          <test name="org.apache.qpid.client.AllClientUnitTests"/>
-          <formatter type="xml" usefile="junit.report.xml"/>
-          <classpath refid="module.class.path"/>
-      </junit>
-  </target>
+    <target name="testreport" depends="build">
+        <junit fork="yes" printsummary="yes" haltonfailure="no">
+            <test name="org.apache.qpid.client.AllClientUnitTests" fork="yes" todir="${module.test.reports}"/>
+            <formatter type="xml" />
+            <classpath refid="module.class.path" />
+        </junit>
+
+        <junitreport todir="${module.test.reports}">
+            <fileset dir="${module.test.reports}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report todir="${module.test.reports}"/>
+        </junitreport>
+    </target>
+
 
 </project>
