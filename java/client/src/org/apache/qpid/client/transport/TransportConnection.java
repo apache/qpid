@@ -21,9 +21,11 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
-import org.apache.mina.transport.socket.nio.SocketConnector;
+
+
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
+import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
@@ -111,7 +113,18 @@ public class TransportConnection
                 {
                     public IoConnector newSocketConnector()
                     {
-                        SocketConnector result = new SocketConnector(); // non-blocking connector
+                        SocketConnector result;
+                        //fixme improve get 
+                        if (Boolean.getBoolean("qpidnio"))
+                        {
+                            _logger.warn("Using Qpid NIO");
+                            result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
+                        }
+                        else
+                        {
+                            _logger.warn("Using Mina NIO");
+                            result = new SocketConnector(); // non-blocking connector
+                        }
 
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
@@ -196,7 +209,7 @@ public class TransportConnection
                 catch (Exception e)
                 {
                     _logger.info("Unable to create InVM Qpid.AMQP on port " + port);
-                    _logger.info(e);
+                    _logger.error(e);
                     throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
                 }
 
@@ -207,6 +220,7 @@ public class TransportConnection
             }
             catch (IOException e)
             {
+                _logger.error(e);
                 throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
             }
         }
