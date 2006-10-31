@@ -45,6 +45,10 @@
     <iterate target="test"/>
   </target>
 
+  <target name="xmltest" description="execute unit tests and produce xml reports">
+    <iterate target="xmltest"/>
+  </target>    
+
   <target name="doc" description="produce javadoc for each module">
     <iterate target="doc"/>
   </target>
