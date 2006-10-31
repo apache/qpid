@@ -15,36 +15,43 @@
  * limitations under the License.
  *
  */
-#ifndef _Acceptor_
-#define _Acceptor_
+#ifndef _LFAcceptor_
+#define _LFAcceptor_
 
+#include "apr-1/apr_network_io.h"
+#include "apr-1/apr_poll.h"
+#include "apr-1/apr_time.h"
+
+#include "qpid/io/Acceptor.h"
+#include "qpid/concurrent/Monitor.h"
+#include "qpid/concurrent/ThreadFactory.h"
+#include "qpid/concurrent/ThreadPool.h"
+#include "qpid/io/LFProcessor.h"
+#include "qpid/io/LFSessionContext.h"
+#include "qpid/concurrent/Runnable.h"
+#include "qpid/io/SessionContext.h"
 #include "qpid/io/SessionHandlerFactory.h"
+#include "qpid/concurrent/Thread.h"
+#include <qpid/SharedObject.h>
 
 namespace qpid {
 namespace io {
 
-    class Acceptor
-    {
-    public:
-        /**
-         * Bind to port.
-         * @param port Port to bind to, 0 to bind to dynamically chosen port.
-         * @return The local bound port.
-         */
-        virtual int16_t bind(int16_t port) = 0;
+/** APR Acceptor. */
+class Acceptor : public qpid::SharedObject<Acceptor>
+{
+  public:
+    Acceptor(int16_t port, int backlog, int threads);
+    virtual int16_t getPort() const;
+    virtual void run(SessionHandlerFactory* factory);
+    virtual void shutdown();
 
-        /**
-         * Run the acceptor.
-         */
-        virtual void run(SessionHandlerFactory* factory) = 0;
-
-        /**
-         * Shut down the acceptor.
-         */
-        virtual void shutdown() = 0;
-        
-	virtual ~Acceptor();
-    };
+  private:
+    int16_t port;
+    LFProcessor processor;
+    apr_socket_t* socket;
+    volatile bool running;
+};
 
 }
 }

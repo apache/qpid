@@ -16,8 +16,8 @@
  *
  */
 #include "qpid/client/Channel.h"
-#include "qpid/concurrent/MonitorImpl.h"
-#include "qpid/concurrent/ThreadFactoryImpl.h"
+#include "qpid/concurrent/Monitor.h"
+#include "qpid/concurrent/ThreadFactory.h"
 #include "qpid/client/Message.h"
 #include "qpid/QpidError.h"
 
@@ -36,9 +36,9 @@ Channel::Channel(bool _transactional, u_int16_t _prefetch) :
     prefetch(_prefetch), 
     transactional(_transactional)
 {
-    threadFactory = new ThreadFactoryImpl();
-    dispatchMonitor = new MonitorImpl();
-    retrievalMonitor = new MonitorImpl();
+    threadFactory = new ThreadFactory();
+    dispatchMonitor = new Monitor();
+    retrievalMonitor = new Monitor();
 }
 
 Channel::~Channel(){

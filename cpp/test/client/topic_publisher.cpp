@@ -21,7 +21,7 @@
 #include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "unistd.h"
 #include <apr-1/apr_time.h>
 #include <cstdlib>
@@ -34,7 +34,7 @@ class Publisher : public MessageListener{
     Channel* const channel;
     const std::string controlTopic;
     const bool transactional;
-    MonitorImpl monitor;
+    Monitor monitor;
     int count;
     
     void waitForCompletion(int msgs);

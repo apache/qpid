@@ -92,7 +92,6 @@ namespace qpid {
             IntOption workerThreads;
             IntOption maxConnections;
             IntOption connectionBacklog;
-            StringOption acceptor;
             BoolOption help;
 
             typedef std::vector<Option*>::iterator op_iterator;
@@ -116,7 +115,6 @@ namespace qpid {
             int getWorkerThreads() const;
             int getMaxConnections() const;
             int getConnectionBacklog() const;
-            std::string getAcceptor() const;
 
             void setHelp(bool b) { help.setValue(b); }
             void setTrace(bool b) { trace.setValue(b); }
@@ -124,7 +122,6 @@ namespace qpid {
             void setWorkerThreads(int i) { workerThreads.setValue(i); }
             void setMaxConnections(int i) { maxConnections.setValue(i); }
             void setConnectionBacklog(int i) { connectionBacklog.setValue(i); }
-            void setAcceptor(const std::string& val) { acceptor.setValue(val); }
 
             void usage();
         };

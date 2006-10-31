@@ -1,3 +1,6 @@
+#ifndef _APRPool_
+#define _APRPool_
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -15,21 +18,30 @@
  * limitations under the License.
  *
  */
-#include "qpid/concurrent/APRBase.h"
-#include "qpid/concurrent/APRThreadFactory.h"
+#include <boost/noncopyable.hpp>
+#include <apr-1/apr_pools.h>
 
-using namespace qpid::concurrent;
+namespace qpid {
+namespace io {
+/**
+ * Singleton APR memory pool.
+ */
+class APRPool : private boost::noncopyable {
+  public:
+    APRPool();
+    ~APRPool();
 
-APRThreadFactory::APRThreadFactory(){
-    APRBase::increment();
-    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
-}
+    /** Get singleton instance */
+    static apr_pool_t* get();
 
-APRThreadFactory::~APRThreadFactory(){
-    apr_pool_destroy(pool);
-    APRBase::decrement();
-}
+  private:
+    apr_pool_t* pool;
+};
 
-Thread* APRThreadFactory::create(Runnable* runnable){
-    return new APRThread(pool, runnable);
-}
+}}
+
+
+
+
+
+#endif  /*!_APRPool_*/

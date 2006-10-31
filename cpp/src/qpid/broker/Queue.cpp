@@ -17,7 +17,7 @@
  */
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/MessageStore.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include <iostream>
 
 using namespace qpid::broker;

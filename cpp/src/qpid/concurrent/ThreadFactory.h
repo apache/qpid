@@ -18,7 +18,11 @@
 #ifndef _ThreadFactory_
 #define _ThreadFactory_
 
+#include "apr-1/apr_thread_proc.h"
+
 #include "qpid/concurrent/Thread.h"
+#include "qpid/concurrent/Thread.h"
+#include "qpid/concurrent/ThreadFactory.h"
 #include "qpid/concurrent/Runnable.h"
 
 namespace qpid {
@@ -26,9 +30,11 @@ namespace concurrent {
 
     class ThreadFactory
     {
+	apr_pool_t* pool;
     public:
-        virtual ~ThreadFactory(){}
-	virtual Thread* create(Runnable* runnable) = 0;
+	ThreadFactory();
+	virtual ~ThreadFactory();
+	virtual Thread* create(Runnable* runnable);
     };
 
 }

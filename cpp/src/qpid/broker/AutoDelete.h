@@ -20,17 +20,17 @@
 
 #include <iostream>
 #include <queue>
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid/concurrent/ThreadFactoryImpl.h"
+#include "qpid/concurrent/ThreadFactory.h"
 
 namespace qpid {
     namespace broker{
         class AutoDelete : private virtual qpid::concurrent::Runnable{
-            qpid::concurrent::ThreadFactoryImpl factory;
-            qpid::concurrent::MonitorImpl lock;            
-            qpid::concurrent::MonitorImpl monitor;            
+            qpid::concurrent::ThreadFactory factory;
+            qpid::concurrent::Monitor lock;            
+            qpid::concurrent::Monitor monitor;            
             std::queue<Queue::shared_ptr> queues;
             QueueRegistry* const registry;
             const u_int32_t period;
