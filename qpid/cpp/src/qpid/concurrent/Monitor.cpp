@@ -16,45 +16,45 @@
  *
  */
 #include "qpid/concurrent/APRBase.h"
-#include "qpid/concurrent/APRMonitor.h"
+#include "qpid/concurrent/Monitor.h"
 #include <iostream>
 
-qpid::concurrent::APRMonitor::APRMonitor(){
+qpid::concurrent::Monitor::Monitor(){
     APRBase::increment();
     CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
     CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, pool));
     CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, pool));
 }
 
-qpid::concurrent::APRMonitor::~APRMonitor(){
+qpid::concurrent::Monitor::~Monitor(){
     CHECK_APR_SUCCESS(apr_thread_cond_destroy(condition));
     CHECK_APR_SUCCESS(apr_thread_mutex_destroy(mutex));
     apr_pool_destroy(pool);
     APRBase::decrement();
 }
 
-void qpid::concurrent::APRMonitor::wait(){
+void qpid::concurrent::Monitor::wait(){
     CHECK_APR_SUCCESS(apr_thread_cond_wait(condition, mutex));
 }
 
 
-void qpid::concurrent::APRMonitor::wait(u_int64_t time){
+void qpid::concurrent::Monitor::wait(u_int64_t time){
     apr_status_t status = apr_thread_cond_timedwait(condition, mutex, time * 1000);
     if(!status == APR_TIMEUP) CHECK_APR_SUCCESS(status);
 }
 
-void qpid::concurrent::APRMonitor::notify(){
+void qpid::concurrent::Monitor::notify(){
     CHECK_APR_SUCCESS(apr_thread_cond_signal(condition));
 }
 
-void qpid::concurrent::APRMonitor::notifyAll(){
+void qpid::concurrent::Monitor::notifyAll(){
     CHECK_APR_SUCCESS(apr_thread_cond_broadcast(condition));
 }
 
-void qpid::concurrent::APRMonitor::acquire(){
+void qpid::concurrent::Monitor::acquire(){
     CHECK_APR_SUCCESS(apr_thread_mutex_lock(mutex));
 }
 
-void qpid::concurrent::APRMonitor::release(){
+void qpid::concurrent::Monitor::release(){
     CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
 }

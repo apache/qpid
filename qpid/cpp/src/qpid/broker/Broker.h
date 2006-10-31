@@ -19,47 +19,35 @@
  *
  */
 
-#include "qpid/io/Acceptor.h"
 #include "qpid/broker/Configuration.h"
-#include "qpid/concurrent/Runnable.h"
 #include "qpid/broker/SessionHandlerFactoryImpl.h"
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include "qpid/concurrent/Runnable.h"
+#include "qpid/io/Acceptor.h"
+#include <qpid/SharedObject.h>
 
 namespace qpid {
     namespace broker {
         /**
          * A broker instance. 
          */
-        class Broker : public qpid::concurrent::Runnable, private boost::noncopyable {
-            Broker(const Configuration& config); // Private, use create()
-            std::auto_ptr<qpid::io::Acceptor> acceptor;
-            SessionHandlerFactoryImpl factory;
-            int16_t port;
-            bool isBound;
-            
+        class Broker : public qpid::concurrent::Runnable,
+                       public qpid::SharedObject<Broker>
+        {
           public:
             static const int16_t DEFAULT_PORT;
             
             virtual ~Broker();
-            typedef boost::shared_ptr<Broker> shared_ptr;
 
             /**
              * Create a broker.
              * @param port Port to listen on or 0 to pick a port dynamically.
              */
-            static shared_ptr create(int port = DEFAULT_PORT);
+            static SharedPtr create(int16_t port = DEFAULT_PORT);
 
             /**
-             * Create a broker from a Configuration.
+             * Create a broker using a Configuration.
              */
-            static shared_ptr create(const Configuration& config);
-
-            /**
-             * Bind to the listening port.
-             * @return The port number bound. 
-             */
-            virtual int16_t bind();
+            static SharedPtr create(const Configuration& config);
 
             /**
              * Return listening port. If called before bind this is
@@ -67,7 +55,7 @@ namespace qpid {
              * port, which will be different if the configured port is
              * 0.
              */
-            virtual int16_t getPort() { return port; }
+            virtual int16_t getPort() const { return acceptor->getPort(); }
             
             /**
              * Run the broker. Implements Runnable::run() so the broker
@@ -77,6 +65,11 @@ namespace qpid {
 
             /** Shut down the broker */
             virtual void shutdown();
+
+          private:
+            Broker(const Configuration& config); 
+            qpid::io::Acceptor::SharedPtr acceptor;
+            SessionHandlerFactoryImpl factory;
         };
     }
 }

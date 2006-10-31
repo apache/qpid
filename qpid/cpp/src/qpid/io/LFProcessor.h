@@ -21,8 +21,8 @@
 #include "apr-1/apr_poll.h"
 #include <iostream>
 #include <vector>
-#include "qpid/concurrent/APRMonitor.h"
-#include "qpid/concurrent/APRThreadFactory.h"
+#include "qpid/concurrent/Monitor.h"
+#include "qpid/concurrent/ThreadFactory.h"
 #include "qpid/concurrent/Runnable.h"
 
 namespace qpid {
@@ -50,9 +50,9 @@ namespace io {
         const int workerCount;
         bool hasLeader;
         qpid::concurrent::Thread** const workers;
-        qpid::concurrent::APRMonitor leadLock;
-        qpid::concurrent::APRMonitor countLock;
-        qpid::concurrent::APRThreadFactory factory;
+        qpid::concurrent::Monitor leadLock;
+        qpid::concurrent::Monitor countLock;
+        qpid::concurrent::ThreadFactory factory;
         std::vector<LFSessionContext*> sessions;
         volatile bool stopped;
 

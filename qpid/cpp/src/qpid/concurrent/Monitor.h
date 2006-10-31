@@ -18,42 +18,39 @@
 #ifndef _Monitor_
 #define _Monitor_
 
-#include "qpid/framing/amqp_types.h"
+#include "apr-1/apr_thread_mutex.h"
+#include "apr-1/apr_thread_cond.h"
+#include "qpid/concurrent/Monitor.h"
 
 namespace qpid {
 namespace concurrent {
 
 class Monitor
 {
+    apr_pool_t* pool;
+    apr_thread_mutex_t* mutex;
+    apr_thread_cond_t* condition;
+
   public:
-    virtual ~Monitor(){}
-    virtual void wait() = 0;
-    virtual void wait(u_int64_t time) = 0;
-    virtual void notify() = 0;
-    virtual void notifyAll() = 0;
-    virtual void acquire() = 0;
-    virtual void release() = 0;
+    Monitor();
+    virtual ~Monitor();
+    virtual void wait();
+    virtual void wait(u_int64_t time);
+    virtual void notify();
+    virtual void notifyAll();
+    virtual void acquire();
+    virtual void release();
 };
 
-/**
- * Scoped locker for a monitor.
- */
 class Locker
 {
   public:
-    Locker(Monitor&  lock_) : lock(lock_) { lock.acquire(); }
-    ~Locker() { lock.release(); }
-
+    Locker(Monitor& monitor_) : monitor(monitor_) { monitor.acquire(); }
+    ~Locker() { monitor.release(); }
   private:
-    Monitor& lock;
-
-    // private and unimplemented to prevent copying
-    Locker(const Locker&);
-    void operator=(const Locker&);
+    Monitor& monitor;
 };
-
-}
-}
+}}
 
 
 #endif

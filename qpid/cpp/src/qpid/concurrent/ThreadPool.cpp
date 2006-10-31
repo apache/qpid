@@ -15,33 +15,33 @@
  * limitations under the License.
  *
  */
-#include "qpid/concurrent/APRThreadFactory.h"
-#include "qpid/concurrent/APRThreadPool.h"
+#include "qpid/concurrent/ThreadFactory.h"
+#include "qpid/concurrent/ThreadPool.h"
 #include "qpid/QpidError.h"
 #include <iostream>
 
 using namespace qpid::concurrent;
 
-APRThreadPool::APRThreadPool(int _size) : deleteFactory(true), size(_size), factory(new APRThreadFactory()), running(false){
+ThreadPool::ThreadPool(int _size) : deleteFactory(true), size(_size), factory(new ThreadFactory()), running(false){
     worker = new Worker(this);
 }
 
-APRThreadPool::APRThreadPool(int _size, ThreadFactory* _factory) :     deleteFactory(false), size(_size), factory(_factory), running(false){
+ThreadPool::ThreadPool(int _size, ThreadFactory* _factory) :     deleteFactory(false), size(_size), factory(_factory), running(false){
     worker = new Worker(this);
 }
 
-APRThreadPool::~APRThreadPool(){
+ThreadPool::~ThreadPool(){
     if(deleteFactory) delete factory;
 }
 
-void APRThreadPool::addTask(Runnable* task){
+void ThreadPool::addTask(Runnable* task){
     lock.acquire();
     tasks.push(task);
     lock.notifyAll();
     lock.release();
 }
 
-void APRThreadPool::runTask(){
+void ThreadPool::runTask(){
     lock.acquire();
     while(tasks.empty()){
         lock.wait();
@@ -56,7 +56,7 @@ void APRThreadPool::runTask(){
     }
 }
 
-void APRThreadPool::start(){
+void ThreadPool::start(){
     if(!running){
         running = true;
         for(int i = 0; i < size; i++){
@@ -67,7 +67,7 @@ void APRThreadPool::start(){
     }
 }
 
-void APRThreadPool::stop(){
+void ThreadPool::stop(){
     if(!running){
         running = false;
         lock.acquire();

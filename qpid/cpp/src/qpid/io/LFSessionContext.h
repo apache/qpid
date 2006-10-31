@@ -25,7 +25,7 @@
 #include "apr-1/apr_time.h"
 
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/concurrent/APRMonitor.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/io/APRSocket.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/io/LFProcessor.h"
@@ -51,7 +51,7 @@ namespace io {
         apr_pollfd_t fd;
 
         std::queue<qpid::framing::AMQFrame*> framesToWrite;
-        qpid::concurrent::APRMonitor writeLock;
+        qpid::concurrent::Monitor writeLock;
         
         bool processing;
         bool closing;
@@ -60,7 +60,7 @@ namespace io {
         volatile unsigned int reading;
         volatile unsigned int writing;
 
-        static qpid::concurrent::APRMonitor logLock;
+        static qpid::concurrent::Monitor logLock;
         void log(const std::string& desc, qpid::framing::AMQFrame* const frame);
 
     public:

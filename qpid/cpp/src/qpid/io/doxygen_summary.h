@@ -1,3 +1,6 @@
+#ifndef _doxygen_summary_
+#define _doxygen_summary_
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -16,6 +19,16 @@
  *
  */
 
-#include "qpid/framing/OutputHandler.h"
+// No code just a doxygen comment for the namespace
 
-qpid::framing::OutputHandler::~OutputHandler() {}
+/** \namspace qpid::io
+ * IO classes used by client and broker.
+ *
+ * This namespace contains platform-neutral classes.  Platform
+ * specific classes are in a sub-namespace named after the
+ * platform. At build time the appropriate platform classes are
+ * imported into this namespace so other code does not need to be awre
+ * of the difference.
+ * 
+ */
+#endif  /*!_doxygen_summary_*/

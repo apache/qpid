@@ -16,7 +16,7 @@
  *
  */
 #include "qpid/concurrent/APRBase.h"
-#include "qpid/concurrent/APRThread.h"
+#include "qpid/concurrent/Thread.h"
 #include "apr-1/apr_portable.h"
 
 using namespace qpid::concurrent;
@@ -27,24 +27,24 @@ void* APR_THREAD_FUNC ExecRunnable(apr_thread_t* thread, void *data){
     return NULL;
 } 
 
-APRThread::APRThread(apr_pool_t* _pool, Runnable* _runnable) : runnable(_runnable), pool(_pool), runner(0) {}
+Thread::Thread(apr_pool_t* _pool, Runnable* _runnable) : runnable(_runnable), pool(_pool), runner(0) {}
 
-APRThread::~APRThread(){
+Thread::~Thread(){
 }
 
-void APRThread::start(){
+void Thread::start(){
     CHECK_APR_SUCCESS(apr_thread_create(&runner, NULL, ExecRunnable,(void*) runnable, pool));
 }
 
-void APRThread::join(){
+void Thread::join(){
     apr_status_t status;
     if (runner) CHECK_APR_SUCCESS(apr_thread_join(&status, runner));
 }
 
-void APRThread::interrupt(){
+void Thread::interrupt(){
     if (runner) CHECK_APR_SUCCESS(apr_thread_exit(runner, APR_SUCCESS));
 }
 
-unsigned int qpid::concurrent::APRThread::currentThread(){
+unsigned int qpid::concurrent::Thread::currentThread(){
     return apr_os_thread_current();
 }
