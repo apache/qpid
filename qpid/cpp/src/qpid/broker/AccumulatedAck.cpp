@@ -25,7 +25,7 @@ void AccumulatedAck::update(u_int64_t tag, bool multiple){
     if(multiple){
         if(tag > range) range = tag;
         //else don't care, it is already counted
-    }else if(tag < range){
+    }else if(tag > range){
         individual.push_back(tag);
     }
 }
