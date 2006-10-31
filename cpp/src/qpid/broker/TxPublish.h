@@ -29,6 +29,16 @@
 
 namespace qpid {
     namespace broker {
+        /**
+         * Defines the behaviour for publish operations on a
+         * transactional channel. Messages are routed through
+         * exchanges when received but are not at that stage delivered
+         * to the matching queues, rather the queues are held in an
+         * instance of this class. On prepare() the message is marked
+         * enqueued to the relevant queues in the MessagesStore. On
+         * commit() the messages will be passed to the queue for
+         * dispatch or to be added to the in-memory queue.
+         */
         class TxPublish : public TxOp, public Deliverable{
             class Prepare{
                 Message::shared_ptr& msg;
