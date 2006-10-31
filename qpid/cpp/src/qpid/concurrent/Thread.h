@@ -18,16 +18,27 @@
 #ifndef _Thread_
 #define _Thread_
 
+#include "apr-1/apr_thread_proc.h"
+#include "qpid/concurrent/Thread.h"
+#include "qpid/concurrent/Runnable.h"
+#include "qpid/concurrent/Thread.h"
+
 namespace qpid {
 namespace concurrent {
 
     class Thread
     {
+	const Runnable* runnable;
+	apr_pool_t* pool;
+	apr_thread_t* runner;
+
     public:
-        virtual ~Thread(){}
-	virtual void start() = 0;
-	virtual void join() = 0;
-	virtual void interrupt() = 0;
+	Thread(apr_pool_t* pool, Runnable* runnable);
+	virtual ~Thread();
+	virtual void start();
+	virtual void join();
+	virtual void interrupt();
+        static unsigned int currentThread();
     };
 
 }

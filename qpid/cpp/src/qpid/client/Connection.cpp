@@ -17,7 +17,7 @@
  */
 #include "qpid/client/Connection.h"
 #include "qpid/client/Channel.h"
-#include "qpid/io/ConnectorImpl.h"
+#include "qpid/io/Connector.h"
 #include "qpid/client/Message.h"
 #include "qpid/QpidError.h"
 #include <iostream>
@@ -30,7 +30,7 @@ using namespace qpid::concurrent;
 u_int16_t Connection::channelIdCounter;
 
 Connection::Connection(bool debug, u_int32_t _max_frame_size) : max_frame_size(_max_frame_size), closed(true){
-    connector = new ConnectorImpl(debug, _max_frame_size);
+    connector = new Connector(debug, _max_frame_size);
 }
 
 Connection::~Connection(){

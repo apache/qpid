@@ -1,3 +1,5 @@
+#ifndef _InputHandler_
+#define _InputHandler_
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -15,24 +17,19 @@
  * limitations under the License.
  *
  */
-#include <string>
 
-#ifndef _InputHandler_
-#define _InputHandler_
-
+#include <qpid/SharedObject.h>
 #include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace framing {
 
-    class InputHandler{
-    public:
-        virtual ~InputHandler();
-	virtual void received(AMQFrame* frame) = 0;
-    };
+class InputHandler : public qpid::SharedObject<InputHandler> {
+  public:
+    virtual void received(AMQFrame* frame) = 0;
+};
 
-}
-}
+}}
 
 
 #endif

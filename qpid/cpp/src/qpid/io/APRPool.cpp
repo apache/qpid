@@ -15,38 +15,25 @@
  * limitations under the License.
  *
  */
-#ifndef _ThreadFactoryImpl_
-#define _ThreadFactoryImpl_
 
+#include "APRPool.h"
+#include "qpid/concurrent/APRBase.h"
+#include <boost/pool/singleton_pool.hpp>
 
-#ifdef _USE_APR_IO_
-#include "qpid/concurrent/APRThreadFactory.h"
-#else
-#include "qpid/concurrent/LThreadFactory.h"
-#endif
+using namespace qpid::io;
+using namespace qpid::concurrent;
 
-
-namespace qpid {
-namespace concurrent {
-
-
-#ifdef _USE_APR_IO_
-    class ThreadFactoryImpl : public virtual APRThreadFactory
-    {
-    public:
-	ThreadFactoryImpl(): APRThreadFactory() {};
-	virtual ~ThreadFactoryImpl() {};
-    };
-#else
-    class ThreadFactoryImpl : public virtual LThreadFactory
-    {
-    public:
-	ThreadFactoryImpl(): LThreadFactory() {};
-	virtual ~ThreadFactoryImpl() {};
-    };
-#endif
-}
+APRPool::APRPool(){
+    APRBase::increment();
+    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
 }
 
+APRPool::~APRPool(){
+    apr_pool_destroy(pool);
+    APRBase::decrement();
+}
 
-#endif
+apr_pool_t* APRPool::get() {
+    return boost::details::pool::singleton_default<APRPool>::instance().pool;
+}
+

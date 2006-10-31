@@ -15,43 +15,21 @@
  * limitations under the License.
  *
  */
- 
- 
-#ifndef _MonitorImpl_
-#define _MonitorImpl_
+#include "qpid/concurrent/APRBase.h"
+#include "qpid/concurrent/ThreadFactory.h"
 
-#ifdef _USE_APR_IO_
-#include "qpid/concurrent/APRMonitor.h"
-#else /* use POSIX Monitor */
-#include "qpid/concurrent/LMonitor.h"  
-#endif
+using namespace qpid::concurrent;
 
-
-namespace qpid {
-namespace concurrent {
-
-#ifdef _USE_APR_IO_
-    class MonitorImpl : public virtual APRMonitor 
-    {
-
-    public:
-	MonitorImpl() : APRMonitor(){};
-	virtual ~MonitorImpl(){};
-
-    };
-#else
-    class MonitorImpl : public virtual LMonitor 
-    {
-
-    public:
-	MonitorImpl() : LMonitor(){};
-	virtual ~MonitorImpl(){};
-
-    };   
-#endif
-    
-}
+ThreadFactory::ThreadFactory(){
+    APRBase::increment();
+    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
 }
 
+ThreadFactory::~ThreadFactory(){
+    apr_pool_destroy(pool);
+    APRBase::decrement();
+}
 
-#endif
+Thread* ThreadFactory::create(Runnable* runnable){
+    return new Thread(pool, runnable);
+}

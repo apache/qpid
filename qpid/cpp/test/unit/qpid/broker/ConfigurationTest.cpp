@@ -28,8 +28,6 @@ class ConfigurationTest : public CppUnit::TestCase
     CPPUNIT_TEST(testIsHelp);
     CPPUNIT_TEST(testPortLongForm);
     CPPUNIT_TEST(testPortShortForm);
-    CPPUNIT_TEST(testAcceptorLongForm);
-    CPPUNIT_TEST(testAcceptorShortForm);
     CPPUNIT_TEST(testVarious);
     CPPUNIT_TEST_SUITE_END();
 
@@ -59,29 +57,12 @@ class ConfigurationTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(6789, conf.getPort());
     }
 
-    void testAcceptorLongForm() 
-    {
-        Configuration conf;
-        char* argv[] = {"ignore", "--acceptor", "blocking"};
-        conf.parse(3, argv);
-        CPPUNIT_ASSERT_EQUAL(string("blocking"), conf.getAcceptor());
-    }
-
-    void testAcceptorShortForm() 
-    {
-        Configuration conf;
-        char* argv[] = {"ignore", "-a", "blocking"};
-        conf.parse(3, argv);
-        CPPUNIT_ASSERT_EQUAL(string("blocking"), conf.getAcceptor());
-    }
-
     void testVarious() 
     {
         Configuration conf;
         char* argv[] = {"ignore", "-t", "--worker-threads", "10", "-a", "blocking"};
         conf.parse(6, argv);
         CPPUNIT_ASSERT_EQUAL(5672, conf.getPort());//default
-        CPPUNIT_ASSERT_EQUAL(string("blocking"), conf.getAcceptor());
         CPPUNIT_ASSERT_EQUAL(10, conf.getWorkerThreads());
         CPPUNIT_ASSERT(conf.isTrace());
         CPPUNIT_ASSERT(!conf.isHelp());

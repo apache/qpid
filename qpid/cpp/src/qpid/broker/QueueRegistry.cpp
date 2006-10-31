@@ -16,7 +16,7 @@
  *
  */
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/broker/SessionHandlerImpl.h"
 #include <sstream>
 #include <assert.h>

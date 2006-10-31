@@ -37,7 +37,7 @@
 #include "qpid/broker/TxAck.h"
 #include "qpid/broker/TxBuffer.h"
 #include "qpid/broker/TxPublish.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
@@ -77,7 +77,7 @@ namespace qpid {
             u_int32_t framesize;
             NameGenerator tagGenerator;
             std::list<DeliveryRecord> unacked;
-            qpid::concurrent::MonitorImpl deliveryLock;
+            qpid::concurrent::Monitor deliveryLock;
             TxBuffer txBuffer;
             AccumulatedAck accumulatedAck;
             TransactionalStore* store;

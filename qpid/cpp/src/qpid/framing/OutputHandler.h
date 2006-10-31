@@ -1,3 +1,6 @@
+#ifndef _OutputHandler_
+#define _OutputHandler_
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -15,24 +18,18 @@
  * limitations under the License.
  *
  */
-#include <string>
-
-#ifndef _OutputHandler_
-#define _OutputHandler_
-
+#include <qpid/SharedObject.h>
 #include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace framing {
 
-    class OutputHandler{
-    public:
-        virtual ~OutputHandler();
-	virtual void send(AMQFrame* frame) = 0;
-    };
+class OutputHandler : public qpid::SharedObject<OutputHandler> {
+  public:
+    virtual void send(AMQFrame* frame) = 0;
+};
 
-}
-}
+}}
 
 
 #endif
