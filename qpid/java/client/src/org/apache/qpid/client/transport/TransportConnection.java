@@ -114,17 +114,7 @@ public class TransportConnection
                     public IoConnector newSocketConnector()
                     {
                         SocketConnector result;
-                        //fixme improve get 
-                        if (Boolean.getBoolean("qpidnio"))
-                        {
-                            _logger.warn("Using Qpid NIO");
-                            result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
-                        }
-                        else
-                        {
-                            _logger.warn("Using Mina NIO");
-                            result = new SocketConnector(); // non-blocking connector
-                        }
+                        result = new SocketConnector(); // non-blocking connector
 
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
