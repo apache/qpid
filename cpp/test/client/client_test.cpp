@@ -22,7 +22,7 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/MessageListener.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::client;
@@ -65,7 +65,7 @@ int main(int argc, char**)
 	std::cout << "Bound queue to exchange." << std::endl;
 
 	//set up a message listener
-	MonitorImpl monitor;
+	Monitor monitor;
 	SimpleListener listener(&monitor);
 	string tag("MyTag");
 	channel.consume(queue, tag, &listener);

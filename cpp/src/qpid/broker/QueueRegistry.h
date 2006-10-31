@@ -19,7 +19,7 @@
 #define _QueueRegistry_
 
 #include <map>
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/broker/Queue.h"
 
 namespace qpid {
@@ -77,7 +77,7 @@ class QueueRegistry{
   private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
-    qpid::concurrent::MonitorImpl lock;
+    qpid::concurrent::Monitor lock;
     int counter;
 
 };

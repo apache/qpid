@@ -54,7 +54,7 @@ LFSessionContext::~LFSessionContext(){
 
 void LFSessionContext::read(){
     assert(!reading);           // No concurrent read. 
-    reading = APRThread::currentThread();
+    reading = Thread::currentThread();
 
     socket.read(in);
     in.flip();
@@ -79,7 +79,7 @@ void LFSessionContext::read(){
 
 void LFSessionContext::write(){
     assert(!writing);           // No concurrent writes.
-    writing = APRThread::currentThread();
+    writing = Thread::currentThread();
 
     bool done = isClosed();
     while(!done){
@@ -186,4 +186,4 @@ void LFSessionContext::log(const std::string& desc, AMQFrame* const frame){
     logLock.release();
 }
 
-APRMonitor LFSessionContext::logLock;
+Monitor LFSessionContext::logLock;

@@ -24,10 +24,9 @@ using namespace std;
 Configuration::Configuration() : 
     trace('t', "trace", "Print incoming & outgoing frames to the console (default=false)", false),
     port('p', "port", "Sets the port to listen on (default=5672)", 5672),
-    workerThreads("worker-threads", "Sets the number of worker threads to use (default=5). Only valid for non-blocking acceptor.", 5),
-    maxConnections("max-connections", "Sets the maximum number of connections the broker can accept (default=500). Only valid for non-blocking acceptor.", 500),
+    workerThreads("worker-threads", "Sets the number of worker threads to use (default=5).", 5),
+    maxConnections("max-connections", "Sets the maximum number of connections the broker can accept (default=500).", 500),
     connectionBacklog("connection-backlog", "Sets the connection backlog for the servers socket (default=10)", 10),
-    acceptor('a', "acceptor", "Sets the acceptor to use. Currently only two values are recognised, blocking and non-blocking (which is the default)", "non-blocking"),
     help("help", "Prints usage information", false)
 {
     options.push_back(&trace);
@@ -35,7 +34,6 @@ Configuration::Configuration() :
     options.push_back(&workerThreads);
     options.push_back(&maxConnections);
     options.push_back(&connectionBacklog);
-    options.push_back(&acceptor);
     options.push_back(&help);
 }
 
@@ -83,10 +81,6 @@ int Configuration::getMaxConnections() const {
 
 int Configuration::getConnectionBacklog() const {
     return connectionBacklog.getValue();
-}
-
-string Configuration::getAcceptor() const {
-    return acceptor.getValue();
 }
 
 Configuration::Option::Option(const char _flag, const string& _name, const string& _desc) : 

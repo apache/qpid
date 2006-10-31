@@ -17,8 +17,8 @@
  */
 #include <iostream>
 #include "qpid/concurrent/APRBase.h"
-#include "qpid/io/APRConnector.h"
-#include "qpid/concurrent/APRThreadFactory.h"
+#include "qpid/io/Connector.h"
+#include "qpid/concurrent/ThreadFactory.h"
 #include "qpid/QpidError.h"
 
 using namespace qpid::io;
@@ -26,7 +26,7 @@ using namespace qpid::concurrent;
 using namespace qpid::framing;
 using qpid::QpidError;
 
-APRConnector::APRConnector(bool _debug, u_int32_t buffer_size) :
+Connector::Connector(bool _debug, u_int32_t buffer_size) :
     debug(_debug), 
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
@@ -44,11 +44,11 @@ APRConnector::APRConnector(bool _debug, u_int32_t buffer_size) :
     CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
     CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, pool));
 
-    threadFactory = new APRThreadFactory();
-    writeLock = new APRMonitor();
+    threadFactory = new ThreadFactory();
+    writeLock = new Monitor();
 }
 
-APRConnector::~APRConnector(){
+Connector::~Connector(){
     delete receiver;
     delete writeLock;
     delete threadFactory;
@@ -57,7 +57,7 @@ APRConnector::~APRConnector(){
     APRBase::decrement();
 }
 
-void APRConnector::connect(const std::string& host, int port){
+void Connector::connect(const std::string& host, int port){
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, host.c_str(), APR_UNSPEC, port, APR_IPV4_ADDR_OK, pool));
     CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
@@ -67,36 +67,36 @@ void APRConnector::connect(const std::string& host, int port){
     receiver->start();
 }
 
-void APRConnector::init(ProtocolInitiation* header){
+void Connector::init(ProtocolInitiation* header){
     writeBlock(header);
     delete header;
 }
 
-void APRConnector::close(){
+void Connector::close(){
     closed = true;
     CHECK_APR_SUCCESS(apr_socket_close(socket));
     receiver->join();
 }
 
-void APRConnector::setInputHandler(InputHandler* handler){
+void Connector::setInputHandler(InputHandler* handler){
     input = handler;
 }
 
-void APRConnector::setShutdownHandler(ShutdownHandler* handler){
+void Connector::setShutdownHandler(ShutdownHandler* handler){
     shutdownHandler = handler;
 }
 
-OutputHandler* APRConnector::getOutputHandler(){ 
+OutputHandler* Connector::getOutputHandler(){ 
     return this; 
 }
 
-void APRConnector::send(AMQFrame* frame){
+void Connector::send(AMQFrame* frame){
     writeBlock(frame);    
     if(debug) std::cout << "SENT: " << *frame << std::endl; 
     delete frame;
 }
 
-void APRConnector::writeBlock(AMQDataBlock* data){
+void Connector::writeBlock(AMQDataBlock* data){
     writeLock->acquire();
     data->encode(outbuf);
 
@@ -107,7 +107,7 @@ void APRConnector::writeBlock(AMQDataBlock* data){
     writeLock->release();
 }
 
-void APRConnector::writeToSocket(char* data, size_t available){
+void Connector::writeToSocket(char* data, size_t available){
     apr_size_t bytes(available);
     apr_size_t written(0);
     while(written < available && !closed){
@@ -124,7 +124,7 @@ void APRConnector::writeToSocket(char* data, size_t available){
     }
 }
 
-void APRConnector::checkIdle(apr_status_t status){
+void Connector::checkIdle(apr_status_t status){
     if(timeoutHandler){
         apr_time_t now = apr_time_as_msec(apr_time_now());
         if(APR_STATUS_IS_TIMEUP(status)){
@@ -144,7 +144,7 @@ void APRConnector::checkIdle(apr_status_t status){
     }
 }
 
-void APRConnector::setReadTimeout(u_int16_t t){
+void Connector::setReadTimeout(u_int16_t t){
     idleIn = t * 1000;//t is in secs
     if(idleIn && (!timeout || idleIn < timeout)){
         timeout = idleIn;
@@ -153,7 +153,7 @@ void APRConnector::setReadTimeout(u_int16_t t){
 
 }
 
-void APRConnector::setWriteTimeout(u_int16_t t){
+void Connector::setWriteTimeout(u_int16_t t){
     idleOut = t * 1000;//t is in secs
     if(idleOut && (!timeout || idleOut < timeout)){
         timeout = idleOut;
@@ -161,7 +161,7 @@ void APRConnector::setWriteTimeout(u_int16_t t){
     }
 }
 
-void APRConnector::setSocketTimeout(){
+void Connector::setSocketTimeout(){
     //interval is in microseconds, timeout in milliseconds
     //want the interval to be a bit shorter than the timeout, hence multiply
     //by 800 rather than 1000.
@@ -169,11 +169,11 @@ void APRConnector::setSocketTimeout(){
     apr_socket_timeout_set(socket, interval);
 }
 
-void APRConnector::setTimeoutHandler(TimeoutHandler* handler){
+void Connector::setTimeoutHandler(TimeoutHandler* handler){
     timeoutHandler = handler;
 }
 
-void APRConnector::run(){
+void Connector::run(){
     try{
 	while(!closed){
 	    apr_size_t bytes(inbuf.available());

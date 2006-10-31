@@ -18,7 +18,12 @@
 #ifndef _ThreadPool_
 #define _ThreadPool_
 
+#include <queue>
+#include <vector>
+#include "qpid/concurrent/Monitor.h"
 #include "qpid/concurrent/Thread.h"
+#include "qpid/concurrent/ThreadFactory.h"
+#include "qpid/concurrent/ThreadPool.h"
 #include "qpid/concurrent/Runnable.h"
 
 namespace qpid {
@@ -26,11 +31,33 @@ namespace concurrent {
 
     class ThreadPool
     {
+        class Worker : public virtual Runnable{
+            ThreadPool* pool;
+        public:
+            inline Worker(ThreadPool* _pool) : pool(_pool){}
+            inline virtual void run(){
+                while(pool->running){
+                    pool->runTask();
+                }
+            }
+        };
+        const bool deleteFactory;
+        const int size;
+        ThreadFactory* factory;
+        Monitor lock; 
+        std::vector<Thread*> threads;
+        std::queue<Runnable*> tasks;
+        Worker* worker;
+        volatile bool running;
+
+        void runTask();
     public:
-        virtual void start() = 0;
-        virtual void stop() = 0;
-	virtual void addTask(Runnable* runnable) = 0;
-        virtual ~ThreadPool(){}
+        ThreadPool(int size);
+        ThreadPool(int size, ThreadFactory* factory);
+        virtual void start();
+        virtual void stop();
+	virtual void addTask(Runnable* task);
+        virtual ~ThreadPool();
     };
 
 }

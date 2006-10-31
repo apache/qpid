@@ -27,7 +27,7 @@
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/broker/Consumer.h"
 #include "qpid/broker/Message.h"
-#include "qpid/concurrent/MonitorImpl.h"
+#include "qpid/concurrent/Monitor.h"
 
 namespace qpid {
     namespace broker {
@@ -56,7 +56,7 @@ namespace qpid {
             bool queueing;
             bool dispatching;
             int next;
-            mutable qpid::concurrent::MonitorImpl lock;
+            mutable qpid::concurrent::Monitor lock;
             apr_time_t lastUsed;
             Consumer* exclusive;
 

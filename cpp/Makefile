@@ -36,6 +36,7 @@ STYLESHEETS := $(XSL:%=$(CURDIR)/etc/stylesheets/%)
 TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
 generate: $(GENDIR)/timestamp
 $(GENDIR)/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
+	rm -rf $(GENDIR)
 	mkdir -p $(GENDIR)/qpid/framing
 	( cd $(GENDIR)/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ; done ) && echo > $(GENDIR)/timestamp
 $(shell find $(GENDIR) -name *.cpp -o -name *.h): $(GENDIR)/timestamp
@@ -106,7 +107,7 @@ CLIENT_TEST_EXE := $(CLIENT_TEST_SRC:test/client/%.cpp=$(TESTDIR)/%)
 all-nogen: $(CLIENT_TEST_EXE)
 
 ## #include dependencies
--include $(shell find src test -name '*.d') dummy-avoid-warning-if-none
+-include $(shell find $(GENDIR) $(OBJDIR) -name '*.d') dummy-avoid-warning-if-none
 
 
 ## Clean up
