@@ -39,12 +39,12 @@ public class TransactedTest
 
     private AMQConnection con;
     private Session session;
-    private MessageConsumer consumer;
-    private MessageProducer producer;
+    private MessageConsumer consumer1;
+    private MessageProducer producer2;
 
     private AMQConnection prepCon;
     private Session prepSession;
-    private MessageProducer prepProducer;
+    private MessageProducer prepProducer1;
 
     private AMQConnection testCon;
     private Session testSession;
@@ -66,28 +66,40 @@ public class TransactedTest
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
 
+
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
         session = con.createSession(true, 0);
-        consumer = session.createConsumer(queue1);
-        producer = session.createProducer(queue2);
+        consumer1 = session.createConsumer(queue1);
+        producer2 = session.createProducer(queue2);
         con.start();
 
         prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "/test");
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        prepProducer = prepSession.createProducer(queue1);
+        prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
 
         //add some messages
-        prepProducer.send(prepSession.createTextMessage("A"));
-        prepProducer.send(prepSession.createTextMessage("B"));
-        prepProducer.send(prepSession.createTextMessage("C"));
-
+        prepProducer1.send(prepSession.createTextMessage("A"));
+        prepProducer1.send(prepSession.createTextMessage("B"));
+        prepProducer1.send(prepSession.createTextMessage("C"));
 
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
         testCon.start();
+
+        // Sleep to ensure all queues have been created in the Broker.
+        try
+        {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e)
+        {
+            //do nothing
+        }
+
+
     }
 
     @After
@@ -104,12 +116,12 @@ public class TransactedTest
     public void commit() throws Exception
     {
         //send and receive some messages
-        producer.send(session.createTextMessage("X"));
-        producer.send(session.createTextMessage("Y"));
-        producer.send(session.createTextMessage("Z"));
-        expect("A", consumer.receive(1000));
-        expect("B", consumer.receive(1000));
-        expect("C", consumer.receive(1000));
+        producer2.send(session.createTextMessage("X"));
+        producer2.send(session.createTextMessage("Y"));
+        producer2.send(session.createTextMessage("Z"));
+        expect("A", consumer1.receive(1000));
+        expect("B", consumer1.receive(1000));
+        expect("C", consumer1.receive(1000));
 
         //commit
         session.commit();
@@ -126,20 +138,20 @@ public class TransactedTest
     @Test
     public void rollback() throws Exception
     {
-        producer.send(session.createTextMessage("X"));
-        producer.send(session.createTextMessage("Y"));
-        producer.send(session.createTextMessage("Z"));
-        expect("A", consumer.receive(1000));
-        expect("B", consumer.receive(1000));
-        expect("C", consumer.receive(1000));
+        producer2.send(session.createTextMessage("X"));
+        producer2.send(session.createTextMessage("Y"));
+        producer2.send(session.createTextMessage("Z"));
+        expect("A", consumer1.receive(1000));
+        expect("B", consumer1.receive(1000));
+        expect("C", consumer1.receive(1000));
 
         //rollback
         session.rollback();
 
         //ensure sent messages are not visible and received messages are requeued
-        expect("A", consumer.receive(1000));
-        expect("B", consumer.receive(1000));
-        expect("C", consumer.receive(1000));
+        expect("A", consumer1.receive(1000));
+        expect("B", consumer1.receive(1000));
+        expect("C", consumer1.receive(1000));
 
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
