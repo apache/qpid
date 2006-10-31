@@ -38,6 +38,13 @@ public class RecoverTest
 
     static
     {
+        String workdir = System.getProperty("QPID_WORK");
+        if (workdir == null || workdir.equals(""))
+        {
+            String tempdir = System.getProperty("java.io.tmpdir");
+            System.out.println("QPID_WORK not set using tmp directory: " + tempdir);
+            System.setProperty("QPID_WORK", tempdir);
+        }
         //DOMConfigurator.configure("../etc/log4j.xml");
         DOMConfigurator.configure("broker/etc/log4j.xml");
     }
@@ -45,7 +52,7 @@ public class RecoverTest
     @After
     public void stopVmBroker()
     {
-       TransportConnection.killVMBroker(1);
+        TransportConnection.killVMBroker(1);
     }
 
     @Test
