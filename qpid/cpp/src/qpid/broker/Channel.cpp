@@ -155,7 +155,7 @@ void Channel::ConsumerImpl::requestDispatch(){
     if(blocked) queue->dispatch();
 }
 
-void Channel::handlePublish(Message* _message, Exchange* _exchange){
+void Channel::handlePublish(Message* _message, Exchange::shared_ptr _exchange){
     Message::shared_ptr message(_message);
     exchange = _exchange;
     messageBuilder.initialise(message);
@@ -179,7 +179,7 @@ void Channel::complete(Message::shared_ptr& msg){
             DeliverableMessage deliverable(msg);
             exchange->route(deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
         }
-        exchange = 0;
+        exchange.reset();
     }else{
         std::cout << "Exchange not known in Channel::complete(Message::shared_ptr&)" << std::endl;
     }

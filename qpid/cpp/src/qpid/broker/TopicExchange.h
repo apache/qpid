@@ -77,6 +77,8 @@ class TopicExchange : public virtual Exchange{
     static const std::string typeName;
 
     TopicExchange(const string& name);
+
+    virtual std::string getType(){ return typeName; }            
         
     virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args);
 

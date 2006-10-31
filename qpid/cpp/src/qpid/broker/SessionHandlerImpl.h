@@ -97,7 +97,7 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
      */
     Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
 
-    Exchange* findExchange(const string& name);
+    Exchange::shared_ptr findExchange(const string& name);
     
   public:
     SessionHandlerImpl(qpid::io::SessionContext* context, QueueRegistry* queues, 

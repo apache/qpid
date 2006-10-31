@@ -33,11 +33,11 @@ const std::string amq_match("amq.match");
 }
 
 SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeout(_timeout), cleaner(&queues, timeout/10){
-    exchanges.declare(new DirectExchange(empty)); // Default exchange.
-    exchanges.declare(new DirectExchange(amq_direct));
-    exchanges.declare(new TopicExchange(amq_topic));
-    exchanges.declare(new FanOutExchange(amq_fanout));
-    exchanges.declare(new HeadersExchange(amq_match));
+    exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
+    exchanges.declare(amq_direct, DirectExchange::typeName);
+    exchanges.declare(amq_topic, TopicExchange::typeName);
+    exchanges.declare(amq_fanout, FanOutExchange::typeName);
+    exchanges.declare(amq_match, HeadersExchange::typeName);
     cleaner.start();
 }
 
