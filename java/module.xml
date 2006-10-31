@@ -20,7 +20,7 @@
   <import file="common.xml"/>
 
 
-  <map property="module" value="${basedir}">      
+  <map property="module" value="${basedir}">
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
@@ -33,6 +33,7 @@
       <replacestring from="${file.separator}" to="-"/>
     </filtermapper>
   </map>
+
 
   <property name="module.jar" location="${module.dir}/${module.name}.jar"/>
   <property name="module.launcher"
@@ -92,6 +93,8 @@
   <property name="module.manifest.classpath"
             value="${module.name}.jar ${module.manifest.jars} ${module.manifest.deps}"/>
 
+ <property name="module.test.reports" value="${module.dir}/reports/junit" />
+
   <target name="debug">
     <echo message="basedir = ${basedir}"/>
     <echo message = "project.root = ${project.root}"/>
@@ -122,6 +125,7 @@
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
     <mkdir dir="${module.doc}"/>
+    <mkdir dir="${module.test.reports}"/>
   </target>
 
   <target name="precompile"/>
@@ -167,7 +171,7 @@
 
   <target name="test"/>
 
-  <target name="xmltest"/>
+  <target name="testreport"/>
 
   <uptodate property="doc.done" targetfile="${module.doc}/index.html">
     <srcfiles dir="${module.src}" includes="**/*.java"/>
