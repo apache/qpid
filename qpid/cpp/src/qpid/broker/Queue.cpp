@@ -165,15 +165,13 @@ bool Queue::canAutoDelete() const{
 }
 
 void Queue::enqueue(Message::shared_ptr& msg, const string * const xid){
-    bool persistent(false);//TODO: pull this from headers
-    if(persistent){
+    if(store){
         store->enqueue(msg, name, xid);
     }
 }
 
 void Queue::dequeue(Message::shared_ptr& msg, const string * const xid){
-    bool persistent(false);//TODO: pull this from headers
-    if(persistent){
+    if(store){
         store->dequeue(msg, name, xid);
     }
 }

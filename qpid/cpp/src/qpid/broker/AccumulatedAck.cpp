@@ -42,5 +42,5 @@ void AccumulatedAck::clear(){
 }
 
 bool AccumulatedAck::covers(u_int64_t tag) const{
-    return tag < range || find(individual.begin(), individual.end(), tag) != individual.end();
+    return tag <= range || find(individual.begin(), individual.end(), tag) != individual.end();
 }

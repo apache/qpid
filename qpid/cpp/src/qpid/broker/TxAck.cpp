@@ -22,7 +22,7 @@ using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
 
-TxAck::TxAck(AccumulatedAck _acked, std::list<DeliveryRecord>& _unacked) : acked(_acked), unacked(_unacked){
+TxAck::TxAck(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked) : acked(_acked), unacked(_unacked){
 
 }
 

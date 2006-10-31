@@ -27,11 +27,20 @@
 
 namespace qpid {
     namespace broker {
+        /**
+         * Defines the transactional behaviour for acks received by a
+         * transactional channel.
+         */
         class TxAck : public TxOp{
-            AccumulatedAck acked;
+            AccumulatedAck& acked;
             std::list<DeliveryRecord>& unacked;
         public:
-            TxAck(AccumulatedAck acked, std::list<DeliveryRecord>& unacked);
+            /**
+             * @param acked a representation of the accumulation of
+             * acks received
+             * @param unacked the record of delivered messages
+             */
+            TxAck(AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
             virtual bool prepare() throw();
             virtual void commit() throw();
             virtual void rollback() throw();
