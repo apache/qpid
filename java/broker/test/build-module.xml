@@ -29,4 +29,12 @@
     </junit>
   </target>
 
+     <target name="xmltest" depends="build">
+    <junit fork="yes" showoutput="true" haltonfailure="no">
+      <test name="org.apache.qpid.server.UnitTests"/>
+      <formatter type="xml" usefile="junit.report.xml"/>
+      <classpath refid="module.class.path"/>
+    </junit>
+  </target>
+
 </project>
