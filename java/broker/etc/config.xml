@@ -23,6 +23,7 @@
     <connector>
         <ssl>false</ssl>
         <nonssl>true</nonssl>
+        <qpidnio>true</qpidnio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
