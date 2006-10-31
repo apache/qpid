@@ -82,7 +82,7 @@ namespace qpid {
             AccumulatedAck accumulatedAck;
             TransactionalStore* store;
             MessageBuilder messageBuilder;//builder for in-progress message
-            Exchange* exchange;//exchange to which any in-progress message was published to
+            Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
 
             virtual void complete(Message::shared_ptr& msg);
             void deliver(Message::shared_ptr& msg, string& tag, Queue::shared_ptr& queue, bool ackExpected);            
@@ -107,7 +107,7 @@ namespace qpid {
             void ack(u_int64_t deliveryTag, bool multiple);
             void recover(bool requeue);
             void deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag);            
-            void handlePublish(Message* msg, Exchange* exchange);
+            void handlePublish(Message* msg, Exchange::shared_ptr exchange);
             void handleHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
             void handleContent(qpid::framing::AMQContentBody::shared_ptr content);
         };

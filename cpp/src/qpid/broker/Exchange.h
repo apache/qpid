@@ -18,23 +18,27 @@
 #ifndef _Exchange_
 #define _Exchange_
 
+#include <boost/shared_ptr.hpp>
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
-namespace broker {
-    class Exchange{
-        const std::string name;
-      public:
-        explicit Exchange(const std::string& _name) : name(_name) {}
-        virtual ~Exchange(){}
-        std::string getName() { return name; }
-        virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-        virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-        virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-    };
-}
+    namespace broker {
+        class Exchange{
+            const std::string name;
+        public:
+            typedef boost::shared_ptr<Exchange> shared_ptr;
+
+            explicit Exchange(const std::string& _name) : name(_name){}
+            virtual ~Exchange(){}
+            std::string getName() { return name; }
+            virtual std::string getType() = 0;
+            virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
+            virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
+            virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
+        };
+    }
 }
 
 

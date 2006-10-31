@@ -23,6 +23,7 @@ Test classes ending in 'RuleTests' are derived from rules in amqp.xml.
 import Queue, logging
 from qpid.testlib import TestBase
 from qpid.content import Content
+from qpid.client import Closed
 
 
 class StandardExchangeVerifier:
@@ -207,10 +208,14 @@ class DeclareMethodTypeFieldSupportRuleTests(TestBase):
 class DeclareMethodPassiveFieldNotFoundRuleTests(TestBase):
     """
     If set, and the exchange does not already exist, the server MUST raise a
-    channel exception with reply code 404 (not found).
-    
-    
+    channel exception with reply code 404 (not found).    
     """
+    def test(self):
+        try:
+            self.channel.exchange_declare(exchange="humpty_dumpty", passive=True)
+            self.fail("Expected 404 for passive declaration of unknown exchange.")
+        except Closed, e:
+            self.assertChannelException(404, e.args[0])
 
 
 class DeclareMethodDurableFieldSupportRuleTests(TestBase):
@@ -292,3 +297,28 @@ class HeadersExchangeTests(TestBase):
         self.myBasicPublish({"irrelevant":0})
         self.assertEmpty(self.q)
 
+
+class MiscellaneousErrorsTests(TestBase):
+    """
+    Test some miscellaneous error conditions
+    """
+    def testTypeNotKnown(self):
+        try:
+            self.channel.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
+            self.fail("Expected 503 for declaration of unknown exchange type.")
+        except Closed, e:
+            self.assertConnectionException(503, e.args[0])
+
+    def testDifferentDeclaredType(self):
+        self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
+        try:
+            self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
+            self.fail("Expected 507 for redeclaration of exchange with different type.")
+        except Closed, e:
+            self.assertConnectionException(507, e.args[0])
+        #cleanup    
+        other = self.connect()
+        c2 = other.channel(1)
+        c2.channel_open()
+        c2.exchange_delete(exchange="test_different_declared_type_exchange")
+    
