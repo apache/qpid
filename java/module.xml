@@ -19,7 +19,8 @@
 
   <import file="common.xml"/>
 
-  <map property="module" value="${basedir}">
+
+  <map property="module" value="${basedir}">      
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
@@ -165,6 +166,8 @@
   </target>
 
   <target name="test"/>
+
+  <target name="xmltest"/>
 
   <uptodate property="doc.done" targetfile="${module.doc}/index.html">
     <srcfiles dir="${module.src}" includes="**/*.java"/>
