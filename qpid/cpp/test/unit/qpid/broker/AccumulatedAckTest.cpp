@@ -27,6 +27,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
 {
         CPPUNIT_TEST_SUITE(AccumulatedAckTest);
         CPPUNIT_TEST(testCovers);
+        CPPUNIT_TEST(testUpdateAndConsolidate);
         CPPUNIT_TEST_SUITE_END();
 
     public:
@@ -48,6 +49,30 @@ class AccumulatedAckTest : public CppUnit::TestCase
             CPPUNIT_ASSERT(!ack.covers(6));
             CPPUNIT_ASSERT(!ack.covers(8));
             CPPUNIT_ASSERT(!ack.covers(10));
+        }
+
+        void testUpdateAndConsolidate()
+        {
+            AccumulatedAck ack;
+            ack.clear();
+            ack.update(1, false);
+            ack.update(3, false);
+            ack.update(10, false);
+            ack.update(8, false);
+            ack.update(6, false);
+            ack.update(3, true);
+            ack.update(2, true);
+            ack.update(5, true);
+            ack.consolidate();
+            CPPUNIT_ASSERT_EQUAL((u_int64_t) 5, ack.range);
+            CPPUNIT_ASSERT_EQUAL((size_t) 3, ack.individual.size());
+            list<u_int64_t>::iterator i = ack.individual.begin();
+            CPPUNIT_ASSERT_EQUAL((u_int64_t) 6, *i);
+            i++;
+            CPPUNIT_ASSERT_EQUAL((u_int64_t) 8, *i);
+            i++;
+            CPPUNIT_ASSERT_EQUAL((u_int64_t) 10, *i);
+
         }
 };
 
