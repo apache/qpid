@@ -60,6 +60,7 @@ public class TransactedTest
         }
         catch (AMQVMBrokerCreationException e)
         {
+            e.printStackTrace();
             Assert.fail("Unable to create VM Broker");
         }
 
