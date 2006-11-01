@@ -27,20 +27,20 @@ namespace qpid {
      * Template to enforce shared object conventions.
      * Shared object classes should inherit : public qpid::SharedObject
      * That ensures Foo:
-     * - has typedef boost::shared_ptr<T> SharedPtr
+     * - has typedef boost::shared_ptr<T> shared_ptr
      * - has virtual destructor
      * - is boost::noncopyable (no default copy or assign)
      * - has a protected default constructor.
      *
      * Shared objects should not have public constructors.
      * Make constructors protected and provide public statc create()
-     * functions that return a SharedPtr.
+     * functions that return a shared_ptr.
      */
     template <class T>
     class SharedObject : private boost::noncopyable
     {
       public:
-        typedef boost::shared_ptr<T> SharedPtr;
+        typedef boost::shared_ptr<T> shared_ptr;
 
         virtual ~SharedObject() {};
 

@@ -19,6 +19,7 @@
 #include "qpid/broker/SessionHandlerImpl.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
+#include "qpid/broker/DirectExchange.h"
 
 using namespace qpid::broker;
 using namespace qpid::io;

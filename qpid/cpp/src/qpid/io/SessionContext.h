@@ -23,15 +23,16 @@
 namespace qpid {
 namespace io {
 
-    class SessionContext : public virtual qpid::framing::OutputHandler 
-    {
-    public:
-        virtual void close() = 0;
-	virtual ~SessionContext(){}
-    };
+/**
+ * Provides the output handler associated with a connection.
+ */
+class SessionContext : public virtual qpid::framing::OutputHandler 
+{
+  public:
+    virtual void close() = 0;
+};
 
-}
-}
+}}
 
 
 #endif

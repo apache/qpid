@@ -57,8 +57,8 @@ EXTRA_LIBDIRS := -L/usr/local/apr/lib
 ## Compile flags
 
 # Release vs. debug flags.
-DEBUG   := -ggdb3
-RELEASE := -O3 -DNDEBUG
+CXXFLAGS_debug   := -ggdb3
+CXXFLAGS_release := -O3 -DNDEBUG
 
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
@@ -71,7 +71,7 @@ WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wc
 
 INCLUDES :=  $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
 LDFLAGS := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
-CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM))
+CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM)) $(CXXFLAGS_$(TYPE))
 
 ## Macros for linking, must be late evaluated
 

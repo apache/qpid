@@ -26,13 +26,13 @@
 namespace qpid {
 namespace io {
 
-    class SessionHandler : public virtual qpid::framing::InitiationHandler,
-        public virtual qpid::framing::InputHandler, 
-        public virtual TimeoutHandler
+    class SessionHandler :
+        public qpid::framing::InitiationHandler,
+        public qpid::framing::InputHandler, 
+        public TimeoutHandler
     {
     public:
         virtual void closed() = 0;
-	virtual ~SessionHandler(){}
     };
 
 }
