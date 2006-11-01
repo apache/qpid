@@ -18,14 +18,15 @@
  *
  */
 
-#include <qpid/SharedObject.h>
 #include "qpid/framing/AMQFrame.h"
+#include <boost/noncopyable.hpp>
 
 namespace qpid {
 namespace framing {
 
-class InputHandler : public qpid::SharedObject<InputHandler> {
+class InputHandler : private boost::noncopyable {
   public:
+    virtual ~InputHandler() {}
     virtual void received(AMQFrame* frame) = 0;
 };
 

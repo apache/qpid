@@ -20,11 +20,12 @@
 
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/broker/AutoDelete.h"
-#include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/io/SessionHandlerFactory.h"
+#include "qpid/io/SessionContext.h"
+#include "qpid/io/SessionHandler.h"
 #include "qpid/io/TimeoutHandler.h"
 
 namespace qpid {

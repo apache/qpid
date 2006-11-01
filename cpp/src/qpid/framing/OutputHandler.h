@@ -18,14 +18,15 @@
  * limitations under the License.
  *
  */
-#include <qpid/SharedObject.h>
+#include <boost/noncopyable.hpp>
 #include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace framing {
 
-class OutputHandler : public qpid::SharedObject<OutputHandler> {
+class OutputHandler : private boost::noncopyable {
   public:
+    virtual ~OutputHandler() {}
     virtual void send(AMQFrame* frame) = 0;
 };
 
