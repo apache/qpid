@@ -49,10 +49,8 @@ import org.apache.qpid.server.state.AMQStateManager;
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
-import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
-import javax.management.ObjectName;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -103,7 +101,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private boolean _closed;
 
-    private long _maxNoOfChannels;
+    private long _maxNoOfChannels = 1000;
     
     /* AMQP Version for this session */
     
@@ -129,34 +127,21 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
          * Represents the channel attributes sent with channel data.
          */
         private String[] _channelAtttibuteNames = { "ChannelId",
-                                                    "ChannelName",
                                                     "Transactional",
                                                     "DefaultQueue",
                                                     "UnacknowledgedMessageCount"};
         private String[] _channelAttributeDescriptions = { "Channel Identifier",
-                                                           "Channel Name",
                                                            "is Channel Transactional?",
                                                            "Default Queue Name",
                                                            "Unacknowledged Message Count"};
         private OpenType[] _channelAttributeTypes = { SimpleType.INTEGER,
-                                                      SimpleType.OBJECTNAME,
                                                       SimpleType.BOOLEAN,
                                                       SimpleType.STRING,
                                                       SimpleType.INTEGER};
-        /**
-         * Channels in the list will be indexed according to channelId.
-         */
-        private String[] _indexNames = { "ChannelId" };
 
-        /**
-         * represents the data type for channel data.
-         */
-        private CompositeType _channelType = null;
-        /**
-         * Datatype for list of channelsType.
-         */
-        private TabularType  _channelsType = null;
-
+        private String[] _indexNames = { "ChannelId" };  //Channels in the list will be indexed according to channelId.
+        private CompositeType _channelType = null;       // represents the data type for channel data
+        private TabularType  _channelsType = null;       // Datatype for list of channelsType
         private TabularDataSupport _channelsList = null;
 
         @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
@@ -283,20 +268,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             for (Map.Entry<Integer, AMQChannel> entry : _channelMap.entrySet())
             {
                 AMQChannel channel = entry.getValue();
-                //ManagedChannel channel = (AMQChannelMBean)amqChannel.getManagedObject();
-                ObjectName channelObjectName = null;
-
-                try
-                {
-                    channelObjectName = channel.getObjectName();
-                }
-                catch (MalformedObjectNameException ex)
-                {
-                    _logger.error("Unable to create object name: ", ex);
-                }
-
                 Object[] itemValues = {channel.getChannelId(),
-                                       channelObjectName,
                                        channel.isTransactional(),
                                        (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
                                        channel.getUnacknowledgedMessageMap().size()};
