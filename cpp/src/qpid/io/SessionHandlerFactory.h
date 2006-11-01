@@ -18,21 +18,24 @@
 #ifndef _SessionHandlerFactory_
 #define _SessionHandlerFactory_
 
-#include "qpid/io/SessionContext.h"
-#include "qpid/io/SessionHandler.h"
-
 namespace qpid {
 namespace io {
 
-    class SessionHandlerFactory
-    {
-    public:
-        virtual SessionHandler* create(SessionContext* ctxt) = 0;
-	virtual ~SessionHandlerFactory(){}
-    };
+class SessionContext;
+class SessionHandler;
 
-}
-}
+/**
+ * Callback interface used by the Acceptor to
+ * create a SessionHandler for each new connection.
+ */
+class SessionHandlerFactory : private boost::noncopyable
+{
+  public:
+    virtual SessionHandler* create(SessionContext* ctxt) = 0;
+    virtual ~SessionHandlerFactory(){}
+};
+
+}}
 
 
 #endif

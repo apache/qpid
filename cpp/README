@@ -49,6 +49,8 @@ Main targets:
 
 The source tree is structured as follows:
  * src/ - .h and .cpp source files, directories mirror namespaces.
+ * src_apr/ - source files that depend on APR
+ * src_linux/ - source files optimized for Linux.
  * etc/ - Non-c++ resources, e.g. stylesheets.
  * test/ 
   * unit/ - unit tests (cppunit plugins), directories mirror namespaces.

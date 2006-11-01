@@ -39,7 +39,7 @@ namespace client {
 
     class Channel;
 
-    class Connection : public virtual qpid::framing::InputHandler, 
+class Connection : public virtual qpid::framing::InputHandler, 
         public virtual qpid::io::TimeoutHandler, 
         public virtual qpid::io::ShutdownHandler, 
         private virtual qpid::framing::BodyHandler{

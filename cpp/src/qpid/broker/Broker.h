@@ -42,12 +42,12 @@ namespace qpid {
              * Create a broker.
              * @param port Port to listen on or 0 to pick a port dynamically.
              */
-            static SharedPtr create(int16_t port = DEFAULT_PORT);
+            static shared_ptr create(int16_t port = DEFAULT_PORT);
 
             /**
              * Create a broker using a Configuration.
              */
-            static SharedPtr create(const Configuration& config);
+            static shared_ptr create(const Configuration& config);
 
             /**
              * Return listening port. If called before bind this is
@@ -68,7 +68,7 @@ namespace qpid {
 
           private:
             Broker(const Configuration& config); 
-            qpid::io::Acceptor::SharedPtr acceptor;
+            qpid::io::Acceptor::shared_ptr acceptor;
             SessionHandlerFactoryImpl factory;
         };
     }

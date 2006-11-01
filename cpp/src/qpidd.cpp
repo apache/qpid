@@ -37,7 +37,7 @@ int main(int argc, char** argv)
             config.usage();
         }else{
             apr_signal(SIGINT, handle_signal);
-            Broker::SharedPtr broker = Broker::create(config);
+            Broker::shared_ptr broker = Broker::create(config);
             broker->run();
         }
         return 0;
