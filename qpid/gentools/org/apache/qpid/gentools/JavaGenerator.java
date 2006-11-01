@@ -472,7 +472,7 @@ public class JavaGenerator extends Generator
 	
 	@Override
 	protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
-	    throws AmqpTemplateException
+	    throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		String codeSnippet;
 		int lend = sb.indexOf(cr, tokStart) + 1; // Include cr at end of line
@@ -496,7 +496,7 @@ public class JavaGenerator extends Generator
 	
 	@Override
 	protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
-        throws AmqpTemplateException
+        throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		String codeSnippet;
 		int lend = sb.indexOf(cr, tokStart) + 1; // Include cr at end of line
