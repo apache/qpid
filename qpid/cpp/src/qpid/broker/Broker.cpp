@@ -30,15 +30,15 @@ Broker::Broker(const Configuration& config) :
 { }
 
 
-Broker::SharedPtr Broker::create(int16_t port) 
+Broker::shared_ptr Broker::create(int16_t port) 
 {
     Configuration config;
     config.setPort(port);
     return create(config);
 }
 
-Broker::SharedPtr Broker::create(const Configuration& config) {
-    return Broker::SharedPtr(new Broker(config));
+Broker::shared_ptr Broker::create(const Configuration& config) {
+    return Broker::shared_ptr(new Broker(config));
 }    
         
 void Broker::run() {
