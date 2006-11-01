@@ -45,7 +45,8 @@ LIBDIR:=build/$(BUILD)/lib
 OBJDIR:=build/$(BUILD)/obj
 TESTDIR:=build/$(BUILD)/test
 
-BUILDDIRS:= $(BINDIR) $(LIBDIR) $(OBJDIR) $(TESTDIR) $(GENDIR)
+BUILDDIRS := $(BINDIR) $(LIBDIR) $(OBJDIR) $(TESTDIR) $(GENDIR)
+SRCDIRS := src src_$(PLATFORM) $(GENDIR)
 
 ## External dependencies:
 
@@ -68,14 +69,17 @@ RELEASE := -O3 -DNDEBUG
 # 
 WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch
 
-INCLUDES :=  -Isrc -I$(GENDIR) $(EXTRA_INCLUDES)
+INCLUDES :=  $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
 LDFLAGS := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
 CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM))
 
 ## Macros for linking, must be late evaluated
 
-# $(call OBJ_FROM,root,subdirs)
-OBJ_FROM = $(foreach sub,$2,$(patsubst $1/%.cpp,$(OBJDIR)/%.o,$(wildcard $1/$(sub)/*.cpp)))
+# Collect object files from a collection of src subdirs
+# $(call OBJ_FROM,srcdir,subdir)
+OBJECTS_1 = $(patsubst $1/$2/%.cpp,$(OBJDIR)/$2/%.o,$(wildcard $1/$2/*.cpp))
+OBJECTS = $(foreach src,$(SRCDIRS),$(foreach sub,$1,$(call OBJECTS_1,$(src),$(sub))))
+
 # $(call LIBFILE,name,version)
 LIBFILE =$(CURDIR)/$(LIBDIR)/libqpid_$1.so.$2
 

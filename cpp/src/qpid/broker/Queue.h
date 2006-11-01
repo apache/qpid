@@ -21,13 +21,13 @@
 #include <vector>
 #include <queue>
 #include <boost/shared_ptr.hpp>
-#include "apr-1/apr_time.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/broker/Binding.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "qpid/broker/Consumer.h"
 #include "qpid/broker/Message.h"
 #include "qpid/concurrent/Monitor.h"
+#include "qpid/concurrent/Time.h"
 
 namespace qpid {
     namespace broker {
@@ -57,7 +57,7 @@ namespace qpid {
             bool dispatching;
             int next;
             mutable qpid::concurrent::Monitor lock;
-            apr_time_t lastUsed;
+            int64_t lastUsed;
             Consumer* exclusive;
 
             bool startDispatching();

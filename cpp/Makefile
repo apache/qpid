@@ -39,7 +39,12 @@ $(GENDIR)/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
 	rm -rf $(GENDIR)
 	mkdir -p $(GENDIR)/qpid/framing
 	( cd $(GENDIR)/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ; done ) && echo > $(GENDIR)/timestamp
-$(shell find $(GENDIR) -name *.cpp -o -name *.h): $(GENDIR)/timestamp
+
+# Dependencies for existing generated files.
+GENFILES:=$(wildcard $(GENDIR)/qpid/*/*.cpp $(GENDIR)/qpid/*/*.h)
+ifdef GENFILES
+$(GENFILES): $(GENDIR)/timestamp
+endif
 
 $(BUILDDIRS):
 	mkdir -p $(BUILDDIRS)
@@ -47,15 +52,15 @@ $(BUILDDIRS):
 ## Library rules
 
 LIB_common := $(call LIBFILE,common,1.0)
-$(LIB_common): $(call OBJ_FROM,src,qpid/concurrent qpid/framing qpid/io qpid) $(call OBJ_FROM,$(GENDIR),qpid/framing)
+$(LIB_common): $(call OBJECTS,qpid qpid/concurrent qpid/framing qpid/io) 
 	$(LIB_COMMAND)
 
 LIB_client :=$(call LIBFILE,client,1.0)
-$(LIB_client): $(call OBJ_FROM,src,qpid/client) $(LIB_common)
+$(LIB_client): $(call OBJECTS,qpid/client) $(LIB_common)
 	$(LIB_COMMAND)
 
 LIB_broker :=$(call LIBFILE,broker,1.0)
-$(LIB_broker): $(call OBJ_FROM,src,qpid/broker) $(LIB_common)
+$(LIB_broker): $(call OBJECTS,qpid/broker) $(LIB_common)
 	$(LIB_COMMAND)
 
 ## Daemon executable
@@ -85,13 +90,14 @@ build/html: doxygen.cfg
 
 ## Implicit rules
 
-# C++ compiile
-$(OBJDIR)/%.o: src/%.cpp
-	mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-$(OBJDIR)/%.o: $(GENDIR)/%.cpp
-	mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+# C++ compile
+define CPPRULE
+$(OBJDIR)/%.o: $1/%.cpp
+	@mkdir -p $$(dir $$@)
+	$(CXX) $(CXXFLAGS) -c -o $$@ $$< 
+endef
+
+$(foreach dir,$(SRCDIRS),$(eval $(call CPPRULE,$(dir))))
 
 #  Unit test plugin libraries.
 $(TESTDIR)/%Test.so: test/unit/%Test.cpp 
@@ -106,9 +112,11 @@ CLIENT_TEST_SRC := $(wildcard test/client/*.cpp)
 CLIENT_TEST_EXE := $(CLIENT_TEST_SRC:test/client/%.cpp=$(TESTDIR)/%)
 all-nogen: $(CLIENT_TEST_EXE)
 
-## #include dependencies
--include $(shell find $(GENDIR) $(OBJDIR) -name '*.d') dummy-avoid-warning-if-none
-
+## include dependencies
+DEPFILES:=$(wildcard $(OBJDIR)/*.d $(OBJDIR)/*/*.d $(OBJDIR)/*/*/*.d)
+ifdef DEPFILES
+-include $(DEPFILES)
+endif
 
 ## Clean up
 
