@@ -1,28 +1,41 @@
 AMQP MULTI_VERSION CODE GENERATOR
 
-This directory contains the first part of the new multi-AMQP-version code generator. The Java generation is almost complete, C++ will follow.
+This directory contains the first part of the new multi-AMQP-version code
+generator. The Java generation is almost complete, C++ will follow.
 
-NOTE: The generator has NOT been integrated into the current build, and is included here to run stand-alone for the purposes of review and comment. As currently configured, this generator will not interact with any file or directory outside of this directory.
+NOTE: The generator has NOT been integrated into the current build, and is
+included here to run stand-alone for the purposes of review and comment. As
+currently configured, this generator will not interact with any file or
+directory outside of this directory.
 
 To build (from this directory):
 javac  org/apache/qpid/gentools/Main.java
 
+Make sure you are using Sun's JDK1.5.0; Eclipse and gcj do not work.
+
 To run (from this directory):
 java org/apache/qpid/gentools/Main -j [xml_spec_file, ...]
 
-XML test files are located in the xml-src directory. Pay attention to the Basic class and Basic.Consume method - these were the primary test vehicles for this generator. *** NOTE *** These files do not represent any current or future version of the AMQP specification - do not use in production!
+XML test files are located in the xml-src directory. Pay attention to the
+Basic class and Basic.Consume method - these were the primary test vehicles
+for this generator. *** NOTE *** These files do not represent any current or
+future version of the AMQP specification - do not use in production!
 
 Folders:
 --------
 org/apache/qpid/gentools/: Source.
 xml-src/: Test AMQP specification files.
 templ.java/: Templates for java code generation.
-out.java/: Output folder for generated Java files (will be created with use of -j flag on command-line).
+out.java/: Output folder for generated Java files (will be created with use
+           of -j flag on command-line).
 templ.cpp/: (Future:) Templates for C++ code generation.
-out.cpp/: Output folder for generated C++ files (will be created with use of -c flag on command-line).
+out.cpp/: Output folder for generated C++ files (will be created with use
+           of -c flag on command-line).
 
-For a more detaild description of the generator, see the Qpid Wiki (http://cwiki.apache.org/qpid/multiple-amqp-version-support).
+For a more detaild description of the generator, see the Qpid Wiki
+(http://cwiki.apache.org/qpid/multiple-amqp-version-support.html).
 
-Please send comments and bugs to me (kim.vdriet [at] redhat.com) or via the Apache Qpid list (qpid-dev [at] incubator.apache.org).
+Please send comments and bugs to me (kim.vdriet [at] redhat.com) or via the
+Apache Qpid list (qpid-dev [at] incubator.apache.org).
 
 Kim van der Riet

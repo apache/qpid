@@ -136,10 +136,10 @@ public abstract class Generator implements LanguageConverter
 	    throws AmqpTemplateException;
 	
 	abstract protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
-        throws AmqpTemplateException;
+        throws AmqpTemplateException, AmqpTypeMappingException;
 	
 	abstract protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
-        throws AmqpTemplateException;
+        throws AmqpTemplateException, AmqpTypeMappingException;
 	
 	abstract protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
 		AmqpFieldMap fieldMap, AmqpVersion version)
