@@ -20,7 +20,6 @@ package org.apache.qpid.gentools;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
@@ -32,9 +31,17 @@ public class CppGenerator extends Generator
 	protected static final String versionNamespaceEndToken = "${version_namespace_end}";
 	protected static final int FIELD_NAME = 0;
 	protected static final int FIELD_DOMAIN = 1;
-
+	protected static final String[] cppReservedWords = {"and", "and_eq", "asm", "auto", "bitand",
+		"bitor", "bool", "break", "case", "catch", "char", "class", "compl", "const", "const_cast",
+		"continue", "default", "delete", "do", "DomainInfo", "double", "dynamic_cast", "else",
+		"enum", "explicit", "extern", "false", "float", "for", "friend", "goto", "if", "inline",
+		"int", "long", "mutable", "namespace", "new", "not", "not_eq", "operator", "or", "or_eq",
+		"private", "protected", "public", "register", "reinterpret_cast", "return", "short",
+		"signed", "sizeof", "static", "static_cast", "struct", "switch", "template", "this",
+		"throw", "true", "try", "typedef", "typeid", "typename", "union", "unsigned", "using",
+		"virtual", "void", "volatile", "wchar_t", "while", "xor", "xor_eq"};
 	
-	private class DomainInfo
+	private class DomainInfo	
 	{
 		public String type;
 		public String size;
@@ -294,15 +301,37 @@ public class CppGenerator extends Generator
 	}
 	
 	@Override
-	protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
-        throws AmqpTemplateException
+	protected void processClassList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+		AmqpModel model)
+        throws AmqpTemplateException, AmqpTypeMappingException
 	{
-// 		TODO
+		String codeSnippet;
+		int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
+		String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
+		int tokxStart = tline.indexOf('$');
+		String token = tline.substring(tokxStart).trim();
+		sb.delete(listMarkerStartIndex, lend);
+		
+		if (token.compareTo("${co_method_handler_get_method}") == 0)
+		{
+			codeSnippet = generateMethodHandlerGetMethods(model, 8);
+		}
+		else if (token.compareTo("${co_server_method_inner_class}") == 0)
+		{
+			codeSnippet = generateInnerClasses(model, 8, 4);
+		}
+		
+		else // Oops!
+		{
+			throw new AmqpTemplateException("Template token \"" + token + "\" unknown.");
+		}
+		sb.insert(listMarkerStartIndex, codeSnippet);
 	}
 	
 	@Override
-	protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
-        throws AmqpTemplateException
+	protected void processMethodList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+		AmqpClass thisClass)
+        throws AmqpTemplateException, AmqpTypeMappingException
 	{
 //		TODO
 	}
@@ -320,7 +349,6 @@ public class CppGenerator extends Generator
 		String token = tline.substring(tokxStart).trim();
 		sb.delete(listMarkerStartIndex, lend);
 		
-		// Field declarations - common to MethodBody and PropertyContentHeader classes
 		if (token.compareTo("${mb_field_declaration}") == 0)
 		{
 			codeSnippet = generateFieldDeclarations(fieldMap, version, 4);
@@ -366,13 +394,117 @@ public class CppGenerator extends Generator
 	}
 		
 	// === Protected and private helper functions unique to C++ implementation ===
-
-	// Methods used for generation of code snippets called from the field map parsers
-
-	// Common methods
+	
+	// Methods used for generation of code snippets for ServerOperations class generation
+	
+	protected String generateMethodHandlerGetMethods(AmqpModel model, int indentSize)
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		Iterator<String> cItr = model.classMap.keySet().iterator();
+		while (cItr.hasNext())
+		{
+			AmqpClass thisClass = model.classMap.get(cItr.next());
+			sb.append(indent + "virtual AMQP_ServerOperations::" +
+				thisClass.name + "Handler* get" + thisClass.name + "Handler() = 0;" + cr);
+		}
+		return sb.toString();
+	}
+	
+	protected String generateInnerClasses(AmqpModel model, int indentSize, int tabSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		String tab = Utils.createSpaces(tabSize);
+		StringBuffer sb = new StringBuffer();
+		boolean first = true;
+		Iterator<String> cItr = model.classMap.keySet().iterator();
+		while (cItr.hasNext())
+		{
+			AmqpClass thisClass = model.classMap.get(cItr.next());
+			String className = thisClass.name + "Handler";
+			if (!first)
+				sb.append(cr);
+			sb.append(indent + "class " + className);
+			if (thisClass.versionSet.size() != globalVersionSet.size())
+				sb.append(" // AMQP Version(s) " + thisClass.versionSet + cr);
+			else
+				sb.append(cr);
+			sb.append(indent + "{" + cr);
+			sb.append(indent + "private:" + cr);
+			sb.append(indent + tab + "u_int8_t major;" + cr);
+			sb.append(indent + tab + "u_int8_t minor;" + cr);
+			sb.append(cr);
+			sb.append(indent + "public:" + cr);
+			sb.append(indent + tab + "// Constructors and destructors" + cr);
+			sb.append(cr);
+			sb.append(indent + tab + className +
+				"(u_int8_t major, u_int8_t minor) : major(major), minor(minor) {}" + cr);
+			sb.append(indent + tab + "virtual ~" + className + "() {}" + cr);
+			sb.append(cr);
+			sb.append(indent + tab + "// Protocol methods" + cr);
+			sb.append(cr);
+			sb.append(generateInnerClassMethods(thisClass, indentSize + tabSize, tabSize));
+			sb.append(indent + "}; // class " + className + cr);
+			first = false;
+		}
+		return sb.toString();		
+	}
+	
+	protected String generateInnerClassMethods(AmqpClass thisClass, int indentSize, int tabSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		boolean first = true;
+		Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
+		while (mItr.hasNext())
+		{
+			AmqpMethod method = thisClass.methodMap.get(mItr.next());
+			AmqpOverloadedParameterMap overloadededParameterMap = method.getOverloadedParameterLists(globalVersionSet);
+			Iterator<AmqpOrdinalFieldMap> ofmItr = overloadededParameterMap.keySet().iterator();
+			String methodName = parseForReservedWords(method.name, thisClass.name);
+			while (ofmItr.hasNext())
+			{
+				AmqpOrdinalFieldMap fieldMap = ofmItr.next();
+				AmqpVersionSet versionSet = overloadededParameterMap.get(fieldMap);
+				if (!first)
+					sb.append(cr);
+				sb.append(indent + "virtual void " + methodName + "(");
+				sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize)));
+				if (versionSet.size() != globalVersionSet.size())
+					sb.append(") = 0; // AMQP Version(s) " + versionSet + cr);
+				else
+					sb.append(") = 0;" + cr);
+				first = false;
+			}
+		}
+		return sb.toString();		
+	}
+	
+	protected String generateMethodParameterList(AmqpOrdinalFieldMap fieldMap, int indentSize)
+		throws AmqpTypeMappingException
+	{
+		String indent = Utils.createSpaces(indentSize);
+		StringBuffer sb = new StringBuffer();
+		boolean first = true;
+		Iterator<Integer> pItr = fieldMap.keySet().iterator();
+		while(pItr.hasNext())
+		{
+			String[] field = fieldMap.get(pItr.next());
+			String codeType = getGeneratedType(field[FIELD_DOMAIN], globalVersionSet.first());
+			if (!first)
+				sb.append(indent);
+			sb.append(setRef(codeType) + " " + field[FIELD_NAME] + (pItr.hasNext() ? "," + cr : ""));
+			first = false;
+		}
+		return sb.toString();		
+	}
+	
+	// Methods used for generation of code snippets for MethodBody class generation
 
 	protected String getIndex(AmqpOrdinalVersionMap indexMap, AmqpVersion version)
-	throws AmqpTemplateException
+		throws AmqpTemplateException
 	{
 		Iterator<Integer> iItr = indexMap.keySet().iterator();
 		while (iItr.hasNext())
@@ -759,6 +891,20 @@ public class CppGenerator extends Generator
 //		}
 //		return sb.toString();		
 //	}
+	
+	private String parseForReservedWords(String methodName, String className)
+	{
+		for (int i=0; i<cppReservedWords.length; i++)
+			if (methodName.compareTo(cppReservedWords[i]) == 0)
+			{
+				System.err.println("WARNING: Found method \"" + methodName +
+					"\" in class \"" + className +
+					"\", which is a C/C++ reserved word. " +
+					"Changing generated method name to \"" + methodName + "_\".");
+				return methodName + "_";
+			}
+		return methodName;
+	}
 	
 	private String setRef(String codeType)
 	{

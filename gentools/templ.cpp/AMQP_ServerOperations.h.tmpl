@@ -34,16 +34,27 @@ namespace framing {
 
 class AMQP_ServerOperations
 {
+	private:
+		u_int8_t major;
+		u_int8_t minor;
     public:
-        AMQP_ServerOperations() {}
+        AMQP_ServerOperations(u_int8_t major, u_int8_t minor) : major(major), minor(minor) {}
         virtual ~AMQP_ServerOperations() {}
-{so_get_amqp_major}
-{so_get_amqp_minor}
+        
+        inline u_int8_t getMajor() { return major; }
+        inline u_int8_t getMinor() { return minor; }
+        inline isVersion(u_int8_t _major, u_int8_t _minor)
+        {
+        	return major == _major && minor == _minor;
+        }
 
-	// Method handler get methods
-{CLIST} {co_method_handler_get_method}
+		// Method handler get methods
+	
+%{CLIST} ${co_method_handler_get_method}
 
-{CLIST} {co_server_method_inner_class}
+		// Inner classes
+
+%{CLIST} ${co_server_method_inner_class}
 
 }; /* class AMQP_ServerOperations */
 
