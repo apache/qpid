@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.junit.Assert;
 import junit.framework.JUnit4TestAdapter;
 
-import javax.naming.NamingException;
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NoInitialContextException;
 

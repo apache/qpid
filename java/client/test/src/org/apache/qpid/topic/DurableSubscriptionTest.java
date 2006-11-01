@@ -50,7 +50,7 @@ public class DurableSubscriptionTest
         }
         catch (AMQVMBrokerCreationException e)
         {
-            Assert.fail("Unable to create VM Broker");
+            Assert.fail("Unable to create VM Broker: " + e.getMessage());
         }
     }
 

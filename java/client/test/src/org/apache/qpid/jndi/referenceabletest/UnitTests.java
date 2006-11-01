@@ -28,6 +28,6 @@ public class UnitTests
 {
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(org.apache.qpid.destinationurl.UnitTests.class);
+        return new JUnit4TestAdapter(org.apache.qpid.jndi.referenceabletest.UnitTests.class);
     }
 }
