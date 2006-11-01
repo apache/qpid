@@ -24,6 +24,7 @@ import org.apache.qpid.server.management.MBeanOperationParameter;
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.TabularData;
+import javax.management.openmbean.CompositeData;
 import java.io.IOException;
 
 /**
@@ -209,4 +210,8 @@ public interface ManagedQueue
                          impact= MBeanOperationInfo.ACTION)
     void clearQueue() throws IOException, JMException;
 
+    @MBeanOperation(name="viewMessageContent",
+                         description="Returns the message content along with MimeType and Encoding")
+    CompositeData viewMessageContent(@MBeanOperationParameter(name="Message Id", description="Message Id")long messageId) 
+        throws IOException, JMException;
 }
