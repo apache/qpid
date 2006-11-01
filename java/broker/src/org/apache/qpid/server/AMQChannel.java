@@ -36,8 +36,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
 
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -661,15 +659,6 @@ public class AMQChannel
         sb.append(", prefetch marks: ").append(_prefetch_LowWaterMark);
         sb.append("/").append(_prefetch_HighWaterMark);
         return sb.toString();
-    }
-
-    public ObjectName getObjectName()
-            throws MalformedObjectNameException
-    {
-        StringBuilder sb = new StringBuilder(30);
-        sb.append("Channel:id=").append(_channelId);
-        sb.append(",transaction mode=").append(_transactional);
-        return new ObjectName(sb.toString());
     }
 
     public void setDefaultQueue(AMQQueue queue)
