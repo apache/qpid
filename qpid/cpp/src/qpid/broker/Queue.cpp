@@ -38,7 +38,7 @@ Queue::Queue(const string& _name, bool _durable, u_int32_t _autodelete,
     lastUsed(0),
     exclusive(0)
 {
-    if(autodelete) lastUsed = apr_time_as_msec(apr_time_now());
+    if(autodelete) lastUsed = Time::now().msecs();
 }
 
 Queue::~Queue(){
@@ -128,7 +128,7 @@ void Queue::consume(Consumer* c, bool requestExclusive){
 void Queue::cancel(Consumer* c){
     Locker locker(lock);
     consumers.erase(find(consumers.begin(), consumers.end(), c));
-    if(autodelete && consumers.empty()) lastUsed = apr_time_as_msec(apr_time_now());
+    if(autodelete && consumers.empty()) lastUsed = Time::now().msecs();
     if(exclusive == c) exclusive = 0;
 }
 
@@ -161,7 +161,7 @@ u_int32_t Queue::getConsumerCount() const{
 
 bool Queue::canAutoDelete() const{
     Locker locker(lock);
-    return lastUsed && ((apr_time_as_msec(apr_time_now()) - lastUsed) > autodelete);
+    return lastUsed && (Time::now().msecs() - lastUsed > autodelete);
 }
 
 void Queue::enqueue(Message::shared_ptr& msg, const string * const xid){
