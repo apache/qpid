@@ -135,32 +135,31 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		}		
 	}
 	
-	public AmqpOverloadedParameterMap getOverloadedParameterLists(AmqpVersionSet globalVersionSet)
+	public AmqpOverloadedParameterMap getOverloadedParameterLists(AmqpVersionSet globalVersionSet,
+		Generator generator)
+		throws AmqpTypeMappingException
 	{
 		AmqpOverloadedParameterMap parameterVersionMap = new AmqpOverloadedParameterMap();
 		Iterator<AmqpVersion> vItr = globalVersionSet.iterator();
 		while (vItr.hasNext())
 		{
 			AmqpVersion version = vItr.next();
-			AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version);
-			if (ordinalFieldMap.size() > 0)
+			AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, generator);
+			AmqpVersionSet methodVersionSet = parameterVersionMap.get(ordinalFieldMap);
+			if (methodVersionSet == null)
 			{
-				AmqpVersionSet methodVersionSet = parameterVersionMap.get(ordinalFieldMap);
-				if (methodVersionSet == null)
-				{
-					methodVersionSet = new AmqpVersionSet();
-					methodVersionSet.add(version);
-					parameterVersionMap.put(ordinalFieldMap, methodVersionSet);
-				}
-				else
-				{
-					methodVersionSet.add(version);
-				}
+				methodVersionSet = new AmqpVersionSet();
+				methodVersionSet.add(version);
+				parameterVersionMap.put(ordinalFieldMap, methodVersionSet);
+			}
+			else
+			{
+				methodVersionSet.add(version);
 			}
 		}
 		return parameterVersionMap;
 	}
-	
+		
 	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
 	{
 		if (!versionSet.equals(globalVersionSet))
