@@ -82,22 +82,26 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 		}	
 	}
 
-	public String getDomainType(String domainName, AmqpVersion v)
+	public String getDomainType(String domainName, AmqpVersion version)
 	    throws AmqpTypeMappingException
 	{
-		AmqpDomain domain = get(domainName);
+		AmqpDomain domainType = get(domainName);
 		// For AMQP 8.0, primitive types were not described as domains, so
 		// return itself as the type.
-		if (domain == null)
-			return converter.getDomainType(domainName, v);
+		if (domainType == null)
+		{
+//			return converter.getDomainType(domainName, version);
+System.out.println("@DEBUG Unable to find domain " + domainName);
+			return domainName;
+		}
 		try
 		{
-			return domain.getDomainType(v);
+			return domainType.getDomainType(version);
 		}
 		catch (AmqpTypeMappingException e)
 		{
 			throw new AmqpTypeMappingException("Unable to find domain type for domain \"" + domainName +
-				"\" version " + v + ".");
+				"\" version " + version + ".");
 		}
 	}
 	

@@ -70,7 +70,7 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		thisVersionList.add(version);
 	}
 	
-	public boolean isCodeTypeConsistent(Generator generator)
+	public boolean isCodeTypeConsistent(LanguageConverter converter)
 	    throws AmqpTypeMappingException
 	{
 		if (domainMap.size() == 1)
@@ -81,7 +81,7 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		{
 			String domainName = itr.next();
 			AmqpVersionSet versionSet = domainMap.get(domainName);
-			String codeType = generator.getGeneratedType(domainName, versionSet.first());
+			String codeType = converter.getGeneratedType(domainName, versionSet.first());
 			if (!codeTypeList.contains(codeType))
 				codeTypeList.add(codeType);
 		}

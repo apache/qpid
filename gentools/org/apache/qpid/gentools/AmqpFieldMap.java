@@ -41,7 +41,9 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 		return newMap;
 	}
 	
-	public AmqpOrdinalFieldMap getMapForVersion(AmqpVersion version)
+	public AmqpOrdinalFieldMap getMapForVersion(AmqpVersion version, boolean codeTypeFlag,
+		LanguageConverter converter)
+		throws AmqpTypeMappingException
 	{
 		AmqpOrdinalFieldMap ordinalFieldMap = new AmqpOrdinalFieldMap();
 		Iterator<String> fItr = keySet().iterator();
@@ -58,7 +60,11 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 					domain = dItr.next();
 					AmqpVersionSet versionSet = field.domainMap.get(domain);
 					if (version == null || versionSet.contains(version))
+					{
+						if (codeTypeFlag)
+							domain = converter.getGeneratedType(domain, version);
 						dFound = true;
+					}
 				}
 				
 				int ordinal = -1;
@@ -81,7 +87,7 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 		}
 		return ordinalFieldMap;
 	}
-	
+		
 	public boolean isDomainConsistent(Generator generator, AmqpVersionSet versionSet)
         throws AmqpTypeMappingException
 	{
@@ -104,7 +110,7 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 	}
 	
 	public String parseFieldMap(Method commonGenerateMethod, Method mangledGenerateMethod,
-		int indentSize, int tabSize, Generator codeGenerator)
+		int indentSize, int tabSize, LanguageConverter converter)
         throws AmqpTypeMappingException, IllegalAccessException, InvocationTargetException
 	{
 		String indent = Utils.createSpaces(indentSize);
@@ -126,19 +132,19 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 		{
 			String fieldName = itr.next();
 			AmqpField field = get(fieldName);
-			if (field.isCodeTypeConsistent(codeGenerator))
+			if (field.isCodeTypeConsistent(converter))
 			{
 				// All versions identical - Common declaration
 				String domainName = field.domainMap.firstKey();
 				AmqpVersionSet versionSet = field.domainMap.get(domainName);
-				String codeType = codeGenerator.getGeneratedType(domainName, versionSet.first());
+				String codeType = converter.getGeneratedType(domainName, versionSet.first());
 				if (commonGenerateMethod != null)
-					sb.append(commonGenerateMethod.invoke(codeGenerator, codeType, field, versionSet,
+					sb.append(commonGenerateMethod.invoke(converter, codeType, field, versionSet,
 					    indentSize, tabSize, itr.hasNext()));
 			}
 			else if (mangledGenerateMethod != null) // Version-mangled
 			{
-				sb.append(mangledGenerateMethod.invoke(codeGenerator, field, indentSize, tabSize,
+				sb.append(mangledGenerateMethod.invoke(converter, field, indentSize, tabSize,
 					itr.hasNext()));
 			}
 		}

@@ -42,17 +42,17 @@ public class AmqpDomain extends TreeMap<String, AmqpVersionSet> implements Print
 		versionSet.add(version);
 	}
 
-	public String getDomainType(AmqpVersion v)
+	public String getDomainType(AmqpVersion version)
 	    throws AmqpTypeMappingException
 	{
 		Iterator<String> i = keySet().iterator();
 		while (i.hasNext())
 		{
 			String type = i.next();
-			AmqpVersionSet vs = get(type);
-			if (vs.contains(v))
+			AmqpVersionSet versionSet = get(type);
+			if (versionSet.contains(version))
 				return type;
-		} throw new AmqpTypeMappingException("Unable to find version " + v + ".");
+		} throw new AmqpTypeMappingException("Unable to find version " + version + ".");
 	}
 	
 	public boolean hasVersion(String type, AmqpVersion v)
