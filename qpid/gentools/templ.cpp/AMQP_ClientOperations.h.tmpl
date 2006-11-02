@@ -34,16 +34,28 @@ namespace framing {
 
 class AMQP_ClientOperations
 {
-    public:
-        AMQP_ClientOperations() {}
-        virtual ~AMQP_ClientOperations() {}
-{so_get_amqp_major}
-{so_get_amqp_minor}
+private:
+    u_int8_t major;
+    u_int8_t minor;
 
-	// Method handler get methods
-{CLIST} {co_method_handler_get_method}
+public:
+    AMQP_ClientOperations(u_int8_t major, u_int8_t minor) : major(major), minor(minor) {}
+    virtual ~AMQP_ClientOperations() {}
 
-{CLIST} {co_cleint method_inner_class}
+    inline u_int8_t getMajor() { return major; }
+    inline u_int8_t getMinor() { return minor; }
+    inline isVersion(u_int8_t _major, u_int8_t _minor)
+    {
+        return major == _major && minor == _minor;
+    }
+
+    // Method handler get methods
+
+%{CLIST} ${coh_method_handler_get_method}
+
+    // Inner classes
+
+%{CLIST} ${coh_inner_class}
 
 }; /* class AMQP_ClientOperations */
 

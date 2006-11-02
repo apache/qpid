@@ -7,6 +7,9 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpOrdinalFieldMap extends TreeMap<Integer, String[]> implements Comparable
 {
+	protected static final int FIELD_DOMAIN = 1;
+	protected boolean codeTypeFlag = false;
+	
 	public int compareTo(Object obj)
 	{
 		AmqpOrdinalFieldMap o = (AmqpOrdinalFieldMap)obj;
@@ -51,5 +54,18 @@ public class AmqpOrdinalFieldMap extends TreeMap<Integer, String[]> implements C
 			}
 		}
 		return 0;
+	}
+	
+	public String toString()
+	{
+		StringBuffer sb = new StringBuffer();
+		Iterator<Integer> itr = keySet().iterator();
+		while (itr.hasNext())
+		{
+			int ordinal = itr.next();
+			String[] pair = get(ordinal);
+			sb.append("[" + ordinal + "] " + pair[0] + " : " + pair[1] + Utils.lineSeparator);
+		}
+		return sb.toString();
 	}
 }
