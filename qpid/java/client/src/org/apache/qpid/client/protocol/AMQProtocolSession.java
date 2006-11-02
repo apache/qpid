@@ -33,6 +33,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.commons.lang.StringUtils;
 
 import javax.jms.JMSException;
 import javax.security.sasl.SaslClient;
@@ -48,46 +49,56 @@ import java.util.concurrent.ConcurrentMap;
 public class AMQProtocolSession implements ProtocolVersionList
 {
 
-    private static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
+    protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
 
-    private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+    protected static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
 
     public static final String PROTOCOL_INITIATION_RECEIVED = "ProtocolInitiatiionReceived";
 
     protected static final String CONNECTION_TUNE_PARAMETERS = "ConnectionTuneParameters";
 
-    private static final String AMQ_CONNECTION = "AMQConnection";
+    protected static final String AMQ_CONNECTION = "AMQConnection";
 
-    private static final String SASL_CLIENT = "SASLClient";
+    protected static final String SASL_CLIENT = "SASLClient";
 
-    private final IoSession _minaProtocolSession;
+    protected final IoSession _minaProtocolSession;
 
-    private WriteFuture _lastWriteFuture;
+    protected WriteFuture _lastWriteFuture;
 
     /**
      * The handler from which this session was created and which is used to handle protocol events.
      * We send failover events to the handler.
      */
-    private final AMQProtocolHandler _protocolHandler;
+    protected final AMQProtocolHandler _protocolHandler;
 
     /**
      * Maps from the channel id to the AMQSession that it represents.
      */
-    private ConcurrentMap _channelId2SessionMap = new ConcurrentHashMap();
+    protected ConcurrentMap _channelId2SessionMap = new ConcurrentHashMap();
 
-    private ConcurrentMap _closingChannels = new ConcurrentHashMap();
+    protected ConcurrentMap _closingChannels = new ConcurrentHashMap();
 
     /**
      * Maps from a channel id to an unprocessed message. This is used to tie together the
      * JmsDeliverBody (which arrives first) with the subsequent content header and content bodies.
      */
-    private ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
+    protected ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
 
     /**
      * Counter to ensure unique queue names
      */
-    private int _queueId = 1;
-    private final Object _queueIdLock = new Object();
+    protected int _queueId = 1;
+    protected final Object _queueIdLock = new Object();
+
+    /**
+     * No-arg constructor for use by test subclass - has to initialise final vars
+     * NOT intended for use other then for test
+     */
+    public AMQProtocolSession()
+    {
+        _protocolHandler = null;
+        _minaProtocolSession = null;
+    }
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
     {
@@ -367,15 +378,16 @@ public class AMQProtocolSession implements ProtocolVersionList
         _protocolHandler.failover(host, port);
     }
 
-    String generateQueueName()
+    protected String generateQueueName()
     {
         int id;
         synchronized(_queueIdLock)
         {
             id = _queueId++;
         }
-        //todo remove '/' and ':' from local Address as this doesn't conform to spec.        
-        return "tmp_" + _minaProtocolSession.getLocalAddress() + "_" + id;
+        //get rid of / and ; from address for spec conformance
+        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;","");
+        return "tmp_" + localAddress + "_" + id;
     }
 
     /**
