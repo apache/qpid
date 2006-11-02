@@ -60,12 +60,12 @@ public class TestAMQProtocolSession extends AMQProtocolSession {
 
         //initialise addresses for test and expected results
         _port = 123;
-        _brokenAddress = "tcp://myAddress;";
-        _generatedAddress = "tmp_tcp:myAddress:123_1";
+        _brokenAddress = "tcp://myAddress;:";
+        _generatedAddress = "tmp_tcpmyAddress123_1";
         _emptyAddress = "";
-        _generatedAddress_2 = "tmp_localhost127.0.0.1:123_2";
+        _generatedAddress_2 = "tmp_localhost127.0.0.1123_2";
         _validAddress = "abc";
-        _generatedAddress_3 = "tmp_abc:123_3";
+        _generatedAddress_3 = "tmp_abc123_3";
 
     }
 
