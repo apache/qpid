@@ -385,8 +385,8 @@ public class AMQProtocolSession implements ProtocolVersionList
         {
             id = _queueId++;
         }
-        //get rid of / and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;","");
+        //get rid of / and : and ; from address for spec conformance
+        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;:","");
         return "tmp_" + localAddress + "_" + id;
     }
 
