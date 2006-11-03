@@ -100,7 +100,7 @@ endef
 $(foreach dir,$(SRCDIRS),$(eval $(call CPPRULE,$(dir))))
 
 #  Unit test plugin libraries.
-$(TESTDIR)/%Test.so: test/unit/%Test.cpp 
+$(TESTDIR)/%Test.so: test/unit/%Test.cpp $(LIB_common) $(LIB_client)
 	mkdir -p $(dir $@)
 	$(CXX) -shared -o $@ $< $(CXXFLAGS)  -Itest/include $(LDFLAGS) -lcppunit $(LIB_common) $(LIB_broker)
 

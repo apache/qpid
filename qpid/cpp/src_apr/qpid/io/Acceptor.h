@@ -24,7 +24,6 @@
 
 #include "qpid/io/Acceptor.h"
 #include "qpid/concurrent/Monitor.h"
-#include "qpid/concurrent/ThreadFactory.h"
 #include "qpid/io/LFProcessor.h"
 #include "qpid/io/LFSessionContext.h"
 #include "qpid/concurrent/Runnable.h"
