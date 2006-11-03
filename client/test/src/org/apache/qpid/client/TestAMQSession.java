@@ -1,0 +1,86 @@
+/*
+ *
+ * Copyright (c) 2006 The Apache Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package org.apache.qpid.client;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.url.URLSyntaxException;
+
+import javax.jms.JMSException;
+import javax.jms.TopicSubscriber;
+
+import junit.framework.JUnit4TestAdapter;
+
+/**
+ * These tests need a broker to be running on locahost:5672 so not added to
+ */
+public class TestAMQSession {
+
+    private AMQSession _session;
+    private AMQTopic _topic;
+    private AMQQueue _queue;
+
+    @Before
+    public void setUp() throws AMQException, URLSyntaxException, JMSException {
+        //initialise the variables we need for testing
+        startVmBrokers();
+        AMQConnection connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
+        _topic = new AMQTopic("mytopic");
+        _queue = new AMQQueue("myqueue");
+        _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+    }
+
+    @Test
+    public void testCreateSubscriber() throws JMSException {
+        TopicSubscriber subscriber = _session.createSubscriber(_topic);
+        Assert.assertEquals("Topic names should match from TopicSubscriber",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+
+        subscriber = _session.createSubscriber(_topic,"abc",false);
+        Assert.assertEquals("Topic names should match from TopicSubscriber with selector",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+    }
+
+    @Test
+    public void testCreateDurableSubscriber() throws JMSException {
+         TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
+         Assert.assertEquals("Topic names should match from durable TopicSubscriber",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+
+        subscriber = _session.createDurableSubscriber(_topic,"mysubname","abc",false);
+        Assert.assertEquals("Topic names should match from durable TopicSubscriber with selector",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new JUnit4TestAdapter(TestAMQSession.class);
+    }
+
+    private void startVmBrokers()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create VM Broker: " + e.getMessage());
+        }
+    }
+}
