@@ -129,7 +129,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private boolean _dups_ok_acknowledge_send;
 
-    BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
+    protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
                          boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
                          AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
                          int prefetchHigh, int prefetchLow, boolean exclusive, int acknowledgeMode)
