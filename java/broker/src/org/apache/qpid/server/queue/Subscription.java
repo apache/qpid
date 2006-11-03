@@ -25,5 +25,5 @@ public interface Subscription
 
     boolean isSuspended();
 
-    void queueDeleted(AMQQueue queue);
+    void queueDeleted(AMQQueue queue) throws AMQException;
 }

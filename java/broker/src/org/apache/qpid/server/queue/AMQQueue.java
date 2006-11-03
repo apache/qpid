@@ -21,24 +21,15 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.txn.TxnBuffer;
-import org.apache.qpid.server.txn.TxnOp;
 
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.NotCompliantMBeanException;
-import javax.management.Notification;
+import javax.management.*;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -284,7 +275,7 @@ public class AMQQueue implements Managable
             {
                 queueSize = queueSize + getMessageSize(message);
             }
-            return new Long(Math.round(queueSize/100));
+            return (long) Math.round(queueSize/100);
         }
         // Operations
 
@@ -292,16 +283,11 @@ public class AMQQueue implements Managable
         private long getMessageSize(AMQMessage msg)
         {
             if (msg == null)
-                return 0l;
-
-            List<ContentBody> cBodies = msg.getContentBodies();
-            long messageSize = 0;
-            for (ContentBody body : cBodies)
             {
-                if (body != null)
-                    messageSize = messageSize + body.getSize();
+                return 0L;
             }
-            return messageSize;
+
+            return msg.getContentHeaderBody().bodySize;
         }
 
         // Checks if there is any notification to be send to the listeners
@@ -386,7 +372,8 @@ public class AMQQueue implements Managable
 
             if (beginIndex > list.size())
             {
-                throw new JMException("FromIndex = " + beginIndex + ". There are only " + list.size() + " messages in the queue");
+                throw new JMException("FromIndex = " + beginIndex + ". There are only " + list.size() +
+                                      " messages in the queue");
             }
 
             endIndex = endIndex < list.size() ? endIndex : list.size();
@@ -397,14 +384,15 @@ public class AMQQueue implements Managable
                 AMQMessage msg = list.get(i - 1);
                 long msgId = msg.getMessageId();
 
-                List<ContentBody> cBodies = msg.getContentBodies();
+                Iterator<ContentBody> cBodies = msg.getContentBodyIterator();
 
                 TabularDataSupport _contentList = new TabularDataSupport(_contentBodyListType);
                 int  contentSerialNo = 1;
                 long size = 0;
 
-                for (ContentBody body : cBodies)
+                while (cBodies.hasNext())
                 {
+                    ContentBody body = cBodies.next();
                     if (body.getSize() != 0)
                     {
                         Byte[] byteArray = getByteArray(body.payload.slice().array());
@@ -665,7 +653,7 @@ public class AMQQueue implements Managable
         delete();
     }
 
-    public void deliver(AMQMessage msg) throws AMQException
+    /*public void deliver(AMQMessage msg) throws AMQException
     {
         TxnBuffer buffer = msg.getTxnBuffer();
         if(buffer == null)
@@ -678,15 +666,15 @@ public class AMQQueue implements Managable
         {
             buffer.enlist(new Deliver(msg));
         }
-    }
+    } */
 
-    private void record(AMQMessage msg) throws AMQException
+    /*private void record(AMQMessage msg) throws AMQException
     {
         msg.enqueue(this);
         msg.incrementReference();
-    }
+    } */
 
-    private void process(AMQMessage msg) throws FailedDequeueException
+    public void process(AMQMessage msg) throws FailedDequeueException
     {
         _deliveryMgr.deliver(getName(), msg);
         updateReceivedMessageCount(msg);
@@ -773,45 +761,4 @@ public class AMQQueue implements Managable
             _logger.debug(MessageFormat.format(msg, args));
         }
     }
-
-    private class Deliver implements TxnOp
-    {
-        private final AMQMessage _msg;
-
-        Deliver(AMQMessage msg)
-        {
-            _msg = msg;
-        }
-
-        public void prepare() throws AMQException
-        {
-            //do the persistent part of the record()
-            _msg.enqueue(AMQQueue.this);
-        }
-
-        public void undoPrepare()
-        {
-        }
-
-        public void commit()
-        {
-            //do the memeory part of the record()
-            _msg.incrementReference();
-            //then process the message
-            try
-            {
-                process(_msg);
-            }
-            catch(FailedDequeueException e)
-            {
-                //TODO: is there anything else we can do here? I think not...
-                _logger.error("Error during commit of a queue delivery: " + e, e);
-            }
-        }
-
-        public void rollback()
-        {
-        }
-    }
-
 }

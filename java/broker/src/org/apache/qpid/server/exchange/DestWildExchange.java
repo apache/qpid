@@ -183,8 +183,8 @@ public class DestWildExchange extends AbstractExchange
         {
             // TODO: modify code generator to add clone() method then clone the deliver body
             // without this addition we have a race condition - we will be modifying the body
-            // before the encoder has encoded the body for delivery
-            q.deliver(payload);
+            // before the encoder has encoded the body for delivery            
+            payload.registerQueue(q);
         }
     }
 

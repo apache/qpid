@@ -139,7 +139,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         _logger.debug("Protocol Session [" + this + "] idle: " + status);
         if(IdleStatus.WRITER_IDLE.equals(status))
         {
-            //write heartbeat frame:
+            //writeDeliver heartbeat frame:
             session.write(HeartbeatBody.FRAME);
         }
         else if(IdleStatus.READER_IDLE.equals(status))
@@ -165,7 +165,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         }
         else if(throwable instanceof IOException)
         {
-            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);            
+            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);
         }
         else
         {

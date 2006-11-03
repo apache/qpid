@@ -44,7 +44,7 @@ public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
                                ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
                                AMQMethodEvent<TxSelectBody> evt) throws AMQException
     {
-        protocolSession.getChannel(evt.getChannelId()).setTransactional(true);
+        protocolSession.getChannel(evt.getChannelId()).setLocalTransactional();
         protocolSession.writeFrame(TxSelectOkBody.createAMQFrame(evt.getChannelId()));
     }
 }

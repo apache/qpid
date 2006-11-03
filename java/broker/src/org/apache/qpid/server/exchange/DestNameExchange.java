@@ -212,8 +212,8 @@ public class DestNameExchange extends AbstractExchange
             }
 
             for (AMQQueue q : queues)
-            {
-                q.deliver(payload);
+            {                
+                payload.registerQueue(q);
             }
         }
     }

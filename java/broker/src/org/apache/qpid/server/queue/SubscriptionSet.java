@@ -18,6 +18,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -166,7 +168,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
      * channel, which in turn can update its list of unacknowledged messages.
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         for (Subscription s : _subscriptions)
         {

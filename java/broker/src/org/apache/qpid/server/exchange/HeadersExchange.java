@@ -175,7 +175,7 @@ public class HeadersExchange extends AbstractExchange
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
         }
-        boolean delivered = false;
+        boolean routed = false;
         for (Registration e : _bindings)
         {
             if (e.binding.matches(headers))
@@ -185,11 +185,11 @@ public class HeadersExchange extends AbstractExchange
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
                                   headers + " to " + e.queue.getName());
                 }
-                e.queue.deliver(payload);
-                delivered = true;
+                payload.registerQueue(e.queue);
+                routed = true;
             }
         }
-        if (!delivered)
+        if (!routed)
         {
             _logger.warn("Exchange " + getName() + ": message not routable.");
         }

@@ -25,44 +25,17 @@ import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.*;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.Notification;
-import javax.management.ObjectName;
+import javax.management.*;
 import javax.management.monitor.MonitorNotification;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
+import javax.management.openmbean.*;
 import javax.security.sasl.SaslServer;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -104,9 +77,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private boolean _closed;
 
     private long _maxNoOfChannels;
-    
+
     /* AMQP Version for this session */
-    
+
     private byte _major;
     private byte _minor;
 
@@ -240,10 +213,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 {
                     throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
                 }
-                if (channel.isTransactional())
-                {
-                    channel.commit();
-                }
+                channel.commit();
             }
             catch(AMQException ex)
             {
@@ -260,10 +230,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 {
                     throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
                 }
-                if (channel.isTransactional())
-                {
-                    channel.rollback();
-                }
+                channel.rollback();
             }
             catch(AMQException ex)
             {
@@ -297,7 +264,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
                 Object[] itemValues = {channel.getChannelId(),
                                        channelObjectName,
-                                       channel.isTransactional(),
                                        (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
                                        channel.getUnacknowledgedMessageMap().size()};
 
@@ -448,17 +414,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             }
             else
             {
-                try
-                {
-                    contentFrameReceived(frame);
-                }
-                catch (RequiredDeliveryException e)
-                {
-                    //need to return the message:
-                    _logger.info("Returning message to " + this + " channel " + frame.channel
-                                 + ": " + e.getMessage());
-                    writeFrame(e.getReturnMessage(frame.channel));
-                }
+                contentFrameReceived(frame);                
             }
         }
     }
@@ -539,9 +495,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     /**
      * Convenience method that writes a frame to the protocol session. Equivalent
-     * to calling getProtocolSession().write().
+     * to calling getProtocolSession().writeDeliver().
      *
-     * @param frame the frame to write
+     * @param frame the frame to writeDeliver
      */
     public void writeFrame(AMQDataBlock frame)
     {
@@ -702,22 +658,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         _saslServer = saslServer;
     }
-    
+
     /**
      * Convenience methods for managing AMQP version.
      * NOTE: Both major and minor will be set to 0 prior to protocol initiation.
      */
-    
+
     public byte getAmqpMajor()
     {
         return _major;
     }
-    
+
     public byte getAmqpMinor()
     {
         return _minor;
     }
-    
+
     public boolean amqpVersionEquals(byte major, byte minor)
     {
         return _major == major && _minor == minor;

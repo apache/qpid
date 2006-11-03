@@ -18,11 +18,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
@@ -127,8 +123,8 @@ public class SubscriptionImpl implements Subscription
         if (msg != null)
         {
             // if we do not need to wait for client acknowledgements
-            // we can decrement the reference count immediately. 
-            
+            // we can decrement the reference count immediately.
+
             // By doing this _before_ the send we ensure that it
             // doesn't get sent if it can't be dequeued, preventing
             // duplicate delivery on recovery.
@@ -148,10 +144,7 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-                AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
-
-                protocolSession.writeFrame(frame);
+                msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
             }
         }
         else
@@ -170,19 +163,8 @@ public class SubscriptionImpl implements Subscription
      *
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         channel.queueDeleted(queue);
-    }
-
-    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
-    {
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channel.getChannelId(), consumerTag,
-                                                                deliveryTag, false, exchange,
-                                                                routingKey);
-        ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
-        deliverFrame.writePayload(buf);
-        buf.flip();
-        return buf;
     }
 }

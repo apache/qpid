@@ -17,11 +17,46 @@
  */
 package org.apache.qpid.server.ack;
 
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.AMQException;
+
+import java.util.Collection;
 import java.util.List;
 
 public interface UnacknowledgedMessageMap
 {
-    public void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
-    public void remove(List<UnacknowledgedMessage> msgs);
+    public interface Visitor
+    {
+        /**
+         * @param message the message being iterated over
+         * @return true to stop iteration, false to continue
+         * @throws AMQException
+         */
+        boolean callback(UnacknowledgedMessage message) throws AMQException;
+
+        void visitComplete();
+    }
+
+    void visit(Visitor visitor) throws AMQException;
+
+    void add(long deliveryTag, UnacknowledgedMessage message);
+
+    void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
+
+    boolean contains(long deliveryTag) throws AMQException;
+
+    void remove(List<UnacknowledgedMessage> msgs);
+
+    UnacknowledgedMessage remove(long deliveryTag);
+
+    void drainTo(Collection<UnacknowledgedMessage> destination, long deliveryTag) throws AMQException;
+
+    Collection<UnacknowledgedMessage> cancelAllMessages();
+
+    void acknowledgeMessage(long deliveryTag, boolean multiple, TransactionalContext txnContext) throws AMQException;
+
+    int size();
+
+    void clear();
 }
 
