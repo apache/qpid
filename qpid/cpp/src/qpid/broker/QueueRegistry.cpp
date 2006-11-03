@@ -24,20 +24,20 @@
 using namespace qpid::broker;
 using namespace qpid::concurrent;
 
-QueueRegistry::QueueRegistry() : counter(1){}
+QueueRegistry::QueueRegistry(MessageStore* const _store) : counter(1), store(_store){}
 
 QueueRegistry::~QueueRegistry(){}
 
 std::pair<Queue::shared_ptr, bool>
-QueueRegistry::declare(const string& declareName, bool durable, u_int32_t autoDelete, 
-                       MessageStore* const store, const ConnectionToken* owner)
+QueueRegistry::declare(const string& declareName, bool durable, 
+                       u_int32_t autoDelete, const ConnectionToken* owner)
 {
     Locker locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
     assert(!name.empty());
     QueueMap::iterator i =  queues.find(name);
     if (i == queues.end()) {
-	Queue::shared_ptr queue(new Queue(name, durable, autoDelete, store, owner));
+	Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner));
 	queues[name] = queue;
 	return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {

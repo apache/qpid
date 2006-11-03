@@ -48,7 +48,7 @@ namespace qpid {
             qpid::framing::AMQHeaderBody::shared_ptr header;
             content_list content;
             u_int64_t size;
-            TxBuffer* tx;
+            u_int64_t persistenceId;
 
             void sendContent(qpid::framing::OutputHandler* out, 
                              int channel, u_int32_t framesize);
@@ -78,11 +78,12 @@ namespace qpid {
             void redeliver();
 
             qpid::framing::BasicHeaderProperties* getHeaderProperties();
+            bool isPersistent();
             const string& getRoutingKey() const { return routingKey; }
             const string& getExchange() const { return exchange; }
             u_int64_t contentSize() const { return size; }
-            TxBuffer* getTx() const { return tx; }
-            void setTx(TxBuffer* _tx) { tx = _tx; }
+            u_int64_t getPersistenceId() const { return persistenceId; }
+            void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
         };
     }
 }
