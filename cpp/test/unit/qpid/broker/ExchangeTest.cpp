@@ -37,8 +37,8 @@ class ExchangeTest : public CppUnit::TestCase
 
     void testMe() 
     {
-        Queue::shared_ptr queue(new Queue("queue", true, true));
-        Queue::shared_ptr queue2(new Queue("queue2", true, true));
+        Queue::shared_ptr queue(new Queue("queue", true));
+        Queue::shared_ptr queue2(new Queue("queue2", true));
 
         TopicExchange topic("topic");
         topic.bind(queue, "abc", 0);

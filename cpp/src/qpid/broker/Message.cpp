@@ -32,7 +32,8 @@ Message::Message(const ConnectionToken* const _publisher,
                                                      mandatory(_mandatory),
                                                      immediate(_immediate),
                                                      redelivered(false),
-                                                     size(0) {}
+                                                     size(0),
+                                                     persistenceId(0) {}
 
 Message::~Message(){}
 
@@ -92,3 +93,9 @@ const ConnectionToken* const Message::getPublisher(){
     return publisher;
 }
 
+bool Message::isPersistent()
+{
+    if(!header) return false;
+    BasicHeaderProperties* props = getHeaderProperties();
+    return props && props->getDeliveryMode() == PERSISTENT;
+}

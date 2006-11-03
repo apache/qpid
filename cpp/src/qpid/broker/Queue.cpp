@@ -23,13 +23,12 @@
 using namespace qpid::broker;
 using namespace qpid::concurrent;
 
-Queue::Queue(const string& _name, bool _durable, u_int32_t _autodelete, 
+Queue::Queue(const string& _name, u_int32_t _autodelete, 
              MessageStore* const _store,
              const ConnectionToken* const _owner) :
 
     name(_name), 
     autodelete(_autodelete),
-    durable(_durable), 
     store(_store),
     owner(_owner), 
     queueing(false),
@@ -166,12 +165,26 @@ bool Queue::canAutoDelete() const{
 
 void Queue::enqueue(Message::shared_ptr& msg, const string * const xid){
     if(store){
-        store->enqueue(msg, name, xid);
+        store->enqueue(msg, *this, xid);
     }
 }
 
 void Queue::dequeue(Message::shared_ptr& msg, const string * const xid){
     if(store){
-        store->dequeue(msg, name, xid);
+        store->dequeue(msg, *this, xid);
+    }
+}
+
+void Queue::create()
+{
+    if(store){
+        store->create(*this);
+    }
+}
+
+void Queue::destroy()
+{
+    if(store){
+        store->destroy(*this);
     }
 }

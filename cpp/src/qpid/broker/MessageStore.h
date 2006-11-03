@@ -24,11 +24,28 @@
 
 namespace qpid {
     namespace broker {
+        class Queue;
+        class QueueRegistry;
+
         /**
          * An abstraction of the persistent storage for messages.
          */
         class MessageStore : public TransactionalStore{
         public:
+            /**
+             * Record the existance of a durable queue
+             */
+            virtual void create(const Queue& queue) = 0;
+            /**
+             * Destroy a durable queue
+             */
+            virtual void destroy(const Queue& queue) = 0;
+
+            /**
+             * Request recovery of queue and message state from store
+             */
+            virtual void recover(QueueRegistry& queues) = 0;
+
             /**
              * Enqueues a message, storing the message if it has not
              * been previously stored and recording that the given
@@ -40,7 +57,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void enqueue(Message::shared_ptr& msg, const string& queue, const string * const xid) = 0;
+            virtual void enqueue(Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
             /**
              * Dequeues a message, recording that the given message is
              * no longer on the given queue and deleting the message
@@ -52,7 +69,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void dequeue(Message::shared_ptr& msg, const string& queue, const string * const xid) = 0;
+            virtual void dequeue(Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
             /**
              * Treat all enqueue/dequeues where this xid was specified as being committed.
              */

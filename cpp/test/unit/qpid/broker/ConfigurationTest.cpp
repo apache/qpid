@@ -60,8 +60,8 @@ class ConfigurationTest : public CppUnit::TestCase
     void testVarious() 
     {
         Configuration conf;
-        char* argv[] = {"ignore", "-t", "--worker-threads", "10", "-a", "blocking"};
-        conf.parse(6, argv);
+        char* argv[] = {"ignore", "-t", "--worker-threads", "10"};
+        conf.parse(4, argv);
         CPPUNIT_ASSERT_EQUAL(5672, conf.getPort());//default
         CPPUNIT_ASSERT_EQUAL(10, conf.getWorkerThreads());
         CPPUNIT_ASSERT(conf.isTrace());
