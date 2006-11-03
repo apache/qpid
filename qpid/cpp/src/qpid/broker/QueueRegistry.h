@@ -37,7 +37,7 @@ class SessionHandlerImpl;
 class QueueRegistry{
  
   public:
-    QueueRegistry();
+    QueueRegistry(MessageStore* const store = 0);
     ~QueueRegistry();
 
     /**
@@ -47,7 +47,6 @@ class QueueRegistry{
      * was created by this declare call false if it already existed.
      */
     std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, u_int32_t autodelete = 0, 
-                                               MessageStore* const _store = 0,
                                                const ConnectionToken* const owner = 0);
 
     /**
@@ -79,7 +78,7 @@ class QueueRegistry{
     QueueMap queues;
     qpid::concurrent::Monitor lock;
     int counter;
-
+    MessageStore* const store;
 };
 
     

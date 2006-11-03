@@ -250,24 +250,28 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
 	queue = parent->getQueue(name, channel);
     } else {
 	std::pair<Queue::shared_ptr, bool> queue_created =  
-            parent->queues->declare(name, durable, autoDelete ? parent->timeout : 0, 0, exclusive ? parent : 0);
+            parent->queues->declare(name, durable, autoDelete ? parent->timeout : 0, exclusive ? parent : 0);
 	queue = queue_created.first;
 	assert(queue);
 	if (queue_created.second) { // This is a new queue
 	    parent->getChannel(channel)->setDefaultQueue(queue);
+
+            //create persistent record if required
+            queue_created.first->create();
+
 	    //add default binding:
 	    parent->exchanges->getDefault()->bind(queue, name, 0);
-	    if(exclusive){
+	    if (exclusive) {
 		parent->exclusiveQueues.push_back(queue);
 	    } else if(autoDelete){
 		parent->cleaner->add(queue);
 	    }
 	}
     }
-    if(exclusive && !queue->isExclusiveOwner(parent)){
+    if (exclusive && !queue->isExclusiveOwner(parent)) {
 	throw ChannelException(405, "Cannot grant exclusive access to queue");
     }
-    if(!nowait){
+    if (!nowait) {
         name = queue->getName();
         parent->client.getQueue().declareOk(channel, name, queue->getMessageCount(), queue->getConsumerCount());
     }
@@ -311,6 +315,7 @@ void SessionHandlerImpl::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t 
             if(i < parent->exclusiveQueues.end()) parent->exclusiveQueues.erase(i);
         }
         count = q->getMessageCount();
+        q->destroy();
         parent->queues->destroy(queue);
     }
     if(!nowait) parent->client.getQueue().deleteOk(channel, count);
