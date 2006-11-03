@@ -18,6 +18,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQDataBlock.h"
+#include "qpid/framing/ProtocolVersion.h"
 
 #ifndef _ProtocolInitiation_
 #define _ProtocolInitiation_
@@ -27,18 +28,20 @@ namespace framing {
 
 class ProtocolInitiation : virtual public AMQDataBlock
 {
-    u_int8_t pmajor;
-    u_int8_t pminor;
-    
+private:
+    ProtocolVersion version;
+        
 public:
     ProtocolInitiation();
     ProtocolInitiation(u_int8_t major, u_int8_t minor);
+    ProtocolInitiation(const ProtocolVersion& p);
     virtual ~ProtocolInitiation();
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
     inline virtual u_int32_t size() const { return 8; }
-    inline u_int8_t getMajor(){ return pmajor; }
-    inline u_int8_t getMinor(){ return pminor; }
+    inline u_int8_t getMajor(){ return version.major_; }
+    inline u_int8_t getMinor(){ return version.minor_; }
+    inline const ProtocolVersion& getVersion() const { return version; }
 };
 
 }
