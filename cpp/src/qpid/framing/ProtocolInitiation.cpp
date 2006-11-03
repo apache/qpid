@@ -19,7 +19,9 @@
 
 qpid::framing::ProtocolInitiation::ProtocolInitiation(){}
 
-qpid::framing::ProtocolInitiation::ProtocolInitiation(u_int8_t _major, u_int8_t _minor) : pmajor(_major), pminor(_minor){}
+qpid::framing::ProtocolInitiation::ProtocolInitiation(u_int8_t _major, u_int8_t _minor) : version(_major, _minor) {}
+
+qpid::framing::ProtocolInitiation::ProtocolInitiation(const qpid::framing::ProtocolVersion& p) : version(p) {}
 
 qpid::framing::ProtocolInitiation::~ProtocolInitiation(){}
 
@@ -30,8 +32,8 @@ void qpid::framing::ProtocolInitiation::encode(Buffer& buffer){
     buffer.putOctet('P');
     buffer.putOctet(1);//class
     buffer.putOctet(1);//instance
-    buffer.putOctet(pmajor);
-    buffer.putOctet(pminor);    
+    buffer.putOctet(version.major_);
+    buffer.putOctet(version.minor_);    
 }
 
 bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
@@ -42,8 +44,8 @@ bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
 	buffer.getOctet();//P
 	buffer.getOctet();//class
 	buffer.getOctet();//instance
-	pmajor = buffer.getOctet();
-	pminor = buffer.getOctet();
+	version.major_ = buffer.getOctet();
+	version.minor_ = buffer.getOctet();
 	return true;
     }else{
 	return false;
