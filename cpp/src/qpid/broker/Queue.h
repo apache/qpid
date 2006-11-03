@@ -47,7 +47,6 @@ namespace qpid {
         class Queue{
             const string name;
             const u_int32_t autodelete;
-            const bool durable;
             MessageStore* const store;
             const ConnectionToken* const owner;
             std::vector<Consumer*> consumers;
@@ -69,10 +68,13 @@ namespace qpid {
 
             typedef std::vector<shared_ptr> vector;
 	    
-            Queue(const string& name, bool durable = false, u_int32_t autodelete = 0, 
+            Queue(const string& name, u_int32_t autodelete = 0, 
                   MessageStore* const store = 0, 
                   const ConnectionToken* const owner = 0);
             ~Queue();
+
+            void create();
+            void destroy();
             /**
              * Informs the queue of a binding that should be cancelled on
              * destruction of the queue.

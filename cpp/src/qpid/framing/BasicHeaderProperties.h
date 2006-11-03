@@ -25,6 +25,7 @@
 
 namespace qpid {
 namespace framing {
+    enum delivery_mode {TRANSIENT = 1, PERSISTENT = 2};
 
     //TODO: This could be easily generated from the spec
     class BasicHeaderProperties : public HeaderProperties

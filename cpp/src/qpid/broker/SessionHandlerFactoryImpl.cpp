@@ -33,7 +33,9 @@ const std::string amq_fanout("amq.fanout");
 const std::string amq_match("amq.match");
 }
 
-SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeout(_timeout), cleaner(&queues, timeout/10){
+SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : 
+    queues(store.get()), timeout(_timeout), cleaner(&queues, timeout/10)
+{
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);
     exchanges.declare(amq_topic, TopicExchange::typeName);
@@ -42,10 +44,17 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : timeo
     cleaner.start();
 }
 
-SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt){
+void SessionHandlerFactoryImpl::recover()
+{
+    if(store.get()) store->recover(queues);
+}
+
+SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt)
+{
     return new SessionHandlerImpl(ctxt, &queues, &exchanges, &cleaner, timeout);
 }
 
-SessionHandlerFactoryImpl::~SessionHandlerFactoryImpl(){
+SessionHandlerFactoryImpl::~SessionHandlerFactoryImpl()
+{
     cleaner.stop();
 }

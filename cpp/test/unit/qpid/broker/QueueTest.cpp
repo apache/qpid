@@ -52,7 +52,7 @@ class QueueTest : public CppUnit::TestCase
 
   public:
     void testConsumers(){
-        Queue::shared_ptr queue(new Queue("my_queue", true, true));
+        Queue::shared_ptr queue(new Queue("my_queue", true));
     
         //Test adding consumers:
         TestConsumer c1; 
@@ -84,7 +84,7 @@ class QueueTest : public CppUnit::TestCase
     }
 
     void testBinding(){
-        Queue::shared_ptr queue(new Queue("my_queue", true, true));
+        Queue::shared_ptr queue(new Queue("my_queue", true));
         //Test bindings:
         TestBinding a;
         TestBinding b;
@@ -118,7 +118,7 @@ class QueueTest : public CppUnit::TestCase
     }
 
     void testDequeue(){
-        Queue::shared_ptr queue(new Queue("my_queue", true, true));
+        Queue::shared_ptr queue(new Queue("my_queue", true));
 
         Message::shared_ptr msg1 = Message::shared_ptr(new Message(0, "e", "A", true, true));
         Message::shared_ptr msg2 = Message::shared_ptr(new Message(0, "e", "B", true, true));
