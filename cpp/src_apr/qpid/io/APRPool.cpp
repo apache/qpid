@@ -18,7 +18,7 @@
 
 #include "APRPool.h"
 #include "qpid/concurrent/APRBase.h"
-#include <boost/pool/singleton_pool.hpp>
+#include <boost/pool/detail/singleton.hpp>
 
 using namespace qpid::io;
 using namespace qpid::concurrent;
