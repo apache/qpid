@@ -494,14 +494,30 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _failoverPolicy;
     }
 
+    /**
+     * Returns an AMQQueueSessionAdaptor which wraps an AMQSession and throws IllegalStateExceptions
+     * where specified in the JMS spec
+     * @param transacted
+     * @param acknowledgeMode
+     * @return QueueSession
+     * @throws JMSException
+     */
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
-        return (QueueSession) createSession(transacted, acknowledgeMode);
+        return new AMQQueueSessionAdaptor(createSession(transacted, acknowledgeMode));
     }
 
+    /**
+     * Returns an AMQTopicSessionAdapter which wraps an AMQSession and throws IllegalStateExceptions
+     * where specified in the JMS spec
+     * @param transacted
+     * @param acknowledgeMode
+     * @return TopicSession
+     * @throws JMSException
+     */
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
-        return (TopicSession) createSession(transacted, acknowledgeMode);
+        return new AMQTopicSessionAdaptor(createSession(transacted, acknowledgeMode));
     }
 
     private boolean channelLimitReached()
