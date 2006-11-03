@@ -169,7 +169,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     String reason = message.bounceBody.replyText;
                     _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
 
-                    //Todo should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
+                    //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
                     if (errorCode == AMQConstant.NO_CONSUMERS.getCode())
                     {
                         _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
@@ -380,7 +380,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             catch (AMQException e)
             {
-                throw new JMSException("Unable to create message: " + e);
+                throw new JMSException("Unable to create text message: " + e);
             }
         }
     }
@@ -398,7 +398,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             catch (AMQException e)
             {
-                throw new JMSException("Unable to create message: " + e);
+                throw new JMSException("Unable to create text message: " + e);
             }
         }
     }
@@ -718,6 +718,34 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }.execute(_connection);
     }
 
+    /**
+     * Creates a QueueReceiver
+     * @param destination
+     * @return QueueReceiver - a wrapper around our MessageConsumer
+     * @throws JMSException
+     */
+    public QueueReceiver createQueueReceiver(Destination destination) throws JMSException
+    {
+        AMQQueue dest = (AMQQueue) destination;
+        BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(destination);
+        return new QueueReceiverAdaptor(dest, consumer);
+    }
+
+    /**
+     * Creates a QueueReceiver using a message selector
+     * @param destination
+     * @param messageSelector
+     * @return QueueReceiver - a wrapper around our MessageConsumer
+     * @throws JMSException
+     */
+    public QueueReceiver createQueueReceiver(Destination destination, String messageSelector) throws JMSException
+    {
+        AMQQueue dest = (AMQQueue) destination;
+        BasicMessageConsumer consumer = (BasicMessageConsumer)
+                createConsumer(destination, messageSelector);
+        return new QueueReceiverAdaptor(dest, consumer);
+    }
+
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
         return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, null);
@@ -924,14 +952,32 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
+    /**
+     * Creates a QueueReceiver wrapping a MessageConsumer
+     * @param queue
+     * @return QueueReceiver
+     * @throws JMSException
+     */
     public QueueReceiver createReceiver(Queue queue) throws JMSException
     {
-        return (QueueReceiver) createConsumer(queue);
+        AMQQueue dest = (AMQQueue) queue;
+        BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest);
+        return new QueueReceiverAdaptor(dest, consumer);
     }
 
+    /**
+     * Creates a QueueReceiver wrapping a MessageConsumer using a message selector
+     * @param queue
+     * @param messageSelector
+     * @return QueueReceiver
+     * @throws JMSException
+     */
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException
     {
-        return (QueueReceiver) createConsumer(queue, messageSelector);
+        AMQQueue dest = (AMQQueue) queue;
+        BasicMessageConsumer consumer = (BasicMessageConsumer)
+                createConsumer(dest, messageSelector);
+        return new QueueReceiverAdaptor(dest, consumer);
     }
 
     public QueueSender createSender(Queue queue) throws JMSException
@@ -961,14 +1007,30 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
+    /**
+     * Creates a non-durable subscriber
+     * @param topic
+     * @return TopicSubscriber - a wrapper round our MessageConsumer
+     * @throws JMSException
+     */
     public TopicSubscriber createSubscriber(Topic topic) throws JMSException
     {
-        return (TopicSubscriber) createConsumer(topic);
+        AMQTopic dest = new AMQTopic(topic.getTopicName());
+        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
     }
 
+    /**
+     * Creates a non-durable subscriber with a message selector
+     * @param topic
+     * @param messageSelector
+     * @param noLocal
+     * @return TopicSubscriber - a wrapper round our MessageConsumer
+     * @throws JMSException
+     */
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException
     {
-        return (TopicSubscriber) createConsumer(topic, messageSelector, noLocal);
+        AMQTopic dest = new AMQTopic(topic.getTopicName());
+        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
     }
 
     /**
