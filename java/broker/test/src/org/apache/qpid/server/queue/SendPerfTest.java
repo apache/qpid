@@ -103,7 +103,9 @@ public class SendPerfTest extends TimedRun
         {
             for (AMQQueue q : queues)
             {
-                q.deliver(new AMQMessage(messageStore, i, publish, header, body));
+                //q.deliver(new AMQMessage(messageStore, i, publish, header, body));
+                //q.process(new AMQMessage(messageStore, i, publish, header, body));
+                throw new AMQException("Need to fix this!!");
             }
         }
     }

@@ -683,7 +683,7 @@ public class AMQQueue implements Managable
             msg.checkDeliveredToConsumer();
             updateReceivedMessageCount(msg);
         }
-        catch(NoConsumersException e)
+        catch (NoConsumersException e)
         {
             // as this message will be returned, it should be removed
             // from the queue:

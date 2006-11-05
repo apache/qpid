@@ -91,12 +91,12 @@ public class TxAckTest
     private class Scenario
     {
         private final LinkedHashMap<Long, UnacknowledgedMessage> _messages = new LinkedHashMap<Long, UnacknowledgedMessage>();
-        private final UnacknowledgedMessageMap _map = new UnacknowledgedMessageMapImpl(_messages, _messages);
+        private final UnacknowledgedMessageMap _map = new UnacknowledgedMessageMapImpl(500);
         private final TxAck _op = new TxAck(_map);
         private final List<Long> _acked;
         private final List<Long> _unacked;
 
-        Scenario(int messageCount, List<Long> acked, List<Long> unacked)
+        Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws AMQException
         {
             for(int i = 0; i < messageCount; i++)
             {
@@ -162,10 +162,11 @@ public class TxAckTest
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag)
+        TestMessage(long tag) throws AMQException
         {
-            super(new TestableMemoryMessageStore(), null);
+            super(null); // new TestableMemoryMessageStore(), null);
             _tag = tag;
+            throw new AMQException("Fix this!");
         }
 
         public void incrementReference()

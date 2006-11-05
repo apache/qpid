@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Before;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.AMQException;
 
 /**
@@ -43,22 +45,25 @@ public class TestReferenceCounting
     @Test
     public void testMessageGetsRemoved() throws AMQException
     {
-        AMQMessage message = new AMQMessage(_store, null);
+        throw new AMQException("Fix this!!!");
+        /*AMQMessage message = new AMQMessage(_store, null);
         _store.put(message);
         Assert.assertTrue(_store.getMessageMap().size() == 1);
         message.decrementReference();
         Assert.assertTrue(_store.getMessageMap().size() == 0);
+        */
     }
 
     @Test
     public void testMessageRemains() throws AMQException
     {
-        AMQMessage message = new AMQMessage(_store, null);
+        throw new AMQException("Fix me!!!");
+        /*AMQMessage message = new AMQMessage(_store, null);
         _store.put(message);
         Assert.assertTrue(_store.getMessageMap().size() == 1);
         message.incrementReference();
         message.decrementReference();
-        Assert.assertTrue(_store.getMessageMap().size() == 1);
+        Assert.assertTrue(_store.getMessageMap().size() == 1);*/
     }
 
     public static junit.framework.Test suite()

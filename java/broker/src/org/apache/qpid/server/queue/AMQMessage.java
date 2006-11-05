@@ -90,7 +90,7 @@ public class AMQMessage
 
         public boolean hasNext()
         {
-            return _index < _messageHandle.getBodyCount();
+            return _index < _messageHandle.getBodyCount() - 1;
         }
 
         public AMQDataBlock next()
@@ -111,7 +111,7 @@ public class AMQMessage
 
         public boolean hasNext()
         {
-            return _index < _messageHandle.getBodyCount();
+            return _index < _messageHandle.getBodyCount() - 1;
         }
 
         public ContentBody next()

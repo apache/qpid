@@ -34,12 +34,13 @@ public interface MessageStore
      * @param base the base element identifier from which all configuration items are relative. For example, if the base
      * element is "store", the all elements used by concrete classes will be "store.foo" etc.
      * @param config the apache commons configuration object
+     * @throws Exception if an error occurs that means the store is unable to configure itself
      */
     void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
-     * @throws Exception
+     * @throws Exception if close fails
      */
     void close() throws Exception;
 

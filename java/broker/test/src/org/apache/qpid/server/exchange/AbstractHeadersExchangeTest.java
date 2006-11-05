@@ -166,7 +166,9 @@ public class AbstractHeadersExchangeTest
 
         private Message(BasicPublishBody publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
         {
-            super(_messageStore, publish, header, bodies);
+            //super(_messageStore, publish, header, bodies);
+            super(null);
+            throw new AMQException("Fix this!!!!");
         }
 
         private Message(AMQMessage msg) throws AMQException

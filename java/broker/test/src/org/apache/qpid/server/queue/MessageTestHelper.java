@@ -43,7 +43,8 @@ class MessageTestHelper
     {
         BasicPublishBody publish = new BasicPublishBody();
         publish.immediate = immediate;
-        return new AMQMessage(_messageStore, publish, new ContentHeaderBody(), null);
+        //return new AMQMessage(_messageStore, publish, new ContentHeaderBody(), null);
+        throw new AMQException("Need to fix this!!!");
     }
 
 }

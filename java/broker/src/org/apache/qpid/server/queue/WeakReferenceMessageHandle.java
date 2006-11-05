@@ -15,6 +15,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
 import java.util.List;
+import java.util.LinkedList;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -23,7 +24,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 {
     private ContentHeaderBody _contentHeaderBody;
 
-    private List<ContentBody> _contentBodies;
+    private List<ContentBody> _contentBodies = new LinkedList<ContentBody>();
 
     private boolean _redelivered;
 
@@ -52,12 +53,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public long getBodySize()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return _contentHeaderBody.bodySize;
     }
 
     public ContentBody getContentBody(int index) throws IllegalArgumentException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _contentBodies.get(index);
     }
 
     public void addContentBodyFrame(ContentBody contentBody) throws AMQException
@@ -67,7 +68,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public String getExchangeName()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public String getRoutingKey()
