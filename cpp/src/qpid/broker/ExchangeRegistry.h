@@ -20,7 +20,7 @@
 
 #include <map>
 #include "qpid/broker/Exchange.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 
 namespace qpid {
 namespace broker {
@@ -29,7 +29,7 @@ namespace broker {
     class ExchangeRegistry{
         typedef std::map<string, Exchange::shared_ptr> ExchangeMap;
         ExchangeMap exchanges;
-        qpid::concurrent::Monitor lock;
+        qpid::sys::Monitor lock;
     public:
         std::pair<Exchange::shared_ptr, bool> declare(const string& name, const string& type) throw(UnknownExchangeTypeException);
         void destroy(const string& name);

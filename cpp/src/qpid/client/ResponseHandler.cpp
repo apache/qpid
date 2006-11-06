@@ -16,11 +16,11 @@
  *
  */
 #include "qpid/client/ResponseHandler.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/QpidError.h"
 
 qpid::client::ResponseHandler::ResponseHandler() : waiting(false){
-    monitor = new qpid::concurrent::Monitor();
+    monitor = new qpid::sys::Monitor();
 }
 
 qpid::client::ResponseHandler::~ResponseHandler(){

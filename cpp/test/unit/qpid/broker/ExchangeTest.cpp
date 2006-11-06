@@ -25,7 +25,7 @@
 #include <iostream>
 
 using namespace qpid::broker;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 class ExchangeTest : public CppUnit::TestCase
 {

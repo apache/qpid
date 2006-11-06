@@ -22,11 +22,11 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/MessageListener.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::client;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 class SimpleListener : public virtual MessageListener{
     Monitor* monitor;

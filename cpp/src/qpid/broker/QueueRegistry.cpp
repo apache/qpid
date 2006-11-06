@@ -16,13 +16,13 @@
  *
  */
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/SessionHandlerImpl.h"
 #include <sstream>
 #include <assert.h>
 
 using namespace qpid::broker;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 QueueRegistry::QueueRegistry(MessageStore* const _store) : counter(1), store(_store){}
 

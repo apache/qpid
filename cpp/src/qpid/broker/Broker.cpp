@@ -21,7 +21,7 @@
 
 
 using namespace qpid::broker;
-using namespace qpid::io;
+using namespace qpid::sys;
 
 Broker::Broker(const Configuration& config) :
     acceptor(new Acceptor(config.getPort(),

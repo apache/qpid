@@ -21,8 +21,8 @@
 
 #include "qpid/broker/Configuration.h"
 #include "qpid/broker/SessionHandlerFactoryImpl.h"
-#include "qpid/concurrent/Runnable.h"
-#include "qpid/io/Acceptor.h"
+#include "qpid/sys/Runnable.h"
+#include "qpid/sys/Acceptor.h"
 #include <qpid/SharedObject.h>
 
 namespace qpid {
@@ -30,7 +30,7 @@ namespace qpid {
         /**
          * A broker instance. 
          */
-        class Broker : public qpid::concurrent::Runnable,
+        class Broker : public qpid::sys::Runnable,
                        public qpid::SharedObject<Broker>
         {
           public:
@@ -68,7 +68,7 @@ namespace qpid {
 
           private:
             Broker(const Configuration& config); 
-            qpid::io::Acceptor::shared_ptr acceptor;
+            qpid::sys::Acceptor::shared_ptr acceptor;
             SessionHandlerFactoryImpl factory;
         };
     }

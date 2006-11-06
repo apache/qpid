@@ -21,7 +21,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 FanOutExchange::FanOutExchange(const std::string& _name) : Exchange(_name) {}
 
