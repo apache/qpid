@@ -14,27 +14,22 @@
  # limitations under the License.
  #
 
-## Build platform and type.
-
-# Default type
+## Build platform and type defaults
 TYPE := debug
-# Known platforms
-PLATFORMS := apr
-# TODO aconway 2006-10-30: Remove Default platform when there's more than 1.
 PLATFORM := apr
 
 # Local options, may override PLATFORM and/or TYPE
 -include options-local.mk
 
-DUMMY := $(if $(filter $(PLATFORM),$(PLATFORMS)),OK,$(error PLATFORM is not set. Use 'make PLATFORM=<name>' or create file options-local.mk with PLATFORM=<name>. Valid names: $(PLATFORMS)))
-DUMMY := $(if $(filter $(TYPE),debug release),OK,$(error TYPE must be 'debug' or 'release'))
-
-
 ## Platform specific options
 
 # apr: Apache Portable Runtime.
-CXXFLAGS_apr := -D_USE_APR_IO_ -I/usr/local/apr/include
+CXXFLAGS_apr := -I/usr/local/apr/include
 LDFLAGS_apr  := -L/usr/local/apr/lib -lapr-1 
+
+# posix: Native posix implementation
+CXXFLAGS_posix :=
+LDFLAGS_posix  :=
 
 ## Build directories.
 
@@ -46,13 +41,13 @@ OBJDIR:=build/$(BUILD)/obj
 TESTDIR:=build/$(BUILD)/test
 
 BUILDDIRS := $(BINDIR) $(LIBDIR) $(OBJDIR) $(TESTDIR) $(GENDIR)
-SRCDIRS := src src_$(PLATFORM) $(GENDIR)
+SRCDIRS := src $(GENDIR)
 
 ## External dependencies:
 
 # Add location for headers and libraries of any external dependencies here
-EXTRA_INCLUDES := -I/usr/local/apr/include
-EXTRA_LIBDIRS := -L/usr/local/apr/lib
+EXTRA_INCLUDES :=
+EXTRA_LIBDIRS  :=
 
 ## Compile flags
 

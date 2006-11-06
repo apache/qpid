@@ -15,14 +15,14 @@
  * limitations under the License.
  *
  */
-#include "qpid/concurrent/APRBase.h"
+#include "qpid/sys/APRBase.h"
 #include "qpid/broker/Message.h"
 #include <qpid_test_plugin.h>
 #include <iostream>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 class MessageTest : public CppUnit::TestCase  
 {

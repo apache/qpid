@@ -24,7 +24,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 // TODO aconway 2006-09-20: More efficient matching algorithm.
 // The current search algorithm really sucks.

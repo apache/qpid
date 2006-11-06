@@ -22,7 +22,7 @@
 #include "qpid/broker/DirectExchange.h"
 
 using namespace qpid::broker;
-using namespace qpid::io;
+using namespace qpid::sys;
 
 namespace
 {

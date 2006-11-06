@@ -25,7 +25,7 @@ using std::mem_fun_ref;
 using std::bind2nd;
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 
 Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize) :

@@ -22,7 +22,7 @@
 #include "qpid/broker/TopicExchange.h"
 
 using namespace qpid::broker;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 using std::pair;
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) throw(UnknownExchangeTypeException){

@@ -33,9 +33,9 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid/io/SessionContext.h"
-#include "qpid/io/SessionHandler.h"
-#include "qpid/io/TimeoutHandler.h"
+#include "qpid/sys/SessionContext.h"
+#include "qpid/sys/SessionHandler.h"
+#include "qpid/sys/TimeoutHandler.h"
 #include "qpid/broker/TopicExchange.h"
 
 namespace qpid {
@@ -57,14 +57,14 @@ struct ConnectionException : public std::exception {
     const char* what() const throw() { return text.c_str(); }
 };
 
-class SessionHandlerImpl : public virtual qpid::io::SessionHandler, 
+class SessionHandlerImpl : public virtual qpid::sys::SessionHandler, 
                            public virtual qpid::framing::AMQP_ServerOperations, 
                            public virtual ConnectionToken
 {
     typedef std::map<u_int16_t, Channel*>::iterator channel_iterator;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
-    qpid::io::SessionContext* context;
+    qpid::sys::SessionContext* context;
     qpid::framing::AMQP_ClientProxy client;
     QueueRegistry* queues;
     ExchangeRegistry* const exchanges;
@@ -100,7 +100,7 @@ class SessionHandlerImpl : public virtual qpid::io::SessionHandler,
     Exchange::shared_ptr findExchange(const string& name);
     
   public:
-    SessionHandlerImpl(qpid::io::SessionContext* context, QueueRegistry* queues, 
+    SessionHandlerImpl(qpid::sys::SessionContext* context, QueueRegistry* queues, 
                        ExchangeRegistry* exchanges, AutoDelete* cleaner, const u_int32_t timeout);
     virtual void received(qpid::framing::AMQFrame* frame);
     virtual void initiated(qpid::framing::ProtocolInitiation* header);

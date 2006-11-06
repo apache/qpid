@@ -22,7 +22,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/Queue.h"
 
 namespace qpid {
@@ -34,7 +34,7 @@ class HeadersExchange : public virtual Exchange {
     typedef std::vector<Binding> Bindings;
 
     Bindings bindings;
-    qpid::concurrent::Monitor lock;
+    qpid::sys::Monitor lock;
 
   public:
     static const std::string typeName;

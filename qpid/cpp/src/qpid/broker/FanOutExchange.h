@@ -23,7 +23,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/Queue.h"
 
 namespace qpid {
@@ -31,7 +31,7 @@ namespace broker {
 
 class FanOutExchange : public virtual Exchange {
     std::vector<Queue::shared_ptr> bindings;
-    qpid::concurrent::Monitor lock;
+    qpid::sys::Monitor lock;
 
   public:
     static const std::string typeName;

@@ -17,11 +17,11 @@
  */
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/MessageStore.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include <iostream>
 
 using namespace qpid::broker;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 Queue::Queue(const string& _name, u_int32_t _autodelete, 
              MessageStore* const _store,
