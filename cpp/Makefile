@@ -52,7 +52,7 @@ $(BUILDDIRS):
 ## Library rules
 
 LIB_common := $(call LIBFILE,common,1.0)
-$(LIB_common): $(call OBJECTS,qpid qpid/concurrent qpid/framing qpid/io) 
+$(LIB_common): $(call OBJECTS,qpid qpid/framing qpid/sys) 
 	$(LIB_COMMAND)
 
 LIB_client :=$(call LIBFILE,client,1.0)

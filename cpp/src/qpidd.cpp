@@ -22,7 +22,7 @@
 #include <memory>
 
 using namespace qpid::broker;
-using namespace qpid::io;
+using namespace qpid::sys;
 
 void handle_signal(int /*signal*/){
     std::cout << "Shutting down..." << std::endl;

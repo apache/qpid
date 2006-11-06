@@ -23,14 +23,14 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
         std::map<string, std::vector<Queue::shared_ptr> > bindings;
-        qpid::concurrent::Monitor lock;
+        qpid::sys::Monitor lock;
 
     public:
         static const std::string typeName;

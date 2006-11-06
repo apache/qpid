@@ -23,7 +23,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/broker/Message.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/Queue.h"
 
 namespace qpid {
@@ -71,7 +71,7 @@ class TopicPattern : public Tokens
 class TopicExchange : public virtual Exchange{
     typedef std::map<TopicPattern, Queue::vector> BindingMap;
     BindingMap bindings;
-    qpid::concurrent::Monitor lock;
+    qpid::sys::Monitor lock;
 
   public:
     static const std::string typeName;

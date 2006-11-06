@@ -21,14 +21,14 @@
 #include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "unistd.h"
 #include <apr-1/apr_time.h>
 #include <cstdlib>
 #include <iostream>
 
 using namespace qpid::client;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 class Publisher : public MessageListener{    
     Channel* const channel;

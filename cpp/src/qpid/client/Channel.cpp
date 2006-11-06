@@ -16,15 +16,15 @@
  *
  */
 #include "qpid/client/Channel.h"
-#include "qpid/concurrent/Monitor.h"
-#include "qpid/concurrent/ThreadFactory.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/sys/ThreadFactory.h"
 #include "qpid/client/Message.h"
 #include "qpid/QpidError.h"
 
 using namespace boost;          //to use dynamic_pointer_cast
 using namespace qpid::client;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 Channel::Channel(bool _transactional, u_int16_t _prefetch) :
     id(0),
