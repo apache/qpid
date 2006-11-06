@@ -24,16 +24,16 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/io/SessionContext.h"
-#include "qpid/io/SessionHandler.h"
-#include "qpid/io/SessionHandlerFactory.h"
-#include "qpid/io/TimeoutHandler.h"
+#include "qpid/sys/SessionContext.h"
+#include "qpid/sys/SessionHandler.h"
+#include "qpid/sys/SessionHandlerFactory.h"
+#include "qpid/sys/TimeoutHandler.h"
 #include <memory>
 
 namespace qpid {
     namespace broker {
 
-        class SessionHandlerFactoryImpl : public virtual qpid::io::SessionHandlerFactory
+        class SessionHandlerFactoryImpl : public virtual qpid::sys::SessionHandlerFactory
         {
             std::auto_ptr<MessageStore> store;
             QueueRegistry queues;
@@ -43,7 +43,7 @@ namespace qpid {
         public:
             SessionHandlerFactoryImpl(u_int32_t timeout = 30000);
             void recover();
-            virtual qpid::io::SessionHandler* create(qpid::io::SessionContext* ctxt);
+            virtual qpid::sys::SessionHandler* create(qpid::sys::SessionContext* ctxt);
             virtual ~SessionHandlerFactoryImpl();
         };
 

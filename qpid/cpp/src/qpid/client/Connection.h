@@ -22,9 +22,9 @@
 #define _Connection_
 
 #include "qpid/QpidError.h"
-#include "qpid/io/Connector.h"
-#include "qpid/io/ShutdownHandler.h"
-#include "qpid/io/TimeoutHandler.h"
+#include "qpid/sys/Connector.h"
+#include "qpid/sys/ShutdownHandler.h"
+#include "qpid/sys/TimeoutHandler.h"
 
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/client/Exchange.h"
@@ -40,8 +40,8 @@ namespace client {
     class Channel;
 
 class Connection : public virtual qpid::framing::InputHandler, 
-        public virtual qpid::io::TimeoutHandler, 
-        public virtual qpid::io::ShutdownHandler, 
+        public virtual qpid::sys::TimeoutHandler, 
+        public virtual qpid::sys::ShutdownHandler, 
         private virtual qpid::framing::BodyHandler{
 
         typedef std::map<int, Channel*>::iterator iterator;
@@ -52,7 +52,7 @@ class Connection : public virtual qpid::framing::InputHandler,
 	int port;
 	const u_int32_t max_frame_size;
 	std::map<int, Channel*> channels; 
-	qpid::io::Connector* connector;
+	qpid::sys::Connector* connector;
 	qpid::framing::OutputHandler* out;
 	ResponseHandler responses;
         volatile bool closed;

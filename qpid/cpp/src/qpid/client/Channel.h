@@ -25,7 +25,7 @@
 
 #include "qpid/framing/amqp_framing.h"
 
-#include "qpid/concurrent/ThreadFactory.h"
+#include "qpid/sys/ThreadFactory.h"
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/Exchange.h"
@@ -40,7 +40,7 @@ namespace qpid {
 namespace client {
     enum ack_modes {NO_ACK=0, AUTO_ACK=1, LAZY_ACK=2, CLIENT_ACK=3};
 
-    class Channel : private virtual qpid::framing::BodyHandler, public virtual qpid::concurrent::Runnable{
+    class Channel : private virtual qpid::framing::BodyHandler, public virtual qpid::sys::Runnable{
         struct Consumer{
             MessageListener* listener;
             int ackMode;
@@ -51,15 +51,15 @@ namespace client {
 
 	u_int16_t id;
 	Connection* con;
-	qpid::concurrent::ThreadFactory* threadFactory;
-	qpid::concurrent::Thread* dispatcher;
+	qpid::sys::ThreadFactory* threadFactory;
+	qpid::sys::Thread* dispatcher;
 	qpid::framing::OutputHandler* out;
 	IncomingMessage* incoming;
 	ResponseHandler responses;
 	std::queue<IncomingMessage*> messages;//holds returned messages or those delivered for a consume
 	IncomingMessage* retrieved;//holds response to basic.get
-	qpid::concurrent::Monitor* dispatchMonitor;
-	qpid::concurrent::Monitor* retrievalMonitor;
+	qpid::sys::Monitor* dispatchMonitor;
+	qpid::sys::Monitor* retrievalMonitor;
 	std::map<std::string, Consumer*> consumers;
 	ReturnedMessageHandler* returnsHandler;
 	bool closed;

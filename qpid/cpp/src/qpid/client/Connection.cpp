@@ -17,15 +17,15 @@
  */
 #include "qpid/client/Connection.h"
 #include "qpid/client/Channel.h"
-#include "qpid/io/Connector.h"
+#include "qpid/sys/Connector.h"
 #include "qpid/client/Message.h"
 #include "qpid/QpidError.h"
 #include <iostream>
 
 using namespace qpid::client;
 using namespace qpid::framing;
-using namespace qpid::io;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
+using namespace qpid::sys;
 
 u_int16_t Connection::channelIdCounter;
 

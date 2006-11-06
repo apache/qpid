@@ -1,7 +1,5 @@
 = Developer guide to C++ codebase =
 
-See DESIGN for design notes, Makefile comment for build system notes.
-
 == Prerequisites ==
 
 Required to build:
@@ -14,6 +12,7 @@ Optional: to generate documentation from source code comments you need:
  * graphviz 2.8: http://www.graphviz.org/
 
 If you use yum to install packages:
+
 # yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
 
 == Building ==
@@ -47,10 +46,17 @@ Main targets:
  * clean: cleans the current build only. Does not clean generated code.
  * spotless: cleans up all build output and removes the build directory.
 
+=== Source Tree ===
+
 The source tree is structured as follows:
  * src/ - .h and .cpp source files, directories mirror namespaces.
- * src_apr/ - source files that depend on APR
- * src_linux/ - source files optimized for Linux.
+  * qpid/
+   * sys/ - system abstractions: threading, IO.
+    * posix/ - posix implementation
+    * apr/ - portable APR implementation (for client side)
+   * framing - encoding/decoding AMQP messages
+   * client - client classes.
+   * broker - broker classes.
  * etc/ - Non-c++ resources, e.g. stylesheets.
  * test/ 
   * unit/ - unit tests (cppunit plugins), directories mirror namespaces.
@@ -62,6 +68,20 @@ Build system principles:
  * Calculate sources from directories, no explicit source lists.
  * Corresponding .cpp and .h files in same directory for easy editing.
  * Source directory structure mirrors C++ namespaces.
+
+=== Portability ===
+
+All system calls are abstracted by classes in qpid/sys. This provides
+an object-oriented C++ API and contains platform-specific code.
+
+These wrappers should be mainlly inline by-value classes so they
+impose no run-time penalty compared do direct system calls.
+
+Initially we will have a full POSIX implementation and a portable 
+implementation suffcient for the client using the APR portability
+library. The implementations may change in future but the interface
+for qpid code outside the qpid/sys namespace should remain stable.
+
 
 === Unit tests ===
 

@@ -24,9 +24,9 @@
 
 using namespace boost;
 using namespace qpid::broker;
-using namespace qpid::io;
+using namespace qpid::sys;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context, 
                                        QueueRegistry* _queues, 

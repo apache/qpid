@@ -15,14 +15,14 @@
  * limitations under the License.
  *
  */
-#include "qpid/concurrent/Monitor.h"
+#include "qpid/sys/Monitor.h"
 #include "qpid/broker/Message.h"
 #include <iostream>
 
 using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::concurrent;
+using namespace qpid::sys;
 
 Message::Message(const ConnectionToken* const _publisher, 
                  const string& _exchange, const string& _routingKey, 
