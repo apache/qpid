@@ -33,7 +33,7 @@ import javax.jms.QueueReceiver;
 import junit.framework.JUnit4TestAdapter;
 
 /**
- * These tests need a broker to be running on locahost:5672 so not added to
+ * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession
  */
 public class TestAMQSession {
 
