@@ -580,7 +580,18 @@ public class AMQQueue implements Managable
         _managedObject.register();
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
-        _deliveryMgr = new DeliveryManager(_subscribers, this);
+
+        //fixme - Pick one.
+        if (Boolean.getBoolean("concurrentdeliverymanager"))
+        {
+            _logger.warn("Using ConcurrentDeliveryManager");
+            _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
+        }
+        else
+        {
+            _logger.warn("Using SynchronizedDeliveryManager");
+            _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
+        }
     }
 
     private AMQQueueMBean createMBean() throws AMQException
@@ -676,7 +687,7 @@ public class AMQQueue implements Managable
             _logger.info("Will not delete " + this + " as it is in use.");
             return 0;
         }
-        else if (checkEmpty && _deliveryMgr.getQueueMessageCount() > 0)
+        else if (checkEmpty && _deliveryMgr.hasQueuedMessages())
         {
             _logger.info("Will not delete " + this + " as it is not empty.");
             return 0;
