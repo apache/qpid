@@ -137,7 +137,7 @@ public class TransportConnection
                 break;
             case VM:
             {
-                _instance = getVMTransport(details, Boolean.getBoolean("amqj.NoAutoCreateVMBroker"));
+                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
                 break;
             }
         }
@@ -160,19 +160,19 @@ public class TransportConnection
         return -1;
     }
 
-    private static ITransportConnection getVMTransport(BrokerDetails details, boolean noAutoCreate) throws AMQVMBrokerCreationException
+    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate) throws AMQVMBrokerCreationException
     {
         int port = details.getPort();
 
         if (!_inVmPipeAddress.containsKey(port))
         {
-            if (noAutoCreate)
+            if (AutoCreate)
             {
-                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
+                createVMBroker(port);
             }
             else
             {
-                createVMBroker(port);
+                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
             }
         }
 
@@ -208,7 +208,14 @@ public class TransportConnection
                 {
                     VmPipeAddress pipe = new VmPipeAddress(port);
 
-                    _acceptor.unbind(pipe);
+                    try
+                    {
+                        _acceptor.unbind(pipe);
+                    }
+                    catch (Exception ignore)
+                    {
+                        //ignore
+                    }
 
                     if (provider == null)
                     {
@@ -258,14 +265,7 @@ public class TransportConnection
             Object[] params = {port};
             provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
             //Give the broker a second to create
-            try
-            {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                //do nothing
-            }
+            _logger.info("Created Instance");
         }
         catch (Exception e)
         {
@@ -309,8 +309,8 @@ public class TransportConnection
         if (pipe != null)
         {
             _logger.info("Killing VM Broker:" + port);
-            _acceptor.unbind(pipe);
             _inVmPipeAddress.remove(port);
+            _acceptor.unbind(pipe);
         }
     }
 
