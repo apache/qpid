@@ -23,6 +23,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -37,6 +38,7 @@ import javax.jms.*;
 public class DisconnectAndRedeliverTest
 {
     private static final Logger _logger = Logger.getLogger(DisconnectAndRedeliverTest.class);
+
 
     static
     {
@@ -54,7 +56,21 @@ public class DisconnectAndRedeliverTest
     @Before
     public void resetAppliactionRegistry() throws Exception
     {
-        ApplicationRegistry.initialise(new TestApplicationRegistry());
+        createVMBroker();
+        ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
+    }
+
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
     }
 
     @After
@@ -83,6 +99,8 @@ public class DisconnectAndRedeliverTest
         ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+                 
+
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 

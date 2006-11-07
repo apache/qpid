@@ -21,6 +21,8 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
+import javax.jms.Connection;
+import javax.jms.JMSException;
 import java.io.File;
 import java.util.Hashtable;
 
@@ -48,7 +50,6 @@ class Unbind
 
     public Unbind(boolean output)
     {
-
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
@@ -99,6 +100,14 @@ class Unbind
                 try
                 {
                     obj = ctx.lookup("Connection");
+                    try
+                    {
+                        ((Connection) obj).close();
+                    }
+                    catch (JMSException e)
+                    {
+                        //ignore just need to close
+                    }
                 }
                 catch (NameNotFoundException ne2)
                 {
@@ -125,7 +134,9 @@ class Unbind
             //System.out.println("unbind failed; object still there: " + obj);
 
             // Close the context when we're done
+
             ctx.close();
+
         }
         catch (NamingException e)
         {
