@@ -20,6 +20,7 @@ package org.apache.qpid.client;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.After;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
@@ -84,6 +85,15 @@ public class TestAMQSession {
 
         receiver = _session.createReceiver(_queue, "abc");
         Assert.assertEquals("Queue names should match from QueueReceiver with selector",_queue.getQueueName(),receiver.getQueue().getQueueName());
+    }
+
+    @After
+    public void stopVmBrokers()
+    {
+        TransportConnection.killVMBroker(1);
+        _queue = null;
+        _topic = null;
+        _session = null;
     }
 
     public static junit.framework.Test suite()
