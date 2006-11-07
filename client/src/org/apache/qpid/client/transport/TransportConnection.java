@@ -219,7 +219,18 @@ public class TransportConnection
                 {
                     _logger.info("Unable to create InVM Qpid.AMQP on port " + port + ". Because: " + e.getCause());
                     _logger.error(e);
-                    throw new AMQVMBrokerCreationException(port, e.getCause() + " Stopped InVM Qpid.AMQP creation");
+                    String because;
+                    if (e.getCause() == null)
+                    {
+                        because = e.toString();
+                    }
+                    else
+                    {
+                        because = e.getCause().toString();
+                    }
+
+
+                    throw new AMQVMBrokerCreationException(port, because + " Stopped InVM Qpid.AMQP creation");
                 }
 
                 _acceptor.bind(pipe, provider);
@@ -230,7 +241,18 @@ public class TransportConnection
             catch (IOException e)
             {
                 _logger.error(e);
-                throw new AMQVMBrokerCreationException(port, e.getCause() + " Stopped binding of InVM Qpid.AMQP");
+                
+                String because;
+                if (e.getCause() == null)
+                {
+                    because = e.toString();
+                }
+                else
+                {
+                    because = e.getCause().toString();
+                }
+
+                throw new AMQVMBrokerCreationException(port, because + " Stopped binding of InVM Qpid.AMQP");
             }
         }
         else
