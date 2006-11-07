@@ -205,6 +205,15 @@ public class TransportConnection
                     Class[] cnstr = {Integer.class};
                     Object[] params = {port};
                     provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
+                    //Give the broker a second to create
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        //do nothing
+                    }
                 }
                 catch (Exception e)
                 {
