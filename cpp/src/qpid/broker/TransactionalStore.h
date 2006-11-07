@@ -20,11 +20,16 @@
 
 namespace qpid {
     namespace broker {
+        class TransactionContext{
+        public:
+            virtual ~TransactionContext(){}
+        };
+
         class TransactionalStore{
         public:
-            virtual void begin() = 0;
-            virtual void commit() = 0;
-            virtual void abort() = 0;
+            virtual TransactionContext* begin() = 0;
+            virtual void commit(TransactionContext*) = 0;
+            virtual void abort(TransactionContext*) = 0;
 
             virtual ~TransactionalStore(){}
         };

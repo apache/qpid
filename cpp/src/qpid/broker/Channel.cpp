@@ -198,7 +198,7 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
             throw InvalidAckException();
         }else if(multiple){     
             ack_iterator end = ++i;
-            for_each(unacked.begin(), end, mem_fun_ref(&DeliveryRecord::discard));
+            for_each(unacked.begin(), end, bind2nd(mem_fun_ref(&DeliveryRecord::discard), 0));
             unacked.erase(unacked.begin(), end);
 
             //recalculate the prefetch:

@@ -30,7 +30,7 @@ namespace qpid {
             TxOp* delegate;
         public:
             DeletingTxOp(TxOp* const delegate);
-            virtual bool prepare() throw();
+            virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit()  throw();
             virtual void rollback()  throw();
             virtual ~DeletingTxOp(){}
