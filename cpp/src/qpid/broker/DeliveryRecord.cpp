@@ -38,8 +38,8 @@ DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg,
                                                                pull(true){}
 
 
-void DeliveryRecord::discard() const{
-    queue->dequeue(msg, 0);
+void DeliveryRecord::discard(TransactionContext* ctxt) const{
+    queue->dequeue(ctxt, msg, 0);
 }
 
 bool DeliveryRecord::matches(u_int64_t tag) const{
@@ -48,10 +48,6 @@ bool DeliveryRecord::matches(u_int64_t tag) const{
 
 bool DeliveryRecord::coveredBy(const AccumulatedAck* const range) const{
     return range->covers(deliveryTag);
-}
-
-void DeliveryRecord::discardIfCoveredBy(const AccumulatedAck* const range) const{
-    if(coveredBy(range)) discard();
 }
 
 void DeliveryRecord::redeliver(Channel* const channel) const{

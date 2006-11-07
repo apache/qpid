@@ -18,11 +18,13 @@
 #ifndef _TxOp_
 #define _TxOp_
 
+#include "qpid/broker/TransactionalStore.h"
+
 namespace qpid {
     namespace broker {
         class TxOp{
         public:
-            virtual bool prepare() throw() = 0;
+            virtual bool prepare(TransactionContext*) throw() = 0;
             virtual void commit()  throw() = 0;
             virtual void rollback()  throw() = 0;
             virtual ~TxOp(){}

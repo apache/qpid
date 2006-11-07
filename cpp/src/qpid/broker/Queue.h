@@ -58,6 +58,7 @@ namespace qpid {
             mutable qpid::sys::Monitor lock;
             int64_t lastUsed;
             Consumer* exclusive;
+            u_int64_t persistenceId;
 
             bool startDispatching();
             bool dispatch(Message::shared_ptr& msg);
@@ -106,10 +107,13 @@ namespace qpid {
             inline const string& getName() const { return name; }
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
+            inline u_int64_t getPersistenceId() const { return persistenceId; }
+            inline void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
+
             bool canAutoDelete() const;
 
-            void enqueue(Message::shared_ptr& msg, const string * const xid);
-            void dequeue(Message::shared_ptr& msg, const string * const xid);
+            void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
+            void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
         };
     }
 }
