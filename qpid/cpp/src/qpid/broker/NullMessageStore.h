@@ -39,7 +39,7 @@ namespace qpid {
             void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             void committed(const string * const xid);
             void aborted(const string * const xid);
-            TransactionContext* begin();
+            std::auto_ptr<TransactionContext> begin();
             void commit(TransactionContext* ctxt);
             void abort(TransactionContext* ctxt);
             ~NullMessageStore(){}

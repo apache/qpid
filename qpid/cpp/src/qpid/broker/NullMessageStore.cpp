@@ -46,8 +46,8 @@ void NullMessageStore::committed(const string * const){
 void NullMessageStore::aborted(const string * const){
     std::cout << "WARNING: Persistence not enabled." << std::endl;
 }
-TransactionContext* NullMessageStore::begin(){
-    return 0;
+std::auto_ptr<TransactionContext> NullMessageStore::begin(){
+    return std::auto_ptr<TransactionContext>();
 }
 void NullMessageStore::commit(TransactionContext*){
 }
