@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.AfterClass;
 
 import javax.jms.*;
 
@@ -53,13 +54,7 @@ public class TransactedTest
     private MessageConsumer testConsumer2;
 
     @BeforeClass
-    public static void setupVM()
-    {
-        System.setProperty("amqj.NoAutoCreateVMBroker", "true");
-    }
-
-    @Before
-    public void setup() throws Exception
+    public static void setupBeforeClass()
     {
         try
         {
@@ -69,6 +64,18 @@ public class TransactedTest
         {
             Assert.fail("Unable to create VM Broker: " + e.getMessage());
         }
+    }
+
+    @AfterClass
+    public static void setupAfterClass()
+    {
+        TransportConnection.killVMBroker(1);
+    }
+
+    @Before
+    public void setup() throws Exception
+    {
+
 
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
@@ -115,8 +122,6 @@ public class TransactedTest
         con.close();
         testCon.close();
         prepCon.close();
-
-        TransportConnection.killVMBroker(1);
     }
 
     @Test
