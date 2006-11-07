@@ -17,10 +17,7 @@
  */
 package org.apache.qpid.client;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
+import org.junit.*;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
@@ -37,12 +34,12 @@ import junit.framework.JUnit4TestAdapter;
  */
 public class TestAMQSession {
 
-    private AMQSession _session;
-    private AMQTopic _topic;
-    private AMQQueue _queue;
+    private static AMQSession _session;
+    private static AMQTopic _topic;
+    private static AMQQueue _queue;
 
-    @Before
-    public void setUp() throws AMQException, URLSyntaxException, JMSException {
+    @BeforeClass
+    public static void setUp() throws AMQException, URLSyntaxException, JMSException {
         //initialise the variables we need for testing
         startVmBrokers();
         AMQConnection connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
@@ -87,8 +84,8 @@ public class TestAMQSession {
         Assert.assertEquals("Queue names should match from QueueReceiver with selector",_queue.getQueueName(),receiver.getQueue().getQueueName());
     }
 
-    @After
-    public void stopVmBrokers()
+    @AfterClass
+    public static void stopVmBrokers()
     {
         TransportConnection.killVMBroker(1);
         _queue = null;
@@ -101,7 +98,7 @@ public class TestAMQSession {
         return new JUnit4TestAdapter(TestAMQSession.class);
     }
 
-    private void startVmBrokers()
+    private static void startVmBrokers()
     {
         try
         {
