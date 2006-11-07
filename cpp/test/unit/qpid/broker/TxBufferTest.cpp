@@ -34,35 +34,6 @@ template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<
 
 class TxBufferTest : public CppUnit::TestCase  
 {
-    class TestTransactionContext : public TransactionContext{
-        enum states {OPEN = 1, COMMITTED = 2, ABORTED = 3};
-        int state;
-    public:
-        TestTransactionContext() : state(OPEN) {}
-        void commit(){
-            if(state != OPEN) throw "txn already completed";
-            state = COMMITTED;
-        }
-
-        void abort(){
-            if(state != OPEN) throw "txn already completed";
-            state = ABORTED;
-        }
-
-        bool isCommitted(){
-            return state == COMMITTED;
-        }
-
-        bool isAborted(){
-            return state == ABORTED;
-        }
-
-        bool isOpen(){
-            return state == OPEN;
-        }
-        ~TestTransactionContext(){}
-    };
-
     class MockTxOp : public TxOp{
         enum op_codes {PREPARE=2, COMMIT=4, ROLLBACK=8};
         std::vector<int> expected;
@@ -105,24 +76,45 @@ class TxBufferTest : public CppUnit::TestCase
         std::vector<int> expected;
         std::vector<int> actual;
 
-    public:
-        TestTransactionContext txn;
+        enum states {OPEN = 1, COMMITTED = 2, ABORTED = 3};
+        int state;
 
-        TransactionContext* begin(){
+        class TestTransactionContext : public TransactionContext{
+            MockTransactionalStore* store;
+        public:
+            TestTransactionContext(MockTransactionalStore* _store) : store(_store) {}
+            void commit(){
+                if(store->state != OPEN) throw "txn already completed";
+                store->state = COMMITTED;
+            }
+
+            void abort(){
+                if(store->state != OPEN) throw "txn already completed";
+                store->state = ABORTED;
+            }
+            ~TestTransactionContext(){}
+        };
+
+
+    public:
+        MockTransactionalStore() : state(OPEN){}
+
+        std::auto_ptr<TransactionContext> begin(){ 
             actual.push_back(BEGIN);
-            return &txn;
+            std::auto_ptr<TransactionContext> txn(new TestTransactionContext(this));
+            return txn;
         }
         void commit(TransactionContext* ctxt){
             actual.push_back(COMMIT);
-            TestTransactionContext* _txn(dynamic_cast<TestTransactionContext*>(ctxt));
-            CPPUNIT_ASSERT_EQUAL(_txn, &txn);
-            _txn->commit();
+            TestTransactionContext* txn(dynamic_cast<TestTransactionContext*>(ctxt));
+            CPPUNIT_ASSERT(txn);
+            txn->commit();
         }
         void abort(TransactionContext* ctxt){
             actual.push_back(ABORT);
-            TestTransactionContext* _txn(dynamic_cast<TestTransactionContext*>(ctxt));
-            CPPUNIT_ASSERT_EQUAL(_txn, &txn);
-            _txn->abort();
+            TestTransactionContext* txn(dynamic_cast<TestTransactionContext*>(ctxt));
+            CPPUNIT_ASSERT(txn);
+            txn->abort();
         }        
         MockTransactionalStore& expectBegin(){
             expected.push_back(BEGIN);
@@ -138,6 +130,18 @@ class TxBufferTest : public CppUnit::TestCase
         }
         void check(){
             assertEqualVector(expected, actual);
+        }
+
+        bool isCommitted(){
+            return state == COMMITTED;
+        }
+        
+        bool isAborted(){
+            return state == ABORTED;
+        }
+        
+        bool isOpen(){
+            return state == OPEN;
         }
         ~MockTransactionalStore(){}
     };
@@ -170,7 +174,7 @@ class TxBufferTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(buffer.prepare(&store));
         buffer.commit();
         store.check();
-        CPPUNIT_ASSERT(store.txn.isCommitted());
+        CPPUNIT_ASSERT(store.isCommitted());
         opA.check();
         opB.check();
         opC.check();
@@ -193,7 +197,7 @@ class TxBufferTest : public CppUnit::TestCase
 
         CPPUNIT_ASSERT(!buffer.prepare(&store));
         store.check();
-        CPPUNIT_ASSERT(store.txn.isAborted());
+        CPPUNIT_ASSERT(store.isAborted());
         opA.check();
         opB.check();
         opC.check();
