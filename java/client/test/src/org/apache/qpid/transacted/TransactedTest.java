@@ -92,14 +92,14 @@ public class TransactedTest
         // Sleep to ensure all queues have been created in the Broker.
         try
         {
-            Thread.sleep(1000);
+            System.out.println("Finishing Setup");
+            Thread.sleep(3000);
         }
         catch (InterruptedException e)
         {
             //do nothing
         }
-
-
+        System.out.println("Setup Complete");
     }
 
     @After
