@@ -21,8 +21,8 @@ using namespace qpid::broker;
 
 DeletingTxOp::DeletingTxOp(TxOp* const _delegate) : delegate(_delegate){}
 
-bool DeletingTxOp::prepare() throw(){
-    return delegate && delegate->prepare();
+bool DeletingTxOp::prepare(TransactionContext* ctxt) throw(){
+    return delegate && delegate->prepare(ctxt);
 }
 
 void DeletingTxOp::commit() throw(){

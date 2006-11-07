@@ -16,10 +16,12 @@
  *
  */
 #include "qpid/broker/SessionHandlerFactoryImpl.h"
-#include "qpid/broker/SessionHandlerImpl.h"
+
+#include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
-#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/SessionHandlerImpl.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -34,7 +36,7 @@ const std::string amq_match("amq.match");
 }
 
 SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(u_int32_t _timeout) : 
-    queues(store.get()), timeout(_timeout), cleaner(&queues, timeout/10)
+    store(new NullMessageStore()), queues(store.get()), timeout(_timeout), cleaner(&queues, timeout/10)
 {
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);

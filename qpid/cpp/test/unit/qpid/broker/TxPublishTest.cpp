@@ -27,6 +27,7 @@ using std::list;
 using std::pair;
 using std::vector;
 using namespace qpid::broker;
+using namespace qpid::framing;
 
 class TxPublishTest : public CppUnit::TestCase  
 {
@@ -36,7 +37,7 @@ class TxPublishTest : public CppUnit::TestCase
     public:
         vector< pair<string, Message::shared_ptr> > enqueued;
         
-        void enqueue(Message::shared_ptr& msg, const Queue& queue, const string * const /*xid*/)
+        void enqueue(TransactionContext*, Message::shared_ptr& msg, const Queue& queue, const string * const /*xid*/)
         {
             enqueued.push_back(pair<string, Message::shared_ptr>(queue.getName(),msg));
         }
@@ -45,12 +46,12 @@ class TxPublishTest : public CppUnit::TestCase
         void create(const Queue&){}
         void destroy(const Queue&){}
         void recover(QueueRegistry&){}
-        void dequeue(Message::shared_ptr&, const Queue&, const string * const){}
+        void dequeue(TransactionContext*, Message::shared_ptr&, const Queue&, const string * const){}
         void committed(const string * const){}
         void aborted(const string * const){}
-        void begin(){}
-        void commit(){}
-        void abort(){}        
+        TransactionContext* begin(){ return 0; }
+        void commit(TransactionContext*){}
+        void abort(TransactionContext*){}        
         ~TestMessageStore(){}
     };
     
@@ -74,6 +75,8 @@ public:
                       msg(new Message(0, "exchange", "routing_key", false, false)),
                       op(msg)
     {
+        msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
+        msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
         op.deliverTo(queue1);
         op.deliverTo(queue2);
     }      
@@ -81,7 +84,7 @@ public:
     void testPrepare()
     {
         //ensure messages are enqueued in store
-        op.prepare();
+        op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 2, store.enqueued.size());
         CPPUNIT_ASSERT_EQUAL(string("queue1"), store.enqueued[0].first);
         CPPUNIT_ASSERT_EQUAL(msg, store.enqueued[0].second);

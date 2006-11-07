@@ -35,7 +35,8 @@ Queue::Queue(const string& _name, u_int32_t _autodelete,
     dispatching(false),
     next(0),
     lastUsed(0),
-    exclusive(0)
+    exclusive(0),
+    persistenceId(0)
 {
     if(autodelete) lastUsed = Time::now().msecs();
 }
@@ -52,7 +53,7 @@ void Queue::bound(Binding* b){
 }
 
 void Queue::deliver(Message::shared_ptr& msg){
-    enqueue(msg, 0);
+    enqueue(0, msg, 0);
     process(msg);
 }
 
@@ -163,15 +164,17 @@ bool Queue::canAutoDelete() const{
     return lastUsed && (Time::now().msecs() - lastUsed > autodelete);
 }
 
-void Queue::enqueue(Message::shared_ptr& msg, const string * const xid){
-    if(store){
-        store->enqueue(msg, *this, xid);
+void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
+{
+    if(msg->isPersistent() && store){
+        store->enqueue(ctxt, msg, *this, xid);
     }
 }
 
-void Queue::dequeue(Message::shared_ptr& msg, const string * const xid){
-    if(store){
-        store->dequeue(msg, *this, xid);
+void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
+{
+    if(msg->isPersistent() && store){
+        store->dequeue(ctxt, msg, *this, xid);
     }
 }
 

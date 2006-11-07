@@ -18,6 +18,8 @@
 #ifndef _TxBuffer_
 #define _TxBuffer_
 
+#include <algorithm>
+#include <functional>
 #include <vector>
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/broker/TxOp.h"

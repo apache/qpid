@@ -34,6 +34,35 @@ template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<
 
 class TxBufferTest : public CppUnit::TestCase  
 {
+    class TestTransactionContext : public TransactionContext{
+        enum states {OPEN = 1, COMMITTED = 2, ABORTED = 3};
+        int state;
+    public:
+        TestTransactionContext() : state(OPEN) {}
+        void commit(){
+            if(state != OPEN) throw "txn already completed";
+            state = COMMITTED;
+        }
+
+        void abort(){
+            if(state != OPEN) throw "txn already completed";
+            state = ABORTED;
+        }
+
+        bool isCommitted(){
+            return state == COMMITTED;
+        }
+
+        bool isAborted(){
+            return state == ABORTED;
+        }
+
+        bool isOpen(){
+            return state == OPEN;
+        }
+        ~TestTransactionContext(){}
+    };
+
     class MockTxOp : public TxOp{
         enum op_codes {PREPARE=2, COMMIT=4, ROLLBACK=8};
         std::vector<int> expected;
@@ -43,7 +72,7 @@ class TxBufferTest : public CppUnit::TestCase
         MockTxOp() : failOnPrepare(false) {}
         MockTxOp(bool _failOnPrepare) : failOnPrepare(_failOnPrepare) {}
 
-        bool prepare() throw(){
+        bool prepare(TransactionContext*) throw(){
             actual.push_back(PREPARE);
             return !failOnPrepare;
         }
@@ -75,15 +104,25 @@ class TxBufferTest : public CppUnit::TestCase
         enum op_codes {BEGIN=2, COMMIT=4, ABORT=8};
         std::vector<int> expected;
         std::vector<int> actual;
+
     public:
-        void begin(){
+        TestTransactionContext txn;
+
+        TransactionContext* begin(){
             actual.push_back(BEGIN);
+            return &txn;
         }
-        void commit(){
+        void commit(TransactionContext* ctxt){
             actual.push_back(COMMIT);
+            TestTransactionContext* _txn(dynamic_cast<TestTransactionContext*>(ctxt));
+            CPPUNIT_ASSERT_EQUAL(_txn, &txn);
+            _txn->commit();
         }
-        void abort(){
+        void abort(TransactionContext* ctxt){
             actual.push_back(ABORT);
+            TestTransactionContext* _txn(dynamic_cast<TestTransactionContext*>(ctxt));
+            CPPUNIT_ASSERT_EQUAL(_txn, &txn);
+            _txn->abort();
         }        
         MockTransactionalStore& expectBegin(){
             expected.push_back(BEGIN);
@@ -131,6 +170,7 @@ class TxBufferTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(buffer.prepare(&store));
         buffer.commit();
         store.check();
+        CPPUNIT_ASSERT(store.txn.isCommitted());
         opA.check();
         opB.check();
         opC.check();
@@ -153,6 +193,7 @@ class TxBufferTest : public CppUnit::TestCase
 
         CPPUNIT_ASSERT(!buffer.prepare(&store));
         store.check();
+        CPPUNIT_ASSERT(store.txn.isAborted());
         opA.check();
         opB.check();
         opC.check();
@@ -181,3 +222,4 @@ class TxBufferTest : public CppUnit::TestCase
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();
 CPPUNIT_TEST_SUITE_REGISTRATION(TxBufferTest);
+

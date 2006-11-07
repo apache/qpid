@@ -26,6 +26,7 @@
 using std::list;
 using std::vector;
 using namespace qpid::broker;
+using namespace qpid::framing;
 
 class TxAckTest : public CppUnit::TestCase  
 {
@@ -35,7 +36,7 @@ class TxAckTest : public CppUnit::TestCase
     public:
         vector<Message::shared_ptr> dequeued;
 
-        void dequeue(Message::shared_ptr& msg, const Queue& /*queue*/, const string * const /*xid*/)
+        void dequeue(TransactionContext*, Message::shared_ptr& msg, const Queue& /*queue*/, const string * const /*xid*/)
         {
             dequeued.push_back(msg);
         }
@@ -44,12 +45,12 @@ class TxAckTest : public CppUnit::TestCase
         void create(const Queue&){}
         void destroy(const Queue&){}        
         void recover(QueueRegistry&){}
-        void enqueue(Message::shared_ptr&, const Queue&, const string * const){}
+        void enqueue(TransactionContext*, Message::shared_ptr&, const Queue&, const string * const){}
         void committed(const string * const){}
         void aborted(const string * const){}
-        void begin(){}
-        void commit(){}
-        void abort(){}        
+        TransactionContext* begin(){ return 0; }
+        void commit(TransactionContext*){}
+        void abort(TransactionContext*){}        
         ~TestMessageStore(){}
     };
 
@@ -73,6 +74,8 @@ public:
     {
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(new Message(0, "exchange", "routing_key", false, false));
+            msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
+            msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
             messages.push_back(msg);
             deliveries.push_back(DeliveryRecord(msg, queue, "xyz", (i+1)));
         }
@@ -86,7 +89,7 @@ public:
     void testPrepare()
     {
         //ensure acked messages are discarded, i.e. dequeued from store
-        op.prepare();
+        op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 7, store.dequeued.size());
         CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
         CPPUNIT_ASSERT_EQUAL(messages[0], store.dequeued[0]);//msg 1
