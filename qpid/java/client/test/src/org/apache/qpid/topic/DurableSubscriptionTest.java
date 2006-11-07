@@ -40,26 +40,6 @@ import javax.jms.TopicSubscriber;
 
 public class DurableSubscriptionTest
 {
-
-          @Before
-    public void startVmBrokers()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create VM Broker: " + e.getMessage());
-        }
-    }
-
-    @After
-    public void stopVmBrokers()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
     @Test
     public void unsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
@@ -73,6 +53,21 @@ public class DurableSubscriptionTest
         TopicSubscriber consumer2 = session2.createDurableSubscriber(topic, "MySubscription");
 
         con.start();
+
+        // Sleep to ensure all queues have been created in the Broker.
+        try
+        {
+            System.out.println("Allowing Server to create queues");
+            Thread.sleep(2000);
+        }
+        catch (InterruptedException e)
+        {
+            //do nothing
+        }
+        finally
+        {
+            System.out.println("Setup Complete");
+        }
 
         producer.send(session1.createTextMessage("A"));
 
