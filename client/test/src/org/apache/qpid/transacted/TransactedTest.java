@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
 import javax.jms.*;
 
@@ -50,6 +51,12 @@ public class TransactedTest
     private Session testSession;
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
+
+    @BeforeClass
+    public static void setupVM()
+    {
+        System.setProperty("amqj.NoAutoCreateVMBroker", "true");
+    }
 
     @Before
     public void setup() throws Exception
