@@ -24,6 +24,7 @@ import org.apache.qpid.client.AMQSession;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.JMSException;
 
 /**
  * Declare a queue and bind it to amq.direct with a 'well known' routing key,
@@ -56,10 +57,15 @@ public class Service implements MessageListener
             Destination replyTo = request.getJMSReplyTo();
             _session.createProducer(replyTo).send(response);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             e.printStackTrace(System.out);
         }
+    }
+
+    public void close() throws JMSException
+    {
+        _connection.close();
     }
 
     static AMQConnection connect(String broker) throws Exception

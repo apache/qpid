@@ -20,11 +20,14 @@ package org.apache.qpid.client.channelclose;
 import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
 
 import javax.jms.*;
 import java.util.ArrayList;
@@ -33,16 +36,16 @@ import java.util.List;
 /**
  * Due to bizarre exception handling all sessions are closed if you get
  * a channel close request and no exception listener is registered.
- *
+ * <p/>
  * JIRA issue IBTBLZ-10.
- *
+ * <p/>
  * Simulate by:
- *
+ * <p/>
  * 0. Create two sessions with no exception listener.
  * 1. Publish message to queue/topic that does not exist (wrong routing key).
  * 2. This will cause a channel close.
  * 3. Since client does not have an exception listener, currently all sessions are
- *    closed.
+ * closed.
  */
 public class ChannelCloseOkTest
 {
@@ -57,18 +60,40 @@ public class ChannelCloseOkTest
     private final static Logger _log = Logger.getLogger(ChannelCloseOkTest.class);
     public String _connectionString = "vm://:1";
 
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
+    }
+
     @Before
     public void init() throws Exception
     {
+        createVMBroker();
+
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
+
         _destination1 = new AMQQueue("q1", true);
         _destination2 = new AMQQueue("q2", true);
         _session1 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _session1.createConsumer(_destination1).setMessageListener(new MessageListener() {
+        _session1.createConsumer(_destination1).setMessageListener(new MessageListener()
+        {
             public void onMessage(Message message)
             {
                 _log.debug("consumer 1 got message [" + getTextMessage(message) + "]");
-                synchronized (_received1)
+                synchronized(_received1)
                 {
                     _received1.add(message);
                     _received1.notify();
@@ -76,11 +101,12 @@ public class ChannelCloseOkTest
             }
         });
         _session2 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _session2.createConsumer(_destination2).setMessageListener(new MessageListener() {
+        _session2.createConsumer(_destination2).setMessageListener(new MessageListener()
+        {
             public void onMessage(Message message)
             {
-                _log.debug("consumer 2 got message [" +  getTextMessage(message) + "]");
-                synchronized (_received2)
+                _log.debug("consumer 2 got message [" + getTextMessage(message) + "]");
+                synchronized(_received2)
                 {
                     _received2.add(message);
                     _received2.notify();
@@ -93,7 +119,7 @@ public class ChannelCloseOkTest
 
     private String getTextMessage(Message message)
     {
-        TextMessage tm = (TextMessage)message;
+        TextMessage tm = (TextMessage) message;
         try
         {
             return tm.getText();
@@ -112,6 +138,8 @@ public class ChannelCloseOkTest
             System.out.println(">>>>>>>>>>>>>>.. closing");
             _connection.close();
         }
+
+        stopVmBroker();
     }
 
     @Test
@@ -123,7 +151,8 @@ public class ChannelCloseOkTest
     @Test
     public void testWithExceptionListener() throws Exception
     {
-        _connection.setExceptionListener(new ExceptionListener() {
+        _connection.setExceptionListener(new ExceptionListener()
+        {
             public void onException(JMSException jmsException)
             {
                 _log.error("onException - ", jmsException);
@@ -177,7 +206,7 @@ public class ChannelCloseOkTest
 
     private void waitFor(List<Message> received, int count) throws InterruptedException
     {
-        synchronized (received)
+        synchronized(received)
         {
             while (received.size() < count)
             {

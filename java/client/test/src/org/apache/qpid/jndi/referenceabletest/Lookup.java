@@ -24,6 +24,7 @@ import org.apache.qpid.client.AMQTopic;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.jms.JMSException;
 import java.io.File;
 import java.util.Hashtable;
 
@@ -46,6 +47,7 @@ class Lookup
     AMQTopic _topic = null;
     AMQConnection _connection = null;
     AMQConnectionFactory _connectionFactory = null;
+    private String _connectionURL;
 
     public Lookup()
     {
@@ -83,6 +85,8 @@ class Lookup
 
             _connection = (AMQConnection) ctx.lookup("Connection");
 
+            _connectionURL = _connection.toURL();
+
             _connectionFactory = (AMQConnectionFactory) ctx.lookup("ConnectionFactory");
             //System.out.println(topic);
 
@@ -93,6 +97,20 @@ class Lookup
         {
             System.out.println("Operation failed: " + e);
         }
+        finally
+        {
+            try
+            {
+                if (_connection != null)
+                {
+                    _connection.close();
+                }
+            }
+            catch (JMSException e)
+            {
+                //ignore just need to close
+            }
+        }
     }
 
     public String connectionFactoryValue()
@@ -102,7 +120,7 @@ class Lookup
 
     public String connectionValue()
     {
-        return _connection.toURL();
+        return _connectionURL;
     }
 
     public String topicValue()
