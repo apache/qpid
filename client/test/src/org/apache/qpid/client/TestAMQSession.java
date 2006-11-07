@@ -27,6 +27,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.JMSException;
 import javax.jms.TopicSubscriber;
+import javax.jms.QueueReceiver;
 
 import junit.framework.JUnit4TestAdapter;
 
@@ -60,11 +61,29 @@ public class TestAMQSession {
 
     @Test
     public void testCreateDurableSubscriber() throws JMSException {
-         TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
-         Assert.assertEquals("Topic names should match from durable TopicSubscriber",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+        TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
+        Assert.assertEquals("Topic names should match from durable TopicSubscriber",_topic.getTopicName(),subscriber.getTopic().getTopicName());
 
         subscriber = _session.createDurableSubscriber(_topic,"mysubname","abc",false);
         Assert.assertEquals("Topic names should match from durable TopicSubscriber with selector",_topic.getTopicName(),subscriber.getTopic().getTopicName());
+    }
+
+    @Test
+    public void testCreateQueueReceiver() throws JMSException {
+        QueueReceiver receiver = _session.createQueueReceiver(_queue);
+        Assert.assertEquals("Queue names should match from QueueReceiver",_queue.getQueueName(),receiver.getQueue().getQueueName());
+
+        receiver = _session.createQueueReceiver(_queue, "abc");
+        Assert.assertEquals("Queue names should match from QueueReceiver with selector",_queue.getQueueName(),receiver.getQueue().getQueueName());
+    }
+
+    @Test
+     public void testCreateReceiver() throws JMSException {
+        QueueReceiver receiver = _session.createReceiver(_queue);
+        Assert.assertEquals("Queue names should match from QueueReceiver",_queue.getQueueName(),receiver.getQueue().getQueueName());
+
+        receiver = _session.createReceiver(_queue, "abc");
+        Assert.assertEquals("Queue names should match from QueueReceiver with selector",_queue.getQueueName(),receiver.getQueue().getQueueName());
     }
 
     public static junit.framework.Test suite()
