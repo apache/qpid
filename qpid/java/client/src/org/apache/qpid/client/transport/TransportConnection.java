@@ -114,7 +114,17 @@ public class TransportConnection
                     public IoConnector newSocketConnector()
                     {
                         SocketConnector result;
-                        result = new SocketConnector(); // non-blocking connector
+                        //FIXME - this needs to be sorted to use the new Mina MultiThread SA.
+                        if (Boolean.getBoolean("qpidnio"))
+                        {
+                            _logger.warn("Using Qpid NIO - DISABLED");
+//                            result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
+                        }
+//                        else
+                        {
+                            _logger.warn("Using Mina NIO");
+                            result = new SocketConnector(); // non-blocking connector
+                        }
 
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
@@ -198,9 +208,9 @@ public class TransportConnection
                 }
                 catch (Exception e)
                 {
-                    _logger.info("Unable to create InVM Qpid.AMQP on port " + port);
+                    _logger.info("Unable to create InVM Qpid.AMQP on port " + port + ". Because: " + e.getCause());
                     _logger.error(e);
-                    throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
+                    throw new AMQVMBrokerCreationException(port, e.getCause() + " Stopped InVM Qpid.AMQP creation");
                 }
 
                 _acceptor.bind(pipe, provider);
@@ -211,7 +221,7 @@ public class TransportConnection
             catch (IOException e)
             {
                 _logger.error(e);
-                throw new AMQVMBrokerCreationException(port, "Unable to create InVM Qpid.AMQP on port " + port);
+                throw new AMQVMBrokerCreationException(port, e.getCause() + " Stopped binding of InVM Qpid.AMQP");
             }
         }
         else
