@@ -37,7 +37,6 @@ public class TestAMQConnection {
     @BeforeClass
     public static void setUp() throws AMQException, URLSyntaxException, JMSException {
         //initialise the variables we need for testing
-        startVmBrokers();
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
@@ -95,27 +94,8 @@ public class TestAMQConnection {
         _queueSession.unsubscribe("abc");
     }
 
-    @AfterClass
-    public static void stopVmBrokers()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
     public static junit.framework.Test suite()
     {
         return new JUnit4TestAdapter(TestAMQConnection.class);
     }
-
-    private static void startVmBrokers()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create VM Broker: " + e.getMessage());
-        }
-    }
-
 }
