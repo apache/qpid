@@ -91,7 +91,7 @@ class Bind
             }
         }
 
-
+        Connection connection = null;
         try
         {
             // Create the initial context
@@ -100,7 +100,7 @@ class Bind
             // Create the connection factory to be bound
             ConnectionFactory connectionFactory = null;
             // Create the Connection to be bound
-            Connection connection = null;
+
 
             try
             {
@@ -164,6 +164,20 @@ class Bind
             if (e instanceof NoInitialContextException)
             {
                 throw(NoInitialContextException) e;
+            }
+        }
+        finally
+        {
+            try
+            {
+                if (connection != null)
+                {
+                    connection.close();
+                }
+            }
+            catch (JMSException e)
+            {
+                //ignore just want it closed
             }
         }
     }

@@ -31,18 +31,36 @@ import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
  */
 public class Combined
 {
+
+    @Before
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        ServiceCreator.closeAll();
+        TransportConnection.killVMBroker(1);
+    }
+
     @Test
     public void forwardAll() throws Exception
     {
         int services = 2;
         ServiceCreator.start("vm://:1", services);
 
-        //give them time to get registered etc.
-        System.out.println("Services started, waiting for them to initialise...");
-        Thread.sleep(5 * 1000);
         System.out.println("Starting client...");
 
-        new Client("vm://:1", services).waitUntilComplete();
+        new Client("vm://:1", services).shutdownWhenComplete();
 
         System.out.println("Completed successfully!");
     }

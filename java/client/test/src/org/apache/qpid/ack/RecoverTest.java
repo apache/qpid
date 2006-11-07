@@ -49,6 +49,19 @@ public class RecoverTest
         DOMConfigurator.configure("broker/etc/log4j.xml");
     }
 
+    @Before
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
     @After
     public void stopVmBroker()
     {
