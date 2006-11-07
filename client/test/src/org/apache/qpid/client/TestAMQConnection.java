@@ -26,7 +26,8 @@ import junit.framework.JUnit4TestAdapter;
 
 import javax.jms.*;
 
-public class TestAMQConnection {
+public class TestAMQConnection
+{
 
     private static AMQConnection _connection;
     private static AMQTopic _topic;
@@ -34,18 +35,47 @@ public class TestAMQConnection {
     private static QueueSession _queueSession;
     private static TopicSession _topicSession;
 
-    @BeforeClass
-    public static void setUp() throws AMQException, URLSyntaxException, JMSException {
+
+    @Before
+    public void setUp() throws AMQException, URLSyntaxException, JMSException
+    {
+        createVMBroker();
         //initialise the variables we need for testing
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
     }
 
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        try
+        {
+            _connection.close();
+        }
+        catch (JMSException e)
+        {
+            //ignore 
+        }
+        TransportConnection.killVMBroker(1);
+    }
+
     /**
-    * Simple tests to check we can create TopicSession and QueueSession ok
-    * And that they throw exceptions where appropriate as per JMS spec
-    */
+     * Simple tests to check we can create TopicSession and QueueSession ok
+     * And that they throw exceptions where appropriate as per JMS spec
+     */
 
     @Test
     public void testCreateQueueSession() throws JMSException
@@ -59,38 +89,45 @@ public class TestAMQConnection {
         _topicSession = _connection.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testTopicSessionCreateBrowser() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testTopicSessionCreateBrowser() throws JMSException
+    {
         _topicSession.createBrowser(_queue);
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testTopicSessionCreateQueue() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testTopicSessionCreateQueue() throws JMSException
+    {
         _topicSession.createQueue("abc");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testTopicSessionCreateTemporaryQueue() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testTopicSessionCreateTemporaryQueue() throws JMSException
+    {
         _topicSession.createTemporaryQueue();
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testQueueSessionCreateTemporaryTopic() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testQueueSessionCreateTemporaryTopic() throws JMSException
+    {
         _queueSession.createTemporaryTopic();
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testQueueSessionCreateTopic() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testQueueSessionCreateTopic() throws JMSException
+    {
         _queueSession.createTopic("abc");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testQueueSessionDurableSubscriber() throws JMSException {
-        _queueSession.createDurableSubscriber(_topic,"abc");
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testQueueSessionDurableSubscriber() throws JMSException
+    {
+        _queueSession.createDurableSubscriber(_topic, "abc");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testQueueSessionUnsubscribe() throws JMSException {
+    @Test(expected = javax.jms.IllegalStateException.class)
+    public void testQueueSessionUnsubscribe() throws JMSException
+    {
         _queueSession.unsubscribe("abc");
     }
 
