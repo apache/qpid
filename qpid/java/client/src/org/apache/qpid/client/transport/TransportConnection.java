@@ -187,38 +187,40 @@ public class TransportConnection
         if (!_inVmPipeAddress.containsKey(port))
         {
             _logger.info("Creating InVM Qpid.AMQP listening on port " + port);
-
+            IoHandlerAdapter provider = null;
             try
             {
                 VmPipeAddress pipe = new VmPipeAddress(port);
 
-                String protocolProviderClass = System.getProperty("amqj.protocolprovider.class", DEFAULT_QPID_SERVER);
-                _logger.info("Creating Qpid protocol provider: " + protocolProviderClass);
+                provider = createBrokerInstance(port);
 
-                // can't use introspection to get Provider as it is a server class.
-                // need to go straight to IoHandlerAdapter but that requries the queues and exchange from the ApplicationRegistry which we can't access.
+                _acceptor.bind(pipe, provider);
 
-                //get right constructor and pass in instancec ID - "port"
-                IoHandlerAdapter provider;
+                _inVmPipeAddress.put(port, pipe);
+                _logger.info("Created InVM Qpid.AMQP listening on port " + port);
+            }
+            catch (IOException e)
+            {
+                _logger.error(e);
+
+                //Try and unbind provider
                 try
                 {
-                    Class[] cnstr = {Integer.class};
-                    Object[] params = {port};
-                    provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
-                    //Give the broker a second to create
-                    try
+                    VmPipeAddress pipe = new VmPipeAddress(port);
+
+                    _acceptor.unbind(pipe);
+
+                    if (provider == null)
                     {
-                        Thread.sleep(1000);
+                        provider = createBrokerInstance(port);
                     }
-                    catch (InterruptedException e)
-                    {
-                        //do nothing
-                    }
+
+                    _acceptor.bind(pipe, provider);
+                    _inVmPipeAddress.put(port, pipe);
+                    _logger.info("Created InVM Qpid.AMQP listening on port " + port);
                 }
-                catch (Exception e)
+                catch (IOException justUseFirstException)
                 {
-                    _logger.info("Unable to create InVM Qpid.AMQP on port " + port + ". Because: " + e.getCause());
-                    _logger.error(e);
                     String because;
                     if (e.getCause() == null)
                     {
@@ -229,30 +231,8 @@ public class TransportConnection
                         because = e.getCause().toString();
                     }
 
-
-                    throw new AMQVMBrokerCreationException(port, because + " Stopped InVM Qpid.AMQP creation");
+                    throw new AMQVMBrokerCreationException(port, because + " Stopped binding of InVM Qpid.AMQP");
                 }
-
-                _acceptor.bind(pipe, provider);
-
-                _inVmPipeAddress.put(port, pipe);
-                _logger.info("Created InVM Qpid.AMQP listening on port " + port);
-            }
-            catch (IOException e)
-            {
-                _logger.error(e);
-                
-                String because;
-                if (e.getCause() == null)
-                {
-                    because = e.toString();
-                }
-                else
-                {
-                    because = e.getCause().toString();
-                }
-
-                throw new AMQVMBrokerCreationException(port, because + " Stopped binding of InVM Qpid.AMQP");
             }
         }
         else
@@ -260,6 +240,52 @@ public class TransportConnection
             _logger.info("InVM Qpid.AMQP on port " + port + " already exits.");
         }
 
+    }
+
+    private static IoHandlerAdapter createBrokerInstance(int port) throws AMQVMBrokerCreationException
+    {
+        String protocolProviderClass = System.getProperty("amqj.protocolprovider.class", DEFAULT_QPID_SERVER);
+        _logger.info("Creating Qpid protocol provider: " + protocolProviderClass);
+
+        // can't use introspection to get Provider as it is a server class.
+        // need to go straight to IoHandlerAdapter but that requries the queues and exchange from the ApplicationRegistry which we can't access.
+
+        //get right constructor and pass in instancec ID - "port"
+        IoHandlerAdapter provider;
+        try
+        {
+            Class[] cnstr = {Integer.class};
+            Object[] params = {port};
+            provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
+            //Give the broker a second to create
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                //do nothing
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.info("Unable to create InVM Qpid.AMQP on port " + port + ". Because: " + e.getCause());
+            _logger.error(e);
+            String because;
+            if (e.getCause() == null)
+            {
+                because = e.toString();
+            }
+            else
+            {
+                because = e.getCause().toString();
+            }
+
+
+            throw new AMQVMBrokerCreationException(port, because + " Stopped InVM Qpid.AMQP creation");
+        }
+
+        return provider;
     }
 
     public static void killAllVMBrokers()
