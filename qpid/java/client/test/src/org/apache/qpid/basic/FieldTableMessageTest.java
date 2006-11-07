@@ -22,6 +22,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
@@ -29,6 +31,8 @@ import org.apache.qpid.framing.FieldTableTest;
 import org.apache.mina.common.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
+import org.junit.After;
 
 import javax.jms.*;
 import java.io.IOException;
@@ -49,7 +53,27 @@ public class FieldTableMessageTest implements MessageListener
     public void init() throws Exception
     {
         init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+        createVMBroker();
     }
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
+    }
+
 
     private void init(AMQConnection connection) throws Exception
     {
@@ -109,7 +133,7 @@ public class FieldTableMessageTest implements MessageListener
     {
         synchronized(received)
         {
-            while(received.size() < count)
+            while (received.size() < count)
             {
                 received.wait();
             }

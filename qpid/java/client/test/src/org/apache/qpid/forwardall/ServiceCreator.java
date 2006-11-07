@@ -17,9 +17,15 @@
  */
 package org.apache.qpid.forwardall;
 
+import javax.jms.JMSException;
+
 public class ServiceCreator implements Runnable
 {
+    private static Thread[] threads;
+    private static ServiceCreator[] _services;
+
     private final String broker;
+    private Service service;
 
     ServiceCreator(String broker)
     {
@@ -30,7 +36,7 @@ public class ServiceCreator implements Runnable
     {
         try
         {
-            new Service(broker);
+            service = new Service(broker);
         }
         catch (Exception e)
         {
@@ -38,15 +44,37 @@ public class ServiceCreator implements Runnable
         }
     }
 
+    public void closeSC() throws JMSException
+    {
+        service.close();
+    }
+
+    static void closeAll()
+    {
+        for (int i = 0; i < _services.length; i++)
+        {
+            try
+            {
+                _services[i].closeSC();
+            }
+            catch (JMSException e)
+            {
+                //ignore
+            }
+        }
+    }
+
     static void start(String broker, int services) throws InterruptedException
     {
-        Thread[] threads = new Thread[services];
+        threads = new Thread[services];
+        _services = new ServiceCreator[services];
         ServiceCreator runner = new ServiceCreator(broker);
         //start services
         System.out.println("Starting " + services + " services...");
         for (int i = 0; i < services; i++)
         {
             threads[i] = new Thread(runner);
+            _services[i] = runner;
             threads[i].start();
         }
 
@@ -60,7 +88,8 @@ public class ServiceCreator implements Runnable
     {
         final String connectionString;
         final int services;
-        if (argv.length == 0) {
+        if (argv.length == 0)
+        {
             connectionString = "localhost:5672";
             services = 100;
         }
