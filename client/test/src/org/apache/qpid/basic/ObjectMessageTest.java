@@ -22,9 +22,13 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
+import org.junit.After;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -50,6 +54,25 @@ public class ObjectMessageTest implements MessageListener
     {
         String broker = _connectionString;
         init(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"));
+        createVMBroker();
+    }
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -95,7 +118,7 @@ public class ObjectMessageTest implements MessageListener
     {
         synchronized(received)
         {
-            while(received.size() < count)
+            while (received.size() < count)
             {
                 received.wait();
             }
@@ -116,25 +139,26 @@ public class ObjectMessageTest implements MessageListener
     private static void assertEqual(Iterator expected, Iterator actual)
     {
         List<String> errors = new ArrayList<String>();
-        while(expected.hasNext() && actual.hasNext())
+        while (expected.hasNext() && actual.hasNext())
         {
-            try{
+            try
+            {
                 assertEqual(expected.next(), actual.next());
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 errors.add(e.getMessage());
             }
         }
-        while(expected.hasNext())
+        while (expected.hasNext())
         {
             errors.add("Expected " + expected.next() + " but no more actual values.");
         }
-        while(actual.hasNext())
+        while (actual.hasNext())
         {
             errors.add("Found " + actual.next() + " but no more expected values.");
         }
-        if(!errors.isEmpty())
+        if (!errors.isEmpty())
         {
             throw new RuntimeException(errors.toString());
         }
@@ -142,7 +166,7 @@ public class ObjectMessageTest implements MessageListener
 
     private static void assertEqual(Object expected, Object actual)
     {
-        if(!expected.equals(actual))
+        if (!expected.equals(actual))
         {
             throw new RuntimeException("Expected '" + expected + "' found '" + actual + "'");
         }
@@ -183,7 +207,7 @@ public class ObjectMessageTest implements MessageListener
 
         public String toString()
         {
-            return "Payload[" + data +"]";
+            return "Payload[" + data + "]";
         }
     }
 

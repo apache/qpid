@@ -38,15 +38,44 @@ public class TestAMQSession
     private static AMQSession _session;
     private static AMQTopic _topic;
     private static AMQQueue _queue;
+    private static AMQConnection _connection;
 
-    @BeforeClass
-    public static void setUp() throws AMQException, URLSyntaxException, JMSException
+    @Before
+    public  void setUp() throws AMQException, URLSyntaxException, JMSException
     {
+        createVMBroker();
         //initialise the variables we need for testing
-        AMQConnection connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
+        _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
-        _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+    }
+
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        try
+        {
+            _connection.close();
+        }
+        catch (JMSException e)
+        {
+            //just close
+        }
+        TransportConnection.killVMBroker(1);
     }
 
     @Test

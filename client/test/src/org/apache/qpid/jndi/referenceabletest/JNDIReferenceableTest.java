@@ -19,6 +19,10 @@ package org.apache.qpid.jndi.referenceabletest;
 
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import junit.framework.JUnit4TestAdapter;
 
 import javax.naming.NameAlreadyBoundException;
@@ -37,6 +41,24 @@ import javax.naming.NoInitialContextException;
  */
 public class JNDIReferenceableTest
 {
+    @Before
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
+    }
 
     @Test
     public void referenceable()
@@ -70,19 +92,19 @@ public class JNDIReferenceableTest
         catch (NoInitialContextException e)
         {
             Assert.fail("You don't have the File System SPI on you class path.\n" +
-                    "This can be downloaded from sun here:\n" +
-                    "http://java.sun.com/products/jndi/downloads/index.html\n" +
-                    "Click : Download JNDI 1.2.1 & More button\n" +
-                    "Download: File System Service Provider, 1.2 Beta 3\n" +
-                    "and add the two jars in the lib dir to your class path.");
+                        "This can be downloaded from sun here:\n" +
+                        "http://java.sun.com/products/jndi/downloads/index.html\n" +
+                        "Click : Download JNDI 1.2.1 & More button\n" +
+                        "Download: File System Service Provider, 1.2 Beta 3\n" +
+                        "and add the two jars in the lib dir to your class path.");
         }
 
         Assert.assertTrue(b.bound());
-
+        
         Lookup l = new Lookup();
 
         Assert.assertTrue(l.connectionFactoryValue().equals(b.connectionFactoryValue()));
-        
+
         Assert.assertTrue(l.connectionValue().equals(b.connectionValue()));
 
         Assert.assertTrue(l.topicValue().equals(b.topicValue()));

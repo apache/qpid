@@ -40,12 +40,31 @@ public class SessionStartTest implements MessageListener
     private AMQDestination _destination;
     private AMQSession _session;
     private int count;
-    public String _connectionString = "vm://:1";  
+    public String _connectionString = "vm://:1";
 
     @Before
     public void init() throws Exception
     {
         init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+        createVMBroker();
+    }
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
     }
 
     private void init(AMQConnection connection) throws Exception

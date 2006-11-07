@@ -22,9 +22,14 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.mina.common.ByteBuffer;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.Assert;
+import org.junit.After;
 
 import javax.jms.*;
 import java.util.ArrayList;
@@ -41,9 +46,29 @@ public class BytesMessageTest implements MessageListener
     private int _count = 100;
     public String _connectionString = "vm://:1";
 
-    void init() throws Exception
+    @Before
+    public void init() throws Exception
     {
         init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+        createVMBroker();
+    }
+
+    public void createVMBroker()
+    {
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (AMQVMBrokerCreationException e)
+        {
+            Assert.fail("Unable to create broker: " + e);
+        }
+    }
+
+    @After
+    public void stopVmBroker()
+    {
+        TransportConnection.killVMBroker(1);
     }
 
     void init(AMQConnection connection) throws Exception
@@ -65,7 +90,6 @@ public class BytesMessageTest implements MessageListener
     @Test
     public void test() throws Exception
     {
-        init();
 
         try
         {
@@ -96,7 +120,7 @@ public class BytesMessageTest implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized (received)
+        synchronized(received)
         {
             while (received.size() < count)
             {
@@ -164,7 +188,7 @@ public class BytesMessageTest implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized (received)
+        synchronized(received)
         {
             received.add((JMSBytesMessage) message);
             received.notify();
