@@ -20,27 +20,31 @@
 using std::mem_fun;
 using namespace qpid::broker;
 
-bool TxBuffer::prepare(TransactionalStore* const store){
-    TransactionContext* ctxt(0);
+bool TxBuffer::prepare(TransactionalStore* const store)
+{
+    std::auto_ptr<TransactionContext> ctxt;
     if(store) ctxt = store->begin();
     for(op_iterator i = ops.begin(); i < ops.end(); i++){
-        if(!(*i)->prepare(ctxt)){
-            if(store) store->abort(ctxt);
+        if(!(*i)->prepare(ctxt.get())){
+            if(store) store->abort(ctxt.get());
             return false;
         }
     }
-    if(store) store->commit(ctxt);
+    if(store) store->commit(ctxt.get());
     return true;
 }
 
-void TxBuffer::commit(){
+void TxBuffer::commit()
+{
     for_each(ops.begin(), ops.end(), mem_fun(&TxOp::commit));
 }
 
-void TxBuffer::rollback(){
+void TxBuffer::rollback()
+{
     for_each(ops.begin(), ops.end(), mem_fun(&TxOp::rollback));
 }
 
-void TxBuffer::enlist(TxOp* const op){
+void TxBuffer::enlist(TxOp* const op)
+{
     ops.push_back(op);
 }

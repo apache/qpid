@@ -49,7 +49,7 @@ class TxPublishTest : public CppUnit::TestCase
         void dequeue(TransactionContext*, Message::shared_ptr&, const Queue&, const string * const){}
         void committed(const string * const){}
         void aborted(const string * const){}
-        TransactionContext* begin(){ return 0; }
+        std::auto_ptr<TransactionContext> begin(){ return std::auto_ptr<TransactionContext>(); }
         void commit(TransactionContext*){}
         void abort(TransactionContext*){}        
         ~TestMessageStore(){}
