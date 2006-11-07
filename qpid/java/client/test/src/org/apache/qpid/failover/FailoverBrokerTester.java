@@ -129,8 +129,6 @@ public class FailoverBrokerTester implements Runnable
 
     private void createWorld()
     {
-        System.setProperty("amqj.NoAutoCreateVMBroker", "true");
-
         genesis();
 
         Thread brokerGod = new Thread(this);
