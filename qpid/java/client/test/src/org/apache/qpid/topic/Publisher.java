@@ -154,7 +154,8 @@ public class Publisher implements MessageListener
         }
         sum -= min;
         sum -= max;
-        return (sum / times.length - 2);
+
+        return (sum / (times.length - 2));
     }
 
     public static void main(String[] argv) throws Exception
