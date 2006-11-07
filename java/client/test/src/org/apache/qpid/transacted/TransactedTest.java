@@ -53,33 +53,12 @@ public class TransactedTest
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
 
-    @BeforeClass
-    public static void setupBeforeClass()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create VM Broker: " + e.getMessage());
-        }
-    }
-
-    @AfterClass
-    public static void setupAfterClass()
-    {
-        TransportConnection.killVMBroker(1);
-    }
 
     @Before
     public void setup() throws Exception
     {
-
-
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
-
 
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
         session = con.createSession(true, 0);
@@ -92,6 +71,21 @@ public class TransactedTest
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
 
+        // Sleep to ensure all queues have been created in the Broker.
+        try
+        {
+            System.out.println("Allowing Server to create queues");
+            Thread.sleep(2000);
+        }
+        catch (InterruptedException e)
+        {
+            //do nothing
+        }
+        finally
+        {
+            System.out.println("Setup Complete");
+        }
+
         //add some messages
         prepProducer1.send(prepSession.createTextMessage("A"));
         prepProducer1.send(prepSession.createTextMessage("B"));
@@ -103,17 +97,20 @@ public class TransactedTest
         testConsumer2 = testSession.createConsumer(queue2);
         testCon.start();
 
-        // Sleep to ensure all queues have been created in the Broker.
+         // Sleep to ensure all queues have been created in the Broker.
         try
         {
-            System.out.println("Finishing Setup");
-            Thread.sleep(3000);
+            System.out.println("Allowing Server to create queues");
+            Thread.sleep(2000);
         }
         catch (InterruptedException e)
         {
             //do nothing
         }
-        System.out.println("Setup Complete");
+        finally
+        {
+            System.out.println("Setup Complete");
+        }
     }
 
     @After
