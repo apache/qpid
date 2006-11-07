@@ -54,7 +54,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     public ConcurrencyTest() throws Exception
     {
-        _deliveryMgr = new DeliveryManager(_subscriptionMgr, new AMQQueue("myQ", false, "guest", false,
+        _deliveryMgr = new ConcurrentDeliveryManager(_subscriptionMgr, new AMQQueue("myQ", false, "guest", false,
                                                                           new DefaultQueueRegistry()));
     }
 
@@ -165,7 +165,7 @@ public class ConcurrencyTest extends MessageTestHelper
             }
             else
             {
-                if (_deliveryMgr.getQueueMessageCount() == 0) {
+                if (!_deliveryMgr.hasQueuedMessages()) {
                     isComplete = true;
                 }
                 return null;

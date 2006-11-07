@@ -20,40 +20,38 @@ package org.apache.qpid.server.queue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.junit.runners.Suite;
+import org.junit.runner.RunWith;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 import org.apache.qpid.AMQException;
 import junit.framework.JUnit4TestAdapter;
 
-public class DeliveryManagerTest extends MessageTestHelper
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        ConcurrentDeliveryManagerTest.class,
+        SynchronizedDeliveryManagerTest.class})
+
+abstract public class DeliveryManagerTest extends MessageTestHelper
 {
-    private final SubscriptionSet _subscriptions = new SubscriptionSet();
-    private final DeliveryManager _mgr;
+    protected final SubscriptionSet _subscriptions = new SubscriptionSet();
+    protected DeliveryManager _mgr;
 
     public DeliveryManagerTest() throws Exception
     {
-        try
-        {
-            _mgr = new DeliveryManager(_subscriptions, new AMQQueue("myQ", false, "guest", false,
-                                                                new DefaultQueueRegistry()));
-        }
-        catch(Throwable t)
-        {
-            t.printStackTrace();
-            throw new AMQException("Could not initialise delivery manager", t);
-        }
     }
+
 
     @Test
     public void startInQueueingMode() throws AMQException
     {
         AMQMessage[] messages = new AMQMessage[10];
-        for(int i = 0; i < messages.length; i++)
+        for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message();
         }
         int batch = messages.length / 2;
 
-        for(int i = 0; i < batch; i++)
+        for (int i = 0; i < batch; i++)
         {
             _mgr.deliver("Me", messages[i]);
         }
@@ -63,7 +61,7 @@ public class DeliveryManagerTest extends MessageTestHelper
         _subscriptions.addSubscriber(s1);
         _subscriptions.addSubscriber(s2);
 
-        for(int i = batch; i < messages.length; i++)
+        for (int i = batch; i < messages.length; i++)
         {
             _mgr.deliver("Me", messages[i]);
         }
@@ -76,9 +74,9 @@ public class DeliveryManagerTest extends MessageTestHelper
         assertEquals(messages.length / 2, s1.getMessages().size());
         assertEquals(messages.length / 2, s2.getMessages().size());
 
-        for(int i = 0; i < messages.length; i++)
+        for (int i = 0; i < messages.length; i++)
         {
-            if(i % 2 == 0)
+            if (i % 2 == 0)
             {
                 assertTrue(s1.getMessages().get(i / 2) == messages[i]);
             }
@@ -93,7 +91,7 @@ public class DeliveryManagerTest extends MessageTestHelper
     public void startInDirectMode() throws AMQException
     {
         AMQMessage[] messages = new AMQMessage[10];
-        for(int i = 0; i < messages.length; i++)
+        for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message();
         }
@@ -102,13 +100,13 @@ public class DeliveryManagerTest extends MessageTestHelper
         TestSubscription s1 = new TestSubscription("1");
         _subscriptions.addSubscriber(s1);
 
-        for(int i = 0; i < batch; i++)
+        for (int i = 0; i < batch; i++)
         {
             _mgr.deliver("Me", messages[i]);
         }
 
         assertEquals(batch, s1.getMessages().size());
-        for(int i = 0; i < batch; i++)
+        for (int i = 0; i < batch; i++)
         {
             assertTrue(messages[i] == s1.getMessages().get(i));
         }
@@ -116,7 +114,7 @@ public class DeliveryManagerTest extends MessageTestHelper
         assertEquals(0, s1.getMessages().size());
 
         s1.setSuspended(true);
-        for(int i = batch; i < messages.length; i++)
+        for (int i = batch; i < messages.length; i++)
         {
             _mgr.deliver("Me", messages[i]);
         }
@@ -128,22 +126,22 @@ public class DeliveryManagerTest extends MessageTestHelper
         _mgr.processAsync(new OnCurrentThreadExecutor());
         assertEquals(messages.length - batch, s1.getMessages().size());
 
-        for(int i = batch; i < messages.length; i++)
+        for (int i = batch; i < messages.length; i++)
         {
             assertTrue(messages[i] == s1.getMessages().get(i - batch));
         }
 
     }
 
-    @Test (expected=NoConsumersException.class)
+    @Test(expected = NoConsumersException.class)
     public void noConsumers() throws AMQException
     {
         AMQMessage msg = message(true);
         _mgr.deliver("Me", msg);
-        msg.checkDeliveredToConsumer();        
+        msg.checkDeliveredToConsumer();
     }
 
-    @Test (expected=NoConsumersException.class)
+    @Test(expected = NoConsumersException.class)
     public void noActiveConsumers() throws AMQException
     {
         TestSubscription s = new TestSubscription("A");
