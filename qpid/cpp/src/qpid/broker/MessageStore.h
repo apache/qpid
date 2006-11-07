@@ -57,7 +57,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void enqueue(Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
+            virtual void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
             /**
              * Dequeues a message, recording that the given message is
              * no longer on the given queue and deleting the message
@@ -69,7 +69,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void dequeue(Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
+            virtual void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid) = 0;
             /**
              * Treat all enqueue/dequeues where this xid was specified as being committed.
              */

@@ -41,10 +41,11 @@ namespace qpid {
          */
         class TxPublish : public TxOp, public Deliverable{
             class Prepare{
+                TransactionContext* ctxt;
                 Message::shared_ptr& msg;
                 const string* const xid;
             public:
-                Prepare(Message::shared_ptr& msg, const string* const xid);
+                Prepare(TransactionContext* ctxt, Message::shared_ptr& msg, const string* const xid);
                 void operator()(Queue::shared_ptr& queue);            
             };
 
@@ -60,7 +61,7 @@ namespace qpid {
 
         public:
             TxPublish(Message::shared_ptr msg);
-            virtual bool prepare() throw();
+            virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
 

@@ -26,10 +26,15 @@ TxAck::TxAck(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked) : acke
 
 }
 
-bool TxAck::prepare() throw(){
+bool TxAck::prepare(TransactionContext* ctxt) throw(){
     try{
         //dequeue all acked messages from their queues
-        for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::discardIfCoveredBy), &acked));
+        for (ack_iterator i = unacked.begin(); i != unacked.end(); i++) {
+            if (i->coveredBy(&acked)) {
+                i->discard(ctxt);
+            }
+        }
+        //for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::discardIfCoveredBy), &acked));
         return true;
     }catch(...){
         std::cout << "TxAck::prepare() - Failed to prepare" << std::endl;
