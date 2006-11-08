@@ -49,7 +49,8 @@ import java.util.Hashtable;
 class Bind
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
-    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public static final String DEFAULT_PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public String PROVIDER_URL = DEFAULT_PROVIDER_URL;
 
     String _connectionFactoryString = "";
 
@@ -60,12 +61,12 @@ class Bind
 
     public Bind() throws NameAlreadyBoundException, NoInitialContextException
     {
-        this(false, DEFAULT_PROVIDER_FILE_PATH);
+        this(false, DEFAULT_PROVIDER_URL);
     }
 
     public Bind(boolean output) throws NameAlreadyBoundException, NoInitialContextException
     {
-        this(output, DEFAULT_PROVIDER_FILE_PATH);
+        this(output, DEFAULT_PROVIDER_URL);
     }
 
     public Bind(boolean output, String providerURL) throws NameAlreadyBoundException, NoInitialContextException
