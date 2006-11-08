@@ -15,46 +15,50 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/Monitor.h"
-#include <iostream>
+#include "Monitor.h"
+#include "APRPool.h"
 
-qpid::sys::Monitor::Monitor(){
+using namespace qpid::sys;
+
+Mutex::Mutex()
+{
     APRBase::increment();
-    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
-    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, pool));
-    CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, pool));
+    // TODO aconway 2006-11-08: Switch to non-nested.
+    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, APRPool::get()));
 }
 
-qpid::sys::Monitor::~Monitor(){
-    CHECK_APR_SUCCESS(apr_thread_cond_destroy(condition));
+Mutex::~Mutex(){
     CHECK_APR_SUCCESS(apr_thread_mutex_destroy(mutex));
-    apr_pool_destroy(pool);
     APRBase::decrement();
 }
 
-void qpid::sys::Monitor::wait(){
+Monitor::Monitor() 
+{
+    CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, APRPool::get()));
+}
+
+Monitor::~Monitor(){
+    CHECK_APR_SUCCESS(apr_thread_cond_destroy(condition));
+}
+
+
+
+void Monitor::wait(){
     CHECK_APR_SUCCESS(apr_thread_cond_wait(condition, mutex));
 }
 
-
-void qpid::sys::Monitor::wait(u_int64_t time){
-    apr_status_t status = apr_thread_cond_timedwait(condition, mutex, time * 1000);
+void Monitor::wait(int64_t nsecs){
+    // APR uses microseconds.
+    apr_status_t status = apr_thread_cond_timedwait(
+        condition, mutex, nsecs/1000);
     if(!status == APR_TIMEUP) CHECK_APR_SUCCESS(status);
 }
 
-void qpid::sys::Monitor::notify(){
+void Monitor::notify(){
     CHECK_APR_SUCCESS(apr_thread_cond_signal(condition));
 }
 
-void qpid::sys::Monitor::notifyAll(){
+void Monitor::notifyAll(){
     CHECK_APR_SUCCESS(apr_thread_cond_broadcast(condition));
 }
 
-void qpid::sys::Monitor::acquire(){
-    CHECK_APR_SUCCESS(apr_thread_mutex_lock(mutex));
-}
-
-void qpid::sys::Monitor::release(){
-    CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
-}

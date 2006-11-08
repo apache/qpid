@@ -105,7 +105,7 @@ void Channel::rollback(){
 }
 
 void Channel::deliver(Message::shared_ptr& msg, string& consumerTag, Queue::shared_ptr& queue, bool ackExpected){
-    Locker locker(deliveryLock);
+    Mutex::ScopedLock locker(deliveryLock);
 
     u_int64_t deliveryTag = currentDeliveryTag++;
     if(ackExpected){
@@ -118,7 +118,7 @@ void Channel::deliver(Message::shared_ptr& msg, string& consumerTag, Queue::shar
 }
 
 bool Channel::checkPrefetch(Message::shared_ptr& msg){
-    Locker locker(deliveryLock);
+    Mutex::ScopedLock locker(deliveryLock);
     bool countOk = !prefetchCount || prefetchCount > unacked.size();
     bool sizeOk = !prefetchSize || prefetchSize > msg->contentSize() + outstanding.size || unacked.empty();
     return countOk && sizeOk;
@@ -191,7 +191,7 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
         //TODO: I think the outstanding prefetch size & count should be updated at this point...
         //TODO: ...this may then necessitate dispatching to consumers
     }else{
-        Locker locker(deliveryLock);//need to synchronize with possible concurrent delivery
+        Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
     
         ack_iterator i = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), deliveryTag));
         if(i == unacked.end()){
@@ -219,7 +219,7 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
 }
 
 void Channel::recover(bool requeue){
-    Locker locker(deliveryLock);//need to synchronize with possible concurrent delivery
+    Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
 
     if(requeue){
         outstanding.reset();
@@ -234,7 +234,7 @@ void Channel::recover(bool requeue){
 bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
     Message::shared_ptr msg = queue->dequeue();
     if(msg){
-        Locker locker(deliveryLock);
+        Mutex::ScopedLock locker(deliveryLock);
         u_int64_t myDeliveryTag = currentDeliveryTag++;
         msg->sendGetOk(out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize);
         if(ackExpected){

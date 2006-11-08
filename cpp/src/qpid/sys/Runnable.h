@@ -21,15 +21,15 @@
 namespace qpid {
 namespace sys {
 
-    class Runnable
-    {
-    public:
-        virtual ~Runnable();
-	virtual void run() = 0;
-    };
+/** Base class for classes that run in a thread. */
+class Runnable
+{
+  public:
+    virtual ~Runnable() {}
+    virtual void run() = 0;
+};
 
-}
-}
+}}
 
 
 #endif

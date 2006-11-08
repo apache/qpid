@@ -52,8 +52,8 @@ The source tree is structured as follows:
  * src/ - .h and .cpp source files, directories mirror namespaces.
   * qpid/
    * sys/ - system abstractions: threading, IO.
-    * posix/ - posix implementation
-    * apr/ - portable APR implementation (for client side)
+   * posix/ - posix implementations for sys
+   * apr/ - portable APR implementation for sys (client side)
    * framing - encoding/decoding AMQP messages
    * client - client classes.
    * broker - broker classes.

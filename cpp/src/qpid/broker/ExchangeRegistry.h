@@ -29,7 +29,7 @@ namespace broker {
     class ExchangeRegistry{
         typedef std::map<string, Exchange::shared_ptr> ExchangeMap;
         ExchangeMap exchanges;
-        qpid::sys::Monitor lock;
+        qpid::sys::Mutex lock;
     public:
         std::pair<Exchange::shared_ptr, bool> declare(const string& name, const string& type) throw(UnknownExchangeTypeException);
         void destroy(const string& name);

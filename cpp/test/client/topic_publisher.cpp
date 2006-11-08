@@ -23,7 +23,7 @@
 #include "qpid/client/Queue.h"
 #include "qpid/sys/Monitor.h"
 #include "unistd.h"
-#include <apr-1/apr_time.h>
+#include <qpid/sys/Time.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -43,7 +43,7 @@ class Publisher : public MessageListener{
 public:
     Publisher(Channel* channel, const std::string& controlTopic, bool tx);
     virtual void received(Message& msg);
-    apr_time_t publish(int msgs, int listeners, int size);
+    int64_t publish(int msgs, int listeners, int size);
     void terminate();
 };
 
@@ -105,19 +105,19 @@ int main(int argc, char** argv){
             channel.start();
 
             int batchSize(args.getBatches());
-            apr_time_t max(0);
-            apr_time_t min(0);
-            apr_time_t sum(0);
+            int64_t max(0);
+            int64_t min(0);
+            int64_t sum(0);
             for(int i = 0; i < batchSize; i++){
                 if(i > 0 && args.getDelay()) sleep(args.getDelay());
-                apr_time_t time = publisher.publish(args.getMessages(), args.getSubscribers(), args.getSize());
+                int64_t time = publisher.publish(args.getMessages(), args.getSubscribers(), args.getSize());
                 if(!max || time > max) max = time;
                 if(!min || time < min) min = time;
                 sum += time;
-                std::cout << "Completed " << (i+1) << " of " << batchSize << " in " << time << "ms" << std::endl;
+                std::cout << "Completed " << (i+1) << " of " << batchSize << " in " << nsecsToMsecs(time) << "ms" << std::endl;
             }
             publisher.terminate();
-            apr_time_t avg = sum / batchSize;
+            int64_t avg = sum / batchSize;
             if(batchSize > 1){
                 std::cout << batchSize << " batches completed. avg=" << avg << 
                     ", max=" << max << ", min=" << min << std::endl;
@@ -135,12 +135,11 @@ Publisher::Publisher(Channel* _channel, const std::string& _controlTopic, bool t
 
 void Publisher::received(Message& msg){
     //count responses and when all are received end the current batch
-    monitor.acquire();
+    Monitor::ScopedLock l(monitor);
     if(--count == 0){
         monitor.notify();
     }
     std::cout << "Received report: " << msg.getData() << " (" << count << " remaining)." << std::endl;
-    monitor.release();
 }
 
 void Publisher::waitForCompletion(int msgs){
@@ -148,26 +147,27 @@ void Publisher::waitForCompletion(int msgs){
     monitor.wait();
 }
 
-apr_time_t Publisher::publish(int msgs, int listeners, int size){
-    monitor.acquire();
+int64_t Publisher::publish(int msgs, int listeners, int size){
     Message msg;
     msg.setData(generateData(size));
-    apr_time_t start(apr_time_as_msec(apr_time_now()));
-    for(int i = 0; i < msgs; i++){
-        channel->publish(msg, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
-    }
-    //send report request
-    Message reportRequest;
-    reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
-    channel->publish(reportRequest, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
-    if(transactional){
-        channel->commit();
+    int64_t start = getTimeMsecs();
+    {
+        Monitor::ScopedLock l(monitor);
+        for(int i = 0; i < msgs; i++){
+            channel->publish(msg, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
+        }
+        //send report request
+        Message reportRequest;
+        reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
+        channel->publish(reportRequest, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
+        if(transactional){
+            channel->commit();
+        }
+
+        waitForCompletion(listeners);
     }
 
-    waitForCompletion(listeners);
-    monitor.release();
-    apr_time_t finish(apr_time_as_msec(apr_time_now()));
-    
+    int64_t finish(getTimeMsecs());
     return finish - start; 
 }
 

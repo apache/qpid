@@ -15,14 +15,13 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/APRSocket.h"
+#include "APRBase.h"
+#include "APRSocket.h"
 #include <assert.h>
 #include <iostream>
 
 using namespace qpid::sys;
 using namespace qpid::framing;
-using namespace qpid::sys;
 
 APRSocket::APRSocket(apr_socket_t* _socket) : socket(_socket), closed(false){
 

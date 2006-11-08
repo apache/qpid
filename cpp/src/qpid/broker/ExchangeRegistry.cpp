@@ -26,7 +26,7 @@ using namespace qpid::sys;
 using std::pair;
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) throw(UnknownExchangeTypeException){
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
 	Exchange::shared_ptr exchange;
@@ -50,12 +50,12 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 }
 
 void ExchangeRegistry::destroy(const string& name){
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     exchanges.erase(name);
 }
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     return exchanges[name];
 }
 

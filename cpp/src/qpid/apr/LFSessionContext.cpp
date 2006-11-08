@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/LFSessionContext.h"
-#include "qpid/sys/APRBase.h"
+#include "LFSessionContext.h"
+#include "APRBase.h"
 #include "qpid/QpidError.h"
 #include <assert.h>
 
@@ -34,9 +34,7 @@ LFSessionContext::LFSessionContext(apr_pool_t* _pool, apr_socket_t* _socket,
     out(32768),
     processor(_processor),
     processing(false),
-    closing(false),
-    reading(0),
-    writing(0)
+    closing(false)
 {
     
     fd.p = _pool;
@@ -53,9 +51,6 @@ LFSessionContext::~LFSessionContext(){
 }
 
 void LFSessionContext::read(){
-    assert(!reading);           // No concurrent read. 
-    reading = Thread::currentThread();
-
     socket.read(in);
     in.flip();
     if(initiated){
@@ -73,27 +68,21 @@ void LFSessionContext::read(){
         }
     }
     in.compact();
-
-    reading = 0;
 }
 
 void LFSessionContext::write(){
-    assert(!writing);           // No concurrent writes.
-    writing = Thread::currentThread();
-
     bool done = isClosed();
     while(!done){
         if(out.available() > 0){
             socket.write(out);
             if(out.available() > 0){
-                writing = 0;
 
                 //incomplete write, leave flags to receive notification of readiness to write
                 done = true;//finished processing for now, but write is still in progress
             }
         }else{
             //do we have any frames to write?
-            writeLock.acquire();
+            Mutex::ScopedLock l(writeLock);
             if(!framesToWrite.empty()){
                 out.clear();
                 bool encoded(false);
@@ -113,19 +102,16 @@ void LFSessionContext::write(){
                 fd.reqevents = APR_POLLIN;
                 done = true;
 
-                writing = 0;
-
                 if(closing){
                     socket.close();
                 }
             }
-            writeLock.release();
         }
     }
 }
 
 void LFSessionContext::send(AMQFrame* frame){
-    writeLock.acquire();
+    Mutex::ScopedLock l(writeLock);
     if(!closing){
         framesToWrite.push(frame);
         if(!(fd.reqevents & APR_POLLOUT)){
@@ -135,32 +121,28 @@ void LFSessionContext::send(AMQFrame* frame){
             }
         }
     }
-    writeLock.release();
 }
 
 void LFSessionContext::startProcessing(){
-    writeLock.acquire();
+    Mutex::ScopedLock l(writeLock);
     processing = true;
     processor->deactivate(&fd);
-    writeLock.release();
 }
 
 void LFSessionContext::stopProcessing(){
-    writeLock.acquire();
+    Mutex::ScopedLock l(writeLock);
     processor->reactivate(&fd);
     processing = false;
-    writeLock.release();
 }
 
 void LFSessionContext::close(){
     closing = true;
-    writeLock.acquire();
+    Mutex::ScopedLock l(writeLock);
     if(!processing){
         //allow pending frames to be written to socket
         fd.reqevents = APR_POLLOUT;
         processor->update(&fd);
     }
-    writeLock.release();
 }
 
 void LFSessionContext::handleClose(){
@@ -181,9 +163,8 @@ void LFSessionContext::init(SessionHandler* _handler){
 }
 
 void LFSessionContext::log(const std::string& desc, AMQFrame* const frame){
-    logLock.acquire();
+    Mutex::ScopedLock l(logLock);
     std::cout << desc << " [" << &socket << "]: " << *frame << std::endl;
-    logLock.release();
 }
 
-Monitor LFSessionContext::logLock;
+Mutex LFSessionContext::logLock;
