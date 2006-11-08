@@ -23,7 +23,7 @@
 
     <target name="test" depends="build">
         <echo>Client Tests</echo>
-        <junit fork="yes" printsummary="yes" showoutput="true" haltonfailure="yes" timeout="30000">
+        <junit fork="yes" printsummary="yes" showoutput="true" haltonfailure="yes">
             <sysproperty key="amqj.noAutoCreateVMBroker" value="true"/>
             <formatter type="plain"/>
             <classpath refid="module.class.path"/>
@@ -39,7 +39,7 @@
 
     <target name="testreport" depends="build">
         <echo>Client Tests with Report</echo>
-        <junit fork="yes" printsummary="yes" haltonfailure="no" timeout="30000">
+        <junit fork="yes" printsummary="yes" haltonfailure="no" timeout="90000">
             <sysproperty key="amqj.noAutoCreateVMBroker" value="true"/>
             <formatter type="xml" />
             <classpath refid="module.class.path" />
