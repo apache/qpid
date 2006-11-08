@@ -21,7 +21,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
-
+using namespace qpid::sys;
 
 // TODO aconway 2006-09-20: More efficient matching algorithm.
 // Areas for improvement:
@@ -115,15 +115,14 @@ bool TopicPattern::match(const Tokens& target)  const
 TopicExchange::TopicExchange(const string& _name) : Exchange(_name) { }
 
 void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    lock.acquire();
+    Monitor::ScopedLock l(lock);
     TopicPattern routingPattern(routingKey);
     bindings[routingPattern].push_back(queue);
     queue->bound(new ExchangeBinding(this, queue, routingKey, args));
-    lock.release();
 }
 
 void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
-    lock.acquire();
+    Monitor::ScopedLock l(lock);
     BindingMap::iterator bi = bindings.find(TopicPattern(routingKey));
     Queue::vector& qv(bi->second);
     if (bi == bindings.end()) return;
@@ -131,12 +130,11 @@ void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, Fi
     if(q == qv.end()) return;
     qv.erase(q);
     if(qv.empty()) bindings.erase(bi);
-    lock.release();
 }
 
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
-    lock.acquire();
+    Monitor::ScopedLock l(lock);
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(routingKey)) {
             Queue::vector& qv(i->second);
@@ -145,7 +143,6 @@ void TopicExchange::route(Deliverable& msg, const string& routingKey, FieldTable
             }
         }
     }
-    lock.release();
 }
 
 TopicExchange::~TopicExchange() {}

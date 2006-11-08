@@ -24,9 +24,6 @@
 #define _Channel_
 
 #include "qpid/framing/amqp_framing.h"
-
-#include "qpid/sys/ThreadFactory.h"
-
 #include "qpid/client/Connection.h"
 #include "qpid/client/Exchange.h"
 #include "qpid/client/IncomingMessage.h"
@@ -51,15 +48,14 @@ namespace client {
 
 	u_int16_t id;
 	Connection* con;
-	qpid::sys::ThreadFactory* threadFactory;
-	qpid::sys::Thread* dispatcher;
+	qpid::sys::Thread dispatcher;
 	qpid::framing::OutputHandler* out;
 	IncomingMessage* incoming;
 	ResponseHandler responses;
 	std::queue<IncomingMessage*> messages;//holds returned messages or those delivered for a consume
 	IncomingMessage* retrieved;//holds response to basic.get
-	qpid::sys::Monitor* dispatchMonitor;
-	qpid::sys::Monitor* retrievalMonitor;
+	qpid::sys::Monitor dispatchMonitor;
+	qpid::sys::Monitor retrievalMonitor;
 	std::map<std::string, Consumer*> consumers;
 	ReturnedMessageHandler* returnsHandler;
 	bool closed;

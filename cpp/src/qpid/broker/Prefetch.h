@@ -30,7 +30,7 @@ namespace qpid {
             u_int32_t size;
             u_int16_t count;
 
-            void reset();
+            void reset() { size = 0; count = 0; }
         };
     }
 }

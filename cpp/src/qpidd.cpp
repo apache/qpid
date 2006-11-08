@@ -24,8 +24,11 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
+Broker::shared_ptr broker;
+
 void handle_signal(int /*signal*/){
     std::cout << "Shutting down..." << std::endl;
+    broker->shutdown();
 }
 
 int main(int argc, char** argv)
@@ -36,8 +39,8 @@ int main(int argc, char** argv)
         if(config.isHelp()){
             config.usage();
         }else{
+            broker = Broker::create(config);
             apr_signal(SIGINT, handle_signal);
-            Broker::shared_ptr broker = Broker::create(config);
             broker->run();
         }
         return 0;

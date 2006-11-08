@@ -34,7 +34,7 @@ class HeadersExchange : public virtual Exchange {
     typedef std::vector<Binding> Bindings;
 
     Bindings bindings;
-    qpid::sys::Monitor lock;
+    qpid::sys::Mutex lock;
 
   public:
     static const std::string typeName;

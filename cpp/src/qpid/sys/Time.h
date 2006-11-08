@@ -24,28 +24,14 @@
 namespace qpid {
 namespace sys {
 
-/**
- * Time since the epoch.
- */
-class Time
-{
-  public:
-    static const int64_t NANOS  = 1000000000;
-    static const int64_t MICROS = 1000000;
-    static const int64_t MILLIS = 1000;
+inline int64_t msecsToNsecs(int64_t msecs) { return msecs * 1000 *1000; }
+inline int64_t nsecsToMsecs(int64_t nsecs) { return nsecs / (1000 *1000); }
 
-    static Time now();
+/** Nanoseconds since epoch */
+int64_t getTimeNsecs();
 
-    Time(int64_t nsecs_) : ticks(nsecs_) {}
-
-    int64_t nsecs() const { return ticks; }
-    int64_t usecs() const { return nsecs()/1000; }
-    int64_t msecs() const { return usecs()/1000; }
-    int64_t secs() const { return msecs()/1000; }
-
-  private:
-    int64_t ticks;
-};
+/** Milliseconds since epoch */
+int64_t getTimeMsecs();
 
 }}
 
