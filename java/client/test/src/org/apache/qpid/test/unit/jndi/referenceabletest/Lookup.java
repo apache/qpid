@@ -42,19 +42,29 @@ import java.util.Hashtable;
 class Lookup
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
-    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     AMQTopic _topic = null;
     AMQConnection _connection = null;
     AMQConnectionFactory _connectionFactory = null;
     private String _connectionURL;
 
+
     public Lookup()
     {
+        this(DEFAULT_PROVIDER_FILE_PATH);
+    }
+
+    public Lookup(String providerURL)
+    {
+
+        PROVIDER_URL = providerURL;
+
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.fscontext.RefFSContextFactory");
+
         env.put(Context.PROVIDER_URL, PROVIDER_URL);
 
         File file = new File(PROVIDER_URL.substring(PROVIDER_URL.indexOf("://") + 3));
@@ -115,17 +125,34 @@ class Lookup
 
     public String connectionFactoryValue()
     {
-        return _connectionFactory.getConnectionURL().toString();
+        if (_connectionFactory != null)
+        {
+            return _connectionFactory.getConnectionURL().toString();
+        }
+        return "";
     }
 
     public String connectionValue()
     {
-        return _connectionURL;
+        if (_connectionURL != null)
+        {
+            return _connectionURL;
+        }
+        return "";
     }
 
     public String topicValue()
     {
-        return _topic.toURL();
+        if (_topic != null)
+        {
+            return _topic.toURL();
+        }
+        return "";
+    }
+
+    public String getProviderURL()
+    {
+        return PROVIDER_URL;
     }
 
     public static void main(String[] args)
