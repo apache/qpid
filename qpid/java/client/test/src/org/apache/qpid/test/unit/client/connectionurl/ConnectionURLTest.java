@@ -324,7 +324,8 @@ public class ConnectionURLTest
         Assert.assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
-    @Test @Ignore //FIXME Connection now parses but result is wrong
+    @Ignore("Connection now parses but result is wrong QPID-")
+    @Test
     public void wrongOptionSeperatorInBroker()
     {
         String url = "amqp://user:@/test?brokerlist='tcp://localhost:5672+option='value''";

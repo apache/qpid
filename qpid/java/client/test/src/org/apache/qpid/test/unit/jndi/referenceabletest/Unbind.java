@@ -38,18 +38,29 @@ import java.util.Hashtable;
  */
 class Unbind
 {
-    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
-    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
+    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     boolean _unbound = false;
 
     public Unbind()
     {
-        this(false);
+        this(false, DEFAULT_PROVIDER_FILE_PATH);
     }
 
-    public Unbind(boolean output)
+    public Unbind(Boolean output)
     {
+        this(output, DEFAULT_PROVIDER_FILE_PATH);
+    }
+
+    public Unbind(String provider)
+    {
+        this(false, provider);
+    }
+
+    public Unbind(boolean output, String providerURL)
+    {
+        PROVIDER_URL = providerURL;
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,

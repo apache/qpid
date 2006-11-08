@@ -49,7 +49,7 @@ import java.util.Hashtable;
 class Bind
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
-    public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     String _connectionFactoryString = "";
 
@@ -60,15 +60,24 @@ class Bind
 
     public Bind() throws NameAlreadyBoundException, NoInitialContextException
     {
-        this(false);
+        this(false, DEFAULT_PROVIDER_FILE_PATH);
     }
 
     public Bind(boolean output) throws NameAlreadyBoundException, NoInitialContextException
     {
+        this(output, DEFAULT_PROVIDER_FILE_PATH);
+    }
+
+    public Bind(boolean output, String providerURL) throws NameAlreadyBoundException, NoInitialContextException
+    {
+        PROVIDER_URL = providerURL;
+
         // Set up the environment for creating the initial context
         Hashtable env = new Hashtable(11);
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.fscontext.RefFSContextFactory");
+
+
         env.put(Context.PROVIDER_URL, PROVIDER_URL);
 
 
@@ -184,22 +193,49 @@ class Bind
 
     public String connectionFactoryValue()
     {
-        return _connectionFactoryString;
+        if (_connectionFactoryString != null)
+        {
+            return _connectionFactoryString;
+        }
+        else
+        {
+            return "";
+        }
     }
 
     public String connectionValue()
     {
-        return _connectionString;
+        if (_connectionString != null)
+        {
+            return _connectionString;
+        }
+        else
+        {
+            return "";
+        }
     }
 
     public String topicValue()
     {
-        return ((AMQTopic) _topic).toURL();
+        if (_topic != null)
+        {
+            return ((AMQTopic) _topic).toURL();
+        }
+        else
+        {
+            return "";
+        }
+
     }
 
     public boolean bound()
     {
         return _bound;
+    }
+
+    public String getProviderURL()
+    {
+        return PROVIDER_URL;
     }
 
     public static void main(String[] args) throws NameAlreadyBoundException, NoInitialContextException
