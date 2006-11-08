@@ -185,7 +185,8 @@ class Method(Metadata):
               "octet": 0,
               "short": 0,
               "long": 0,
-              "longlong": 0}
+              "longlong": 0,
+              "timestamp": 0}
 
   def define_method(self, name):
     g = {Method.METHOD: self}
