@@ -28,15 +28,14 @@
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Thread.h"
-#include "qpid/sys/ThreadFactory.h"
 #include "qpid/sys/Connector.h"
 #include "qpid/sys/Monitor.h"
 
 namespace qpid {
 namespace sys {
 
-    class Connector : public virtual qpid::framing::OutputHandler, 
-	private virtual qpid::sys::Runnable
+    class Connector : public qpid::framing::OutputHandler, 
+                      private qpid::sys::Runnable
     {
         const bool debug;
 	const int receive_buffer_size;
@@ -44,9 +43,9 @@ namespace sys {
 
 	bool closed;
 
-        apr_time_t lastIn;
-        apr_time_t lastOut;
-        apr_interval_time_t timeout;
+        int64_t lastIn;
+        int64_t lastOut;
+        int64_t timeout;
         u_int32_t idleIn;
         u_int32_t idleOut;
 
@@ -59,9 +58,8 @@ namespace sys {
 	qpid::framing::Buffer inbuf;
 	qpid::framing::Buffer outbuf;
 
-        qpid::sys::Monitor* writeLock;
-	qpid::sys::ThreadFactory* threadFactory;
-	qpid::sys::Thread* receiver;
+        qpid::sys::Mutex writeLock;
+	qpid::sys::Thread receiver;
 
 	apr_pool_t* pool;
 	apr_socket_t* socket;

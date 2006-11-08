@@ -65,7 +65,8 @@ CXXFLAGS_release := -O3 -DNDEBUG
 WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch
 
 INCLUDES :=  $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
-LDFLAGS := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
+DEFINES  := -DPLATFORM=$(PLATFORM)
+LDFLAGS  := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
 CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM)) $(CXXFLAGS_$(TYPE))
 
 ## Macros for linking, must be late evaluated

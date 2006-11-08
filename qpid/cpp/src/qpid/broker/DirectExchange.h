@@ -30,7 +30,7 @@ namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
         std::map<string, std::vector<Queue::shared_ptr> > bindings;
-        qpid::sys::Monitor lock;
+        qpid::sys::Mutex lock;
 
     public:
         static const std::string typeName;

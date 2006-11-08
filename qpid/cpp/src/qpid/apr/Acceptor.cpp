@@ -15,11 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/Acceptor.h"
-#include "qpid/sys/APRBase.h"
+#include "Acceptor.h"
+#include "APRBase.h"
 #include "APRPool.h"
 
-using namespace qpid::sys;
 using namespace qpid::sys;
 
 Acceptor::Acceptor(int16_t port_, int backlog, int threads) :

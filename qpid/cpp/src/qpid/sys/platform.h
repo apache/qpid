@@ -1,3 +1,6 @@
+#ifndef _sys_platform_h
+#define _sys_platform_h
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -16,11 +19,11 @@
  *
  */
 
-#include "qpid/broker/Prefetch.h"
+/**
+ * Macros for including platform-specific headers and aliasing
+ * platform-specific classes into the qpid::sys namespace.
+ */
 
-using namespace qpid::broker;
+#define QPID_PLATFORM_H(HEADER) <qpid/PLATFORM/HEADER>
 
-void Prefetch::reset(){
-    size = 0;
-    count = 0;
-}
+#endif  /*!_sys_platform_h*/

@@ -15,21 +15,30 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/ThreadFactory.h"
+#include "qpid/apr/APRBase.h"
+#include <qpid_test_plugin.h>
+#include <iostream>
 
 using namespace qpid::sys;
 
-ThreadFactory::ThreadFactory(){
-    APRBase::increment();
-    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
-}
+class APRBaseTest : public CppUnit::TestCase  
+{
+    CPPUNIT_TEST_SUITE(APRBaseTest);
+    CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST_SUITE_END();
 
-ThreadFactory::~ThreadFactory(){
-    apr_pool_destroy(pool);
-    APRBase::decrement();
-}
+  public:
 
-Thread* ThreadFactory::create(Runnable* runnable){
-    return new Thread(pool, runnable);
-}
+    void testMe() 
+    {
+        APRBase::increment();
+        APRBase::increment();
+        APRBase::decrement();
+        APRBase::decrement();
+    }
+};
+
+// Make this test suite a plugin.
+CPPUNIT_PLUGIN_IMPLEMENT();
+CPPUNIT_TEST_SUITE_REGISTRATION(APRBaseTest);
+

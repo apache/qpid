@@ -52,7 +52,7 @@ namespace sys {
     void check(apr_status_t status, const std::string& file, const int line);
     std::string get_desc(apr_status_t status);
 
-#define CHECK_APR_SUCCESS(A) check(A, __FILE__, __LINE__); 
+#define CHECK_APR_SUCCESS(A) qpid::sys::check(A, __FILE__, __LINE__); 
 
 }
 }

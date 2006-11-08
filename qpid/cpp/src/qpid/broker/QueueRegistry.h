@@ -76,7 +76,7 @@ class QueueRegistry{
   private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
-    qpid::sys::Monitor lock;
+    qpid::sys::Mutex lock;
     int counter;
     MessageStore* const store;
 };

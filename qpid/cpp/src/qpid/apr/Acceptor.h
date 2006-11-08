@@ -15,27 +15,38 @@
  * limitations under the License.
  *
  */
-#ifndef _ThreadFactory_
-#define _ThreadFactory_
+#ifndef _LFAcceptor_
+#define _LFAcceptor_
 
-#include "apr-1/apr_thread_proc.h"
-
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/ThreadFactory.h"
+#include "LFProcessor.h"
+#include "LFSessionContext.h"
+#include "apr-1/apr_network_io.h"
+#include "apr-1/apr_poll.h"
+#include "apr-1/apr_time.h"
+#include "Monitor.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/SessionContext.h"
+#include "qpid/sys/SessionHandlerFactory.h"
+#include <qpid/SharedObject.h>
 
 namespace qpid {
 namespace sys {
 
-    class ThreadFactory
-    {
-	apr_pool_t* pool;
-    public:
-	ThreadFactory();
-	virtual ~ThreadFactory();
-	virtual Thread* create(Runnable* runnable);
-    };
+/** APR Acceptor. */
+class Acceptor : public qpid::SharedObject<Acceptor>
+{
+  public:
+    Acceptor(int16_t port, int backlog, int threads);
+    virtual int16_t getPort() const;
+    virtual void run(qpid::sys::SessionHandlerFactory* factory);
+    virtual void shutdown();
+
+  private:
+    int16_t port;
+    LFProcessor processor;
+    apr_socket_t* socket;
+    volatile bool running;
+};
 
 }
 }
