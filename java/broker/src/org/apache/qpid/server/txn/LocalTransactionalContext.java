@@ -1,11 +1,20 @@
-/**
- * User: Robert Greig
- * Date: 01-Nov-2006
- ******************************************************************************
- * (c) Copyright JP Morgan Chase Ltd 2006. All rights reserved. No part of
- * this program may be photocopied reproduced or translated to another
- * program language without prior written consent of JP Morgan Chase Ltd
- ******************************************************************************/
+/*
+ *
+ * Copyright (c) 2006 The Apache Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.AMQException;
@@ -18,7 +27,7 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import java.util.List;
 
 /**
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
+ * A transactional context that only supports local transactions.
  */
 public class LocalTransactionalContext implements TransactionalContext
 {
@@ -97,6 +106,16 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             _ackOp.update(deliveryTag, multiple);
         }
+    }
+
+    public void messageFullyReceived(boolean persistent) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void beginTranIfNecessary() throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void commit() throws AMQException

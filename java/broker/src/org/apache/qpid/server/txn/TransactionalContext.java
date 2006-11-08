@@ -18,6 +18,8 @@ import org.apache.qpid.server.queue.AMQQueue;
  */
 public interface TransactionalContext
 {
+    void beginTranIfNecessary() throws AMQException;
+
     void commit() throws AMQException;
 
     void rollback() throws AMQException;
@@ -26,4 +28,6 @@ public interface TransactionalContext
 
     void acknowledgeMessage(long deliveryTag, long lastDeliveryTag, boolean multiple,
                             UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException;
+
+    void messageFullyReceived(boolean persistent) throws AMQException;
 }

@@ -21,7 +21,7 @@ import org.apache.qpid.AMQException;
 
 public interface Subscription
 {
-    void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException;
+    void send(AMQMessage msg, AMQQueue queue) throws AMQException;
 
     boolean isSuspended();
 

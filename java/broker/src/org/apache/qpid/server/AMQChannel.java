@@ -107,7 +107,7 @@ public class AMQChannel
         _messageStore = messageStore;
         _exchanges = exchanges;
         // TODO: fix me to pass in the txn context or at least have a factory for it
-        _txnContext = new NonTransactionalContext(this, _returnMessages);
+        _txnContext = new NonTransactionalContext(_messageStore, this, _returnMessages);
     }
 
     /**
@@ -373,7 +373,7 @@ public class AMQChannel
     {
         _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
         {
-            public boolean callback(UnacknowledgedMessage message)
+            public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
                 long deliveryTag = message.deliveryTag;
                 String consumerTag = message.consumerTag;

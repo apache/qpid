@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -40,17 +41,35 @@ public class NonTransactionalContext implements TransactionalContext
     /**
      * Channel is useful for logging
      */
-    private AMQChannel _channel;
+    private final AMQChannel _channel;
 
     /**
      * Where to put undeliverable messages
      */
-    private List<RequiredDeliveryException> _returnMessages;
+    private final List<RequiredDeliveryException> _returnMessages;
 
-    public NonTransactionalContext(AMQChannel channel, List<RequiredDeliveryException> returnMessages)
+    private final MessageStore _messageStore;
+
+    /**
+     * Whether we are in a transaction
+     */
+    private boolean _inTran;
+
+    public NonTransactionalContext(MessageStore messageStore, AMQChannel channel,
+                                   List<RequiredDeliveryException> returnMessages)
     {
         _channel = channel;
         _returnMessages = returnMessages;
+        _messageStore = messageStore;
+    }
+
+    public void beginTranIfNecessary() throws AMQException
+    {
+        if (!_inTran)
+        {
+            _messageStore.beginTran();
+            _inTran = true;
+        }
     }
 
     public void commit() throws AMQException
@@ -141,6 +160,15 @@ public class NonTransactionalContext implements TransactionalContext
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag);
             }
+        }
+    }
+                                  
+    public void messageFullyReceived(boolean persistent) throws AMQException
+    {
+        if (persistent)
+        {
+            _messageStore.commitTran();
+            _inTran = false;
         }
     }
 }

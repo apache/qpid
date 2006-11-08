@@ -17,29 +17,23 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.NoConsumersException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 public class AbstractHeadersExchangeTest
 {
+    private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTest.class);
+
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
     private int count;
@@ -188,7 +182,15 @@ public class AbstractHeadersExchangeTest
 
         public int hashCode()
         {
-            return getKey().hashCode();
+            try
+            {
+                return getKey().hashCode();
+            }
+            catch (AMQException e)
+            {
+                _log.error("Error getting key: " + e, e);
+                return 0;
+            }
         }
 
         public boolean equals(Object o)
@@ -198,15 +200,31 @@ public class AbstractHeadersExchangeTest
 
         private boolean equals(HeadersExchangeTest.Message m)
         {
-            return getKey().equals(m.getKey());
+            try
+            {
+                return getKey().equals(m.getKey());
+            }
+            catch (AMQException e)
+            {
+                _log.error("Error getting key: " + e, e);
+                return false;
+            }
         }
 
         public String toString()
         {
-            return getKey().toString();
+            try
+            {
+                return getKey().toString();
+            }
+            catch (AMQException e)
+            {
+                _log.error("Error getting key: " + e, e);
+                return null;
+            }
         }
 
-        private Object getKey()
+        private Object getKey() throws AMQException
         {
             return getPublishBody().routingKey;
         }

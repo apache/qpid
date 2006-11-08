@@ -43,7 +43,7 @@ public class AMQMessage
      */
     private AMQProtocolSession _publisher;
 
-    private final long _messageId;
+    private long _messageId;
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
 
@@ -54,6 +54,8 @@ public class AMQMessage
      * constructing the handle
      */
     private BasicPublishBody _publishBody;
+
+    private ContentHeaderBody _contentHeaderBody;
 
     /**
      * Keeps a track of how many bytes we have received in body frames
@@ -68,8 +70,6 @@ public class AMQMessage
      * messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
-
-    private ContentHeaderBody _contentHeaderBody;
 
     private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
 
@@ -212,11 +212,21 @@ public class AMQMessage
 
     public void routingComplete(MessageStore store, MessageHandleFactory factory) throws AMQException
     {
-        _messageHandle = factory.createMessageHandle(store, _publishBody, _contentHeaderBody);
+        final boolean persistent = isPersistent();
+        _messageId = store.getNewMessageId();
+        _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
+        if (persistent)
+        {
+            _txnContext.beginTranIfNecessary();
+        }
+        _messageHandle.setPublishBody(_publishBody);
+        _messageHandle.setContentHeaderBody(_contentHeaderBody);
         if (_contentHeaderBody.bodySize == 0)
         {
             deliver();
         }
+        _publishBody = null;
+        _contentHeaderBody = null;
     }
 
     public boolean addContentBodyFrame(ContentBody contentBody) throws AMQException
@@ -239,34 +249,9 @@ public class AMQMessage
         return _bodyLengthReceived == _messageHandle.getBodySize();
     }
 
-    public boolean isRedelivered()
-    {
-        return _messageHandle.isRedelivered();
-    }
-
-    String getExchangeName()
-    {
-        return _messageHandle.getExchangeName();
-    }
-
-    String getRoutingKey()
-    {
-        return _messageHandle.getRoutingKey();
-    }
-
-    boolean isImmediate()
-    {
-        return _messageHandle.isImmediate();
-    }
-
     public long getMessageId()
     {
         return _messageId;
-    }
-
-    public BasicPublishBody getPublishBody()
-    {
-        return _publishBody;
     }
 
     /**
@@ -351,8 +336,16 @@ public class AMQMessage
 
     public boolean isPersistent() throws AMQException
     {
-        return _messageHandle.isPersistent();
-
+        if (_contentHeaderBody != null)
+        {
+            //todo remove literal values to a constant file such as AMQConstants in common
+            return _contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
+                 ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+        }
+        else
+        {
+            return _messageHandle.isPersistent();
+        }
     }
 
     /**
@@ -362,12 +355,27 @@ public class AMQMessage
      *                              immediate delivery but has not been marked as delivered to a
      *                              consumer
      */
-    public void checkDeliveredToConsumer() throws NoConsumersException
+    public void checkDeliveredToConsumer() throws NoConsumersException, AMQException
     {
-        if (isImmediate() && !_deliveredToConsumer)
+        BasicPublishBody pb = getPublishBody();
+        if (pb.immediate && !_deliveredToConsumer)
         {
             throw new NoConsumersException(this);
         }
+    }
+
+    public BasicPublishBody getPublishBody() throws AMQException
+    {
+        BasicPublishBody pb;
+        if (_publishBody != null)
+        {
+            pb = _publishBody;
+        }
+        else
+        {
+            pb = _messageHandle.getPublishBody();
+        }
+        return pb;
     }
 
     /**
@@ -393,6 +401,9 @@ public class AMQMessage
 
     private void deliver() throws AMQException
     {
+        // we allow the transactional context to do something with the message content
+        // now that it has all been received, before we attempt delivery
+        _txnContext.messageFullyReceived(isPersistent());
         for (AMQQueue q : _destinationQueues)
         {
             _txnContext.deliver(this, q);
@@ -400,6 +411,7 @@ public class AMQMessage
     }
 
     public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, String consumerTag)
+            throws AMQException
     {
         ByteBuffer deliver = createEncodedDeliverFrame(channelId, deliveryTag, consumerTag);
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
@@ -436,10 +448,12 @@ public class AMQMessage
     }
 
     private ByteBuffer createEncodedDeliverFrame(int channelId, long deliveryTag, String consumerTag)
+            throws AMQException
     {
+        BasicPublishBody pb = getPublishBody();
         AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, consumerTag,
-                                                                deliveryTag, false, getExchangeName(),
-                                                                getRoutingKey());
+                                                                deliveryTag, false, pb.exchange,
+                                                                pb.routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
         deliverFrame.writePayload(buf);
         buf.flip();

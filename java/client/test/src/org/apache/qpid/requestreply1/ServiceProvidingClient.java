@@ -40,7 +40,8 @@ public class ServiceProvidingClient
     private AMQConnection _connection;
 
     public ServiceProvidingClient(String brokerDetails, String username, String password,
-                                  String clientName, String virtualPath, String serviceName)
+                                  String clientName, String virtualPath, String serviceName,
+                                  final boolean persistent)
             throws AMQException, JMSException, URLSyntaxException
     {
         _connection = new AMQConnection(brokerDetails, username, password,
@@ -106,7 +107,8 @@ public class ServiceProvidingClient
                         _logger.info("About to create a producer");
                         _destinationProducer = session.createProducer(responseDest);
                         _destinationProducer.setDisableMessageTimestamp(true);
-                        _destinationProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                        _destinationProducer.setDeliveryMode(persistent?DeliveryMode.PERSISTENT:
+                                                             DeliveryMode.NON_PERSISTENT);
                         _logger.info("After create a producer");
                     }
                 }
@@ -174,7 +176,7 @@ public class ServiceProvidingClient
         try
         {
             ServiceProvidingClient client = new ServiceProvidingClient(args[0], args[1], args[2],
-                                                                       clientId, args[3], args[4]);
+                                                                       clientId, args[3], args[4], true);
             client.run();
         }
         catch (JMSException e)

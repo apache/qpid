@@ -118,7 +118,7 @@ public class SubscriptionImpl implements Subscription
      * @param queue
      * @throws AMQException
      */
-    public void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    public void send(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         if (msg != null)
         {

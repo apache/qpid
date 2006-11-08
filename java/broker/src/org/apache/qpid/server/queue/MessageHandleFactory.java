@@ -8,8 +8,6 @@
  ******************************************************************************/
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.MessageStore;
 
 /**
@@ -21,10 +19,9 @@ import org.apache.qpid.server.store.MessageStore;
 public class MessageHandleFactory
 {
 
-    public AMQMessageHandle createMessageHandle(MessageStore store, BasicPublishBody publish,
-                                                ContentHeaderBody contentHeader)
+    public AMQMessageHandle createMessageHandle(long messageId, MessageStore store, boolean persistent)
     {
         // just hardcoded for now
-        return new WeakReferenceMessageHandle(store, contentHeader);
+        return new WeakReferenceMessageHandle(store, messageId);
     }
 }

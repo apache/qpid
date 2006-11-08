@@ -19,7 +19,9 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 
@@ -43,8 +45,6 @@ public interface MessageStore
      * @throws Exception if close fails
      */
     void close() throws Exception;
-
-    void put(AMQMessage msg) throws AMQException;
 
     void removeMessage(long messageId) throws AMQException;
 
@@ -76,6 +76,12 @@ public interface MessageStore
      * @return a message id
      */
     long getNewMessageId();
+
+    void storePublishBody(long messageId, BasicPublishBody publishBody) throws AMQException;
+
+    void storeContentHeader(long messageId, ContentHeaderBody contentHeaderBody) throws AMQException;
+
+    void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException;            
 }
 
 

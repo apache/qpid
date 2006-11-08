@@ -20,10 +20,13 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,21 +43,29 @@ public class MemoryMessageStore implements MessageStore
 
     private static final String HASHTABLE_CAPACITY_CONFIG = "hashtable-capacity";
 
-    protected ConcurrentMap<Long, AMQMessage> _messageMap;
+    protected ConcurrentMap<Long, BasicPublishBody> _publishBodyMap;
+
+    protected ConcurrentMap<Long, ContentHeaderBody> _contentHeaderMap;
+
+    protected ConcurrentMap<Long, List<ContentBody>> _contentBodyMap;
 
     private final AtomicLong _messageId = new AtomicLong(1);
 
     public void configure()
     {
         _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash table");
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(DEFAULT_HASHTABLE_CAPACITY);
+        _publishBodyMap = new ConcurrentHashMap<Long, BasicPublishBody>(DEFAULT_HASHTABLE_CAPACITY);
+        _contentHeaderMap = new ConcurrentHashMap<Long, ContentHeaderBody>(DEFAULT_HASHTABLE_CAPACITY);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
     public void configure(String base, Configuration config)
     {
         int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
         _log.info("Using capacity " + hashtableCapacity + " for hash table");
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(hashtableCapacity);
+        _publishBodyMap = new ConcurrentHashMap<Long, BasicPublishBody>(hashtableCapacity);
+        _contentHeaderMap = new ConcurrentHashMap<Long, ContentHeaderBody>(hashtableCapacity);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(hashtableCapacity);
     }
 
     public void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception
@@ -64,16 +75,11 @@ public class MemoryMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        if (_messageMap != null)
+        if (_publishBodyMap != null)
         {
-            _messageMap.clear();
-            _messageMap = null;
+            _publishBodyMap.clear();
+            _publishBodyMap = null;
         }
-    }
-
-    public void put(AMQMessage msg)
-    {
-        _messageMap.put(msg.getMessageId(), msg);
     }
 
     public void removeMessage(long messageId)
@@ -82,42 +88,42 @@ public class MemoryMessageStore implements MessageStore
         {
             _log.debug("Removing message with id " + messageId);
         }
-        _messageMap.remove(messageId);
+        _publishBodyMap.remove(messageId);
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void removeQueue(String name) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void enqueueMessage(String name, long messageId) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void dequeueMessage(String name, long messageId) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void beginTran() throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void commitTran() throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void abortTran() throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public boolean inTran()
@@ -127,7 +133,7 @@ public class MemoryMessageStore implements MessageStore
 
     public List<AMQQueue> createQueues() throws AMQException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public long getNewMessageId()
@@ -135,8 +141,25 @@ public class MemoryMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public AMQMessage getMessage(long messageId)
+    public void storePublishBody(long messageId, BasicPublishBody publishBody) throws AMQException
     {
-        return _messageMap.get(messageId);
+        _publishBodyMap.put(messageId, publishBody);
+    }
+
+    public void storeContentHeader(long messageId, ContentHeaderBody contentHeaderBody) throws AMQException
+    {
+        _contentHeaderMap.put(messageId, contentHeaderBody);
+    }
+
+    public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
+    {
+        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
+        if (bodyList == null)
+        {
+            bodyList = new LinkedList<ContentBody>();
+            _contentBodyMap.put(messageId, bodyList);
+        }
+
+        bodyList.add(index, contentBody);
     }
 }

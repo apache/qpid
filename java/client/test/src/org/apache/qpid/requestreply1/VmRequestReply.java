@@ -54,10 +54,10 @@ public class VmRequestReply
     {
         ServiceProvidingClient serviceProvider = new ServiceProvidingClient("vm://:1", "guest", "guest",
                                                                             "serviceProvidingClient", "/test",
-                                                                            "serviceQ");
+                                                                            "serviceQ", false);
 
         ServiceRequestingClient serviceRequester = new ServiceRequestingClient("vm://:1", "myClient", "guest", "guest",
-                                                                               "/test", "serviceQ", 5000, 512);
+                                                                               "/test", "serviceQ", 5000, 512, false);
 
         serviceProvider.run();
         Object waiter = new Object();

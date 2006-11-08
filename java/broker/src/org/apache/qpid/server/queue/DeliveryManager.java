@@ -68,11 +68,11 @@ class DeliveryManager
         _queue = queue;
     }
 
-    private synchronized boolean enqueue(AMQMessage msg)
+    private synchronized boolean enqueue(AMQMessage msg) throws AMQException
     {
         if (_queueing)
         {
-            if(msg.isImmediate())
+            if(msg.getPublishBody().immediate)
             {
                 //can't enqueue messages for whom immediate delivery is required
                 return false;
@@ -89,7 +89,7 @@ class DeliveryManager
         }
     }
 
-    private synchronized void startQueueing(AMQMessage msg)
+    private synchronized void startQueueing(AMQMessage msg) throws AMQException
     {
         _queueing = true;
         enqueue(msg);
@@ -143,8 +143,9 @@ class DeliveryManager
     /**
      * Only one thread should ever execute this method concurrently, but
      * it can do so while other threads invoke deliver().
+     * @throws org.apache.qpid.AMQException if we cannot process the messages on the queue
      */
-    private void processQueue()
+    private void processQueue() throws AMQException
     {
         try
         {
@@ -218,7 +219,7 @@ class DeliveryManager
      *                              the message to
      * @throws FailedDequeueException if the message could not be dequeued
      */
-    void deliver(String name, AMQMessage msg) throws FailedDequeueException
+    void deliver(String name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))
@@ -227,7 +228,7 @@ class DeliveryManager
             Subscription s =  _subscriptions.nextSubscriber(msg);
             if (s == null)
             {
-                if (!msg.isImmediate())
+                if (!msg.getPublishBody().immediate)
                 {
                     // no subscribers yet so enter 'queueing' mode and queue this message
                     startQueueing(msg);
@@ -245,7 +246,14 @@ class DeliveryManager
     {
         public void run()
         {
-            processQueue();
+            try
+            {
+                processQueue();
+            }
+            catch (AMQException e)
+            {
+                _log.error("Error processing queue: " + e, e);
+            }
         }
     }
 }

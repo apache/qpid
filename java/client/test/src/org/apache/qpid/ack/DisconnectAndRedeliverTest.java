@@ -41,7 +41,7 @@ public class DisconnectAndRedeliverTest
     static
     {
         //DOMConfigurator.configure("../etc/log4j.xml");
-        DOMConfigurator.configure("broker/etc/log4j.xml");        
+        DOMConfigurator.configure("broker/etc/log4j.xml");
     }
 
     @Before
@@ -141,7 +141,7 @@ public class DisconnectAndRedeliverTest
         _logger.info("No messages redelivered as is expected");
         con.close();
 
-        _logger.info("Actually:" + store.getMessageMap().size());
+        _logger.info("Actually:" + store.gePublishBodyMap().size());
         //  Assert.assertTrue(store.getMessageMap().size() == 0);
     }
 
@@ -197,8 +197,8 @@ public class DisconnectAndRedeliverTest
         Assert.assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 
-        _logger.info("Actually:" + store.getMessageMap().size());
-        Assert.assertTrue(store.getMessageMap().size() == 0);
+        _logger.info("Actually:" + store.gePublishBodyMap().size());
+        Assert.assertTrue(store.gePublishBodyMap().size() == 0);
         con.close();
     }
 

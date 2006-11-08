@@ -76,6 +76,11 @@ public class CleanupMessageOperation implements TxnOp
             //TODO: store this for delivery after the commit-ok
             _returns.add(e);
         }
+        catch (AMQException e)
+        {
+            _log.error("On commiting transaction, unable to determine whether delivered to a consumer immediately: " +
+                       e, e);
+        }
     }
 
     public void rollback()

@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * Holds a list of TxnOp instance representing transactional
- * operations. 
+ * operations.
  */
 public class TxnBuffer
 {
@@ -51,7 +51,7 @@ public class TxnBuffer
         {
             _log.debug("Begin Transaction.");
             _store.beginTran();
-            if(prepare())
+            if (prepare())
             {
                 _log.debug("Transaction Succeeded");
                 _store.commitTran();
@@ -65,20 +65,22 @@ public class TxnBuffer
                 _log.debug("Transaction Failed");
                 _store.abortTran();
             }
-        }else{
-            if(prepare())
+        }
+        else
+        {
+            if (prepare())
             {
                 for (TxnOp op : _ops)
                 {
                     op.commit();
                 }
-            }            
+            }
         }
         _ops.clear();
     }
 
-    private boolean prepare() 
-    {        
+    private boolean prepare()
+    {
         for (int i = 0; i < _ops.size(); i++)
         {
             TxnOp op = _ops.get(i);
@@ -86,18 +88,18 @@ public class TxnBuffer
             {
                 op.prepare();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //compensate previously prepared ops
                 for(int j = 0; j < i; j++)
                 {
                     _ops.get(j).undoPrepare();
-                }    
+                }
                 return false;
             }
         }
         return true;
-    }   
+    }
 
     public void rollback() throws AMQException
     {

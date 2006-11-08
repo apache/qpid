@@ -674,7 +674,7 @@ public class AMQQueue implements Managable
         msg.incrementReference();
     } */
 
-    public void process(AMQMessage msg) throws FailedDequeueException
+    public void process(AMQMessage msg) throws FailedDequeueException, AMQException
     {
         _deliveryMgr.deliver(getName(), msg);
         updateReceivedMessageCount(msg);

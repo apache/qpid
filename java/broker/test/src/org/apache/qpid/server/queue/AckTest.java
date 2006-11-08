@@ -18,10 +18,7 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.JUnit4TestAdapter;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -31,10 +28,10 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.log4j.Logger;
-
-import java.util.Iterator;
-import java.util.Map;
+import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -78,7 +75,7 @@ public class AckTest
             BasicPublishBody publishBody = new BasicPublishBody();
             publishBody.routingKey = "rk";
             publishBody.exchange = "someExchange";
-            AMQMessage msg = null; //new AMQMessage(_messageStore, publishBody);             
+            AMQMessage msg = null; //new AMQMessage(_messageStore, publishBody);
             msg.setContentHeaderBody(new ContentHeaderBody());
             _subscription.send(msg, _queue);
         }
@@ -97,7 +94,7 @@ public class AckTest
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount);
-        
+
         map.visit(new UnacknowledgedMessageMap.Visitor()
         {
             private int i = 1;
@@ -114,7 +111,7 @@ public class AckTest
             }
         });
 
-        assertTrue(_messageStore.getMessageMap().size() == msgCount);
+        assertTrue(_messageStore.gePublishBodyMap().size() == msgCount);
     }
 
     /**
@@ -130,7 +127,7 @@ public class AckTest
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getMessageMap().size() == 0);
+        assertTrue(_messageStore.getContentHeaderMap().size() == 0);
     }
 
     /**
@@ -167,7 +164,7 @@ public class AckTest
             public void visitComplete()
             {
             }
-        });        
+        });
     }
 
     /**
@@ -188,7 +185,7 @@ public class AckTest
         map.visit(new UnacknowledgedMessageMap.Visitor()
         {
             private int i = 1;
-            
+
             public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
                 assertTrue(message.deliveryTag == i + 5);
@@ -200,7 +197,7 @@ public class AckTest
             public void visitComplete()
             {
             }
-        });        
+        });
     }
 
      /**
@@ -233,7 +230,7 @@ public class AckTest
             public void visitComplete()
             {
             }
-        });        
+        });
     }
 
 

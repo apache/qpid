@@ -165,7 +165,7 @@ public class ServiceRequestingClient implements ExceptionListener
     }
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
                                    String vpath, String commandQueueName,
-                                   final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
+                                   final int messageCount, final int messageDataLength, boolean persistent) throws AMQException, URLSyntaxException
     {
         _messageCount = messageCount;
         MESSAGE_DATA = createMessagePayload(messageDataLength);
@@ -181,7 +181,7 @@ public class ServiceRequestingClient implements ExceptionListener
             AMQQueue destination = new AMQQueue(commandQueueName);
             _producer = (MessageProducer) _session.createProducer(destination);
             _producer.setDisableMessageTimestamp(true);
-            _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            _producer.setDeliveryMode(persistent?DeliveryMode.PERSISTENT:DeliveryMode.NON_PERSISTENT);
 
             _tempDestination = new AMQQueue("TempResponse" +
                                             Long.toString(System.currentTimeMillis()), true);
@@ -265,7 +265,7 @@ public class ServiceRequestingClient implements ExceptionListener
             String clientID = address.getHostName() + System.currentTimeMillis();
             ServiceRequestingClient client = new ServiceRequestingClient(args[0], clientID, args[1], args[2], args[3],
                                                                          args[4], Integer.parseInt(args[5]),
-                                                                         messageDataLength);
+                                                                         messageDataLength, true);
             Object waiter = new Object();
             client.run(waiter);
             synchronized (waiter)

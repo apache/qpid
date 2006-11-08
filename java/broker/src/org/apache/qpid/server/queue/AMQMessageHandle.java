@@ -11,6 +11,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicPublishBody;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -41,13 +42,12 @@ public interface AMQMessageHandle
 
     void addContentBodyFrame(ContentBody contentBody) throws AMQException;
 
-    String getExchangeName();
-
-    String getRoutingKey();
-
-    boolean isImmediate();
+    BasicPublishBody getPublishBody() throws AMQException;
 
     boolean isRedelivered();
 
     boolean isPersistent() throws AMQException;
+
+    void setPublishBody(BasicPublishBody publishBody)
+            ;
 }

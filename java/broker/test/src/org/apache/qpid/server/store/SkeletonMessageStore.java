@@ -17,11 +17,13 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.AMQException;
-import org.apache.commons.configuration.Configuration;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,21 +34,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SkeletonMessageStore implements MessageStore
 {
-    private final AtomicLong _messageId = new AtomicLong(1);
-
-    public void configure(String base, Configuration config) throws Exception
-    {
-    }
+    private final AtomicLong _messageId = new AtomicLong(1);    
 
     public void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception
     {
     }
 
     public void close() throws Exception
-    {
-    }
-
-    public void put(AMQMessage msg)
     {
     }
 
@@ -78,7 +72,7 @@ public class SkeletonMessageStore implements MessageStore
     {
         return false;
     }
-    
+
     public void commitTran() throws AMQException
     {
     }
@@ -95,5 +89,17 @@ public class SkeletonMessageStore implements MessageStore
     public long getNewMessageId()
     {
         return _messageId.getAndIncrement();
+    }
+
+    public void storePublishBody(long messageId, BasicPublishBody publishBody) throws AMQException
+    {
+    }
+
+    public void storeContentHeader(long messageId, ContentHeaderBody contentHeaderBody) throws AMQException
+    {
+    }
+
+    public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
+    {
     }
 }

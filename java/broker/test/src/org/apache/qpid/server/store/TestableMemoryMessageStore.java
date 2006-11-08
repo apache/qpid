@@ -17,10 +17,13 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Adds some extra methods to the memory message store for testing purposes.
@@ -29,11 +32,23 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
 {
     public TestableMemoryMessageStore()
     {
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>();
+        _publishBodyMap = new ConcurrentHashMap<Long, BasicPublishBody>();
+        _contentHeaderMap = new ConcurrentHashMap<Long, ContentHeaderBody>();
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>();
     }
 
-    public ConcurrentMap<Long, AMQMessage> getMessageMap()
+    public ConcurrentMap<Long, BasicPublishBody> gePublishBodyMap()
     {
-        return _messageMap;
+        return _publishBodyMap;
+    }
+
+    public ConcurrentMap<Long, ContentHeaderBody> getContentHeaderMap()
+    {
+        return _contentHeaderMap;
+    }
+
+    public ConcurrentMap<Long, List<ContentBody>> getContentBodyMap()
+    {
+        return _contentBodyMap;
     }
 }

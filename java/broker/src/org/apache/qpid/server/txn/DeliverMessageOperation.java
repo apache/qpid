@@ -8,11 +8,10 @@
  ******************************************************************************/
 package org.apache.qpid.server.txn;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.FailedDequeueException;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.log4j.Logger;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -50,7 +49,7 @@ public class DeliverMessageOperation implements TxnOp
         {
             _queue.process(_msg);
         }
-        catch (FailedDequeueException e)
+        catch (AMQException e)
         {
             //TODO: is there anything else we can do here? I think not...
             _logger.error("Error during commit of a queue delivery: " + e, e);

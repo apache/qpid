@@ -13,6 +13,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicPublishBody;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -24,16 +25,20 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 {
     private ContentHeaderBody _contentHeaderBody;
 
+    private BasicPublishBody _publishBody;
+
     private List<ContentBody> _contentBodies = new LinkedList<ContentBody>();
 
     private boolean _redelivered;
 
     private final MessageStore _messageStore;
 
-    public WeakReferenceMessageHandle(MessageStore messageStore, ContentHeaderBody contentHeader)
+    private final long _messageId;
+
+    public WeakReferenceMessageHandle(MessageStore messageStore, long messageId)
     {
         _messageStore = messageStore;
-        _contentHeaderBody = contentHeader;
+        _messageId = messageId;
     }
 
     public ContentHeaderBody getContentHeaderBody()
@@ -44,6 +49,8 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _contentHeaderBody = contentHeaderBody;
+        _messageStore.storePublishBody(_messageId, _publishBody);
+        _messageStore.storeContentHeader(_messageId, contentHeaderBody);
     }
 
     public int getBodyCount()
@@ -64,21 +71,17 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
     public void addContentBodyFrame(ContentBody contentBody) throws AMQException
     {
         _contentBodies.add(contentBody);
+        _messageStore.storeContentBodyChunk(_messageId, _contentBodies.size() - 1, contentBody);
     }
 
-    public String getExchangeName()
+    public void setPublishBody(BasicPublishBody publishBody)
     {
-        return null;
+        _publishBody = publishBody;
     }
 
-    public String getRoutingKey()
+    public BasicPublishBody getPublishBody() throws AMQException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isImmediate()
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return _publishBody;
     }
 
     public boolean isRedelivered()

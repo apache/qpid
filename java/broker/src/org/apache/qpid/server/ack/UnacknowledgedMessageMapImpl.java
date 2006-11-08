@@ -169,7 +169,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void resendMessages(AMQProtocolSession protocolSession, int channelId)
+    public void resendMessages(AMQProtocolSession protocolSession, int channelId) throws AMQException
     {
         synchronized (_lock)
         {
