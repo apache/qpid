@@ -39,18 +39,19 @@ import java.util.Hashtable;
 class Unbind
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
-    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public static final String DEFAULT_PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public String PROVIDER_URL = DEFAULT_PROVIDER_URL;
 
     boolean _unbound = false;
 
     public Unbind()
     {
-        this(false, DEFAULT_PROVIDER_FILE_PATH);
+        this(false, DEFAULT_PROVIDER_URL);
     }
 
     public Unbind(Boolean output)
     {
-        this(output, DEFAULT_PROVIDER_FILE_PATH);
+        this(output, DEFAULT_PROVIDER_URL);
     }
 
     public Unbind(String provider)

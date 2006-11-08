@@ -42,7 +42,8 @@ import java.util.Hashtable;
 class Lookup
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
-    public String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public static final String DEFAULT_PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
+    public String PROVIDER_URL = DEFAULT_PROVIDER_URL;
 
     AMQTopic _topic = null;
     AMQConnection _connection = null;
@@ -52,7 +53,7 @@ class Lookup
 
     public Lookup()
     {
-        this(DEFAULT_PROVIDER_FILE_PATH);
+        this(DEFAULT_PROVIDER_URL);
     }
 
     public Lookup(String providerURL)
