@@ -20,7 +20,6 @@ package org.apache.qpid.test.unit.basic;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.apache.qpid.client.message.FieldTableKeyEnumeratorTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
