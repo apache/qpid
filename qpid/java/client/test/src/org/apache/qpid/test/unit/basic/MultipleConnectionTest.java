@@ -25,9 +25,9 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import javax.jms.*;
 
@@ -217,8 +217,8 @@ public class MultipleConnectionTest
         }
     }
 
-    @Before
-    public void createVMBroker() throws Exception
+    @BeforeClass
+    public static void createVMBroker() throws Exception
     {
         try
         {
@@ -230,8 +230,8 @@ public class MultipleConnectionTest
         }
     }
 
-    @After
-    public void stopVmBroker()
+    @AfterClass
+    public static void stopVmBroker()
     {
         TransportConnection.killVMBroker(1);
     }
