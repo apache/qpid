@@ -36,7 +36,6 @@ class Delegate:
 
   def dispatch(self, channel, message):
     method = message.method
-    spec = method.klass.spec
 
     try:
       handler = self.handlers[method]
