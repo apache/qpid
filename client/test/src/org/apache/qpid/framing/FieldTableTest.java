@@ -19,12 +19,6 @@ package org.apache.qpid.framing;
 
 import junit.framework.JUnit4TestAdapter;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.xml.security.utils.Base64;
-import org.apache.xml.security.exceptions.Base64DecodingException;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -38,7 +32,7 @@ import java.util.Properties;
 public class FieldTableTest
 {
     @Test
-    public void dataDump() throws IOException, AMQFrameDecodingException, Base64DecodingException
+    public void dataDump() throws IOException, AMQFrameDecodingException
     {
         byte[] data = readBase64("content.txt");
         System.out.println("Got " + data.length + " bytes of data");
@@ -105,10 +99,11 @@ public class FieldTableTest
         return ((BasicContentHeaderProperties) header.properties).getHeaders();
     }
 
-    byte[] readBase64(String name) throws IOException, Base64DecodingException
+    byte[] readBase64(String name) throws IOException
     {
         String content = read(new InputStreamReader(getClass().getResourceAsStream(name)));
-        return Base64.decode(content);
+
+        return org.apache.commons.codec.binary.Base64.decodeBase64(content.getBytes());
     }
 
     FieldTable load(String name) throws IOException
