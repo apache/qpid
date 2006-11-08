@@ -22,18 +22,34 @@
     <import file="../../module.xml"/>
 
     <target name="test" depends="build">
-        <junit fork="yes" showoutput="true" haltonfailure="yes">
-            <test name="org.apache.qpid.client.AllClientUnitTests"/>
+        <echo>Client Tests</echo>
+        <junit fork="yes" printsummary="yes" showoutput="true" haltonfailure="yes" timeout="30000">
+            <sysproperty key="amqj.noAutoCreateVMBroker" value="true"/>
             <formatter type="plain"/>
             <classpath refid="module.class.path"/>
+
+            <batchtest fork="yes" todir="${module.test.reports}">
+               <fileset dir="${module.src}">
+                 <include name="**/test/unit/**/*Test.java"/>                 
+                 <exclude name="**/test/unit/**/*UnitTests.java"/>
+               </fileset>
+             </batchtest>            
         </junit>
     </target>
 
     <target name="testreport" depends="build">
-        <junit fork="yes" printsummary="yes" haltonfailure="no">
-            <test name="org.apache.qpid.client.AllClientUnitTests" fork="yes" todir="${module.test.reports}"/>
+        <echo>Client Tests with Report</echo>
+        <junit fork="yes" printsummary="yes" haltonfailure="no" timeout="30000">
+            <sysproperty key="amqj.noAutoCreateVMBroker" value="true"/>
             <formatter type="xml" />
             <classpath refid="module.class.path" />
+
+             <batchtest fork="yes" todir="${module.test.reports}">
+               <fileset dir="${module.src}">
+                 <include name="**/test/unit/**/*Test.java"/>
+                 <exclude name="**/test/unit/**/*UnitTests.java"/>
+               </fileset>
+             </batchtest>
         </junit>
 
         <junitreport todir="${module.test.reports}">
