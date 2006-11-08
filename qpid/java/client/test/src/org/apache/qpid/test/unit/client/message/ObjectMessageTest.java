@@ -23,6 +23,8 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.url.URLSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
@@ -67,6 +69,12 @@ public class ObjectMessageTest implements MessageListener
     public void stopVmBroker()
     {
         TransportConnection.killVMBroker(1);
+    }
+
+
+    public ObjectMessageTest() throws Exception
+    {        
+        this(new AMQConnection("vm://:1", "guest", "guest", randomize("Client"), "/test_path"));
     }
 
     ObjectMessageTest(String broker) throws Exception
@@ -290,4 +298,8 @@ public class ObjectMessageTest implements MessageListener
         return in + System.currentTimeMillis();
     }
 
+    public static junit.framework.Test suite()
+    {
+        return new JUnit4TestAdapter(ObjectMessageTest.class);
+    }
 }

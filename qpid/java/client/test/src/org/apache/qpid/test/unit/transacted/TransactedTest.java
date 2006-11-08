@@ -48,7 +48,7 @@ public class TransactedTest
     private Session prepSession;
     private MessageProducer prepProducer1;
 
-    private AMQConnection testCon;       
+    private AMQConnection testCon;
     private Session testSession;
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
@@ -82,6 +82,9 @@ public class TransactedTest
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
         session = con.createSession(true, 0);
         consumer1 = session.createConsumer(queue1);
+        //Dummy just to create the queue. 
+        MessageConsumer consumer2 = session.createConsumer(queue2);
+        consumer2.close();
         producer2 = session.createProducer(queue2);
         con.start();
 
