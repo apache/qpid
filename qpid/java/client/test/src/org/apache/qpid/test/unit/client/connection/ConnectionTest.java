@@ -74,7 +74,7 @@ public class ConnectionTest
         }
     }
 
-    @Ignore("The inVM broker currently has no authentication .. Needs added QPID-")
+    @Ignore("The inVM broker currently has no authentication .. Needs added QPID-70")
     @Test
     public void passwordFailureConnection() throws Exception
     {

@@ -324,7 +324,7 @@ public class ConnectionURLTest
         Assert.assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
-    @Ignore("Connection now parses but result is wrong QPID-")
+    @Ignore("Connection now parses but result is wrong QPID-71")
     @Test
     public void wrongOptionSeperatorInBroker()
     {
