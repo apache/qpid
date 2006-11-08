@@ -48,7 +48,7 @@ import java.util.Hashtable;
  */
 class Bind
 {
-    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest";
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
 
     String _connectionFactoryString = "";
