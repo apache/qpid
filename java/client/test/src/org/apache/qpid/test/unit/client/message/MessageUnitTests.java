@@ -21,8 +21,6 @@ package org.apache.qpid.test.unit.client.message;
 import junit.framework.JUnit4TestAdapter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.apache.qpid.client.message.TextMessageTest;
-import org.apache.qpid.client.message.BytesMessageTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({BytesMessageTest.class, TextMessageTest.class})
