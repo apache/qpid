@@ -100,8 +100,8 @@ public class JNDIReferenceableTest
         }
 
         Assert.assertTrue(b.bound());
-        
-        Lookup l = new Lookup();
+
+        Lookup l = new Lookup(b.getProviderURL());
 
         Assert.assertTrue(l.connectionFactoryValue().equals(b.connectionFactoryValue()));
 
