@@ -15,13 +15,12 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/LFProcessor.h"
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/LFSessionContext.h"
-#include "qpid/QpidError.h"
 #include <sstream>
+#include <qpid/QpidError.h>
+#include "LFProcessor.h"
+#include "APRBase.h"
+#include "LFSessionContext.h"
 
-using namespace qpid::sys;
 using namespace qpid::sys;
 using qpid::QpidError;
 
@@ -36,47 +35,38 @@ LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout
     count(0),
     workerCount(_workers),
     hasLeader(false),
-    workers(new Thread*[_workers]),
+    workers(new Thread[_workers]),
     stopped(false)
 {
 
     CHECK_APR_SUCCESS(apr_pollset_create(&pollset, size, pool, APR_POLLSET_THREADSAFE));
-    //create & start the required number of threads
-    for(int i = 0; i < workerCount; i++){
-        workers[i] = factory.create(this);
-    }
 }
 
 
 LFProcessor::~LFProcessor(){
     if (!stopped) stop();
-    for(int i = 0; i < workerCount; i++){
-        delete workers[i];
-    }
     delete[] workers;
     CHECK_APR_SUCCESS(apr_pollset_destroy(pollset));
 }
 
 void LFProcessor::start(){
     for(int i = 0; i < workerCount; i++){
-        workers[i]->start();
+        workers[i] = Thread(this);
     }
 }
 
 void LFProcessor::add(const apr_pollfd_t* const fd){
     CHECK_APR_SUCCESS(apr_pollset_add(pollset, fd));
-    countLock.acquire();
+    Monitor::ScopedLock l(countLock);
     sessions.push_back(reinterpret_cast<LFSessionContext*>(fd->client_data));
     count++;
-    countLock.release();
 }
 
 void LFProcessor::remove(const apr_pollfd_t* const fd){
     CHECK_APR_SUCCESS(apr_pollset_remove(pollset, fd));
-    countLock.acquire();
+    Monitor::ScopedLock l(countLock);
     sessions.erase(find(sessions.begin(), sessions.end(), reinterpret_cast<LFSessionContext*>(fd->client_data)));
     count--;
-    countLock.release();
 }
 
 void LFProcessor::reactivate(const apr_pollfd_t* const fd){
@@ -93,12 +83,12 @@ void LFProcessor::update(const apr_pollfd_t* const fd){
 }
 
 bool LFProcessor::full(){
-    Locker locker(countLock);
+    Mutex::ScopedLock locker(countLock);
     return count == size; 
 }
 
 bool LFProcessor::empty(){
-    Locker locker(countLock);
+    Mutex::ScopedLock locker(countLock);
     return count == 0; 
 }
 
@@ -115,36 +105,30 @@ void LFProcessor::poll() {
 void LFProcessor::run(){
     try{
         while(!stopped){
-            leadLock.acquire();
-            waitToLead();
-            if(!stopped){
-                const apr_pollfd_t* evt = getNextEvent();
-                if(evt){
-                    LFSessionContext* session = reinterpret_cast<LFSessionContext*>(evt->client_data);
-                    session->startProcessing();
+            const apr_pollfd_t* event = 0;
+            LFSessionContext* session = 0;
+            {
+                Monitor::ScopedLock l(leadLock);
+                waitToLead();
+                event = getNextEvent();
+                if(!event) return;
+                session = reinterpret_cast<LFSessionContext*>(
+                    event->client_data);
+                session->startProcessing();
+                relinquishLead();
+            }
 
-                    relinquishLead();
-                    leadLock.release();
+            //process event:
+            if(event->rtnevents & APR_POLLIN) session->read();
+            if(event->rtnevents & APR_POLLOUT) session->write();
 
-                    //process event:
-                    if(evt->rtnevents & APR_POLLIN) session->read();
-                    if(evt->rtnevents & APR_POLLOUT) session->write();
-
-                    if(session->isClosed()){
-                        session->handleClose();
-                        countLock.acquire();
-                        sessions.erase(find(sessions.begin(), sessions.end(), session));
-                        count--;
-                        countLock.release();                        
-                    }else{
-                        session->stopProcessing();
-                    }
-
-                }else{
-                    leadLock.release();
-                }
+            if(session->isClosed()){
+                session->handleClose();
+                Monitor::ScopedLock l(countLock);
+                sessions.erase(find(sessions.begin(),sessions.end(), session));
+                count--;
             }else{
-                leadLock.release();
+                session->stopProcessing();
             }
         }
     }catch(QpidError error){
@@ -178,14 +162,13 @@ const apr_pollfd_t* LFProcessor::getNextEvent(){
 
 void LFProcessor::stop(){
     stopped = true;
-    leadLock.acquire();
-    leadLock.notifyAll();
-    leadLock.release();
-
-    for(int i = 0; i < workerCount; i++){
-        workers[i]->join();
+    {
+        Monitor::ScopedLock l(leadLock);
+        leadLock.notifyAll();
     }
-
+    for(int i = 0; i < workerCount; i++){
+        workers[i].join();
+    }
     for(iterator i = sessions.begin(); i < sessions.end(); i++){
         (*i)->shutdown();
     }

@@ -16,8 +16,8 @@
  *
  */
 #include <iostream>
-#include "qpid/sys/APRBase.h"
-#include "qpid/QpidError.h"
+#include <qpid/QpidError.h>
+#include "APRBase.h"
 
 using namespace qpid::sys;
 

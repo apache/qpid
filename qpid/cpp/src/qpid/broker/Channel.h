@@ -77,7 +77,7 @@ namespace qpid {
             u_int32_t framesize;
             NameGenerator tagGenerator;
             std::list<DeliveryRecord> unacked;
-            qpid::sys::Monitor deliveryLock;
+            qpid::sys::Mutex deliveryLock;
             TxBuffer txBuffer;
             AccumulatedAck accumulatedAck;
             TransactionalStore* store;

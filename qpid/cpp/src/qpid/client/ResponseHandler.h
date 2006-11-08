@@ -17,7 +17,7 @@
  */
 #include <string>
 #include "qpid/framing/amqp_framing.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/sys/Monitor.h>
 
 #ifndef _ResponseHandler_
 #define _ResponseHandler_
@@ -28,7 +28,7 @@ namespace qpid {
         class ResponseHandler{
             bool waiting;
             qpid::framing::AMQMethodBody::shared_ptr response;
-            qpid::sys::Monitor* monitor;
+            qpid::sys::Monitor monitor;
 
         public:
             ResponseHandler();

@@ -17,13 +17,23 @@
  */
 
 #include <qpid/sys/Time.h>
-#include <apr-1/apr_time.h>
+#include "apr-1/apr_time.h"
 
 namespace qpid {
 namespace sys {
 
-Time Time::now() {
-    return Time(apr_time_now()*1000);
+int64_t getTimeNsecs() 
+{
+    // APR returns microseconds.
+    return apr_time_now() * 1000;
 }
 
+int64_t getTimeMsecs() 
+{
+    // APR returns microseconds.
+    return apr_time_now() / 1000;
+}
+
+
 }}
+

@@ -18,26 +18,23 @@
 #include "qpid/broker/AutoDelete.h"
 
 using namespace qpid::broker;
+using namespace qpid::sys;
 
-AutoDelete::AutoDelete(QueueRegistry* const _registry, u_int32_t _period) : registry(_registry), 
-                                                                            period(_period), 
-                                                                            stopped(true), 
-                                                                            runner(0){}
+AutoDelete::AutoDelete(QueueRegistry* const _registry, u_int32_t _period)
+    : registry(_registry), period(_period), stopped(true) { }
 
 void AutoDelete::add(Queue::shared_ptr const queue){
-    lock.acquire();
+    Mutex::ScopedLock l(lock);
     queues.push(queue);
-    lock.release();
 }
 
 Queue::shared_ptr const AutoDelete::pop(){
     Queue::shared_ptr next;
-    lock.acquire();
+    Mutex::ScopedLock l(lock);
     if(!queues.empty()){
         next = queues.front();
 	queues.pop();
     }
-    lock.release();
     return next;
 }
 
@@ -59,35 +56,27 @@ void AutoDelete::process(){
 }
 
 void AutoDelete::run(){
-    monitor.acquire();
+    Monitor::ScopedLock l(monitor);
     while(!stopped){
         process();
-        monitor.wait(period);
+        monitor.wait(msecsToNsecs(period));
     }
-    monitor.release();
 }
 
 void AutoDelete::start(){
-    monitor.acquire();
+    Monitor::ScopedLock l(monitor);
     if(stopped){
-        runner = factory.create(this);
         stopped = false;
-        monitor.release();
-        runner->start();
-    }else{
-        monitor.release();
+        runner = Thread(this);
     }
 }
 
 void AutoDelete::stop(){
-    monitor.acquire();
-    if(!stopped){
+    {
+        Monitor::ScopedLock l(monitor);
+        if(stopped) return;
         stopped = true;
-        monitor.notify();
-        monitor.release();
-        runner->join();
-        delete runner;
-    }else{
-        monitor.release();
     }
+    monitor.notify();
+    runner.join();
 }

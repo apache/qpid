@@ -21,11 +21,12 @@
 #include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
-#include <apr-1/apr_time.h>
+#include <qpid/sys/Time.h>
 #include <iostream>
 #include <sstream>
 
 using namespace qpid::client;
+using namespace qpid::sys;
 
 class Listener : public MessageListener{    
     Channel* const channel;
@@ -33,7 +34,7 @@ class Listener : public MessageListener{
     const bool transactional;
     bool init;
     int count;
-    apr_time_t start;
+    int64_t start;
     
     void shutdown();
     void report();
@@ -101,7 +102,7 @@ Listener::Listener(Channel* _channel, const std::string& _responseq, bool tx) :
 
 void Listener::received(Message& message){
     if(!init){        
-        start = apr_time_as_msec(apr_time_now());
+        start = getTimeMsecs();
         count = 0;
         init = true;
     }
@@ -123,8 +124,8 @@ void Listener::shutdown(){
 }
 
 void Listener::report(){
-    apr_time_t finish = apr_time_as_msec(apr_time_now());
-    apr_time_t time = finish - start;
+    int64_t finish = getTimeMsecs();
+    int64_t time = finish - start;
     std::stringstream reportstr;
     reportstr << "Received " << count << " messages in " << time << " ms.";
     Message msg;

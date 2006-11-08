@@ -15,14 +15,12 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/APRBase.h"
-#include "qpid/broker/Message.h"
+#include <qpid/broker/Message.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
-using namespace qpid::sys;
 
 class MessageTest : public CppUnit::TestCase  
 {
@@ -34,7 +32,6 @@ class MessageTest : public CppUnit::TestCase
 
     void testMe() 
     {
-        APRBase::increment();
         const int size(10);
         for(int i = 0; i < size; i++){
             Message::shared_ptr msg = Message::shared_ptr(new Message(0, "A", "B", true, true));

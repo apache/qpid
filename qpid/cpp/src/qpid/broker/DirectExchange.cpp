@@ -21,24 +21,24 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
+using namespace qpid::sys;
 
 DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {
 
 }
 
 void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
-    lock.acquire();
+    Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
     if(i == queues.end()){
         bindings[routingKey].push_back(queue);
         queue->bound(new ExchangeBinding(this, queue, routingKey, args));
     }
-    lock.release();
 }
 
 void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
-    lock.acquire();
+    Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
 
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
@@ -48,11 +48,10 @@ void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, F
             bindings.erase(routingKey);
         }
     }
-    lock.release();
 }
 
 void DirectExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
-    lock.acquire();
+    Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     int count(0);
     for(std::vector<Queue::shared_ptr>::iterator i = queues.begin(); i != queues.end(); i++, count++){
@@ -61,7 +60,6 @@ void DirectExchange::route(Deliverable& msg, const string& routingKey, FieldTabl
     if(!count){
         std::cout << "WARNING: DirectExchange " << getName() << " could not route message with key " << routingKey << std::endl;
     }
-    lock.release();
 }
 
 DirectExchange::~DirectExchange(){

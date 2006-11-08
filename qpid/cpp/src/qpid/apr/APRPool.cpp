@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright (c) 2006 The Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,5 +16,23 @@
  *
  */
 
-#include "qpid/sys/Runnable.h"
-qpid::sys::Runnable::~Runnable() {}
+#include "APRPool.h"
+#include "APRBase.h"
+#include <boost/pool/detail/singleton.hpp>
+
+using namespace qpid::sys;
+
+APRPool::APRPool(){
+    APRBase::increment();
+    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
+}
+
+APRPool::~APRPool(){
+    apr_pool_destroy(pool);
+    APRBase::decrement();
+}
+
+apr_pool_t* APRPool::get() {
+    return boost::details::pool::singleton_default<APRPool>::instance().pool;
+}
+

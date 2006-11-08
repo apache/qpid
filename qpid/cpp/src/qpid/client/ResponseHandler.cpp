@@ -19,40 +19,35 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/QpidError.h"
 
-qpid::client::ResponseHandler::ResponseHandler() : waiting(false){
-    monitor = new qpid::sys::Monitor();
-}
+using namespace qpid::sys;
 
-qpid::client::ResponseHandler::~ResponseHandler(){
-    delete monitor;
-}
+qpid::client::ResponseHandler::ResponseHandler() : waiting(false){}
+
+qpid::client::ResponseHandler::~ResponseHandler(){}
 
 bool qpid::client::ResponseHandler::validate(const qpid::framing::AMQMethodBody& expected){
     return expected.match(response.get());
 }
 
 void qpid::client::ResponseHandler::waitForResponse(){
-    monitor->acquire();
+    Monitor::ScopedLock l(monitor);
     if(waiting){
-	monitor->wait();
+	monitor.wait();
     }
-    monitor->release();
 }
 
 void qpid::client::ResponseHandler::signalResponse(qpid::framing::AMQMethodBody::shared_ptr _response){
     response = _response;
-    monitor->acquire();
+    Monitor::ScopedLock l(monitor);
     waiting = false;
-    monitor->notify();
-    monitor->release();
+    monitor.notify();
 }
 
 void qpid::client::ResponseHandler::receive(const qpid::framing::AMQMethodBody& expected){
-    monitor->acquire();
+    Monitor::ScopedLock l(monitor);
     if(waiting){
-	monitor->wait();
+	monitor.wait();
     }
-    monitor->release();
     if(!validate(expected)){
 	THROW_QPID_ERROR(PROTOCOL_ERROR, "Protocol Error");
     }

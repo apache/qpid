@@ -16,10 +16,9 @@
  *
  */
 #include <iostream>
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/Connector.h"
-#include "qpid/sys/ThreadFactory.h"
-#include "qpid/QpidError.h"
+#include <qpid/QpidError.h>
+#include "APRBase.h"
+#include "Connector.h"
 
 using namespace qpid::sys;
 using namespace qpid::sys;
@@ -43,15 +42,9 @@ Connector::Connector(bool _debug, u_int32_t buffer_size) :
 
     CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
     CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, pool));
-
-    threadFactory = new ThreadFactory();
-    writeLock = new Monitor();
 }
 
 Connector::~Connector(){
-    delete receiver;
-    delete writeLock;
-    delete threadFactory;
     apr_pool_destroy(pool);
 
     APRBase::decrement();
@@ -62,9 +55,7 @@ void Connector::connect(const std::string& host, int port){
     CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, host.c_str(), APR_UNSPEC, port, APR_IPV4_ADDR_OK, pool));
     CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
     closed = false;
-
-    receiver = threadFactory->create(this);
-    receiver->start();
+    receiver = Thread(this);
 }
 
 void Connector::init(ProtocolInitiation* header){
@@ -75,7 +66,7 @@ void Connector::init(ProtocolInitiation* header){
 void Connector::close(){
     closed = true;
     CHECK_APR_SUCCESS(apr_socket_close(socket));
-    receiver->join();
+    receiver.join();
 }
 
 void Connector::setInputHandler(InputHandler* handler){
@@ -97,14 +88,12 @@ void Connector::send(AMQFrame* frame){
 }
 
 void Connector::writeBlock(AMQDataBlock* data){
-    writeLock->acquire();
+    Mutex::ScopedLock l(writeLock);
     data->encode(outbuf);
-
     //transfer data to wire
     outbuf.flip();
     writeToSocket(outbuf.start(), outbuf.available());
     outbuf.clear();
-    writeLock->release();
 }
 
 void Connector::writeToSocket(char* data, size_t available){
@@ -126,7 +115,7 @@ void Connector::writeToSocket(char* data, size_t available){
 
 void Connector::checkIdle(apr_status_t status){
     if(timeoutHandler){
-        apr_time_t now = apr_time_as_msec(apr_time_now());
+        int64_t now = apr_time_as_msec(apr_time_now());
         if(APR_STATUS_IS_TIMEUP(status)){
             if(idleIn && (now - lastIn > idleIn)){
                 timeoutHandler->idleIn();

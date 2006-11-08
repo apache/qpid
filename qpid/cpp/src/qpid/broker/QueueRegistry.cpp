@@ -16,7 +16,6 @@
  *
  */
 #include "qpid/broker/QueueRegistry.h"
-#include "qpid/sys/Monitor.h"
 #include "qpid/broker/SessionHandlerImpl.h"
 #include <sstream>
 #include <assert.h>
@@ -32,7 +31,7 @@ std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 
                        u_int32_t autoDelete, const ConnectionToken* owner)
 {
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
     assert(!name.empty());
     QueueMap::iterator i =  queues.find(name);
@@ -46,12 +45,12 @@ QueueRegistry::declare(const string& declareName, bool durable,
 }
 
 void QueueRegistry::destroy(const string& name){
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     queues.erase(name);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){
-    Locker locker(lock);
+    Mutex::ScopedLock locker(lock);
     QueueMap::iterator i = queues.find(name);
     if (i == queues.end()) {
 	return Queue::shared_ptr();

@@ -15,36 +15,41 @@
  * limitations under the License.
  *
  */
-#include "qpid/sys/APRBase.h"
-#include "qpid/sys/Thread.h"
-#include "apr-1/apr_portable.h"
+
+#include "Thread.h"
+#include "APRPool.h"
+#include "APRBase.h"
+#include <apr-1/apr_portable.h>
 
 using namespace qpid::sys;
+using qpid::sys::Runnable;
 
-void* APR_THREAD_FUNC ExecRunnable(apr_thread_t* thread, void *data){
-    ((Runnable*) data)->run();
+namespace {
+void* APR_THREAD_FUNC run(apr_thread_t* thread, void *data) {
+    reinterpret_cast<Runnable*>(data)->run();
     CHECK_APR_SUCCESS(apr_thread_exit(thread, APR_SUCCESS));
     return NULL;
 } 
-
-Thread::Thread(apr_pool_t* _pool, Runnable* _runnable) : runnable(_runnable), pool(_pool), runner(0) {}
-
-Thread::~Thread(){
 }
 
-void Thread::start(){
-    CHECK_APR_SUCCESS(apr_thread_create(&runner, NULL, ExecRunnable,(void*) runnable, pool));
+Thread::Thread() : thread(0) {}
+
+Thread::Thread(Runnable* runnable) {
+    CHECK_APR_SUCCESS(
+        apr_thread_create(&thread, NULL, run, runnable, APRPool::get()));
 }
 
 void Thread::join(){
     apr_status_t status;
-    if (runner) CHECK_APR_SUCCESS(apr_thread_join(&status, runner));
+    if (thread != 0) 
+        CHECK_APR_SUCCESS(apr_thread_join(&status, thread));
 }
 
-void Thread::interrupt(){
-    if (runner) CHECK_APR_SUCCESS(apr_thread_exit(runner, APR_SUCCESS));
-}
+Thread::Thread(apr_thread_t* t) : thread(t) {}
 
-unsigned int qpid::sys::Thread::currentThread(){
-    return apr_os_thread_current();
+Thread Thread::current(){
+    apr_thread_t* thr;
+    apr_os_thread_t osthr = apr_os_thread_current();
+    CHECK_APR_SUCCESS(apr_os_thread_put(&thr, &osthr, APRPool::get()));
+    return Thread(thr);
 }

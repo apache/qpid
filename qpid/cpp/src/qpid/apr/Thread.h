@@ -1,3 +1,6 @@
+#ifndef _apr_Thread_h
+#define _apr_Thread_h
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -16,24 +19,27 @@
  *
  */
 
-#include "APRPool.h"
-#include "qpid/sys/APRBase.h"
-#include <boost/pool/detail/singleton.hpp>
+#include <apr-1/apr_thread_proc.h>
+#include <qpid/sys/Runnable.h>
 
-using namespace qpid::sys;
-using namespace qpid::sys;
+namespace qpid {
+namespace sys {
 
-APRPool::APRPool(){
-    APRBase::increment();
-    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
-}
+class Thread
+{
 
-APRPool::~APRPool(){
-    apr_pool_destroy(pool);
-    APRBase::decrement();
-}
+  public:
+    Thread();
+    explicit Thread(qpid::sys::Runnable*);
+    void join();
+    static Thread current();
 
-apr_pool_t* APRPool::get() {
-    return boost::details::pool::singleton_default<APRPool>::instance().pool;
-}
+  private:
+    Thread(apr_thread_t*);
+    
+    apr_thread_t* thread;
+};
 
+}}
+
+#endif  /*!_apr_Thread_h*/

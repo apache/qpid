@@ -36,9 +36,7 @@ public:
 
     inline virtual void received(Message& /*msg*/){
 	std::cout << "Received message " /**<< msg **/<< std::endl;
-	monitor->acquire();
 	monitor->notify();
-	monitor->release();
     }
 };
 
@@ -77,12 +75,12 @@ int main(int argc, char**)
 	msg.setData(data);
 	channel.publish(msg, exchange, "MyTopic");
 	std::cout << "Published message." << std::endl;
-	
-	monitor.acquire();
-	monitor.wait();
-	monitor.release();
 
-	
+	{
+            Monitor::ScopedLock l(monitor);
+            monitor.wait();
+        }
+        
 	con.closeChannel(&channel);
 	std::cout << "Closed channel." << std::endl;
 	con.close();	

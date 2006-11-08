@@ -1,3 +1,6 @@
+#ifndef _sys_Thread_h
+#define _sys_Thread_h
+
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -15,34 +18,10 @@
  * limitations under the License.
  *
  */
-#ifndef _Thread_
-#define _Thread_
 
-#include "apr-1/apr_thread_proc.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Thread.h"
-
-namespace qpid {
-namespace sys {
-
-    class Thread
-    {
-	const Runnable* runnable;
-	apr_pool_t* pool;
-	apr_thread_t* runner;
-
-    public:
-	Thread(apr_pool_t* pool, Runnable* runnable);
-	virtual ~Thread();
-	virtual void start();
-	virtual void join();
-	virtual void interrupt();
-        static unsigned int currentThread();
-    };
-
-}
-}
+#include <qpid/sys/platform.h>
+#include QPID_PLATFORM_H(Thread.h)
 
 
-#endif
+
+#endif  /*!_sys_Thread_h*/
