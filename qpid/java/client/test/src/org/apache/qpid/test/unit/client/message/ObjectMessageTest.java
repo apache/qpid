@@ -73,8 +73,7 @@ public class ObjectMessageTest implements MessageListener
 
 
     public ObjectMessageTest() throws Exception
-    {        
-        this(new AMQConnection("vm://:1", "guest", "guest", randomize("Client"), "/test_path"));
+    {
     }
 
     ObjectMessageTest(String broker) throws Exception
