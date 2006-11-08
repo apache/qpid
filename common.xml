@@ -32,6 +32,7 @@
   <property name="etc.dir" value="etc"/>
   <property name="bin.dir" value="bin"/>
   <property name="src.bin" value="${bin.dir}"/>
+  <property name="release.dir" value="release"/>
   <property name="launcher.sfx" value="-launch.jar"/>
 
   <property name="dist.root" value="${build.dir}/dist"/>
@@ -41,6 +42,14 @@
   <property name="dist.lib" value="${dist.dir}/${lib.dir}"/>
   <property name="dist.doc" value="${dist.dir}/${doc.dir}"/>
   <property name="dist.etc" value="${dist.dir}/${etc.dir}"/>
+
+  <property name="module.build.file" value="build-module.xml"/>
+  <property name="build.file" value="build.xml"/>
+  <property name="module.file" value="module.xml"/>
+  <property name="common.file" value="common.xml"/>
+  <property name="build.properties.file" value="build.properties"/>
+  <property name="build.release" value="${build.dir}/${release.dir}"/>
+  <property name="build.release.prepare" value="${build.dir}/${release.dir}/prepare"/>
 
   <property name="build.zip" value="${build.dir}/${project.namever}.zip"/>
   <property name="build.tar" value="${build.dir}/${project.namever}.tar"/>
@@ -57,9 +66,9 @@
 
   <property name="tasks.dir" value="${project.root}/tasks"/>
   <property name="tasks.classes" value="${tasks.dir}/classes"/>
-  <property name="tasks.src" value="${tasks.dir}/src"/>
+  <property name="tasks.src" value="${tasks.dir}/src"/>           
 
-  <mkdir dir="${tasks.classes}"/>
+  <mkdir dir="${tasks.classes}"/>  
   <javac srcdir="${tasks.src}" destdir="${tasks.classes}"
          classpath="${java.class.path}"/>
   <taskdef name="map" classname="org.apache.qpid.tasks.Map"
