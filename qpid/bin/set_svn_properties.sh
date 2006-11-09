@@ -24,6 +24,9 @@
 find . -name "*.java" | grep -v ".svn" | xargs -n 1 -r svn propset svn:eol-style native
 find . -name "*.java" | grep -v ".svn" | xargs -n 1 -r  svn propset svn:keywords "Rev Date"
 
+find . -name "*.py" | grep -v ".svn" | xargs -n 1 -r svn propset svn:eol-style native
+
+find . -name "*.rb" | grep -v ".svn" | xargs -n 1 -r svn propset svn:eol-style native
 
 find . -name "*.xml" | grep -v ".svn" | xargs -n 1 -r  svn propset svn:mime-type text/xml
 find . -name "*.xml" | grep -v ".svn" | xargs -n 1 -r  svn propset svn:eol-style native
