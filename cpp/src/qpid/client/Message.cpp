@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/client/Message.h"
+#include <qpid/client/Message.h>
 
 using namespace qpid::client;
 using namespace qpid::framing;

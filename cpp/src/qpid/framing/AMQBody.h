@@ -16,8 +16,8 @@
  *
  */
 #include <boost/shared_ptr.hpp>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/Buffer.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/Buffer.h>
 
 #ifndef _AMQBody_
 #define _AMQBody_

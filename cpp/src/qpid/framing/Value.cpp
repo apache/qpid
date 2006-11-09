@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/Value.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/QpidError.h"
+#include <qpid/framing/Value.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/FieldTable.h>
+#include <qpid/QpidError.h>
 
 namespace qpid {
 namespace framing {

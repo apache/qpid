@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/DeliveryRecord.h"
-#include "qpid/broker/Channel.h"
+#include <qpid/broker/DeliveryRecord.h>
+#include <qpid/broker/Channel.h>
 
 using namespace qpid::broker;
 

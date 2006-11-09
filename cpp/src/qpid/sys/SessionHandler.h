@@ -18,10 +18,10 @@
 #ifndef _SessionHandler_
 #define _SessionHandler_
 
-#include "qpid/framing/InputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/sys/TimeoutHandler.h"
+#include <qpid/framing/InputHandler.h>
+#include <qpid/framing/InitiationHandler.h>
+#include <qpid/framing/ProtocolInitiation.h>
+#include <qpid/sys/TimeoutHandler.h>
 
 namespace qpid {
 namespace sys {

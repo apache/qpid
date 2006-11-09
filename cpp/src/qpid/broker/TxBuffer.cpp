@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/TxBuffer.h"
+#include <qpid/broker/TxBuffer.h>
 
 using std::mem_fun;
 using namespace qpid::broker;

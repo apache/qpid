@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/amqp_types.h"
+#include <qpid/framing/amqp_types.h>
 
 #ifndef _Buffer_
 #define _Buffer_

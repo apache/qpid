@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/TxPublish.h"
+#include <qpid/broker/TxPublish.h>
 
 using namespace qpid::broker;
 

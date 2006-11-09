@@ -18,7 +18,7 @@
  *
  */
 
-#include "qpid/framing/AMQFrame.h"
+#include <qpid/framing/AMQFrame.h>
 #include <boost/noncopyable.hpp>
 
 namespace qpid {

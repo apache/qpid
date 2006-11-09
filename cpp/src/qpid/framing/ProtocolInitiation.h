@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/AMQDataBlock.h"
-#include "qpid/framing/ProtocolVersion.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/AMQDataBlock.h>
+#include <qpid/framing/ProtocolVersion.h>
 
 #ifndef _ProtocolInitiation_
 #define _ProtocolInitiation_

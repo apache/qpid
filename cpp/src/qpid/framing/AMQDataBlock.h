@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/Buffer.h"
+#include <qpid/framing/Buffer.h>
 
 #ifndef _AMQDataBlock_
 #define _AMQDataBlock_

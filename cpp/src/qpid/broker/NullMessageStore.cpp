@@ -16,10 +16,10 @@
  *
  */
 
-#include "qpid/broker/NullMessageStore.h"
+#include <qpid/broker/NullMessageStore.h>
 
-#include "qpid/broker/Queue.h"
-#include "qpid/broker/QueueRegistry.h"
+#include <qpid/broker/Queue.h>
+#include <qpid/broker/QueueRegistry.h>
 
 #include <iostream>
 

@@ -23,15 +23,15 @@
 #ifndef _Channel_
 #define _Channel_
 
-#include "qpid/framing/amqp_framing.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/Exchange.h"
-#include "qpid/client/IncomingMessage.h"
-#include "qpid/client/Message.h"
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
-#include "qpid/client/ResponseHandler.h"
-#include "qpid/client/ReturnedMessageHandler.h"
+#include <qpid/framing/amqp_framing.h>
+#include <qpid/client/Connection.h>
+#include <qpid/client/Exchange.h>
+#include <qpid/client/IncomingMessage.h>
+#include <qpid/client/Message.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/Queue.h>
+#include <qpid/client/ResponseHandler.h>
+#include <qpid/client/ReturnedMessageHandler.h>
 
 namespace qpid {
 namespace client {

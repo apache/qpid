@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#include "qpid/Exception.h"
+#include <qpid/Exception.h>
 
 namespace qpid {
     namespace broker {

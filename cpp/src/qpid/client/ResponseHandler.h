@@ -16,7 +16,7 @@
  *
  */
 #include <string>
-#include "qpid/framing/amqp_framing.h"
+#include <qpid/framing/amqp_framing.h>
 #include <qpid/sys/Monitor.h>
 
 #ifndef _ResponseHandler_

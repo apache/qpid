@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/AMQMethodBody.h"
-#include "qpid/QpidError.h"
+#include <qpid/framing/AMQMethodBody.h>
+#include <qpid/QpidError.h>
 
 void qpid::framing::AMQMethodBody::encode(Buffer& buffer) const{
     buffer.putShort(amqpClassId());

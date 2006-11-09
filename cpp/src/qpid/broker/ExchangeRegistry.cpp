@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/broker/DirectExchange.h"
-#include "qpid/broker/FanOutExchange.h"
-#include "qpid/broker/HeadersExchange.h"
-#include "qpid/broker/TopicExchange.h"
+#include <qpid/broker/ExchangeRegistry.h>
+#include <qpid/broker/DirectExchange.h>
+#include <qpid/broker/FanOutExchange.h>
+#include <qpid/broker/HeadersExchange.h>
+#include <qpid/broker/TopicExchange.h>
 
 using namespace qpid::broker;
 using namespace qpid::sys;

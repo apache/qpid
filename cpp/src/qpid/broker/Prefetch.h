@@ -18,7 +18,7 @@
 #ifndef _Prefetch_
 #define _Prefetch_
 
-#include "qpid/framing/amqp_types.h"
+#include <qpid/framing/amqp_types.h>
 
 namespace qpid {
     namespace broker {

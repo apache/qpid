@@ -16,10 +16,10 @@
  *
  */
 #include <iostream>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/AMQBody.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/AMQBody.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/AMQP_ServerOperations.h>
 
 #ifndef _AMQMethodBody_
 #define _AMQMethodBody_

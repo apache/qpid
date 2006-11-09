@@ -17,7 +17,7 @@
  */
 #include "LFSessionContext.h"
 #include "APRBase.h"
-#include "qpid/QpidError.h"
+#include <qpid/QpidError.h>
 #include <assert.h>
 
 using namespace qpid::sys;

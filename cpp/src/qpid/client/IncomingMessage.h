@@ -17,12 +17,12 @@
  */
 #include <string>
 #include <vector>
-#include "qpid/framing/amqp_framing.h"
+#include <qpid/framing/amqp_framing.h>
 
 #ifndef _IncomingMessage_
 #define _IncomingMessage_
 
-#include "qpid/client/Message.h"
+#include <qpid/client/Message.h>
 
 namespace qpid {
 namespace client {

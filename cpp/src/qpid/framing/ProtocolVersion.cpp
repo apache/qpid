@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/ProtocolVersion.h"
+#include <qpid/framing/ProtocolVersion.h>
 #include <sstream>
 
 using namespace qpid::framing;

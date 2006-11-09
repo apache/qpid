@@ -18,7 +18,7 @@
 #ifndef _DeletingTxOp_
 #define _DeletingTxOp_
 
-#include "qpid/broker/TxOp.h"
+#include <qpid/broker/TxOp.h>
 
 namespace qpid {
     namespace broker {

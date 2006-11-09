@@ -15,12 +15,12 @@
  * limitations under the License.
  *
  */
-#include "qpid/QpidError.h"
-#include "qpid/client/Channel.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/Exchange.h"
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
+#include <qpid/QpidError.h>
+#include <qpid/client/Channel.h>
+#include <qpid/client/Connection.h>
+#include <qpid/client/Exchange.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/Queue.h>
 #include <qpid/sys/Time.h>
 #include <iostream>
 #include <sstream>
@@ -102,7 +102,7 @@ Listener::Listener(Channel* _channel, const std::string& _responseq, bool tx) :
 
 void Listener::received(Message& message){
     if(!init){        
-        start = getTimeMsecs();
+        start = Time::now().msecs();
         count = 0;
         init = true;
     }
@@ -124,7 +124,7 @@ void Listener::shutdown(){
 }
 
 void Listener::report(){
-    int64_t finish = getTimeMsecs();
+    int64_t finish = Time::now().msecs();
     int64_t time = finish - start;
     std::stringstream reportstr;
     reportstr << "Received " << count << " messages in " << time << " ms.";
