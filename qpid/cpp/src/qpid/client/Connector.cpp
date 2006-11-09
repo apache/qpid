@@ -17,11 +17,11 @@
  */
 #include <iostream>
 #include <qpid/QpidError.h>
-#include "APRBase.h"
+#include <qpid/sys/Time.h>
 #include "Connector.h"
 
 using namespace qpid::sys;
-using namespace qpid::sys;
+using namespace qpid::client;
 using namespace qpid::framing;
 using qpid::QpidError;
 
@@ -36,24 +36,12 @@ Connector::Connector(bool _debug, u_int32_t buffer_size) :
     timeoutHandler(0),
     shutdownHandler(0),
     inbuf(receive_buffer_size), 
-    outbuf(send_buffer_size){
+    outbuf(send_buffer_size){ }
 
-    APRBase::increment();
-
-    CHECK_APR_SUCCESS(apr_pool_create(&pool, NULL));
-    CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, pool));
-}
-
-Connector::~Connector(){
-    apr_pool_destroy(pool);
-
-    APRBase::decrement();
-}
+Connector::~Connector(){ }
 
 void Connector::connect(const std::string& host, int port){
-    apr_sockaddr_t* address;
-    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, host.c_str(), APR_UNSPEC, port, APR_IPV4_ADDR_OK, pool));
-    CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
+    socket.connect(host, port);
     closed = false;
     receiver = Thread(this);
 }
@@ -65,7 +53,7 @@ void Connector::init(ProtocolInitiation* header){
 
 void Connector::close(){
     closed = true;
-    CHECK_APR_SUCCESS(apr_socket_close(socket));
+    socket.close();
     receiver.join();
 }
 
@@ -97,32 +85,26 @@ void Connector::writeBlock(AMQDataBlock* data){
 }
 
 void Connector::writeToSocket(char* data, size_t available){
-    apr_size_t bytes(available);
-    apr_size_t written(0);
+    size_t written = 0;
     while(written < available && !closed){
-	apr_status_t status = apr_socket_send(socket, data + written, &bytes);
-        if(status == APR_TIMEUP){
-            std::cout << "Write request timed out." << std::endl;
+	ssize_t sent = socket.send(data + written, available-written);
+        if(sent > 0) {
+            lastOut = getTimeMsecs();
+            written += sent;
         }
-        if(bytes == 0){
-            std::cout << "Write request wrote 0 bytes." << std::endl;
-        }
-        lastOut = apr_time_as_msec(apr_time_now());
-	written += bytes;
-	bytes = available - written;
     }
 }
 
-void Connector::checkIdle(apr_status_t status){
+void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
-        int64_t now = apr_time_as_msec(apr_time_now());
-        if(APR_STATUS_IS_TIMEUP(status)){
+        int64_t now = getTimeMsecs();
+        if(status == Socket::SOCKET_TIMEOUT) {
             if(idleIn && (now - lastIn > idleIn)){
                 timeoutHandler->idleIn();
             }
-        }else if(APR_STATUS_IS_EOF(status)){
+        }else if(status == Socket::SOCKET_EOF){
             closed = true;
-            CHECK_APR_SUCCESS(apr_socket_close(socket));
+            socket.close();
             if(shutdownHandler) shutdownHandler->shutdown();
         }else{
             lastIn = now;
@@ -151,11 +133,7 @@ void Connector::setWriteTimeout(u_int16_t t){
 }
 
 void Connector::setSocketTimeout(){
-    //interval is in microseconds, timeout in milliseconds
-    //want the interval to be a bit shorter than the timeout, hence multiply
-    //by 800 rather than 1000.
-    apr_interval_time_t interval(timeout * 800);
-    apr_socket_timeout_set(socket, interval);
+    socket.setTimeout(timeout);
 }
 
 void Connector::setTimeoutHandler(TimeoutHandler* handler){
@@ -165,14 +143,15 @@ void Connector::setTimeoutHandler(TimeoutHandler* handler){
 void Connector::run(){
     try{
 	while(!closed){
-	    apr_size_t bytes(inbuf.available());
-            if(bytes < 1){
+            ssize_t available = inbuf.available();
+            if(available < 1){
                 THROW_QPID_ERROR(INTERNAL_ERROR, "Frame exceeds buffer size.");
             }
-	    checkIdle(apr_socket_recv(socket, inbuf.start(), &bytes));
+            ssize_t received = socket.recv(inbuf.start(), available);
+	    checkIdle(received);
 
-	    if(bytes > 0){
-		inbuf.move(bytes);
+	    if(received > 0){
+		inbuf.move(received);
 		inbuf.flip();//position = 0, limit = total data read
 		
 		AMQFrame frame;

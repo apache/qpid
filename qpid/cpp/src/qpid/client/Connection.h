@@ -22,7 +22,7 @@
 #define _Connection_
 
 #include "qpid/QpidError.h"
-#include "qpid/sys/Connector.h"
+#include "qpid/client/Connector.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 
@@ -52,7 +52,7 @@ class Connection : public virtual qpid::framing::InputHandler,
 	int port;
 	const u_int32_t max_frame_size;
 	std::map<int, Channel*> channels; 
-	qpid::sys::Connector* connector;
+	Connector* connector;
 	qpid::framing::OutputHandler* out;
 	ResponseHandler responses;
         volatile bool closed;
