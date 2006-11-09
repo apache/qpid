@@ -18,8 +18,6 @@
 #ifndef _Connector_
 #define _Connector_
 
-#include "apr-1/apr_network_io.h"
-#include "apr-1/apr_time.h"
 
 #include "qpid/framing/InputHandler.h"
 #include "qpid/framing/OutputHandler.h"
@@ -28,11 +26,11 @@
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Thread.h"
-#include "qpid/sys/Connector.h"
 #include "qpid/sys/Monitor.h"
+#include <qpid/sys/Socket.h>
 
 namespace qpid {
-namespace sys {
+namespace client {
 
     class Connector : public qpid::framing::OutputHandler, 
                       private qpid::sys::Runnable
@@ -49,8 +47,8 @@ namespace sys {
         u_int32_t idleIn;
         u_int32_t idleOut;
 
-        TimeoutHandler* timeoutHandler;
-        ShutdownHandler* shutdownHandler;
+        qpid::sys::TimeoutHandler* timeoutHandler;
+        qpid::sys::ShutdownHandler* shutdownHandler;
 	qpid::framing::InputHandler* input;
 	qpid::framing::InitiationHandler* initialiser;
 	qpid::framing::OutputHandler* output;
@@ -61,10 +59,9 @@ namespace sys {
         qpid::sys::Mutex writeLock;
 	qpid::sys::Thread receiver;
 
-	apr_pool_t* pool;
-	apr_socket_t* socket;
-
-        void checkIdle(apr_status_t status);
+	qpid::sys::Socket socket;
+        
+        void checkIdle(ssize_t status);
 	void writeBlock(qpid::framing::AMQDataBlock* data);
 	void writeToSocket(char* data, size_t available);
         void setSocketTimeout();
@@ -78,8 +75,8 @@ namespace sys {
 	virtual void init(qpid::framing::ProtocolInitiation* header);
 	virtual void close();
 	virtual void setInputHandler(qpid::framing::InputHandler* handler);
-	virtual void setTimeoutHandler(TimeoutHandler* handler);
-	virtual void setShutdownHandler(ShutdownHandler* handler);
+	virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);
+	virtual void setShutdownHandler(qpid::sys::ShutdownHandler* handler);
 	virtual qpid::framing::OutputHandler* getOutputHandler();
 	virtual void send(qpid::framing::AMQFrame* frame);
         virtual void setReadTimeout(u_int16_t timeout);

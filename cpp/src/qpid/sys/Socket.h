@@ -1,5 +1,5 @@
-#ifndef _sys_Connector_h
-#define _sys_Connector_h
+#ifndef _sys_Socket_h
+#define _sys_Socket_h
 
 /*
  *
@@ -19,7 +19,9 @@
  *
  */
 
-#include "platform.h"
-#include QPID_PLATFORM_H(Connector.h)
+#include <qpid/sys/platform.h>
+#include QPID_PLATFORM_H(Socket.h)
 
-#endif  /*!_sys_Connector_h*/
+
+
+#endif  /*!_sys_Socket_h*/
