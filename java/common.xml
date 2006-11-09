@@ -23,7 +23,11 @@
   <property name="project.namever" value="${project.name}-${project.version}"/>
   <property name="client.namever" value="${project.name}-client-${project.version}"/>
   <property name="build.dir" value="${project.root}/build"/>
-  <!-- <property name="amqp.xml" location="${project.root}/../specs/amqp-8.0.xml"/> -->
+  <property name="release.dir" value="release"/>
+  <property name="release.root.dir" value="${project.root}/${release.dir}"/>
+    
+  <property name="specs.dir" value="specs"/>
+  <property name="amqpspec.dir" value="${project.root}/../${specs.dir}"/>
 
   <property name="classes.dir" value="classes"/>
   <property name="src.dir" value="src"/>
@@ -31,8 +35,10 @@
   <property name="doc.dir" value="doc"/>
   <property name="etc.dir" value="etc"/>
   <property name="bin.dir" value="bin"/>
+  <property name="etc.dir" value="etc"/>
+  <property name="resources.dir" value="resources"/>
+  <property name="stylesheets.dir" value="stylesheets"/>
   <property name="src.bin" value="${bin.dir}"/>
-  <property name="release.dir" value="release"/>
   <property name="launcher.sfx" value="-launch.jar"/>
 
   <property name="dist.root" value="${build.dir}/dist"/>
@@ -51,6 +57,7 @@
   <property name="build.release" value="${build.dir}/${release.dir}"/>
   <property name="build.release.prepare" value="${build.dir}/${release.dir}/prepare"/>
 
+
   <property name="build.zip" value="${build.dir}/${project.namever}.zip"/>
   <property name="build.tar" value="${build.dir}/${project.namever}.tar"/>
   <property name="build.tgz" value="${build.dir}/${project.namever}.tar.gz"/>
@@ -66,7 +73,9 @@
 
   <property name="tasks.dir" value="${project.root}/tasks"/>
   <property name="tasks.classes" value="${tasks.dir}/classes"/>
-  <property name="tasks.src" value="${tasks.dir}/src"/>           
+  <property name="tasks.src" value="${tasks.dir}/src"/>
+  <property name="common.dir" value="common"/>
+  <property name="common.root.dir" value="${project.root}/${common.dir}"/>
 
   <mkdir dir="${tasks.classes}"/>  
   <javac srcdir="${tasks.src}" destdir="${tasks.classes}"

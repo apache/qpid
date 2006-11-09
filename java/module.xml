@@ -19,8 +19,7 @@
 
   <import file="common.xml"/>
 
-
-  <map property="module" value="${basedir}">
+  <map property="module" value="${basedir}" split="${path.separator}">
     <globmapper from="${project.root}${file.separator}*" to="*"/>
   </map>
 
