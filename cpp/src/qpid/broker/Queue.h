@@ -57,7 +57,7 @@ namespace qpid {
             mutable qpid::sys::Mutex lock;
             int64_t lastUsed;
             Consumer* exclusive;
-            u_int64_t persistenceId;
+            mutable u_int64_t persistenceId;
 
             bool startDispatching();
             bool dispatch(Message::shared_ptr& msg);
@@ -91,6 +91,10 @@ namespace qpid {
              */
             void process(Message::shared_ptr& msg);
             /**
+             * Used during recovery to add stored messages back to the queue
+             */
+            void recover(Message::shared_ptr& msg);
+            /**
              * Dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
              * at any time, but this method (rather than the caller)
@@ -107,7 +111,7 @@ namespace qpid {
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
             inline u_int64_t getPersistenceId() const { return persistenceId; }
-            inline void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
+            inline void setPersistenceId(u_int64_t _persistenceId) const { persistenceId = _persistenceId; }
 
             bool canAutoDelete() const;
 

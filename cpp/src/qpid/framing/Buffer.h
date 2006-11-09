@@ -28,6 +28,7 @@ class FieldTable;
 class Buffer
 {
     const u_int32_t size;
+    const bool owner;//indicates whether the data is owned by this instance
     char* data;
     u_int32_t position;
     u_int32_t limit;
@@ -37,6 +38,7 @@ class Buffer
 public:
 
     Buffer(u_int32_t size);
+    Buffer(char* data, u_int32_t size);
     ~Buffer();
 
     void flip();
