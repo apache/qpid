@@ -107,22 +107,43 @@
 
 
     <target name="preparerelease">
-        <mkdir dir="${build.release.prepare}/src"/>
         <mkdir dir="${release.dir}"/>
 
+
         <!-- Copy Source to prepare directory -->
-        <mkdir dir="${build.release.prepare}/src"/>
-        <copy todir="${build.release.prepare}/src">
+        <mkdir dir="${build.release.prepare}/src/java"/>
+        <copy todir="${build.release.prepare}/src/java">
             <fileset dir="">
+                <!-- Module src -->
+                <include name="**/${bin.dir}/**"/>
                 <include name="**/${src.dir}/**"/>
                 <include name="**/${lib.dir}/**"/>
+                <include name="**/${etc.dir}/**"/>
                 <include name="**/${module.build.file}"/>
+
+                <!-- Extra Common files -->
+                <include name="${common.dir}/${stylesheets.dir}/**"/>
+                <include name="${common.dir}/${resources.dir}/**"/>
+
+                <!-- Root build Files -->
                 <include name="${build.file}"/>
                 <include name="${common.file}"/>
                 <include name="${module.file}"/>
                 <include name="${build.properties.file}"/>
+
+                <!-- Exclude Generated content -->
+                <exclude name="**/${build.dir}/**"/>
+                <exclude name="**/${release.dir}/**"/>                
             </fileset>
         </copy>
+        
+        <!-- Copy Spec files for protocol generation -->
+        <copy todir="${build.release.prepare}/src/">
+            <fileset dir=".." casesensitive="false">
+                <include name="${specs.dir}/**"/>
+            </fileset>
+        </copy>
+
 
         <!-- Copy Various Txt files to prepare directory -->
          <copy todir="${build.release.prepare}" >
@@ -131,13 +152,12 @@
                  <include name="README.txt"/>
                  <include name="NOTICE.txt"/>
                  <include name="RELEASE_NOTES.txt"/>
-                 <exclude name="${build.dir}"/>
-                 <exclude name="${release.dir}"/>
              </fileset>
          </copy>
 
            <!-- Copy all licenses to license directory -->
-          <mkdir dir="${build.release.prepare}/licenses"/>
+
+         <mkdir dir="${build.release.prepare}/licenses"/>
 
             <copy todir="${build.release.prepare}/licenses" >
                 <fileset dir="client/${lib.dir}" casesensitive="false">
@@ -155,19 +175,18 @@
 
   <target name="releasesrc" depends="preparerelease">
 
-    <tar compression="gzip" destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.tar.gz">
+    <tar compression="gzip" longfile="gnu" destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.tar.gz">
       <tarfileset dir="${build.release.prepare}" mode="755" username="ant" group="ant">
         <include name="**"/>
       </tarfileset>
     </tar>
 
-    <zip destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.zip">
-      <zipfileset dir="${build.release.prepare}">
+    <zip destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.zip" >
+      <zipfileset dir="${build.release.prepare}" >
         <include name="**"/>
       </zipfileset>
     </zip>
 
-    <delete dir="${build.release.prepare}"/>
   </target>
 
 
