@@ -16,7 +16,7 @@
  *
  */
 #include <string>
-#include "qpid/framing/amqp_framing.h"
+#include <qpid/framing/amqp_framing.h>
 
 #ifndef _Message_
 #define _Message_

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/DeletingTxOp.h"
+#include <qpid/broker/DeletingTxOp.h>
 
 using namespace qpid::broker;
 

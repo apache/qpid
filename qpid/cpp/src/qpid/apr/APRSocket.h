@@ -18,8 +18,8 @@
 #ifndef _APRSocket_
 #define _APRSocket_
 
-#include "apr-1/apr_network_io.h"
-#include "qpid/framing/Buffer.h"
+#include <apr-1/apr_network_io.h>
+#include <qpid/framing/Buffer.h>
 
 namespace qpid {
 namespace sys {

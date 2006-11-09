@@ -18,9 +18,9 @@
 #ifndef _MessageStore_
 #define _MessageStore_
 
-#include "qpid/broker/Message.h"
-#include "qpid/broker/Queue.h"
-#include "qpid/broker/TransactionalStore.h"
+#include <qpid/broker/Message.h>
+#include <qpid/broker/Queue.h>
+#include <qpid/broker/TransactionalStore.h>
 
 namespace qpid {
     namespace broker {

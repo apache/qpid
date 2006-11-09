@@ -17,16 +17,16 @@
  */
 #include <iostream>
 #include <memory>
-#include "qpid/broker/Broker.h"
+#include <qpid/broker/Broker.h>
 
 
 using namespace qpid::broker;
 using namespace qpid::sys;
 
 Broker::Broker(const Configuration& config) :
-    acceptor(new Acceptor(config.getPort(),
-                          config.getConnectionBacklog(),
-                          config.getWorkerThreads()))
+    acceptor(Acceptor::create(config.getPort(),
+                              config.getConnectionBacklog(),
+                              config.getWorkerThreads()))
 { }
 
 

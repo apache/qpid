@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/NameGenerator.h"
+#include <qpid/broker/NameGenerator.h>
 #include <sstream>
 
 using namespace qpid::broker;

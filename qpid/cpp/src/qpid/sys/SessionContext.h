@@ -18,7 +18,7 @@
 #ifndef _SessionContext_
 #define _SessionContext_
 
-#include "qpid/framing/OutputHandler.h"
+#include <qpid/framing/OutputHandler.h>
 
 namespace qpid {
 namespace sys {

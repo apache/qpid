@@ -18,9 +18,9 @@
 #ifndef _DeliverableMessage_
 #define _DeliverableMessage_
 
-#include "qpid/broker/Deliverable.h"
-#include "qpid/broker/Message.h"
-#include "qpid/broker/Queue.h"
+#include <qpid/broker/Deliverable.h>
+#include <qpid/broker/Message.h>
+#include <qpid/broker/Queue.h>
 
 namespace qpid {
     namespace broker {

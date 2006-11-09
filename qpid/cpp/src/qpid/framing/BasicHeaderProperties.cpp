@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/BasicHeaderProperties.h"
+#include <qpid/framing/BasicHeaderProperties.h>
 
 //TODO: This could be easily generated from the spec
 

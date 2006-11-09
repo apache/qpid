@@ -18,7 +18,7 @@
 #ifndef _ProtocolVersion_
 #define _ProtocolVersion_
 
-#include "qpid/framing/amqp_types.h"
+#include <qpid/framing/amqp_types.h>
 
 namespace qpid
 {

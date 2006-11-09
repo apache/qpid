@@ -16,10 +16,10 @@
  *
  */
 #include <iostream>
-#include "qpid/broker/SessionHandlerImpl.h"
-#include "qpid/broker/FanOutExchange.h"
-#include "qpid/broker/HeadersExchange.h"
-#include "qpid/broker/TopicExchange.h"
+#include <qpid/broker/SessionHandlerImpl.h>
+#include <qpid/broker/FanOutExchange.h>
+#include <qpid/broker/HeadersExchange.h>
+#include <qpid/broker/TopicExchange.h>
 #include "assert.h"
 
 using namespace boost;

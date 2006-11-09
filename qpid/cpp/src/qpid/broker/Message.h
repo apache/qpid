@@ -19,13 +19,13 @@
 #define _Message_
 
 #include <boost/shared_ptr.hpp>
-#include "qpid/broker/ConnectionToken.h"
-#include "qpid/broker/TxBuffer.h"
-#include "qpid/framing/AMQContentBody.h"
-#include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/framing/BasicHeaderProperties.h"
-#include "qpid/framing/BasicPublishBody.h"
-#include "qpid/framing/OutputHandler.h"
+#include <qpid/broker/ConnectionToken.h>
+#include <qpid/broker/TxBuffer.h>
+#include <qpid/framing/AMQContentBody.h>
+#include <qpid/framing/AMQHeaderBody.h>
+#include <qpid/framing/BasicHeaderProperties.h>
+#include <qpid/framing/BasicPublishBody.h>
+#include <qpid/framing/OutputHandler.h>
 
 namespace qpid {
     namespace broker {

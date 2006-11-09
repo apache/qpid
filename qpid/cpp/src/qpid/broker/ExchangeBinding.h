@@ -18,9 +18,9 @@
 #ifndef _ExchangeBinding_
 #define _ExchangeBinding_
 
-#include "qpid/broker/Binding.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/broker/Queue.h"
+#include <qpid/broker/Binding.h>
+#include <qpid/framing/FieldTable.h>
+#include <qpid/broker/Queue.h>
 
 namespace qpid {
     namespace broker {

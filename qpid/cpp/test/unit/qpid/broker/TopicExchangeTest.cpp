@@ -1,4 +1,4 @@
-#include "qpid/broker/TopicExchange.h"
+#include <qpid/broker/TopicExchange.h>
 #include <qpid_test_plugin.h>
 
 using namespace qpid::broker;

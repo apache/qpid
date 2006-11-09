@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/Message.h"
-#include "qpid/broker/MessageBuilder.h"
+#include <qpid/broker/Message.h>
+#include <qpid/broker/MessageBuilder.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>

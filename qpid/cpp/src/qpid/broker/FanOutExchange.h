@@ -20,11 +20,11 @@
 
 #include <map>
 #include <vector>
-#include "qpid/broker/Exchange.h"
-#include "qpid/framing/FieldTable.h"
-#include "qpid/broker/Message.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/broker/Queue.h"
+#include <qpid/broker/Exchange.h>
+#include <qpid/framing/FieldTable.h>
+#include <qpid/broker/Message.h>
+#include <qpid/sys/Monitor.h>
+#include <qpid/broker/Queue.h>
 
 namespace qpid {
 namespace broker {

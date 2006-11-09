@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/HeadersExchange.h"
-#include "qpid/broker/ExchangeBinding.h"
-#include "qpid/framing/Value.h"
-#include "qpid/QpidError.h"
+#include <qpid/broker/HeadersExchange.h>
+#include <qpid/broker/ExchangeBinding.h>
+#include <qpid/framing/Value.h>
+#include <qpid/QpidError.h>
 #include <algorithm>
 
 

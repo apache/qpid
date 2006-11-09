@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/client/IncomingMessage.h"
-#include "qpid/QpidError.h"
+#include <qpid/client/IncomingMessage.h>
+#include <qpid/QpidError.h>
 #include <iostream>
 
 using namespace qpid::client;

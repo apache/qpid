@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/client/Queue.h"
+#include <qpid/client/Queue.h>
 
 qpid::client::Queue::Queue() : name(""), autodelete(true), exclusive(true){}
 

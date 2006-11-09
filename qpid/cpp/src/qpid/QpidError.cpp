@@ -16,7 +16,7 @@
  *
  */
 
-#include "qpid/QpidError.h"
+#include <qpid/QpidError.h>
 #include <sstream>
 
 using namespace qpid;

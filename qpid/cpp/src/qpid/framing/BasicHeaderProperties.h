@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/amqp_methods.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/HeaderProperties.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/amqp_methods.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/HeaderProperties.h>
 
 #ifndef _BasicHeaderProperties_
 #define _BasicHeaderProperties_

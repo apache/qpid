@@ -17,8 +17,8 @@
  */
 #include <iostream>
 #include <vector>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/framing/FieldTable.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/FieldTable.h>
 
 #ifndef _Value_
 #define _Value_

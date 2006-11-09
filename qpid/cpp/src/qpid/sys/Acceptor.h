@@ -19,8 +19,26 @@
  *
  */
 
-#include "platform.h"
-#include QPID_PLATFORM_H(Acceptor.h)
+#include <stdint.h>
+#include <qpid/SharedObject.h>
+
+namespace qpid {
+namespace sys {
+
+class SessionHandlerFactory;
+
+class Acceptor : public qpid::SharedObject<Acceptor>
+{
+  public:
+    static Acceptor::shared_ptr create(int16_t port, int backlog, int threads);
+    virtual ~Acceptor() = 0;
+    virtual int16_t getPort() const = 0;
+    virtual void run(qpid::sys::SessionHandlerFactory* factory) = 0;
+    virtual void shutdown() = 0;
+};
+
+}}
 
 
+    
 #endif  /*!_sys_Acceptor_h*/

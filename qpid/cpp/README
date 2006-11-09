@@ -20,13 +20,11 @@ If you use yum to install packages:
 You can have mutltiple builds in the same working copy. 
 For example for a release build using APR platform:
 
-  make PLATFORM=apr TYPE=release
+  make USE_APR=1 RELEASE=1
 
 This will create build/apr-release containing the bin/ lib/ and test/ subdirs.
 
-To set your preferred default create file options-local.mk with
-PLATFORM=<my platform>
-TYPE=<my type>
+You can set your preferred defaults in options-local.mk.
 
 Generated code goes in build/gen and is shared between all builds.
 
@@ -51,9 +49,9 @@ Main targets:
 The source tree is structured as follows:
  * src/ - .h and .cpp source files, directories mirror namespaces.
   * qpid/
-   * sys/ - system abstractions: threading, IO.
+   * sys/ - system portability abstractions: threading, io etc.
    * posix/ - posix implementations for sys
-   * apr/ - portable APR implementation for sys (client side)
+   * apr/ - portable APR implementation for sys
    * framing - encoding/decoding AMQP messages
    * client - client classes.
    * broker - broker classes.

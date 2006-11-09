@@ -20,7 +20,7 @@
 #ifndef _ReturnedMessageHandler_
 #define _ReturnedMessageHandler_
 
-#include "qpid/client/Message.h"
+#include <qpid/client/Message.h>
 
 namespace qpid {
 namespace client {

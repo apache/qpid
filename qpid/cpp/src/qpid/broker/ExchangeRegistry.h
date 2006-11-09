@@ -19,8 +19,8 @@
 #define _ExchangeRegistry_
 
 #include <map>
-#include "qpid/broker/Exchange.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/broker/Exchange.h>
+#include <qpid/sys/Monitor.h>
 
 namespace qpid {
 namespace broker {

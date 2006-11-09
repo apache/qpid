@@ -22,21 +22,21 @@
 #include <sstream>
 #include <vector>
 #include <exception>
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/broker/AutoDelete.h"
-#include "qpid/broker/ExchangeRegistry.h"
-#include "qpid/broker/Channel.h"
-#include "qpid/broker/ConnectionToken.h"
-#include "qpid/broker/DirectExchange.h"
-#include "qpid/framing/OutputHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/broker/QueueRegistry.h"
-#include "qpid/sys/SessionContext.h"
-#include "qpid/sys/SessionHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
-#include "qpid/broker/TopicExchange.h"
+#include <qpid/framing/AMQFrame.h>
+#include <qpid/framing/AMQP_ClientProxy.h>
+#include <qpid/framing/AMQP_ServerOperations.h>
+#include <qpid/broker/AutoDelete.h>
+#include <qpid/broker/ExchangeRegistry.h>
+#include <qpid/broker/Channel.h>
+#include <qpid/broker/ConnectionToken.h>
+#include <qpid/broker/DirectExchange.h>
+#include <qpid/framing/OutputHandler.h>
+#include <qpid/framing/ProtocolInitiation.h>
+#include <qpid/broker/QueueRegistry.h>
+#include <qpid/sys/SessionContext.h>
+#include <qpid/sys/SessionHandler.h>
+#include <qpid/sys/TimeoutHandler.h>
+#include <qpid/broker/TopicExchange.h>
 
 namespace qpid {
 namespace broker {
