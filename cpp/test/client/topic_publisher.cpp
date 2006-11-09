@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-#include "qpid/QpidError.h"
-#include "qpid/client/Channel.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/Exchange.h"
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/QpidError.h>
+#include <qpid/client/Channel.h>
+#include <qpid/client/Connection.h>
+#include <qpid/client/Exchange.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/Queue.h>
+#include <qpid/sys/Monitor.h>
 #include "unistd.h"
 #include <qpid/sys/Time.h>
 #include <cstdlib>
@@ -149,7 +149,7 @@ void Publisher::waitForCompletion(int msgs){
 int64_t Publisher::publish(int msgs, int listeners, int size){
     Message msg;
     msg.setData(generateData(size));
-    int64_t start = getTimeMsecs();
+    int64_t start = Time::now().msecs();
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
@@ -166,7 +166,7 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
         waitForCompletion(listeners);
     }
 
-    int64_t finish(getTimeMsecs());
+    int64_t finish(Time::now().msecs());
     return finish - start; 
 }
 

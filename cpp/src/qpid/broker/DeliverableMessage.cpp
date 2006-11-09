@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/DeliverableMessage.h"
+#include <qpid/broker/DeliverableMessage.h>
 
 using namespace qpid::broker;
 

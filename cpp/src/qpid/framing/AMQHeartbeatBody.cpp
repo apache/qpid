@@ -16,7 +16,7 @@
  *
  */
 
-#include "qpid/framing/AMQHeartbeatBody.h"
+#include <qpid/framing/AMQHeartbeatBody.h>
 #include <iostream>
 
 qpid::framing::AMQHeartbeatBody::~AMQHeartbeatBody() {}

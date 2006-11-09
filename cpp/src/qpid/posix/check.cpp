@@ -1,6 +1,3 @@
-#ifndef _sys_platform_h
-#define _sys_platform_h
-
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -19,11 +16,13 @@
  *
  */
 
-/**
- * Macros for including platform-specific headers and aliasing
- * platform-specific classes into the qpid::sys namespace.
- */
+#include <qpid/QpidError.h>
+#include "check.h" 
 
-#define QPID_PLATFORM_H(HEADER) <qpid/PLATFORM/HEADER>
-
-#endif  /*!_sys_platform_h*/
+void qpid::sys::check(long result, const char* file, const int line) {
+    if (result != 0) {
+        char buf[512];
+        char* msg = strerror_r(errno, buf, sizeof(buf));
+        throw QpidError(errno, msg, file, line);
+    }
+}

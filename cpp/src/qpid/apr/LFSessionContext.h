@@ -20,15 +20,15 @@
 
 #include <queue>
 
-#include "apr-1/apr_network_io.h"
-#include "apr-1/apr_poll.h"
-#include "apr-1/apr_time.h"
+#include <apr-1/apr_network_io.h>
+#include <apr-1/apr_poll.h>
+#include <apr-1/apr_time.h>
 
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/sys/SessionContext.h"
-#include "qpid/sys/SessionHandler.h"
+#include <qpid/framing/AMQFrame.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/sys/Monitor.h>
+#include <qpid/sys/SessionContext.h>
+#include <qpid/sys/SessionHandler.h>
 
 #include "APRSocket.h"
 #include "LFProcessor.h"

@@ -21,11 +21,11 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "qpid/broker/Deliverable.h"
-#include "qpid/broker/Message.h"
-#include "qpid/broker/MessageStore.h"
-#include "qpid/broker/Queue.h"
-#include "qpid/broker/TxOp.h"
+#include <qpid/broker/Deliverable.h>
+#include <qpid/broker/Message.h>
+#include <qpid/broker/MessageStore.h>
+#include <qpid/broker/Queue.h>
+#include <qpid/broker/TxOp.h>
 
 namespace qpid {
     namespace broker {

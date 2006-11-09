@@ -19,9 +19,47 @@
  *
  */
 
-#include <qpid/sys/platform.h>
-#include QPID_PLATFORM_H(Socket.h)
+#include <string>
 
+#ifdef USE_APR
+#  include <apr-1/apr_network_io.h>
+#endif
+
+namespace qpid {
+namespace sys {
+
+class Socket
+{
+  public:
+    Socket();
+
+    /** Set timeout for read and write */
+    void setTimeout(long msecs);
+
+    void connect(const std::string& host, int port);
+
+    void close();
+
+    enum { SOCKET_TIMEOUT=-2, SOCKET_EOF=-3 } ErrorCode;
+
+    /** Returns bytes sent or an ErrorCode value < 0. */
+    ssize_t send(const char* data, size_t size);
+
+    /**
+     * Returns bytes received, an ErrorCode value < 0 or 0
+     * if the connection closed in an orderly manner.
+     */
+    ssize_t recv(char* data, size_t size);
+
+  private:
+#ifdef USE_APR    
+    apr_socket_t* socket;
+#else
+    int socket;
+#endif
+};
+
+}}
 
 
 #endif  /*!_sys_Socket_h*/

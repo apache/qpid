@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/apr/APRBase.h"
+#include <qpid/apr/APRBase.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
 

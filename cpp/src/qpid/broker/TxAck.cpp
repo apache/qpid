@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/TxAck.h"
+#include <qpid/broker/TxAck.h>
 
 using std::bind1st;
 using std::bind2nd;

@@ -1,5 +1,5 @@
-#ifndef _apr_Thread_h
-#define _apr_Thread_h
+#ifndef _posix_check_h
+#define _posix_check_h
 
 /*
  *
@@ -19,27 +19,16 @@
  *
  */
 
-#include <apr-1/apr_thread_proc.h>
-#include <qpid/sys/Runnable.h>
+#include <errno.h>
 
 namespace qpid {
 namespace sys {
 
-class Thread
-{
+void check(long result, const char* file, const int line);
 
-  public:
-    Thread();
-    explicit Thread(qpid::sys::Runnable*);
-    void join();
-    static Thread current();
-
-  private:
-    Thread(apr_thread_t*);
-    
-    apr_thread_t* thread;
-};
+#define CHECK(N) qpid::sys::check(N, __FILE__, __LINE__)
 
 }}
 
-#endif  /*!_apr_Thread_h*/
+
+#endif  /*!_posix_check_h*/

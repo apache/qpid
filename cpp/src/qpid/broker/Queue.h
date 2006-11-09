@@ -21,12 +21,12 @@
 #include <vector>
 #include <queue>
 #include <boost/shared_ptr.hpp>
-#include "qpid/framing/amqp_types.h"
-#include "qpid/broker/Binding.h"
-#include "qpid/broker/ConnectionToken.h"
-#include "qpid/broker/Consumer.h"
-#include "qpid/broker/Message.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/broker/Binding.h>
+#include <qpid/broker/ConnectionToken.h>
+#include <qpid/broker/Consumer.h>
+#include <qpid/broker/Message.h>
+#include <qpid/sys/Monitor.h>
 
 namespace qpid {
     namespace broker {

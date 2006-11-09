@@ -19,9 +19,9 @@
 #define _Exchange_
 
 #include <boost/shared_ptr.hpp>
-#include "qpid/broker/Deliverable.h"
-#include "qpid/broker/Queue.h"
-#include "qpid/framing/FieldTable.h"
+#include <qpid/broker/Deliverable.h>
+#include <qpid/broker/Queue.h>
+#include <qpid/framing/FieldTable.h>
 
 namespace qpid {
     namespace broker {

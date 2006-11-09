@@ -22,13 +22,6 @@
 // No code just a doxygen comment for the namespace
 
 /** \namspace qpid::sys
- * IO classes used by client and broker.
- *
- * This namespace contains platform-neutral classes.  Platform
- * specific classes are in a sub-namespace named after the
- * platform. At build time the appropriate platform classes are
- * imported into this namespace so other code does not need to be awre
- * of the difference.
- * 
+ * Portability wrappers for platform-specific details.
  */
 #endif  /*!_doxygen_summary_*/

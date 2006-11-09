@@ -20,10 +20,10 @@
 #ifndef _BodyHandler_
 #define _BodyHandler_
 
-#include "qpid/framing/AMQMethodBody.h"
-#include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/framing/AMQContentBody.h"
-#include "qpid/framing/AMQHeartbeatBody.h"
+#include <qpid/framing/AMQMethodBody.h>
+#include <qpid/framing/AMQHeaderBody.h>
+#include <qpid/framing/AMQContentBody.h>
+#include <qpid/framing/AMQHeartbeatBody.h>
 
 namespace qpid {
 namespace framing {

@@ -16,6 +16,6 @@
  *
  */
 
-#include "qpid/client/MessageListener.h"
+#include <qpid/client/MessageListener.h>
 
 qpid::client::MessageListener::~MessageListener() {}

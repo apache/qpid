@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include "qpid/client/Channel.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/client/Message.h"
-#include "qpid/QpidError.h"
+#include <qpid/client/Channel.h>
+#include <qpid/sys/Monitor.h>
+#include <qpid/client/Message.h>
+#include <qpid/QpidError.h>
 
 using namespace boost;          //to use dynamic_pointer_cast
 using namespace qpid::client;

@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/ExchangeBinding.h"
-#include "qpid/broker/Exchange.h"
+#include <qpid/broker/ExchangeBinding.h>
+#include <qpid/broker/Exchange.h>
 
 using namespace qpid::broker;
 using namespace qpid::framing;

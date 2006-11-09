@@ -19,8 +19,8 @@
 #ifndef _ProtocolVersionException_
 #define _ProtocolVersionException_
 
-#include "qpid/Exception.h"
-#include "qpid/framing/ProtocolVersion.h"
+#include <qpid/Exception.h>
+#include <qpid/framing/ProtocolVersion.h>
 #include <string>
 #include <vector>
 

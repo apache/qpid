@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-#include "qpid/client/ResponseHandler.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/QpidError.h"
+#include <qpid/client/ResponseHandler.h>
+#include <qpid/sys/Monitor.h>
+#include <qpid/QpidError.h>
 
 using namespace qpid::sys;
 

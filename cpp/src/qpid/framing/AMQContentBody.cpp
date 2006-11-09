@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/AMQContentBody.h"
+#include <qpid/framing/AMQContentBody.h>
 #include <iostream>
 
 qpid::framing::AMQContentBody::AMQContentBody(){

@@ -15,20 +15,11 @@
  * limitations under the License.
  *
  */
-#ifndef _Deliverable_
-#define _Deliverable_
 
-#include <qpid/broker/Queue.h>
+#include <qpid/sys/Thread.h>
 
-namespace qpid {
-    namespace broker {
-        class Deliverable{
-        public:
-            virtual void deliverTo(Queue::shared_ptr& queue) = 0;
-            virtual ~Deliverable(){}
-        };
-    }
+void* qpid::sys::Thread::runRunnable(void* p)
+{
+    static_cast<Runnable*>(p)->run();
+    return 0;
 }
-
-
-#endif

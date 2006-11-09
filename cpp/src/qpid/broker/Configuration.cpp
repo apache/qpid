@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/Configuration.h"
+#include <qpid/broker/Configuration.h>
 #include <string.h>
 
 using namespace qpid::broker;

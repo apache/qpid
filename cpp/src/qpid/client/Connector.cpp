@@ -89,7 +89,7 @@ void Connector::writeToSocket(char* data, size_t available){
     while(written < available && !closed){
 	ssize_t sent = socket.send(data + written, available-written);
         if(sent > 0) {
-            lastOut = getTimeMsecs();
+            lastOut = Time::now().msecs();
             written += sent;
         }
     }
@@ -97,7 +97,7 @@ void Connector::writeToSocket(char* data, size_t available){
 
 void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
-        int64_t now = getTimeMsecs();
+        int64_t now = Time::now().msecs();
         if(status == Socket::SOCKET_TIMEOUT) {
             if(idleIn && (now - lastIn > idleIn)){
                 timeoutHandler->idleIn();

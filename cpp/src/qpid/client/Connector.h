@@ -19,14 +19,14 @@
 #define _Connector_
 
 
-#include "qpid/framing/InputHandler.h"
-#include "qpid/framing/OutputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
-#include "qpid/sys/ShutdownHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/framing/InputHandler.h>
+#include <qpid/framing/OutputHandler.h>
+#include <qpid/framing/InitiationHandler.h>
+#include <qpid/framing/ProtocolInitiation.h>
+#include <qpid/sys/ShutdownHandler.h>
+#include <qpid/sys/TimeoutHandler.h>
+#include <qpid/sys/Thread.h>
+#include <qpid/sys/Monitor.h>
 #include <qpid/sys/Socket.h>
 
 namespace qpid {

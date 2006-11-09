@@ -16,7 +16,7 @@
  *
  */
 
-#include "qpid/framing/AMQBody.h"
+#include <qpid/framing/AMQBody.h>
 #include <iostream>
 
 std::ostream& qpid::framing::operator<<(std::ostream& out, const qpid::framing::AMQBody& body) 

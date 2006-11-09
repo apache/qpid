@@ -16,6 +16,6 @@
  *
  */
 
-#include "qpid/Exception.h"
+#include <qpid/Exception.h>
 
 qpid::Exception::~Exception() throw() {}

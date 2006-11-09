@@ -19,7 +19,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <map>
-#include "qpid/framing/amqp_types.h"
+#include <qpid/framing/amqp_types.h>
 
 #ifndef _FieldTable_
 #define _FieldTable_
