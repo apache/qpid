@@ -57,6 +57,11 @@ void Queue::deliver(Message::shared_ptr& msg){
     process(msg);
 }
 
+void Queue::recover(Message::shared_ptr& msg){
+    queueing = true;
+    messages.push(msg);
+}
+
 void Queue::process(Message::shared_ptr& msg){
     Mutex::ScopedLock locker(lock);
     if(queueing || !dispatch(msg)){

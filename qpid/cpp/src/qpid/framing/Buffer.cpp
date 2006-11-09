@@ -18,12 +18,15 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h" 
 
-qpid::framing::Buffer::Buffer(u_int32_t _size) : size(_size), position(0), limit(_size){
+qpid::framing::Buffer::Buffer(u_int32_t _size) : size(_size), owner(true), position(0), limit(_size){
     data = new char[size];
 }
 
+qpid::framing::Buffer::Buffer(char* _data, u_int32_t _size) : size(_size), owner(false), data(_data), position(0), limit(_size){
+}
+
 qpid::framing::Buffer::~Buffer(){
-    delete[] data;
+    if(owner) delete[] data;
 }
 
 void qpid::framing::Buffer::flip(){
