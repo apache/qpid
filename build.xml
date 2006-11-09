@@ -126,7 +126,7 @@
 
         <!-- Copy Various Txt files to prepare directory -->
          <copy todir="${build.release.prepare}" >
-             <fileset dir="doc/Release Docs">
+             <fileset dir="doc/release-docs">
                  <include name="LICENSE.txt"/>
                  <include name="README.txt"/>
                  <include name="NOTICE.txt"/>
