@@ -105,7 +105,7 @@
   <target name="archive" depends="zip,gzip,bzip2"
           description="produce all archive formats of the distribution tree"/>
 
-    <target name="preparerelease">
+    <target name="preparerelease">        
         <mkdir dir="${release.dir}"/>
     </target>
 
@@ -210,13 +210,11 @@
         <property name="release.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}"/>
         <mkdir dir="${build.release}/${project.name}-java-${release.fullversion}"/>
 
-        <iterate target="dist"/>
-
-        <copy todir="${release.bin.dir}">
-            <fileset dir="${dist.dir}">
-                <include name="**"/>
-            </fileset>
-        </copy>
+        <iterate target="dist">
+            <property name="module.preix" value="${project.name}-"/>
+            <property name="module.suffix" value="-${release.fullversion}"/>
+            <property name="dist.dest.dir" value="${release.bin.dir}"/>
+        </iterate>
 
         <antcall target="copyreleasedocs">
             <param name="todir" value="${release.bin.dir}"/>
