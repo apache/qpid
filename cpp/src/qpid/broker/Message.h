@@ -40,8 +40,8 @@ namespace qpid {
             typedef content_list::iterator content_iterator;
 
             const ConnectionToken* const publisher;
-            const string exchange;
-            const string routingKey;
+            string exchange;
+            string routingKey;
             const bool mandatory;
             const bool immediate;
             bool redelivered;
@@ -59,6 +59,7 @@ namespace qpid {
             Message(const ConnectionToken* const publisher, 
                     const string& exchange, const string& routingKey, 
                     bool mandatory, bool immediate);
+            Message(qpid::framing::Buffer& buffer);
             ~Message();
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
             void addContent(qpid::framing::AMQContentBody::shared_ptr data);
@@ -84,7 +85,14 @@ namespace qpid {
             u_int64_t contentSize() const { return size; }
             u_int64_t getPersistenceId() const { return persistenceId; }
             void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
+            void encode(qpid::framing::Buffer& buffer);
+            /**
+             * @returns the size of the buffer needed to encode this message
+             */
+            u_int32_t encodedSize();
+            
         };
+
     }
 }
 

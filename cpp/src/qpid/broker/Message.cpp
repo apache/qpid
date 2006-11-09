@@ -33,6 +33,24 @@ Message::Message(const ConnectionToken* const _publisher,
                                                      size(0),
                                                      persistenceId(0) {}
 
+Message::Message(Buffer& buffer) : publisher(0), mandatory(false), immediate(false), redelivered(false), size(0), persistenceId(0){
+    buffer.getShortString(exchange);
+    buffer.getShortString(routingKey);
+    
+    AMQFrame headerFrame;
+    headerFrame.decode(buffer);
+    AMQHeaderBody::shared_ptr headerBody = dynamic_pointer_cast<AMQHeaderBody, AMQBody>(headerFrame.getBody());
+    setHeader(headerBody);
+    
+    AMQContentBody::shared_ptr contentBody;
+    while (buffer.available()) {
+        AMQFrame contentFrame;
+        contentFrame.decode(buffer);
+        contentBody = dynamic_pointer_cast<AMQContentBody, AMQBody>(contentFrame.getBody());
+        addContent(contentBody);
+    }        
+}
+
 Message::~Message(){}
 
 void Message::setHeader(AMQHeaderBody::shared_ptr _header){
@@ -96,4 +114,36 @@ bool Message::isPersistent()
     if(!header) return false;
     BasicHeaderProperties* props = getHeaderProperties();
     return props && props->getDeliveryMode() == PERSISTENT;
+}
+
+void Message::encode(Buffer& buffer)
+{
+    buffer.putShortString(exchange);
+    buffer.putShortString(routingKey);
+    
+    AMQBody::shared_ptr body;
+
+    body = static_pointer_cast<AMQBody, AMQHeaderBody>(header);
+
+    AMQFrame headerFrame(0, body);
+    headerFrame.encode(buffer);
+    
+    for (content_iterator i = content.begin(); i != content.end(); i++) {
+        body = static_pointer_cast<AMQBody, AMQContentBody>(*i);
+        AMQFrame contentFrame(0, body);
+        contentFrame.encode(buffer);
+    }    
+}
+
+u_int32_t Message::encodedSize()
+{
+    int encodedContentSize(0);
+    for (content_iterator i = content.begin(); i != content.end(); i++) {
+        encodedContentSize += (*i)->size() + 8;//8 extra bytes for the frame (TODO, could replace frame by simple size)
+    }
+
+    return exchange.size() + 1
+        + routingKey.size() + 1
+        + header->size() + 8 //8 extra bytes for frame (TODO, could actually remove the frame)
+        + encodedContentSize;
 }
