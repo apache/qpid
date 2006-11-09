@@ -114,7 +114,7 @@ int main(int argc, char** argv){
                 if(!max || time > max) max = time;
                 if(!min || time < min) min = time;
                 sum += time;
-                std::cout << "Completed " << (i+1) << " of " << batchSize << " in " << nsecsToMsecs(time) << "ms" << std::endl;
+                std::cout << "Completed " << (i+1) << " of " << batchSize << " in " << time << "ms" << std::endl;
             }
             publisher.terminate();
             int64_t avg = sum / batchSize;
@@ -133,13 +133,12 @@ int main(int argc, char** argv){
 Publisher::Publisher(Channel* _channel, const std::string& _controlTopic, bool tx) : 
     channel(_channel), controlTopic(_controlTopic), transactional(tx){}
 
-void Publisher::received(Message& msg){
+void Publisher::received(Message& ){
     //count responses and when all are received end the current batch
     Monitor::ScopedLock l(monitor);
     if(--count == 0){
         monitor.notify();
     }
-    std::cout << "Received report: " << msg.getData() << " (" << count << " remaining)." << std::endl;
 }
 
 void Publisher::waitForCompletion(int msgs){

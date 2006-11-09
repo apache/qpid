@@ -1,5 +1,5 @@
-#ifndef _concurrent_Time_h
-#define _concurrent_Time_h
+#ifndef _sys_Time_h
+#define _sys_Time_h
 
 /*
  *
@@ -35,4 +35,4 @@ int64_t getTimeMsecs();
 
 }}
 
-#endif  /*!_concurrent_Time_h*/
+#endif  /*!_sys_Time_h*/
