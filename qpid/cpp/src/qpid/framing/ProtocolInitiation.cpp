@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/ProtocolInitiation.h"
+#include <qpid/framing/ProtocolInitiation.h>
 
 qpid::framing::ProtocolInitiation::ProtocolInitiation(){}
 

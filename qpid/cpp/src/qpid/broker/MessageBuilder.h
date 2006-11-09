@@ -18,12 +18,12 @@
 #ifndef _MessageBuilder_
 #define _MessageBuilder_
 
-#include "qpid/QpidError.h"
-#include "qpid/broker/Exchange.h"
-#include "qpid/broker/Message.h"
-#include "qpid/framing/AMQContentBody.h"
-#include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/framing/BasicPublishBody.h"
+#include <qpid/QpidError.h>
+#include <qpid/broker/Exchange.h>
+#include <qpid/broker/Message.h>
+#include <qpid/framing/AMQContentBody.h>
+#include <qpid/framing/AMQHeaderBody.h>
+#include <qpid/framing/BasicPublishBody.h>
 
 namespace qpid {
     namespace broker {

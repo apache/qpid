@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/FieldTable.h" 
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/FieldTable.h> 
 
 qpid::framing::Buffer::Buffer(u_int32_t _size) : size(_size), owner(true), position(0), limit(_size){
     data = new char[size];

@@ -20,10 +20,10 @@
 
 #include <algorithm>
 #include <list>
-#include "qpid/broker/AccumulatedAck.h"
-#include "qpid/broker/Message.h"
-#include "qpid/broker/Prefetch.h"
-#include "qpid/broker/Queue.h"
+#include <qpid/broker/AccumulatedAck.h>
+#include <qpid/broker/Message.h>
+#include <qpid/broker/Prefetch.h>
+#include <qpid/broker/Queue.h>
 
 namespace qpid {
     namespace broker {

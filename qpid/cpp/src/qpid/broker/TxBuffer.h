@@ -21,8 +21,8 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
-#include "qpid/broker/TransactionalStore.h"
-#include "qpid/broker/TxOp.h"
+#include <qpid/broker/TransactionalStore.h>
+#include <qpid/broker/TxOp.h>
 
 /**
  * Represents a single transaction. As such, an instance of this class

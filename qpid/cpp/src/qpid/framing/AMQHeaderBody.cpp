@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/QpidError.h"
-#include "qpid/framing/BasicHeaderProperties.h"
+#include <qpid/framing/AMQHeaderBody.h>
+#include <qpid/QpidError.h>
+#include <qpid/framing/BasicHeaderProperties.h>
 
 qpid::framing::AMQHeaderBody::AMQHeaderBody(int classId) : weight(0), contentSize(0){
     createProperties(classId);

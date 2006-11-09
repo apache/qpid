@@ -16,6 +16,6 @@
  *
  */
 
-#include "qpid/framing/InitiationHandler.h"
+#include <qpid/framing/InitiationHandler.h>
 
 qpid::framing::InitiationHandler::~InitiationHandler() {}

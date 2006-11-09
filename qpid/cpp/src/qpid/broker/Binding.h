@@ -18,7 +18,7 @@
 #ifndef _Binding_
 #define _Binding_
 
-#include "qpid/framing/FieldTable.h"
+#include <qpid/framing/FieldTable.h>
 
 namespace qpid {
     namespace broker {

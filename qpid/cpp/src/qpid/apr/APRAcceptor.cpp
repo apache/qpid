@@ -15,13 +15,40 @@
  * limitations under the License.
  *
  */
-#include "Acceptor.h"
+#include <qpid/sys/Acceptor.h>
+#include <qpid/sys/SessionHandlerFactory.h>
+#include "LFProcessor.h"
+#include "LFSessionContext.h"
 #include "APRBase.h"
 #include "APRPool.h"
 
-using namespace qpid::sys;
+namespace qpid {
+namespace sys {
 
-Acceptor::Acceptor(int16_t port_, int backlog, int threads) :
+class APRAcceptor : public Acceptor
+{
+  public:
+    APRAcceptor(int16_t port, int backlog, int threads);
+    virtual int16_t getPort() const;
+    virtual void run(qpid::sys::SessionHandlerFactory* factory);
+    virtual void shutdown();
+
+  private:
+    int16_t port;
+    LFProcessor processor;
+    apr_socket_t* socket;
+    volatile bool running;
+};
+
+// Define generic Acceptor::create() to return APRAcceptor.
+Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads)
+{
+    return Acceptor::shared_ptr(new APRAcceptor(port, backlog, threads));
+}
+// Must define Acceptor virtual dtor.
+Acceptor::~Acceptor() {}
+
+APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads) :
     port(port_),
     processor(APRPool::get(), threads, 1000, 5000000)
 {
@@ -33,13 +60,13 @@ Acceptor::Acceptor(int16_t port_, int backlog, int threads) :
     CHECK_APR_SUCCESS(apr_socket_listen(socket, backlog));
 }
 
-int16_t Acceptor::getPort() const {
+int16_t APRAcceptor::getPort() const {
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
     return address->port;
 }
 
-void Acceptor::run(SessionHandlerFactory* factory) {
+void APRAcceptor::run(SessionHandlerFactory* factory) {
     running = true;
     processor.start();
     std::cout << "Listening on port " << getPort() << "..." << std::endl;
@@ -65,7 +92,7 @@ void Acceptor::run(SessionHandlerFactory* factory) {
     shutdown();
 }
 
-void Acceptor::shutdown() {
+void APRAcceptor::shutdown() {
     // TODO aconway 2006-10-12: Cleanup, this is not thread safe.
     if (running) {
         running = false;
@@ -75,3 +102,4 @@ void Acceptor::shutdown() {
 }
 
 
+}}

@@ -21,9 +21,9 @@
 #include <iostream>
 #include <queue>
 #include <qpid/sys/Monitor.h>
-#include "qpid/broker/Queue.h"
-#include "qpid/broker/QueueRegistry.h"
-#include "qpid/sys/Thread.h"
+#include <qpid/broker/Queue.h>
+#include <qpid/broker/QueueRegistry.h>
+#include <qpid/sys/Thread.h>
 
 namespace qpid {
     namespace broker{

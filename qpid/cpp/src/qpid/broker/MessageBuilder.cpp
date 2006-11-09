@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/MessageBuilder.h"
+#include <qpid/broker/MessageBuilder.h>
 
 using namespace qpid::broker;
 using namespace qpid::framing;

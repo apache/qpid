@@ -16,6 +16,6 @@
  *
  */
 
-#include "qpid/client/ReturnedMessageHandler.h"
+#include <qpid/client/ReturnedMessageHandler.h>
 
 qpid::client::ReturnedMessageHandler::~ReturnedMessageHandler() {}

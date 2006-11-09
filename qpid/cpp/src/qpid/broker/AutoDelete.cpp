@@ -15,7 +15,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/AutoDelete.h"
+#include <qpid/broker/AutoDelete.h>
+#include <qpid/sys/Time.h>
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -59,7 +60,7 @@ void AutoDelete::run(){
     Monitor::ScopedLock l(monitor);
     while(!stopped){
         process();
-        monitor.wait(msecsToNsecs(period));
+        monitor.wait(period * Time::NSEC_PER_MSEC);
     }
 }
 

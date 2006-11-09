@@ -16,7 +16,7 @@
  *
  */
 #include <boost/shared_ptr.hpp>
-#include "qpid/framing/BodyHandler.h"
+#include <qpid/framing/BodyHandler.h>
 
 using namespace qpid::framing;
 using namespace boost;

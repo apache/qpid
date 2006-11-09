@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/AccumulatedAck.h"
+#include <qpid/broker/AccumulatedAck.h>
 
 using std::less_equal;
 using std::bind2nd;

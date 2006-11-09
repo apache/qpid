@@ -21,9 +21,9 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "qpid/broker/AccumulatedAck.h"
-#include "qpid/broker/DeliveryRecord.h"
-#include "qpid/broker/TxOp.h"
+#include <qpid/broker/AccumulatedAck.h>
+#include <qpid/broker/DeliveryRecord.h>
+#include <qpid/broker/TxOp.h>
 
 namespace qpid {
     namespace broker {

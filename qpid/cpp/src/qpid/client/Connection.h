@@ -21,18 +21,18 @@
 #ifndef _Connection_
 #define _Connection_
 
-#include "qpid/QpidError.h"
-#include "qpid/client/Connector.h"
-#include "qpid/sys/ShutdownHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
+#include <qpid/QpidError.h>
+#include <qpid/client/Connector.h>
+#include <qpid/sys/ShutdownHandler.h>
+#include <qpid/sys/TimeoutHandler.h>
 
-#include "qpid/framing/amqp_framing.h"
-#include "qpid/client/Exchange.h"
-#include "qpid/client/IncomingMessage.h"
-#include "qpid/client/Message.h"
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
-#include "qpid/client/ResponseHandler.h"
+#include <qpid/framing/amqp_framing.h>
+#include <qpid/client/Exchange.h>
+#include <qpid/client/IncomingMessage.h>
+#include <qpid/client/Message.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/Queue.h>
+#include <qpid/client/ResponseHandler.h>
 
 namespace qpid {
 namespace client {

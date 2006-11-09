@@ -1,39 +1,49 @@
- #
- # Copyright (c) 2006 The Apache Software Foundation
- #
- # Licensed under the Apache License, Version 2.0 (the "License");
- # you may not use this file except in compliance with the License.
- # You may obtain a copy of the License at
- #
- #    http://www.apache.org/licenses/LICENSE-2.0
- #
- # Unless required by applicable law or agreed to in writing, software
- # distributed under the License is distributed on an "AS IS" BASIS,
- # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- # See the License for the specific language governing permissions and
- # limitations under the License.
- #
+#
+# Copyright (c) 2006 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-## Build platform and type defaults
-TYPE := debug
-PLATFORM := apr
+# Use APR by default till Posix is complete.
+USE_APR := 1
 
-# Local options, may override PLATFORM and/or TYPE
+# Local options.
 -include options-local.mk
 
+## Release vs. debug build.
+ifdef RELEASE
+BUILD := release
+CXXFLAGS := $(CXXFLAGS) -O3 -DNDEBUG
+else
+BUILD := debug
+CXXFLAGS := $(CXXFLAGS) -ggdb3
+endif
+
 ## Platform specific options
-
-# apr: Apache Portable Runtime.
-CXXFLAGS_apr := -I/usr/local/apr/include
-LDFLAGS_apr  := -L/usr/local/apr/lib -lapr-1 
-
-# posix: Native posix implementation
-CXXFLAGS_posix :=
-LDFLAGS_posix  :=
+ifdef USE_APR
+PLATFORM := apr
+IGNORE   := posix
+CXXFLAGS := $(CXXFLAGS) -DUSE_APR -I/usr/local/apr/include
+LDFLAGS  := $(LDFLAGS) -L/usr/local/apr/lib -lapr-1 
+else
+PLATFORM := posix
+IGNORE   := apr
+LDFLAGS  := $(LDFLAGS) -lpthread -lrt
+endif
 
 ## Build directories.
 
-BUILD=$(PLATFORM)-$(TYPE)
+BUILD :=$(PLATFORM)-$(BUILD)
 GENDIR:=build/gen
 BINDIR:=build/$(BUILD)/bin
 LIBDIR:=build/$(BUILD)/lib
@@ -51,23 +61,19 @@ EXTRA_LIBDIRS  :=
 
 ## Compile flags
 
-# Release vs. debug flags.
-CXXFLAGS_debug   := -ggdb3
-CXXFLAGS_release := -O3 -DNDEBUG
-
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
 # qpid-dev list.
 # 
 # The following warnings deliberately omitted, they warn on valid code.
-# -Wno-unreachable-code -Wpadded -Winline
+# -Wunreachable-code -Wpadded -Winline
+# -Wshadow - warns about boost headers.
 # 
-WARN := -Werror -pedantic -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch
+WARN := -Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers
 
-INCLUDES :=  $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
-DEFINES  := -DPLATFORM=$(PLATFORM)
-LDFLAGS  := -L$(LIBDIR) $(LDFLAGS_$(PLATFORM))
-CXXFLAGS :=  $(DEFINES) $(WARN) -MMD -fpic $(INCLUDES) $(CXXFLAGS_$(PLATFORM)) $(CXXFLAGS_$(TYPE))
+INCLUDES := $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
+LDFLAGS  := $(LDFLAGS) -L$(LIBDIR) 
+CXXFLAGS := $(CXXFLAGS) $(WARN) -MMD -fpic $(INCLUDES) 
 
 ## Macros for linking, must be late evaluated
 

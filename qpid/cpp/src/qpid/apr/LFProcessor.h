@@ -18,12 +18,12 @@
 #ifndef _LFProcessor_
 #define _LFProcessor_
 
-#include "apr-1/apr_poll.h"
+#include <apr-1/apr_poll.h>
 #include <iostream>
 #include <vector>
 #include <qpid/sys/Monitor.h>
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Thread.h"
+#include <qpid/sys/Runnable.h>
+#include <qpid/sys/Thread.h>
 
 namespace qpid {
 namespace sys {

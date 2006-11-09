@@ -15,9 +15,9 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/Broker.h"
-#include "qpid/broker/Configuration.h"
-#include "apr-1/apr_signal.h"
+#include <qpid/broker/Broker.h>
+#include <qpid/broker/Configuration.h>
+#include <apr-1/apr_signal.h>
 #include <iostream>
 #include <memory>
 

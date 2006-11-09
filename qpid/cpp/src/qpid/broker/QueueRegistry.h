@@ -19,8 +19,8 @@
 #define _QueueRegistry_
 
 #include <map>
-#include "qpid/sys/Monitor.h"
-#include "qpid/broker/Queue.h"
+#include <qpid/sys/Monitor.h>
+#include <qpid/broker/Queue.h>
 
 namespace qpid {
 namespace broker {

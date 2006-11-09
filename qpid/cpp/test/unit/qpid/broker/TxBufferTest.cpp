@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/TxBuffer.h"
+#include <qpid/broker/TxBuffer.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <vector>

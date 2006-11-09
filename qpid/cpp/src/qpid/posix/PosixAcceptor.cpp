@@ -16,24 +16,30 @@
  *
  */
 
-#include <qpid/sys/Time.h>
-#include "apr-1/apr_time.h"
+#include <qpid/sys/Acceptor.h>
+#include <qpid/Exception.h>
 
 namespace qpid {
 namespace sys {
 
-int64_t getTimeNsecs() 
-{
-    // APR returns microseconds.
-    return apr_time_now() * 1000;
+namespace {
+void fail() { throw qpid::Exception("PosixAcceptor not implemented"); }
 }
 
-int64_t getTimeMsecs() 
+class PosixAcceptor : public Acceptor {
+  public:
+    virtual int16_t getPort() const { fail(); return 0; }
+    virtual void run(qpid::sys::SessionHandlerFactory* ) { fail(); }
+    virtual void shutdown() { fail(); }
+};
+
+// Define generic Acceptor::create() to return APRAcceptor.
+Acceptor::shared_ptr Acceptor::create(int16_t , int, int )
 {
-    // APR returns microseconds.
-    return apr_time_now() / 1000;
+    return Acceptor::shared_ptr(new PosixAcceptor());
 }
 
+// Must define Acceptor virtual dtor.
+Acceptor::~Acceptor() {}
 
 }}
-

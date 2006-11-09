@@ -21,17 +21,52 @@
 
 #include <stdint.h>
 
+#ifdef USE_APR
+#  include <apr-1/apr_time.h>
+#else
+#  include <time.h>
+#endif
+
 namespace qpid {
 namespace sys {
 
-inline int64_t msecsToNsecs(int64_t msecs) { return msecs * 1000 *1000; }
-inline int64_t nsecsToMsecs(int64_t nsecs) { return nsecs / (1000 *1000); }
+class Time
+{
+  public:
+    static Time now();
+ 
+    enum {
+        NSEC_PER_SEC=1000*1000*1000,
+        NSEC_PER_MSEC=1000*1000,
+        NSEC_PER_USEC=1000
+    };
 
-/** Nanoseconds since epoch */
-int64_t getTimeNsecs();
+    inline Time(int64_t ticks=0, long nsec_per_tick=1);
 
-/** Milliseconds since epoch */
-int64_t getTimeMsecs();
+    void set(int64_t ticks, long nsec_per_tick=1);
+        
+    inline int64_t msecs() const;
+    inline int64_t usecs() const;
+    int64_t nsecs() const;
+
+#ifndef USE_APR
+    const struct timespec& getTimespec() const { return time; }
+    struct timespec& getTimespec() { return time; }
+#endif
+    
+  private:
+#ifdef USE_APR
+    apr_time_t time;
+#else
+    struct timespec time;
+#endif
+};
+
+Time::Time(int64_t ticks, long nsec_per_tick) { set(ticks, nsec_per_tick); }
+
+int64_t Time::msecs() const { return nsecs() / NSEC_PER_MSEC; }
+
+int64_t Time::usecs() const { return nsecs() / NSEC_PER_USEC; }
 
 }}
 

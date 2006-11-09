@@ -16,8 +16,8 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/QpidError.h"
+#include <qpid/framing/AMQFrame.h>
+#include <qpid/QpidError.h>
 
 using namespace qpid::framing;
 

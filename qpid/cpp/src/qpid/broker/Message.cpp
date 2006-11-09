@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "qpid/broker/Message.h"
+#include <qpid/broker/Message.h>
 #include <iostream>
 
 using namespace boost;

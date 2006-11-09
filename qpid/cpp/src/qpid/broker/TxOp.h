@@ -18,7 +18,7 @@
 #ifndef _TxOp_
 #define _TxOp_
 
-#include "qpid/broker/TransactionalStore.h"
+#include <qpid/broker/TransactionalStore.h>
 
 namespace qpid {
     namespace broker {

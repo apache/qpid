@@ -16,8 +16,8 @@
  *
  */
 #include <iostream>
-#include "qpid/framing/amqp_framing.h"
-#include "qpid_test_plugin.h"
+#include <qpid/framing/amqp_framing.h>
+#include <qpid_test_plugin.h>
 using namespace qpid::framing;
 
 class BodyHandlerTest : public CppUnit::TestCase  

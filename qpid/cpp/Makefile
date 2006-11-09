@@ -51,26 +51,30 @@ $(BUILDDIRS):
 
 ## Library rules
 
-LIB_common := $(call LIBFILE,common,1.0)
-$(LIB_common): $(call OBJECTS,qpid qpid/framing qpid/sys qpid/$(PLATFORM))
+LIB_common  := $(call LIBFILE,common,1.0)
+DIRS_common := qpid qpid/framing qpid/sys qpid/$(PLATFORM)
+$(LIB_common): $(call OBJECTS, $(DIRS_common))
 	$(LIB_COMMAND)
 
-LIB_client :=$(call LIBFILE,client,1.0)
-$(LIB_client): $(call OBJECTS,qpid/client) $(LIB_common)
+LIB_client  := $(call LIBFILE,client,1.0)
+DIRS_client := qpid/client
+$(LIB_client): $(call OBJECTS,$(DIRS_client)) $(LIB_common)
 	$(LIB_COMMAND)
 
-LIB_broker :=$(call LIBFILE,broker,1.0)
-$(LIB_broker): $(call OBJECTS,qpid/broker) $(LIB_common)
+LIB_broker  := $(call LIBFILE,broker,1.0)
+DIRS_broker := qpid/broker
+$(LIB_broker): $(call OBJECTS,$(DIRS_broker)) $(LIB_common)
 	$(LIB_COMMAND)
 
 ## Daemon executable
 $(BINDIR)/qpidd: $(OBJDIR)/qpidd.o $(LIB_common) $(LIB_broker)
 	mkdir -p $(dir $@)
-	$(CXX) -o $@ $(CXXFLAGS) $(LDFLAGS) -lapr-1 $^ 
+	$(CXX) -o $@ $(CXXFLAGS) $(LDFLAGS) $^ 
 all-nogen: $(BINDIR)/qpidd
 
 ## Unit tests.
 UNITTEST_SRC:=$(shell find test/unit -name *Test.cpp)
+UNITTEST_SRC:=$(filter-out test/unit/qpid/$(IGNORE)/%,$(UNITTEST_SRC))
 UNITTESTS:=$(UNITTEST_SRC:test/unit/%.cpp=$(TESTDIR)/%.so)
 
 unittest: all 
@@ -100,7 +104,7 @@ endef
 $(foreach dir,$(SRCDIRS),$(eval $(call CPPRULE,$(dir))))
 
 #  Unit test plugin libraries.
-$(TESTDIR)/%Test.so: test/unit/%Test.cpp $(LIB_common) $(LIB_client)
+$(TESTDIR)/%Test.so: test/unit/%Test.cpp $(LIB_common) $(LIB_broker)
 	mkdir -p $(dir $@)
 	$(CXX) -shared -o $@ $< $(CXXFLAGS)  -Itest/include $(LDFLAGS) -lcppunit $(LIB_common) $(LIB_broker)
 
@@ -111,6 +115,7 @@ $(TESTDIR)/%: test/client/%.cpp $(LIB_common) $(LIB_client)
 CLIENT_TEST_SRC := $(wildcard test/client/*.cpp)
 CLIENT_TEST_EXE := $(CLIENT_TEST_SRC:test/client/%.cpp=$(TESTDIR)/%)
 all-nogen: $(CLIENT_TEST_EXE)
+client: $(CLIENT_TEST_EXE)
 
 ## include dependencies
 DEPFILES:=$(wildcard $(OBJDIR)/*.d $(OBJDIR)/*/*.d $(OBJDIR)/*/*/*.d)

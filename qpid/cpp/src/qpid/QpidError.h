@@ -18,7 +18,7 @@
  *
  */
 #include <string>
-#include "qpid/Exception.h"
+#include <qpid/Exception.h>
 
 namespace qpid {
 
