@@ -105,10 +105,11 @@
   <target name="archive" depends="zip,gzip,bzip2"
           description="produce all archive formats of the distribution tree"/>
 
-
     <target name="preparerelease">
         <mkdir dir="${release.dir}"/>
+    </target>
 
+    <target name="preparereleasesrc" depends="preparerelease">
 
         <!-- Copy Source to prepare directory -->
         <mkdir dir="${build.release.prepare}/src/java"/>
@@ -133,10 +134,10 @@
 
                 <!-- Exclude Generated content -->
                 <exclude name="**/${build.dir}/**"/>
-                <exclude name="**/${release.dir}/**"/>                
+                <exclude name="**/${release.dir}/**"/>
             </fileset>
         </copy>
-        
+
         <!-- Copy Spec files for protocol generation -->
         <copy todir="${build.release.prepare}/src/">
             <fileset dir=".." casesensitive="false">
@@ -144,51 +145,92 @@
             </fileset>
         </copy>
 
+        <antcall target="copyreleasedocs">
+            <param name="todir" value="${build.release.prepare}"/>
+        </antcall>
 
-        <!-- Copy Various Txt files to prepare directory -->
-         <copy todir="${build.release.prepare}" >
-             <fileset dir="doc/release-docs">
-                 <include name="LICENSE.txt"/>
-                 <include name="README.txt"/>
-                 <include name="NOTICE.txt"/>
-                 <include name="RELEASE_NOTES.txt"/>
-             </fileset>
-         </copy>
+        <!-- Copy all licenses to license directory -->
 
-           <!-- Copy all licenses to license directory -->
+        <mkdir dir="${build.release.prepare}/licenses"/>
 
-         <mkdir dir="${build.release.prepare}/licenses"/>
-
-            <copy todir="${build.release.prepare}/licenses" >
-                <fileset dir="client/${lib.dir}" casesensitive="false">
-                    <include name="**/license.txt"/>
-                </fileset>
-                <fileset dir="broker/${lib.dir}" casesensitive="false">
-                    <include name="**/license.txt"/>
-                </fileset>
-                <fileset dir="common/${lib.dir}" casesensitive="false">
-                    <include name="**/license.txt"/>
-                </fileset>
-            </copy>
+        <copy todir="${build.release.prepare}/licenses">
+            <fileset dir="client/${lib.dir}" casesensitive="false">
+                <include name="**/license.txt"/>
+            </fileset>
+            <fileset dir="broker/${lib.dir}" casesensitive="false">
+                <include name="**/license.txt"/>
+            </fileset>
+            <fileset dir="common/${lib.dir}" casesensitive="false">
+                <include name="**/license.txt"/>
+            </fileset>
+        </copy>
 
     </target>
 
-  <target name="releasesrc" depends="preparerelease">
-
-    <tar compression="gzip" longfile="gnu" destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.tar.gz">
-      <tarfileset dir="${build.release.prepare}" mode="755" username="ant" group="ant">
-        <include name="**"/>
-      </tarfileset>
-    </tar>
-
-    <zip destfile="${release.dir}/${project.name}-java-${release.fullversion}-src.zip" >
-      <zipfileset dir="${build.release.prepare}" >
-        <include name="**"/>
-      </zipfileset>
-    </zip>
-
-  </target>
+    <target name="copyreleasedocs">
+        <!-- Copy Various Txt files to prepare directory -->
+        <copy todir="${todir}">
+            <fileset dir="doc/release-docs">
+                <include name="LICENSE.txt"/>
+                <include name="README.txt"/>
+                <include name="NOTICE.txt"/>
+                <include name="RELEASE_NOTES.txt"/>
+            </fileset>
+        </copy>
+    </target>
 
 
+    <target name="tgzandzip">
+        <tar compression="gzip" longfile="gnu"
+             destfile="${file}.tar.gz">
+            <tarfileset dir="${source}" mode="755" username="ant" group="ant">
+                <include name="**"/>
+            </tarfileset>
+        </tar>
+
+        <zip destfile="${file}.zip">
+            <zipfileset dir="${source}">
+                <include name="**"/>
+            </zipfileset>
+        </zip>
+    </target>
+
+    <target name="std-src-release" depends="preparereleasesrc">
+
+        <antcall target="tgzandzip">
+            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-src"/>
+            <param name="source" value="${build.release.prepare}"/>
+        </antcall>
+
+    </target>
+
+
+    <target name="std-bin-release" depends="preparerelease">
+
+        <property name="release.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}"/>
+        <mkdir dir="${build.release}/${project.name}-java-${release.fullversion}"/>
+
+        <iterate target="dist"/>
+
+        <copy todir="${release.bin.dir}">
+            <fileset dir="${dist.dir}">
+                <include name="**"/>
+            </fileset>
+        </copy>
+
+        <antcall target="copyreleasedocs">
+            <param name="todir" value="${release.bin.dir}"/>
+        </antcall>
+
+        <mkdir dir="${release.bin.dir}/${log.dir}"/>
+
+        <antcall target="tgzandzip">
+            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-bin"/>
+            <param name="source" value="${release.bin.dir}"/>
+        </antcall>
+
+    </target>
+
+    <target name="std-release" depends="std-src-release, std-bin-release"/>
 
 </project>

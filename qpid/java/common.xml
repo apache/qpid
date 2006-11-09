@@ -36,6 +36,7 @@
   <property name="etc.dir" value="etc"/>
   <property name="bin.dir" value="bin"/>
   <property name="etc.dir" value="etc"/>
+  <property name="log.dir" value="log"/>
   <property name="resources.dir" value="resources"/>
   <property name="stylesheets.dir" value="stylesheets"/>
   <property name="src.bin" value="${bin.dir}"/>
