@@ -19,12 +19,12 @@ includes (binary only):
           http://saxon.sourceforge.net/
 
 	- The JUnit regression testing framework written by Erich Gamma 
-          and Kent Beck and ditributed under the Common Public License v1.0.
+          and Kent Beck and distributed under the Common Public License v1.0.
           JUnit is available for download at 
           http://sourceforge.net/projects/junit/
 
 	- The Simple Logging Facade For Java (slf4j), Copyright (c) 
-          2004-2005 SLF4J.ORG, Copyright (c) 2004-2005 QOS.ch. sljf4j is 
+          2004-2005 SLF4J.ORG, Copyright (c) 2004-2005 QOS.ch. slf4j is 
           licensed under identical terms to the MIT/X11 license and 
           available for download at http://www.slf4j.org/
 
