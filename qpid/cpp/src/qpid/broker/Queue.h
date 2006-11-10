@@ -103,7 +103,6 @@ namespace qpid {
             void dispatch();
             void consume(Consumer* c, bool exclusive = false);
             void cancel(Consumer* c);
-            Message::shared_ptr dequeue();
             u_int32_t purge();
             u_int32_t getMessageCount() const;
             u_int32_t getConsumerCount() const;
@@ -116,7 +115,14 @@ namespace qpid {
             bool canAutoDelete() const;
 
             void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
+            /**
+             * dequeue from store (only done once messages is acknowledged)
+             */
             void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
+            /**
+             * dequeues from memory only
+             */
+            Message::shared_ptr dequeue();
         };
     }
 }
