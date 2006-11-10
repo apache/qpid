@@ -147,23 +147,7 @@
 
         <antcall target="copyreleasedocs">
             <param name="todir" value="${build.release.prepare}"/>
-        </antcall>
-
-        <!-- Copy all licenses to license directory -->
-
-        <mkdir dir="${build.release.prepare}/licenses"/>
-
-        <copy todir="${build.release.prepare}/licenses">
-            <fileset dir="client/${lib.dir}" casesensitive="false">
-                <include name="**/license.txt"/>
-            </fileset>
-            <fileset dir="broker/${lib.dir}" casesensitive="false">
-                <include name="**/license.txt"/>
-            </fileset>
-            <fileset dir="common/${lib.dir}" casesensitive="false">
-                <include name="**/license.txt"/>
-            </fileset>
-        </copy>
+        </antcall>    
 
     </target>
 
