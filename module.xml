@@ -193,6 +193,19 @@
     </target>
 
     <target name="jar" depends="build">
+
+        <copy todir="${module.classes}">
+            <fileset dir="${resources.root.dir}">
+                <include name="${metainf.dir}/**"/>
+            </fileset>
+        </copy>
+        <copy todir="${module.classes}/${metainf.dir}">
+             <fileset dir="${project.root}">
+                <include name="LICENSE.txt"/>
+                <include name="NOTICE.txt"/>
+            </fileset>
+        </copy>
+
         <jar destfile="${module.jar}" basedir="${module.classes}"/>
     </target>
 

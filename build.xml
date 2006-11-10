@@ -157,7 +157,7 @@
             <fileset dir="release-docs">
                 <include name="RELEASE_NOTES.txt"/>
             </fileset>
-            <fileset dir="">
+            <fileset dir="${project.root}">
                 <include name="LICENSE.txt"/>
                 <include name="README.txt"/>
                 <include name="NOTICE.txt"/>
