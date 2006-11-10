@@ -40,16 +40,15 @@
         <filtermapper>
             <replacestring from="${file.separator}" to="-"/>
         </filtermapper>
-        <globmapper from="*" to="${prefix}*"/>
-        <globmapper from="*" to="*${suffix}"/>
     </map>
 
-
-    <property name="module.jar" location="${module.dir}/${module.name}.jar"/>
+    <property name="dist.module.name" value="${prefix}${module.name}${suffix}" />
+      
+    <property name="module.jar" location="${module.dir}/${dist.module.name}.jar"/>
     <property name="module.launcher"
               location="${module.dir}/${module.name}${launcher.sfx}"/>
     <property name="module.manifest"
-              location="${module.dir}/${module.name}.mf"/>
+              location="${module.dir}/${dist.module.name}.mf"/>
     <property name="module.doc" location="${module.dir}/${doc.dir}"/>
     <property name="module.src" location="${src.dir}"/>
     <property name="module.lib" location="${lib.dir}"/>
@@ -101,7 +100,7 @@
     </map>
 
     <property name="module.manifest.classpath"
-              value="${module.name}.jar ${module.manifest.jars} ${module.manifest.deps}"/>
+              value="${dist.module.name}.jar ${module.manifest.jars} ${module.manifest.deps}"/>
 
     <property name="module.test.reports" value="${module.dir}/reports/junit"/>
 
