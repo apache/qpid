@@ -37,11 +37,13 @@ public class Utils
 	public final static String ATTRIBUTE_CONTENT = "content";
 	public final static String ATTRIBUTE_HANDLER = "handler";
 	public final static String ATTRIBUTE_DOMAIN = "domain";
+    public final static String ATTRIBUTE_VALUE = "value";
 	public final static String ATTRIBUTE_TYPE = "type"; // For compatibility with AMQP 8.0
 	
 	public final static String ELEMENT_AMQP = "amqp";
 	public final static String ELEMENT_CHASSIS = "chassis";
 	public final static String ELEMENT_CLASS = "class";
+    public final static String ELEMENT_CONSTANT = "constant";
 	public final static String ELEMENT_DOMAIN = "domain";
 	public final static String ELEMENT_METHOD = "method";
 	public final static String ELEMENT_FIELD = "field";
@@ -91,6 +93,15 @@ public class Utils
 		return sb.toString();
 	}
 	
+	public static String firstLower(String str)
+	{
+		if (!Character.isUpperCase(str.charAt(0)))
+			return str;
+		StringBuffer sb = new StringBuffer(str);
+		sb.setCharAt(0, Character.toLowerCase(str.charAt(0)));
+		return sb.toString();
+	}
+	
 	public static String createSpaces(int cnt)
 	{
 		StringBuffer sb = new StringBuffer();
@@ -98,4 +109,34 @@ public class Utils
 			sb.append(' ');
 		return sb.toString();
 	}
+    
+    public static boolean containsOnlyDigits(String str)
+    {
+        boolean foundNonDigit = false;
+        for (int i=0; i<str.length() && !foundNonDigit; i++)
+        {
+            if (!Character.isDigit(str.charAt(i)))
+            {
+                foundNonDigit = true;
+            }
+        }
+        return !foundNonDigit;
+    }
+    
+    public static boolean containsOnlyDigitsAndDecimal(String str)
+    {
+        boolean foundNonDigit = false;
+        int decimalCntr = 0;
+        for (int i=0; i<str.length() && !foundNonDigit && decimalCntr<2; i++)
+        {
+            char ch = str.charAt(i);
+            if (!(Character.isDigit(ch) || ch == '.'))
+            {
+                foundNonDigit = true;
+            }
+            else if (ch == '.')
+                decimalCntr++;
+        }
+        return !foundNonDigit && decimalCntr<2;
+    }
 }
