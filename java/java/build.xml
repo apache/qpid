@@ -1,0 +1,250 @@
+<!--
+ -
+ - Copyright (c) 2006 The Apache Software Foundation
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -    http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -
+ -->
+<project name="AMQ Java" default="build">
+
+  <import file="common.xml"/>
+
+  <property file="build.properties"/>
+  <property name="modules.extra" value=""/>
+  <property name="modules.client" value="common,client"/>
+  <property name="modules"
+            value="${modules.client},broker,broker/test,client/test,management/core,management/cli,cluster,${modules.extra}"/>
+
+  <property name="release.fullversion" value="${build.release.version}-${build.release.name}-${build.release.tag}"/>
+
+  <macrodef name="iterate">
+    <attribute name="target"/>
+    <attribute name="modules" default="${modules}"/>
+    <element name="elements" implicit="true" optional="true"/>
+    <sequential>
+      <subant target="@{target}" antfile="build-module.xml">
+        <filelist dir="." files="@{modules}"/>
+        <elements/>
+      </subant>
+    </sequential>
+  </macrodef>
+
+  <target name="build" description="compile java source code for each module">
+    <iterate target="build"/>
+  </target>
+
+  <target name="test" description="execute unit tests">
+    <iterate target="test"/>
+  </target>
+
+  <target name="testreport" description="execute unit tests and produce reports">
+    <iterate target="testreport"/>
+  </target>
+
+  <target name="doc" description="produce javadoc for each module">
+    <iterate target="doc"/>
+  </target>
+
+  <target name="jar"
+          description="create java class file archives for each module">
+    <iterate target="jar"/>
+  </target>
+
+  <target name="dist"
+          description="copy each module's files into a single distribution tree">
+    <iterate target="dist"/>
+    <iterate target="dist-lib" modules="${modules.client}">
+      <property name="dist.dir" value="${dist.client.dir}"/>
+    </iterate>
+  </target>
+
+  <target name="clean" description="remove all build artifacts">
+    <iterate target="clean"/>
+    <delete dir="${build.dir}"/>
+    <delete dir="${release.dir}"/>
+  </target>
+
+  <property name="client.includes" value="*/client/**"/>
+
+  <target name="zip" depends="dist"
+          description="produce a zip archive of the distribution tree">
+    <zip basedir="${dist.root}" destfile="${build.zip}"/>
+    <zip basedir="${dist.root}" destfile="${client.zip}"
+         includes="${client.includes}"/>
+  </target>
+
+  <target name="tar" depends="dist"
+          description="produce a tar archive of the distribution tree">
+    <tar basedir="${dist.root}" destfile="${build.tar}"/>
+    <tar basedir="${dist.root}" destfile="${client.tar}"
+         includes="${client.includes}"/>
+  </target>
+
+  <target name="gzip" depends="tar"
+          description="produce a gzipped tarball of the distribution tree">
+    <gzip src="${build.tar}" destfile="${build.tgz}"/>
+    <gzip src="${client.tar}" destfile="${client.tgz}"/>
+  </target>
+
+  <target name="bzip2" depends="tar"
+          description="produze a bzipped tarball of the distribution tree">
+    <bzip2 src="${build.tar}" destfile="${build.bz2}"/>
+    <bzip2 src="${client.tar}" destfile="${client.bz2}"/>
+  </target>
+
+  <target name="archive" depends="zip,gzip,bzip2"
+          description="produce all archive formats of the distribution tree"/>
+
+    <target name="preparerelease">
+        <mkdir dir="${release.dir}"/>
+    </target>
+
+    <target name="copymodule">
+        <copy todir="${build.release.prepare}/src/java">
+            <fileset dir="${project.root}">
+                <!-- Module src -->
+                <include name="${module}/${bin.dir}/**"/>
+                <include name="${module}/${src.dir}/**"/>
+                <include name="${module}/${lib.dir}/**"/>
+                <include name="${module}/${etc.dir}/**"/>
+                <include name="${module}/${test.dir}/**"/>
+                <include name="${module}/${module.build.file}"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="preparereleasesrc" depends="preparerelease">
+
+        <!-- Copy Source to prepare directory -->
+        <mkdir dir="${build.release.prepare}/src/java"/>
+
+        <antcall target="copymodule">
+            <param name="module" value="broker"/>
+        </antcall>
+
+        <antcall target="copymodule">
+            <param name="module" value="client"/>
+        </antcall>
+
+        <antcall target="copymodule">
+            <param name="module" value="common"/>
+        </antcall>
+
+        <antcall target="copymodule">
+            <param name="module" value="cluster"/>
+        </antcall>
+
+         <copy todir="${build.release.prepare}/src/java">
+            <fileset dir="${project.root}">
+                <include name="management/**"/>
+                <include name="${tasks.dir}/${src.dir}/**"/>
+                <include name="${doc.dir}/**"/>
+            </fileset>
+         </copy>
+
+        <copy todir="${build.release.prepare}/src/java">
+            <fileset dir="${project.root}">
+                <!-- Module src -->
+                <!-- Extra Common files -->
+                <include name="${common.dir}/${stylesheets.dir}/**"/>
+                <include name="${common.dir}/${resources.dir}/**"/>
+
+                <!-- Root build Files -->
+                <include name="${build.file}"/>
+                <include name="${common.file}"/>
+                <include name="${module.file}"/>
+                <include name="${build.properties.file}"/>
+
+            </fileset>
+        </copy>
+
+        <!-- Copy Spec files for protocol generation -->
+        <copy todir="${build.release.prepare}/src/">
+            <fileset dir=".." casesensitive="false">
+                <include name="${specs.dir}/**"/>
+            </fileset>
+        </copy>
+
+        <antcall target="copyreleasedocs">
+            <param name="todir" value="${build.release.prepare}"/>
+        </antcall>
+
+    </target>
+
+    <target name="copyreleasedocs">
+        <!-- Copy Various Txt files to prepare directory -->
+        <copy todir="${todir}">
+            <fileset dir="release-docs">
+                <include name="RELEASE_NOTES.txt"/>
+            </fileset>
+            <fileset dir="${project.root}">
+                <include name="LICENSE.txt"/>
+                <include name="README.txt"/>
+                <include name="NOTICE.txt"/>
+            </fileset>
+        </copy>
+    </target>
+
+
+    <target name="tgzandzip">
+        <tar compression="gzip" longfile="gnu"
+             destfile="${file}.tar.gz">
+            <tarfileset dir="${source}" mode="755" username="ant" group="ant">
+                <include name="**"/>
+            </tarfileset>
+        </tar>
+
+        <zip destfile="${file}.zip">
+            <zipfileset dir="${source}">
+                <include name="**"/>
+            </zipfileset>
+        </zip>
+    </target>
+
+    <target name="std-src-release" depends="preparereleasesrc">
+
+        <antcall target="tgzandzip">
+            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-src"/>
+            <param name="source" value="${build.release.prepare}"/>
+        </antcall>
+
+    </target>
+
+
+    <target name="std-bin-release" depends="preparerelease">
+
+        <property name="release.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}"/>
+        <mkdir dir="${build.release}/${project.name}-java-${release.fullversion}"/>
+
+        <iterate target="dist">
+            <property name="module.preix" value="${project.name}-"/>
+            <property name="module.suffix" value="-${release.fullversion}"/>
+            <property name="dist.dest.dir" value="${release.bin.dir}"/>
+        </iterate>
+
+        <antcall target="copyreleasedocs">
+            <param name="todir" value="${release.bin.dir}"/>
+        </antcall>
+
+        <mkdir dir="${release.bin.dir}/${log.dir}"/>
+
+        <antcall target="tgzandzip">
+            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-bin"/>
+            <param name="source" value="${release.bin.dir}"/>
+        </antcall>
+
+    </target>
+
+    <target name="std-release" depends="std-src-release, std-bin-release"/>
+
+</project>
