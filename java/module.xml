@@ -200,12 +200,14 @@
         <manifest file="${module.manifest}">
             <attribute name="Main-Class" value="${module.main}"/>
             <attribute name="Class-Path" value="${module.manifest.classpath}"/>
+            <attribute name="X-Compile-Source-JDK" value="${module.vm.version}"/>                        
         </manifest>
     </target>
 
     <target name="manifest-lib" unless="module.main">
         <manifest file="${module.manifest}">
             <attribute name="Class-Path" value="${module.manifest.classpath}"/>
+            <attribute name="X-Compile-Source-JDK" value="${module.vm.version}"/>                                    
         </manifest>
     </target>
 
@@ -219,6 +221,10 @@
             <isfalse value="${module.dist}"/>
         </and>
     </condition>
+
+    <condition property="module.vm.version" value="${module.vm.version}" else="1.4">
+          <isset property="module.vm.version"/>
+    </condition>    
 
     <condition property="dist.destlib.dir" value="${dist.dest.dir}/${lib.dir}">
          <isset property="dist.dest.dir"/>
