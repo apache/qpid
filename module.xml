@@ -96,7 +96,7 @@
     </pathconvert>
 
     <map property="module.manifest.deps" value="${module.depends.dirs}">
-        <globmapper from="*" to="${prefix}*${suffix}${launcher.sfx}"/>        
+        <globmapper from="*" to="*${launcher.sfx}"/>
     </map>
 
     <property name="module.manifest.classpath"
@@ -159,8 +159,8 @@
         <mkdir dir="${destdir}/${bin.dir}"/>
         <copy todir="${destdir}/${bin.dir}" failonerror="false">
             <fileset dir="${src.bin}"/>
-        </copy>
-        <chmod dir="${destdir}" perm="ugo+rx" includes="**/*"/>
+        </copy>        
+        <chmod dir="${destdir}/${bin.dir}" perm="ugo+rx" includes="**/*"/>
     </target>
 
     <target name="build" depends="compile">

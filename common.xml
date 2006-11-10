@@ -36,10 +36,13 @@
   <property name="bin.dir" value="bin"/>
   <property name="etc.dir" value="etc"/>
   <property name="log.dir" value="log"/>
+  <property name="test.dir" value="test"/>
+  <property name="tasks.dir" value="tasks"/>
   <property name="metainf.dir" value="META-INF"/>
   <property name="release.dir" value="release"/>
   <property name="resources.dir" value="resources"/>
   <property name="stylesheets.dir" value="stylesheets"/>
+  <property name="releasedocs.dir" value="release-docs"/>
   <property name="src.bin" value="${bin.dir}"/>
   <property name="launcher.sfx" value="-launch.jar"/>
 
@@ -78,9 +81,9 @@
   <property name="java.target" value="1.5"/>
   <property name="java.source" value="1.5"/>
 
-  <property name="tasks.dir" value="${project.root}/tasks"/>
-  <property name="tasks.classes" value="${tasks.dir}/classes"/>
-  <property name="tasks.src" value="${tasks.dir}/src"/>
+  <property name="tasks.root.dir" value="${project.root}/tasks"/>
+  <property name="tasks.classes" value="${tasks.root.dir}/classes"/>
+  <property name="tasks.src" value="${tasks.root.dir}/src"/>
   <property name="common.dir" value="common"/>
   <property name="common.root.dir" value="${project.root}/${common.dir}"/>
 
