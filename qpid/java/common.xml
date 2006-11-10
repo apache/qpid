@@ -47,8 +47,7 @@
   <property name="launcher.sfx" value="-launch.jar"/>
 
   <property name="release.root.dir" value="${project.root}/${release.dir}"/>
-  <property name="resources.root.dir" value="${project.root}/${resources.dir}"/>
-
+  <property name="resources.root.dir" value="${project.root}/${resources.dir}"/>  
 
 
   <property name="dist.root" value="${build.dir}/dist"/>
