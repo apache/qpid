@@ -90,8 +90,6 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 		// return itself as the type.
 		if (domainType == null)
 		{
-//			return converter.getDomainType(domainName, version);
-System.out.println("@DEBUG Unable to find domain " + domainName);
 			return domainName;
 		}
 		try
@@ -108,8 +106,8 @@ System.out.println("@DEBUG Unable to find domain " + domainName);
 	
 	public void print(PrintStream out, int marginSize, int tabSize)
 	{
+        out.println(Utils.createSpaces(marginSize) + "Domain Map:");
 		Iterator<String> i = keySet().iterator();
-		out.println(Utils.createSpaces(marginSize) + "Domain Map:");
 		while (i.hasNext())
 		{
 			String domainName = i.next();

@@ -21,6 +21,9 @@ public interface LanguageConverter
 {
 	public void setDomainMap(AmqpDomainMap domainMap);
 	public AmqpDomainMap getDomainMap();
+
+    public void setConstantSet(AmqpConstantSet constantSet);
+    public AmqpConstantSet getConstantSet();
 	
 	public void setModel(AmqpModel model);
 	public AmqpModel getModel();

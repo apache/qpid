@@ -23,23 +23,23 @@
 %{VLIST} *   ${major}-${minor}
  */
 
+#include <sstream>
 #include "AMQP_ClientProxy.h"
 
 namespace qpid {
 namespace framing {
 
-AMQP_ClientProxy::AMQP_ClientProxy(OutputHandler* _out) :
-    out(_out)
-{CLIST} {cpc_constructor_initializer}
+AMQP_ClientProxy::AMQP_ClientProxy(OutputHandler* out, u_int8_t major, u_int8_t minor) :
+%{CLIST} ${cpc_constructor_initializer}
 {}
 
 	// Inner class instance get methods
 	
-{CLIST} {cpc_inner_class_get_method}
+%{CLIST} ${cpc_inner_class_get_method}
 
 	// Inner class implementation
 
-{CLIST} {cpc_inner_class_impl}
+%{CLIST} ${cpc_inner_class_impl}
 
 } /* namespace framing */
 } /* namespace qpid */

@@ -1,4 +1,4 @@
-&{AMQP_ServerProxy.cpp}
+&{AMQP_Constants.h}
 /**
 *
 * Copyright (c) 2006 The Apache Software Foundation
@@ -22,24 +22,14 @@
  * Supported AMQP versions:
 %{VLIST} *   ${major}-${minor}
  */
+	// NOTE: This file is intended to be included within the class structure of both
+	// the client and server operations classes.
 
-#include <sstream>
-#include "AMQP_ServerProxy.h"
-
-namespace qpid {
-namespace framing {
-
-AMQP_ServerProxy::AMQP_ServerProxy(OutputHandler* out, u_int8_t major, u_int8_t minor) :
-%{CLIST} ${spc_constructor_initializer}
-{}
-
-	// Inner class instance get methods
+	// Constant declarations for constants that change by version
 	
-%{CLIST} ${spc_inner_class_get_method}
-
-	// Inner class implementation
-
-%{CLIST} ${spc_inner_class_impl}
-
-} /* namespace framing */
-} /* namespace qpid */
+%{TLIST} ${ch_static_const_decl}
+ 
+ 	// Constant getValue methods
+ 	
+%{TLIST} ${ch_get_value_method}
+ 
