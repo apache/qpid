@@ -170,11 +170,13 @@
     <target name="copyreleasedocs">
         <!-- Copy Various Txt files to prepare directory -->
         <copy todir="${todir}">
-            <fileset dir="doc/release-docs">
+            <fileset dir="release-docs">
+                <include name="RELEASE_NOTES.txt"/>
+            </fileset>
+            <fileset dir="">
                 <include name="LICENSE.txt"/>
                 <include name="README.txt"/>
                 <include name="NOTICE.txt"/>
-                <include name="RELEASE_NOTES.txt"/>
             </fileset>
         </copy>
     </target>
