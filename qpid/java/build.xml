@@ -188,13 +188,46 @@
                 <include name="RELEASE_NOTES.txt"/>
             </fileset>
             <fileset dir="${project.root}">
-                <include name="LICENSE.txt"/>
                 <include name="README.txt"/>
                 <include name="NOTICE.txt"/>
             </fileset>
         </copy>
+
+        <antcall target="createLicense">
+            <param name="fromdir" value="${todir}"/>
+            <param name="destdir" value="${todir}"/>
+        </antcall>
+
     </target>
 
+    <target name="createLicense">
+
+        <!-- Copy our main License file-->
+        <copy file="LICENSE.txt" todir="${destdir}"/>
+
+        <!-- Find all the license files-->
+        <fileset dir="${fromdir}" id="license.files">
+            <include name="**/${lib.dir}/**/license*"/>
+        </fileset>
+
+        <!-- Path to use to remove from the start of the license file name -->
+        <path path="${todir}${file.separator}" id="release.prepare.dir.id" />
+
+        <!-- Convert this path to use the platform file separator \ or / -->
+        <pathconvert refid="release.prepare.dir.id" property="release.prepare.path" dirsep="${file.separator}"/>
+
+        <!-- For each of the license files remove the release prepare path-->
+        <pathconvert refid="license.files" id="licenses.convert.path.id" property="licenses.convert" pathsep="${line.separator}" >
+            <map from="${release.prepare.path}${file.separator}" to=''/>
+        </pathconvert>
+
+
+        <!-- Add the list of licence files to the end of the main license file.-->
+        <echo file="${destdir}/LICENSE.txt" append="yes">
+            ${line.separator}Additional license files can be found here:${line.separator}${licenses.convert}
+        </echo>
+
+    </target>
 
     <target name="tgzandzip">
         <tar compression="gzip" longfile="gnu"
