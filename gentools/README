@@ -9,6 +9,7 @@ currently configured, this generator will not interact with any file or
 directory outside of this directory.
 
 To build (from this directory):
+rm org/apache/qpid/gentools/*.class
 javac  org/apache/qpid/gentools/Main.java
 
 Make sure you are using Sun's JDK1.5.0; Eclipse and gcj do not work.

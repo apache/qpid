@@ -27,7 +27,8 @@ import java.util.TreeMap;
 
 public class JavaGenerator extends Generator
 {
-	static String cr = Utils.lineSeparator;
+	private static String cr = Utils.lineSeparator;
+    private enum OutputTypes { OUTPUT_STRING, OUTPUT_INTEGER, OUTPUT_DOUBLE; };
 	
 	private class DomainInfo
 	{
@@ -471,15 +472,16 @@ public class JavaGenerator extends Generator
 	}
 	
 	@Override
-	protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
+	protected void processClassList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpModel model)
 	    throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		String codeSnippet;
-		int lend = sb.indexOf(cr, tokStart) + 1; // Include cr at end of line
-		String tline = sb.substring(tokEnd, lend); // Line excluding line marker, including cr
-		int tokxStart = tline.indexOf('$');
-		String token = tline.substring(tokxStart).trim();
-		sb.delete(tokStart, lend);
+		int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
+		String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
+		int tokStart = tline.indexOf('$');
+		String token = tline.substring(tokStart).trim();
+		sb.delete(listMarkerStartIndex, lend);
 		
 		if (token.compareTo("${reg_map_put_method}") == 0)
 		{
@@ -491,19 +493,20 @@ public class JavaGenerator extends Generator
 			throw new AmqpTemplateException("Template token " + token + " unknown.");
 		}
 
-		sb.insert(tokStart, codeSnippet);
+		sb.insert(listMarkerStartIndex, codeSnippet);
 	}
 	
 	@Override
-	protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
+	protected void processMethodList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpClass thisClass)
         throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		String codeSnippet;
-		int lend = sb.indexOf(cr, tokStart) + 1; // Include cr at end of line
-		String tline = sb.substring(tokEnd, lend); // Line excluding line marker, including cr
-		int tokxStart = tline.indexOf('$');
-		String token = tline.substring(tokxStart).trim();
-		sb.delete(tokStart, lend);
+		int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
+		String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
+		int tokStart = tline.indexOf('$');
+		String token = tline.substring(tokStart).trim();
+		sb.delete(listMarkerStartIndex, lend);
 		
 		//TODO - we don't have any cases of this (yet).
 		if (token.compareTo("${???}") == 0)
@@ -515,7 +518,7 @@ public class JavaGenerator extends Generator
 			throw new AmqpTemplateException("Template token " + token + " unknown.");
 		}
 		
-		sb.insert(tokStart, codeSnippet);
+		sb.insert(listMarkerStartIndex, codeSnippet);
 	}
 	
 	@Override
@@ -527,8 +530,8 @@ public class JavaGenerator extends Generator
 		String codeSnippet;
 		int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
 		String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
-		int tokxStart = tline.indexOf('$');
-		String token = tline.substring(tokxStart).trim();
+		int tokStart = tline.indexOf('$');
+		String token = tline.substring(tokStart).trim();
 		sb.delete(listMarkerStartIndex, lend);
 		
 		// Field declarations - common to MethodBody and PropertyContentHeader classes
@@ -625,7 +628,34 @@ public class JavaGenerator extends Generator
 		}
 		sb.insert(listMarkerStartIndex, codeSnippet);
 	}
-	
+
+    @Override
+    protected void processConstantList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpConstantSet constantSet)
+        throws AmqpTemplateException, AmqpTypeMappingException
+
+        {
+        String codeSnippet;
+        int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
+        String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
+        int tokStart = tline.indexOf('$');
+        String token = tline.substring(tokStart).trim();
+        sb.delete(listMarkerStartIndex, lend);
+
+        if (token.compareTo("${const_get_method}") == 0)
+        {
+            codeSnippet = generateConstantGetMethods(constantSet, 4, 4); 
+        }
+       
+        else // Oops!
+        {
+            throw new AmqpTemplateException("Template token " + token + " unknown.");
+        }
+
+        sb.insert(listMarkerStartIndex, codeSnippet);
+        }
+    
+    
 	// === Protected and private helper functions unique to Java implementation ===
 	
 	// Methods used for generation of code snippets called from the field map parsers
@@ -752,7 +782,149 @@ public class JavaGenerator extends Generator
 		}
 		throw new Exception("Index not found");
 	}
-	
+    
+    // Methods for AmqpConstants class
+   
+    protected String generateConstantGetMethods(AmqpConstantSet constantSet,
+        int indentSize, int tabSize)
+        throws AmqpTypeMappingException
+    {
+        String indent = Utils.createSpaces(indentSize);
+        StringBuffer sb = new StringBuffer();
+        Iterator<AmqpConstant> cItr = constantSet.iterator();
+        while (cItr.hasNext())
+        {
+            AmqpConstant constant = cItr.next();
+            if (constant.isVersionConsistent(globalVersionSet))
+            {
+                // return a constant
+                String value = constant.firstKey();
+                sb.append(indent + "public static String " + constant.name + "() { return \"" +
+                    constant.firstKey() + "\"; }" + cr);
+                if (Utils.containsOnlyDigits(value))
+                {
+                    sb.append(indent + "public static int " + constant.name + "AsInt() { return " +
+                        constant.firstKey() + "; }" + cr);
+                }
+                if (Utils.containsOnlyDigitsAndDecimal(value))
+                {
+                    sb.append(indent + "public static double " + constant.name + "AsDouble() { return (double)" +
+                        constant.firstKey() + "; }" + cr);
+                }
+                sb.append(cr);
+            }
+            else
+            {
+                // return value from version map
+                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_STRING, indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_INTEGER, indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_DOUBLE, indentSize, tabSize));
+                sb.append(cr);
+           }
+        }        
+        return sb.toString();       
+    }
+    
+    protected String generateVersionDependentGet(AmqpConstant constant, OutputTypes outType, int indentSize, int tabSize)
+        throws AmqpTypeMappingException
+    {
+        String indent = Utils.createSpaces(indentSize);
+        String tab = Utils.createSpaces(tabSize);
+        StringBuffer sb = new StringBuffer();
+        String methodNameSuffix = "";
+        String methodReturnType = "String";
+        if (outType == OutputTypes.OUTPUT_INTEGER)
+        {
+            methodNameSuffix = "AsInt";
+            methodReturnType = "int";
+        }
+        else if (outType == OutputTypes.OUTPUT_DOUBLE)
+        {
+            methodNameSuffix = "AsDouble";
+            methodReturnType = "double";
+        }
+        sb.append(indent + "public static " + methodReturnType + " " + constant.name +
+             methodNameSuffix + "(byte major, byte minor) throws AMQProtocolVersionException" + cr);
+        sb.append(indent + "{" + cr);
+        boolean first = true;
+        Iterator<String> sItr = constant.keySet().iterator();
+        while (sItr.hasNext())
+        {
+            String value = sItr.next();
+            AmqpVersionSet versionSet = constant.get(value);
+            sb.append(indent + tab + (first ? "" : "else ") + "if (" +
+                generateVersionCheck(versionSet) + ")" + cr);
+            sb.append(indent + tab + "{" + cr);
+            if (outType == OutputTypes.OUTPUT_STRING)
+            {
+                sb.append(indent + tab + tab + "return \"" + value + "\";" + cr);
+            }
+            else if (outType == OutputTypes.OUTPUT_INTEGER)
+            {
+                if (Utils.containsOnlyDigits(value))
+                {
+                    sb.append(indent + tab + tab + "return " + value + ";" + cr);
+                }
+                else
+                {
+                    sb.append(generateConstantDeclarationException(constant.name, outType,
+                        indentSize + (2*tabSize), tabSize));
+                }
+            }
+            else if (outType == OutputTypes.OUTPUT_DOUBLE)
+            {
+                if (Utils.containsOnlyDigitsAndDecimal(value))
+                {
+                    sb.append(indent + tab + tab + "return (double)" + value + ";" + cr);
+                }
+                else
+                {
+                    sb.append(generateConstantDeclarationException(constant.name, outType,
+                        indentSize + (2*tabSize), tabSize));
+                }
+            }
+            sb.append(indent + tab + "}" + cr);
+            first = false;
+        }
+        sb.append(indent + tab + "else" + cr);
+        sb.append(indent + tab + "{" + cr);
+        sb.append(indent + tab + tab + "throw new AMQProtocolVersionException(\"Constant \\\"" +
+            constant.name + "\\\" \" +" + cr);
+        sb.append(indent + tab + tab + tab +
+            "\"undefined for AMQP version \" + major + \"-\" + minor + \".\");" + cr);
+        sb.append(indent + tab + "}" + cr);
+        sb.append(indent + "}" + cr);        
+        return sb.toString();       
+    }
+    
+    protected String generateConstantDeclarationException(String name, OutputTypes outType,
+        int indentSize, int tabSize)
+    {
+        String indent = Utils.createSpaces(indentSize);
+        String tab = Utils.createSpaces(tabSize);
+        StringBuffer sb = new StringBuffer();
+        String typeStr;
+        switch (outType)
+        {
+            case OUTPUT_STRING:
+                typeStr = "a String";
+                break;
+            case OUTPUT_INTEGER:
+                typeStr = "an integer";
+               break;
+            case OUTPUT_DOUBLE:
+                typeStr = "a double";
+                break;
+            default:
+                typeStr = "*ERROR*";
+        }
+        sb.append(indent + "throw new AMQProtocolVersionException(\"Constant \\\"" +
+                        name + "\\\" \" +" + cr);
+        sb.append(indent + tab + "\"is not " + typeStr +
+            " type for AMQP version \" + major + \"-\" + minor + \".\");" + cr);        
+        return sb.toString();       
+    }
+    
 	// Methods for MessageBody classes
 	protected String generateMbGetMethod(String codeType, AmqpField field,
 		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
@@ -1484,7 +1656,7 @@ public class JavaGenerator extends Generator
 				sb.append(" || ");
 			if (versionArray.length > 1)
 				sb.append("(");
-			sb.append("major == " + versionArray[i].getMajor() + " && minor == " +
+			sb.append("major == (byte)" + versionArray[i].getMajor() + " && minor == (byte)" +
 				versionArray[i].getMinor());
 			if (versionArray.length > 1)
 				sb.append(")");

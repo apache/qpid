@@ -35,17 +35,26 @@ namespace framing {
 
 class AMQP_ClientProxy : virtual public AMQP_ClientOperations
 {
-    public:
-        AMQP_ClientProxy(OutputHandler* _out);
-        virtual ~AMQP_ClientProxy() {};
+private:
+    OutputHandler* out;
+    u_int8_t major;
+    u_int8_t minor;
 
 	// Inner class instances
 	
-{CLIST} {cph_inner_class_get_method}
+%{CLIST} ${cph_inner_class_instance}
+
+public:
+    AMQP_ClientProxy(OutputHandler* out, u_int8_t major, u_int8_t minor);
+    virtual ~AMQP_ClientProxy() {}
+
+	// Inner class instance get methods
+	
+%{CLIST} ${cph_inner_class_get_method}
 
 	// Inner class definitions
 
-{CLIST} {cph_inner_class_impl}
+%{CLIST} ${cph_inner_class_defn}
     
 }; /* class AMQP_ClientProxy */
 

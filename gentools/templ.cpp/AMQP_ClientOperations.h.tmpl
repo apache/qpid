@@ -26,7 +26,6 @@
 #ifndef _AMQP_ClientOperations_
 #define _AMQP_ClientOperations_
 
-#include "AMQP_Constants.h"
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
@@ -35,20 +34,28 @@ namespace framing {
 class AMQP_ClientOperations
 {
 private:
-    u_int8_t major;
-    u_int8_t minor;
+    ProtocolVersion version;
 
 public:
-    AMQP_ClientOperations(u_int8_t major, u_int8_t minor) : major(major), minor(minor) {}
+    AMQP_ClientOperations(u_int8_t major, u_int8_t minor) : version(major, minor) {}
+    AMQP_ClientOperations(ProtocolVersion version) : version(version) {}
     virtual ~AMQP_ClientOperations() {}
 
-    inline u_int8_t getMajor() { return major; }
-    inline u_int8_t getMinor() { return minor; }
-    inline isVersion(u_int8_t _major, u_int8_t _minor)
+    inline u_int8_t getMajor() const { return version.getMajor(); }
+    inline u_int8_t getMinor() const { return version.getMinor(); }
+    inline const ProtocolVersion& getVersion() const { return version; }
+    inline isVersion(u_int8_t _major, u_int8_t _minor) const
     {
-        return major == _major && minor == _minor;
+        return version.equals(_major, _minor);
+    }
+    inline isVersion(ProtocolVersion& _version) const
+    {
+        return version.equals(_version);
     }
 
+	// Include framing constant declarations
+	#include "AMQP_Constants.h"
+	
     // Method handler get methods
 
 %{CLIST} ${coh_method_handler_get_method}

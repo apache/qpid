@@ -19,13 +19,41 @@ package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
 //import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.TreeSet;
 
 @SuppressWarnings("serial")
-public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable
+public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable, Comparable<AmqpVersionSet>
 {
+    public AmqpVersionSet()
+    {
+    }
+    
+    public AmqpVersionSet(AmqpVersion version)
+    {
+        add(version);
+    }
+    
 	public void print(PrintStream out, int marginSize, int tabSize)
 	{
 		out.print(Utils.createSpaces(marginSize) + "Version Set: " + toString());
 	}
+    
+    public int compareTo(AmqpVersionSet other)
+    {
+        int res = size() - other.size();
+        if (res != 0)
+            return res;
+        Iterator<AmqpVersion> vItr = iterator();
+        Iterator<AmqpVersion> oItr = other.iterator();
+        while (vItr.hasNext() && oItr.hasNext())
+        {
+            AmqpVersion version = vItr.next();
+            AmqpVersion oVersion = oItr.next();
+            res = version.compareTo(oVersion);
+            if (res != 0)
+                return res;
+        }
+        return 0;
+    }
 }

@@ -43,6 +43,7 @@ public abstract class Generator implements LanguageConverter
 	
 	protected AmqpVersionSet globalVersionSet;
 	protected AmqpDomainMap globalDomainMap;
+    protected AmqpConstantSet globalConstantSet;
 	protected AmqpModel model;
 	
 	protected int generatedFileCounter;
@@ -71,6 +72,16 @@ public abstract class Generator implements LanguageConverter
 	{
 		return globalDomainMap;
 	}
+    
+    public void setConstantSet(AmqpConstantSet constantSet)
+    {
+        this.globalConstantSet = constantSet;
+    }
+    
+    public AmqpConstantSet getConstantSet()
+    {
+        return globalConstantSet;
+    }
 	
 	public void setModel(AmqpModel model)
 	{
@@ -135,17 +146,22 @@ public abstract class Generator implements LanguageConverter
 		AmqpField field, AmqpVersion version)
 	    throws AmqpTemplateException;
 	
-	abstract protected void processClassList(StringBuffer sb, int tokStart, int tokEnd, AmqpModel model)
+	abstract protected void processClassList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpModel model)
         throws AmqpTemplateException, AmqpTypeMappingException;
 	
-	abstract protected void processMethodList(StringBuffer sb, int tokStart, int tokEnd, AmqpClass thisClass)
+	abstract protected void processMethodList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpClass thisClass)
         throws AmqpTemplateException, AmqpTypeMappingException;
 	
 	abstract protected void processFieldList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
 		AmqpFieldMap fieldMap, AmqpVersion version)
         throws AmqpTypeMappingException, AmqpTemplateException, IllegalAccessException,
         	InvocationTargetException;
-
+    
+    abstract protected void processConstantList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
+        AmqpConstantSet constantSet)
+        throws AmqpTemplateException, AmqpTypeMappingException;
 	
 	public void generate(File genDir)
 	    throws TargetDirectoryException, IOException, AmqpTypeMappingException,
@@ -300,6 +316,10 @@ public abstract class Generator implements LanguageConverter
 						(method == null ? thisClass.fieldMap : method.fieldMap),
 						version);
 				}
+                else if (listToken.compareTo("TLIST") == 0)
+                {
+                    processConstantList(sb, lstart, lend + 1, globalConstantSet);
+                }
 				else
 				{
 					throw new AmqpTemplateException("Unknown list token \"%{" + listToken +
