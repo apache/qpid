@@ -34,6 +34,7 @@ public class Main
 	private DocumentBuilder docBuilder;
 	private AmqpVersionSet versionSet;
 	private Generator generator;
+    private AmqpConstantSet constants;
 	private AmqpDomainMap domainMap;
 	private AmqpModel model;
 	
@@ -64,25 +65,29 @@ public class Main
 			// *** C++ generation ***
 			System.out.println("C++ generation mode.");
 			generator = new CppGenerator(versionSet);
+            constants = new AmqpConstantSet(generator);
 			domainMap = new AmqpDomainMap(generator);
 			model = new AmqpModel(generator);			
-			modelTemplateFiles = new File[]{
+			modelTemplateFiles = new File[]
+			{
 				new File("templ.cpp/AMQP_ServerOperations.h.tmpl"),
 				new File("templ.cpp/AMQP_ClientOperations.h.tmpl"),
 				new File("templ.cpp/AMQP_ServerProxy.h.tmpl"),
 				new File("templ.cpp/AMQP_ClientProxy.h.tmpl"),
 				new File("templ.cpp/AMQP_ServerProxy.cpp.tmpl"),
 				new File("templ.cpp/AMQP_ClientProxy.cpp.tmpl"),
-				new File("templ.cpp/AMQP_ServerHandlerImpl.h.tmpl"),
-				new File("templ.cpp/AMQP_ClientHandlerImpl.h.tmpl"),
-				new File("templ.cpp/AMQP_ServerHandlerImpl.cpp.tmpl"),
-				new File("templ.cpp/AMQP_ClientHandlerImpl.cpp.tmpl"),
-				new File("templ.cpp/amqp_methods.h.tmpl"),
-				new File("templ.cpp/amqp_methods.cpp.tmpl")
-				};
-			methodTemplateFiles = new File[]{
+                new File("templ.cpp/AMQP_Constants.h.tmpl")
+//				new File("templ.cpp/AMQP_ServerHandlerImpl.h.tmpl"),
+//				new File("templ.cpp/AMQP_ClientHandlerImpl.h.tmpl"),
+//				new File("templ.cpp/AMQP_ServerHandlerImpl.cpp.tmpl"),
+//				new File("templ.cpp/AMQP_ClientHandlerImpl.cpp.tmpl"),
+//				new File("templ.cpp/amqp_methods.h.tmpl"),
+//				new File("templ.cpp/amqp_methods.cpp.tmpl")
+			};
+			methodTemplateFiles = new File[]
+			{
 				new File("templ.cpp/MethodBodyClass.h.tmpl")
-				};
+			};
 			outDir += ".cpp";
 		}
 		else if (args[0].compareToIgnoreCase("-j") == 0)
@@ -90,14 +95,22 @@ public class Main
 			// *** Java generation ***
 			System.out.println("Java generation mode.");
 			generator = new JavaGenerator(versionSet);
+            constants = new AmqpConstantSet(generator);
 			domainMap = new AmqpDomainMap(generator);
 			model = new AmqpModel(generator);		
 			modelTemplateFiles = new File[]
-			    { new File("templ.java/MethodRegistryClass.tmpl") };
+			{
+                new File("templ.java/MethodRegistryClass.tmpl"),
+                new File("templ.java/AmqpConstantsClass.tmpl")
+            };
 			classTemplateFiles = new File[]
-			    { new File("templ.java/PropertyContentHeaderClass.tmpl") };
+			{
+                new File("templ.java/PropertyContentHeaderClass.tmpl")
+            };
 			methodTemplateFiles = new File[]
-			    { new File("templ.java/MethodBodyClass.tmpl") };
+			{
+                new File("templ.java/MethodBodyClass.tmpl")
+            };
 			outDir += ".java";
 		}
 		else
@@ -131,9 +144,12 @@ public class Main
 				versionSet.add(version);
 				
 				// 1c. Extract domains
-				domainMap.addFromNode(amqpNode, 0, version);
+				constants.addFromNode(amqpNode, 0, version);
+                
+                // 1d. Extract domains
+                domainMap.addFromNode(amqpNode, 0, version);
 				
-				// 1d. Extract class/method/field heirarchy
+				// 1e. Extract class/method/field heirarchy
 				model.addFromNode(amqpNode, 0, version);
 			}
 			else
@@ -143,7 +159,9 @@ public class Main
 //		System.out.println();
 //		System.out.println("*** Debug output ***");
 //		System.out.println();
-//		versionSet.print(System.out, 0, 2);
+		constants.print(System.out, 0, 2);
+//      System.out.println();
+//      versionSet.print(System.out, 0, 2);
 //		System.out.println();
 //		domainMap.print(System.out, 0, 2);
 //		System.out.println();

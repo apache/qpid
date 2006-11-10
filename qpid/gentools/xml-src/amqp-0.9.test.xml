@@ -295,6 +295,8 @@
     </doc>
   </constant>
 
+  <constant name = "test-str2" value = "1.2.3.3"/>
+
   <!--
       ======================================================
       ==       DOMAIN TYPES

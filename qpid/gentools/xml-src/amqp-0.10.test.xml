@@ -287,13 +287,17 @@
     </doc>
   </constant>
 
-  <constant name = "internal-error" value = "541" class = "hard-error">
+  <constant name = "internal-error" value = "545" class = "hard-error">
     <doc>
       The server could not complete the method because of an internal error.
       The server may require intervention by an operator in order to resume
       normal operations.
     </doc>
   </constant>
+
+  <constant name = "test-double" value = "3.141592654"/>
+  <constant name = "test-str1" value = "hello, world!"/>
+  <constant name = "test-str2" value = "1.2.3.4"/>
 
   <!--
       ======================================================
