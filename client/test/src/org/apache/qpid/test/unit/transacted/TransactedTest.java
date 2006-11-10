@@ -66,7 +66,6 @@ public class TransactedTest
         }
     }
 
-    @After
     public void stopVmBroker()
     {
         TransportConnection.killVMBroker(1);
@@ -112,6 +111,7 @@ public class TransactedTest
         con.close();
         testCon.close();
         prepCon.close();
+        stopVmBroker();
     }
 
     @Test
