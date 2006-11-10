@@ -45,35 +45,35 @@ namespace client {
 
         inline u_int64_t getDeliveryTag(){ return deliveryTag; }
 
-        std::string& getContentType();
-        std::string& getContentEncoding();
+        const std::string& getContentType();
+        const std::string& getContentEncoding();
         qpid::framing::FieldTable& getHeaders();
         u_int8_t getDeliveryMode();
         u_int8_t getPriority();
-        std::string& getCorrelationId();
-        std::string& getReplyTo();
-        std::string& getExpiration();
-        std::string& getMessageId();
+        const std::string& getCorrelationId();
+        const std::string& getReplyTo();
+        const std::string& getExpiration();
+        const std::string& getMessageId();
         u_int64_t getTimestamp();
-        std::string& getType();
-        std::string& getUserId();
-        std::string& getAppId();
-        std::string& getClusterId();
+        const std::string& getType();
+        const std::string& getUserId();
+        const std::string& getAppId();
+        const std::string& getClusterId();
 
-	void setContentType(std::string& type);
-	void setContentEncoding(std::string& encoding);
-	void setHeaders(qpid::framing::FieldTable& headers);
+	void setContentType(const std::string& type);
+	void setContentEncoding(const std::string& encoding);
+	void setHeaders(const qpid::framing::FieldTable& headers);
 	void setDeliveryMode(u_int8_t mode);
 	void setPriority(u_int8_t priority);
-	void setCorrelationId(std::string& correlationId);
-	void setReplyTo(std::string& replyTo);
-	void setExpiration(std::string&  expiration);
-	void setMessageId(std::string& messageId);
+	void setCorrelationId(const std::string& correlationId);
+	void setReplyTo(const std::string& replyTo);
+	void setExpiration(const std::string&  expiration);
+	void setMessageId(const std::string& messageId);
 	void setTimestamp(u_int64_t timestamp);
-	void setType(std::string& type);
-	void setUserId(std::string& userId);
-	void setAppId(std::string& appId);
-	void setClusterId(std::string& clusterId);
+	void setType(const std::string& type);
+	void setUserId(const std::string& userId);
+	void setAppId(const std::string& appId);
+	void setClusterId(const std::string& clusterId);
 
 
 	friend class Channel;

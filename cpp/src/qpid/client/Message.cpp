@@ -34,11 +34,11 @@ BasicHeaderProperties* Message::getHeaderProperties(){
     return dynamic_cast<BasicHeaderProperties*>(header->getProperties());
 }
 
-std::string& Message::getContentType(){ 
+const std::string& Message::getContentType(){ 
     return getHeaderProperties()->getContentType(); 
 }
 
-std::string& Message::getContentEncoding(){ 
+const std::string& Message::getContentEncoding(){ 
     return getHeaderProperties()->getContentEncoding(); 
 }
 
@@ -54,19 +54,19 @@ u_int8_t Message::getPriority(){
     return getHeaderProperties()->getPriority(); 
 }
 
-std::string& Message::getCorrelationId(){
+const std::string& Message::getCorrelationId(){
     return getHeaderProperties()->getCorrelationId(); 
 }
 
-std::string& Message::getReplyTo(){ 
+const std::string& Message::getReplyTo(){ 
     return getHeaderProperties()->getReplyTo(); 
 }
 
-std::string& Message::getExpiration(){ 
+const std::string& Message::getExpiration(){ 
     return getHeaderProperties()->getExpiration(); 
 }
 
-std::string& Message::getMessageId(){
+const std::string& Message::getMessageId(){
     return getHeaderProperties()->getMessageId(); 
 }
 
@@ -74,31 +74,31 @@ u_int64_t Message::getTimestamp(){
     return getHeaderProperties()->getTimestamp(); 
 }
 
-std::string& Message::getType(){ 
+const std::string& Message::getType(){ 
     return getHeaderProperties()->getType(); 
 }
 
-std::string& Message::getUserId(){ 
+const std::string& Message::getUserId(){ 
     return getHeaderProperties()->getUserId(); 
 }
 
-std::string& Message::getAppId(){ 
+const std::string& Message::getAppId(){ 
     return getHeaderProperties()->getAppId(); 
 }
 
-std::string& Message::getClusterId(){ 
+const std::string& Message::getClusterId(){ 
     return getHeaderProperties()->getClusterId(); 
 }
 
-void Message::setContentType(std::string& type){ 
+void Message::setContentType(const std::string& type){ 
     getHeaderProperties()->setContentType(type); 
 }
 
-void Message::setContentEncoding(std::string& encoding){ 
+void Message::setContentEncoding(const std::string& encoding){ 
     getHeaderProperties()->setContentEncoding(encoding); 
 }
 
-void Message::setHeaders(FieldTable& headers){ 
+void Message::setHeaders(const FieldTable& headers){ 
     getHeaderProperties()->setHeaders(headers); 
 }
 
@@ -110,19 +110,19 @@ void Message::setPriority(u_int8_t priority){
     getHeaderProperties()->setPriority(priority); 
 }
 
-void Message::setCorrelationId(std::string& correlationId){ 
+void Message::setCorrelationId(const std::string& correlationId){ 
     getHeaderProperties()->setCorrelationId(correlationId); 
 }
 
-void Message::setReplyTo(std::string& replyTo){ 
+void Message::setReplyTo(const std::string& replyTo){ 
     getHeaderProperties()->setReplyTo(replyTo);
 }
 
-void Message::setExpiration(std::string&  expiration){ 
+void Message::setExpiration(const std::string&  expiration){ 
     getHeaderProperties()->setExpiration(expiration); 
 }
 
-void Message::setMessageId(std::string& messageId){ 
+void Message::setMessageId(const std::string& messageId){ 
     getHeaderProperties()->setMessageId(messageId); 
 }
 
@@ -130,18 +130,18 @@ void Message::setTimestamp(u_int64_t timestamp){
     getHeaderProperties()->setTimestamp(timestamp); 
 }
 
-void Message::setType(std::string& type){ 
+void Message::setType(const std::string& type){ 
     getHeaderProperties()->setType(type); 
 }
 
-void Message::setUserId(std::string& userId){ 
+void Message::setUserId(const std::string& userId){ 
     getHeaderProperties()->setUserId(userId); 
 }
 
-void Message::setAppId(std::string& appId){
+void Message::setAppId(const std::string& appId){
     getHeaderProperties()->setAppId(appId); 
 }
 
-void Message::setClusterId(std::string& clusterId){ 
+void Message::setClusterId(const std::string& clusterId){ 
     getHeaderProperties()->setClusterId(clusterId); 
 }
