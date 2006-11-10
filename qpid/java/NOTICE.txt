@@ -12,7 +12,7 @@ distribution.
 
 
 Aside from contributions to the Apache Qpid project, this software also 
-includes:
+includes (binary only):
 
 	- The SAXON XSLT Processor from Michael Kay distributed under the 
 	  Mozilla Public License v1.0, which is available for download at 
@@ -27,3 +27,13 @@ includes:
           2004-2005 SLF4J.ORG, Copyright (c) 2004-2005 QOS.ch. sljf4j is 
           licensed under identical terms to the MIT/X11 license and 
           available for download at http://www.slf4j.org/
+
+	- The JMS Compliance Test Suite from the Exolab project. 
+          Copyright 1999 (C) Exoffice Technologies Inc. All Rights Reserved.
+          JMS CTS is available from http://www.exolab.org/
+
+	- The jython java implementation of python, Copyright (c) 2000, 
+          Jython Developers All rights reserved. Jython can be downloaded at
+          http://sourceforge.net/projects/jython/
+             
+
