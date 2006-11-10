@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import junit.framework.JUnit4TestAdapter;
@@ -60,6 +61,8 @@ public class JNDIReferenceableTest
         TransportConnection.killVMBroker(1);
     }
 
+
+    @Ignore("FSContext has been removed from repository. This needs redone with the PropertiesFileInitialContextFactory. QPID-84")
     @Test
     public void referenceable()
     {
