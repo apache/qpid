@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({HeadersBindingTest.class, HeadersExchangeTest.class})
+@Suite.SuiteClasses({HeadersBindingTest.class})
 public class UnitTests
 {
     public static junit.framework.Test suite()
