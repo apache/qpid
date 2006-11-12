@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({RecoverTest.class})
+@Suite.SuiteClasses({DisconnectAndRedeliverTest.class})
 public class UnitTests
 {
     public static junit.framework.Test suite()

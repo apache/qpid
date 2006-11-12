@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.test.unit.ack;
+package org.apache.qpid.server.exchange;
 
 import junit.framework.JUnit4TestAdapter;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({RecoverTest.class})
+@Suite.SuiteClasses({HeadersExchangeTest.class})
 public class UnitTests
 {
     public static junit.framework.Test suite()

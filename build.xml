@@ -26,7 +26,7 @@
   <property name="modules.extra" value=""/>
   <property name="modules.client" value="common,client"/>
   <property name="modules"
-            value="${modules.client},broker,broker/test,client/test,management/core,management/cli,cluster,${modules.extra}"/>
+            value="${modules.client},broker,broker/test,client/test,management/core,management/cli,cluster,systests,${modules.extra}"/>
 
   <property name="release.fullversion" value="${build.release.version}-${build.release.name}-${build.release.tag}"/>
 
