@@ -21,6 +21,8 @@
 #ifndef _SessionHandlerFactory_
 #define _SessionHandlerFactory_
 
+#include <boost/noncopyable.hpp>
+
 namespace qpid {
 namespace sys {
 

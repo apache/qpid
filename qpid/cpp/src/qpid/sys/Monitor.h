@@ -164,46 +164,46 @@ struct PODMutex
 
 
 void PODMutex::lock() {
-    CHECK(pthread_mutex_lock(&mutex));
+    CHECK0(pthread_mutex_lock(&mutex));
 }
 void PODMutex::unlock() {
-    CHECK(pthread_mutex_unlock(&mutex));
+    CHECK0(pthread_mutex_unlock(&mutex));
 }
 
 void PODMutex::trylock() {
-    CHECK(pthread_mutex_trylock(&mutex));
+    CHECK0(pthread_mutex_trylock(&mutex));
 }
 
 
 Mutex::Mutex() {
-    CHECK(pthread_mutex_init(&mutex, 0));
+    CHECK0(pthread_mutex_init(&mutex, 0));
 }
 
 Mutex::~Mutex(){
-    CHECK(pthread_mutex_destroy(&mutex));
+    CHECK0(pthread_mutex_destroy(&mutex));
 }
 
 void Mutex::lock() {
-    CHECK(pthread_mutex_lock(&mutex));
+    CHECK0(pthread_mutex_lock(&mutex));
 }
 void Mutex::unlock() {
-    CHECK(pthread_mutex_unlock(&mutex));
+    CHECK0(pthread_mutex_unlock(&mutex));
 }
 
 void Mutex::trylock() {
-    CHECK(pthread_mutex_trylock(&mutex));
+    CHECK0(pthread_mutex_trylock(&mutex));
 }
 
 Monitor::Monitor() {
-    CHECK(pthread_cond_init(&condition, 0));
+    CHECK0(pthread_cond_init(&condition, 0));
 }
 
 Monitor::~Monitor() {
-    CHECK(pthread_cond_destroy(&condition));
+    CHECK0(pthread_cond_destroy(&condition));
 }
 
 void Monitor::wait() {
-    CHECK(pthread_cond_wait(&condition, &mutex));
+    CHECK0(pthread_cond_wait(&condition, &mutex));
 }
 
 bool Monitor::wait(int64_t nsecs){
@@ -211,17 +211,17 @@ bool Monitor::wait(int64_t nsecs){
     int status = pthread_cond_timedwait(&condition, &mutex, &t.getTimespec());
     if(status != 0) {
         if (errno == ETIMEDOUT) return false;
-        CHECK(status);
+        CHECK0(status);
     }
     return true;
 }
 
 void Monitor::notify(){
-    CHECK(pthread_cond_signal(&condition));
+    CHECK0(pthread_cond_signal(&condition));
 }
 
 void Monitor::notifyAll(){
-    CHECK(pthread_cond_broadcast(&condition));
+    CHECK0(pthread_cond_broadcast(&condition));
 }
 
 

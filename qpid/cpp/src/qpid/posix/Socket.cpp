@@ -33,7 +33,7 @@ using namespace qpid::sys;
 
 Socket::Socket() : socket(::socket (PF_INET, SOCK_STREAM, 0))
 {
-    if (socket == 0) CHECK(-1);
+    CHECKNN(socket == 0);
 }
 
 void
@@ -53,16 +53,16 @@ Socket::connect(const std::string& host, int port)
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
     struct hostent* hp = gethostbyname ( host.c_str() );
-    if (hp == 0) CHECK(-1);     // TODO aconway 2006-11-09: error message?
+    if (hp == 0) CHECK0(-1);     // TODO aconway 2006-11-09: error message?
     memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-    CHECK(::connect(socket, (struct sockaddr*)(&name), sizeof(name)));
+    CHECK0(::connect(socket, (struct sockaddr*)(&name), sizeof(name)));
 }
 
 void
 Socket::close()
 {
     if (socket == 0) return;
-    CHECK(::close(socket));
+    CHECK0(::close(socket));
     socket = 0;
 }
 
@@ -73,7 +73,7 @@ Socket::send(const char* data, size_t size)
     if (sent < 0) {
         if (errno == ECONNRESET) return SOCKET_EOF;
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        CHECK(sent);
+        CHECK0(sent);
     }
     return sent;
 }
@@ -84,7 +84,7 @@ Socket::recv(char* data, size_t size)
     ssize_t received = ::recv(socket, data, size, 0);
     if (received < 0) {
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        CHECK(received);
+        CHECK0(received);
     }
     return received;
 }

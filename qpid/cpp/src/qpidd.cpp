@@ -20,7 +20,7 @@
  */
 #include <qpid/broker/Broker.h>
 #include <qpid/broker/Configuration.h>
-#include <apr-1/apr_signal.h>
+#include <qpid/sys/signal.h>
 #include <iostream>
 #include <memory>
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
             config.usage();
         }else{
             broker = Broker::create(config);
-            apr_signal(SIGINT, handle_signal);
+            qpid::sys::signal(SIGINT, handle_signal);
             broker->run();
         }
         return 0;
