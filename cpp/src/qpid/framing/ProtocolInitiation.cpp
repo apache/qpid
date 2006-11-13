@@ -35,8 +35,8 @@ void qpid::framing::ProtocolInitiation::encode(Buffer& buffer){
     buffer.putOctet('P');
     buffer.putOctet(1);//class
     buffer.putOctet(1);//instance
-    buffer.putOctet(version.major_);
-    buffer.putOctet(version.minor_);    
+    buffer.putOctet(version.getMajor());
+    buffer.putOctet(version.getMinor());    
 }
 
 bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
@@ -47,8 +47,8 @@ bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
 	buffer.getOctet();//P
 	buffer.getOctet();//class
 	buffer.getOctet();//instance
-	version.major_ = buffer.getOctet();
-	version.minor_ = buffer.getOctet();
+	version.setMajor(buffer.getOctet());
+	version.setMinor(buffer.getOctet());
 	return true;
     }else{
 	return false;

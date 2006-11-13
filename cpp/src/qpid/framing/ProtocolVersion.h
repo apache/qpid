@@ -30,15 +30,20 @@ namespace framing
 
 class ProtocolVersion
 {
-public:
+private:
     u_int8_t major_;
 	u_int8_t minor_;
     
+public:
     ProtocolVersion();
     ProtocolVersion(u_int8_t _major, u_int8_t _minor);
     ProtocolVersion(const ProtocolVersion& p);
     virtual ~ProtocolVersion();
-    
+
+    inline u_int8_t getMajor() const { return major_; }
+    inline void setMajor(u_int8_t major) { major_ = major; }
+    inline u_int8_t getMinor() const { return minor_; }
+    inline void setMinor(u_int8_t minor) { minor_ = minor; }
     virtual bool equals(u_int8_t _major, u_int8_t _minor) const;
     virtual bool equals(const ProtocolVersion& p) const;
     virtual const std::string toString() const;
