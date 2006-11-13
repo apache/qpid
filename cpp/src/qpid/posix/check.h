@@ -23,14 +23,16 @@
  */
 
 #include <errno.h>
+#include <string>
+#include <qpid/QpidError.h>
 
 namespace qpid {
 namespace sys {
 
-void check(long result, const char* file, const int line);
+std::string errnoToString();
 
-#define CHECK(N) qpid::sys::check(N, __FILE__, __LINE__)
-
+#define CHECK0(N) if ((N)!=0) THROW_QPID_ERROR(INTERNAL_ERROR, errnoToString())
+#define CHECKNN(N) if ((N)<0) THROW_QPID_ERROR(INTERNAL_ERROR, errnoToString())
 }}
 
 
