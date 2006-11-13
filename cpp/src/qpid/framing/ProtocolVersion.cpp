@@ -37,7 +37,7 @@ ProtocolVersion::ProtocolVersion(const ProtocolVersion::ProtocolVersion& p):
 
 ProtocolVersion::~ProtocolVersion()
 {}
-    
+
 bool  ProtocolVersion::equals(u_int8_t _major, u_int8_t _minor) const
 {
     return major_ == _major && minor_ == _minor;
