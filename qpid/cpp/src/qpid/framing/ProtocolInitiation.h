@@ -42,8 +42,8 @@ public:
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
     inline virtual u_int32_t size() const { return 8; }
-    inline u_int8_t getMajor(){ return version.major_; }
-    inline u_int8_t getMinor(){ return version.minor_; }
+    inline u_int8_t getMajor() const { return version.getMajor(); }
+    inline u_int8_t getMinor() const { return version.getMinor(); }
     inline const ProtocolVersion& getVersion() const { return version; }
 };
 
