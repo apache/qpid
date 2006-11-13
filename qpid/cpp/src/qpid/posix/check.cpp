@@ -22,10 +22,12 @@
 #include <qpid/QpidError.h>
 #include "check.h" 
 
-void qpid::sys::check(long result, const char* file, const int line) {
-    if (result != 0) {
-        char buf[512];
-        char* msg = strerror_r(errno, buf, sizeof(buf));
-        throw QpidError(errno, msg, file, line);
-    }
+namespace qpid {
+namespace sys {
+
+std::string strError() {
+    char buf[512];
+    return strerror_r(errno, buf, sizeof(buf));
 }
+
+}}
