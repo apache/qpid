@@ -87,11 +87,11 @@ Thread Thread::current(){
 #else
 
 Thread::Thread(Runnable* runnable) {
-    CHECK(pthread_create(&thread, NULL, runRunnable, runnable));
+    CHECK0(pthread_create(&thread, NULL, runRunnable, runnable));
 }
 
 void Thread::join(){
-    if (thread != 0) CHECK(pthread_join(thread, 0));
+    if (thread != 0) CHECK0(pthread_join(thread, 0));
 }
 
 Thread::Thread(pthread_t thr) : thread(thr) {}
