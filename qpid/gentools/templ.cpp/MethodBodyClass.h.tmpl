@@ -47,16 +47,13 @@ ${version_namespace_start}
  
 class ${CLASS}${METHOD}Body : virtual public AMQMethodBody
 {
-	const int classId = ${CLASS_ID_INIT};
-	const int methodId = ${METHOD_ID_INIT};
-	
 	// Method field declarations
 
 %{FLIST} ${mb_field_declaration}
      
 
 public:
-    typedef std::tr1::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
+    typedef boost::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
 
 	// Constructors and destructors
 	
@@ -68,8 +65,6 @@ public:
 
     inline ${CLASS}${METHOD}Body() {}
 
-	${CLASS}${METHOD}Body() {}
-	
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods
@@ -86,12 +81,12 @@ public:
 
     inline u_int16_t amqpClassId() const
     {
-    	return classId;
+    	return ${CLASS_ID_INIT};
     }
     
     inline u_int16_t amqpMethodId() const
     {
-    	return methodId;
+    	return ${METHOD_ID_INIT};
     }
 
     inline u_int32_t bodySize() const
@@ -113,7 +108,7 @@ public:
 
     inline void invoke(AMQP_ServerOperations& target, u_int16_t channel)
     {
-		target.getBasicHandler()->consume(
+		target.getBasicHandler()->publish(channel,
 %{FLIST} ${mb_field_list}
 		);
     }

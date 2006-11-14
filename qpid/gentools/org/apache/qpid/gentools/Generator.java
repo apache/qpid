@@ -32,6 +32,9 @@ import java.util.Iterator;
 
 public abstract class Generator implements LanguageConverter
 {
+    protected static String cr = Utils.lineSeparator;
+    protected static enum EnumConstOutputTypes { OUTPUT_STRING, OUTPUT_INTEGER, OUTPUT_DOUBLE; };
+    
 	// This string is reproduced in every generated file as a comment
 	// TODO: Tie the version info into the build system.
 	protected static final String generatorInfo = "Qpid Gentools v.0.1";
