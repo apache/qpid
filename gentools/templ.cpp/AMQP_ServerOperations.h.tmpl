@@ -30,6 +30,9 @@
 #define _AMQP_ServerOperations_
 
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/framing/ProtocolVersionException.h"
+#include <sstream>
 
 namespace qpid {
 namespace framing {
@@ -47,11 +50,11 @@ public:
     inline u_int8_t getMajor() const { return version.getMajor(); }
     inline u_int8_t getMinor() const { return version.getMinor(); }
     inline const ProtocolVersion& getVersion() const { return version; }
-    inline isVersion(u_int8_t _major, u_int8_t _minor) const
+    inline bool isVersion(u_int8_t _major, u_int8_t _minor) const
     {
         return version.equals(_major, _minor);
     }
-    inline isVersion(ProtocolVersion& _version) const
+    inline bool isVersion(ProtocolVersion& _version) const
     {
         return version.equals(_version);
     }
@@ -59,13 +62,13 @@ public:
 	// Include framing constant declarations
 	#include "AMQP_Constants.h"
 
-    // Method handler get methods
-
-%{CLIST} ${soh_method_handler_get_method}
-
     // Inner classes
 
 %{CLIST} ${soh_inner_class}
+
+    // Method handler get methods
+
+%{CLIST} ${soh_method_handler_get_method}
 
 }; /* class AMQP_ServerOperations */
 

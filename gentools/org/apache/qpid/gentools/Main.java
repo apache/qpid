@@ -162,7 +162,7 @@ public class Main
 //		System.out.println();
 //		System.out.println("*** Debug output ***");
 //		System.out.println();
-		constants.print(System.out, 0, 2);
+//		constants.print(System.out, 0, 2);
 //      System.out.println();
 //      versionSet.print(System.out, 0, 2);
 //		System.out.println();

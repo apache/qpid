@@ -29,7 +29,6 @@ import java.util.TreeMap;
 
 public class CppGenerator extends Generator
 {
-	protected static final String cr = Utils.lineSeparator;
 	protected static final String versionNamespaceStartToken = "${version_namespace_start}";
 	protected static final String versionNamespaceEndToken = "${version_namespace_end}";
 	protected static final int FIELD_NAME = 0;
@@ -40,7 +39,7 @@ public class CppGenerator extends Generator
 		"enum", "explicit", "extern", "false", "float", "for", "friend", "goto", "if", "inline",
 		"int", "long", "mutable", "namespace", "new", "not", "not_eq", "operator", "or", "or_eq",
 		"private", "protected", "public", "register", "reinterpret_cast", "return", "short",
-		"signed", "sizeof", "static", "static_cast", "struct", "switch", "template", "this",
+		"signed", "sizeof", "static", "static_cast", "string", "struct", "switch", "template", "this",
 		"throw", "true", "try", "typedef", "typeid", "typename", "union", "unsigned", "using",
 		"virtual", "void", "volatile", "wchar_t", "while", "xor", "xor_eq"};
 	
@@ -78,12 +77,12 @@ public class CppGenerator extends Generator
 				"u_int32_t",			// type
 				"4", 					// size
                 "buffer.putLong(#)",	// encodeExpression
-				"buffer.getLong(#)"));	// decodeExpression
+				"# = buffer.getLong()"));	// decodeExpression
 		typeMap.put("longlong", new DomainInfo(
 				"u_int64_t",			// type
 				"8", 					// size
                 "buffer.putLongLong(#)", // encodeExpression
-				"buffer.getLongLong(#)")); // decodeExpression
+				"# = buffer.getLongLong()")); // decodeExpression
 		typeMap.put("longstr", new DomainInfo(
 				"string",				// type
 				"4 + #.length()", 		// size
@@ -93,12 +92,12 @@ public class CppGenerator extends Generator
 				"u_int8_t",				// type
 				"1", 					// size
                 "buffer.putOctet(#)",	// encodeExpression
-				"buffer.getOctet(#)"));	// decodeExpression
+				"# = buffer.getOctet()"));	// decodeExpression
 		typeMap.put("short", new DomainInfo(
 				"u_int16_t",			// type
 				"2",					// size
                 "buffer.putShort(#)",	// encodeExpression
-				"buffer.getShort(#)"));	// decodeExpression
+				"# = buffer.getShort()"));	// decodeExpression
 		typeMap.put("shortstr", new DomainInfo(
 				"string",				// type
 				"1 + #.length()",		// size
@@ -473,11 +472,7 @@ public class CppGenerator extends Generator
         String token = tline.substring(tokxStart).trim();
         sb.delete(listMarkerStartIndex, lend);
         
-        if (token.compareTo("${ch_static_const_decl}") == 0)
-        {
-            codeSnippet = generateConstantDeclarations(constantSet, 4, 4);
-        }
-        else if (token.compareTo("${ch_get_value_method}") == 0)
+        if (token.compareTo("${ch_get_value_method}") == 0)
         {
             codeSnippet = generateConstantGetMethods(constantSet, 4, 4);
         }
@@ -493,30 +488,11 @@ public class CppGenerator extends Generator
     
     // Methods for generation of code snippets for AMQP_Constants.h file
     
-    protected String generateConstantDeclarations(AmqpConstantSet constantSet,
-        int indentSize, int tabSize)
-    {
-        String indent = Utils.createSpaces(indentSize);
-        String tab = Utils.createSpaces(tabSize);
-        StringBuffer sb = new StringBuffer();
-        Iterator<AmqpConstant> cItr = constantSet.iterator();
-        while (cItr.hasNext())
-        {
-            AmqpConstant constant = cItr.next();
-            // Do nothing if version is consistent across all versions
-            if (!constant.isVersionConsistent(globalVersionSet))
-            {
-                
-            }
-        }
-        return sb.toString();       
-    }
-    
     protected String generateConstantGetMethods(AmqpConstantSet constantSet,
         int indentSize, int tabSize)
+        throws AmqpTypeMappingException
     {
         String indent = Utils.createSpaces(indentSize);
-        String tab = Utils.createSpaces(tabSize);
         StringBuffer sb = new StringBuffer();
         Iterator<AmqpConstant> cItr = constantSet.iterator();
         while (cItr.hasNext())
@@ -526,28 +502,97 @@ public class CppGenerator extends Generator
             {
                 // return a constant
                 String value = constant.firstKey();
-                sb.append(indent + "public const char* " + constant.name + "() const { return \"" +
+                sb.append(indent + "static const char* " + constant.name + "() { return \"" +
                     constant.firstKey() + "\"; }" + cr);
-                sb.append(indent + "public const string& " + constant.name + "AsString() const { return new string(\"" +
-                    constant.firstKey() + "\"); }" + cr);
+//                sb.append(indent + "std::string " + constant.name + "Str(\"" +
+//                    constant.firstKey() + "\");" + cr);
+//                sb.append(indent + "static const std::string& " + constant.name + "AsString() { return " +
+//                    constant.name + "Str; }" + cr);
                 if (Utils.containsOnlyDigits(value))
                 {
-                    sb.append(indent + "public int " + constant.name + "AsInt() const { return " +
+                    sb.append(indent + "static int " + constant.name + "AsInt() { return " +
                         constant.firstKey() + "; }" + cr);
                 }
                 if (Utils.containsOnlyDigitsAndDecimal(value))
                 {
-                    sb.append(indent + "public double " + constant.name + "AsDouble() const { return (double)" +
+                    sb.append(indent + "static double " + constant.name + "AsDouble() { return (double)" +
                         constant.firstKey() + "; }" + cr);
                 }
                 sb.append(cr);
            }
             else
             {
-                // return value from version map
+                // Return version-specific constant
+                sb.append(generateVersionDependentGet(constant, "const char*", "", "\"", "\"", indentSize, tabSize));
+//                sb.append(generateVersionDependentGet(constant, "const string&", "AsString", "string(\"", "\")", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, "int", "AsInt", "", "", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, "double", "AsDouble", "(double)", "", indentSize, tabSize));
+                sb.append(cr);
             }
         }        
         return sb.toString();       
+    }
+    
+    protected String generateVersionDependentGet(AmqpConstant constant, String methodReturnType,
+        String methodNameSuffix, String returnPrefix, String returnPostfix, int indentSize, int tabSize)
+        throws AmqpTypeMappingException
+    {
+        String indent = Utils.createSpaces(indentSize);
+        String tab = Utils.createSpaces(tabSize);
+        StringBuffer sb = new StringBuffer();
+        sb.append(indent + methodReturnType + " " + constant.name + methodNameSuffix +
+            "() const" + cr);
+        sb.append(indent + "{" + cr);
+        boolean first = true;
+        Iterator<String> sItr = constant.keySet().iterator();
+        while (sItr.hasNext())
+        {
+            String value = sItr.next();
+            AmqpVersionSet versionSet = constant.get(value);
+            sb.append(indent + tab + (first ? "" : "else ") + "if (" + generateVersionCheck(versionSet) +
+                ")" + cr);
+            sb.append(indent + tab + "{" + cr);
+            if (methodReturnType.compareTo("int") == 0 && !Utils.containsOnlyDigits(value))
+            {
+                sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
+                    indentSize + (2*tabSize), tabSize));
+            }
+            else if (methodReturnType.compareTo("double") == 0 && !Utils.containsOnlyDigitsAndDecimal(value))
+            {
+                sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
+                    indentSize + (2*tabSize), tabSize));                            
+            }
+            else
+            {
+                sb.append(indent + tab + tab + "return " + returnPrefix + value + returnPostfix + ";" + cr);
+            }
+            sb.append(indent + tab + "}" + cr);
+            first = false;
+        }
+        sb.append(indent + tab + "else" + cr);
+        sb.append(indent + tab + "{" + cr);
+        sb.append(indent + tab + tab + "std::stringstream ss;" + cr);
+        sb.append(indent + tab + tab + "ss << \"Constant \\\"" + constant.name +
+            "\\\" is undefined for AMQP version \" <<" + cr);
+        sb.append(indent + tab + tab + tab + "version.toString() << \".\";" + cr);
+        sb.append(indent + tab + tab + "throw ProtocolVersionException(ss.str());" + cr);
+        sb.append(indent + tab + "}" + cr);
+        sb.append(indent + "}" + cr); 
+        return sb.toString();       
+    }
+        
+    protected String generateConstantDeclarationException(String name, String methodReturnType,
+        int indentSize, int tabSize)
+    {
+        String indent = Utils.createSpaces(indentSize);
+        String tab = Utils.createSpaces(tabSize);
+        StringBuffer sb = new StringBuffer();
+        sb.append(indent + "std::stringstream ss;" + cr);
+        sb.append(indent + "ss << \"Constant \\\"" + name + "\\\" cannot be converted to type " +
+            methodReturnType + " for AMQP version \" <<" + cr);        
+        sb.append(indent + tab + "version.toString() << \".\";" + cr);        
+        sb.append(indent + "throw ProtocolVersionException(ss.str());" + cr);        
+       return sb.toString();       
     }
 	
 	// Methods used for generation of code snippets for Server/ClientOperations class generation
@@ -628,6 +673,7 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
+        String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + (abstractMethodFlag ? "Operations" : "Proxy");
 		boolean first = true;
 		Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
 		while (mItr.hasNext())
@@ -637,7 +683,7 @@ public class CppGenerator extends Generator
 			boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
 			if ((serverFlag && serverChassisFlag) || (!serverFlag && clientChassisFlag))
 			{
-				String methodName = parseForReservedWords(method.name, thisClass.name);				
+				String methodName = parseForReservedWords(method.name, outerClassName + "." + thisClass.name);				
 				AmqpOverloadedParameterMap overloadededParameterMap =
 					method.getOverloadedParameterLists(thisClass.versionSet, this);
 				Iterator<AmqpOrdinalFieldMap> ofmItr = overloadededParameterMap.keySet().iterator();
@@ -670,11 +716,12 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
+        String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		Iterator<String> cItr = model.classMap.keySet().iterator();
 		while (cItr.hasNext())
 		{
 			AmqpClass thisClass = model.classMap.get(cItr.next());
-			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), null);
+			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			String className = parseForReservedWords(thisClass.name, null);
 			sb.append(indent + instanceName + " " + className + ";");
 			if (thisClass.versionSet.size() != globalVersionSet.size())
@@ -690,11 +737,12 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
+        String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		Iterator<String> cItr = model.classMap.keySet().iterator();
 		while (cItr.hasNext())
 		{
 			AmqpClass thisClass = model.classMap.get(cItr.next());
-			String className = parseForReservedWords(thisClass.name, null);
+			String className = parseForReservedWords(thisClass.name, outerClassName);
 			sb.append(indent + className + "& get" + className + "();");
 			if (thisClass.versionSet.size() != globalVersionSet.size())
 				sb.append(" // AMQP Version(s) " + thisClass.versionSet + cr);
@@ -756,13 +804,14 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer(indent + "out(out)," + cr);
+        String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		sb.append(indent + "major(major)," + cr);
 		sb.append(indent + "minor(minor)");
 		Iterator<String> cItr = model.classMap.keySet().iterator();
 		while (cItr.hasNext())
 		{
 			AmqpClass thisClass = model.classMap.get(cItr.next());
-			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), null);
+			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			sb.append("," + cr);
 			sb.append(indent + instanceName + "(out)");
 			if (!cItr.hasNext())
@@ -784,7 +833,7 @@ public class CppGenerator extends Generator
 		{
 			AmqpClass thisClass = model.classMap.get(cItr.next());
 			String className = thisClass.name;
-			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), null);
+			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			sb.append(indent + outerClassName + "::" + className + "& " +
 				outerClassName + "::get" + className + "()" + cr);
 			sb.append(indent + "{" + cr);
@@ -840,7 +889,7 @@ public class CppGenerator extends Generator
 			boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
 			if ((serverFlag && serverChassisFlag) || (!serverFlag && clientChassisFlag))
 			{
-				String methodName = parseForReservedWords(method.name, thisClass.name);
+				String methodName = parseForReservedWords(method.name, outerclassName + "." + thisClass.name);
 				AmqpOverloadedParameterMap overloadededParameterMap =
 					method.getOverloadedParameterLists(thisClass.versionSet, this);
 				Iterator<AmqpOrdinalFieldMap> ofmItr = overloadededParameterMap.keySet().iterator();
@@ -944,31 +993,42 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
-		Iterator<String> fItr = fieldMap.keySet().iterator();
-		while(fItr.hasNext())
-		{
-			AmqpField fieldDetails = fieldMap.get(fItr.next());
-			if (version == null) // Version consistent - there *should* be only one domain
-			{
-				String domainName =  fieldDetails.domainMap.firstKey();
-				String codeType = getGeneratedType(domainName, globalVersionSet.first());
-				sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
-			}
-			else
-			{
-				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
-				while (dItr.hasNext())
-				{
-					String domainName = dItr.next();
-					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
-					if (versionSet.contains(version))
-					{
-						String codeType = getGeneratedType(domainName, version);
-						sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
-					}
-				}
-			}
-		}
+        
+        if (version == null)
+            version = globalVersionSet.first();
+        AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, this);
+        Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
+        while (oItr.hasNext())
+        {
+            String[] fieldDomainPair = ordinalFieldMap.get(oItr.next());
+            sb.append(indent + fieldDomainPair[FIELD_DOMAIN] + " " + fieldDomainPair[FIELD_NAME] + ";" + cr);
+        }
+        
+//		Iterator<String> fItr = fieldMap.keySet().iterator();
+//		while(fItr.hasNext())
+//		{
+//			AmqpField fieldDetails = fieldMap.get(fItr.next());
+//			if (version == null) // Version consistent - there *should* be only one domain
+//			{
+//				String domainName =  fieldDetails.domainMap.firstKey();
+//				String codeType = getGeneratedType(domainName, globalVersionSet.first());
+//				sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
+//			}
+//			else
+//			{
+//				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
+//				while (dItr.hasNext())
+//				{
+//					String domainName = dItr.next();
+//					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
+//					if (versionSet.contains(version))
+//					{
+//						String codeType = getGeneratedType(domainName, version);
+//						sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
+//					}
+//				}
+//			}
+//		}
 		return sb.toString();
 	}
 	
@@ -1139,8 +1199,8 @@ public class CppGenerator extends Generator
 		int numBytes = ((bitFieldList.size() - 1) / 8) + 1;
 		String indent = Utils.createSpaces(indentSize);
 		String bitArrayName = "flags_" + ordinal;
-		StringBuffer sb = new StringBuffer(indent + "u_int8_t[" + numBytes + "] " +
-			bitArrayName + " = {0};" +
+		StringBuffer sb = new StringBuffer(indent + "u_int8_t " + bitArrayName +
+            "[" + numBytes + "] = {0};" + 
 			(numBytes != 1 ? " /* All array elements will be initialized to 0 */" : "") +
 			cr);
 		for (int i=0; i<bitFieldList.size(); i++)
@@ -1207,11 +1267,11 @@ public class CppGenerator extends Generator
 		int numBytes = ((bitFieldList.size() - 1) / 8) + 1;
 		String indent = Utils.createSpaces(indentSize);
 		String bitArrayName = "flags_" + ordinal;
-		StringBuffer sb = new StringBuffer(indent + "u_int8_t[" + numBytes + "] " +
-			bitArrayName + ";" + cr);	
+		StringBuffer sb = new StringBuffer(indent + "u_int8_t " + bitArrayName +
+            "[" + numBytes + "];" + cr);	
 		for (int i=0; i<numBytes; i++)
 		{
-			sb.append(indent + "buffer.getOctet(" + bitArrayName + "[" + i + "]);" + cr);
+			sb.append(indent + bitArrayName + "[" + i + "] = buffer.getOctet();" + cr);
 		}
 		for (int i=0; i<bitFieldList.size(); i++)
 		{
@@ -1233,10 +1293,9 @@ public class CppGenerator extends Generator
 		StringBuffer sb = new StringBuffer();
 		AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, this);
 		Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
-		int ordinal = 0;
 		while (oItr.hasNext())
 		{
-			ordinal = oItr.next();
+			int ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			sb.append(indent + (defineFlag ? fieldDomainPair[FIELD_DOMAIN] + " " : "") +
 				fieldDomainPair[FIELD_NAME] + (initializerFlag ? "(" + fieldDomainPair[FIELD_NAME] + ")" : "") +
@@ -1296,24 +1355,14 @@ public class CppGenerator extends Generator
 		return sb.toString();
 	}
 	
-	private String parseForReservedWords(String name, String className)
+	private String parseForReservedWords(String name, String context)
 	{
 		for (int i=0; i<cppReservedWords.length; i++)
 			if (name.compareTo(cppReservedWords[i]) == 0)
 			{
-				if (className == null)
-				{
-					System.out.println("WARNING: Found name \"" + name +
-						"\", which is a C/C++ reserved word. " +
-						"Changing generated name to \"" + name + "_\".");
-				}
-				else
-				{
-					System.out.println("WARNING: Found method \"" + name +
-						"\" in class \"" + className +
-						"\", which is a C/C++ reserved word. " +
-						"Changing generated method name to \"" + name + "_\".");
-				}
+				System.out.println("WARNING: " + (context == null ? "" : context + ": ") +
+                    "Found XML method \"" + name + "\", which is a C++ reserved word. " +
+                    "Changing generated name to \"" + name + "_\".");
 				return name + "_";
 			}
 		return name;
