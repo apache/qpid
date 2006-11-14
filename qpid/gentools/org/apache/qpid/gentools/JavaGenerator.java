@@ -30,9 +30,6 @@ import java.util.TreeMap;
 
 public class JavaGenerator extends Generator
 {
-	private static String cr = Utils.lineSeparator;
-    private enum OutputTypes { OUTPUT_STRING, OUTPUT_INTEGER, OUTPUT_DOUBLE; };
-	
 	private class DomainInfo
 	{
 		public String type;
@@ -818,36 +815,26 @@ public class JavaGenerator extends Generator
             }
             else
             {
-                // return value from version map
-                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_STRING, indentSize, tabSize));
-                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_INTEGER, indentSize, tabSize));
-                sb.append(generateVersionDependentGet(constant, OutputTypes.OUTPUT_DOUBLE, indentSize, tabSize));
+                // Return version-specific constant
+                sb.append(generateVersionDependentGet(constant, "String", "", "\"", "\"", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, "int", "AsInt", "", "", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(constant, "double", "AsDouble", "(double)", "", indentSize, tabSize));
                 sb.append(cr);
            }
         }        
         return sb.toString();       
     }
     
-    protected String generateVersionDependentGet(AmqpConstant constant, OutputTypes outType, int indentSize, int tabSize)
+    protected String generateVersionDependentGet(AmqpConstant constant,
+        String methodReturnType, String methodNameSuffix, String returnPrefix, String returnPostfix,
+        int indentSize, int tabSize)
         throws AmqpTypeMappingException
     {
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         StringBuffer sb = new StringBuffer();
-        String methodNameSuffix = "";
-        String methodReturnType = "String";
-        if (outType == OutputTypes.OUTPUT_INTEGER)
-        {
-            methodNameSuffix = "AsInt";
-            methodReturnType = "int";
-        }
-        else if (outType == OutputTypes.OUTPUT_DOUBLE)
-        {
-            methodNameSuffix = "AsDouble";
-            methodReturnType = "double";
-        }
         sb.append(indent + "public static " + methodReturnType + " " + constant.name +
-             methodNameSuffix + "(byte major, byte minor) throws AMQProtocolVersionException" + cr);
+            methodNameSuffix + "(byte major, byte minor) throws AMQProtocolVersionException" + cr);
         sb.append(indent + "{" + cr);
         boolean first = true;
         Iterator<String> sItr = constant.keySet().iterator();
@@ -855,36 +842,22 @@ public class JavaGenerator extends Generator
         {
             String value = sItr.next();
             AmqpVersionSet versionSet = constant.get(value);
-            sb.append(indent + tab + (first ? "" : "else ") + "if (" +
-                generateVersionCheck(versionSet) + ")" + cr);
+            sb.append(indent + tab + (first ? "" : "else ") + "if (" + generateVersionCheck(versionSet) +
+                ")" + cr);
             sb.append(indent + tab + "{" + cr);
-            if (outType == OutputTypes.OUTPUT_STRING)
+            if (methodReturnType.compareTo("int") == 0 && !Utils.containsOnlyDigits(value))
             {
-                sb.append(indent + tab + tab + "return \"" + value + "\";" + cr);
+                sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
+                    indentSize + (2*tabSize), tabSize));
             }
-            else if (outType == OutputTypes.OUTPUT_INTEGER)
+            else if (methodReturnType.compareTo("double") == 0 && !Utils.containsOnlyDigitsAndDecimal(value))
             {
-                if (Utils.containsOnlyDigits(value))
-                {
-                    sb.append(indent + tab + tab + "return " + value + ";" + cr);
-                }
-                else
-                {
-                    sb.append(generateConstantDeclarationException(constant.name, outType,
-                        indentSize + (2*tabSize), tabSize));
-                }
+                sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
+                    indentSize + (2*tabSize), tabSize));                            
             }
-            else if (outType == OutputTypes.OUTPUT_DOUBLE)
+            else
             {
-                if (Utils.containsOnlyDigitsAndDecimal(value))
-                {
-                    sb.append(indent + tab + tab + "return (double)" + value + ";" + cr);
-                }
-                else
-                {
-                    sb.append(generateConstantDeclarationException(constant.name, outType,
-                        indentSize + (2*tabSize), tabSize));
-                }
+                sb.append(indent + tab + tab + "return " + returnPrefix + value + returnPostfix + ";" + cr);
             }
             sb.append(indent + tab + "}" + cr);
             first = false;
@@ -894,37 +867,22 @@ public class JavaGenerator extends Generator
         sb.append(indent + tab + tab + "throw new AMQProtocolVersionException(\"Constant \\\"" +
             constant.name + "\\\" \" +" + cr);
         sb.append(indent + tab + tab + tab +
-            "\"undefined for AMQP version \" + major + \"-\" + minor + \".\");" + cr);
+            "\"is undefined for AMQP version \" + major + \"-\" + minor + \".\");" + cr);
         sb.append(indent + tab + "}" + cr);
-        sb.append(indent + "}" + cr);        
+        sb.append(indent + "}" + cr); 
         return sb.toString();       
     }
-    
-    protected String generateConstantDeclarationException(String name, OutputTypes outType,
+        
+    protected String generateConstantDeclarationException(String name, String methodReturnType,
         int indentSize, int tabSize)
     {
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         StringBuffer sb = new StringBuffer();
-        String typeStr;
-        switch (outType)
-        {
-            case OUTPUT_STRING:
-                typeStr = "a String";
-                break;
-            case OUTPUT_INTEGER:
-                typeStr = "an integer";
-               break;
-            case OUTPUT_DOUBLE:
-                typeStr = "a double";
-                break;
-            default:
-                typeStr = "*ERROR*";
-        }
         sb.append(indent + "throw new AMQProtocolVersionException(\"Constant \\\"" +
-                        name + "\\\" \" +" + cr);
-        sb.append(indent + tab + "\"is not " + typeStr +
-            " type for AMQP version \" + major + \"-\" + minor + \".\");" + cr);        
+            name + "\\\" \" +" + cr);
+        sb.append(indent + tab + "\"cannot be converted to type " + methodReturnType +
+            " for AMQP version \" + major + \"-\" + minor + \".\");" + cr);        
         return sb.toString();       
     }
     
