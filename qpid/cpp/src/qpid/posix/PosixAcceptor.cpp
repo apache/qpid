@@ -37,7 +37,7 @@ class PosixAcceptor : public Acceptor {
 };
 
 // Define generic Acceptor::create() to return APRAcceptor.
-Acceptor::shared_ptr Acceptor::create(int16_t , int, int )
+    Acceptor::shared_ptr Acceptor::create(int16_t , int, int, bool)
 {
     return Acceptor::shared_ptr(new PosixAcceptor());
 }
