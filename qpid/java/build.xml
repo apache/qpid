@@ -148,8 +148,7 @@
         </antcall>
 
          <copy todir="${build.release.prepare}/src/java">
-            <fileset dir="${project.root}">
-                <include name="management/**"/>
+            <fileset dir="${project.root}">                
                 <include name="${tasks.dir}/${src.dir}/**"/>
                 <include name="${doc.dir}/**"/>
             </fileset>
@@ -256,15 +255,53 @@
 
     </target>
 
-
     <target name="std-bin-release" depends="preparerelease">
 
-        <property name="release.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}"/>
-        <mkdir dir="${build.release}/${project.name}-java-${release.fullversion}"/>
+        <antcall target="std-bin-release-item">
+            <param name="module.content" value="client-server"/>
+        </antcall>
 
-        <iterate target="dist">
-            <property name="module.preix" value="${project.name}-"/>
-            <property name="module.suffix" value="-${release.fullversion}"/>
+        <antcall target="std-bin-release-item">
+            <param name="module.content" value="client"/>
+            <param name="modules.include" value="${modules.client}"/>
+            <param name="release.libsonly" value=""/>
+        </antcall>
+
+    </target>
+
+    <!-- incoming params
+         module.content    i.e. client or client-server
+         modules.include   i.e. ${modules.client}
+         release.libsonly  determines what task to run on the iterate normally dist but if libs only then dist-lib
+    -->
+     <target name="std-bin-release-item" depends="preparerelease">
+
+         <property name="release.client.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}-client"/>
+
+         <!-- if modules.include has not been set set it to all modules-->
+         <property name="modules.include" value="${modules}"/>
+
+         <!-- Set the type of dist to do. Normally it is dist but if we are doing a libs only then set dist-lib -->
+         <condition property="disttype" value="dist-lib" else="dist">
+             <isset property="release.libsonly"/>
+         </condition>
+
+         <!-- If the module content has been specified then use then set that value-->
+         <condition property="module.content.suffix" value="-${module.content}" else="">
+             <isset property="module.content"/>
+         </condition>
+
+        <!-- Setup the local variables -->
+        <property name="release.name" value="${project.name}-java-${release.fullversion}${module.content.suffix}"/>
+        <property name="release.bin.dir" value="${build.release}/${release.name}"/>
+        <property name="module.jar.prefix" value="${project.name}-"/>
+        <property name="module.jar.suffix" value="-${release.fullversion}${module.content.suffix}"/>
+
+        <mkdir dir="${release.bin.dir}"/>
+
+        <iterate target="${disttype}" modules="${modules.include}" >
+            <property name="module.prefix" value="${module.jar.prefix}"/>
+            <property name="module.suffix" value="${module.jar.suffix}"/>
             <property name="dist.dest.dir" value="${release.bin.dir}"/>
         </iterate>
 
@@ -275,11 +312,12 @@
         <mkdir dir="${release.bin.dir}/${log.dir}"/>
 
         <antcall target="tgzandzip">
-            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-bin"/>
+            <param name="file" value="${release.dir}/${release.name}-bin"/>
             <param name="source" value="${release.bin.dir}"/>
         </antcall>
 
     </target>
+
 
     <target name="std-release" depends="std-src-release, std-bin-release"/>
 
