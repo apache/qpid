@@ -31,6 +31,7 @@ class ConfigurationTest : public CppUnit::TestCase
     CPPUNIT_TEST(testIsHelp);
     CPPUNIT_TEST(testPortLongForm);
     CPPUNIT_TEST(testPortShortForm);
+    CPPUNIT_TEST(testStore);
     CPPUNIT_TEST(testVarious);
     CPPUNIT_TEST_SUITE_END();
 
@@ -60,8 +61,17 @@ class ConfigurationTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(6789, conf.getPort());
     }
 
-    void testVarious() 
+    void testStore() 
     {
+        Configuration conf;
+        char* argv[] = {"ignore", "--store", "my-store-module.so"};
+        conf.parse(3, argv);
+        std::string expected("my-store-module.so");
+        CPPUNIT_ASSERT_EQUAL(expected, conf.getStore());
+    }
+
+    void testVarious() 
+    {        
         Configuration conf;
         char* argv[] = {"ignore", "-t", "--worker-threads", "10"};
         conf.parse(4, argv);
