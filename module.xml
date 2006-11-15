@@ -30,7 +30,6 @@
     <property name="module.classes" value="${module.dir}/${classes.dir}"/>
     <property name="module.precompiled" value="${module.dir}/${src.dir}"/>
 
-
     <condition property="suffix" value="${module.suffix}" else="">
         <isset property="module.suffix"/>
     </condition>
@@ -241,7 +240,7 @@
           <isset property="module.vm.version"/>
     </condition>    
 
-    <condition property="dist.destlib.dir" value="${dist.dest.dir}/${lib.dir}">
+    <condition property="dist.destlib.dir" value="${dist.dest.dir}/${lib.dir}" else="${dist.lib}">
          <isset property="dist.dest.dir"/>
     </condition>
 
