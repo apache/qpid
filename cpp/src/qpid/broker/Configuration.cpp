@@ -30,6 +30,7 @@ Configuration::Configuration() :
     workerThreads("worker-threads", "Sets the number of worker threads to use (default=5).", 5),
     maxConnections("max-connections", "Sets the maximum number of connections the broker can accept (default=500).", 500),
     connectionBacklog("connection-backlog", "Sets the connection backlog for the servers socket (default=10)", 10),
+    store('s', "store", "Sets the message store module to use (default='' which implies no store)", ""),
     help("help", "Prints usage information", false)
 {
     options.push_back(&trace);
@@ -37,6 +38,7 @@ Configuration::Configuration() :
     options.push_back(&workerThreads);
     options.push_back(&maxConnections);
     options.push_back(&connectionBacklog);
+    options.push_back(&store);
     options.push_back(&help);
 }
 
@@ -84,6 +86,10 @@ int Configuration::getMaxConnections() const {
 
 int Configuration::getConnectionBacklog() const {
     return connectionBacklog.getValue();
+}
+
+const std::string& Configuration::getStore() const {
+    return store.getValue();
 }
 
 Configuration::Option::Option(const char _flag, const string& _name, const string& _desc) : 
