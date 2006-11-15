@@ -29,7 +29,8 @@ using namespace qpid::sys;
 Broker::Broker(const Configuration& config) :
     acceptor(Acceptor::create(config.getPort(),
                               config.getConnectionBacklog(),
-                              config.getWorkerThreads())),
+                              config.getWorkerThreads(),
+                              config.isTrace())),
     factory(config.getStore())
 { }
 

@@ -31,28 +31,30 @@ namespace sys {
 class APRAcceptor : public Acceptor
 {
   public:
-    APRAcceptor(int16_t port, int backlog, int threads);
+    APRAcceptor(int16_t port, int backlog, int threads, bool trace);
     virtual int16_t getPort() const;
     virtual void run(qpid::sys::SessionHandlerFactory* factory);
     virtual void shutdown();
 
   private:
     int16_t port;
+    bool trace;
     LFProcessor processor;
     apr_socket_t* socket;
     volatile bool running;
 };
 
 // Define generic Acceptor::create() to return APRAcceptor.
-Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads)
+Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads, bool trace)
 {
-    return Acceptor::shared_ptr(new APRAcceptor(port, backlog, threads));
+    return Acceptor::shared_ptr(new APRAcceptor(port, backlog, threads, trace));
 }
 // Must define Acceptor virtual dtor.
 Acceptor::~Acceptor() {}
 
-APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads) :
+    APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     port(port_),
+    trace(trace_),
     processor(APRPool::get(), threads, 1000, 5000000)
 {
     apr_sockaddr_t* address;
@@ -83,7 +85,7 @@ void APRAcceptor::run(SessionHandlerFactory* factory) {
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_TCP_NODELAY, 1));
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_SNDBUF, 32768));
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_RCVBUF, 32768));
-            LFSessionContext* session = new LFSessionContext(APRPool::get(), client, &processor, false);
+            LFSessionContext* session = new LFSessionContext(APRPool::get(), client, &processor, trace);
             session->init(factory->create(session));
         }else{
             running = false;
