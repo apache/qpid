@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.transport;
 
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.jms.BrokerDetails;
@@ -29,7 +28,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.SimpleByteBufferAllocator;
-import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
+
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class SocketTransportConnection implements ITransportConnection
     public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail)
             throws IOException
     {
-        ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
+        ByteBuffer.setPreferDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
 
         // the MINA default is currently to use the pooled allocator although this may change in future
         // once more testing of the performance of the simple allocator has been done
@@ -64,17 +63,15 @@ public class SocketTransportConnection implements ITransportConnection
         }
 
         final IoConnector ioConnector = _socketConnectorFactory.newSocketConnector();
-        SocketConnectorConfig cfg = (SocketConnectorConfig) ioConnector.getDefaultConfig();
-
         // if we do not use our own thread model we get the MINA default which is to use
         // its own leader-follower model
         boolean readWriteThreading = Boolean.getBoolean("amqj.shared_read_write_pool");
         if (readWriteThreading)
         {
-            cfg.setThreadModel(new ReadWriteThreadModel());
+            ioConnector.setThreadModel(new ReadWriteThreadModel());
         }
 
-        SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
+        SocketSessionConfig scfg = (SocketSessionConfig) ioConnector.getSessionConfig();
         scfg.setTcpNoDelay("true".equalsIgnoreCase(System.getProperty("amqj.tcpNoDelay", "true")));
         scfg.setSendBufferSize(Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE));
         _logger.info("send-buffer-size = " + scfg.getSendBufferSize());
@@ -83,7 +80,8 @@ public class SocketTransportConnection implements ITransportConnection
         final InetSocketAddress address = new InetSocketAddress(brokerDetail.getHost(), brokerDetail.getPort());
         protocolHandler.setUseSSL(brokerDetail.useSSL());
         _logger.info("Attempting connection to " + address);
-        ConnectFuture future = ioConnector.connect(address, protocolHandler);
+        ioConnector.setHandler(protocolHandler);
+        ConnectFuture future = ioConnector.connect(address);
 
         // wait for connection to complete
         if (future.join(brokerDetail.getTimeout()))

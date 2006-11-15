@@ -34,7 +34,12 @@ public class Server extends IoHandlerAdapter
 {
     Server(int port) throws Exception
     {
-        new SocketAcceptor().bind(new InetSocketAddress(port), this);
+
+        SocketAcceptor acceptor = new SocketAcceptor();
+
+        acceptor.setLocalAddress(new InetSocketAddress(port));
+        acceptor.setHandler(this);
+        acceptor.bind();
         System.out.println("Listening on " + port);
     }
 
