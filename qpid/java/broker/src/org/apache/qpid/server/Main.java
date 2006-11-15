@@ -320,19 +320,7 @@ public class Main implements ProtocolVersionList
 
             SocketSessionConfig sc;
 
-            //fixme improve get to use configuration
-            if (connectorConfig.qpidNIO)
-            {
-                //FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                _logger.warn("Using Qpid NIO - DISABLED");
-                //sconfig = (org.apache.mina.transport.socket.nio.MultiThreadSocketAcceptorConfig) acceptor.getDefaultConfig();
-                //sc = (SocketSessionConfig) sconfig.getSessionConfig();
-            }
-//            else
-            {
-                _logger.warn("Using Mina NIO");
-                sc = (SocketSessionConfig) acceptor.getSessionConfig();
-            }
+            sc = (SocketSessionConfig) acceptor.getSessionConfig();
 
             sc.setReceiveBufferSize(connectorConfig.socketReceiveBufferSize);
             sc.setSendBufferSize(connectorConfig.socketWriteBuferSize);
