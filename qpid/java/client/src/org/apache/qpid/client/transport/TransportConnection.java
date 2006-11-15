@@ -23,8 +23,6 @@ package org.apache.qpid.client.transport;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
-import org.apache.mina.common.IoServiceConfig;
-
 
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
@@ -33,7 +31,6 @@ import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -68,9 +65,7 @@ public class TransportConnection
     {
         _acceptor = new VmPipeAcceptor();
 
-        IoServiceConfig config = _acceptor.getDefaultConfig();
-
-        config.setThreadModel(new ReadWriteThreadModel());
+        _acceptor.setThreadModel(new ReadWriteThreadModel());
     }
 
     public static ITransportConnection getInstance() throws AMQTransportConnectionException
@@ -140,7 +135,7 @@ public class TransportConnection
                 break;
             case VM:
             {
-                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
+                _instance = getVMTransport(details, Boolean.getBoolean("amqj.noAutoCreateVMBroker"));
                 break;
             }
         }
@@ -163,20 +158,23 @@ public class TransportConnection
         return -1;
     }
 
-    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate) throws AMQVMBrokerCreationException
+    private static ITransportConnection getVMTransport(BrokerDetails details, boolean noAutoCreate) throws AMQVMBrokerCreationException
     {
         int port = details.getPort();
 
         if (!_inVmPipeAddress.containsKey(port))
         {
-            if (AutoCreate)
+            if (noAutoCreate)
             {
-                createVMBroker(port);
+                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
+
             }
             else
             {
-                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
+                _logger.info("Auto Creating VMBroker on port " + port);
+                createVMBroker(port);
             }
+
         }
 
         return new VmPipeTransportConnection(port);
@@ -197,7 +195,9 @@ public class TransportConnection
 
                 provider = createBrokerInstance(port);
 
-                _acceptor.bind(pipe, provider);
+                _acceptor.setLocalAddress(pipe);
+                _acceptor.setHandler(provider);
+                _acceptor.bind();
 
                 _inVmPipeAddress.put(port, pipe);
                 _logger.info("Created InVM Qpid.AMQP listening on port " + port);
@@ -213,7 +213,7 @@ public class TransportConnection
 
                     try
                     {
-                        _acceptor.unbind(pipe);
+                        _acceptor.unbind();
                     }
                     catch (Exception ignore)
                     {
@@ -225,8 +225,10 @@ public class TransportConnection
                         provider = createBrokerInstance(port);
                     }
 
-                    _acceptor.bind(pipe, provider);
-                    _inVmPipeAddress.put(port, pipe);
+                    _acceptor.setLocalAddress(pipe);
+                    _acceptor.setHandler(provider);
+                    _acceptor.bind();
+                    _inVmPipeAddress.put(port, _acceptor);
                     _logger.info("Created InVM Qpid.AMQP listening on port " + port);
                 }
                 catch (IOException justUseFirstException)
@@ -294,14 +296,14 @@ public class TransportConnection
     public static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
-        _acceptor.unbindAll();
 
         Iterator keys = _inVmPipeAddress.keySet().iterator();
 
         while (keys.hasNext())
         {
             int id = (Integer) keys.next();
-            _inVmPipeAddress.remove(id);
+
+            ((VmPipeAcceptor)_inVmPipeAddress.remove(id)).unbind();
         }
 
     }
@@ -313,7 +315,7 @@ public class TransportConnection
         {
             _logger.info("Killing VM Broker:" + port);
             _inVmPipeAddress.remove(port);
-            _acceptor.unbind(pipe);
+            _acceptor.unbind();
         }
     }
 
