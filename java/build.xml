@@ -113,7 +113,7 @@
     </target>
 
     <target name="copymodule">
-        <copy todir="${build.release.prepare}/src/java">
+        <copy todir="${todir}">
             <fileset dir="${project.root}">
                 <!-- Module src -->
                 <include name="${module}/${bin.dir}/**"/>
@@ -128,33 +128,45 @@
 
     <target name="preparereleasesrc" depends="preparerelease">
 
+        <property name="release.src.dir" value="${build.release.dir}/src"/>
+        <property name="release.java.src.dir" value="${build.release.dir}/src/java"/>
+
         <!-- Copy Source to prepare directory -->
-        <mkdir dir="${build.release.prepare}/src/java"/>
+        <mkdir dir="${release.java.src.dir}"/>
 
         <antcall target="copymodule">
             <param name="module" value="broker"/>
+            <param name="todir" value="${release.java.src.dir}"/>
         </antcall>
 
         <antcall target="copymodule">
             <param name="module" value="client"/>
+            <param name="todir" value="${release.java.src.dir}"/>
         </antcall>
 
         <antcall target="copymodule">
             <param name="module" value="common"/>
+            <param name="todir" value="${release.java.src.dir}"/>
         </antcall>
 
         <antcall target="copymodule">
             <param name="module" value="cluster"/>
+            <param name="todir" value="${release.java.src.dir}"/>
         </antcall>
 
-         <copy todir="${build.release.prepare}/src/java">
+        <antcall target="copymodule">
+            <param name="module" value="systests"/>
+            <param name="todir" value="${release.java.src.dir}"/>
+        </antcall>
+
+         <copy todir="${release.java.src.dir}">
             <fileset dir="${project.root}">                
                 <include name="${tasks.dir}/${src.dir}/**"/>
                 <include name="${doc.dir}/**"/>
             </fileset>
          </copy>
 
-        <copy todir="${build.release.prepare}/src/java">
+        <copy todir="${release.java.src.dir}">
             <fileset dir="${project.root}">
                 <!-- Module src -->
                 <!-- Extra Common files -->
@@ -171,14 +183,14 @@
         </copy>
 
         <!-- Copy Spec files for protocol generation -->
-        <copy todir="${build.release.prepare}/src/">
+        <copy todir="${release.src.dir}">
             <fileset dir=".." casesensitive="false">
                 <include name="${specs.dir}/**"/>
             </fileset>
         </copy>
 
         <antcall target="copyreleasedocs">
-            <param name="todir" value="${build.release.prepare}"/>
+            <param name="todir" value="${build.release.dir}"/>
         </antcall>
 
     </target>
@@ -193,6 +205,9 @@
                 <include name="README.txt"/>
                 <include name="NOTICE.txt"/>
             </fileset>
+	    <fileset dir="${resources.root.dir}/META-INF">
+                <include name="DISCLAIMER.txt"/>
+	    </fileset>
         </copy>
 
         <antcall target="createLicense">
@@ -234,23 +249,33 @@
     <target name="tgzandzip">
         <tar compression="gzip" longfile="gnu"
              destfile="${file}.tar.gz">
-            <tarfileset dir="${source}" mode="755" username="ant" group="ant">
-                <include name="**"/>
+            <tarfileset dir="${path}" mode="755" username="ant" group="ant">
+                <include name="${source}/**"/>
             </tarfileset>
         </tar>
 
         <zip destfile="${file}.zip">
-            <zipfileset dir="${source}">
-                <include name="**"/>
+            <zipfileset dir="${path}">
+                <include name="${source}/**"/>
             </zipfileset>
         </zip>
     </target>
 
-    <target name="std-src-release" depends="preparereleasesrc">
+    <target name="std-src-release" >
+
+        <!-- Setup the local variables -->
+        <property name="release.name" value="${project.name}-java-${release.fullversion}-src"/>
+        <property name="build.release.src.dir" value="${build.release}/${release.name}"/>
+
+        <antcall target="preparereleasesrc">
+            <param name="release.name" value="${release.name}"/>
+            <param name="build.release.dir" value="${build.release.src.dir}"/>
+        </antcall>
 
         <antcall target="tgzandzip">
-            <param name="file" value="${release.dir}/${project.name}-java-${release.fullversion}-src"/>
-            <param name="source" value="${build.release.prepare}"/>
+            <param name="file" value="${release.dir}/${release.name}"/>
+            <param name="path" value="${build.release}"/>
+            <param name="source" value="${release.name}"/>            
         </antcall>
 
     </target>
@@ -275,8 +300,6 @@
          release.libsonly  determines what task to run on the iterate normally dist but if libs only then dist-lib
     -->
      <target name="std-bin-release-item" depends="preparerelease">
-
-         <property name="release.client.bin.dir" value="${build.release}/${project.name}-java-${release.fullversion}-client"/>
 
          <!-- if modules.include has not been set set it to all modules-->
          <property name="modules.include" value="${modules}"/>
@@ -313,7 +336,8 @@
 
         <antcall target="tgzandzip">
             <param name="file" value="${release.dir}/${release.name}-bin"/>
-            <param name="source" value="${release.bin.dir}"/>
+            <param name="path" value="${build.release}"/>
+            <param name="source" value="${release.name}"/>
         </antcall>
 
     </target>
