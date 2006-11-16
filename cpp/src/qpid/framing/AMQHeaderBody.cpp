@@ -64,9 +64,12 @@ void qpid::framing::AMQHeaderBody::createProperties(int classId){
 
 void qpid::framing::AMQHeaderBody::print(std::ostream& out) const
 {
-    out << "header, content_size=" << getContentSize() 
-        << " (" << size() << " bytes)" << ", headers=" ;
+    out << "header (" << size() << " bytes)"  << " content_size=" << getContentSize();
     const BasicHeaderProperties* props =
         dynamic_cast<const BasicHeaderProperties*>(getProperties());
-    if (props) out << const_cast<BasicHeaderProperties*>(props)->getHeaders();
+    if (props) {
+        out << ", message_id=" << props->getMessageId(); 
+        out << ", delivery_mode=" << (int) props->getDeliveryMode(); 
+        out << ", headers=" << const_cast<BasicHeaderProperties*>(props)->getHeaders();
+    }
 }
