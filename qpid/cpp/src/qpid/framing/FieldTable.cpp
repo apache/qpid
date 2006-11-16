@@ -50,7 +50,7 @@ std::ostream& operator<<(std::ostream& out, const FieldTable::ValueMap::value_ty
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
-    out << "field_table{";
+    out << "{";
     FieldTable::ValueMap::const_iterator i = t.getMap().begin();
     if (i != t.getMap().end()) out << *i++;
     while (i != t.getMap().end()) 
