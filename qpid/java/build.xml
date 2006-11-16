@@ -264,18 +264,18 @@
     <target name="std-src-release" >
 
         <!-- Setup the local variables -->
-        <property name="release.name" value="${project.name}-java-${release.fullversion}-src"/>
-        <property name="build.release.src.dir" value="${build.release}/${release.name}"/>
+        <property name="release.src.name" value="${project.name}-java-${release.fullversion}-src"/>
+        <property name="build.release.src.dir" value="${build.release}/${release.src.name}"/>
 
         <antcall target="preparereleasesrc">
-            <param name="release.name" value="${release.name}"/>
+            <param name="release.src.name" value="${release.src.name}"/>
             <param name="build.release.dir" value="${build.release.src.dir}"/>
         </antcall>
 
         <antcall target="tgzandzip">
-            <param name="file" value="${release.dir}/${release.name}"/>
+            <param name="file" value="${release.dir}/${release.src.name}"/>
             <param name="path" value="${build.release}"/>
-            <param name="source" value="${release.name}"/>            
+            <param name="source" value="${release.src.name}"/>
         </antcall>
 
     </target>
@@ -283,7 +283,7 @@
     <target name="std-bin-release" depends="preparerelease">
 
         <antcall target="std-bin-release-item">
-            <param name="module.content" value="client-server"/>
+            <param name="module.content" value="client-broker"/>
         </antcall>
 
         <antcall target="std-bin-release-item">
@@ -310,15 +310,15 @@
          </condition>
 
          <!-- If the module content has been specified then use then set that value-->
-         <condition property="module.content.suffix" value="-${module.content}" else="">
+         <condition property="module.release.suffix" value="-bin-${module.content}" else="">
              <isset property="module.content"/>
          </condition>
 
         <!-- Setup the local variables -->
-        <property name="release.name" value="${project.name}-java-${release.fullversion}${module.content.suffix}"/>
-        <property name="release.bin.dir" value="${build.release}/${release.name}"/>
+        <property name="release.bin.name" value="${project.name}-java-${release.fullversion}${module.release.suffix}"/>
+        <property name="release.bin.dir" value="${build.release}/${release.bin.name}"/>
         <property name="module.jar.prefix" value="${project.name}-"/>
-        <property name="module.jar.suffix" value="-${release.fullversion}${module.content.suffix}"/>
+        <property name="module.jar.suffix" value="-${release.fullversion}"/>
 
         <mkdir dir="${release.bin.dir}"/>
 
@@ -335,9 +335,9 @@
         <mkdir dir="${release.bin.dir}/${log.dir}"/>
 
         <antcall target="tgzandzip">
-            <param name="file" value="${release.dir}/${release.name}-bin"/>
+            <param name="file" value="${release.dir}/${release.bin.name}"/>
             <param name="path" value="${build.release}"/>
-            <param name="source" value="${release.name}"/>
+            <param name="source" value="${release.bin.name}"/>
         </antcall>
 
     </target>
