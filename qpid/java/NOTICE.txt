@@ -32,8 +32,5 @@ includes (binary only):
           Copyright 1999 (C) Exoffice Technologies Inc. All Rights Reserved.
           JMS CTS is available from http://www.exolab.org/
 
-	- The jython java implementation of python, Copyright (c) 2000, 
-          Jython Developers All rights reserved. Jython can be downloaded at
-          http://sourceforge.net/projects/jython/
              
 
