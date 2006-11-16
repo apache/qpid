@@ -48,12 +48,10 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, 
     exchanges.declare(amq_topic, TopicExchange::typeName);
     exchanges.declare(amq_fanout, FanOutExchange::typeName);
     exchanges.declare(amq_match, HeadersExchange::typeName);
-    cleaner.start();
-}
 
-void SessionHandlerFactoryImpl::recover()
-{
     if(store.get()) store->recover(queues);
+
+    cleaner.start();
 }
 
 SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt)

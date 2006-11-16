@@ -45,7 +45,6 @@ namespace qpid {
             AutoDelete cleaner;
         public:
             SessionHandlerFactoryImpl(const std::string& store = "", u_int32_t timeout = 30000);
-            void recover();
             virtual qpid::sys::SessionHandler* create(qpid::sys::SessionContext* ctxt);
             virtual ~SessionHandlerFactoryImpl();
         };
