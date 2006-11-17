@@ -18,9 +18,7 @@ import org.apache.qpid.framing.BasicPublishBody;
  */
 public interface AMQMessageHandle
 {
-    ContentHeaderBody getContentHeaderBody();
-
-    void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException;
+    ContentHeaderBody getContentHeaderBody() throws AMQException;
 
     /**
      * @return the number of body frames associated with this message
@@ -30,7 +28,7 @@ public interface AMQMessageHandle
     /**
      * @return the size of the body
      */
-    long getBodySize();
+    long getBodySize() throws AMQException;
 
     /**
      * Get a particular content body
@@ -38,7 +36,7 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentBody getContentBody(int index) throws IllegalArgumentException;
+    ContentBody getContentBody(int index) throws IllegalArgumentException, AMQException;
 
     void addContentBodyFrame(ContentBody contentBody) throws AMQException;
 
@@ -48,6 +46,7 @@ public interface AMQMessageHandle
 
     boolean isPersistent() throws AMQException;
 
-    void setPublishBody(BasicPublishBody publishBody)
-            ;
+    void setPublishAndContentHeaderBody(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody)
+            throws AMQException;    
+
 }

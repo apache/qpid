@@ -264,7 +264,7 @@ public class AMQQueue implements Managable
         }
 
         // Returns the size of messages in the queue
-        public Long getQueueSize()
+        public Long getQueueSize() throws AMQException
         {
             List<AMQMessage> list = _deliveryMgr.getMessages();
             if (list.size() == 0)
@@ -280,7 +280,7 @@ public class AMQQueue implements Managable
         // Operations
 
         // calculates the size of an AMQMessage
-        private long getMessageSize(AMQMessage msg)
+        private long getMessageSize(AMQMessage msg) throws AMQException
         {
             if (msg == null)
             {
@@ -291,7 +291,7 @@ public class AMQQueue implements Managable
         }
 
         // Checks if there is any notification to be send to the listeners
-        private void checkForNotification(AMQMessage msg)
+        private void checkForNotification(AMQMessage msg) throws AMQException
         {
             // Check for message count
             Integer msgCount = getMessageCount();
@@ -722,7 +722,7 @@ public class AMQQueue implements Managable
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount(AMQMessage msg)
+    protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
         _totalMessagesReceived++;
         _managedObject.checkForNotification(msg);

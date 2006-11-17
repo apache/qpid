@@ -24,6 +24,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.MessageMetaData;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SkeletonMessageStore implements MessageStore
 {
-    private final AtomicLong _messageId = new AtomicLong(1);    
+    private final AtomicLong _messageId = new AtomicLong(1);
 
     public void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception
     {
@@ -101,5 +102,19 @@ public class SkeletonMessageStore implements MessageStore
 
     public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
     {
+    }
+
+    public void storeMessageMetaData(long messageId, MessageMetaData messageMetaData) throws AMQException
+    {        
+    }
+
+    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    {
+        return null;
+    }
+
+    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    {
+        return null;
     }
 }

@@ -95,7 +95,17 @@ public class AMQMessage
 
         public AMQDataBlock next()
         {
-            return ContentBody.createAMQFrame(_channel, _messageHandle.getContentBody(++_index));
+            try
+            {
+                ContentBody cb = _messageHandle.getContentBody(++_index);
+                return ContentBody.createAMQFrame(_channel, cb);
+            }
+            catch (AMQException e)
+            {
+                // have no choice but to throw a runtime exception
+                throw new RuntimeException("Error getting content body: " + e, e);
+            }
+
         }
 
         public void remove()
@@ -116,7 +126,14 @@ public class AMQMessage
 
         public ContentBody next()
         {
-            return _messageHandle.getContentBody(++_index);
+            try
+            {
+                return _messageHandle.getContentBody(++_index);
+            }
+            catch (AMQException e)
+            {
+                throw new RuntimeException("Error getting content body: " + e, e);
+            }
         }
 
         public void remove()
@@ -199,7 +216,7 @@ public class AMQMessage
         return _publishBody;
     } */
 
-    public ContentHeaderBody getContentHeaderBody()
+    public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
         return _messageHandle.getContentHeaderBody();
     }
@@ -219,14 +236,11 @@ public class AMQMessage
         {
             _txnContext.beginTranIfNecessary();
         }
-        _messageHandle.setPublishBody(_publishBody);
-        _messageHandle.setContentHeaderBody(_contentHeaderBody);
+
         if (_contentHeaderBody.bodySize == 0)
         {
             deliver();
         }
-        _publishBody = null;
-        _contentHeaderBody = null;
     }
 
     public boolean addContentBodyFrame(ContentBody contentBody) throws AMQException
@@ -244,7 +258,7 @@ public class AMQMessage
         }
     }
 
-    public boolean isAllContentReceived()
+    public boolean isAllContentReceived() throws AMQException
     {
         return _bodyLengthReceived == _messageHandle.getBodySize();
     }
@@ -401,7 +415,13 @@ public class AMQMessage
 
     private void deliver() throws AMQException
     {
-        // we allow the transactional context to do something with the message content
+        // first we allow the handle to know that the message has been fully received. This is useful if it is
+        // maintaining any calculated values based on content chunks
+        _messageHandle.setPublishAndContentHeaderBody(_publishBody, _contentHeaderBody);
+        _publishBody = null;
+        _contentHeaderBody = null;
+
+        // we then allow the transactional context to do something with the message content
         // now that it has all been received, before we attempt delivery
         _txnContext.messageFullyReceived(isPersistent());
         for (AMQQueue q : _destinationQueues)
@@ -471,6 +491,7 @@ public class AMQMessage
     }
 
     public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, String replyText)
+            throws AMQException
     {
         ByteBuffer returnFrame = createEncodedReturnFrame(channelId, replyCode, replyText);
 

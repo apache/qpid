@@ -20,6 +20,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.management.MBeanAttribute;
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.AMQException;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -147,7 +148,7 @@ public interface ManagedQueue
      * @throws IOException
      */
     @MBeanAttribute(name="QueueSize", description="Size of messages(KB) in the queue")
-    Long getQueueSize() throws IOException;
+    Long getQueueSize() throws IOException, AMQException;
 
     /**
      * Tells the maximum size of all the messages combined together,

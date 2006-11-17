@@ -20,13 +20,12 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,9 +42,7 @@ public class MemoryMessageStore implements MessageStore
 
     private static final String HASHTABLE_CAPACITY_CONFIG = "hashtable-capacity";
 
-    protected ConcurrentMap<Long, BasicPublishBody> _publishBodyMap;
-
-    protected ConcurrentMap<Long, ContentHeaderBody> _contentHeaderMap;
+    protected ConcurrentMap<Long, MessageMetaData> _metaDataMap;
 
     protected ConcurrentMap<Long, List<ContentBody>> _contentBodyMap;
 
@@ -53,18 +50,16 @@ public class MemoryMessageStore implements MessageStore
 
     public void configure()
     {
-        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash table");
-        _publishBodyMap = new ConcurrentHashMap<Long, BasicPublishBody>(DEFAULT_HASHTABLE_CAPACITY);
-        _contentHeaderMap = new ConcurrentHashMap<Long, ContentHeaderBody>(DEFAULT_HASHTABLE_CAPACITY);
+        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash tables");
+        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(DEFAULT_HASHTABLE_CAPACITY);
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
     public void configure(String base, Configuration config)
     {
         int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
-        _log.info("Using capacity " + hashtableCapacity + " for hash table");
-        _publishBodyMap = new ConcurrentHashMap<Long, BasicPublishBody>(hashtableCapacity);
-        _contentHeaderMap = new ConcurrentHashMap<Long, ContentHeaderBody>(hashtableCapacity);
+        _log.info("Using capacity " + hashtableCapacity + " for hash tables");
+        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(hashtableCapacity);
     }
 
@@ -75,10 +70,15 @@ public class MemoryMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        if (_publishBodyMap != null)
+        if (_metaDataMap != null)
         {
-            _publishBodyMap.clear();
-            _publishBodyMap = null;
+            _metaDataMap.clear();
+            _metaDataMap = null;
+        }
+        if (_contentBodyMap != null)
+        {
+            _contentBodyMap.clear();
+            _contentBodyMap = null;
         }
     }
 
@@ -88,7 +88,8 @@ public class MemoryMessageStore implements MessageStore
         {
             _log.debug("Removing message with id " + messageId);
         }
-        _publishBodyMap.remove(messageId);
+        _metaDataMap.remove(messageId);
+        _contentBodyMap.remove(messageId);
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
@@ -141,25 +142,31 @@ public class MemoryMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storePublishBody(long messageId, BasicPublishBody publishBody) throws AMQException
-    {
-        _publishBodyMap.put(messageId, publishBody);
-    }
-
-    public void storeContentHeader(long messageId, ContentHeaderBody contentHeaderBody) throws AMQException
-    {
-        _contentHeaderMap.put(messageId, contentHeaderBody);
-    }
-
     public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
     {
         List<ContentBody> bodyList = _contentBodyMap.get(messageId);
         if (bodyList == null)
         {
-            bodyList = new LinkedList<ContentBody>();
+            bodyList = new ArrayList<ContentBody>();
             _contentBodyMap.put(messageId, bodyList);
         }
 
         bodyList.add(index, contentBody);
+    }
+
+    public void storeMessageMetaData(long messageId, MessageMetaData messageMetaData) throws AMQException
+    {
+        _metaDataMap.put(messageId, messageMetaData);
+    }
+
+    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    {
+        return _metaDataMap.get(messageId);
+    }
+
+    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    {
+        List<ContentBody> bodyList = _contentBodyMap.get(messageId);        
+        return bodyList.get(index);
     }
 }

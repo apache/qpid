@@ -46,12 +46,15 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
                                AMQMethodEvent<TxCommitBody> evt) throws AMQException
     {
 
-        try{
+        try
+        {
             AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
             channel.commit();
             protocolSession.writeFrame(TxCommitOkBody.createAMQFrame(evt.getChannelId()));
-            channel.processReturns(protocolSession);            
-        }catch(AMQException e){
+            channel.processReturns(protocolSession);
+        }
+        catch(AMQException e)
+        {
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());
         }
     }

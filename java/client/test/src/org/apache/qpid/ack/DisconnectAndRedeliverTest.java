@@ -141,7 +141,7 @@ public class DisconnectAndRedeliverTest
         _logger.info("No messages redelivered as is expected");
         con.close();
 
-        _logger.info("Actually:" + store.gePublishBodyMap().size());
+        _logger.info("Actually:" + store.getMessageMetaDataMap().size());
         //  Assert.assertTrue(store.getMessageMap().size() == 0);
     }
 
@@ -197,8 +197,8 @@ public class DisconnectAndRedeliverTest
         Assert.assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 
-        _logger.info("Actually:" + store.gePublishBodyMap().size());
-        Assert.assertTrue(store.gePublishBodyMap().size() == 0);
+        _logger.info("Actually:" + store.getMessageMetaDataMap().size());
+        Assert.assertTrue(store.getMessageMetaDataMap().size() == 0);
         con.close();
     }
 

@@ -111,7 +111,7 @@ public class AckTest
             }
         });
 
-        assertTrue(_messageStore.gePublishBodyMap().size() == msgCount);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
     }
 
     /**
@@ -127,7 +127,7 @@ public class AckTest
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getContentHeaderMap().size() == 0);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
     }
 
     /**

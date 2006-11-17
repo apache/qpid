@@ -553,7 +553,7 @@ public class AMQChannel
         return _defaultQueue;
     }
 
-    public void processReturns(AMQProtocolSession session)
+    public void processReturns(AMQProtocolSession session) throws AMQException
     {
         for (RequiredDeliveryException bouncedMessage : _returnMessages)
         {
