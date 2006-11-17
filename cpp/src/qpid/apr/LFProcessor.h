@@ -21,7 +21,7 @@
 #ifndef _LFProcessor_
 #define _LFProcessor_
 
-#include <apr-1/apr_poll.h>
+#include <apr_poll.h>
 #include <iostream>
 #include <vector>
 #include <qpid/sys/Monitor.h>

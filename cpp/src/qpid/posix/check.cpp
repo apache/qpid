@@ -25,7 +25,7 @@
 namespace qpid {
 namespace sys {
 
-std::string strError() {
+std::string errnoToString() {
     char buf[512];
     return strerror_r(errno, buf, sizeof(buf));
 }

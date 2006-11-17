@@ -25,8 +25,8 @@
 #include <qpid/sys/Runnable.h>
 
 #ifdef USE_APR
-#  include <apr-1/apr_thread_proc.h>
-#  include <apr-1/apr_portable.h>
+#  include <apr_thread_proc.h>
+#  include <apr_portable.h>
 #  include <qpid/apr/APRPool.h>
 #  include <qpid/apr/APRBase.h>
 #else
