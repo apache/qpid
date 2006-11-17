@@ -55,6 +55,42 @@ class TxTests(TestBase):
         channel.basic_ack(delivery_tag=0, multiple=True)
         channel.tx_commit()
 
+    def test_auto_rollback(self):
+        """
+        Test that a channel closed with an open transaction is effectively rolled back
+        """
+        channel = self.channel
+        queue_a, queue_b, queue_c = self.perform_txn_work(channel, "tx-autorollback-a", "tx-autorollback-b", "tx-autorollback-c")
+
+        for q in [queue_a, queue_b, queue_c]:
+            try:
+                extra = q.get(timeout=1)
+                self.fail("Got unexpected message: " + extra.content.body)
+            except Empty: None
+
+        channel.tx_rollback()
+
+        #check results
+        for i in range(1, 5):
+            msg = queue_a.get(timeout=1)
+            self.assertEqual("Message %d" % i, msg.content.body)
+
+        msg = queue_b.get(timeout=1)
+        self.assertEqual("Message 6", msg.content.body)
+
+        msg = queue_c.get(timeout=1)
+        self.assertEqual("Message 7", msg.content.body)
+
+        for q in [queue_a, queue_b, queue_c]:
+            try:
+                extra = q.get(timeout=1)
+                self.fail("Got unexpected message: " + extra.content.body)
+            except Empty: None
+
+        #cleanup
+        channel.basic_ack(delivery_tag=0, multiple=True)
+        channel.tx_commit()
+
     def test_rollback(self):
         """
         Test that rolled back publishes are not delivered and rolled back acks are re-delivered
@@ -90,7 +126,7 @@ class TxTests(TestBase):
         #cleanup
         channel.basic_ack(delivery_tag=0, multiple=True)
         channel.tx_commit()
-        
+
     def perform_txn_work(self, channel, name_a, name_b, name_c):
         """
         Utility method that does some setup and some work under a transaction. Used for testing both

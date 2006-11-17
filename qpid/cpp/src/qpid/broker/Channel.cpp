@@ -87,6 +87,8 @@ void Channel::close(){
     for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin() ){
         cancel(i);
     }
+    //requeue:
+    recover(true);
 }
 
 void Channel::begin(){
