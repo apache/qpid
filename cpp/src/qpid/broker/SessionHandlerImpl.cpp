@@ -97,6 +97,9 @@ void SessionHandlerImpl::received(qpid::framing::AMQFrame* frame){
             client.getChannel().close(channel, e.code, e.text, method->amqpClassId(), method->amqpMethodId());
         }catch(ConnectionException& e){
             client.getConnection().close(0, e.code, e.text, method->amqpClassId(), method->amqpMethodId());
+        }catch(std::exception& e){
+            string error(e.what());
+            client.getConnection().close(0, 541/*internal error*/, error, method->amqpClassId(), method->amqpMethodId());
         }
 	break;
 
@@ -132,16 +135,20 @@ void SessionHandlerImpl::idleIn(){
 }
 
 void SessionHandlerImpl::closed(){
-    for(channel_iterator i = channels.begin(); i != channels.end(); i = channels.begin()){
-        Channel* c = i->second;
-        channels.erase(i);
-        c->close();
-        delete c;
-    }
-    for(queue_iterator i = exclusiveQueues.begin(); i < exclusiveQueues.end(); i = exclusiveQueues.begin()){
-        string name = (*i)->getName();
-        queues->destroy(name);
-        exclusiveQueues.erase(i);
+    try {
+        for(channel_iterator i = channels.begin(); i != channels.end(); i = channels.begin()){
+            Channel* c = i->second;
+            channels.erase(i);
+            c->close();
+            delete c;
+        }
+        for(queue_iterator i = exclusiveQueues.begin(); i < exclusiveQueues.end(); i = exclusiveQueues.begin()){
+            string name = (*i)->getName();
+            queues->destroy(name);
+            exclusiveQueues.erase(i);
+        }
+    } catch(std::exception& e) {
+        std::cout << "Caught unhandled exception while closing session: " << e.what() << std::endl;
     }
 }
 

@@ -225,13 +225,13 @@ class TestBase(unittest.TestCase):
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
     def assertChannelException(self, expectedCode, message): 
-        self.assertEqual(message.method.klass.name, "channel")
-        self.assertEqual(message.method.name, "close")
-        self.assertEqual(message.reply_code, expectedCode)
+        self.assertEqual("channel", message.method.klass.name)
+        self.assertEqual("close", message.method.name)
+        self.assertEqual(expectedCode, message.reply_code)
 
 
     def assertConnectionException(self, expectedCode, message): 
-        self.assertEqual(message.method.klass.name, "connection")
-        self.assertEqual(message.method.name, "close")
-        self.assertEqual(message.reply_code, expectedCode)
+        self.assertEqual("connection", message.method.klass.name)
+        self.assertEqual("close", message.method.name)
+        self.assertEqual(expectedCode, message.reply_code)
 
