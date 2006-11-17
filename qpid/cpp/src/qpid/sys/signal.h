@@ -20,7 +20,7 @@
  */
 
 #ifdef USE_APR
-#  include <apr-1/apr_signal.h>
+#  include <apr_signal.h>
 #else
 #  include <signal.h>
 #endif

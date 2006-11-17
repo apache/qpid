@@ -23,9 +23,9 @@
 
 #include <queue>
 
-#include <apr-1/apr_network_io.h>
-#include <apr-1/apr_poll.h>
-#include <apr-1/apr_time.h>
+#include <apr_network_io.h>
+#include <apr_poll.h>
+#include <apr_time.h>
 
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/Buffer.h>
