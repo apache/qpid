@@ -22,8 +22,8 @@
 #define _APRBase_
 
 #include <string>
-#include <apr-1/apr_thread_mutex.h>
-#include <apr-1/apr_errno.h>
+#include <apr_thread_mutex.h>
+#include <apr_errno.h>
 
 namespace qpid {
 namespace sys {

@@ -36,12 +36,12 @@ endif
 ifdef USE_APR
 PLATFORM := apr
 IGNORE   := posix
-CXXFLAGS := $(CXXFLAGS) -DUSE_APR -I/usr/local/apr/include
+CXXFLAGS := $(CXXFLAGS) -DUSE_APR -I$(shell apr-1-config --includedir)
 LDFLAGS  := $(LDFLAGS) -L/usr/local/apr/lib -lapr-1 
 else
 PLATFORM := posix
 IGNORE   := apr
-LDFLAGS  := $(LDFLAGS) -lpthread -lrt
+LDFLAGS  := $(LDFLAGS) -lpthread -lrt -ldl
 endif
 
 ## Build directories.

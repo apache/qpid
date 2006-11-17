@@ -25,7 +25,7 @@
 #include <stdint.h>
 
 #ifdef USE_APR
-#  include <apr-1/apr_time.h>
+#  include <apr_time.h>
 #else
 #  include <time.h>
 #endif

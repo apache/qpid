@@ -28,7 +28,7 @@
 namespace qpid {
 namespace sys {
 #if USE_APR
-#include <apr-1/apr_dso.h>
+#include <apr_dso.h>
     typedef apr_dso_handle_t* dso_handle_t;
 #else 
     typedef void* dso_handle_t;

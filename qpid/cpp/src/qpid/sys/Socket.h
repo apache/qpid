@@ -25,7 +25,7 @@
 #include <string>
 
 #ifdef USE_APR
-#  include <apr-1/apr_network_io.h>
+#  include <apr_network_io.h>
 #endif
 
 namespace qpid {

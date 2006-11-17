@@ -35,6 +35,8 @@ EpollEventChannel::EpollEventChannel()
     epollFd = epoll_create(estimatedFdsForEpoll);
 }
 
+EpollEventChannel::~EpollEventChannel() { }
+
 void 
 EpollEventChannel::post(ReadEvent& /*event*/)
 {
