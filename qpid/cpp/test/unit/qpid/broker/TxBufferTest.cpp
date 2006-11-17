@@ -153,6 +153,8 @@ class TxBufferTest : public CppUnit::TestCase
     CPPUNIT_TEST(testPrepareAndCommit);
     CPPUNIT_TEST(testFailOnPrepare);
     CPPUNIT_TEST(testRollback);
+    CPPUNIT_TEST(testBufferIsClearedAfterRollback);
+    CPPUNIT_TEST(testBufferIsClearedAfterCommit);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -223,6 +225,38 @@ class TxBufferTest : public CppUnit::TestCase
         opA.check();
         opB.check();
         opC.check();
+    }
+
+    void testBufferIsClearedAfterRollback(){
+        MockTxOp opA;
+        opA.expectRollback();
+        MockTxOp opB;
+        opB.expectRollback();
+
+        TxBuffer buffer;
+        buffer.enlist(&opA);
+        buffer.enlist(&opB);
+
+        buffer.rollback();
+        buffer.commit();//second call should not reach ops
+        opA.check();
+        opB.check();
+    }
+
+    void testBufferIsClearedAfterCommit(){
+        MockTxOp opA;
+        opA.expectCommit();
+        MockTxOp opB;
+        opB.expectCommit();
+
+        TxBuffer buffer;
+        buffer.enlist(&opA);
+        buffer.enlist(&opB);
+
+        buffer.commit();
+        buffer.rollback();//second call should not reach ops
+        opA.check();
+        opB.check();
     }
 };
 
