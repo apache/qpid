@@ -40,11 +40,13 @@ bool TxBuffer::prepare(TransactionalStore* const store)
 void TxBuffer::commit()
 {
     for_each(ops.begin(), ops.end(), mem_fun(&TxOp::commit));
+    ops.clear();
 }
 
 void TxBuffer::rollback()
 {
     for_each(ops.begin(), ops.end(), mem_fun(&TxOp::rollback));
+    ops.clear();
 }
 
 void TxBuffer::enlist(TxOp* const op)
