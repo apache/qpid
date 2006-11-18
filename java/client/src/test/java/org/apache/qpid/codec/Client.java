@@ -53,11 +53,7 @@ public class Client extends IoHandlerAdapter
         AMQDataBlock block = BasicDeliverTest.getDataBlock(size);
 
         InetSocketAddress address = new InetSocketAddress(host, port);
-
-        SocketConnector ioConnector = new SocketConnector();
-        ioConnector.setHandler(this);
-        ConnectFuture future = ioConnector.connect(address);
-
+        ConnectFuture future = new SocketConnector().connect(address, this);
         future.join();
         _session = future.getSession();
 

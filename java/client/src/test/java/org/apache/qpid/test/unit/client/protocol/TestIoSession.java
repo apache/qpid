@@ -45,6 +45,10 @@ public class TestIoSession extends BaseIoSession {
         return null;
     }
 
+    public IoServiceConfig getServiceConfig() {
+        return null;
+    }
+
     public IoHandler getHandler() {
         return null;
     }
@@ -69,7 +73,7 @@ public class TestIoSession extends BaseIoSession {
         return null;
     }
 
-    public int getScheduledWriteMessages() {
+    public int getScheduledWriteRequests() {
         return 0;
     }
 

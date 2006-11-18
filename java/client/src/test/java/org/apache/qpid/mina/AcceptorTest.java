@@ -27,6 +27,7 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.junit.Test;
 import org.apache.qpid.pool.ReadWriteThreadModel;
@@ -75,18 +76,17 @@ public class AcceptorTest
     {
         IoAcceptor acceptor = null;
         acceptor = new SocketAcceptor();
-
-        SocketSessionConfig sc = (SocketSessionConfig) acceptor.getSessionConfig();
+        
+        SocketAcceptorConfig config = (SocketAcceptorConfig) acceptor.getDefaultConfig();
+        SocketSessionConfig sc = (SocketSessionConfig) config.getSessionConfig();
         sc.setTcpNoDelay(true);
         sc.setSendBufferSize(32768);
         sc.setReceiveBufferSize(32768);
 
-        acceptor.setThreadModel(new ReadWriteThreadModel());
+        config.setThreadModel(new ReadWriteThreadModel());
 
-        acceptor.setLocalAddress(new InetSocketAddress(PORT));
-        acceptor.setHandler(new TestHandler());
-        acceptor.bind();
-
+        acceptor.bind(new InetSocketAddress(PORT),
+                      new TestHandler());
         _logger.info("Bound on port " + PORT);
     }
 

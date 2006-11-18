@@ -159,6 +159,11 @@ public class BasicDeliverTest
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
+        public IoServiceConfig getServiceConfig()
+        {
+            return null;
+        }
+
         public IoHandler getHandler()
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -194,7 +199,7 @@ public class BasicDeliverTest
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public int getScheduledWriteMessages()
+        public int getScheduledWriteRequests()
         {
             return 0;  //To change body of implemented methods use File | Settings | File Templates.
         }
