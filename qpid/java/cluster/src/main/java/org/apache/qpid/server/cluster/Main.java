@@ -31,6 +31,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -71,7 +72,8 @@ public class Main extends org.apache.qpid.server.Main
         try
         {
             IoAcceptor acceptor = new SocketAcceptor();
-            SocketSessionConfig sc = (SocketSessionConfig) acceptor.getSessionConfig();
+            SocketAcceptorConfig sconfig = (SocketAcceptorConfig) acceptor.getDefaultConfig();
+            SocketSessionConfig sc = (SocketSessionConfig) sconfig.getSessionConfig();
 
             sc.setReceiveBufferSize(connectorConfig.socketReceiveBufferSize);
             sc.setSendBufferSize(connectorConfig.socketWriteBuferSize);
@@ -81,16 +83,14 @@ public class Main extends org.apache.qpid.server.Main
             // implementation provided by MINA
             if (connectorConfig.enableExecutorPool)
             {
-                acceptor.setThreadModel(new ReadWriteThreadModel());
+                sconfig.setThreadModel(new ReadWriteThreadModel());
             }
 
             String host = InetAddress.getLocalHost().getHostName();
             ClusteredProtocolHandler handler = new ClusteredProtocolHandler(new InetSocketAddress(host, port));
             if (connectorConfig.enableNonSSL)
             {
-                acceptor.setLocalAddress(new InetSocketAddress(port));
-                acceptor.setHandler(handler);
-                acceptor.bind();
+                acceptor.bind(new InetSocketAddress(port), handler, sconfig);
                 _logger.info("Qpid.AMQP listening on non-SSL port " + port);
                 handler.connect(commandLine.getOptionValue("j"));
             }
@@ -99,9 +99,7 @@ public class Main extends org.apache.qpid.server.Main
             {
                 ClusteredProtocolHandler sslHandler = new ClusteredProtocolHandler(handler);
                 sslHandler.setUseSSL(true);
-                acceptor.setLocalAddress(new InetSocketAddress(connectorConfig.sslPort));
-                acceptor.setHandler(handler);
-                acceptor.bind();
+                acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
                 _logger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
             }
         }
