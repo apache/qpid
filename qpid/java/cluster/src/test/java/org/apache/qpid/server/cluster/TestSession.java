@@ -32,6 +32,11 @@ class TestSession implements IoSession
         return null;  //TODO
     }
 
+    public IoServiceConfig getServiceConfig()
+    {
+        return null;  //TODO        
+    }
+
     public IoHandler getHandler()
     {
         return null;  //TODO
@@ -217,7 +222,7 @@ class TestSession implements IoSession
         return 0;  //TODO
     }
 
-    public int getScheduledWriteMessages()
+    public int getScheduledWriteRequests()
     {
         return 0;  //TODO
     }
