@@ -1,0 +1,90 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.qpid</groupId>
+  <artifactId>qpid-common</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-incubating-M2-SNAPSHOT</version>
+  <name>Qpid Common Utilities</name>
+  <url>http://cwiki.apache.org/confluence/display/qpid</url>
+
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid</artifactId>
+    <version>1.0-incubating-M2-SNAPSHOT</version>
+  </parent>
+
+  <properties>
+    <topDirectoryLocation>..</topDirectoryLocation>
+    <cluster.asl>${basedir}/src/main/xsl/cluster.asl</cluster.asl>
+    <spec.stylesheet>${basedir}/src/main/xsl/framing.xsl</spec.stylesheet>
+    <registry.stylesheet>${basedir}/src/main/xsl/registry.xsl</registry.stylesheet>
+    <registry.template>${basedir}/src/main/xsl/registry.template</registry.template>
+    <generated.path>${project.build.directory}/generated/xsl</generated.path>
+    <generated.package>org/apache/qpid/framing</generated.package>
+    <generated.dir>${generated.path}/${generated.package}</generated.dir>
+    <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>protocol-version</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <tasks>
+                <ant antfile="protocol-version.xml">
+                  <property name="cluster.asl" value="${cluster.asl}"/>
+                  <property name="spec.stylesheet" value="${spec.stylesheet}"/>
+                  <property name="registry.stylesheet" value="${registry.stylesheet}"/>
+                  <property name="registry.template" value="${registry.template}"/>
+                  <property name="generated.dir" value="${generated.dir}"/>
+                  <property name="proto_version" value="${generated.dir}/ProtocolVersionList.java"/>
+                  <property name="specs.dir" value="${specs.dir}"/>
+                </ant>
+              </tasks>
+              <sourceRoot>${generated.path}</sourceRoot>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-core</artifactId>
+    </dependency>
+  </dependencies>
+</project>

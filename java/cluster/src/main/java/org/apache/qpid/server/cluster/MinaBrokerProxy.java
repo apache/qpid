@@ -27,6 +27,7 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.common.RuntimeIOException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.SocketConnector;
+import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.cluster.util.LogMessage;
@@ -62,7 +63,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     {
         super(host, port);
         _local = local;
-        _legacyHandler = new ClientHandlerRegistry(local);            
+        _legacyHandler = new ClientHandlerRegistry(local);
     }
 
     private void init(IoSession session)
@@ -75,14 +76,14 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     {
         _logger.info("Connecting to cluster peer: " + getDetails());
         SocketConnector ioConnector = new SocketConnector();
+        SocketConnectorConfig cfg = (SocketConnectorConfig) ioConnector.getDefaultConfig();
 
-        SocketSessionConfig scfg = (SocketSessionConfig) ioConnector.getSessionConfig();
+        SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
         scfg.setTcpNoDelay(true);
         scfg.setSendBufferSize(32768);
         scfg.setReceiveBufferSize(32768);
         InetSocketAddress address = new InetSocketAddress(getHost(), getPort());
-        ioConnector.setHandler(_binding);
-        return ioConnector.connect(address);
+        return ioConnector.connect(address, _binding);
     }
 
     //extablish connection without handling redirect

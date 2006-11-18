@@ -24,6 +24,7 @@ import junit.framework.JUnit4TestAdapter;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.*;
 import org.apache.mina.transport.socket.nio.SocketConnector;
+import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.junit.Test;
 
@@ -180,15 +181,16 @@ public class WriterTest implements Runnable
 
         ioConnector = new SocketConnector();
         
-        SocketSessionConfig scfg = (SocketSessionConfig) ioConnector.getSessionConfig();
+        SocketConnectorConfig cfg = (SocketConnectorConfig) ioConnector.getDefaultConfig();
+        cfg.setThreadModel(ThreadModel.MANUAL);
+        SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
         scfg.setTcpNoDelay(true);
         scfg.setSendBufferSize(32768);
         scfg.setReceiveBufferSize(32768);
 
         final InetSocketAddress address = new InetSocketAddress("localhost", AcceptorTest.PORT);
         _logger.info("Attempting connection to " + address);
-        ioConnector.setHandler(new WriterHandler());
-        ConnectFuture future = ioConnector.connect(address);
+        ConnectFuture future = ioConnector.connect(address, new WriterHandler());
         // wait for connection to complete
         future.join();
         _logger.info("Connection completed");
