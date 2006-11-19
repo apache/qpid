@@ -68,45 +68,6 @@
 
   <build>
     <plugins>
-<!--
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>ant-test</id>
-            <phase>test</phase>
-            <configuration>
-              <tasks unless="${maven.test.skip}">
-                <taskdef name="junit" 
-                  classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
-                  <classpath>
-                    <path refid="maven.test.classpath"/>
-                  </classpath>
-                </taskdef>							
-                <mkdir dir="${project.build.directory}/test-classes"/>
-                <junit fork="yes" printsummary="yes" showoutput="true" haltonfailure="yes">
-                  <sysproperty key="amqj.noAutoCreateVMBroker" value="true"/>
-                  <formatter type="plain"/>
-                  <classpath>
-                    <path refid="maven.test.classpath"/>
-                  </classpath>
-                  <batchtest fork="yes" todir="${project.build.directory}">
-                    <fileset dir="src/test/java">
-                      <include name="**/server/UnitTests.java"/>
-                      <include name="**/test/unit/ack/UnitTests.java"/>
-                    </fileset>
-                  </batchtest>
-                </junit>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
--->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
