@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -28,17 +27,16 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
+import org.apache.qpid.test.VMBrokerSetup;
 
-import javax.jms.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.jms.*;
 
-public class TextMessageTest implements MessageListener
+import junit.framework.TestCase;
+
+public class TextMessageTest extends TestCase implements MessageListener
 {
     private AMQConnection _connection;
     private Destination _destination;
@@ -48,37 +46,22 @@ public class TextMessageTest implements MessageListener
     private int _count = 100;
     public String _connectionString = "vm://:1";
 
-    @Before
-    public void init()
+    protected void setUp() throws Exception
     {
-        createVMBroker();
-
+        super.setUp();
         try
         {
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
         {
-            Assert.fail("Unable to initialilse connection: " + e);
+            fail("Unable to initialilse connection: " + e);
         }
     }
 
-    public void createVMBroker()
+    protected void tearDown() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -98,7 +81,6 @@ public class TextMessageTest implements MessageListener
         connection.start();
     }
 
-    @Test
     public void test() throws Exception
     {
         int count = _count;
@@ -197,7 +179,7 @@ public class TextMessageTest implements MessageListener
     {
         TextMessageTest test = new TextMessageTest();
         test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
-        test.init();
+        test.setUp();
         if (argv.length > 1)
         {
             test._count = Integer.parseInt(argv[1]);
@@ -207,6 +189,6 @@ public class TextMessageTest implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TextMessageTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(TextMessageTest.class));
     }
 }

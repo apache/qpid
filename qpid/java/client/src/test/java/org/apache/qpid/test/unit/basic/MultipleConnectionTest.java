@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,24 +19,22 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
+
+import junit.framework.TestCase;
 
 /**
  * This is a slow test.
  */
-public class MultipleConnectionTest
+public class MultipleConnectionTest extends TestCase
 {
     public static String _connectionString = "vm://:1";
 
@@ -178,7 +175,6 @@ public class MultipleConnectionTest
         test.test();
     }
 
-    @Test
     public void test() throws Exception
     {
         String broker = _connectionString;
@@ -220,28 +216,8 @@ public class MultipleConnectionTest
         }
     }
 
-    @BeforeClass
-    public static void createVMBroker() throws Exception
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @AfterClass
-    public static void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(MultipleConnectionTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(MultipleConnectionTest.class));
     }
 }

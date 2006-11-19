@@ -20,29 +20,19 @@
  */
 package org.apache.qpid.server.txn;
 
-import junit.framework.JUnit4TestAdapter;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 
 import java.util.LinkedList;
 
-public class TxnBufferTest
+import junit.framework.TestCase;
+
+public class TxnBufferTest extends TestCase
 {
     private final LinkedList<MockOp> ops = new LinkedList<MockOp>();  
 
-    @Before
-    public void setup() throws Exception
-    {
-    }
-
-    @Test
-    public void commit() throws AMQException
+    public void testCommit() throws AMQException
     {
         MockStore store = new MockStore();
 
@@ -60,8 +50,7 @@ public class TxnBufferTest
         store.validate();
     }
 
-    @Test
-    public void rollback() throws AMQException
+    public void testRollback() throws AMQException
     {
         MockStore store = new MockStore();
 
@@ -76,8 +65,7 @@ public class TxnBufferTest
         store.validate();
     }
 
-    @Test
-    public void commitWithFailureDuringPrepare() throws AMQException
+    public void testCommitWithFailureDuringPrepare() throws AMQException
     {
         MockStore store = new MockStore();
         store.expectBegin().expectAbort();
@@ -95,8 +83,7 @@ public class TxnBufferTest
         store.validate();
     }
 
-    @Test
-    public void commitWithPersistance() throws AMQException
+    public void testCommitWithPersistance() throws AMQException
     {
         MockStore store = new MockStore();
         store.expectBegin().expectCommit();
@@ -115,7 +102,7 @@ public class TxnBufferTest
 
     private void validateOps()
     {
-        for(MockOp op : ops)
+        for (MockOp op : ops)
         {
             op.validate();
         }
@@ -123,7 +110,7 @@ public class TxnBufferTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TxnBufferTest.class);
+        return new junit.framework.TestSuite(TxnBufferTest.class);
     }
 
     class MockOp implements TxnOp

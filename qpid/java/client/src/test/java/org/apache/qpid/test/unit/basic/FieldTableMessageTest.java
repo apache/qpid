@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -31,17 +30,16 @@ import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableTest;
+import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.mina.common.ByteBuffer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
 
-import javax.jms.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import javax.jms.*;
 
-public class FieldTableMessageTest implements MessageListener
+import junit.framework.TestCase;
+
+public class FieldTableMessageTest extends TestCase implements MessageListener
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -51,29 +49,15 @@ public class FieldTableMessageTest implements MessageListener
     private int _count = 10;
     public String _connectionString = "vm://:1";
 
-    @Before
-    public void init() throws Exception
+    protected void setUp() throws Exception
     {
-        createVMBroker();
+        super.setUp();
         init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));        
     }
 
-    public void createVMBroker()
+    protected void tearDown() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
 
@@ -108,7 +92,6 @@ public class FieldTableMessageTest implements MessageListener
         return result;
     }
 
-    @Test
     public void test() throws Exception
     {
         int count = _count;
@@ -170,13 +153,13 @@ public class FieldTableMessageTest implements MessageListener
     {
         FieldTableMessageTest test = new FieldTableMessageTest();
         test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
-        test.init();
+        test.setUp();
         test._count = argv.length > 1 ? Integer.parseInt(argv[1]) : 5;
         test.test();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(FieldTableMessageTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(FieldTableMessageTest.class));
     }
 }

@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.server.configuration;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.configuration.PropertyUtils;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+
+import junit.framework.TestCase;
 
 // TODO: This belongs in the "common" module.
-public class TestPropertyUtils
+public class TestPropertyUtils extends TestCase
 {
-    @Test
     public void testSimpleExpansion() throws PropertyException
     {
         System.setProperty("banana", "fruity");
@@ -37,7 +35,6 @@ public class TestPropertyUtils
         assertEquals(expandedProperty, "fruity");
     }
 
-    @Test
     public void testDualExpansion() throws PropertyException
     {
         System.setProperty("banana", "fruity");
@@ -48,6 +45,6 @@ public class TestPropertyUtils
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TestPropertyUtils.class);
+        return new junit.framework.TestSuite(TestPropertyUtils.class);
     }
 }

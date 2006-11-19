@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.junit.Test;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
@@ -28,10 +27,11 @@ import org.apache.qpid.client.AMQSession;
 
 import javax.jms.JMSException;
 
-public class SimpleClusterTest
+import junit.framework.TestCase;
+
+public class SimpleClusterTest extends TestCase
 {
-    @Test
-    public void declareExchange() throws AMQException, JMSException, URLSyntaxException
+    public void testDeclareExchange() throws AMQException, JMSException, URLSyntaxException
     {
         AMQConnection con = new AMQConnection("localhost:9000", "guest", "guest", "test", "/test");
         AMQSession session = (AMQSession) con.createSession(false, AMQSession.NO_ACKNOWLEDGE);

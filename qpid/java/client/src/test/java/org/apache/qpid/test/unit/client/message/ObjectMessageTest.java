@@ -26,11 +26,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
@@ -41,58 +37,25 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.ArrayList;
 
-import junit.framework.JUnit4TestAdapter;
+import junit.framework.TestCase;
 
-public class ObjectMessageTest implements MessageListener
+public class ObjectMessageTest extends TestCase implements MessageListener
 {
-    private final AMQConnection connection;
-    private final AMQDestination destination;
-    private final AMQSession session;
-    private final Serializable[] data;
+    private AMQConnection connection;
+    private AMQDestination destination;
+    private AMQSession session;
+    private Serializable[] data;
     private volatile boolean waiting;
     private int received;
     private final ArrayList items = new ArrayList();
 
+    private String _broker = "vm://:1";
 
-    @BeforeClass
-    public static void createVMBroker()
+    protected void setUp() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @AfterClass
-    public static void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-
-    public ObjectMessageTest() throws Exception
-    {
-        this(new AMQConnection("vm://:1", "guest", "guest", randomize("Client"), "/test_path"));
-    }
-
-    ObjectMessageTest(String broker) throws Exception
-    {
-        this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"));
-    }
-
-    ObjectMessageTest(AMQConnection connection) throws Exception
-    {
-        this(connection, new AMQQueue(randomize("LatencyTest"), true));
-    }
-
-    ObjectMessageTest(AMQConnection connection, AMQDestination destination) throws Exception
-    {
-        this.connection = connection;
-        this.destination = destination;
+        super.setUp();
+        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "/test_path");
+        destination = new AMQQueue(randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         A a1 = new A(1, "A");
         A a2 = new A(2, "a");
@@ -106,6 +69,19 @@ public class ObjectMessageTest implements MessageListener
         data = new Serializable[]{a1, a2, b, c, "Hello World!", new Integer(1001)};
     }
 
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+    }
+
+    public ObjectMessageTest()
+    {
+    }
+
+    ObjectMessageTest(String broker) throws Exception
+    {
+        _broker = broker;
+    }
 
     public void test() throws Exception
     {
@@ -115,6 +91,10 @@ public class ObjectMessageTest implements MessageListener
             waitUntilReceived(data.length);
             check();
             System.out.println("All " + data.length + " items matched.");
+        }
+        catch (Exception e)
+        {
+            fail("This Test should succeed but failed due to: " + e);
         }
         finally
         {
@@ -220,19 +200,6 @@ public class ObjectMessageTest implements MessageListener
     }
 
 
-    @Test
-    public void doJUnitTest()
-    {
-        try
-        {
-            new ObjectMessageTest("vm://:1").test();
-        }
-        catch (Exception e)
-        {
-            Assert.fail("This Test should succeed but failed due to: " + e);
-        }
-    }
-
     public static void main(String[] argv) throws Exception
     {
         String broker = argv.length > 0 ? argv[0] : "vm://:1";
@@ -302,6 +269,6 @@ public class ObjectMessageTest implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ObjectMessageTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(ObjectMessageTest.class));
     }
 }

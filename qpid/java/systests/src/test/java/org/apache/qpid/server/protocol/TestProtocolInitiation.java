@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import junit.framework.Assert;
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.codec.AMQEncoder;
 import org.apache.qpid.framing.*;
@@ -30,13 +28,13 @@ import org.apache.mina.common.WriteFuture;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.apache.mina.filter.codec.support.SimpleProtocolDecoderOutput;
-import org.junit.Before;
-import org.junit.Test;
+
+import junit.framework.TestCase;
 
 /**
  * This test suite tests the handling of protocol initiation frames and related issues.
  */
-public class TestProtocolInitiation implements ProtocolVersionList
+public class TestProtocolInitiation extends TestCase implements ProtocolVersionList
 {
     private AMQPFastProtocolHandler _protocolHandler;
 
@@ -83,9 +81,9 @@ public class TestProtocolInitiation implements ProtocolVersionList
         }
     }
 
-    @Before
-    public void createCommonObjects()
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _mockIoSession = new MockIoSession();
         _protocolHandler = new AMQPFastProtocolHandler(null, null);
     }
@@ -95,67 +93,121 @@ public class TestProtocolInitiation implements ProtocolVersionList
      * Tests that the AMQDecoder handles invalid protocol classes
      * @throws Exception
      */
-    @Test(expected = AMQProtocolClassException.class)
     public void testDecoderValidateProtocolClass() throws Exception
     {
-        ProtocolInitiation pi = createValidProtocolInitiation();
-        pi.protocolClass = 2;
-        decodePI(pi);
+        try
+        {
+            ProtocolInitiation pi = createValidProtocolInitiation();
+            pi.protocolClass = 2;
+            decodePI(pi);
+            fail("expected exception did not occur");
+        }
+        catch (AMQProtocolClassException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected AMQProtocolClassException, got " + e);
+        }
     }
 
     /**
      * Tests that the AMQDecoder handles invalid protocol instance numbers
      * @throws Exception
      */
-    @Test(expected = AMQProtocolInstanceException.class)
     public void testDecoderValidatesProtocolInstance() throws Exception
     {
-        ProtocolInitiation pi = createValidProtocolInitiation();
-        pi.protocolInstance = 2;
-        decodePI(pi);
+        try
+        {
+            ProtocolInitiation pi = createValidProtocolInitiation();
+            pi.protocolInstance = 2;
+            decodePI(pi);
+            fail("expected exception did not occur");
+        }
+        catch (AMQProtocolInstanceException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected AMQProtocolInstanceException, got " + e);
+        }
     }
 
     /**
      * Tests that the AMQDecoder handles invalid protocol major
      * @throws Exception
      */
-    @Test(expected = AMQProtocolVersionException.class)
     public void testDecoderValidatesProtocolMajor() throws Exception
     {
-        ProtocolInitiation pi = createValidProtocolInitiation();
-        pi.protocolMajor = 2;
-        decodePI(pi);
+        try
+        {
+            ProtocolInitiation pi = createValidProtocolInitiation();
+            pi.protocolMajor = 2;
+            decodePI(pi);
+            fail("expected exception did not occur");
+        }
+        catch (AMQProtocolVersionException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected AMQProtocolVersionException, got " + e);
+        }
     }
 
     /**
      * Tests that the AMQDecoder handles invalid protocol minor
      * @throws Exception
      */
-    @Test(expected = AMQProtocolVersionException.class)
     public void testDecoderValidatesProtocolMinor() throws Exception
     {
-        ProtocolInitiation pi = createValidProtocolInitiation();
-        pi.protocolMinor = 99;
-        decodePI(pi);
+        try
+        {
+            ProtocolInitiation pi = createValidProtocolInitiation();
+            pi.protocolMinor = 99;
+            decodePI(pi);
+            fail("expected exception did not occur");
+        }
+        catch (AMQProtocolVersionException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected AMQProtocolVersionException, got " + e);
+        }
     }
 
     /**
      * Tests that the AMQDecoder accepts a valid PI
      * @throws Exception
      */
-    @Test(expected = AMQProtocolHeaderException.class)
     public void testDecoderValidatesHeader() throws Exception
     {
-        ProtocolInitiation pi = createValidProtocolInitiation();
-        pi.header = new char[] {'P', 'Q', 'M', 'A' };
-        decodePI(pi);
+        try
+        {
+            ProtocolInitiation pi = createValidProtocolInitiation();
+            pi.header = new char[] {'P', 'Q', 'M', 'A' };
+            decodePI(pi);
+            fail("expected exception did not occur");
+        }
+        catch (AMQProtocolHeaderException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected AMQProtocolHeaderException, got " + e);
+        }
     }
 
     /**
      * Test that a valid header is passed by the decoder.
      * @throws Exception
      */
-    @Test
     public void testDecoderAcceptsValidHeader() throws Exception
     {
         ProtocolInitiation pi = createValidProtocolInitiation();
@@ -166,18 +218,17 @@ public class TestProtocolInitiation implements ProtocolVersionList
      * This test checks that an invalid protocol header results in the
      * connection being closed.
      */
-    @Test
     public void testInvalidProtocolHeaderClosesConnection() throws Exception
     {
         AMQProtocolHeaderException pe = new AMQProtocolHeaderException("Test");
         _protocolHandler.exceptionCaught(_mockIoSession, pe);
-        Assert.assertNotNull(_mockIoSession.getLastWrittenObject());
+        assertNotNull(_mockIoSession.getLastWrittenObject());
         Object piResponse = _mockIoSession.getLastWrittenObject();
-        Assert.assertEquals(piResponse.getClass(), ProtocolInitiation.class);
+        assertEquals(piResponse.getClass(), ProtocolInitiation.class);
         ProtocolInitiation pi = (ProtocolInitiation) piResponse;
-        Assert.assertEquals("Protocol Initiation sent out was not the broker's expected header", pi,
+        assertEquals("Protocol Initiation sent out was not the broker's expected header", pi,
                             createValidProtocolInitiation());
-        Assert.assertTrue("Session has not been closed", _mockIoSession.isClosing());
+        assertTrue("Session has not been closed", _mockIoSession.isClosing());
     }
 
     private ProtocolInitiation createValidProtocolInitiation()
@@ -210,6 +261,6 @@ public class TestProtocolInitiation implements ProtocolVersionList
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TestProtocolInitiation.class);
+        return new junit.framework.TestSuite(TestProtocolInitiation.class);
     }
 }

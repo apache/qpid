@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.mina.common.ByteBuffer;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,10 +29,11 @@ import java.io.Reader;
 import java.util.Enumeration;
 import java.util.Properties;
 
-public class FieldTableTest
+import junit.framework.TestCase;
+
+public class FieldTableTest extends TestCase
 {
-    @Test
-    public void dataDump() throws IOException, AMQFrameDecodingException
+    public void testDataDump() throws IOException, AMQFrameDecodingException
     {
         byte[] data = readBase64("content.txt");
         System.out.println("Got " + data.length + " bytes of data");
@@ -52,19 +50,17 @@ public class FieldTableTest
     }
 
     /*
-    @Test
-    public void case1() throws AMQFrameDecodingException, IOException
+    public void testCase1() throws AMQFrameDecodingException, IOException
     {
-        testEncoding(load("FieldTableTest.properties"));
+        doTestEncoding(load("FieldTableTest.properties"));
     }
 
-    @Test
-    public void case2() throws AMQFrameDecodingException, IOException
+    public void testCase2() throws AMQFrameDecodingException, IOException
     {
-        testEncoding(load("FieldTableTest2.properties"));
+        doTestEncoding(load("FieldTableTest2.properties"));
     }
     */
-    void testEncoding(FieldTable table) throws AMQFrameDecodingException
+    void doTestEncoding(FieldTable table) throws AMQFrameDecodingException
     {
         assertEquivalent(table, encodeThenDecode(table));
     }
@@ -157,6 +153,6 @@ public class FieldTableTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(FieldTableTest.class);
+        return new junit.framework.TestSuite(FieldTableTest.class);
     }
 }

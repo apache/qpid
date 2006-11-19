@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.JUnit4TestAdapter;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import org.junit.Test;
-import org.junit.Assert;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 
@@ -61,23 +56,21 @@ public class ConcurrencyTest extends MessageTestHelper
                                                                           new DefaultQueueRegistry()));
     }
 
-    @Test
-    public void concurrent1() throws InterruptedException, AMQException
+    public void testConcurrent1() throws InterruptedException, AMQException
     {
         initSubscriptions(10);
         initMessages(numMessages);
         initThreads(1, 4, 4, 4);
-        run();
+        doRun();
         check();
     }
 
-    @Test
-    public void concurrent2() throws InterruptedException, AMQException
+    public void testConcurrent2() throws InterruptedException, AMQException
     {
         initSubscriptions(10);
         initMessages(numMessages);
         initThreads(4, 2, 2, 2);
-        run();
+        doRun();
         check();
     }
 
@@ -126,7 +119,7 @@ public class ConcurrencyTest extends MessageTestHelper
         }
     }
 
-    void run() throws InterruptedException
+    void doRun() throws InterruptedException
     {
         for(Thread t : _threads)
         {
@@ -147,7 +140,7 @@ public class ConcurrencyTest extends MessageTestHelper
             {
                 _active.remove(s);
                 Subscription result = _subscriptionMgr.removeSubscriber(s);
-                Assert.assertTrue("Removed subscription " + result + " but trying to remove subscription " + s,
+                assertTrue("Removed subscription " + result + " but trying to remove subscription " + s,
                         result != null && result.equals(s));
             }
             else
@@ -258,7 +251,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ConcurrencyTest.class);
+        return new junit.framework.TestSuite(ConcurrencyTest.class);
     }
 
 }

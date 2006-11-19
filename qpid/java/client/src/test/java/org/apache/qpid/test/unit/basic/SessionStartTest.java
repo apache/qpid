@@ -20,24 +20,21 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-public class SessionStartTest implements MessageListener
+import junit.framework.TestCase;
+
+public class SessionStartTest extends TestCase implements MessageListener
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -45,36 +42,15 @@ public class SessionStartTest implements MessageListener
     private int count;
     public String _connectionString = "vm://:1";
 
-    @Before
-    public void init()
+    protected void setUp() throws Exception
     {
-        createVMBroker();
-        try
-        {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
-        }
-        catch (Exception e)
-        {
-            Assert.fail("Unable to initialise connection: " + e);
-        }
+        super.setUp();
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
-    public void createVMBroker()
+    protected void tearDown() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -92,7 +68,6 @@ public class SessionStartTest implements MessageListener
         _session.createConsumer(destination).setMessageListener(this);
     }
 
-    @Test
     public synchronized void test() throws JMSException, InterruptedException
     {
         try
@@ -131,12 +106,12 @@ public class SessionStartTest implements MessageListener
     {
         SessionStartTest test = new SessionStartTest();
         test._connectionString = argv.length == 0 ? "localhost:5672" : argv[0];
-        test.init();
+        test.setUp();
         test.test();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(SessionStartTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(SessionStartTest.class));
     }
 }

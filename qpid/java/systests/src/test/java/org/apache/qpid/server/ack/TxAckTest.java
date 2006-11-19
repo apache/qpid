@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.server.ack;
 
-import junit.framework.JUnit4TestAdapter;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -35,15 +29,18 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class TxAckTest
+import junit.framework.TestCase;
+
+public class TxAckTest extends TestCase
 {
     private Scenario individual;
     private Scenario multiple;
     private Scenario combined;
 
-    @Before
-    public void setup() throws Exception
-    {   
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+
         //ack only 5th msg
         individual = new Scenario(10, Arrays.asList(5l), Arrays.asList(1l, 2l, 3l, 4l, 6l, 7l, 8l, 9l, 10l));
         individual.update(5, false);
@@ -62,24 +59,21 @@ public class TxAckTest
         combined.update(10, false);
     }
 
-    @Test
-    public void prepare() throws AMQException
+    public void testPrepare() throws AMQException
     {
         individual.prepare();
         multiple.prepare();
         combined.prepare();
     }
 
-    @Test
-    public void undoPrepare() throws AMQException
+    public void testUndoPrepare() throws AMQException
     {
         individual.undoPrepare();
         multiple.undoPrepare();
         combined.undoPrepare();
     }
 
-    @Test
-    public void commit() throws AMQException
+    public void testCommit() throws AMQException
     {
         individual.commit();
         multiple.commit();
@@ -88,7 +82,7 @@ public class TxAckTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TxAckTest.class);
+        return new junit.framework.TestSuite(TxAckTest.class);
     }
 
     private class Scenario

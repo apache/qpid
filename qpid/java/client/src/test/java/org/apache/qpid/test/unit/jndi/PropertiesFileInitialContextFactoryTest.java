@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.test.unit.jndi;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -34,14 +30,16 @@ import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import java.util.Properties;
 
-public class PropertiesFileInitialContextFactoryTest
+import junit.framework.TestCase;
+
+public class PropertiesFileInitialContextFactoryTest extends TestCase
 {
     InitialContextFactory contextFactory;
     Properties _properties;
 
-    @Before
-    public void setupProperties()
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _properties = new Properties();
         _properties.put("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
         _properties.put("connectionfactory.local", "amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'");
@@ -50,7 +48,6 @@ public class PropertiesFileInitialContextFactoryTest
         _properties.put("destination.direct", "direct://amq.direct//directQueue");
     }
 
-    @Test
     public void test()
     {
         Context ctx = null;
@@ -60,54 +57,52 @@ public class PropertiesFileInitialContextFactoryTest
         }
         catch (NamingException ne)
         {
-            Assert.fail("Error loading context:" + ne);
+            fail("Error loading context:" + ne);
         }
 
         try
         {
             AMQConnectionFactory cf = (AMQConnectionFactory) ctx.lookup("local");
-            Assert.assertEquals("amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'", cf.getConnectionURL().toString());
+            assertEquals("amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'", cf.getConnectionURL().toString());
         }
         catch (NamingException ne)
         {
-            Assert.fail("Unable to create Connection Factory:" + ne);
+            fail("Unable to create Connection Factory:" + ne);
         }
 
         try
         {
             AMQQueue queue = (AMQQueue) ctx.lookup("MyQueue");
-            Assert.assertEquals("example.MyQueue", queue.getRoutingKey());
+            assertEquals("example.MyQueue", queue.getRoutingKey());
         }
         catch (NamingException ne)
         {
-            Assert.fail("Unable to create queue:" + ne);
+            fail("Unable to create queue:" + ne);
         }
 
         try
         {
             AMQTopic topic = (AMQTopic) ctx.lookup("ibmStocks");
-            Assert.assertEquals("stocks.nyse.ibm", topic.getTopicName());
+            assertEquals("stocks.nyse.ibm", topic.getTopicName());
         }
         catch (Exception ne)
         {
-            Assert.fail("Unable to create topic:" + ne);
+            fail("Unable to create topic:" + ne);
         }
 
         try
         {
             AMQQueue direct = (AMQQueue) ctx.lookup("direct");
-            Assert.assertEquals("directQueue", direct.getRoutingKey());
+            assertEquals("directQueue", direct.getRoutingKey());
         }
         catch (NamingException ne)
         {
-            Assert.fail("Unable to create direct destination:" + ne);
+            fail("Unable to create direct destination:" + ne);
         }
-
-
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(PropertiesFileInitialContextFactoryTest.class);
+        return new junit.framework.TestSuite(PropertiesFileInitialContextFactoryTest.class);
     }
 }
