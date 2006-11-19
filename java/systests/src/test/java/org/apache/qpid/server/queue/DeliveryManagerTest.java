@@ -20,19 +20,10 @@
  */
 package org.apache.qpid.server.queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-import org.junit.runners.Suite;
-import org.junit.runner.RunWith;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 import org.apache.qpid.AMQException;
-import junit.framework.JUnit4TestAdapter;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-        ConcurrentDeliveryManagerTest.class,
-        SynchronizedDeliveryManagerTest.class})
+import junit.framework.TestSuite;
 
 abstract public class DeliveryManagerTest extends MessageTestHelper
 {
@@ -43,9 +34,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
     {
     }
 
-
-    @Test
-    public void startInQueueingMode() throws AMQException
+    public void testStartInQueueingMode() throws AMQException
     {
         AMQMessage[] messages = new AMQMessage[10];
         for (int i = 0; i < messages.length; i++)
@@ -90,8 +79,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         }
     }
 
-    @Test
-    public void startInDirectMode() throws AMQException
+    public void testStartInDirectMode() throws AMQException
     {
         AMQMessage[] messages = new AMQMessage[10];
         for (int i = 0; i < messages.length; i++)
@@ -136,27 +124,52 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
     }
 
-    @Test(expected = NoConsumersException.class)
-    public void noConsumers() throws AMQException
+    public void testNoConsumers() throws AMQException
     {
-        AMQMessage msg = message(true);
-        _mgr.deliver("Me", msg);
-        msg.checkDeliveredToConsumer();
+        try
+        {
+            AMQMessage msg = message(true);
+            _mgr.deliver("Me", msg);
+            msg.checkDeliveredToConsumer();
+            fail("expected exception did not occur");
+        }
+        catch (NoConsumersException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected NoConsumersException, got " + e);
+        }
     }
 
-    @Test(expected = NoConsumersException.class)
-    public void noActiveConsumers() throws AMQException
+    public void testNoActiveConsumers() throws AMQException
     {
-        TestSubscription s = new TestSubscription("A");
-        _subscriptions.addSubscriber(s);
-        s.setSuspended(true);
-        AMQMessage msg = message(true);
-        _mgr.deliver("Me", msg);
-        msg.checkDeliveredToConsumer();
+        try
+        {
+            TestSubscription s = new TestSubscription("A");
+            _subscriptions.addSubscriber(s);
+            s.setSuspended(true);
+            AMQMessage msg = message(true);
+            _mgr.deliver("Me", msg);
+            msg.checkDeliveredToConsumer();
+            fail("expected exception did not occur");
+        }
+        catch (NoConsumersException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected NoConsumersException, got " + e);
+        }
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(DeliveryManagerTest.class);
+        TestSuite suite = new TestSuite();
+        suite.addTestSuite(ConcurrentDeliveryManagerTest.class);
+        suite.addTestSuite(SynchronizedDeliveryManagerTest.class);
+        return suite;
     }
 }

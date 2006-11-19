@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import org.junit.*;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.AMQTopic;
@@ -29,44 +28,30 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
-import junit.framework.JUnit4TestAdapter;
+import org.apache.qpid.test.VMBrokerSetup;
 
+import java.lang.reflect.Method;
 import javax.jms.*;
 
-public class AMQConnectionTest
-{
+import junit.framework.TestCase;
 
+public class AMQConnectionTest extends TestCase
+{
     private static AMQConnection _connection;
     private static AMQTopic _topic;
     private static AMQQueue _queue;
     private static QueueSession _queueSession;
     private static TopicSession _topicSession;
 
-
-    @Before
-    public void setUp() throws AMQException, URLSyntaxException, JMSException
+    protected void setUp() throws Exception
     {
-        createVMBroker();
-        //initialise the variables we need for testing
+        super.setUp();
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
     }
 
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
+    protected void tearDown() throws Exception
     {
         try
         {
@@ -76,7 +61,7 @@ public class AMQConnectionTest
         {
             //ignore 
         }
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
     /**
@@ -84,62 +69,137 @@ public class AMQConnectionTest
      * And that they throw exceptions where appropriate as per JMS spec
      */
 
-    @Test
     public void testCreateQueueSession() throws JMSException
     {
         _queueSession = _connection.createQueueSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
-    @Test
     public void testCreateTopicSession() throws JMSException
     {
         _topicSession = _connection.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testTopicSessionCreateBrowser() throws JMSException
     {
-        _topicSession.createBrowser(_queue);
+        try
+        {
+            _topicSession.createBrowser(_queue);
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testTopicSessionCreateQueue() throws JMSException
     {
-        _topicSession.createQueue("abc");
+        try
+        {
+            _topicSession.createQueue("abc");
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testTopicSessionCreateTemporaryQueue() throws JMSException
     {
-        _topicSession.createTemporaryQueue();
+        try
+        {
+            _topicSession.createTemporaryQueue();
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testQueueSessionCreateTemporaryTopic() throws JMSException
     {
-        _queueSession.createTemporaryTopic();
+        try
+        {
+            _queueSession.createTemporaryTopic();
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testQueueSessionCreateTopic() throws JMSException
     {
-        _queueSession.createTopic("abc");
+        try
+        {
+            _queueSession.createTopic("abc");
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testQueueSessionDurableSubscriber() throws JMSException
     {
-        _queueSession.createDurableSubscriber(_topic, "abc");
+        try
+        {
+            _queueSession.createDurableSubscriber(_topic, "abc");
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
-    @Test(expected = javax.jms.IllegalStateException.class)
     public void testQueueSessionUnsubscribe() throws JMSException
     {
-        _queueSession.unsubscribe("abc");
+        try
+        {
+            _queueSession.unsubscribe("abc");
+            fail("expected exception did not occur");
+        }
+        catch (javax.jms.IllegalStateException s)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected javax.jms.IllegalStateException, got " + e);
+        }
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(AMQConnectionTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(AMQConnectionTest.class));
     }
 }

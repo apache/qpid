@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.test.unit.topic;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
@@ -32,6 +27,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -41,30 +37,11 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.TopicSubscriber;
 
-public class DurableSubscriptionTest
+import junit.framework.TestCase;
+
+public class DurableSubscriptionTest extends TestCase
 {
-
-    @Before
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Test
-    public void unsubscribe() throws AMQException, JMSException, URLSyntaxException
+    public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
@@ -81,32 +58,31 @@ public class DurableSubscriptionTest
 
         Message msg;
         msg = consumer1.receive();
-        Assert.assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer1.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         msg = consumer2.receive();
-        Assert.assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer2.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         session2.unsubscribe("MySubscription");
 
         producer.send(session1.createTextMessage("B"));
 
         msg = consumer1.receive();
-        Assert.assertEquals("B", ((TextMessage) msg).getText());
+        assertEquals("B", ((TextMessage) msg).getText());
         msg = consumer1.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         msg = consumer2.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         con.close();
     }
 
-    @Test
-    public void durability() throws AMQException, JMSException, URLSyntaxException
+    public void testDurability() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
@@ -123,14 +99,14 @@ public class DurableSubscriptionTest
 
         Message msg;
         msg = consumer1.receive();
-        Assert.assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer1.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         msg = consumer2.receive();
-        Assert.assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer2.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         consumer2.close();
 
@@ -140,21 +116,20 @@ public class DurableSubscriptionTest
         producer.send(session1.createTextMessage("B"));
 
         msg = consumer1.receive();
-        Assert.assertEquals("B", ((TextMessage) msg).getText());
+        assertEquals("B", ((TextMessage) msg).getText());
         msg = consumer1.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         msg = consumer3.receive();
-        Assert.assertEquals("B", ((TextMessage) msg).getText());
+        assertEquals("B", ((TextMessage) msg).getText());
         msg = consumer3.receive(1000);
-        Assert.assertEquals(null, msg);
+        assertEquals(null, msg);
 
         con.close();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(DurableSubscriptionTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(DurableSubscriptionTest.class));
     }
-
 }

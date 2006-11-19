@@ -28,7 +28,9 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.AMQException;
 
-class MessageTestHelper
+import junit.framework.TestCase;
+
+class MessageTestHelper extends TestCase
 {
     private final MessageStore _messageStore = new SkeletonMessageStore();
 

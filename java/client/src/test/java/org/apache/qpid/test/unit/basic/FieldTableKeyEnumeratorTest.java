@@ -20,22 +20,18 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import org.junit.Test;
-import org.junit.Assert;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
-
 import java.util.Enumeration;
-
-import junit.framework.JUnit4TestAdapter;
 
 import javax.jms.JMSException;
 
-public class FieldTableKeyEnumeratorTest
+import junit.framework.TestCase;
+
+public class FieldTableKeyEnumeratorTest extends TestCase
 {
-    @Test
     public void testKeyEnumeration()
     {
         FieldTable result = new FieldTable();
@@ -47,14 +43,13 @@ public class FieldTableKeyEnumeratorTest
 
         Enumeration e = result.keys();
 
-        Assert.assertTrue("one".equals(e.nextElement()));
-        Assert.assertTrue("two".equals(e.nextElement()));
-        Assert.assertTrue("three".equals(e.nextElement()));
-        Assert.assertTrue("four".equals(e.nextElement()));
-        Assert.assertTrue("five".equals(e.nextElement()));
+        assertTrue("one".equals(e.nextElement()));
+        assertTrue("two".equals(e.nextElement()));
+        assertTrue("three".equals(e.nextElement()));
+        assertTrue("four".equals(e.nextElement()));
+        assertTrue("five".equals(e.nextElement()));
     }
 
-    @Test
     public void testPropertEnu()
     {
         try
@@ -68,10 +63,10 @@ public class FieldTableKeyEnumeratorTest
 
             Enumeration e = text.getPropertyNames();
 
-            Assert.assertTrue("Boolean1".equals(e.nextElement()));
-            Assert.assertTrue("Boolean2".equals(e.nextElement()));
-            Assert.assertTrue("Int".equals(e.nextElement()));
-            Assert.assertTrue("Long".equals(e.nextElement()));
+            assertTrue("Boolean1".equals(e.nextElement()));
+            assertTrue("Boolean2".equals(e.nextElement()));
+            assertTrue("Int".equals(e.nextElement()));
+            assertTrue("Long".equals(e.nextElement()));
         }
         catch (JMSException e)
         {
@@ -81,8 +76,6 @@ public class FieldTableKeyEnumeratorTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(FieldTableKeyEnumeratorTest.class);
+        return new junit.framework.TestSuite(FieldTableKeyEnumeratorTest.class);
     }
-
-
 }

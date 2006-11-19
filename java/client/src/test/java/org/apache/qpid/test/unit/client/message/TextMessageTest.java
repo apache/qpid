@@ -20,37 +20,35 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Test;
-import org.junit.Assert;
 import org.apache.qpid.client.message.TestMessageHelper;
 import org.apache.qpid.client.message.JMSTextMessage;
 
-public class TextMessageTest
+import junit.framework.TestCase;
+
+public class TextMessageTest extends TestCase
 {
-    @Test
     public void testTextOnConstruction() throws Exception
     {
         JMSTextMessage tm = TestMessageHelper.newJMSTextMessage();
         tm.setText("pies");
         String val = tm.getText();
-        Assert.assertEquals(val, "pies");
+        assertEquals(val, "pies");
     }
 
-    @Test
     public void testClearBody() throws Exception
     {
         JMSTextMessage tm = TestMessageHelper.newJMSTextMessage();
         tm.setText("pies");
         tm.clearBody();
         String val = tm.getText();
-        Assert.assertNull(val);
+        assertNull(val);
         tm.setText("Banana");
         val = tm.getText();
-        Assert.assertEquals(val, "Banana");
+        assertEquals(val, "Banana");
     }
+
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TextMessageTest.class);
+        return new junit.framework.TestSuite(TextMessageTest.class);
     }
 }

@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Test;
-import org.junit.Assert;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
@@ -30,29 +27,52 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageEOFException;
 
-public class BytesMessageTest
+import junit.framework.TestCase;
+
+public class BytesMessageTest extends TestCase
 {
     /**
      * Tests that on creation a call to getBodyLength() throws an exception
      * if null was passed in during creation
      */
-    @Test(expected=MessageNotReadableException.class)
     public void testNotReadableOnCreationWithNull() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.getBodyLength();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.getBodyLength();
+            fail("expected exception did not occur");
+        }
+        catch (MessageNotReadableException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageNotReadableException, got " + e);
+        }
     }
 
-    @Test(expected= MessageNotWriteableException.class)
     public void testResetMakesReadble() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeInt(10);
-        bm.reset();
-        bm.writeInt(12);
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeInt(10);
+            bm.reset();
+            bm.writeInt(12);
+            fail("expected exception did not occur");
+        }
+        catch (MessageNotWriteableException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageNotWriteableException, got " + e);
+        }
     }
 
-    @Test
     public void testClearBodyMakesWritable() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -62,153 +82,271 @@ public class BytesMessageTest
         bm.writeInt(10);
     }
 
-    @Test
     public void testWriteInt() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
         bm.writeInt(10);
         bm.reset();
         long len = bm.getBodyLength();
-        Assert.assertTrue(len == 4);
+        assertTrue(len == 4);
         int val = bm.readInt();
-        Assert.assertTrue(val == 10);
+        assertTrue(val == 10);
     }
 
-    @Test
     public void testWriteString() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
         bm.writeUTF("Bananas");
         bm.reset();
         String res = bm.readUTF();
-        Assert.assertEquals("Bananas", res);
+        assertEquals("Bananas", res);
     }
 
-    @Test(expected=NullPointerException.class)
     public void testWriteObjectThrowsNPE() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeObject(null);
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeObject(null);
+            fail("expected exception did not occur");
+        }
+        catch (NullPointerException n)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected NullPointerException, got " + e);
+        }
     }
 
-    @Test
     public void testReadBoolean() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
         bm.writeBoolean(true);
         bm.reset();
         boolean result = bm.readBoolean();
-        Assert.assertTrue(result);        
+        assertTrue(result);        
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFByte() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)1);
-        bm.reset();
-        bm.readByte();
-        // should throw
-        bm.readByte();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeByte((byte)1);
+            bm.reset();
+            bm.readByte();
+            // should throw
+            bm.readByte();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFUnsignedByte() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)1);
-        bm.reset();
-        bm.readByte();
-        // should throw
-        bm.readUnsignedByte();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeByte((byte)1);
+            bm.reset();
+            bm.readByte();
+            // should throw
+            bm.readUnsignedByte();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFBoolean() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeBoolean(true);
-        bm.reset();
-        bm.readBoolean();
-        // should throw
-        bm.readBoolean();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeBoolean(true);
+            bm.reset();
+            bm.readBoolean();
+            // should throw
+            bm.readBoolean();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFChar() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeChar('A');
-        bm.reset();
-        bm.readChar();
-        // should throw
-        bm.readChar();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeChar('A');
+            bm.reset();
+            bm.readChar();
+            // should throw
+            bm.readChar();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFDouble() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeDouble(1.3d);
-        bm.reset();
-        bm.readDouble();
-        // should throw
-        bm.readDouble();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeDouble(1.3d);
+            bm.reset();
+            bm.readDouble();
+            // should throw
+            bm.readDouble();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFFloat() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeFloat(1.3f);
-        bm.reset();
-        bm.readFloat();
-        // should throw
-        bm.readFloat();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeFloat(1.3f);
+            bm.reset();
+            bm.readFloat();
+            // should throw
+            bm.readFloat();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFInt() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeInt(99);
-        bm.reset();
-        bm.readInt();
-        // should throw
-        bm.readInt();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeInt(99);
+            bm.reset();
+            bm.readInt();
+            // should throw
+            bm.readInt();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFLong() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeLong(4L);
-        bm.reset();
-        bm.readLong();
-        // should throw
-        bm.readLong();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeLong(4L);
+            bm.reset();
+            bm.readLong();
+            // should throw
+            bm.readLong();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFShort() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeShort((short)4);
-        bm.reset();
-        bm.readShort();
-        // should throw
-        bm.readShort();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeShort((short)4);
+            bm.reset();
+            bm.readShort();
+            // should throw
+            bm.readShort();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
-    @Test(expected=MessageEOFException.class)
     public void testEOFUnsignedShort() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeShort((short)4);
-        bm.reset();
-        bm.readUnsignedShort();
-        // should throw
-        bm.readUnsignedShort();
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeShort((short)4);
+            bm.reset();
+            bm.readUnsignedShort();
+            // should throw
+            bm.readUnsignedShort();
+            fail("expected exception did not occur");
+        }
+        catch (MessageEOFException m)
+        {
+            // ok
+        }
+        catch (Exception e)
+        {
+            fail("expected MessageEOFException, got " + e);
+        }
     }
 
     /**
@@ -216,7 +354,6 @@ public class BytesMessageTest
      * correctly
      * @throws Exception
      */
-    @Test
     public void testReadBytes() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -225,12 +362,11 @@ public class BytesMessageTest
         bm.reset();
         byte[] result = new byte[2];
         int count = bm.readBytes(result);
-        Assert.assertEquals((byte)3, result[0]);
-        Assert.assertEquals((byte)4, result[1]);
-        Assert.assertEquals(2, count);
+        assertEquals((byte)3, result[0]);
+        assertEquals((byte)4, result[1]);
+        assertEquals(2, count);
     }
 
-    @Test
     public void testReadBytesEOF() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -240,10 +376,9 @@ public class BytesMessageTest
         byte[] result = new byte[2];
         bm.readBytes(result);
         int count = bm.readBytes(result);
-        Assert.assertEquals(-1, count);
+        assertEquals(-1, count);
     }
 
-    @Test
     public void testReadBytesWithLargerArray() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -252,13 +387,12 @@ public class BytesMessageTest
         bm.reset();
         byte[] result = new byte[3];
         int count = bm.readBytes(result);
-        Assert.assertEquals(2, count);
-        Assert.assertEquals((byte)3, result[0]);
-        Assert.assertEquals((byte)4, result[1]);
-        Assert.assertEquals((byte)0, result[2]);
+        assertEquals(2, count);
+        assertEquals((byte)3, result[0]);
+        assertEquals((byte)4, result[1]);
+        assertEquals((byte)0, result[2]);
     }
 
-    @Test
     public void testReadBytesWithCount() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -268,13 +402,12 @@ public class BytesMessageTest
         bm.reset();
         byte[] result = new byte[3];
         int count = bm.readBytes(result, 2);
-        Assert.assertEquals(2, count);
-        Assert.assertEquals((byte)3, result[0]);
-        Assert.assertEquals((byte)4, result[1]);
-        Assert.assertEquals((byte)0, result[2]);
+        assertEquals(2, count);
+        assertEquals((byte)3, result[0]);
+        assertEquals((byte)4, result[1]);
+        assertEquals((byte)0, result[2]);
     }
 
-    @Test
     public void testToBodyString() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -282,20 +415,19 @@ public class BytesMessageTest
         bm.writeUTF(testText);
         bm.reset();
         String result = bm.toBodyString();
-        Assert.assertEquals(testText, result);
+        assertEquals(testText, result);
     }
 
-    @Test
     public void testToBodyStringWithNull() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
         bm.reset();
         String result = bm.toBodyString();
-        Assert.assertNull(result);
+        assertNull(result);
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(BytesMessageTest.class);
+        return new junit.framework.TestSuite(BytesMessageTest.class);
     }
 }

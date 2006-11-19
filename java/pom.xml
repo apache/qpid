@@ -411,7 +411,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.0</version>
+        <version>3.8.2</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -622,7 +622,7 @@
                     <mkdir dir="${full.eclipse.workspace}/.metadata/.plugins/org.eclipse.core.runtime/.settings"/>
                     <mkdir dir="${full.eclipse.workspace}/.metadata/.plugins/com.atlassw.tools.eclipse.checkstyle"/>
                     <mkdir dir="${full.eclipse.workspace}/.metadata/.plugins/net.sourceforge.pmd.eclipse"/>
-                    <copy file="${basedir}/${topDirectoryLocation}/checkstyle.xml" tofile="${full.eclipse.workspace}/cxf-checkstyle.xml"/>
+                    <copy file="${basedir}/${topDirectoryLocation}/checkstyle.xml" tofile="${full.eclipse.workspace}/qpid-checkstyle.xml"/>
                     <copy file="${basedir}/${topDirectoryLocation}/etc/apache-header.txt" tofile="${full.eclipse.workspace}/apache-header.txt"/>
                     
                     <!-- Add checkstyle config -->
@@ -630,7 +630,7 @@
                           tofile="${full.eclipse.workspace}/.metadata/.plugins/com.atlassw.tools.eclipse.checkstyle/checkstyle-config.xml"
                           overwrite="no">
                       <filterset>
-                        <filter token="CHECKSTYLE_CONFIG_FILE" value="${full.eclipse.workspace}/cxf-checkstyle.xml"/>
+                        <filter token="CHECKSTYLE_CONFIG_FILE" value="${full.eclipse.workspace}/qpid-checkstyle.xml"/>
                         <filter token="APACHE_HEADER_FILE" value="${full.eclipse.workspace}/apache-header.txt"/>
                       </filterset>
                     </copy>
@@ -638,7 +638,7 @@
                     <xslt style="${basedir}/${topDirectoryLocation}/etc/eclipse/addcheckstyle.xsl"
                           in="${full.eclipse.workspace}/.metadata/.plugins/com.atlassw.tools.eclipse.checkstyle/checkstyle-config.xml"
                           out="${full.eclipse.workspace}/.metadata/.plugins/com.atlassw.tools.eclipse.checkstyle/checkstyle-config.xml.new">
-                      <param name="checkstyleconfig" expression="${full.eclipse.workspace}/cxf-checkstyle.xml"/>
+                      <param name="checkstyleconfig" expression="${full.eclipse.workspace}/qpid-checkstyle.xml"/>
                     </xslt>
                     <copy
                        file="${full.eclipse.workspace}/.metadata/.plugins/com.atlassw.tools.eclipse.checkstyle/checkstyle-config.xml.new"
@@ -659,10 +659,10 @@
                             append="true" fixlastline="true">
                       <filelist dir="${basedir}/${topDirectoryLocation}/etc/eclipse" files="org.eclipse.jdt.core.prefs"/>
                     </concat>
-                    <loadfile property="eclipse.code.format" srcFile="${basedir}/${topDirectoryLocation}/etc/eclipse/CXFCodeFormatter.xml"/>
+                    <loadfile property="eclipse.code.format" srcFile="${basedir}/${topDirectoryLocation}/etc/eclipse/QpidCodeFormatter.xml"/>
                     <loadfile property="eclipse.code.templates" srcFile="${basedir}/${topDirectoryLocation}/etc/eclipse/codetemplates.xml"/>
                     <propertyfile file="${full.eclipse.workspace}/.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.jdt.ui.prefs">
-                      <entry key="formatter_profile" value="_CXF Java Conventions"/>
+                      <entry key="formatter_profile" value="_Qpid Java Conventions"/>
                       <entry key="org.eclipse.jdt.ui.formatterprofiles" value="${eclipse.code.format}"/>
                       <entry key="org.eclipse.jdt.ui.text.custom_code_templates" value="${eclipse.code.templates}"/>
                       

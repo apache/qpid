@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.mina;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoAcceptor;
@@ -29,17 +28,18 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-import org.junit.Test;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import junit.framework.TestCase;
+
 /**
  * Tests MINA socket performance. This acceptor simply reads data from the network and writes it back again.
  *
  */
-public class AcceptorTest
+public class AcceptorTest extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(AcceptorTest.class);
 
@@ -71,8 +71,7 @@ public class AcceptorTest
         }
     }
 
-    @Test
-    public void startAcceptor() throws IOException
+    public void testStartAcceptor() throws IOException
     {
         IoAcceptor acceptor = null;
         acceptor = new SocketAcceptor();
@@ -90,14 +89,14 @@ public class AcceptorTest
         _logger.info("Bound on port " + PORT);
     }
 
-    public static junit.framework.Test suite()
-    {
-        return new JUnit4TestAdapter(AcceptorTest.class);
-    }
-
     public static void main(String[] args) throws IOException
     {
         AcceptorTest a = new AcceptorTest();
-        a.startAcceptor();
+        a.testStartAcceptor();
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new junit.framework.TestSuite(AcceptorTest.class);
     }
 }

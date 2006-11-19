@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.cluster;
 
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import junit.framework.TestCase;
 
-public class ClusterCapabilityTest
+public class ClusterCapabilityTest extends TestCase
 {
-    @Test
-    public void startWithNull()
+    public void testStartWithNull()
     {
         MemberHandle peer = new SimpleMemberHandle("myhost:9999");
         String c = ClusterCapability.add(null, peer);
@@ -34,8 +32,7 @@ public class ClusterCapabilityTest
         assertTrue(peer.matches(ClusterCapability.getPeer(c)));
     }
 
-    @Test
-    public void startWithText()
+    public void testStartWithText()
     {
         MemberHandle peer = new SimpleMemberHandle("myhost:9999");
         String c = ClusterCapability.add("existing text", peer);

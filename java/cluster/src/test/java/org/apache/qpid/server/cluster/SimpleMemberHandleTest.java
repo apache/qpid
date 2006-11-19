@@ -20,23 +20,18 @@
  */
 package org.apache.qpid.server.cluster;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import junit.framework.TestCase;
 
-public class SimpleMemberHandleTest
+public class SimpleMemberHandleTest extends TestCase
 {
-    @Test
-    public void matches()
+    public void testMatches()
     {
         assertMatch(new SimpleMemberHandle("localhost", 8888), new SimpleMemberHandle("localhost", 8888));
         assertNoMatch(new SimpleMemberHandle("localhost", 8889), new SimpleMemberHandle("localhost", 8888));
         assertNoMatch(new SimpleMemberHandle("localhost", 8888), new SimpleMemberHandle("localhost2", 8888));
     }
 
-
-    @Test
-    public void resolve()
+    public void testResolve()
     {
         assertEquivalent(new SimpleMemberHandle("WGLAIBD8XGR0J:9000"), new SimpleMemberHandle("localhost:9000"));
     }
