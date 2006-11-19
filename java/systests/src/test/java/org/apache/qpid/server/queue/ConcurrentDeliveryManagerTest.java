@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.ConcurrentDeliveryManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.DeliveryManagerTest;
-import org.apache.qpid.AMQException;
-import junit.framework.JUnit4TestAdapter;
 
 public class ConcurrentDeliveryManagerTest extends DeliveryManagerTest
 {
@@ -46,6 +45,6 @@ public class ConcurrentDeliveryManagerTest extends DeliveryManagerTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ConcurrentDeliveryManagerTest.class);
+        return new junit.framework.TestSuite(ConcurrentDeliveryManagerTest.class);
     }
 }

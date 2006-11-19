@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,18 +17,36 @@
  * under the License.
  *
  */
-package org.apache.qpid.test.unit.transacted;
+package org.apache.qpid.test;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({TransactedTest.class})
-public class UnitTests
+import org.apache.qpid.client.transport.TransportConnection;
+
+public class VMBrokerSetup extends TestSetup
 {
-    public static junit.framework.Test suite()
+    public VMBrokerSetup(Test t)
     {
-        return new JUnit4TestAdapter(UnitTests.class);
+        super(t);
+    }
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        try
+        {
+            TransportConnection.createVMBroker(1);
+        }
+        catch (Exception e)
+        {
+            fail("Unable to create broker: " + e);
+        }
+    }
+
+    protected void tearDown() throws Exception
+    {
+        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 }

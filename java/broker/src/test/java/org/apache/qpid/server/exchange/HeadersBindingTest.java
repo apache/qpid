@@ -20,24 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-
 import java.util.Map;
 import java.util.HashMap;
 
-import junit.framework.JUnit4TestAdapter;
+import junit.framework.TestCase;
 
 /**
  */
-public class HeadersBindingTest
+public class HeadersBindingTest extends TestCase
 {
     private Map<String, String> bindHeaders = new HashMap<String, String>();
     private Map<String, String> matchHeaders = new HashMap<String, String>();
 
-    @Test public void default_1()
+    public void testDefault_1()
     {
         bindHeaders.put("A", "Value of A");
 
@@ -46,7 +41,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void default_2()
+    public void testDefault_2()
     {
         bindHeaders.put("A", "Value of A");
 
@@ -56,7 +51,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void default_3()
+    public void testDefault_3()
     {
         bindHeaders.put("A", "Value of A");
 
@@ -65,7 +60,7 @@ public class HeadersBindingTest
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void all_1()
+    public void testAll_1()
     {
         bindHeaders.put("X-match", "all");
         bindHeaders.put("A", "Value of A");
@@ -75,7 +70,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void all_2()
+    public void testAll_2()
     {
         bindHeaders.put("X-match", "all");
         bindHeaders.put("A", "Value of A");
@@ -86,7 +81,7 @@ public class HeadersBindingTest
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void all_3()
+    public void testAll_3()
     {
         bindHeaders.put("X-match", "all");
         bindHeaders.put("A", "Value of A");
@@ -98,7 +93,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void all_4()
+    public void testAll_4()
     {
         bindHeaders.put("X-match", "all");
         bindHeaders.put("A", "Value of A");
@@ -111,7 +106,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void all_5()
+    public void testAll_5()
     {
         bindHeaders.put("X-match", "all");
         bindHeaders.put("A", "Value of A");
@@ -124,7 +119,7 @@ public class HeadersBindingTest
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_1()
+    public void testAny_1()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -134,7 +129,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_2()
+    public void testAny_2()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -145,7 +140,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_3()
+    public void testAny_3()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -157,7 +152,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_4()
+    public void testAny_4()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -170,7 +165,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_5()
+    public void testAny_5()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -183,7 +178,7 @@ public class HeadersBindingTest
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
-    @Test public void any_6()
+    public void testAny_6()
     {
         bindHeaders.put("X-match", "any");
         bindHeaders.put("A", "Value of A");
@@ -195,9 +190,9 @@ public class HeadersBindingTest
 
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
+
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(HeadersBindingTest.class);
+        return new junit.framework.TestSuite(HeadersBindingTest.class);
     }
-
 }

@@ -24,7 +24,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.url.URLSyntaxException;
-import org.junit.Assert;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -39,6 +38,8 @@ import javax.naming.NoInitialContextException;
 import java.io.File;
 import java.util.Hashtable;
 
+import junit.framework.TestCase;
+
 /**
  * Usage: To run these you need to have the sun JNDI SPI for the FileSystem.
  * This can be downloaded from sun here:
@@ -49,7 +50,7 @@ import java.util.Hashtable;
  * <p/>
  * Also you need to create the directory /temp/qpid-jndi-test
  */
-class Bind
+class Bind extends TestCase
 {
     public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/JNDITest" + System.currentTimeMillis();
     public static final String DEFAULT_PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
@@ -124,11 +125,11 @@ class Bind
             }
             catch (JMSException jmsqe)
             {
-                Assert.fail("Unable to create Connection:" + jmsqe);
+                fail("Unable to create Connection:" + jmsqe);
             }
             catch (URLSyntaxException urlse)
             {
-                Assert.fail("Unable to create Connection:" + urlse);
+                fail("Unable to create Connection:" + urlse);
             }
 
             try
@@ -247,4 +248,3 @@ class Bind
         new Bind(true);
     }
 }
-

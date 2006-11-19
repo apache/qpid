@@ -20,12 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.JUnit4TestAdapter;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import org.junit.Test;
+import junit.framework.TestCase;
 
-public class SubscriptionSetTest
+public class SubscriptionSetTest extends TestCase
 {
     /**
      * A SubscriptionSet that counts the number of items scanned.
@@ -58,8 +55,7 @@ public class SubscriptionSetTest
     final TestSubscription suspendedSub2 = new TestSubscription("sus2", true);
     final TestSubscription suspendedSub3 = new TestSubscription("sus3", true);
 
-    @Test
-    public void nextMessage()
+    public void testNextMessage()
     {
         SubscriptionSet ss = new SubscriptionSet();
         assertNull(ss.nextSubscriber(null));
@@ -81,8 +77,7 @@ public class SubscriptionSetTest
         assertEquals(3, ss.getCurrentSubscriber());
     }
 
-    @Test
-    public void nextMessageWhenAllSuspended()
+    public void testNextMessageWhenAllSuspended()
     {
         SubscriptionSet ss = createAllSuspendedSubscriptionSet();
         assertNull(ss.nextSubscriber(null));
@@ -101,8 +96,7 @@ public class SubscriptionSetTest
         return ss;
     }
 
-    @Test
-    public void nextMessageAfterRemove()
+    public void testNextMessageAfterRemove()
     {
         SubscriptionSet ss = new SubscriptionSet();
         ss.addSubscriber(suspendedSub1);
@@ -117,8 +111,7 @@ public class SubscriptionSetTest
         assertEquals(2, ss.getCurrentSubscriber());
     }
 
-    @Test
-    public void nextMessageOverScanning()
+    public void testNextMessageOverScanning()
     {
         TestSubscriptionSet ss = new TestSubscriptionSet();
         TestSubscription sub = new TestSubscription("test");
@@ -137,8 +130,7 @@ public class SubscriptionSetTest
         assertEquals(ss.size() + 1, ss.getScanned());
     }
 
-    @Test
-    public void nextMessageOverscanWorstCase() {
+    public void testNextMessageOverscanWorstCase() {
         TestSubscriptionSet ss = createAllSuspendedSubscriptionSet();
         ss.nextSubscriber(null);
         // Scans the subscriptions twice.
@@ -147,6 +139,6 @@ public class SubscriptionSetTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(SubscriptionSetTest.class);
+        return new junit.framework.TestSuite(SubscriptionSetTest.class);
     }
 }

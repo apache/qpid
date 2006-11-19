@@ -26,7 +26,6 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
-import org.junit.Assert;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;

@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.server.util;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public class LoggingProxyTest
+import junit.framework.TestCase;
+
+public class LoggingProxyTest extends TestCase
 {
     static interface IFoo {
         void foo();
@@ -58,35 +55,34 @@ public class LoggingProxyTest
         }
     }
 
-    @Test
-    public void simple() {
+    public void testSimple() {
         LoggingProxy proxy = new LoggingProxy(new Foo(), 20);
         IFoo foo = (IFoo)proxy.getProxy(IFoo.class);
         foo.foo();
         assertEquals(2, proxy.getBufferSize());
-        Assert.assertTrue(proxy.getBuffer().get(0).toString().matches(".*: foo\\(\\) entered$"));
-        Assert.assertTrue(proxy.getBuffer().get(1).toString().matches(".*: foo\\(\\) returned$"));
+        assertTrue(proxy.getBuffer().get(0).toString().matches(".*: foo\\(\\) entered$"));
+        assertTrue(proxy.getBuffer().get(1).toString().matches(".*: foo\\(\\) returned$"));
 
         foo.foo(3, Arrays.asList(0, 1, 2));
         assertEquals(4, proxy.getBufferSize());
-        Assert.assertTrue(proxy.getBuffer().get(2).toString().matches(".*: foo\\(\\[3, \\[0, 1, 2\\]\\]\\) entered$"));
-        Assert.assertTrue(proxy.getBuffer().get(3).toString().matches(".*: foo\\(\\) returned$"));
+        assertTrue(proxy.getBuffer().get(2).toString().matches(".*: foo\\(\\[3, \\[0, 1, 2\\]\\]\\) entered$"));
+        assertTrue(proxy.getBuffer().get(3).toString().matches(".*: foo\\(\\) returned$"));
 
         foo.bar();
         assertEquals(6, proxy.getBufferSize());
-        Assert.assertTrue(proxy.getBuffer().get(4).toString().matches(".*: bar\\(\\) entered$"));
-        Assert.assertTrue(proxy.getBuffer().get(5).toString().matches(".*: bar\\(\\) returned null$"));
+        assertTrue(proxy.getBuffer().get(4).toString().matches(".*: bar\\(\\) entered$"));
+        assertTrue(proxy.getBuffer().get(5).toString().matches(".*: bar\\(\\) returned null$"));
 
         foo.bar("hello", Arrays.asList(1, 2, 3));
         assertEquals(8, proxy.getBufferSize());
-        Assert.assertTrue(proxy.getBuffer().get(6).toString().matches(".*: bar\\(\\[hello, \\[1, 2, 3\\]\\]\\) entered$"));
-        Assert.assertTrue(proxy.getBuffer().get(7).toString().matches(".*: bar\\(\\) returned ha$"));
+        assertTrue(proxy.getBuffer().get(6).toString().matches(".*: bar\\(\\[hello, \\[1, 2, 3\\]\\]\\) entered$"));
+        assertTrue(proxy.getBuffer().get(7).toString().matches(".*: bar\\(\\) returned ha$"));
 
         proxy.dump();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(LoggingProxyTest.class);
+        return new junit.framework.TestSuite(LoggingProxyTest.class);
     }
 }

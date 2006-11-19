@@ -20,24 +20,18 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.AfterClass;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
 
-public class TransactedTest
+import junit.framework.TestCase;
+
+public class TransactedTest extends TestCase
 {
     private AMQQueue queue1;
     private AMQQueue queue2;
@@ -56,28 +50,9 @@ public class TransactedTest
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
 
-
-    public void createVMBroker()
+    protected void setup() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Before
-    public void setup() throws Exception
-    {
-        createVMBroker();
+        super.setUp();
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
 
@@ -108,17 +83,15 @@ public class TransactedTest
         testCon.start();
     }
 
-    @After
-    public void shutdown() throws Exception
+    protected void tearDown() throws Exception
     {
         con.close();
         testCon.close();
         prepCon.close();
-        stopVmBroker();
+        super.tearDown();
     }
 
-    @Test
-    public void commit() throws Exception
+    public void testCommit() throws Exception
     {
         //send and receive some messages
         producer2.send(session.createTextMessage("X"));
@@ -140,8 +113,7 @@ public class TransactedTest
         assertTrue(null == testConsumer2.receive(1000));
     }
 
-    @Test
-    public void rollback() throws Exception
+    public void testRollback() throws Exception
     {
         producer2.send(session.createTextMessage("X"));
         producer2.send(session.createTextMessage("Y"));
@@ -170,7 +142,6 @@ public class TransactedTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TransactedTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(TransactedTest.class));
     }
-
 }

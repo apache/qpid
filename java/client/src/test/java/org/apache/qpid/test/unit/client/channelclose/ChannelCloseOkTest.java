@@ -20,21 +20,19 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
 
 import javax.jms.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import junit.framework.TestCase;
+import junit.textui.TestRunner;
 
 /**
  * Due to bizarre exception handling all sessions are closed if you get
@@ -50,7 +48,7 @@ import java.util.List;
  * 3. Since client does not have an exception listener, currently all sessions are
  * closed.
  */
-public class ChannelCloseOkTest
+public class ChannelCloseOkTest extends TestCase
 {
     private Connection _connection;
     private Destination _destination1;
@@ -64,27 +62,9 @@ public class ChannelCloseOkTest
     public String _connectionString = "vm://:1";
 
 
-    public void createVMBroker()
+    protected void setUp() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Before
-    public void init() throws Exception
-    {
-        createVMBroker();
+        super.setUp();
 
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
 
@@ -133,7 +113,12 @@ public class ChannelCloseOkTest
         }
     }
 
-    @After
+    protected void tearDown() throws Exception
+    {
+        closeConnection();
+        super.tearDown();
+    }
+
     public void closeConnection() throws JMSException
     {
         if (_connection != null)
@@ -141,17 +126,13 @@ public class ChannelCloseOkTest
             System.out.println(">>>>>>>>>>>>>>.. closing");
             _connection.close();
         }
-
-        stopVmBroker();
     }
 
-    @Test
     public void testWithoutExceptionListener() throws Exception
     {
-        test();
+        doTest();
     }
 
-    @Test
     public void testWithExceptionListener() throws Exception
     {
         _connection.setExceptionListener(new ExceptionListener()
@@ -162,10 +143,10 @@ public class ChannelCloseOkTest
             }
         });
 
-        test();
+        doTest();
     }
 
-    public void test() throws Exception
+    public void doTest() throws Exception
     {
         // Check both sessions are ok.
         sendAndWait(_session1, _destination1, "first", _received1, 1);
@@ -223,16 +204,13 @@ public class ChannelCloseOkTest
         return in + System.currentTimeMillis();
     }
 
-    /**
-     * For Junit 3 compatibility.
-     */
-    public static junit.framework.Test suite()
-    {
-        return new JUnit4TestAdapter(ChannelCloseOkTest.class);
-    }
-
     public static void main(String[] args)
     {
-        org.junit.runner.JUnitCore.main(ChannelCloseOkTest.class.getName());
+        TestRunner.run(ChannelCloseOkTest.class);
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new VMBrokerSetup(new junit.framework.TestSuite(ChannelCloseOkTest.class));
     }
 }
