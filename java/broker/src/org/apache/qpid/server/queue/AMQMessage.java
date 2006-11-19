@@ -23,6 +23,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AMQMessage
 {
+    private static final Logger _log = Logger.getLogger(AMQMessage.class);
+    
     /**
      * Used in clustering
      */
@@ -260,7 +263,7 @@ public class AMQMessage
 
     public boolean isAllContentReceived() throws AMQException
     {
-        return _bodyLengthReceived == _messageHandle.getBodySize();
+        return _bodyLengthReceived == _contentHeaderBody.bodySize;
     }
 
     public long getMessageId()
@@ -274,6 +277,10 @@ public class AMQMessage
     public void incrementReference()
     {
         _referenceCount.incrementAndGet();
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Ref count on message " + _messageId + " incremented to " + _referenceCount);
+        }
     }
 
     /**
@@ -289,11 +296,15 @@ public class AMQMessage
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
         // the message has been passed to all queues. i.e. we are
         // not relying on the all the increments having taken place before the delivery manager decrements.
-        /*if (_referenceCount.decrementAndGet() == 0)
+        if (_referenceCount.decrementAndGet() == 0)
         {
             try
             {
-                _store.removeMessage(_messageId);
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Ref count on message " + _messageId + " is zero; removing message");
+                }
+                _messageHandle.removeMessage();
             }
             catch (AMQException e)
             {
@@ -301,7 +312,7 @@ public class AMQMessage
                 incrementReference();
                 throw new MessageCleanupException(_messageId, e);
             }
-        } */
+        }
     }
 
     public void setPublisher(AMQProtocolSession publisher)

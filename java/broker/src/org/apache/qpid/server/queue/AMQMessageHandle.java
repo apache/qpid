@@ -47,6 +47,8 @@ public interface AMQMessageHandle
     boolean isPersistent() throws AMQException;
 
     void setPublishAndContentHeaderBody(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody)
-            throws AMQException;    
+            throws AMQException;
+
+    void removeMessage() throws AMQException;
 
 }

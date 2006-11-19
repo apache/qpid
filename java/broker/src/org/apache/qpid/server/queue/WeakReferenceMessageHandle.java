@@ -128,4 +128,9 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _publishBody = new WeakReference<BasicPublishBody>(publishBody);
         _contentHeaderBody = new WeakReference<ContentHeaderBody>(contentHeaderBody);
     }
+
+    public void removeMessage() throws AMQException
+    {
+        _messageStore.removeMessage(_messageId);
+    }
 }
