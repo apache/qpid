@@ -160,7 +160,7 @@
         </antcall>
 
          <copy todir="${release.java.src.dir}">
-            <fileset dir="${project.root}">                
+            <fileset dir="${project.root}">
                 <include name="${tasks.dir}/${src.dir}/**"/>
                 <include name="${doc.dir}/**"/>
             </fileset>
@@ -173,14 +173,26 @@
                 <include name="${common.dir}/${stylesheets.dir}/**"/>
                 <include name="${common.dir}/${resources.dir}/**"/>
 
+
                 <!-- Root build Files -->
                 <include name="${build.file}"/>
                 <include name="${common.file}"/>
                 <include name="${module.file}"/>
                 <include name="${build.properties.file}"/>
 
+
+                <!-- Copy additional files for building releases -->
+                <include name="${resources.dir}/**"/>
+                <include name="${releasedocs.dir}/**"/>
+                <!-- Copy our main License file-->
+                <include name="LICENSE.txt"/>
+                <include name="README.txt"/>
+                <include name="NOTICE.txt"/>
+
             </fileset>
         </copy>
+
+
 
         <!-- Copy Spec files for protocol generation -->
         <copy todir="${release.src.dir}">
@@ -189,6 +201,7 @@
             </fileset>
         </copy>
 
+        <!-- Copy release docs to root of release -->
         <antcall target="copyreleasedocs">
             <param name="todir" value="${build.release.dir}"/>
         </antcall>
@@ -261,7 +274,7 @@
         </zip>
     </target>
 
-    <target name="std-src-release" >
+    <target name="std-src-release-old" >
 
         <!-- Setup the local variables -->
         <property name="release.src.name" value="${project.name}-java-${release.fullversion}-src"/>
@@ -279,6 +292,40 @@
         </antcall>
 
     </target>
+
+    <target name="std-src-release" depends="preparerelease">
+
+        <!-- Setup the local variables -->
+        <property name="release.src.name" value="${project.name}-java-${release.fullversion}-src"/>
+        <property name="build.release.src.dir" value="${build.release}/${release.src.name}"/>
+
+        <copy todir="${build.release.src.dir}">
+            <fileset dir="${project.root}/..">
+                <!-- All source files -->
+                <include name="java/**"/>
+                <include name="specs/**"/>
+
+                <!-- exclude files -->
+                <exclude name=".svn/**"/>
+                <exclude name="java/${build.dir}/**"/>
+                <exclude name="java/${release.dir}/**"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy release docs to root of release -->
+        <antcall target="copyreleasedocs">
+            <param name="todir" value="${build.release.dir}"/>
+        </antcall>
+        
+
+        <antcall target="tgzandzip">
+            <param name="file" value="${release.dir}/${release.src.name}"/>
+            <param name="path" value="${build.release}"/>
+            <param name="source" value="${release.src.name}"/>
+        </antcall>
+
+    </target>
+
 
     <target name="std-bin-release" depends="preparerelease">
 
