@@ -27,44 +27,20 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQUnresolvedAddressException;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Ignore;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.Connection;
 
-import junit.framework.JUnit4TestAdapter;
+import junit.framework.TestCase;
 
-public class ConnectionTest
+public class ConnectionTest extends TestCase
 {
 
     String _broker = "vm://:1";
     String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
-    @Before
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Test
-    public void simpleConnection()
+    public void testSimpleConnection()
     {
         try
         {
@@ -73,68 +49,61 @@ public class ConnectionTest
         }
         catch (Exception e)
         {
-            Assert.fail("Connection to " + _broker + " should succeed. Reason: " + e);
+            fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
     }
 
-    @Ignore("The inVM broker currently has no authentication .. Needs added QPID-70")
-    @Test
+    // FIXME The inVM broker currently has no authentication .. Needs added QPID-70
     public void passwordFailureConnection() throws Exception
     {
         try
         {
             new AMQConnection("amqp://guest:rubbishpassword@clientid/testpath?brokerlist='" + _broker + "?retries='1''");
-            Assert.fail("Connection should not be established password is wrong.");
+            fail("Connection should not be established password is wrong.");
         }
         catch (AMQException amqe)
         {
             if (!(amqe instanceof AMQAuthenticationException))
             {
-                Assert.fail("Correct exception not thrown. Excpected 'AMQAuthenticationException' got: " + amqe);
+                fail("Correct exception not thrown. Excpected 'AMQAuthenticationException' got: " + amqe);
             }
         }
     }
 
-    @Test
-    public void connectionFailure() throws Exception
+    public void testConnectionFailure() throws Exception
     {
         try
         {
             new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_NotRunning + "?retries='0''");
-            Assert.fail("Connection should not be established");
+            fail("Connection should not be established");
         }
         catch (AMQException amqe)
         {
             if (!(amqe instanceof AMQConnectionException))
             {
-                Assert.fail("Correct exception not thrown. Excpected 'AMQConnectionException' got: " + amqe);
+                fail("Correct exception not thrown. Excpected 'AMQConnectionException' got: " + amqe);
             }
         }
     }
 
-    @Test
-    public void unresolvedHostFailure() throws Exception
+    public void testUnresolvedHostFailure() throws Exception
     {
         try
         {
             new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='" + _broker_BadDNS + "?retries='0''");
-            Assert.fail("Connection should not be established");
+            fail("Connection should not be established");
         }
         catch (AMQException amqe)
         {
             if (!(amqe instanceof AMQUnresolvedAddressException))
             {
-                Assert.fail("Correct exception not thrown. Excpected 'AMQUnresolvedAddressException' got: " + amqe);
+                fail("Correct exception not thrown. Excpected 'AMQUnresolvedAddressException' got: " + amqe);
             }
         }
     }
 
-    /**
-     * For Junit 3 compatibility.
-     */
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ConnectionTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(ConnectionTest.class));
     }
-
 }

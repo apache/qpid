@@ -24,14 +24,33 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.mina.common.IoSession;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.After;
-import junit.framework.JUnit4TestAdapter;
-import junit.framework.Assert;
 
-public class AMQProtocolSessionTest extends AMQProtocolSession
+import junit.framework.TestCase;
+
+public class AMQProtocolSessionTest extends TestCase
 {
+    private static class AMQProtSession extends AMQProtocolSession
+    {
+        public AMQProtSession()
+        {
+        }
+
+        public AMQProtSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
+        {
+            super(protocolHandler,protocolSession,connection);
+        }
+
+        public TestIoSession getMinaProtocolSession()
+        {
+            return (TestIoSession) _minaProtocolSession;
+        }
+
+        public String genQueueName()
+        {
+            return generateQueueName();
+        }
+    }
+
     //private Strings for test values and expected results
     private String _brokenAddress;
     private String _generatedAddress;
@@ -40,28 +59,14 @@ public class AMQProtocolSessionTest extends AMQProtocolSession
     private String _validAddress;
     private String _generatedAddress_3;
     private int _port;
-    private AMQProtocolSessionTest _testSession;
+    private AMQProtSession _testSession;
 
-    public AMQProtocolSessionTest()
+    protected void setUp() throws Exception
     {
+        super.setUp();
 
-    }
-
-    public AMQProtocolSessionTest(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
-    {
-        super(protocolHandler,protocolSession,connection);
-    }
-
-    public TestIoSession getMinaProtocolSession()
-    {
-        return (TestIoSession) _minaProtocolSession;
-    }
-
-    @Before
-    public void setUp()
-    {
         //don't care about the values set here apart from the dummy IoSession
-        _testSession = new AMQProtocolSessionTest(null,new TestIoSession(),null);
+        _testSession = new AMQProtSession(null,new TestIoSession(),null);
 
         //initialise addresses for test and expected results
         _port = 123;
@@ -71,11 +76,9 @@ public class AMQProtocolSessionTest extends AMQProtocolSession
         _generatedAddress_2 = "tmp_localhost127.0.0.1123_2";
         _validAddress = "abc";
         _generatedAddress_3 = "tmp_abc123_3";
-
     }
 
-    @Test
-    public void TestGenerateQueueName()
+    public void testGenerateQueueName()
     {
         String testAddress;
 
@@ -83,30 +86,24 @@ public class AMQProtocolSessionTest extends AMQProtocolSession
         _testSession.getMinaProtocolSession().setStringLocalAddress(_brokenAddress);
         _testSession.getMinaProtocolSession().setLocalPort(_port);
 
-        testAddress = _testSession.generateQueueName();
-        Assert.assertEquals("Failure when generating a queue name from an address with special chars",_generatedAddress,testAddress);
+        testAddress = _testSession.genQueueName();
+        assertEquals("Failure when generating a queue name from an address with special chars",_generatedAddress,testAddress);
 
         //test empty address
         _testSession.getMinaProtocolSession().setStringLocalAddress(_emptyAddress);
 
-        testAddress = _testSession.generateQueueName();
-        Assert.assertEquals("Failure when generating a queue name from an empty address",_generatedAddress_2,testAddress);
+        testAddress = _testSession.genQueueName();
+        assertEquals("Failure when generating a queue name from an empty address",_generatedAddress_2,testAddress);
 
         //test address with no special chars
         _testSession.getMinaProtocolSession().setStringLocalAddress(_validAddress);
 
-        testAddress = _testSession.generateQueueName();
-        Assert.assertEquals("Failure when generating a queue name from an address with no special chars",_generatedAddress_3,testAddress);
+        testAddress = _testSession.genQueueName();
+        assertEquals("Failure when generating a queue name from an address with no special chars",_generatedAddress_3,testAddress);
 
     }
 
-    public static junit.framework.Test suite()
-    {
-        return new JUnit4TestAdapter(AMQProtocolSessionTest.class);
-    }
-
-    @After
-    public void tearDown()
+    protected void tearDown() throws Exception
     {
         _testSession = null;
         _brokenAddress = null;
@@ -115,5 +112,11 @@ public class AMQProtocolSessionTest extends AMQProtocolSession
         _generatedAddress_2 = null;
         _validAddress = null;
         _generatedAddress_3 = null;
+        super.tearDown();
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new junit.framework.TestSuite(AMQProtocolSessionTest.class);
     }
 }

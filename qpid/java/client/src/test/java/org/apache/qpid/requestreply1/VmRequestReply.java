@@ -22,38 +22,16 @@ package org.apache.qpid.requestreply1;
 
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.Assert;
-import org.junit.After;
+import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.log4j.Logger;
-import junit.framework.JUnit4TestAdapter;
 
-public class VmRequestReply
+import junit.framework.TestCase;
+
+public class VmRequestReply extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(VmRequestReply.class);
 
-    @Before
-    public void startVmBrokers()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create VM Broker: " + e.getMessage());
-        }
-    }
-
-    @After
-    public void stopVmBrokers()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Test
-    public void simpleClient() throws Exception
+    public void testSimpleClient() throws Exception
     {
         ServiceProvidingClient serviceProvider = new ServiceProvidingClient("vm://:1", "guest", "guest",
                                                                             "serviceProvidingClient", "/test",
@@ -74,21 +52,21 @@ public class VmRequestReply
         }
     }
 
-    public static junit.framework.Test suite()
-    {
-        return new JUnit4TestAdapter(VmRequestReply.class);
-    }
-
     public static void main(String[] args)
     {
         VmRequestReply rr = new VmRequestReply();
         try
         {
-            rr.simpleClient();
+            rr.testSimpleClient();
         }
         catch (Exception e)
         {
             _logger.error("Error: " + e, e);
         }
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new VMBrokerSetup(new junit.framework.TestSuite(VmRequestReply.class));
     }
 }

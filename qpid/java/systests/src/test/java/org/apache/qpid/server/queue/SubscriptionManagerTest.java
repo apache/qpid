@@ -20,18 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-import junit.framework.JUnit4TestAdapter;
+import junit.framework.TestCase;
 
-public class SubscriptionManagerTest
+public class SubscriptionManagerTest extends TestCase
 {
     private final SubscriptionSet mgr = new SubscriptionSet();
 
-    @Test
-    public void basicSubscriptionManagement()
+    public void testBasicSubscriptionManagement()
     {
         assertTrue(mgr.isEmpty());
         assertFalse(mgr.hasActiveSubscribers());
@@ -58,8 +53,7 @@ public class SubscriptionManagerTest
         assertTrue(mgr.isEmpty());
     }
 
-    @Test
-    public void roundRobin()
+    public void testRoundRobin()
     {
         TestSubscription a = new TestSubscription("A");
         TestSubscription b = new TestSubscription("B");
@@ -103,6 +97,6 @@ public class SubscriptionManagerTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(SubscriptionManagerTest.class);
+        return new junit.framework.TestSuite(SubscriptionManagerTest.class);
     }
 }

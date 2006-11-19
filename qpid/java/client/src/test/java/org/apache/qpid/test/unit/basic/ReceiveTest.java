@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -28,14 +27,11 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
-
 import javax.jms.MessageConsumer;
 
-public class ReceiveTest
+import junit.framework.TestCase;
+
+public class ReceiveTest extends TestCase
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -45,16 +41,15 @@ public class ReceiveTest
     private static final String VM_BROKER = "vm://:1";
     public String _connectionString = VM_BROKER;
 
-    @Before
-    public void init() throws Exception
+    protected void setUp() throws Exception
     {
+        super.setUp();
         if (_connectionString.equals(VM_BROKER))
         {
             createVMBroker();
+            String broker = _connectionString;
+            init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "/test_path"));
         }
-
-        String broker = _connectionString;
-        init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "/test_path"));
     }
 
     public void createVMBroker()
@@ -63,22 +58,20 @@ public class ReceiveTest
         {
             TransportConnection.createVMBroker(1);
         }
-        catch (
-                AMQVMBrokerCreationException e)
+        catch (AMQVMBrokerCreationException e)
         {
-            Assert.fail("Unable to create broker: " + e);
+            fail("Unable to create broker: " + e);
         }
     }
 
-    @After
-    public void stopVmBroker()
+    protected void tearDown() throws Exception
     {
         if (_connectionString.equals(VM_BROKER))
         {
             TransportConnection.killVMBroker(1);
         }
+        super.tearDown();
     }
-
 
     private void init(AMQConnection connection) throws Exception
     {
@@ -94,7 +87,6 @@ public class ReceiveTest
         _connection.start();
     }
 
-    @Test
     public void test() throws Exception
     {
         _consumer.receive(5000);
@@ -105,12 +97,12 @@ public class ReceiveTest
     {
         ReceiveTest test = new ReceiveTest();
         test._connectionString = argv.length == 0 ? VM_BROKER : argv[0];
-        test.init();
+        test.setUp();
         test.test();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ReceiveTest.class);
+        return new junit.framework.TestSuite(ReceiveTest.class);
     }
 }

@@ -20,18 +20,14 @@
  */
 package org.apache.qpid.test.unit.jndi.referenceabletest;
 
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import junit.framework.JUnit4TestAdapter;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NoInitialContextException;
 
+import junit.framework.TestCase;
 
 /**
  * Usage: To run these you need to have the sun JNDI SPI for the FileSystem.
@@ -43,31 +39,10 @@ import javax.naming.NoInitialContextException;
  * <p/>
  * Also you need to create the directory /temp/qpid-jndi-test
  */
-public class JNDIReferenceableTest
+public class JNDIReferenceableTest extends TestCase
 {
-    @Before
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-
-    @Ignore("FSContext has been removed from repository. This needs redone with the PropertiesFileInitialContextFactory. QPID-84")
-    @Test
-    public void referenceable()
+    // FIXME FSContext has been removed from repository. This needs redone with the PropertiesFileInitialContextFactory. QPID-84
+    public void testReferenceable()
     {
         Bind b = null;
         try
@@ -86,18 +61,18 @@ public class JNDIReferenceableTest
                     }
                     catch (NameAlreadyBoundException ee)
                     {
-                        Assert.fail("Unable to clear bound objects for test.");
+                        fail("Unable to clear bound objects for test.");
                     }
                 }
                 else
                 {
-                    Assert.fail("Unable to clear bound objects for test.");
+                    fail("Unable to clear bound objects for test.");
                 }
             }
         }
         catch (NoInitialContextException e)
         {
-            Assert.fail("You don't have the File System SPI on you class path.\n" +
+            fail("You don't have the File System SPI on you class path.\n" +
                         "This can be downloaded from sun here:\n" +
                         "http://java.sun.com/products/jndi/downloads/index.html\n" +
                         "Click : Download JNDI 1.2.1 & More button\n" +
@@ -105,25 +80,25 @@ public class JNDIReferenceableTest
                         "and add the two jars in the lib dir to your class path.");
         }
 
-        Assert.assertTrue(b.bound());
+        assertTrue(b.bound());
 
         Lookup l = new Lookup(b.getProviderURL());
 
-        Assert.assertTrue(l.connectionFactoryValue().equals(b.connectionFactoryValue()));
+        assertTrue(l.connectionFactoryValue().equals(b.connectionFactoryValue()));
 
-        Assert.assertTrue(l.connectionValue().equals(b.connectionValue()));
+        assertTrue(l.connectionValue().equals(b.connectionValue()));
 
-        Assert.assertTrue(l.topicValue().equals(b.topicValue()));
+        assertTrue(l.topicValue().equals(b.topicValue()));
 
 
         Unbind u = new Unbind();
 
-        Assert.assertTrue(u.unbound());
+        assertTrue(u.unbound());
 
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(JNDIReferenceableTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(JNDIReferenceableTest.class));
     }
 }

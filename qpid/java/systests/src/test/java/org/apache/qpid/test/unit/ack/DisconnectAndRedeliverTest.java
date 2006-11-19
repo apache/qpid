@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.ack;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.client.AMQConnection;
@@ -31,17 +30,15 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
 
-public class DisconnectAndRedeliverTest
+import junit.framework.TestCase;
+
+public class DisconnectAndRedeliverTest extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(DisconnectAndRedeliverTest.class);
-
 
     static
     {
@@ -52,34 +49,18 @@ public class DisconnectAndRedeliverTest
             System.out.println("QPID_WORK not set using tmp directory: " + tempdir);
             System.setProperty("QPID_WORK", tempdir);
         }
-        //DOMConfigurator.configure("../etc/log4j.xml");
-        DOMConfigurator.configure("broker/etc/log4j.xml");
+        DOMConfigurator.configure("../broker/etc/log4j.xml");
     }
 
-    @Before
-    public void resetAppliactionRegistry() throws Exception
+    protected void setUp() throws Exception
     {
-        createVMBroker();
+        super.setUp();
         ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
     }
 
-
-    public void createVMBroker()
+    protected void tearDown() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
     /**
@@ -88,8 +69,7 @@ public class DisconnectAndRedeliverTest
      *
      * @throws Exception
      */
-    @Test
-    public void disconnectRedeliversMessages() throws Exception
+    public void testDisconnectRedeliversMessages() throws Exception
     {
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
 
@@ -134,15 +114,15 @@ public class DisconnectAndRedeliverTest
         con.start();
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg2", tm.getText());
+        assertEquals("msg2", tm.getText());
 
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg3", tm.getText());
+        assertEquals("msg3", tm.getText());
 
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg4", tm.getText());
+        assertEquals("msg4", tm.getText());
 
         _logger.info("Received redelivery of three messages. Acknowledging last message");
         tm.acknowledge();
@@ -155,7 +135,7 @@ public class DisconnectAndRedeliverTest
         _logger.info("Starting third consumer connection");
         con.start();
         tm = (TextMessage) consumer.receiveNoWait();
-        Assert.assertNull(tm);
+        assertNull(tm);
         _logger.info("No messages redelivered as is expected");
         con.close();
 
@@ -165,12 +145,12 @@ public class DisconnectAndRedeliverTest
         _logger.info("Starting fourth consumer connection");
         con.start();
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertNull(tm);
+        assertNull(tm);
         _logger.info("No messages redelivered as is expected");
         con.close();
 
         _logger.info("Actually:" + store.getMessageMap().size());
-        //  Assert.assertTrue(store.getMessageMap().size() == 0);
+        //  assertTrue(store.getMessageMap().size() == 0);
     }
 
     /**
@@ -179,8 +159,7 @@ public class DisconnectAndRedeliverTest
      *
      * @throws Exception
      */
-    @Test
-    public void disconnectWithTransientQueueThrowsAwayMessages() throws Exception
+    public void testDisconnectWithTransientQueueThrowsAwayMessages() throws Exception
     {
 
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
@@ -222,16 +201,16 @@ public class DisconnectAndRedeliverTest
         con.start();
 
         tm = (TextMessage) consumer.receiveNoWait();
-        Assert.assertNull(tm);
+        assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 
         _logger.info("Actually:" + store.getMessageMap().size());
-        Assert.assertTrue(store.getMessageMap().size() == 0);
+        assertTrue(store.getMessageMap().size() == 0);
         con.close();
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(DisconnectAndRedeliverTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(DisconnectAndRedeliverTest.class));
     }
 }

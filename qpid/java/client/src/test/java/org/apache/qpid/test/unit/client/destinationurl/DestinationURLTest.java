@@ -20,134 +20,126 @@
  */
 package org.apache.qpid.test.unit.client.destinationurl;
 
-import org.junit.Test;
-import org.junit.Assert;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import junit.framework.JUnit4TestAdapter;
 
-public class DestinationURLTest
+import junit.framework.TestCase;
+
+public class DestinationURLTest extends TestCase
 {
-    @Test
-    public void fullURL() throws URLSyntaxException
+    public void testFullURL() throws URLSyntaxException
     {
 
         String url = "exchange.Class://exchangeName/Destination/Queue";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(url.equals(dest.toString()));
+        assertTrue(url.equals(dest.toString()));
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchange.Class"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals("Destination"));
-        Assert.assertTrue(dest.getQueueName().equals("Queue"));
+        assertTrue(dest.getExchangeClass().equals("exchange.Class"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals("Destination"));
+        assertTrue(dest.getQueueName().equals("Queue"));
     }
 
-    @Test
-    public void queue() throws URLSyntaxException
+    public void testQueue() throws URLSyntaxException
     {
 
         String url = "exchangeClass://exchangeName//Queue";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(url.equals(dest.toString()));
+        assertTrue(url.equals(dest.toString()));
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchangeClass"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals(""));
-        Assert.assertTrue(dest.getQueueName().equals("Queue"));
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals(""));
+        assertTrue(dest.getQueueName().equals("Queue"));
     }
 
-    @Test
-    public void queueWithOption() throws URLSyntaxException
+    public void testQueueWithOption() throws URLSyntaxException
     {
 
         String url = "exchangeClass://exchangeName//Queue?option='value'";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(url.equals(dest.toString()));
+        assertTrue(url.equals(dest.toString()));
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchangeClass"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals(""));
-        Assert.assertTrue(dest.getQueueName().equals("Queue"));
-        Assert.assertTrue(dest.getOption("option").equals("value"));
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals(""));
+        assertTrue(dest.getQueueName().equals("Queue"));
+        assertTrue(dest.getOption("option").equals("value"));
     }
 
 
-    @Test
-    public void destination() throws URLSyntaxException
+    public void testDestination() throws URLSyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(url.equals(dest.toString()));
+        assertTrue(url.equals(dest.toString()));
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchangeClass"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals("Destination"));
-        Assert.assertTrue(dest.getQueueName().equals(""));
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals("Destination"));
+        assertTrue(dest.getQueueName().equals(""));
     }
 
-    @Test
-    public void destinationWithOption() throws URLSyntaxException
+    public void testDestinationWithOption() throws URLSyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/?option='value'";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(url.equals(dest.toString()));
+        assertTrue(url.equals(dest.toString()));
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchangeClass"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals("Destination"));
-        Assert.assertTrue(dest.getQueueName().equals(""));
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals("Destination"));
+        assertTrue(dest.getQueueName().equals(""));
 
-        Assert.assertTrue(dest.getOption("option").equals("value"));
+        assertTrue(dest.getOption("option").equals("value"));
     }
 
-    @Test
-    public void destinationWithMultiOption() throws URLSyntaxException
+    public void testDestinationWithMultiOption() throws URLSyntaxException
     {
 
         String url = "exchangeClass://exchangeName/Destination/?option='value',option2='value2'";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(dest.getExchangeClass().equals("exchangeClass"));
-        Assert.assertTrue(dest.getExchangeName().equals("exchangeName"));
-        Assert.assertTrue(dest.getDestinationName().equals("Destination"));
-        Assert.assertTrue(dest.getQueueName().equals(""));
+        assertTrue(dest.getExchangeClass().equals("exchangeClass"));
+        assertTrue(dest.getExchangeName().equals("exchangeName"));
+        assertTrue(dest.getDestinationName().equals("Destination"));
+        assertTrue(dest.getQueueName().equals(""));
 
-        Assert.assertTrue(dest.getOption("option").equals("value"));
-        Assert.assertTrue(dest.getOption("option2").equals("value2"));
+        assertTrue(dest.getOption("option").equals("value"));
+        assertTrue(dest.getOption("option2").equals("value2"));
     }
 
-    @Test
-    public void destinationWithNoExchangeDefaultsToDirect() throws URLSyntaxException
+    public void testDestinationWithNoExchangeDefaultsToDirect() throws URLSyntaxException
     {
 
         String url = "IBMPerfQueue1?durable='true'";
 
         AMQBindingURL dest = new AMQBindingURL(url);
 
-        Assert.assertTrue(dest.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS));
-        Assert.assertTrue(dest.getExchangeName().equals(ExchangeDefaults.DIRECT_EXCHANGE_NAME));
-        Assert.assertTrue(dest.getDestinationName().equals(""));
-        Assert.assertTrue(dest.getQueueName().equals("IBMPerfQueue1"));
+        assertTrue(dest.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS));
+        assertTrue(dest.getExchangeName().equals(ExchangeDefaults.DIRECT_EXCHANGE_NAME));
+        assertTrue(dest.getDestinationName().equals(""));
+        assertTrue(dest.getQueueName().equals("IBMPerfQueue1"));
 
-        Assert.assertTrue(dest.getOption("durable").equals("true"));
+        assertTrue(dest.getOption("durable").equals("true"));
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(DestinationURLTest.class);
+        return new junit.framework.TestSuite(DestinationURLTest.class);
     }
 }

@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.log4j.Logger;
-import org.junit.Test;
 
-public class TestManyConnections
+import junit.framework.TestCase;
+
+public class TestManyConnections extends TestCase
 {
     private static final Logger _log = Logger.getLogger(TestManyConnections.class);
 
@@ -53,50 +53,43 @@ public class TestManyConnections
                   "ms");
     }
 
-    @Test
-    public void create10Connections() throws AMQException, URLSyntaxException
+    public void testCreate10Connections() throws AMQException, URLSyntaxException
     {
         createConnections(10);
     }
 
-    @Test
-    public void create50Connections() throws AMQException, URLSyntaxException
+    public void testCreate50Connections() throws AMQException, URLSyntaxException
     {
         createConnections(50);
     }
 
-    @Test
-    public void create100Connections() throws AMQException, URLSyntaxException
+    public void testCreate100Connections() throws AMQException, URLSyntaxException
     {
         createConnections(100);
     }
 
-    @Test
-    public void create250Connections() throws AMQException, URLSyntaxException
+    public void testCreate250Connections() throws AMQException, URLSyntaxException
     {
         createConnections(250);
     }
 
-    @Test
-    public void create500Connections() throws AMQException, URLSyntaxException
+    public void testCreate500Connections() throws AMQException, URLSyntaxException
     {
         createConnections(500);
     }
 
-    @Test
-    public void create1000Connections() throws AMQException, URLSyntaxException
+    public void testCreate1000Connections() throws AMQException, URLSyntaxException
     {
         createConnections(1000);
     }
 
-    @Test
-    public void create5000Connections() throws AMQException, URLSyntaxException
+    public void testCreate5000Connections() throws AMQException, URLSyntaxException
     {
         createConnections(5000);
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TestManyConnections.class);
+        return new junit.framework.TestSuite(TestManyConnections.class);
     }
 }

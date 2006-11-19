@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -31,17 +30,16 @@ import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.util.Iterator;
 import java.util.Map;
 
+import junit.framework.TestCase;
+
 /**
  * Tests that acknowledgements are handled correctly.
  */
-public class AckTest
+public class AckTest extends TestCase
 {
     private static final Logger _log = Logger.getLogger(AckTest.class);
 
@@ -62,9 +60,9 @@ public class AckTest
         ApplicationRegistry.initialise(new TestApplicationRegistry());
     }
 
-    @Before
-    public void setup() throws Exception
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _messageStore = new TestableMemoryMessageStore();
         _channel = new AMQChannel(5, _messageStore, null/*dont need exchange registry*/);
         _protocolSession = new MockProtocolSession(_messageStore);
@@ -107,8 +105,7 @@ public class AckTest
      * Tests that the acknowledgements are correctly associated with a channel and
      * order is preserved when acks are enabled
      */
-    @Test
-    public void ackChannelAssociationTest() throws AMQException
+    public void testAckChannelAssociationTest() throws AMQException
     {
         _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
         final int msgCount = 10;
@@ -134,7 +131,6 @@ public class AckTest
     /**
      * Tests that in no-ack mode no messages are retained
      */
-    @Test
     public void testNoAckMode() throws AMQException
     {
         // false arg means no acks expected
@@ -151,8 +147,7 @@ public class AckTest
      * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
      * set case)
      */
-    @Test
-    public void singleAckReceivedTest() throws AMQException
+    public void testSingleAckReceivedTest() throws AMQException
     {
         _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
         final int msgCount = 10;
@@ -182,8 +177,7 @@ public class AckTest
      * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
      * set case)
      */
-    @Test
-    public void multiAckReceivedTest() throws AMQException
+    public void testMultiAckReceivedTest() throws AMQException
     {
         _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
         final int msgCount = 10;
@@ -208,8 +202,7 @@ public class AckTest
     /**
      * Tests that a multiple acknowledgement is handled correctly. When ack'ing all pending msgs.
      */
-    @Test
-    public void multiAckAllReceivedTest() throws AMQException
+    public void testMultiAckAllReceivedTest() throws AMQException
     {
         _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
         final int msgCount = 10;
@@ -231,8 +224,6 @@ public class AckTest
         }
     }
 
-
-    @Test
     public void testPrefetchHighLow() throws AMQException
     {
         int lowMark = 5;
@@ -287,7 +278,6 @@ public class AckTest
         assertTrue(map.size() == 0);
     }
 
-    @Test
     public void testPrefetch() throws AMQException
     {
         _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
@@ -316,9 +306,8 @@ public class AckTest
         assertTrue(map.size() == 0);
     }
 
-
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(AckTest.class);
+        return new junit.framework.TestSuite(AckTest.class);
     }
 }

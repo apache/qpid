@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.test.unit.client.connectionurl;
 
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Ignore;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
@@ -32,280 +27,269 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
-import junit.framework.JUnit4TestAdapter;
 
-public class ConnectionURLTest
+import junit.framework.TestCase;
+
+public class ConnectionURLTest extends TestCase
 {
 
-    @Test
-    public void failoverURL() throws URLSyntaxException
+    public void testFailoverURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:bob@/temp?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
-        Assert.assertTrue(connectionurl.getUsername().equals("ritchiem"));
-        Assert.assertTrue(connectionurl.getPassword().equals("bob"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
+        assertTrue(connectionurl.getUsername().equals("ritchiem"));
+        assertTrue(connectionurl.getPassword().equals("bob"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 2);
+        assertTrue(connectionurl.getBrokerCount() == 2);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
 
         service = connectionurl.getBrokerDetails(1);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("fancyserver"));
-        Assert.assertTrue(service.getPort() == 3000);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("fancyserver"));
+        assertTrue(service.getPort() == 3000);
 
     }
 
-    @Test
-    public void singleTransportUsernamePasswordURL() throws URLSyntaxException
+    public void testSingleTransportUsernamePasswordURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:bob@/temp?brokerlist='tcp://localhost:5672'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("ritchiem"));
-        Assert.assertTrue(connectionurl.getPassword().equals("bob"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("ritchiem"));
+        assertTrue(connectionurl.getPassword().equals("bob"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
     }
 
-    @Test
-    public void singleTransportUsernameBlankPasswordURL() throws URLSyntaxException
+    public void testSingleTransportUsernameBlankPasswordURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:@/temp?brokerlist='tcp://localhost:5672'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("ritchiem"));
-        Assert.assertTrue(connectionurl.getPassword().equals(""));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("ritchiem"));
+        assertTrue(connectionurl.getPassword().equals(""));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
     }
 
-    @Test
-    public void failedURLNullPassword()
+    public void testFailedURLNullPassword()
     {
         String url = "amqp://ritchiem@/temp?brokerlist='tcp://localhost:5672'";
 
         try
         {
             new AMQConnectionURL(url);
-            Assert.fail("URL has null password");
+            fail("URL has null password");
         }
         catch (URLSyntaxException e)
         {
-            Assert.assertTrue(e.getReason().equals("Null password in user information not allowed."));
-            Assert.assertTrue(e.getIndex() == 7);
+            assertTrue(e.getReason().equals("Null password in user information not allowed."));
+            assertTrue(e.getIndex() == 7);
         }
     }
 
 
-    @Test
-    public void singleTransportURL() throws URLSyntaxException
+    public void testSingleTransportURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/test"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
     }
 
-    @Test
-    public void singleTransportWithClientURLURL() throws URLSyntaxException
+    public void testSingleTransportWithClientURLURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@clientname/temp?brokerlist='tcp://localhost:5672'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
-        Assert.assertTrue(connectionurl.getClientName().equals("clientname"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getClientName().equals("clientname"));
 
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
     }
 
-    @Test
-    public void singleTransport1OptionURL() throws URLSyntaxException
+    public void testSingleTransport1OptionURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/temp?brokerlist='tcp://localhost:5672',routingkey='jim'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getTransport().equals("tcp"));
 
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
-        Assert.assertTrue(connectionurl.getOption("routingkey").equals("jim"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
+        assertTrue(connectionurl.getOption("routingkey").equals("jim"));
     }
 
-    @Test
-    public void singleTransportDefaultedBroker() throws URLSyntaxException
+    public void testSingleTransportDefaultedBroker() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/temp?brokerlist='localhost'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getTransport().equals("tcp"));
 
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
     }
 
 
-    @Test
-    public void singleTransportMultiOptionURL() throws URLSyntaxException
+    public void testSingleTransportMultiOptionURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/temp?brokerlist='tcp://localhost:5672',routingkey='jim',timeout='200',immediatedelivery='true'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getTransport().equals("tcp"));
 
-        Assert.assertTrue(service.getHost().equals("localhost"));
-        Assert.assertTrue(service.getPort() == 5672);
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 5672);
 
-        Assert.assertTrue(connectionurl.getOption("routingkey").equals("jim"));
-        Assert.assertTrue(connectionurl.getOption("timeout").equals("200"));
-        Assert.assertTrue(connectionurl.getOption("immediatedelivery").equals("true"));
+        assertTrue(connectionurl.getOption("routingkey").equals("jim"));
+        assertTrue(connectionurl.getOption("timeout").equals("200"));
+        assertTrue(connectionurl.getOption("immediatedelivery").equals("true"));
     }
 
-    @Test
-    public void singlevmURL() throws URLSyntaxException
+    public void testSinglevmURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/messages?brokerlist='vm://:2'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod() == null);
-        Assert.assertTrue(connectionurl.getUsername().equals("guest"));
-        Assert.assertTrue(connectionurl.getPassword().equals("guest"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/messages"));
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/messages"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("vm"));
-        Assert.assertTrue(service.getHost().equals(""));
-        Assert.assertTrue(service.getPort() == 2);
+        assertTrue(service.getTransport().equals("vm"));
+        assertTrue(service.getHost().equals(""));
+        assertTrue(service.getPort() == 2);
 
     }
 
-    @Test
-    public void failoverVMURL() throws URLSyntaxException
+    public void testFailoverVMURL() throws URLSyntaxException
     {
         String url = "amqp://ritchiem:bob@/temp?brokerlist='vm://:2;vm://:3',failover='roundrobin'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
-        Assert.assertTrue(connectionurl.getUsername().equals("ritchiem"));
-        Assert.assertTrue(connectionurl.getPassword().equals("bob"));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+        assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
+        assertTrue(connectionurl.getUsername().equals("ritchiem"));
+        assertTrue(connectionurl.getPassword().equals("bob"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 2);
+        assertTrue(connectionurl.getBrokerCount() == 2);
 
         BrokerDetails service = connectionurl.getBrokerDetails(0);
 
-        Assert.assertTrue(service.getTransport().equals("vm"));
-        Assert.assertTrue(service.getHost().equals(""));
-        Assert.assertTrue(service.getPort() == 2);
+        assertTrue(service.getTransport().equals("vm"));
+        assertTrue(service.getHost().equals(""));
+        assertTrue(service.getPort() == 2);
 
         service = connectionurl.getBrokerDetails(1);
-        Assert.assertTrue(service.getTransport().equals("vm"));
-        Assert.assertTrue(service.getHost().equals(""));
-        Assert.assertTrue(service.getPort() == 3);
+        assertTrue(service.getTransport().equals("vm"));
+        assertTrue(service.getHost().equals(""));
+        assertTrue(service.getPort() == 3);
     }
 
 
-    @Test
-    public void noVirtualHostURL()
+    public void testNoVirtualHostURL()
     {
         String url = "amqp://user@?brokerlist='tcp://localhost:5672'";
 
         try
         {
             new AMQConnectionURL(url);
-            Assert.fail("URL has no virtual host should not parse");
+            fail("URL has no virtual host should not parse");
         }
         catch (URLSyntaxException e)
         {
@@ -313,23 +297,22 @@ public class ConnectionURLTest
         }
     }
 
-    @Test
-    public void noClientID() throws URLSyntaxException
+    public void testNoClientID() throws URLSyntaxException
     {
         String url = "amqp://user:@/test?brokerlist='tcp://localhost:5672'";
 
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
-        Assert.assertTrue(connectionurl.getUsername().equals("user"));
-        Assert.assertTrue(connectionurl.getPassword().equals(""));
-        Assert.assertTrue(connectionurl.getVirtualHost().equals("/test"));
+        assertTrue(connectionurl.getUsername().equals("user"));
+        assertTrue(connectionurl.getPassword().equals(""));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
-        Assert.assertTrue(connectionurl.getBrokerCount() == 1);
+        assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
-    @Ignore("Connection now parses but result is wrong QPID-71")
-    @Test
-    public void wrongOptionSeperatorInBroker()
+    // FIXME Connection now parses but result is wrong QPID-71
+    /*
+    public void testWrongOptionSeparatorInBroker()
     {
         String url = "amqp://user:@/test?brokerlist='tcp://localhost:5672+option='value''";
 
@@ -340,103 +323,97 @@ public class ConnectionURLTest
             Float version = Float.parseFloat(System.getProperty("java.specification.version"));
             if (version > 1.5)
             {
-                Assert.fail("URL Should not parse on Java " + version + " Connection is:" + connection);
+                fail("URL Should not parse on Java " + version + " Connection is:" + connection);
             }
         }
         catch (URLSyntaxException urise)
         {
-            Assert.assertTrue(urise.getReason().equals("Illegal character in port number"));
+            assertTrue(urise.getReason().equals("Illegal character in port number"));
         }
 
     }
+    */
 
-    @Test
-    public void wrongOptionSeperatorInOptions()
+    public void testWrongOptionSeparatorInOptions()
     {
         String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672;tcp://localhost:5673'+failover='roundrobin'";
         try
         {
             new AMQConnectionURL(url);
-            Assert.fail("URL Should not parse");
+            fail("URL Should not parse");
         }
         catch (URLSyntaxException urise)
         {
-            Assert.assertTrue(urise.getReason().equals("Unterminated option. Possible illegal option separator:'+'"));
+            assertTrue(urise.getReason().equals("Unterminated option. Possible illegal option separator:'+'"));
         }
 
     }
 
-    @Test
-    public void transportsDefaultToTCP() throws URLSyntaxException
+    public void testTransportsDefaultToTCP() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/test?brokerlist='localhost:5672;myhost:5673'&failover='roundrobin'";
 
         AMQConnectionURL connection = new AMQConnectionURL(url);
 
         BrokerDetails broker = connection.getBrokerDetails(0);
-        Assert.assertTrue(broker.getTransport().equals("tcp"));
+        assertTrue(broker.getTransport().equals("tcp"));
 
         broker = connection.getBrokerDetails(1);
-        Assert.assertTrue(broker.getTransport().equals("tcp"));
+        assertTrue(broker.getTransport().equals("tcp"));
     }
 
-    @Test
-    public void noUserDetailsProvidedWithClientID()
+    public void testNoUserDetailsProvidedWithClientID()
 
     {
         String url = "amqp://clientID/test?brokerlist='tcp://localhost:5672;tcp://localhost:5673'";
         try
         {
             new AMQConnectionURL(url);
-            Assert.fail("URL Should not parse");
+            fail("URL Should not parse");
         }
         catch (URLSyntaxException urise)
         {
-            Assert.assertTrue(urise.getMessage().startsWith("User information not found on url"));
+            assertTrue(urise.getMessage().startsWith("User information not found on url"));
         }
 
     }
 
-    @Test
-    public void noUserDetailsProvidedNOClientID()
+    public void testNoUserDetailsProvidedNOClientID()
 
     {
         String url = "amqp:///test?brokerlist='tcp://localhost:5672;tcp://localhost:5673'";
         try
         {
             new AMQConnectionURL(url);
-            Assert.fail("URL Should not parse");
+            fail("URL Should not parse");
         }
         catch (URLSyntaxException urise)
         {
-            Assert.assertTrue(urise.getMessage().startsWith("User information not found on url"));
+            assertTrue(urise.getMessage().startsWith("User information not found on url"));
         }
 
     }
 
-    @Test
-    public void checkVirtualhostFormat() throws URLSyntaxException
+    public void testCheckVirtualhostFormat() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/t.-_+!=:?brokerlist='tcp://localhost:5672'";
 
         AMQConnectionURL connection = new AMQConnectionURL(url);
-        Assert.assertTrue(connection.getVirtualHost().equals("/t.-_+!=:"));
+        assertTrue(connection.getVirtualHost().equals("/t.-_+!=:"));
     }
 
-    @Test
-    public void checkDefaultPort() throws URLSyntaxException
+    public void testCheckDefaultPort() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/test=:?brokerlist='tcp://localhost'";
 
         AMQConnectionURL connection = new AMQConnectionURL(url);
 
         BrokerDetails broker = connection.getBrokerDetails(0);
-        Assert.assertTrue(broker.getPort() == AMQBrokerDetails.DEFAULT_PORT);
+        assertTrue(broker.getPort() == AMQBrokerDetails.DEFAULT_PORT);
 
     }
 
-    @Test
-    public void checkMissingFinalQuote() throws URLSyntaxException
+    public void testCheckMissingFinalQuote() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@id/test" + "?brokerlist='tcp://localhost:5672";
 
@@ -446,15 +423,12 @@ public class ConnectionURLTest
         }
         catch (URLSyntaxException e)
         {
-            Assert.assertEquals(e.getMessage(), "Unterminated option at index 32: brokerlist='tcp://localhost:5672");
+            assertEquals(e.getMessage(), "Unterminated option at index 32: brokerlist='tcp://localhost:5672");
         }
-
-
     }
-
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(ConnectionURLTest.class);
+        return new junit.framework.TestSuite(ConnectionURLTest.class);
     }
 }

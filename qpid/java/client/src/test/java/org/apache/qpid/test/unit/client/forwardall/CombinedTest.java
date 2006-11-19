@@ -20,43 +20,31 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.Assert;
-import org.junit.After;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.test.VMBrokerSetup;
+
+import junit.framework.TestCase;
 
 /**
  * Runs the Service's and Client parts of the test in the same process
  * as the broker
  */
-public class CombinedTest
+public class CombinedTest extends TestCase
 {
 
-    @Before
-    public void createVMBroker()
+    protected void setUp() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
+        super.setUp();
     }
 
-    @After
-    public void stopVmBroker()
+    protected void tearDown() throws Exception
     {
         ServiceCreator.closeAll();
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
-    @Test
-    public void forwardAll() throws Exception
+    public void testForwardAll() throws Exception
     {
         int services = 2;
         ServiceCreator.start("vm://:1", services);
@@ -70,6 +58,6 @@ public class CombinedTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(CombinedTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(CombinedTest.class));
     }
 }

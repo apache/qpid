@@ -20,23 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.junit.Test;
-import org.junit.Before;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import junit.framework.JUnit4TestAdapter;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTest
 {
-    @Before
-    public void init() throws Exception
+    protected void setUp() throws Exception
     {
+        super.setUp();
         ApplicationRegistry.initialise(new TestApplicationRegistry());
     }
 
-    @Test
-    public void simple() throws AMQException
+    public void testSimple() throws AMQException
     {
         TestQueue q1 = bindDefault("F0000");
         TestQueue q2 = bindDefault("F0000=Aardvark");
@@ -58,8 +54,7 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTest
         routeAndTest(new Message("Message6", "F0002"));
     }
 
-    @Test
-    public void any() throws AMQException
+    public void testAny() throws AMQException
     {
         TestQueue q1 = bindDefault("F0000", "F0001", "X-match=any");
         TestQueue q2 = bindDefault("F0000=Aardvark", "F0001=Bear", "X-match=any");
@@ -78,7 +73,6 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(HeadersExchangeTest.class);
+        return new junit.framework.TestSuite(HeadersExchangeTest.class);
     }
-
 }

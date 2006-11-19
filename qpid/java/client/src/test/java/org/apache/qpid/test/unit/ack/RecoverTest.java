@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,7 +19,6 @@
  */
 package org.apache.qpid.test.unit.ack;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -28,14 +26,13 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
+import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
 
-public class RecoverTest
+import junit.framework.TestCase;
+
+public class RecoverTest extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(RecoverTest.class);
 
@@ -48,31 +45,10 @@ public class RecoverTest
             System.out.println("QPID_WORK not set using tmp directory: " + tempdir);
             System.setProperty("QPID_WORK", tempdir);
         }
-        //DOMConfigurator.configure("../etc/log4j.xml");
-        DOMConfigurator.configure("broker/etc/log4j.xml");
+        DOMConfigurator.configure("../broker/etc/log4j.xml");
     }
 
-    @Before
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
-    {
-        TransportConnection.killVMBroker(1);
-    }
-
-    @Test
-    public void recoverResendsMsgs() throws Exception
+    public void testRecoverResendsMsgs() throws Exception
     {
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
 
@@ -106,13 +82,13 @@ public class RecoverTest
         // no ack for last three messages so when I call recover I expect to get three messages back
         consumerSession.recover();
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg2", tm.getText());
+        assertEquals("msg2", tm.getText());
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg3", tm.getText());
+        assertEquals("msg3", tm.getText());
 
         tm = (TextMessage) consumer.receive(3000);
-        Assert.assertEquals("msg4", tm.getText());
+        assertEquals("msg4", tm.getText());
 
         _logger.info("Received redelivery of three messages. Acknowledging last message");
         tm.acknowledge();
@@ -122,16 +98,14 @@ public class RecoverTest
         consumerSession.recover();
 
         tm = (TextMessage) consumer.receiveNoWait();
-        Assert.assertNull(tm);
+        assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 
         con.close();
-
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(RecoverTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(RecoverTest.class));
     }
 }
-

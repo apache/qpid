@@ -32,8 +32,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.AMQException;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -41,7 +39,9 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 
-public class AbstractHeadersExchangeTest
+import junit.framework.TestCase;
+
+public class AbstractHeadersExchangeTest extends TestCase
 {
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();

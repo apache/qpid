@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import org.junit.*;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
@@ -28,18 +27,19 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.JMSException;
 import javax.jms.TopicSubscriber;
 import javax.jms.QueueReceiver;
 
-import junit.framework.JUnit4TestAdapter;
+import junit.framework.TestCase;
 
 /**
  * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession
  */
-public class AMQSessionTest
+public class AMQSessionTest extends TestCase
 {
 
     private static AMQSession _session;
@@ -47,32 +47,16 @@ public class AMQSessionTest
     private static AMQQueue _queue;
     private static AMQConnection _connection;
 
-    @Before
-    public  void setUp() throws AMQException, URLSyntaxException, JMSException
+    protected void setUp() throws Exception
     {
-        createVMBroker();
-        //initialise the variables we need for testing
+        super.setUp();
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
-
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            Assert.fail("Unable to create broker: " + e);
-        }
-    }
-
-    @After
-    public void stopVmBroker()
+    protected void tearDown() throws Exception
     {
         try
         {
@@ -82,50 +66,45 @@ public class AMQSessionTest
         {
             //just close
         }
-        TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
-    @Test
     public void testCreateSubscriber() throws JMSException
     {
         TopicSubscriber subscriber = _session.createSubscriber(_topic);
-        Assert.assertEquals("Topic names should match from TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        assertEquals("Topic names should match from TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
 
         subscriber = _session.createSubscriber(_topic, "abc", false);
-        Assert.assertEquals("Topic names should match from TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        assertEquals("Topic names should match from TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
     }
 
-    @Test
     public void testCreateDurableSubscriber() throws JMSException
     {
         TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
-        Assert.assertEquals("Topic names should match from durable TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        assertEquals("Topic names should match from durable TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
 
         subscriber = _session.createDurableSubscriber(_topic, "mysubname", "abc", false);
-        Assert.assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
     }
 
-    @Test
     public void testCreateQueueReceiver() throws JMSException
     {
         QueueReceiver receiver = _session.createQueueReceiver(_queue);
-        Assert.assertEquals("Queue names should match from QueueReceiver", _queue.getQueueName(), receiver.getQueue().getQueueName());
+        assertEquals("Queue names should match from QueueReceiver", _queue.getQueueName(), receiver.getQueue().getQueueName());
 
         receiver = _session.createQueueReceiver(_queue, "abc");
-        Assert.assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
+        assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
     }
 
-    @Test
     public void testCreateReceiver() throws JMSException
     {
         QueueReceiver receiver = _session.createReceiver(_queue);
-        Assert.assertEquals("Queue names should match from QueueReceiver", _queue.getQueueName(), receiver.getQueue().getQueueName());
+        assertEquals("Queue names should match from QueueReceiver", _queue.getQueueName(), receiver.getQueue().getQueueName());
 
         receiver = _session.createReceiver(_queue, "abc");
-        Assert.assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
+        assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
     }
 
-    @AfterClass
     public static void stopVmBrokers()
     {
         _queue = null;
@@ -135,8 +114,6 @@ public class AMQSessionTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(AMQSessionTest.class);
+        return new VMBrokerSetup(new junit.framework.TestSuite(AMQSessionTest.class));
     }
-
-
 }

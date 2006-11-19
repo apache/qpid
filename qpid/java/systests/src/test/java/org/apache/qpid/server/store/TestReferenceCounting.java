@@ -20,52 +20,48 @@
  */
 package org.apache.qpid.server.store;
 
-import junit.framework.JUnit4TestAdapter;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Before;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.AMQException;
+
+import junit.framework.TestCase;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
  */
-public class TestReferenceCounting
+public class TestReferenceCounting extends TestCase
 {
     private TestableMemoryMessageStore _store;
 
-    @Before
-    public void createCommonObjects()
+    protected void setUp() throws Exception
     {
+        super.setUp();
         _store = new TestableMemoryMessageStore();
     }
 
     /**
      * Check that when the reference count is decremented the message removes itself from the store
      */
-    @Test
     public void testMessageGetsRemoved() throws AMQException
     {
         AMQMessage message = new AMQMessage(_store, null);
         _store.put(message);
-        Assert.assertTrue(_store.getMessageMap().size() == 1);
+        assertTrue(_store.getMessageMap().size() == 1);
         message.decrementReference();
-        Assert.assertTrue(_store.getMessageMap().size() == 0);
+        assertTrue(_store.getMessageMap().size() == 0);
     }
 
-    @Test
     public void testMessageRemains() throws AMQException
     {
         AMQMessage message = new AMQMessage(_store, null);
         _store.put(message);
-        Assert.assertTrue(_store.getMessageMap().size() == 1);
+        assertTrue(_store.getMessageMap().size() == 1);
         message.incrementReference();
         message.decrementReference();
-        Assert.assertTrue(_store.getMessageMap().size() == 1);
+        assertTrue(_store.getMessageMap().size() == 1);
     }
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(TestReferenceCounting.class);
+        return new junit.framework.TestSuite(TestReferenceCounting.class);
     }
 }
