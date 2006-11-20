@@ -24,7 +24,7 @@
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageStore.h>
 #include <qpid/broker/Queue.h>
-#include <qpid/broker/QueueRegistry.h>
+#include <qpid/broker/RecoveryManager.h>
 #include <qpid/sys/Module.h>
 
 namespace qpid {
@@ -38,7 +38,7 @@ namespace qpid {
             MessageStoreModule(const std::string& name);
             void create(const Queue& queue);
             void destroy(const Queue& queue);
-            void recover(QueueRegistry& queues);
+            void recover(RecoveryManager& queues);
             void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             void committed(const string * const xid);
