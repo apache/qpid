@@ -120,12 +120,12 @@ public class TransportConnection
                         //FIXME - this needs to be sorted to use the new Mina MultiThread SA.
                         if (Boolean.getBoolean("qpidnio"))
                         {
-                            _logger.warn("Using Qpid NIO - DISABLED");
+                            _logger.fatal("Using Qpid NIO - sysproperty 'qpidnio' is set.");
 //                            result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
                         }
 //                        else
                         {
-                            _logger.warn("Using Mina NIO");
+                            _logger.info("Using Mina NIO");
                             result = new SocketConnector(); // non-blocking connector
                         }
 
