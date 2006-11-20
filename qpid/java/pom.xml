@@ -92,7 +92,7 @@
         <resources.version>2.2</resources.version>
         <site.version>2.0-beta-5</site.version>
         <surefire-report.version>2.1-SNAPSHOT</surefire-report.version>
-        <surefire.version>2.3-SNAPSHOT</surefire.version>
+        <surefire.version>2.2</surefire.version>
 
         <amqj.logging.level>debug</amqj.logging.level>
 
