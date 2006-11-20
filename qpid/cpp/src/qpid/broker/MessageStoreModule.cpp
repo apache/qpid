@@ -38,7 +38,7 @@ void MessageStoreModule::destroy(const Queue& queue)
     store->destroy(queue);
 }
 
-void MessageStoreModule::recover(QueueRegistry& registry)
+void MessageStoreModule::recover(RecoveryManager& registry)
 {
     store->recover(registry);
 }
