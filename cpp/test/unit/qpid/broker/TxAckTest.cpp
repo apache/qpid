@@ -19,7 +19,7 @@
  *
  */
 #include <qpid/broker/MessageStore.h>
-#include <qpid/broker/QueueRegistry.h>
+#include <qpid/broker/RecoveryManager.h>
 #include <qpid/broker/TxAck.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
@@ -47,7 +47,7 @@ class TxAckTest : public CppUnit::TestCase
         //dont care about any of the other methods:
         void create(const Queue&){}
         void destroy(const Queue&){}        
-        void recover(QueueRegistry&){}
+        void recover(RecoveryManager&){}
         void enqueue(TransactionContext*, Message::shared_ptr&, const Queue&, const string * const){}
         void committed(const string * const){}
         void aborted(const string * const){}

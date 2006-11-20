@@ -28,8 +28,6 @@
 namespace qpid {
 namespace broker {
 
-class SessionHandlerImpl;
-
 /**
  * A registry of queues indexed by queue name.
  *

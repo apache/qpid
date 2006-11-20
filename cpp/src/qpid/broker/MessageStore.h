@@ -22,14 +22,11 @@
 #define _MessageStore_
 
 #include <qpid/broker/Message.h>
-#include <qpid/broker/Queue.h>
+#include <qpid/broker/RecoveryManager.h>
 #include <qpid/broker/TransactionalStore.h>
 
 namespace qpid {
     namespace broker {
-        class Queue;
-        class QueueRegistry;
-
         /**
          * An abstraction of the persistent storage for messages.
          */
@@ -47,7 +44,7 @@ namespace qpid {
             /**
              * Request recovery of queue and message state from store
              */
-            virtual void recover(QueueRegistry& queues) = 0;
+            virtual void recover(RecoveryManager& queues) = 0;
 
             /**
              * Enqueues a message, storing the message if it has not

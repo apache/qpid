@@ -49,7 +49,10 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, 
     exchanges.declare(amq_fanout, FanOutExchange::typeName);
     exchanges.declare(amq_match, HeadersExchange::typeName);
 
-    if(store.get()) store->recover(queues);
+    if(store.get()) {
+        RecoveryManager recoverer(queues, exchanges);
+        store->recover(recoverer);
+    }
 
     cleaner.start();
 }
