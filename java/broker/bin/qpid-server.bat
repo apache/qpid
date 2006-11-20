@@ -49,8 +49,20 @@ echo This environment variable is needed to run this program.
 goto exit
 :okJavaHome
 
+rem Slurp the command line arguments. This loop allows for an unlimited number
+rem of agruments (up to the command line limit, anyway).
+set QPID_ARGS=%1
+if ""%1""=="""" goto runCommand
+shift
+:loop
+if ""%1""=="""" goto runCommand
+set QPID_ARGS=%QPID_ARGS% %1
+shift
+goto loop
+
+:runCommand
 set LAUNCH_JAR=%QPID_HOME%\lib\broker-launch.jar
 set MODULE_JARS=%QPID_MODULE_JARS%
-"%JAVA_HOME%"\bin\java -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%LAUNCH_JAR%;%MODULE_JARS%" org.apache.qpid.server.Main *
+"%JAVA_HOME%"\bin\java -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%LAUNCH_JAR%;%MODULE_JARS%" org.apache.qpid.server.Main %QPID_ARGS%
 
 :end
