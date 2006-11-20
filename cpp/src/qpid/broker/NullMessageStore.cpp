@@ -22,7 +22,7 @@
 #include <qpid/broker/NullMessageStore.h>
 
 #include <qpid/broker/Queue.h>
-#include <qpid/broker/QueueRegistry.h>
+#include <qpid/broker/RecoveryManager.h>
 
 #include <iostream>
 
@@ -34,7 +34,7 @@ void NullMessageStore::create(const Queue& queue){
 void NullMessageStore::destroy(const Queue& queue){
     std::cout << "WARNING: Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
-void NullMessageStore::recover(QueueRegistry&){
+void NullMessageStore::recover(RecoveryManager&){
     std::cout << "WARNING: Persistence not enabled, no recovery of queues or messages." << std::endl;
 }
 void NullMessageStore::enqueue(TransactionContext*, Message::shared_ptr&, const Queue& queue, const string * const){
