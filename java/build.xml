@@ -218,9 +218,9 @@
                 <include name="README.txt"/>
                 <include name="NOTICE.txt"/>
             </fileset>
-	    <fileset dir="${resources.root.dir}/META-INF">
+            <fileset dir="${resources.root.dir}/META-INF">
                 <include name="DISCLAIMER.txt"/>
-	    </fileset>
+            </fileset>
         </copy>
 
         <antcall target="createLicense">
@@ -301,12 +301,12 @@
 
         <copy todir="${build.release.src.dir}">
             <fileset dir="${project.root}/..">
-                <!-- All source files -->
+                 <!--All source files -->
                 <include name="java/**"/>
                 <include name="specs/**"/>
 
-                <!-- exclude files -->
-                <exclude name=".svn/**"/>
+                 <!--exclude files -->
+                <exclude name="**/.svn/**"/>
                 <exclude name="java/${build.dir}/**"/>
                 <exclude name="java/${release.dir}/**"/>
             </fileset>
@@ -314,7 +314,7 @@
 
         <!-- Copy release docs to root of release -->
         <antcall target="copyreleasedocs">
-            <param name="todir" value="${build.release.dir}"/>
+            <param name="todir" value="${build.release.src.dir}"/>
         </antcall>
         
 
