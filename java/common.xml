@@ -25,7 +25,6 @@
   <property name="project.version" value="0.9"/>
   <property name="project.namever" value="${project.name}-${project.version}"/>
   <property name="client.namever" value="${project.name}-client-${project.version}"/>
-  <property name="build.dir" value="${project.root}/build"/>
 
 
   <property name="specs.dir" value="specs"/>
@@ -43,6 +42,7 @@
   <property name="tasks.dir" value="tasks"/>
   <property name="metainf.dir" value="META-INF"/>
   <property name="release.dir" value="release"/>
+  <property name="build.dir" value="build"/>
   <property name="resources.dir" value="resources"/>
   <property name="stylesheets.dir" value="stylesheets"/>
   <property name="releasedocs.dir" value="release-docs"/>
@@ -50,10 +50,12 @@
   <property name="launcher.sfx" value="-launch.jar"/>
 
   <property name="release.root.dir" value="${project.root}/${release.dir}"/>
-  <property name="resources.root.dir" value="${project.root}/${resources.dir}"/>  
+  <property name="resources.root.dir" value="${project.root}/${resources.dir}"/>
+  <property name="build.root.dir" value="${project.root}/${build.dir}"/>
+  <property name="release.root.dir" value="${project.root}/${release.dir}"/>
 
 
-  <property name="dist.root" value="${build.dir}/dist"/>
+  <property name="dist.root" value="${build.root.dir}/dist"/>
   <property name="dist.dir" value="${dist.root}/${project.namever}"/>
   <property name="dist.client.dir" value="${dist.dir}/client"/>
   <property name="dist.bin" value="${dist.dir}/${bin.dir}"/>
@@ -66,19 +68,19 @@
   <property name="module.file" value="module.xml"/>
   <property name="common.file" value="common.xml"/>
   <property name="build.properties.file" value="build.properties"/>
-  <property name="build.release" value="${build.dir}/${release.dir}"/>
-  <property name="build.release.prepare" value="${build.dir}/${release.dir}/prepare"/>
+  <property name="build.release" value="${build.root.dir}/${release.dir}"/>
+  <property name="build.release.prepare" value="${build.root.dir}/${release.dir}/prepare"/>
 
 
-  <property name="build.zip" value="${build.dir}/${project.namever}.zip"/>
-  <property name="build.tar" value="${build.dir}/${project.namever}.tar"/>
-  <property name="build.tgz" value="${build.dir}/${project.namever}.tar.gz"/>
-  <property name="build.bz2" value="${build.dir}/${project.namever}.tar.bz2"/>
+  <property name="build.zip" value="${build.root.dir}/${project.namever}.zip"/>
+  <property name="build.tar" value="${build.root.dir}/${project.namever}.tar"/>
+  <property name="build.tgz" value="${build.root.dir}/${project.namever}.tar.gz"/>
+  <property name="build.bz2" value="${build.root.dir}/${project.namever}.tar.bz2"/>
 
-  <property name="client.zip" value="${build.dir}/${client.namever}.zip"/>
-  <property name="client.tar" value="${build.dir}/${client.namever}.tar"/>
-  <property name="client.tgz" value="${build.dir}/${client.namever}.tar.gz"/>
-  <property name="client.bz2" value="${build.dir}/${client.namever}.tar.bz2"/>
+  <property name="client.zip" value="${build.root.dir}/${client.namever}.zip"/>
+  <property name="client.tar" value="${build.root.dir}/${client.namever}.tar"/>
+  <property name="client.tgz" value="${build.root.dir}/${client.namever}.tar.gz"/>
+  <property name="client.bz2" value="${build.root.dir}/${client.namever}.tar.bz2"/>
 
   <property name="java.target" value="1.5"/>
   <property name="java.source" value="1.5"/>
@@ -89,7 +91,7 @@
   <property name="common.dir" value="common"/>
   <property name="common.root.dir" value="${project.root}/${common.dir}"/>
 
-  <mkdir dir="${tasks.classes}"/>  
+  <mkdir dir="${tasks.classes}"/>
   <javac srcdir="${tasks.src}" destdir="${tasks.classes}"
          classpath="${java.class.path}"/>
   <taskdef name="map" classname="org.apache.qpid.tasks.Map"
