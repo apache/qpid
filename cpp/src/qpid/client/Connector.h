@@ -70,6 +70,7 @@ namespace client {
         void setSocketTimeout();
 
 	void run();
+	void handleClosed();
 
     public:
 	Connector(bool debug = false, u_int32_t buffer_size = 1024);

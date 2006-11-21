@@ -98,6 +98,12 @@ void Connector::writeToSocket(char* data, size_t available){
     }
 }
 
+void Connector::handleClosed(){
+    closed = true;
+    socket.close();
+    if(shutdownHandler) shutdownHandler->shutdown();
+}
+
 void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
         int64_t now = Time::now().msecs();
@@ -106,9 +112,7 @@ void Connector::checkIdle(ssize_t status){
                 timeoutHandler->idleIn();
             }
         }else if(status == Socket::SOCKET_EOF){
-            closed = true;
-            socket.close();
-            if(shutdownHandler) shutdownHandler->shutdown();
+            handleClosed();
         }else{
             lastIn = now;
         }
@@ -153,7 +157,7 @@ void Connector::run(){
             ssize_t received = socket.recv(inbuf.start(), available);
 	    checkIdle(received);
 
-	    if(received > 0){
+	    if(!closed && received > 0){
 		inbuf.move(received);
 		inbuf.flip();//position = 0, limit = total data read
 		
@@ -168,5 +172,6 @@ void Connector::run(){
 	}
     }catch(QpidError error){
 	std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+        handleClosed();
     }
 }
