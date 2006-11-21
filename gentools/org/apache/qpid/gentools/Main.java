@@ -79,13 +79,9 @@ public class Main
 				new File("templ.cpp/AMQP_ClientProxy.h.tmpl"),
 				new File("templ.cpp/AMQP_ServerProxy.cpp.tmpl"),
 				new File("templ.cpp/AMQP_ClientProxy.cpp.tmpl"),
-                new File("templ.cpp/AMQP_Constants.h.tmpl")
-//				new File("templ.cpp/AMQP_ServerHandlerImpl.h.tmpl"),
-//				new File("templ.cpp/AMQP_ClientHandlerImpl.h.tmpl"),
-//				new File("templ.cpp/AMQP_ServerHandlerImpl.cpp.tmpl"),
-//				new File("templ.cpp/AMQP_ClientHandlerImpl.cpp.tmpl"),
-//				new File("templ.cpp/amqp_methods.h.tmpl"),
-//				new File("templ.cpp/amqp_methods.cpp.tmpl")
+                new File("templ.cpp/AMQP_Constants.h.tmpl"),
+				new File("templ.cpp/AMQP_MethodVersionMap.h.tmpl"),
+				new File("templ.cpp/AMQP_MethodVersionMap.cpp.tmpl")
 			};
 			methodTemplateFiles = new File[]
 			{
@@ -162,9 +158,9 @@ public class Main
 //		System.out.println();
 //		System.out.println("*** Debug output ***");
 //		System.out.println();
+//		versionSet.print(System.out, 0, 2);
+//		System.out.println();
 //		constants.print(System.out, 0, 2);
-//      System.out.println();
-//      versionSet.print(System.out, 0, 2);
 //		System.out.println();
 //		domainMap.print(System.out, 0, 2);
 //		System.out.println();

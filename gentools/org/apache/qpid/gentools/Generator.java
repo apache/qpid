@@ -150,7 +150,7 @@ public abstract class Generator implements LanguageConverter
 
 	abstract protected String processToken(String token, AmqpClass thisClass, AmqpMethod method,
 		AmqpField field, AmqpVersion version)
-	    throws AmqpTemplateException;
+	    throws AmqpTemplateException, AmqpTypeMappingException;
 	
 	abstract protected void processClassList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
         AmqpModel model)
@@ -180,7 +180,7 @@ public abstract class Generator implements LanguageConverter
 		// Use all model-level templates
 		for (int t = 0; t < modelTemplateList.size(); t++)
 		{
-			processTemplate(modelTemplateList.get(t));
+			processTemplateA(modelTemplateList.get(t));
 		}
 		
 		// Cycle through classes
@@ -193,7 +193,7 @@ public abstract class Generator implements LanguageConverter
 			// Use all class-level templates
 			for (int c = 0; c < classTemplateList.size(); c++)
 			{
-				processTemplate(classTemplateList.get(c), thisClass);
+				processTemplateB(classTemplateList.get(c), thisClass);
 			}
 			
 			// Cycle through all methods
@@ -206,7 +206,7 @@ public abstract class Generator implements LanguageConverter
 				// Use all method-level templates
 				for (int m = 0; m < methodTemplateList.size(); m++)
 				{
-					processTemplate(methodTemplateList.get(m), thisClass, method);
+					processTemplateC(methodTemplateList.get(m), thisClass, method);
 				}
 				
 				// Cycle through all fields
@@ -219,7 +219,7 @@ public abstract class Generator implements LanguageConverter
 					// Use all field-level templates
 					for (int f = 0; f < fieldTemplateList.size(); f++)
 					{
-						processTemplate(fieldTemplateList.get(f), thisClass, method, field);
+						processTemplateD(fieldTemplateList.get(f), thisClass, method, field);
 					}
 				}
 			}
@@ -246,23 +246,23 @@ public abstract class Generator implements LanguageConverter
 	}
 
 	// Model-level template processing
-	abstract protected void processTemplate(String[] template)
+	abstract protected void processTemplateA(String[] template)
         throws IOException, AmqpTemplateException, AmqpTypeMappingException,
         	IllegalAccessException, InvocationTargetException;
 	
 	// Class-level template processing
-	abstract protected void processTemplate(String[] template, AmqpClass thisClass)
+	abstract protected void processTemplateB(String[] template, AmqpClass thisClass)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	        IllegalAccessException, InvocationTargetException;
 	
 	// Method-level template processing
-	abstract protected void processTemplate(String[] template, AmqpClass thisClass,
+	abstract protected void processTemplateC(String[] template, AmqpClass thisClass,
 		AmqpMethod method)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException;
 	
 	// Field-level template processing
-	abstract protected void processTemplate(String[] template, AmqpClass thisClass,
+	abstract protected void processTemplateD(String[] template, AmqpClass thisClass,
 		AmqpMethod method, AmqpField field)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException;
@@ -338,7 +338,7 @@ public abstract class Generator implements LanguageConverter
 	
 	protected void processAllTokens(StringBuffer sb, AmqpClass thisClass, AmqpMethod method, AmqpField field,
 		AmqpVersion version)
-        throws AmqpTemplateException
+        throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		int lstart = sb.indexOf("${");
 		while (lstart != -1)

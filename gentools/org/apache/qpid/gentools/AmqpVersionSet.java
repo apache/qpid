@@ -39,7 +39,7 @@ public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable, C
     
 	public void print(PrintStream out, int marginSize, int tabSize)
 	{
-		out.print(Utils.createSpaces(marginSize) + "Version Set: " + toString());
+		out.print(Utils.createSpaces(marginSize) + "Version Set: " + toString() + Utils.lineSeparator);
 	}
     
     public int compareTo(AmqpVersionSet other)
