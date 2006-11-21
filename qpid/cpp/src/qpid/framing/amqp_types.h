@@ -27,7 +27,7 @@ typedef unsigned int   u_int32_t;
 typedef unsigned __int64 u_int64_t;
 #endif
 #ifndef _WINDOWS
-#include "sys/types.h"
+#include "stdint.h"
 #endif
 
 #ifndef AMQP_TYPES_H
