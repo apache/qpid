@@ -171,7 +171,7 @@ Revision history:
     2006-07-03 (PH) - cosmetic clean-up of Basic.Recover comments.
 -->
 
-<amqp major="0" minor="8" port="5672" comment="AMQ protocol 0.80">
+<amqp major="8" minor="0" port="5672" comment="AMQ protocol 0.80">
     AMQ Protocol 0.80
 
 <!--
