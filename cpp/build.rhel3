@@ -1,0 +1,11 @@
+#!/bin/bash
+
+ln -fs options-rhel3.mk options-local.mk
+
+PATH=~/local/make-3.80/bin:$PATH
+PATH=~/local/apr-1.2.7/bin:$PATH
+PATH=~/local/cppunit-1.11.4/bin:$PATH
+
+LD_LIBRARY_PATH=~/local/apr-1.2.7/lib:$LD_LIBRARY_PATH
+
+make "$@"
