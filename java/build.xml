@@ -25,6 +25,7 @@
     <property file="build.properties"/>
     <property name="modules.extra" value=""/>
     <property name="modules.client" value="common,client"/>
+    <property name="modules.broker" value="${modules.client},broker,cluster,systests"/>
     <property name="modules"
               value="${modules.client},broker,broker/test,client/test,cluster,systests,${modules.extra}"/>
 
@@ -239,7 +240,7 @@
 
         <!-- Find all the license files-->
         <fileset dir="${fromdir}" id="license.files">
-            <include name="**/license*"/>                        
+            <include name="**/license*"/>
         </fileset>
 
         <!-- Path to use to remove from the start of the license file name -->
@@ -310,7 +311,7 @@
             <fileset dir="${project.root}/..">
                 <!--All source files -->
                 <include name="specs/**"/>
-                <include name="java/**"/>                                
+                <include name="java/**"/>
 
                 <!--exclude files -->
                 <exclude name="**/.svn/**"/>
@@ -337,7 +338,8 @@
     <target name="std-bin-release" depends="preparerelease">
 
         <antcall target="std-bin-release-item">
-            <param name="module.content" value="client-broker"/>
+            <param name="module.content" value="broker"/>
+            <param name="modules.include" value="${modules.broker}"/>
         </antcall>
 
         <antcall target="std-bin-release-item">
