@@ -17,7 +17,7 @@ CXXFLAGS := $(CXXFLAGS) $(BOOST_CFLAGS)
 # Configure APR.
 #
 APR_LOCATION := ../lib/apr-1.2.7
-APR_CFLAGS := -I$(APR_LOCATION)/include
+APR_CFLAGS := -I$(APR_LOCATION)/include/apr-1
 APR_LDFLAGS := $(shell $(APR_LOCATION)/bin/apr-1-config --libs) -L$(APR_LOCATION)/lib -lapr-1
 
 CXXFLAGS := $(CXXFLAGS) $(APR_CFLAGS)
