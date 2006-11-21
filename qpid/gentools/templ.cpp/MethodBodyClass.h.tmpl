@@ -26,15 +26,13 @@
 %{VLIST} *   ${major}-${minor}
  */
 
-#include <map>
 #include <string>
 #include <sstream>
 
-#include "qpid/framing/amqp_types.h"
-#include "AMQP_ServerOperations.h"
-#include "qpid/framing/AMQMethodBody.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/framing/FieldTable.h"
+#include <qpid/framing/amqp_types.h>
+#include <qpid/framing/AMQMethodBody.h>
+#include <qpid/framing/Buffer.h>
+#include <qpid/framing/FieldTable.h>
 
 #ifndef _${CLASS}${METHOD}Body_
 #define _${CLASS}${METHOD}Body_
@@ -56,15 +54,11 @@ public:
     typedef boost::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
 
 	// Constructors and destructors
-	
-    inline ${CLASS}${METHOD}Body(
-%{FLIST} ${mb_field_list_declare}
-	) :
-%{FLIST} ${mb_field_list_initializer}
-    {}
 
-    inline ${CLASS}${METHOD}Body() {}
+${mb_constructor_with_initializers}
 
+    inline ${CLASS}${METHOD}Body(u_int8_t major, u_int8_t minor): AMQMethodBody(major, minor) {}
+    inline ${CLASS}${METHOD}Body(ProtocolVersion version): AMQMethodBody(version) {}
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods
@@ -96,22 +90,18 @@ public:
         return size;
     }
 
-    inline void encodeContent(Buffer& buffer) const
+    inline void encodeContent(Buffer&${mb_buffer_param}) const
     {
 %{FLIST} ${mb_encode}
     }
 
-    inline void decodeContent(Buffer& buffer)
+    inline void decodeContent(Buffer&${mb_buffer_param})
     {
 %{FLIST} ${mb_decode}
     }       
 
-    inline void invoke(AMQP_ServerOperations& target, u_int16_t channel)
-    {
-		target.getBasicHandler()->publish(channel,
-%{FLIST} ${mb_field_list}
-		);
-    }
+${mb_server_operation_invoke}
+
 }; // class ${CLASS}${METHOD}Body
 
 ${version_namespace_end}
