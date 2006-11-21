@@ -13,3 +13,10 @@ Build using the following command:
 
   $ ./build.rhel3
 
+Generate cppclient tarball:
+
+  $ ./release.client.rhel3
+
+or if you want to name the release:
+
+  $ ./release.client.rhel3 1.0-RC1
