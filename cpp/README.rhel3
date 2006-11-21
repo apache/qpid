@@ -1,0 +1,15 @@
+Building on RHEL3 without access to root (i.e. no yum)
+======================================================
+
+Install make-3.80 into ~/local/make-3.80
+
+Install apr-1.2.7 into ~/local/apr-1.2.7.
+
+Install boost-1.33.1 into ~/local/boost-1.33.1
+
+Install cppunit-1.11.4 into ~/local/cppunit-1.11.4
+
+Build using the following command:
+
+  $ ./build.rhel3
+
