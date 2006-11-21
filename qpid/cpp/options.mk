@@ -36,8 +36,10 @@ endif
 ifdef USE_APR
 PLATFORM := apr
 IGNORE   := posix
-CXXFLAGS := $(CXXFLAGS) -DUSE_APR -I$(shell apr-1-config --includedir)
-LDFLAGS  := $(LDFLAGS) -L/usr/local/apr/lib -lapr-1 
+APR_LDFLAGS := $(shell apr-1-config --link-ld --libs)
+APR_CFLAGS := -DUSE_APR -I$(shell apr-1-config --includedir)
+CXXFLAGS := $(CXXFLAGS) $(APR_CFLAGS)
+LDFLAGS  := $(LDFLAGS) $(APR_LDFLAGS)
 else
 PLATFORM := posix
 IGNORE   := apr
@@ -72,7 +74,9 @@ EXTRA_LIBDIRS  :=
 # -Wunreachable-code -Wpadded -Winline
 # -Wshadow - warns about boost headers.
 # 
+ifndef WARN
 WARN := -Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers
+endif
 
 INCLUDES := $(SRCDIRS:%=-I%) $(EXTRA_INCLUDES)
 LDFLAGS  := $(LDFLAGS) -L$(LIBDIR) 
@@ -90,3 +94,4 @@ LIBFILE =$(CURDIR)/$(LIBDIR)/libqpid_$1.so.$2
 
 LIB_COMMAND = 	mkdir -p $(dir $@) && $(CXX) -shared -o $@ $(LDFLAGS) $(CXXFLAGS) $^
 
+-include options-local-override.mk

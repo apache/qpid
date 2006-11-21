@@ -26,6 +26,14 @@ include options.mk
 
 test: unittest pythontest
 
+.PHONY: show-vars
+show-vars:
+	@echo APR_LDFLAGS=$(APR_LDFLAGS)
+	@echo APR_CFLAGS=$(APR_CFLAGS)
+	@echo CXXFLAGS=$(CXXFLAGS)
+	@echo LDFLAGS=$(LDFLAGS)
+	@echo CXX=$(CXX)
+
 # Must run two separate make processes to pick up generated files.
 all:
 	$(MAKE) generate
@@ -106,10 +114,14 @@ endef
 
 $(foreach dir,$(SRCDIRS),$(eval $(call CPPRULE,$(dir))))
 
+ifndef CPPUNIT_LDFLAGS
+  CPPUNIT_LDFLAGS := -lcppunit
+endif
+
 #  Unit test plugin libraries.
 $(TESTDIR)/%Test.so: test/unit/%Test.cpp $(LIB_common) $(LIB_broker)
 	mkdir -p $(dir $@)
-	$(CXX) -shared -o $@ $< $(CXXFLAGS)  -Itest/include $(LDFLAGS) -lcppunit $(LIB_common) $(LIB_broker)
+	$(CXX) -shared -o $@ $< $(CXXFLAGS)  -Itest/include $(LDFLAGS) $(CPPUNIT_LDFLAGS) $(LIB_common) $(LIB_broker)
 
 # Client test programs
 $(TESTDIR)/%: test/client/%.cpp $(LIB_common) $(LIB_client)
