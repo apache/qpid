@@ -1,4 +1,4 @@
-&{AMQP_ServerProxy.h}
+&{AMQP_MethodVersionMap.h}
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -26,45 +26,31 @@
 %{VLIST} *   ${major}-${minor}
  */
 
-#ifndef _AMQP_ServerProxy_
-#define _AMQP_ServerProxy_
+#ifndef _METHOD_VERSION_MAP_H_
+#define _METHOD_VERSION_MAP_H_
 
-#include <qpid/framing/AMQP_ServerOperations.h>
-#include <qpid/framing/FieldTable.h>
-#include <qpid/framing/OutputHandler.h>
+#include <map>
+#include <qpid/framing/AMQMethodBody.h>
 
-namespace qpid {
-namespace framing {
+%{MLIST} ${mc_method_body_include}
 
-class AMQP_ServerProxy : virtual public AMQP_ServerOperations
+namespace qpid
 {
-private:
-    OutputHandler* out;
-%{CLIST} ${sph_handler_pointer_defn}
+namespace framing
+{
 
+template <class T> AMQMethodBody* createMethodBodyFn(u_int8_t major, u_int8_t minor) { return new T(major, minor); }
+typedef AMQMethodBody* (*fnPtr)(u_int8_t, u_int8_t);
+
+class AMQP_MethodVersionMap: public std::map<u_int64_t, fnPtr>
+{
+protected:
+    ProtocolVersion version;
+	u_int64_t createMapKey(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor);
 public:
-    AMQP_ServerProxy(OutputHandler* out, u_int8_t major, u_int8_t minor);
-    virtual ~AMQP_ServerProxy() {}
-
-	// Get methods for handlers
-
-%{CLIST} ${sph_handler_pointer_get_method}
-
-	// Inner class definitions
-
-%{CLIST} ${sph_inner_class_defn}
-
-private:
-	// Inner class instances
-	
-%{CLIST} ${sph_inner_class_instance}
-
-public:
-	// Inner class instance get methods
-	
-%{CLIST} ${sph_inner_class_get_method}
-
-}; /* class AMQP_ServerProxy */
+	AMQP_MethodVersionMap(u_int8_t major, u_int8_t minor);
+	AMQMethodBody* createMethodBody(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor);
+};
 
 } /* namespace framing */
 } /* namespace qpid */

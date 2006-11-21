@@ -1,4 +1,4 @@
-&{AMQP_ServerProxy.cpp}
+&{AMQP_MethodVersionMap.cpp}
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -28,24 +28,35 @@
 
 #include <sstream>
 
-#include <qpid/framing/AMQP_ServerProxy.h>
-#include <qpid/framing/AMQFrame.h>
-%{MLIST} ${spc_method_body_include}
+#include <qpid/framing/AMQP_MethodVersionMap.h>
 
-namespace qpid {
-namespace framing {
+namespace qpid
+{
+namespace framing
+{
 
-AMQP_ServerProxy::AMQP_ServerProxy(OutputHandler* out, u_int8_t major, u_int8_t minor) :
-%{CLIST} ${spc_constructor_initializer}
-{}
-
-	// Inner class instance get methods
+AMQP_MethodVersionMap::AMQP_MethodVersionMap(u_int8_t major, u_int8_t minor): version(major, minor)
+{
+%{CLIST} ${mc_create_method_body_map_entry}	
+}
 	
-%{CLIST} ${spc_inner_class_get_method}
+AMQMethodBody* AMQP_MethodVersionMap::createMethodBody(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor)
+{
+	iterator itr = find(createMapKey(classId, methodId, major, minor));
+	if (itr == end())
+	{
+		std::stringstream ss;
+		ss << "Unable to find MethodBody class for classId = " << classId << ", methodId = " <<
+		    methodId << ", AMQ protocol version = " << major << "-" << minor << ".";
+   		throw ProtocolVersionException(ss.str());
+   	}
+   	return (itr->second)(major, minor);		
+}
 
-	// Inner class implementation
-
-%{CLIST} ${spc_inner_class_impl}
+u_int64_t AMQP_MethodVersionMap::createMapKey(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor)
+{
+	return ((u_int64_t)classId<<48) + ((u_int64_t)methodId<<32) + ((u_int64_t)major<<16) + minor;
+}
 
 } /* namespace framing */
 } /* namespace qpid */

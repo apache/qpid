@@ -377,32 +377,32 @@ public class JavaGenerator extends Generator
 	}
 	
 	@Override
-	protected void processTemplate(String[] template)
+	protected void processTemplateA(String[] template)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException
    	{
-		processTemplate(template, null, null, null);
+		processTemplateD(template, null, null, null);
   	}
 	
 	@Override
-	protected void processTemplate(String[] template, AmqpClass thisClass)
+	protected void processTemplateB(String[] template, AmqpClass thisClass)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException
 	{
-		processTemplate(template, thisClass, null, null);
+		processTemplateD(template, thisClass, null, null);
 	}
 	
 	@Override
-	protected void processTemplate(String[] template, AmqpClass thisClass,
+	protected void processTemplateC(String[] template, AmqpClass thisClass,
 		AmqpMethod method)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException
 	{
-		processTemplate(template, thisClass, method, null);
+		processTemplateD(template, thisClass, method, null);
 	}
 	
 	@Override
-	protected void processTemplate(String[] template, AmqpClass thisClass,
+	protected void processTemplateD(String[] template, AmqpClass thisClass,
 		AmqpMethod method, AmqpField field)
 	    throws IOException, AmqpTemplateException, AmqpTypeMappingException,
 	    	IllegalAccessException, InvocationTargetException
@@ -433,7 +433,7 @@ public class JavaGenerator extends Generator
 	@Override
 	protected String processToken(String token, AmqpClass thisClass, AmqpMethod method, AmqpField field,
 		AmqpVersion version)
-	    throws AmqpTemplateException
+	    throws AmqpTemplateException, AmqpTypeMappingException
 	{
 		if (token.compareTo("${GENERATOR}") == 0)
 			return generatorInfo;
