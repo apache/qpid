@@ -35,6 +35,7 @@ import java.util.List;
 import javax.jms.*;
 
 import junit.framework.TestCase;
+import junit.framework.Assert;
 
 public class BytesMessageTest extends TestCase implements MessageListener
 {
@@ -95,6 +96,17 @@ public class BytesMessageTest extends TestCase implements MessageListener
         for (int i = 0; i < count; i++)
         {
             BytesMessage msg = _session.createBytesMessage();
+
+            try
+            {
+                msg.readFloat();
+                Assert.fail("Message should not be readable");
+            }
+            catch (MessageNotReadableException mnwe)
+            {
+                //normal execution
+            }
+
             byte[] data = ("Message " + i).getBytes();
             msg.writeBytes(data);
             messages.add(data);
@@ -122,6 +134,16 @@ public class BytesMessageTest extends TestCase implements MessageListener
             byte[] data = new byte[buffer.remaining()];
             buffer.get(data);
             actual.add(data);
+
+            try
+            {
+                m.writeBoolean(true);
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
         }
 
         assertEqual(messages.iterator(), actual.iterator());

@@ -39,6 +39,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
     private final boolean _readonly;
 
     private static final int DEFAULT_BUFFER_SIZE = 1024;
+
     /**
      * Creates empty, writable message for use by producers
      */
@@ -62,7 +63,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
     /**
      * Creates read only message for delivery to consumers
      */
-    JMSObjectMessage(long messageNbr, ByteBuffer data, ContentHeaderBody contentHeader) throws AMQException
+    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
     {
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
         _readonly = data != null;

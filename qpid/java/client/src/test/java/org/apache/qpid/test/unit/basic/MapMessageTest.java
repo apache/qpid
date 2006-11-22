@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.test.VMBrokerSetup;
 
 import java.util.ArrayList;
@@ -37,12 +38,12 @@ import javax.jms.*;
 import junit.framework.TestCase;
 import junit.framework.Assert;
 
-public class TextMessageTest extends TestCase implements MessageListener
+public class MapMessageTest extends TestCase implements MessageListener
 {
     private AMQConnection _connection;
     private Destination _destination;
     private AMQSession _session;
-    private final List<JMSTextMessage> received = new ArrayList<JMSTextMessage>();
+    private final List<JMSMapMessage> received = new ArrayList<JMSMapMessage>();
     private final List<String> messages = new ArrayList<String>();
     private int _count = 100;
     public String _connectionString = "vm://:1";
@@ -52,6 +53,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
+            TransportConnection.createVMBroker(1);
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
@@ -67,7 +69,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(randomize("TextMessageTest"), true);
+        Destination destination = new AMQQueue(randomize("MapMessageTest"), true);
         init(connection, destination);
     }
 
@@ -100,7 +102,13 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             String text = "Message " + i;
             messages.add(text);
-            producer.send(_session.createTextMessage(text));
+            MapMessage message = _session.createMapMessage();
+
+            message.setBoolean("odd", i / 2 == 0);
+            message.setInt("messageNumber", i);
+            message.setString("message", text);
+
+            producer.send(message);
         }
     }
 
@@ -118,20 +126,25 @@ public class TextMessageTest extends TestCase implements MessageListener
     void check() throws JMSException
     {
         List<String> actual = new ArrayList<String>();
-        for (JMSTextMessage m : received)
+        int count = 0;
+        for (JMSMapMessage m : received)
         {
-            actual.add(m.getText());
-            
-            try
-            {
-                m.setText("Test text");
-                Assert.fail("Message should not be writeable");
-            }
-            catch (MessageNotWriteableException mnwe)
-            {
-                //normal execution
-            }
+            actual.add(m.getString("message"));
+            assertEqual(m.getInt("messageNumber"), count);
+            assertEqual(m.getBoolean("odd"), count / 2 == 0);
 
+//            try
+//            {
+//                m.setInt("testint", 3);
+//                Assert.fail("Message should not be writeable");
+//            }
+//            catch (MessageNotWriteableException mnwe)
+//            {
+//                //normal execution
+//            }
+
+
+            count++;
         }
 
         assertEqual(messages.iterator(), actual.iterator());
@@ -177,7 +190,7 @@ public class TextMessageTest extends TestCase implements MessageListener
     {
         synchronized(received)
         {
-            received.add((JMSTextMessage) message);
+            received.add((JMSMapMessage) message);
             received.notify();
         }
     }
@@ -189,7 +202,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     public static void main(String[] argv) throws Exception
     {
-        TextMessageTest test = new TextMessageTest();
+        MapMessageTest test = new MapMessageTest();
         test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
         test.setUp();
         if (argv.length > 1)
@@ -201,6 +214,6 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(TextMessageTest.class));
+        return new VMBrokerSetup(new junit.framework.TestSuite(MapMessageTest.class));
     }
 }
