@@ -36,7 +36,8 @@ import junit.framework.TestCase;
  */
 public class MultipleConnectionTest extends TestCase
 {
-    public static String _connectionString = "vm://:1";
+    public static final String _defaultBroker = "vm://:1";
+    public static String _connectionString = _defaultBroker;
 
     private static class Receiver
     {
@@ -111,7 +112,7 @@ public class MultipleConnectionTest extends TestCase
         public synchronized void onMessage(Message message)
         {
             _count++;
-            notifyAll();
+            notify();
         }
 
         synchronized boolean waitUntil(int expected, long maxWait) throws InterruptedException
@@ -154,7 +155,6 @@ public class MultipleConnectionTest extends TestCase
             {
                 throw new RuntimeException("Expected: " + expected + " got " + counters[i]);
             }
-            ;
         }
     }
 
@@ -165,7 +165,7 @@ public class MultipleConnectionTest extends TestCase
 
     public static void main(String[] argv) throws Exception
     {
-        String broker = argv.length > 0 ? argv[0] : "vm://:1";
+        String broker = argv.length > 0 ? argv[0] : _defaultBroker;
 
         int connections = 7;
         int sessions = 2;
@@ -181,14 +181,6 @@ public class MultipleConnectionTest extends TestCase
         int messages = 10;
 
         AMQTopic topic = new AMQTopic("amq.topic");
-
-        /*
-        Receiver[] receivers = new Receiver[connections];
-        for(int i = 0; i < receivers.length; i++)
-        {
-            receivers[i] = new Receiver(broker, topic, sessions);
-        }
-        */
 
         Receiver[] receivers = new Receiver[]{
                 new Receiver(broker, topic, 2),
