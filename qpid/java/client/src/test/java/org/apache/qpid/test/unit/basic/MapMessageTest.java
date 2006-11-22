@@ -53,7 +53,6 @@ public class MapMessageTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
-            TransportConnection.createVMBroker(1);
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
@@ -136,7 +135,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 //            try
 //            {
 //                m.setInt("testint", 3);
-//                Assert.fail("Message should not be writeable");
+//                fail("Message should not be writeable");
 //            }
 //            catch (MessageNotWriteableException mnwe)
 //            {
