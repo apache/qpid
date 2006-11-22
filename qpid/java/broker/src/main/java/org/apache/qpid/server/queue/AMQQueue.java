@@ -51,7 +51,7 @@ import java.util.concurrent.Executor;
  * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like
  * that. It is described fully in RFC 006.
  */
-public class AMQQueue implements Managable
+public class AMQQueue implements Managable, Comparable
 {
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
@@ -119,6 +119,11 @@ public class AMQQueue implements Managable
      */
     private long _totalMessagesReceived = 0;
 
+    public int compareTo(Object o)
+    {
+        return _name.compareTo(((AMQQueue) o).getName());
+    }
+
     /**
      * MBean class for AMQQueue. It implements all the management features exposed
      * for an AMQQueue.
@@ -133,32 +138,32 @@ public class AMQQueue implements Managable
                                                "Header",
                                                "Size",
                                                "Redelivered"
-                                              };
+        };
         // AMQ Message attribute descriptions.
         private String[] _msgAttributeDescriptions = {"Message Id",
                                                       "Header",
                                                       "Message size in bytes",
                                                       "Redelivered"
-                                                     };
+        };
 
         private OpenType[] _msgAttributeTypes = new OpenType[4];  // AMQ message attribute types.
-        private String[]   _msgAttributeIndex = {"MessageId"};    // Messages will be indexed according to the messageId.
+        private String[] _msgAttributeIndex = {"MessageId"};    // Messages will be indexed according to the messageId.
         private CompositeType _messageDataType = null;            // Composite type for representing AMQ Message data.
-        private TabularType   _messagelistDataType = null;        // Datatype for representing AMQ messages list.
+        private TabularType _messagelistDataType = null;        // Datatype for representing AMQ messages list.
 
 
         private CompositeType _msgContentType = null;    // For message content
-        private String[]      _msgContentAttributes = {"MessageId",
-                                                       "MimeType",
-                                                       "Encoding",
-                                                       "Content"
-                                                      };
-        private String[]    _msgContentDescriptions = {"Message Id",
-                                                       "MimeType",
-                                                       "Encoding",
-                                                       "Message content"
-                                                      };
-        private OpenType[]  _msgContentAttributeTypes = new OpenType[4];
+        private String[] _msgContentAttributes = {"MessageId",
+                                                  "MimeType",
+                                                  "Encoding",
+                                                  "Content"
+        };
+        private String[] _msgContentDescriptions = {"Message Id",
+                                                    "MimeType",
+                                                    "Encoding",
+                                                    "Message content"
+        };
+        private OpenType[] _msgContentAttributeTypes = new OpenType[4];
 
 
         @MBeanConstructor("Creates an MBean exposing an AMQQueue.")
@@ -178,10 +183,10 @@ public class AMQQueue implements Managable
                 _msgContentAttributeTypes[2] = SimpleType.STRING;                  // For Encoding
                 _msgContentAttributeTypes[3] = new ArrayType(1, SimpleType.BYTE);  // For message content
                 _msgContentType = new CompositeType("MessageContent",
-                                                     "AMQ Message Content",
-                                                     _msgContentAttributes,
-                                                     _msgContentDescriptions,
-                                                     _msgContentAttributeTypes);
+                                                    "AMQ Message Content",
+                                                    _msgContentAttributes,
+                                                    _msgContentDescriptions,
+                                                    _msgContentAttributeTypes);
 
 
                 _msgAttributeTypes[0] = SimpleType.LONG;                      // For message id
@@ -414,7 +419,7 @@ public class AMQQueue implements Managable
                 }
 
                 // Create header attributes list
-                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties)msg.getContentHeaderBody().properties;
+                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
                 String mimeType = headerProperties.getContentType();
                 String encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
 
@@ -423,7 +428,7 @@ public class AMQQueue implements Managable
             }
             else
             {
-                throw new JMException("AMQMessage with message id = " + msgId + " is not in the " + _queueName );
+                throw new JMException("AMQMessage with message id = " + msgId + " is not in the " + _queueName);
             }
 
             return messageContent;
@@ -466,7 +471,7 @@ public class AMQQueue implements Managable
                 }
 
                 // Create header attributes list
-                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties)msg.getContentHeaderBody().properties;
+                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
                 List<String> headerAttribsList = new ArrayList<String>();
                 headerAttribsList.add("App Id=" + headerProperties.getAppId());
                 headerAttribsList.add("MimeType=" + headerProperties.getContentType());
@@ -587,12 +592,12 @@ public class AMQQueue implements Managable
         //fixme - Pick one.
         if (Boolean.getBoolean("concurrentdeliverymanager"))
         {
-            _logger.warn("Using ConcurrentDeliveryManager");
+            _logger.info("Using ConcurrentDeliveryManager");
             _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
         }
         else
         {
-            _logger.warn("Using SynchronizedDeliveryManager");
+            _logger.info("Using SynchronizedDeliveryManager");
             _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
         }
     }
