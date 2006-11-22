@@ -33,7 +33,6 @@ typedef unsigned __int64 u_int64_t;
 #ifndef AMQP_TYPES_H
 #define AMQP_TYPES_H
 
-
-typedef std::string string;
+using std::string;
 
 #endif
