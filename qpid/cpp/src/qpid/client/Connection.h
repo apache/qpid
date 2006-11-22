@@ -59,6 +59,7 @@ class Connection : public virtual qpid::framing::InputHandler,
 	qpid::framing::OutputHandler* out;
 	ResponseHandler responses;
         volatile bool closed;
+    qpid::framing::ProtocolVersion version;
 
         void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
         void error(int code, const std::string& msg, int classid = 0, int methodid = 0);

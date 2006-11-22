@@ -22,7 +22,7 @@
 
 include options.mk
 
-.PHONY: test all all-nogen generate unittest pythontest doxygen
+.PHONY: test all all-nogen generate unittest pythontest doxygen build-gentools
 
 test: unittest pythontest
 
@@ -41,15 +41,25 @@ all:
 
 ## Generaged code
 
-SPEC        := $(CURDIR)/../specs/amqp-8.0.xml
-XSL         := code_gen.xsl framing.xsl
-STYLESHEETS := $(XSL:%=$(CURDIR)/etc/stylesheets/%)
-TRANSFORM   := java -jar $(CURDIR)/tools/saxon8.jar -o results.out $(SPEC)
-generate: $(GENDIR)/timestamp
-$(GENDIR)/timestamp: $(wildcard etc/stylesheets/*.xsl) $(SPEC)
-	rm -rf $(GENDIR)
-	mkdir -p $(GENDIR)/qpid/framing
-	( cd $(GENDIR)/qpid/framing && for s in $(STYLESHEETS) ; do $(TRANSFORM) $$s ; done ) && echo > $(GENDIR)/timestamp
+# Add all XML specs to be generated onto the following line
+SPECS       := $(SPEC_DIR)/amqp-8.0.xml # $(SPEC_DIR)/amqp-0.9.test.xml $(SPEC_DIR)/cluster-0.9.test.xml $(SPEC_DIR)/amqp-0.10.test.xml
+GENERATE    := java -cp $(GENTOOLS_DIR)/src org.apache.qpid.gentools.Main -c -o $(GENDIR)/qpid/framing -t $(GENTOOLS_DIR)/templ.cpp $(SPECS)
+generate: build-gentools $(GENDIR)/timestamp
+
+$(GENDIR)/timestamp: $(wildcard) $(SPECS)
+	@echo "---------- Generating code from $(SPECS) ----------"
+	@rm -rf $(GENDIR)
+	@mkdir -p $(GENDIR)/qpid/framing
+	@$(GENERATE)
+	@touch $(GENDIR)/timestamp
+	@echo "---------- Code generation complete ----------"
+
+#Build the code generator
+build-gentools: $(GENTOOLS_DIR)/src/org/apache/qpid/gentools/Main.class
+
+$(GENTOOLS_DIR)/src/org/apache/qpid/gentools/Main.class:
+	@echo "Gentools not built; building..."
+	@( cd $(GENTOOLS_DIR) && ./build )
 
 # Dependencies for existing generated files.
 GENFILES:=$(wildcard $(GENDIR)/qpid/*/*.cpp $(GENDIR)/qpid/*/*.h)
@@ -147,4 +157,5 @@ clean:
 # Clean all builds
 spotless:
 	rm -rf build
+	-rm $(GENTOOLS_DIR)/src/org/apache/qpid/gentools/*.class
 

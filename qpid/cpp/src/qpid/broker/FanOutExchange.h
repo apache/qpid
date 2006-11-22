@@ -43,11 +43,11 @@ class FanOutExchange : public virtual Exchange {
 
     virtual std::string getType(){ return typeName; }            
         
-    virtual void bind(Queue::shared_ptr queue, const std::string& routingKey, qpid::framing::FieldTable* args);
+    virtual void bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void unbind(Queue::shared_ptr queue, const std::string& routingKey, qpid::framing::FieldTable* args);
+    virtual void unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void route(Deliverable& msg, const std::string& routingKey, qpid::framing::FieldTable* args);
+    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
     virtual ~FanOutExchange();
 };

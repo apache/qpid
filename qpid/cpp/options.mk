@@ -49,11 +49,14 @@ endif
 ## Build directories.
 
 BUILD :=$(PLATFORM)-$(BUILD)
-GENDIR:=build/gen
 BINDIR:=build/$(BUILD)/bin
 LIBDIR:=build/$(BUILD)/lib
 OBJDIR:=build/$(BUILD)/obj
 TESTDIR:=build/$(BUILD)/test
+
+GENDIR:=build/gen
+GENTOOLS_DIR:= ../gentools
+SPEC_DIR:=../specs
 
 BUILDDIRS := $(BINDIR) $(LIBDIR) $(OBJDIR) $(TESTDIR) $(GENDIR)
 SRCDIRS := src $(GENDIR)

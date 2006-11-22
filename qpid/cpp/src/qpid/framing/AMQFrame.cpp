@@ -24,14 +24,23 @@
 
 using namespace qpid::framing;
 
-AMQFrame::AMQFrame(){}
+// AMQP version management change - kpvdr 2006-11-17
+// TODO: Make this class version-aware and link these hard-wired numbers to that version
+AMQFrame::AMQFrame() : versionMap(8, 0) {}
 
-AMQFrame::AMQFrame(u_int16_t _channel, AMQBody* _body) : channel(_channel), body(_body){}
+// AMQP version management change - kpvdr 2006-11-17
+// TODO: Make this class version-aware and link these hard-wired numbers to that version
+AMQFrame::AMQFrame(u_int16_t _channel, AMQBody* _body) :
+channel(_channel), body(_body), versionMap(8, 0)
+{}
 
-AMQFrame::AMQFrame(u_int16_t _channel, AMQBody::shared_ptr& _body) : channel(_channel), body(_body){}
+// AMQP version management change - kpvdr 2006-11-17
+// TODO: Make this class version-aware and link these hard-wired numbers to that version
+AMQFrame::AMQFrame(u_int16_t _channel, AMQBody::shared_ptr& _body) :
+channel(_channel), body(_body), versionMap(8, 0)
+{}
 
-AMQFrame::~AMQFrame(){
-}
+AMQFrame::~AMQFrame() {}
 
 u_int16_t AMQFrame::getChannel(){
     return channel;
@@ -50,10 +59,14 @@ void AMQFrame::encode(Buffer& buffer)
     buffer.putOctet(0xCE);
 }
 
-AMQBody::shared_ptr createMethodBody(Buffer& buffer){
+AMQBody::shared_ptr AMQFrame::createMethodBody(Buffer& buffer){
     u_int16_t classId = buffer.getShort();
     u_int16_t methodId = buffer.getShort();
-    AMQBody::shared_ptr body(createAMQMethodBody(classId, methodId));
+    // AMQP version management change - kpvdr 2006-11-16
+    // TODO: Make this class version-aware and link these hard-wired numbers to that version
+    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, 8, 0));
+    // Origianl stmt:
+	// AMQBody::shared_ptr body(createAMQMethodBody(classId, methodId));
     return body;
 }
 
@@ -108,10 +121,13 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t bufSize)
     body->decode(buffer, bufSize);
 }
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t){
+std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t)
+{
     out << "Frame[channel=" << t.channel << "; ";
-    if (t.body.get() == 0) out << "empty";
-    else out << *t.body;
+    if (t.body.get() == 0)
+        out << "empty";
+    else
+        out << *t.body;
     out << "]";
     return out;
 }
