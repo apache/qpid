@@ -206,8 +206,7 @@ public class PropertyFieldTableTest extends TestCase
 
         PropertyFieldTable table2 = new PropertyFieldTable(table1XML);
 
-        Assert.assertEquals(table1XML, table2.toString());
-        System.out.println(table2.toString());
+        Assert.assertEquals(table1XML, table2.toString());        
     }
 
     public void testKeyEnumeration()

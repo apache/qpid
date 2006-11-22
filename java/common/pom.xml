@@ -46,15 +46,7 @@
     </properties>
 
     <build>
-        <plugins>
-            <!-- There are no common tests at the moment -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
+        <plugins>          
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -94,6 +86,14 @@
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
+        </dependency>
+         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant-junit</artifactId>
         </dependency>
     </dependencies>
 </project>
