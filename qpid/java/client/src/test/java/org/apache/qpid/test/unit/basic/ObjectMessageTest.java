@@ -32,12 +32,14 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
+import javax.jms.MessageNotWriteableException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.TestCase;
+import junit.framework.Assert;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
@@ -53,7 +55,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     {
         super.setUp();
         try
-        {      
+        {
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
@@ -122,6 +124,17 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         for (JMSObjectMessage m : received)
         {
             actual.add(m.getObject());
+
+            try
+            {
+                m.setObject("Test text");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
         }
 
         assertEqual(messages.iterator(), actual.iterator());
