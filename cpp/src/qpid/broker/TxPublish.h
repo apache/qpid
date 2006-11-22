@@ -46,9 +46,9 @@ namespace qpid {
             class Prepare{
                 TransactionContext* ctxt;
                 Message::shared_ptr& msg;
-                const string* const xid;
+                const std::string* const xid;
             public:
-                Prepare(TransactionContext* ctxt, Message::shared_ptr& msg, const string* const xid);
+                Prepare(TransactionContext* ctxt, Message::shared_ptr& msg, const std::string* const xid);
                 void operator()(Queue::shared_ptr& queue);            
             };
 

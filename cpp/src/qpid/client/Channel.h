@@ -47,7 +47,7 @@ namespace client {
             int count;
             u_int64_t lastDeliveryTag;
         };
-        typedef std::map<string,Consumer*>::iterator consumer_iterator; 
+        typedef std::map<std::string,Consumer*>::iterator consumer_iterator; 
 
 	u_int16_t id;
 	Connection* con;
