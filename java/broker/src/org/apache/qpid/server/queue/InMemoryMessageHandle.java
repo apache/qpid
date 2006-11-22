@@ -1,6 +1,6 @@
 /**
  * User: Robert Greig
- * Date: 23-Oct-2006
+ * Date: 21-Nov-2006
  ******************************************************************************
  * (c) Copyright JP Morgan Chase Ltd 2006. All rights reserved. No part of
  * this program may be photocopied reproduced or translated to another
@@ -13,43 +13,30 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.server.store.MessageStore;
 
-import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
  */
-public class WeakReferenceMessageHandle implements AMQMessageHandle
+public class InMemoryMessageHandle implements AMQMessageHandle
 {
-    private WeakReference<ContentHeaderBody> _contentHeaderBody;
 
-    private WeakReference<BasicPublishBody> _publishBody;
+    private ContentHeaderBody _contentHeaderBody;
 
-    private List<WeakReference<ContentBody>> _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+    private BasicPublishBody _publishBody;
+
+    private List<ContentBody> _contentBodies = new LinkedList<ContentBody>();
 
     private boolean _redelivered;
 
-    private final MessageStore _messageStore;
-
-    public WeakReferenceMessageHandle(MessageStore messageStore)
+    public InMemoryMessageHandle()
     {
-        _messageStore = messageStore;
     }
 
     public ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException
     {
-        ContentHeaderBody chb = _contentHeaderBody.get();
-        if (chb == null)
-        {
-            MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
-            chb = mmd.getContentHeaderBody();
-            _contentHeaderBody = new WeakReference<ContentHeaderBody>(chb);
-            _publishBody = new WeakReference<BasicPublishBody>(mmd.getPublishBody());
-        }
-        return chb;
+        return _contentHeaderBody;
     }
 
     public int getBodyCount()
@@ -69,33 +56,17 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
             throw new IllegalArgumentException("Index " + index + " out of valid range 0 to " +
                                                (_contentBodies.size() - 1));
         }
-        WeakReference<ContentBody> wr = _contentBodies.get(index);
-        ContentBody cb = wr.get();
-        if (cb == null)
-        {
-            cb = _messageStore.getContentBodyChunk(messageId, index);
-            _contentBodies.set(index, new WeakReference<ContentBody>(cb));
-        }
-        return cb;
+        return _contentBodies.get(index);
     }
 
     public void addContentBodyFrame(long messageId, ContentBody contentBody) throws AMQException
     {
-        _contentBodies.add(new WeakReference<ContentBody>(contentBody));
-        _messageStore.storeContentBodyChunk(messageId, _contentBodies.size() - 1, contentBody);
+        _contentBodies.add(contentBody);
     }
 
     public BasicPublishBody getPublishBody(long messageId) throws AMQException
     {
-        BasicPublishBody bpb = _publishBody.get();
-        if (bpb == null)
-        {
-            MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
-            bpb = mmd.getPublishBody();
-            _publishBody = new WeakReference<BasicPublishBody>(bpb);
-            _contentHeaderBody = new WeakReference<ContentHeaderBody>(mmd.getContentHeaderBody());
-        }
-        return bpb;
+        return _publishBody;
     }
 
     public boolean isRedelivered()
@@ -121,24 +92,19 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
-        _messageStore.storeMessageMetaData(messageId, new MessageMetaData(publishBody, contentHeaderBody,
-                                                                           _contentBodies.size()));
-        _publishBody = new WeakReference<BasicPublishBody>(publishBody);
-        _contentHeaderBody = new WeakReference<ContentHeaderBody>(contentHeaderBody);
+        _publishBody = publishBody;
+        _contentHeaderBody = contentHeaderBody;
     }
 
     public void removeMessage(long messageId) throws AMQException
     {
-        _messageStore.removeMessage(messageId);
     }
 
     public void enqueue(long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.enqueueMessage(queue.getName(), messageId);
     }
 
     public void dequeue(long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.dequeueMessage(queue.getName(), messageId);
     }
 }

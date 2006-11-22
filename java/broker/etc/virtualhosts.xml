@@ -21,5 +21,6 @@
         <path>/development</path>
         <bind>direct://amq.direct//queue</bind>
         <bind>direct://amq.direct//ping</bind>
+        <bind>direct://amq.direct//serviceQ</bind>
     </virtualhost>
 </virtualhosts>

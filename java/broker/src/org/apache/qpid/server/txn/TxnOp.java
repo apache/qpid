@@ -26,14 +26,14 @@ import org.apache.qpid.AMQException;
 public interface TxnOp
 {
     /**
-     * Do the part of the operation that updates persistent state 
+     * Do the part of the operation that updates persistent state
      */
     public void prepare() throws AMQException;
     /**
      * Complete the operation started by prepare. Can now update in
      * memory state or make netork transfers.
      */
-    public void commit();
+    public void commit() throws AMQException;
     /**
      * This is not the same as rollback. Unfortunately the use of an
      * in memory reference count as a locking mechanism and a test for
@@ -47,5 +47,5 @@ public interface TxnOp
     /**
      * Rolls back the operation.
      */
-    public void rollback();
+    public void rollback() throws AMQException;
 }

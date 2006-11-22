@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
-    
+
     /**
      * Used in clustering
      */
@@ -46,7 +46,7 @@ public class AMQMessage
      */
     private AMQProtocolSession _publisher;
 
-    private long _messageId;
+    private final long _messageId;
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
 
@@ -58,6 +58,9 @@ public class AMQMessage
      */
     private BasicPublishBody _publishBody;
 
+    /**
+     * Also stored temporarily.
+     */
     private ContentHeaderBody _contentHeaderBody;
 
     /**
@@ -74,6 +77,11 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
 
+    /**
+     * This is stored during routing, to know the queues to which this message should immediately be
+     * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
+     * by the message handle.
+     */
     private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
 
     /**
@@ -100,7 +108,7 @@ public class AMQMessage
         {
             try
             {
-                ContentBody cb = _messageHandle.getContentBody(++_index);
+                ContentBody cb = _messageHandle.getContentBody(_messageId, ++_index);
                 return ContentBody.createAMQFrame(_channel, cb);
             }
             catch (AMQException e)
@@ -131,7 +139,7 @@ public class AMQMessage
         {
             try
             {
-                return _messageHandle.getContentBody(++_index);
+                return _messageHandle.getContentBody(_messageId, ++_index);
             }
             catch (AMQException e)
             {
@@ -150,6 +158,10 @@ public class AMQMessage
         _messageId = messageId;
         _txnContext = txnContext;
         _publishBody = publishBody;
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Message created with id " + messageId);
+        }
     }
 
     protected AMQMessage(AMQMessage msg) throws AMQException
@@ -159,14 +171,6 @@ public class AMQMessage
         _messageHandle = msg._messageHandle;
         _txnContext = msg._txnContext;
         _deliveredToConsumer = msg._deliveredToConsumer;
-    }
-
-    public void storeMessage() throws AMQException
-    {
-        /*if (isPersistent())
-        {
-            _store.put(this);
-        } */
     }
 
     public Iterator<AMQDataBlock> getBodyFrameIterator(int channel)
@@ -179,49 +183,9 @@ public class AMQMessage
         return new BodyContentIterator();
     }
 
-    /*public CompositeAMQDataBlock getDataBlock(ByteBuffer encodedDeliverBody, int channel)
-    {
-        AMQFrame[] allFrames = new AMQFrame[1 + _contentBodies.size()];
-
-        allFrames[0] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
-        for (int i = 1; i < allFrames.length; i++)
-        {
-            allFrames[i] = ContentBody.createAMQFrame(channel, _contentBodies.get(i - 1));
-        }
-        return new CompositeAMQDataBlock(encodedDeliverBody, allFrames);
-    }
-
-    public CompositeAMQDataBlock getDataBlock(int channel, String consumerTag, long deliveryTag)
-    {
-        AMQFrame[] allFrames = new AMQFrame[2 + _contentBodies.size()];
-
-        allFrames[0] = BasicDeliverBody.createAMQFrame(channel, consumerTag, deliveryTag, _redelivered,
-                                                       getExchangeName(), getRoutingKey());
-        allFrames[1] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
-        for (int i = 2; i < allFrames.length; i++)
-        {
-            allFrames[i] = ContentBody.createAMQFrame(channel, _contentBodies.get(i - 2));
-        }
-        return new CompositeAMQDataBlock(allFrames);
-    }
-
-    public List<AMQBody> getPayload()
-    {
-        List<AMQBody> payload = new ArrayList<AMQBody>(2 + _contentBodies.size());
-        payload.add(_publishBody);
-        payload.add(_contentHeaderBody);
-        payload.addAll(_contentBodies);
-        return payload;
-    }
-
-    public BasicPublishBody getPublishBody()
-    {
-        return _publishBody;
-    } */
-
     public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        return _messageHandle.getContentHeaderBody();
+        return _messageHandle.getContentHeaderBody(_messageId);
     }
 
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody)
@@ -233,11 +197,17 @@ public class AMQMessage
     public void routingComplete(MessageStore store, MessageHandleFactory factory) throws AMQException
     {
         final boolean persistent = isPersistent();
-        _messageId = store.getNewMessageId();
         _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
         if (persistent)
         {
             _txnContext.beginTranIfNecessary();
+        }
+
+        // enqueuing the messages ensure that if required the destinations are recorded to a
+        // persistent store
+        for (AMQQueue q : _destinationQueues)
+        {
+            _messageHandle.enqueue(_messageId, q);
         }
 
         if (_contentHeaderBody.bodySize == 0)
@@ -249,7 +219,7 @@ public class AMQMessage
     public boolean addContentBodyFrame(ContentBody contentBody) throws AMQException
     {
         _bodyLengthReceived += contentBody.getSize();
-        _messageHandle.addContentBodyFrame(contentBody);
+        _messageHandle.addContentBodyFrame(_messageId, contentBody);
         if (isAllContentReceived())
         {
             deliver();
@@ -304,13 +274,24 @@ public class AMQMessage
                 {
                     _log.debug("Ref count on message " + _messageId + " is zero; removing message");
                 }
-                _messageHandle.removeMessage();
+                _messageHandle.removeMessage(_messageId);
             }
             catch (AMQException e)
             {
                 //to maintain consistency, we revert the count
                 incrementReference();
                 throw new MessageCleanupException(_messageId, e);
+            }
+        }
+        else
+        {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Ref count is now " + _referenceCount + " for message id " + _messageId);
+                if (_referenceCount.get() < 0)
+                {
+                    Thread.dumpStack();
+                }
             }
         }
     }
@@ -338,25 +319,22 @@ public class AMQMessage
         }
     }
 
+    /**
+     * Registers a queue to which this message is to be delivered. This is
+     * called from the exchange when it is routing the message. This will be called before any content bodies have
+     * been received so that the choice of AMQMessageHandle implementation can be picked based on various criteria.
+     *
+     * @param queue the queue
+     * @throws org.apache.qpid.AMQException if there is an error enqueuing the message
+     */
     public void enqueue(AMQQueue queue) throws AMQException
     {
-        //if the message is not persistent or the queue is not durable
-        //we will not need to recover the association and so do not
-        //need to record it
-        /*if (isPersistent() && queue.isDurable())
-        {
-            _store.enqueueMessage(queue.getName(), _messageId);
-        } */
+        _destinationQueues.add(queue);
     }
 
     public void dequeue(AMQQueue queue) throws AMQException
     {
-        //only record associations where both queue and message will survive
-        //a restart, so only need to remove association if this is the case
-        /*if (isPersistent() && queue.isDurable())
-        {
-            _store.dequeueMessage(queue.getName(), _messageId);
-        } */
+        _messageHandle.dequeue(_messageId, queue);
     }
 
     public boolean isPersistent() throws AMQException
@@ -369,7 +347,7 @@ public class AMQMessage
         }
         else
         {
-            return _messageHandle.isPersistent();
+            return _messageHandle.isPersistent(_messageId);
         }
     }
 
@@ -398,7 +376,7 @@ public class AMQMessage
         }
         else
         {
-            pb = _messageHandle.getPublishBody();
+            pb = _messageHandle.getPublishBody(_messageId);
         }
         return pb;
     }
@@ -412,32 +390,34 @@ public class AMQMessage
         _deliveredToConsumer = true;
     }
 
-    /**
-     * Registers a queue to which this message is to be delivered. This is
-     * called from the exchange when it is routing the message. This will be called before any content bodies have
-     * been received so that the choice of AMQMessageHandle implementation can be picked based on various criteria.
-     *
-     * @param queue the queue
-     */
-    public void registerQueue(AMQQueue queue)
+    /*public void registerQueue(AMQQueue queue)
     {
         _destinationQueues.add(queue);
-    }
+    } */
 
     private void deliver() throws AMQException
     {
         // first we allow the handle to know that the message has been fully received. This is useful if it is
         // maintaining any calculated values based on content chunks
-        _messageHandle.setPublishAndContentHeaderBody(_publishBody, _contentHeaderBody);
-        _publishBody = null;
-        _contentHeaderBody = null;
-
-        // we then allow the transactional context to do something with the message content
-        // now that it has all been received, before we attempt delivery
-        _txnContext.messageFullyReceived(isPersistent());
-        for (AMQQueue q : _destinationQueues)
+        try
         {
-            _txnContext.deliver(this, q);
+            _messageHandle.setPublishAndContentHeaderBody(_messageId, _publishBody, _contentHeaderBody);
+            _publishBody = null;
+            _contentHeaderBody = null;
+
+            // we then allow the transactional context to do something with the message content
+            // now that it has all been received, before we attempt delivery
+            _txnContext.messageFullyReceived(isPersistent());
+            for (AMQQueue q : _destinationQueues)
+            {
+                _txnContext.deliver(this, q);
+            }
+        }
+        finally
+        {
+            _destinationQueues.clear();
+            _destinationQueues = null;
+            decrementReference();
         }
     }
 

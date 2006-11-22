@@ -698,7 +698,7 @@ public class AMQQueue implements Managable
             msg.dequeue(this);
             msg.decrementReference();
         }
-        catch(MessageCleanupException e)
+        catch (MessageCleanupException e)
         {
             //Message was dequeued, but could notthen be deleted
             //though it is no longer referenced. This should be very

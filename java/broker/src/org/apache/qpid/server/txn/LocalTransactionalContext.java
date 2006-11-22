@@ -23,6 +23,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.store.MessageStore;
 
 import java.util.List;
 
@@ -41,10 +42,17 @@ public class LocalTransactionalContext implements TransactionalContext
 
     private List<RequiredDeliveryException> _returnMessages;
 
-    public LocalTransactionalContext(TxnBuffer txnBuffer, List<RequiredDeliveryException> returnMessages)
+    private final MessageStore _messageStore;
+
+    private boolean _inTran = false;
+
+    public LocalTransactionalContext(MessageStore messageStore,
+                                     TxnBuffer txnBuffer, List<RequiredDeliveryException> returnMessages)
     {
+        _messageStore = messageStore;
         _txnBuffer = txnBuffer;
         _returnMessages = returnMessages;
+        _txnBuffer.enlist(new StoreMessageOperation(messageStore));
     }
 
     public void rollback() throws AMQException
@@ -66,7 +74,7 @@ public class LocalTransactionalContext implements TransactionalContext
         // be added for every queue onto which the message is
         // enqueued. Finally a cleanup op will be added to decrement
         // the reference associated with the routing.
-        _txnBuffer.enlist(new StoreMessageOperation(message));
+
         _txnBuffer.enlist(new DeliverMessageOperation(message, queue));
         _txnBuffer.enlist(new CleanupMessageOperation(message, _returnMessages));
     }
@@ -110,12 +118,16 @@ public class LocalTransactionalContext implements TransactionalContext
 
     public void messageFullyReceived(boolean persistent) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required in this transactional context
     }
 
     public void beginTranIfNecessary() throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        if (!_inTran)
+        {
+            _messageStore.beginTran();
+            _inTran = true;
+        }
     }
 
     public void commit() throws AMQException

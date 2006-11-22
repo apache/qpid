@@ -172,7 +172,8 @@ public class ServiceRequestingClient implements ExceptionListener
         try
         {
             createConnection(brokerHosts, clientID, username, password, vpath);
-            _session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            //_session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            _session = (Session) _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
 
             _connection.setExceptionListener(this);
@@ -192,6 +193,7 @@ public class ServiceRequestingClient implements ExceptionListener
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
             _producer.send(first);
+            _session.commit(); // TODO REMOVE
             try
             {
                 Thread.sleep(1000);
@@ -231,6 +233,7 @@ public class ServiceRequestingClient implements ExceptionListener
             }
             _producer.send(msg);
         }
+        _session.commit(); // TODO REMOVE
         _log.info("Finished sending " + _messageCount + " messages");
     }
 

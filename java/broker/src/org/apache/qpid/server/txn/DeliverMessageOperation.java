@@ -28,12 +28,11 @@ public class DeliverMessageOperation implements TxnOp
     {
         _msg = msg;
         _queue = queue;
+        _msg.incrementReference();
     }
 
     public void prepare() throws AMQException
-    {
-        //do the persistent part of the record()
-        _msg.enqueue(_queue);
+    {        
     }
 
     public void undoPrepare()

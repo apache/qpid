@@ -8,40 +8,38 @@
  ******************************************************************************/
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.MessageStore;
 
 /**
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
+ * A transactional operation to store messages in an underlying persistent store. When this operation
+ * commits it will do everything to ensure that all messages are safely committed to persistent
+ * storage.
  */
 public class StoreMessageOperation implements TxnOp
 {
-    //just use this to do a store of the message during the
-    //prepare phase. Any enqueueing etc is done by TxnOps enlisted
-    //by the queues themselves.
-    private final AMQMessage _msg;
+    private final MessageStore _messsageStore;
 
-    public StoreMessageOperation(AMQMessage msg)
+    public StoreMessageOperation(MessageStore messageStore)
     {
-        _msg = msg;
+        _messsageStore = messageStore;
     }
 
     public void prepare() throws AMQException
     {
-        _msg.storeMessage();
-        // the router's reference can now be released
-        _msg.decrementReference();
     }
 
     public void undoPrepare()
     {
     }
 
-    public void commit()
+    public void commit() throws AMQException
     {
+        _messsageStore.commitTran();
     }
 
-    public void rollback()
+    public void rollback() throws AMQException
     {
+        _messsageStore.abortTran();
     }
 }

@@ -50,11 +50,9 @@ public class TxnBuffer
         if (_containsPersistentChanges)
         {
             _log.debug("Begin Transaction.");
-            _store.beginTran();
             if (prepare())
             {
                 _log.debug("Transaction Succeeded");
-                _store.commitTran();
                 for (TxnOp op : _ops)
                 {
                     op.commit();
@@ -62,8 +60,7 @@ public class TxnBuffer
             }
             else
             {
-                _log.debug("Transaction Failed");
-                _store.abortTran();
+                _log.debug("Transaction Failed");                
             }
         }
         else

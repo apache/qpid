@@ -21,12 +21,12 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
+import org.apache.qpid.server.store.MessageStore;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -60,7 +60,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         _channel = channel;
         _returnMessages = returnMessages;
-        _messageStore = messageStore;
+        _messageStore = messageStore;        
     }
 
     public void beginTranIfNecessary() throws AMQException
@@ -86,6 +86,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         try
         {
+            message.incrementReference();
             queue.process(message);
             //following check implements the functionality
             //required by the 'immediate' flag:
@@ -94,10 +95,6 @@ public class NonTransactionalContext implements TransactionalContext
         catch (NoConsumersException e)
         {
             _returnMessages.add(e);
-        }
-        finally
-        {
-            message.decrementReference();
         }
     }
 
@@ -162,7 +159,7 @@ public class NonTransactionalContext implements TransactionalContext
             }
         }
     }
-                                  
+
     public void messageFullyReceived(boolean persistent) throws AMQException
     {
         if (persistent)

@@ -115,7 +115,7 @@ public class AMQChannel
      */
     public void setLocalTransactional()
     {
-        _txnContext = new LocalTransactionalContext(new TxnBuffer(_messageStore), _returnMessages);
+        _txnContext = new LocalTransactionalContext(_messageStore, new TxnBuffer(_messageStore), _returnMessages);
     }
 
     public int getChannelId()

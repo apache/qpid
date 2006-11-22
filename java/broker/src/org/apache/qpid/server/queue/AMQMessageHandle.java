@@ -9,16 +9,20 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicPublishBody;
 
 /**
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
+ * A pluggable way of getting message data. Implementations can provide intelligent caching for example or
+ * even no caching at all to minimise the broker memory footprint.
+ *
+ * The method all take a messageId to avoid having to store it in the instance - the AMQMessage container
+ * must already keen the messageId so it is pointless storing it twice. 
  */
 public interface AMQMessageHandle
 {
-    ContentHeaderBody getContentHeaderBody() throws AMQException;
+    ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException;
 
     /**
      * @return the number of body frames associated with this message
@@ -28,7 +32,7 @@ public interface AMQMessageHandle
     /**
      * @return the size of the body
      */
-    long getBodySize() throws AMQException;
+    long getBodySize(long messageId) throws AMQException;
 
     /**
      * Get a particular content body
@@ -36,19 +40,23 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentBody getContentBody(int index) throws IllegalArgumentException, AMQException;
+    ContentBody getContentBody(long messageId, int index) throws IllegalArgumentException, AMQException;
 
-    void addContentBodyFrame(ContentBody contentBody) throws AMQException;
+    void addContentBodyFrame(long messageId, ContentBody contentBody) throws AMQException;
 
-    BasicPublishBody getPublishBody() throws AMQException;
+    BasicPublishBody getPublishBody(long messageId) throws AMQException;
 
     boolean isRedelivered();
 
-    boolean isPersistent() throws AMQException;
+    boolean isPersistent(long messageId) throws AMQException;
 
-    void setPublishAndContentHeaderBody(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody)
+    void setPublishAndContentHeaderBody(long messageId, BasicPublishBody publishBody,
+                                        ContentHeaderBody contentHeaderBody)
             throws AMQException;
 
-    void removeMessage() throws AMQException;
+    void removeMessage(long messageId) throws AMQException;
 
+    void enqueue(long messageId, AMQQueue queue) throws AMQException;
+
+    void dequeue(long messageId, AMQQueue queue) throws AMQException;
 }

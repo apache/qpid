@@ -185,7 +185,7 @@ public class HeadersExchange extends AbstractExchange
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
                                   headers + " to " + e.queue.getName());
                 }
-                payload.registerQueue(e.queue);
+                payload.enqueue(e.queue);
                 routed = true;
             }
         }

@@ -22,6 +22,13 @@ public class MessageHandleFactory
     public AMQMessageHandle createMessageHandle(long messageId, MessageStore store, boolean persistent)
     {
         // just hardcoded for now
-        return new WeakReferenceMessageHandle(store, messageId);
+        if (persistent)
+        {
+            return new WeakReferenceMessageHandle(store);
+        }
+        else
+        {
+            return new InMemoryMessageHandle();
+        }
     }
 }
