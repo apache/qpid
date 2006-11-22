@@ -47,7 +47,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         getJmsContentHeaderProperties().setEncoding(encoding);
     }
 
-    JMSTextMessage(long deliveryTag, ByteBuffer data, BasicContentHeaderProperties contentHeader)
+    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(deliveryTag, contentHeader, data);
@@ -62,7 +62,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
 
     JMSTextMessage(String text) throws JMSException
     {
-        super((ByteBuffer)null);
+        super((ByteBuffer) null);
         setText(text);
     }
 
@@ -113,7 +113,8 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         catch (UnsupportedEncodingException e)
         {
             // should never occur
-            throw new JMSException("Unable to decode string data");
+            JMSException jmse = new JMSException("Unable to decode string data");
+            jmse.setLinkedException(e);
         }
     }
 
