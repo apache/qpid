@@ -30,7 +30,7 @@ DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {
 
 }
 
-void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
@@ -40,7 +40,7 @@ void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fie
     }
 }
 
-void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
+void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
 
@@ -53,7 +53,7 @@ void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, F
     }
 }
 
-void DirectExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
+void DirectExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     int count(0);

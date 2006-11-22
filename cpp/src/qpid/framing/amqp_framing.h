@@ -26,9 +26,11 @@
 #include <qpid/framing/AMQHeaderBody.h>
 #include <qpid/framing/AMQContentBody.h>
 #include <qpid/framing/AMQHeartbeatBody.h>
-#include <qpid/framing/amqp_methods.h>
+#include <qpid/framing/AMQP_MethodVersionMap.h>
 #include <qpid/framing/InputHandler.h>
 #include <qpid/framing/OutputHandler.h>
 #include <qpid/framing/InitiationHandler.h>
 #include <qpid/framing/ProtocolInitiation.h>
 #include <qpid/framing/BasicHeaderProperties.h>
+#include <qpid/framing/ProtocolVersion.h>
+#include <qpid/framing/ProtocolVersionException.h>
