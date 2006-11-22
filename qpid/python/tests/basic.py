@@ -147,7 +147,7 @@ class BasicTests(TestBase):
         Test basic ack/recover behaviour
         """
         channel = self.channel
-        channel.queue_declare(queue="test-ack-queue")
+        channel.queue_declare(queue="test-ack-queue", exclusive=True)
         
         reply = channel.basic_consume(queue="test-ack-queue", no_ack=False)
         queue = self.client.queue(reply.consumer_tag)
@@ -191,7 +191,7 @@ class BasicTests(TestBase):
         Test requeing on recovery
         """
         channel = self.channel
-        channel.queue_declare(queue="test-requeue")
+        channel.queue_declare(queue="test-requeue", exclusive=True)
         
         subscription = channel.basic_consume(queue="test-requeue", no_ack=False)
         queue = self.client.queue(subscription.consumer_tag)
