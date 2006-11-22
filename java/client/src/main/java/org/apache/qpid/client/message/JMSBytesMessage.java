@@ -51,8 +51,9 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
 
     /**
      * Construct a bytes message with existing data.
+     *
      * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     * set to auto expand
+     *             set to auto expand
      */
     JMSBytesMessage(ByteBuffer data)
     {
@@ -67,12 +68,12 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         _readable = (data != null);
     }
 
-    JMSBytesMessage(long messageNbr, ByteBuffer data, ContentHeaderBody contentHeader)
+    JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);        
+        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
         _readable = true;
     }
 
@@ -99,6 +100,7 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
      * We reset the stream before and after reading the data. This means that toString() will always output
      * the entire message and also that the caller can then immediately start reading as if toString() had
      * never been called.
+     *
      * @return
      * @throws IOException
      */
@@ -147,6 +149,7 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
 
     /**
      * Check that there is at least a certain number of bytes available to read
+     *
      * @param len the number of bytes
      * @throws MessageEOFException if there are less than len bytes available to read
      */
@@ -203,6 +206,7 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
 
     /**
      * Note that this method reads a unicode character as two bytes from the stream
+     *
      * @return the character read from the stream
      * @throws JMSException
      */
@@ -304,7 +308,7 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
     public void writeBoolean(boolean b) throws JMSException
     {
         checkWritable();
-        _data.put(b?(byte)1:(byte)0);
+        _data.put(b ? (byte) 1 : (byte) 0);
     }
 
     public void writeByte(byte b) throws JMSException

@@ -98,6 +98,7 @@ public class MessageFactoryRegistry
     public static MessageFactoryRegistry newDefaultRegistry()
     {
         MessageFactoryRegistry mf = new MessageFactoryRegistry();
+        mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
         mf.registerFactory("text/plain", new JMSTextMessageFactory());
         mf.registerFactory("text/xml", new JMSTextMessageFactory());
         mf.registerFactory("application/octet-stream", new JMSBytesMessageFactory());

@@ -34,4 +34,8 @@ public class TestMessageHelper
         return new JMSBytesMessage();
     }
 
+    public static JMSMapMessage newJMSMapMessage() throws JMSException
+    {
+        return new JMSMapMessage();
+    }
 }

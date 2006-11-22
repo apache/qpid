@@ -30,7 +30,7 @@ public class JMSBytesMessageFactory extends AbstractJMSMessageFactory
 {
     protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws AMQException
     {
-        return new JMSBytesMessage(deliveryTag, data, contentHeader);
+        return new JMSBytesMessage(deliveryTag, contentHeader, data);
     }
 
     public AbstractJMSMessage createMessage() throws JMSException
