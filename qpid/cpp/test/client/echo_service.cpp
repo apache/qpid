@@ -30,6 +30,7 @@
 
 using namespace qpid::client;
 using namespace qpid::sys;
+using std::string;
 
 class EchoServer : public MessageListener{    
     Channel* const channel;

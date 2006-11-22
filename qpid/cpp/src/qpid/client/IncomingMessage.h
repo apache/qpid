@@ -50,10 +50,10 @@ namespace client {
 	bool isReturn();
 	bool isDelivery();
 	bool isResponse();
-	const string& getConsumerTag();//only relevant if isDelivery()
+	const std::string& getConsumerTag();//only relevant if isDelivery()
 	qpid::framing::AMQHeaderBody::shared_ptr& getHeader();
         u_int64_t getDeliveryTag();
-	void getData(string& data);
+	void getData(std::string& data);
     };
 
 }

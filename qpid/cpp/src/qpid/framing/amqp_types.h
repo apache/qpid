@@ -33,6 +33,13 @@ typedef unsigned __int64 u_int64_t;
 #ifndef AMQP_TYPES_H
 #define AMQP_TYPES_H
 
+namespace qpid 
+{
+namespace framing 
+{
+
 using std::string;
 
+}
+}
 #endif

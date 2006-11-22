@@ -40,6 +40,7 @@ namespace qpid {
          */
         struct ExclusiveAccessException{};
 
+        using std::string;
         /**
          * The brokers representation of an amqp queue. Messages are
          * delivered to a queue from where they can be dispatched to

@@ -30,7 +30,7 @@ namespace client {
 
     class Message{
 	qpid::framing::AMQHeaderBody::shared_ptr header;
-	string data;
+        std::string data;
 	bool redelivered;
         u_int64_t deliveryTag;
 
