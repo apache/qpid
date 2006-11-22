@@ -22,6 +22,7 @@
 #include <qpid/broker/Channel.h>
 
 using namespace qpid::broker;
+using std::string;
 
 DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
                                Queue::shared_ptr _queue, 

@@ -32,7 +32,8 @@
 
 namespace qpid {
     namespace broker {
- 
+
+        using qpid::framing::string;
         /**
          * Represents an AMQP message, i.e. a header body, a list of
          * content bodies and some details about the publication

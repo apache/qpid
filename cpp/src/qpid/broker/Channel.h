@@ -48,6 +48,8 @@
 
 namespace qpid {
     namespace broker {
+        using qpid::framing::string;
+
         /**
          * Maintains state for an AMQP channel. Handles incoming and
          * outgoing messages for that channel.

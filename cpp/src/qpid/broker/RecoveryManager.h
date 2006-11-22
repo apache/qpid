@@ -33,8 +33,8 @@ namespace broker {
     public:
         RecoveryManager(QueueRegistry& queues, ExchangeRegistry& exchanges);
         ~RecoveryManager();
-        Queue::shared_ptr recoverQueue(const string& name);
-        Exchange::shared_ptr recoverExchange(const string& name, const string& type);
+        Queue::shared_ptr recoverQueue(const std::string& name);
+        Exchange::shared_ptr recoverExchange(const std::string& name, const std::string& type);
     };
 
     

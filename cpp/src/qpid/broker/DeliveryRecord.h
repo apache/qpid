@@ -38,12 +38,12 @@ namespace qpid {
         class DeliveryRecord{
             mutable Message::shared_ptr msg;
             mutable Queue::shared_ptr queue;
-            string consumerTag;
+            std::string consumerTag;
             u_int64_t deliveryTag;
             bool pull;
 
         public:
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const string consumerTag, const u_int64_t deliveryTag);
+            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const u_int64_t deliveryTag);
             DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const u_int64_t deliveryTag);
             
             void discard(TransactionContext* ctxt = 0) const;

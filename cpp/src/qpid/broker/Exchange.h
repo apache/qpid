@@ -28,15 +28,17 @@
 
 namespace qpid {
     namespace broker {
+        using std::string;
+
         class Exchange{
-            const std::string name;
+            const string name;
         public:
             typedef boost::shared_ptr<Exchange> shared_ptr;
 
-            explicit Exchange(const std::string& _name) : name(_name){}
+            explicit Exchange(const string& _name) : name(_name){}
             virtual ~Exchange(){}
-            std::string getName() { return name; }
-            virtual std::string getType() = 0;
+            string getName() { return name; }
+            virtual string getType() = 0;
             virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
             virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
             virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
