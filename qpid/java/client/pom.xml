@@ -118,7 +118,6 @@
                     </includes>
                     <excludes>
                         <exclude>**/JNDIReferenceableTest.java</exclude>
-                        <exclude>**/TransactedTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

@@ -50,7 +50,7 @@ public class TransactedTest extends TestCase
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
 
-    protected void setup() throws Exception
+    protected void setUp() throws Exception
     {
         super.setUp();
         queue1 = new AMQQueue("Q1", false);
