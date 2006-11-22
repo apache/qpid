@@ -54,8 +54,7 @@ bool Channel::exists(const string& consumerTag){
 }
 
 void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection){
-    if(tag.empty()) tag = tagGenerator.generate();
-
+	if(tag.empty()) tag = tagGenerator.generate();
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{
         queue->consume(c, exclusive);//may throw exception
@@ -109,7 +108,7 @@ void Channel::rollback(){
     accumulatedAck.clear();
 }
 
-void Channel::deliver(Message::shared_ptr& msg, string& consumerTag, Queue::shared_ptr& queue, bool ackExpected){
+void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, Queue::shared_ptr& queue, bool ackExpected){
     Mutex::ScopedLock locker(deliveryLock);
 
     u_int64_t deliveryTag = currentDeliveryTag++;
@@ -129,7 +128,7 @@ bool Channel::checkPrefetch(Message::shared_ptr& msg){
     return countOk && sizeOk;
 }
 
-Channel::ConsumerImpl::ConsumerImpl(Channel* _parent, string& _tag, 
+Channel::ConsumerImpl::ConsumerImpl(Channel* _parent, const string& _tag, 
                                     Queue::shared_ptr _queue, 
                                     ConnectionToken* const _connection, bool ack) : parent(_parent), 
                                                                                     tag(_tag), 

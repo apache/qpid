@@ -22,6 +22,7 @@
 #include <qpid/sys/Monitor.h>
 #include <qpid/client/Message.h>
 #include <qpid/QpidError.h>
+#include <qpid/client/MethodBodyInstances.h>
 
 using namespace boost;          //to use dynamic_pointer_cast
 using namespace qpid::client;
@@ -35,7 +36,10 @@ Channel::Channel(bool _transactional, u_int16_t _prefetch) :
     incoming(0),
     closed(true),
     prefetch(_prefetch), 
-    transactional(_transactional)
+    transactional(_transactional),
+// AMQP version management change - kpvdr 2006-11-20
+// TODO: Make this class version-aware and link these hard-wired numbers to that version
+    version(8, 0)
 { }
 
 Channel::~Channel(){
@@ -50,9 +54,11 @@ void Channel::setPrefetch(u_int16_t _prefetch){
 }
 
 void Channel::setQos(){
-    sendAndReceive(new AMQFrame(id, new BasicQosBody(0, prefetch, false)), basic_qos_ok);
+// AMQP version management change - kpvdr 2006-11-20
+// TODO: Make this class version-aware and link these hard-wired numbers to that version
+    sendAndReceive(new AMQFrame(id, new BasicQosBody(version, 0, prefetch, false)), method_bodies.basic_qos_ok);
     if(transactional){
-        sendAndReceive(new AMQFrame(id, new TxSelectBody()), tx_select_ok);
+        sendAndReceive(new AMQFrame(id, new TxSelectBody(version)), method_bodies.tx_select_ok);
     }
 }
 
@@ -60,9 +66,9 @@ void Channel::declareExchange(Exchange& exchange, bool synch){
     string name = exchange.getName();
     string type = exchange.getType();
     FieldTable args;
-    AMQFrame*  frame = new AMQFrame(id, new ExchangeDeclareBody(0, name, type, false, false, false, false, !synch, args));
+    AMQFrame*  frame = new AMQFrame(id, new ExchangeDeclareBody(version, 0, name, type, false, false, false, false, !synch, args));
     if(synch){
-        sendAndReceive(frame, exchange_declare_ok);
+        sendAndReceive(frame, method_bodies.exchange_declare_ok);
     }else{
         out->send(frame);
     }
@@ -70,9 +76,9 @@ void Channel::declareExchange(Exchange& exchange, bool synch){
 
 void Channel::deleteExchange(Exchange& exchange, bool synch){
     string name = exchange.getName();
-    AMQFrame*  frame = new AMQFrame(id, new ExchangeDeleteBody(0, name, false, !synch));
+    AMQFrame*  frame = new AMQFrame(id, new ExchangeDeleteBody(version, 0, name, false, !synch));
     if(synch){
-        sendAndReceive(frame, exchange_delete_ok);
+        sendAndReceive(frame, method_bodies.exchange_delete_ok);
     }else{
         out->send(frame);
     }
@@ -81,11 +87,11 @@ void Channel::deleteExchange(Exchange& exchange, bool synch){
 void Channel::declareQueue(Queue& queue, bool synch){
     string name = queue.getName();
     FieldTable args;
-    AMQFrame*  frame = new AMQFrame(id, new QueueDeclareBody(0, name, false, false, 
+    AMQFrame*  frame = new AMQFrame(id, new QueueDeclareBody(version, 0, name, false, false, 
                                                              queue.isExclusive(), 
                                                              queue.isAutoDelete(), !synch, args));
     if(synch){
-        sendAndReceive(frame, queue_declare_ok);
+        sendAndReceive(frame, method_bodies.queue_declare_ok);
         if(queue.getName().length() == 0){
             QueueDeclareOkBody::shared_ptr response = 
                 dynamic_pointer_cast<QueueDeclareOkBody, AMQMethodBody>(responses.getResponse());
@@ -99,9 +105,9 @@ void Channel::declareQueue(Queue& queue, bool synch){
 void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch){
     //ticket, queue, ifunused, ifempty, nowait
     string name = queue.getName();
-    AMQFrame*  frame = new AMQFrame(id, new QueueDeleteBody(0, name, ifunused, ifempty, !synch));
+    AMQFrame*  frame = new AMQFrame(id, new QueueDeleteBody(version, 0, name, ifunused, ifempty, !synch));
     if(synch){
-        sendAndReceive(frame, queue_delete_ok);
+        sendAndReceive(frame, method_bodies.queue_delete_ok);
     }else{
         out->send(frame);
     }
@@ -110,9 +116,9 @@ void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch)
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
     string e = exchange.getName();
     string q = queue.getName();
-    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(0, q, e, key,!synch, args));
+    AMQFrame*  frame = new AMQFrame(id, new QueueBindBody(version, 0, q, e, key,!synch, args));
     if(synch){
-        sendAndReceive(frame, queue_bind_ok);
+        sendAndReceive(frame, method_bodies.queue_bind_ok);
     }else{
         out->send(frame);
     }
@@ -122,9 +128,9 @@ void Channel::consume(Queue& queue, std::string& tag, MessageListener* listener,
                       int ackMode, bool noLocal, bool synch){
 
     string q = queue.getName();
-    AMQFrame* frame = new AMQFrame(id, new BasicConsumeBody(0, q, (string&) tag, noLocal, ackMode == NO_ACK, false, !synch));
+    AMQFrame* frame = new AMQFrame(id, new BasicConsumeBody(version, 0, q, (string&) tag, noLocal, ackMode == NO_ACK, false, !synch));
     if(synch){
-        sendAndReceive(frame, basic_consume_ok);
+        sendAndReceive(frame, method_bodies.basic_consume_ok);
         BasicConsumeOkBody::shared_ptr response = dynamic_pointer_cast<BasicConsumeOkBody, AMQMethodBody>(responses.getResponse());
         tag = response->getConsumerTag();
     }else{
@@ -140,12 +146,12 @@ void Channel::consume(Queue& queue, std::string& tag, MessageListener* listener,
 void Channel::cancel(std::string& tag, bool synch){
     Consumer* c = consumers[tag];
     if(c->ackMode == LAZY_ACK && c->lastDeliveryTag > 0){
-        out->send(new AMQFrame(id, new BasicAckBody(c->lastDeliveryTag, true)));
+        out->send(new AMQFrame(id, new BasicAckBody(version, c->lastDeliveryTag, true)));
     }
 
-    AMQFrame*  frame = new AMQFrame(id, new BasicCancelBody((string&) tag, !synch));
+    AMQFrame*  frame = new AMQFrame(id, new BasicCancelBody(version, (string&) tag, !synch));
     if(synch){
-        sendAndReceive(frame, basic_cancel_ok);
+        sendAndReceive(frame, method_bodies.basic_cancel_ok);
     }else{
         out->send(frame);
     }
@@ -181,12 +187,12 @@ void Channel::retrieve(Message& msg){
 
 bool Channel::get(Message& msg, const Queue& queue, int ackMode){
     string name = queue.getName();
-    AMQFrame*  frame = new AMQFrame(id, new BasicGetBody(0, name, ackMode));
+    AMQFrame*  frame = new AMQFrame(id, new BasicGetBody(version, 0, name, ackMode));
     responses.expect();
     out->send(frame);
     responses.waitForResponse();
     AMQMethodBody::shared_ptr response = responses.getResponse();
-    if(basic_get_ok.match(response.get())){
+    if(method_bodies.basic_get_ok.match(response.get())){
         if(incoming != 0){
             std::cout << "Existing message not complete" << std::endl;
             THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Existing message not complete");
@@ -195,7 +201,7 @@ bool Channel::get(Message& msg, const Queue& queue, int ackMode){
         }
         retrieve(msg);
         return true;
-    }if(basic_get_empty.match(response.get())){
+    }if(method_bodies.basic_get_empty.match(response.get())){
         return false;
     }else{
         THROW_QPID_ERROR(PROTOCOL_ERROR + 500, "Unexpected response to basic.get.");
@@ -207,7 +213,7 @@ void Channel::publish(Message& msg, const Exchange& exchange, const std::string&
     string e = exchange.getName();
     string key = routingKey;
 
-    out->send(new AMQFrame(id, new BasicPublishBody(0, e, key, mandatory, immediate)));
+    out->send(new AMQFrame(id, new BasicPublishBody(version, 0, e, key, mandatory, immediate)));
     //break msg up into header frame and content frame(s) and send these
     string data = msg.getData();
     msg.header->setContentSize(data.length());
@@ -233,38 +239,38 @@ void Channel::publish(Message& msg, const Exchange& exchange, const std::string&
 }
     
 void Channel::commit(){
-    AMQFrame*  frame = new AMQFrame(id, new TxCommitBody());
-    sendAndReceive(frame, tx_commit_ok);
+    AMQFrame*  frame = new AMQFrame(id, new TxCommitBody(version));
+    sendAndReceive(frame, method_bodies.tx_commit_ok);
 }
 
 void Channel::rollback(){
-    AMQFrame*  frame = new AMQFrame(id, new TxRollbackBody());
-    sendAndReceive(frame, tx_rollback_ok);
+    AMQFrame*  frame = new AMQFrame(id, new TxRollbackBody(version));
+    sendAndReceive(frame, method_bodies.tx_rollback_ok);
 }
     
 void Channel::handleMethod(AMQMethodBody::shared_ptr body){
     //channel.flow, channel.close, basic.deliver, basic.return or a response to a synchronous request
     if(responses.isWaiting()){
         responses.signalResponse(body);
-    }else if(basic_deliver.match(body.get())){
+    }else if(method_bodies.basic_deliver.match(body.get())){
         if(incoming != 0){
             std::cout << "Existing message not complete [deliveryTag=" << incoming->getDeliveryTag() << "]" << std::endl;
             THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Existing message not complete");
         }else{
             incoming = new IncomingMessage(dynamic_pointer_cast<BasicDeliverBody, AMQMethodBody>(body));
         }
-    }else if(basic_return.match(body.get())){
+    }else if(method_bodies.basic_return.match(body.get())){
         if(incoming != 0){
             std::cout << "Existing message not complete" << std::endl;
             THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Existing message not complete");
         }else{
             incoming = new IncomingMessage(dynamic_pointer_cast<BasicReturnBody, AMQMethodBody>(body));
         }
-    }else if(channel_close.match(body.get())){
+    }else if(method_bodies.channel_close.match(body.get())){
         con->removeChannel(this);
         //need to signal application that channel has been closed through exception
 
-    }else if(channel_flow.match(body.get())){
+    }else if(method_bodies.channel_flow.match(body.get())){
         
     }else{
         //signal error

@@ -43,7 +43,7 @@ namespace {
 
 HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
 
-void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     std::string what = args->getString("x-match");
     if (what != all && what != any) {
@@ -53,7 +53,7 @@ void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fi
     queue->bound(new ExchangeBinding(this, queue, routingKey, args));
 }
 
-void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, FieldTable* args){
+void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     Bindings::iterator i =
         std::find(bindings.begin(),bindings.end(), Binding(*args, queue));
@@ -61,7 +61,7 @@ void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey
 }
 
 
-void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, FieldTable* args){
+void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
     Mutex::ScopedLock locker(lock);;
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (match(i->first, *args)) msg.deliverTo(i->second);

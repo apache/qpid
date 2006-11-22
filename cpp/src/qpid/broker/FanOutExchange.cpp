@@ -28,7 +28,7 @@ using namespace qpid::sys;
 
 FanOutExchange::FanOutExchange(const std::string& _name) : Exchange(_name) {}
 
-void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     // Add if not already present.
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
@@ -38,7 +38,7 @@ void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, Fie
     }
 }
 
-void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, FieldTable* /*args*/){
+void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
     Mutex::ScopedLock locker(lock);
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i != bindings.end()) {
@@ -47,7 +47,7 @@ void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
     }
 }
 
-void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, FieldTable* /*args*/){
+void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
     Mutex::ScopedLock locker(lock);
     for(Queue::vector::iterator i = bindings.begin(); i != bindings.end(); ++i){
         msg.deliverTo(*i);

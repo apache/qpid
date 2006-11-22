@@ -39,9 +39,9 @@ namespace qpid {
             virtual ~Exchange(){}
             string getName() { return name; }
             virtual string getType() = 0;
-            virtual void bind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-            virtual void unbind(Queue::shared_ptr queue, const string& routingKey, qpid::framing::FieldTable* args) = 0;
-            virtual void route(Deliverable& msg, const string& routingKey, qpid::framing::FieldTable* args) = 0;
+            virtual void bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+            virtual void unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+            virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
         };
     }
 }

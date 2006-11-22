@@ -63,12 +63,15 @@ private:
             CPPUNIT_ASSERT_EQUAL(heartbeat, body.get());
         }
     };
+  	ProtocolVersion v;
 
 public:
+        
+    BodyHandlerTest() : v(8, 0) {}
 
     void testMethod() 
     {
-        AMQMethodBody* method = new QueueDeclareBody();
+        AMQMethodBody* method = new QueueDeclareBody(v);
         AMQFrame frame(0, method);
         TestBodyHandler handler(method);
         handler.handleBody(frame.getBody());

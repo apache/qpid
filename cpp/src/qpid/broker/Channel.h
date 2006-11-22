@@ -57,13 +57,13 @@ namespace qpid {
         class Channel : private MessageBuilder::CompletionHandler{
             class ConsumerImpl : public virtual Consumer{
                 Channel* parent;
-                string tag;
+                const string tag;
                 Queue::shared_ptr queue;
                 ConnectionToken* const connection;
                 const bool ackExpected;
                 bool blocked;
             public:
-                ConsumerImpl(Channel* parent, string& tag, Queue::shared_ptr queue, ConnectionToken* const connection, bool ack);
+                ConsumerImpl(Channel* parent, const string& tag, Queue::shared_ptr queue, ConnectionToken* const connection, bool ack);
                 virtual bool deliver(Message::shared_ptr& msg);            
                 void cancel();
                 void requestDispatch();
@@ -90,7 +90,7 @@ namespace qpid {
             Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
 
             virtual void complete(Message::shared_ptr& msg);
-            void deliver(Message::shared_ptr& msg, string& tag, Queue::shared_ptr& queue, bool ackExpected);            
+            void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
             void cancel(consumer_iterator consumer);
             bool checkPrefetch(Message::shared_ptr& msg);
         

@@ -117,18 +117,22 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline ConnectionHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
 
-        virtual void startOk(u_int16_t channel, qpid::framing::FieldTable& clientProperties, string& mechanism, 
-                             string& response, string& locale); 
+        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
+        virtual void startOk(u_int16_t channel, const qpid::framing::FieldTable& clientProperties, const string& mechanism, 
+                             const string& response, const string& locale); 
                 
-        virtual void secureOk(u_int16_t channel, string& response); 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void secureOk(u_int16_t channel, const string& response); 
                 
         virtual void tuneOk(u_int16_t channel, u_int16_t channelMax, u_int32_t frameMax, u_int16_t heartbeat); 
                 
-        virtual void open(u_int16_t channel, string& virtualHost, string& capabilities, bool insist); 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void open(u_int16_t channel, const string& virtualHost, const string& capabilities, bool insist); 
                 
-        virtual void close(u_int16_t channel, u_int16_t replyCode, string& replyText, u_int16_t classId, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void close(u_int16_t channel, u_int16_t replyCode, const string& replyText, u_int16_t classId, 
                            u_int16_t methodId); 
-                
+ 
         virtual void closeOk(u_int16_t channel); 
                 
         virtual ~ConnectionHandlerImpl(){}
@@ -139,13 +143,15 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline ChannelHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
-        virtual void open(u_int16_t channel, string& outOfBand); 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void open(u_int16_t channel, const string& outOfBand); 
         
         virtual void flow(u_int16_t channel, bool active); 
                 
         virtual void flowOk(u_int16_t channel, bool active); 
                 
-        virtual void close(u_int16_t channel, u_int16_t replyCode, string& replyText, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void close(u_int16_t channel, u_int16_t replyCode, const string& replyText, 
                            u_int16_t classId, u_int16_t methodId); 
                 
         virtual void closeOk(u_int16_t channel); 
@@ -158,11 +164,13 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline ExchangeHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
-        virtual void declare(u_int16_t channel, u_int16_t ticket, string& exchange, string& type, 
+        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
+        virtual void declare(u_int16_t channel, u_int16_t ticket, const string& exchange, const string& type, 
                              bool passive, bool durable, bool autoDelete, bool internal, bool nowait, 
-                             qpid::framing::FieldTable& arguments); 
+                             const qpid::framing::FieldTable& arguments); 
                 
-        virtual void delete_(u_int16_t channel, u_int16_t ticket, string& exchange, bool ifUnused, bool nowait); 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void delete_(u_int16_t channel, u_int16_t ticket, const string& exchange, bool ifUnused, bool nowait); 
                 
         virtual ~ExchangeHandlerImpl(){}
     };
@@ -173,20 +181,24 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline QueueHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
-        virtual void declare(u_int16_t channel, u_int16_t ticket, string& queue, 
+        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
+        virtual void declare(u_int16_t channel, u_int16_t ticket, const string& queue, 
                              bool passive, bool durable, bool exclusive, 
-                             bool autoDelete, bool nowait, qpid::framing::FieldTable& arguments); 
+                             bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments); 
                 
-        virtual void bind(u_int16_t channel, u_int16_t ticket, string& queue, 
-                          string& exchange, string& routingKey, bool nowait, 
-                          qpid::framing::FieldTable& arguments); 
+        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
+        virtual void bind(u_int16_t channel, u_int16_t ticket, const string& queue, 
+                          const string& exchange, const string& routingKey, bool nowait, 
+                          const qpid::framing::FieldTable& arguments); 
                 
-        virtual void purge(u_int16_t channel, u_int16_t ticket, string& queue, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void purge(u_int16_t channel, u_int16_t ticket, const string& queue, 
                            bool nowait); 
                 
-        virtual void delete_(u_int16_t channel, u_int16_t ticket, string& queue, bool ifUnused, bool ifEmpty, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void delete_(u_int16_t channel, u_int16_t ticket, const string& queue, bool ifUnused, bool ifEmpty, 
                              bool nowait); 
-                
+
         virtual ~QueueHandlerImpl(){}
     };
 
@@ -197,15 +209,19 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         
         virtual void qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool global); 
                     
-        virtual void consume(u_int16_t channel, u_int16_t ticket, string& queue, string& consumerTag, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void consume(u_int16_t channel, u_int16_t ticket, const string& queue, const string& consumerTag, 
                              bool noLocal, bool noAck, bool exclusive, bool nowait); 
+        
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void cancel(u_int16_t channel, const string& consumerTag, bool nowait); 
                 
-        virtual void cancel(u_int16_t channel, string& consumerTag, bool nowait); 
-                
-        virtual void publish(u_int16_t channel, u_int16_t ticket, string& exchange, string& routingKey, 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void publish(u_int16_t channel, u_int16_t ticket, const string& exchange, const string& routingKey, 
                              bool mandatory, bool immediate); 
                 
-        virtual void get(u_int16_t channel, u_int16_t ticket, string& queue, bool noAck); 
+        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void get(u_int16_t channel, u_int16_t ticket, const string& queue, bool noAck); 
                 
         virtual void ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple); 
                 
@@ -238,7 +254,11 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     inline virtual FileHandler* getFileHandler(){ throw ConnectionException(540, "File class not implemented"); }       
     inline virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
     inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
-    inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); }       
+    inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
+    
+    // Temporary add-in to resolve version conflicts: AMQP v8.0 still defines class Test;
+    // however v0.9 will not - kpvdr 2006-11-17      
+    inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
 };
 
 }

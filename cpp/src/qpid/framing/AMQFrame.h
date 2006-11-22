@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include <qpid/framing/amqp_methods.h>
+/*#include <qpid/framing/amqp_methods.h>*/
 #include <qpid/framing/amqp_types.h>
 #include <qpid/framing/AMQBody.h>
 #include <qpid/framing/AMQDataBlock.h>
@@ -26,6 +26,7 @@
 #include <qpid/framing/AMQHeaderBody.h>
 #include <qpid/framing/AMQContentBody.h>
 #include <qpid/framing/AMQHeartbeatBody.h>
+#include <qpid/framing/AMQP_MethodVersionMap.h>
 #include <qpid/framing/Buffer.h>
 
 #ifndef _AMQFrame_
@@ -39,7 +40,9 @@ namespace qpid {
             u_int16_t channel;
             u_int8_t type;//used if the body is decoded separately from the 'head'
             AMQBody::shared_ptr body;
-
+            AMQP_MethodVersionMap versionMap;
+			AMQBody::shared_ptr createMethodBody(Buffer& buffer);
+            
         public:
             AMQFrame();
             AMQFrame(u_int16_t channel, AMQBody* body);
