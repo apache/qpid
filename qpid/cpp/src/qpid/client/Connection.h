@@ -61,8 +61,8 @@ class Connection : public virtual qpid::framing::InputHandler,
         volatile bool closed;
 
         void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
-        void error(int code, const string& msg, int classid = 0, int methodid = 0);
-        void closeChannel(Channel* channel, u_int16_t code, string& text, u_int16_t classId = 0, u_int16_t methodId = 0);
+        void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
+        void closeChannel(Channel* channel, u_int16_t code, std::string& text, u_int16_t classId = 0, u_int16_t methodId = 0);
 	void sendAndReceive(qpid::framing::AMQFrame* frame, const qpid::framing::AMQMethodBody& body);
 
 	virtual void handleMethod(qpid::framing::AMQMethodBody::shared_ptr body);
