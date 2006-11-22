@@ -19,8 +19,8 @@
  *
  */
 #include <qpid/framing/amqp_types.h>
-#include <qpid/framing/amqp_methods.h>
 #include <qpid/framing/Buffer.h>
+#include <qpid/framing/FieldTable.h>
 #include <qpid/framing/HeaderProperties.h>
 
 #ifndef _BasicHeaderProperties_

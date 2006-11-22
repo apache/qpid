@@ -34,9 +34,9 @@ namespace qpid {
             Exchange* e;
             Queue::shared_ptr q;
             const string key;
-            qpid::framing::FieldTable* args;
+            const qpid::framing::FieldTable* args;
         public:
-            ExchangeBinding(Exchange* _e, Queue::shared_ptr _q, const string& _key, qpid::framing::FieldTable* _args);
+            ExchangeBinding(Exchange* _e, Queue::shared_ptr _q, const string& _key, const qpid::framing::FieldTable* _args);
             virtual void cancel();
             virtual ~ExchangeBinding();
         };

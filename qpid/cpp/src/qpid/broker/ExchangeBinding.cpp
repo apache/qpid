@@ -24,7 +24,7 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-ExchangeBinding::ExchangeBinding(Exchange* _e, Queue::shared_ptr _q, const string& _key, FieldTable* _args) : e(_e), q(_q), key(_key), args(_args){}
+ExchangeBinding::ExchangeBinding(Exchange* _e, Queue::shared_ptr _q, const string& _key, const FieldTable* _args) : e(_e), q(_q), key(_key), args(_args){}
 
 void ExchangeBinding::cancel(){
     e->unbind(q, key, args);

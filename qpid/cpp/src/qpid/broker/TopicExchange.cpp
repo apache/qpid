@@ -117,14 +117,14 @@ bool TopicPattern::match(const Tokens& target)  const
 
 TopicExchange::TopicExchange(const string& _name) : Exchange(_name) { }
 
-void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, FieldTable* args){
+void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
     Monitor::ScopedLock l(lock);
     TopicPattern routingPattern(routingKey);
     bindings[routingPattern].push_back(queue);
     queue->bound(new ExchangeBinding(this, queue, routingKey, args));
 }
 
-void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, FieldTable* /*args*/){
+void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);
     BindingMap::iterator bi = bindings.find(TopicPattern(routingKey));
     Queue::vector& qv(bi->second);
@@ -136,7 +136,7 @@ void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, Fi
 }
 
 
-void TopicExchange::route(Deliverable& msg, const string& routingKey, FieldTable* /*args*/){
+void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(routingKey)) {

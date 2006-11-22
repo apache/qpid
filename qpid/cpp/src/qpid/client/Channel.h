@@ -65,6 +65,7 @@ namespace client {
 
         u_int16_t prefetch;
         const bool transactional;
+    qpid::framing::ProtocolVersion version;
 
 	void enqueue();
 	void retrieve(Message& msg);

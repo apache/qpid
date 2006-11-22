@@ -35,9 +35,12 @@ class AMQMethodBody : virtual public AMQBody
 public:
     typedef boost::shared_ptr<AMQMethodBody> shared_ptr;
 
+	ProtocolVersion version;
     inline u_int8_t type() const { return METHOD_BODY; }
     inline u_int32_t size() const { return 4 + bodySize(); }
-    inline virtual ~AMQMethodBody(){}
+    inline AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
+    inline AMQMethodBody(ProtocolVersion version) : version(version) {}
+    inline virtual ~AMQMethodBody() {}
     virtual void print(std::ostream& out) const = 0;
     virtual u_int16_t amqpMethodId() const = 0;
     virtual u_int16_t amqpClassId() const = 0;
