@@ -99,10 +99,17 @@ public class ReceiveTest extends TestCase
         test._connectionString = argv.length == 0 ? VM_BROKER : argv[0];
         test.setUp();
         test.test();
+        test.tearDown();
     }
 
     public static junit.framework.Test suite()
     {
+        // TODO: note that this test doesn't use the VMBrokerSetup
+        // test helper class to create and tear down its
+        // VMBroker. This is because the main() above seems to
+        // indicate that it's also used outside of the surefire test
+        // framework. If it isn't, then this test should also be
+        // changed to use VMBrokerSetup here.
         return new junit.framework.TestSuite(ReceiveTest.class);
     }
 }
