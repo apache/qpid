@@ -31,9 +31,6 @@ import javax.jms.*;
 
 import junit.framework.TestCase;
 
-/**
- * This is a slow test.
- */
 public class MultipleConnectionTest extends TestCase
 {
     public static final String _defaultBroker = "vm://:1";
@@ -118,13 +115,15 @@ public class MultipleConnectionTest extends TestCase
         synchronized boolean waitUntil(int expected, long maxWait) throws InterruptedException
         {
             long start = System.currentTimeMillis();
-            long timeLeft = maxWait;
-            do
+            while (expected > _count)
             {
+                long timeLeft = maxWait - timeSince(start);
+                if (timeLeft < 0)
+                {
+                    break;
+                }
                 wait(timeLeft);
-                timeLeft = maxWait - timeSince(start);
             }
-            while (expected > _count && timeLeft > 0);
             return expected <= _count;
         }
 
