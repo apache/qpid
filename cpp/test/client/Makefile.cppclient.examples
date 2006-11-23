@@ -46,7 +46,7 @@ CXX := g++
 # Define targets.
 #
 
-EXAMPLES := client_test topic_listener topic_publisher
+EXAMPLES := client_test topic_listener topic_publisher echo_service
 
 .PHONY:
 all: $(EXAMPLES)
