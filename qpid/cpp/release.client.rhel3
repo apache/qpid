@@ -11,7 +11,7 @@ else
   name=r${svnRevision}
 fi
 
-name=qpid-cppclient-$name
+name=qpid-cpp-client-$name
 dir=build/$name
 
 if [[ -d $dir ]]; then
