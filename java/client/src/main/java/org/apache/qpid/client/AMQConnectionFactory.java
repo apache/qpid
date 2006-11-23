@@ -63,8 +63,8 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                                 String clientName, String virtualHost) throws URLSyntaxException
     {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
-                username + ":" + password + "@" + clientName +
-                virtualHost + "?brokerlist='" + broker + "'"));
+                                  username + ":" + password + "@" + clientName +
+                                  virtualHost + "?brokerlist='" + broker + "'"));
     }
 
     public AMQConnectionFactory(String host, int port, String virtualPath)
@@ -235,7 +235,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
             else
             {
                 return new AMQConnection(_host, _port, _defaultUsername, _defaultPassword, getUniqueClientID(),
-                        _virtualPath);
+                                         _virtualPath);
             }
         }
         catch (Exception e)
@@ -252,7 +252,21 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
         try
         {
-            return new AMQConnection(_host, _port, userName, password, getUniqueClientID(), _virtualPath);
+            if (_connectionDetails != null)
+            {
+                _connectionDetails.setUsername(userName);
+                _connectionDetails.setPassword(password);
+
+                if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+                {
+                    _connectionDetails.setClientName(getUniqueClientID());
+                }
+                return new AMQConnection(_connectionDetails);
+            }
+            else
+            {
+                return new AMQConnection(_host, _port, userName, password, getUniqueClientID(), _virtualPath);
+            }
         }
         catch (Exception e)
         {
