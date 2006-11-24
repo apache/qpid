@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,53 +16,51 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.example.publisher;
+package org.apache.qpid.example.shared;
 
 import org.apache.log4j.Logger;
 
-/**
- * Exception thrown by monitor when cannot send a message marked for immediate delivery
- */
-public class UndeliveredMessageException extends Exception {
+public class ContextException extends Exception {
 
     private int _errorCode;
 
-    public UndeliveredMessageException(String message)
+    public ContextException(String message)
     {
         super(message);
     }
 
-    public UndeliveredMessageException(String msg, Throwable t)
+    public ContextException(String msg, Throwable t)
     {
         super(msg, t);
     }
 
-    public UndeliveredMessageException(int errorCode, String msg, Throwable t)
+    public ContextException(int errorCode, String msg, Throwable t)
     {
         super(msg + " [error code " + errorCode + ']', t);
         _errorCode = errorCode;
     }
 
-    public UndeliveredMessageException(int errorCode, String msg)
+    public ContextException(int errorCode, String msg)
     {
         super(msg + " [error code " + errorCode + ']');
         _errorCode = errorCode;
     }
 
-    public UndeliveredMessageException(Logger logger, String msg, Throwable t)
+    public ContextException(Logger logger, String msg, Throwable t)
     {
         this(msg, t);
         logger.error(getMessage(), this);
     }
 
-    public UndeliveredMessageException(Logger logger, String msg)
+    public ContextException(Logger logger, String msg)
     {
         this(msg);
         logger.error(getMessage(), this);
     }
 
-    public UndeliveredMessageException(Logger logger, int errorCode, String msg)
+    public ContextException(Logger logger, int errorCode, String msg)
     {
         this(errorCode, msg);
         logger.error(getMessage(), this);
