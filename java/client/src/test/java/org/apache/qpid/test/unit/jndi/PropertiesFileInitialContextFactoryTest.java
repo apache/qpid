@@ -29,6 +29,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import java.util.Properties;
+import java.io.InputStream;
+
 
 import junit.framework.TestCase;
 
@@ -36,21 +38,34 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
 {
     InitialContextFactory contextFactory;
     Properties _properties;
+    Properties _fileProperties;
 
     protected void setUp() throws Exception
     {
         super.setUp();
+
+        //create simple set of hardcoded props
         _properties = new Properties();
         _properties.put("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
         _properties.put("connectionfactory.local", "amqp://guest:guest@clientid/testpath?brokerlist='vm://:1'");
         _properties.put("queue.MyQueue", "example.MyQueue");
         _properties.put("topic.ibmStocks", "stocks.nyse.ibm");
         _properties.put("destination.direct", "direct://amq.direct//directQueue");
+
+        //create properties from file as a more realistic test
+        _fileProperties = new Properties();
+        ClassLoader cl = this.getClass().getClassLoader();
+        InputStream is = cl.getResourceAsStream("org/apache/qpid/test/unit/jndi/example.properties");
+        _fileProperties.load(is);
     }
 
-    public void test()
+    /**
+     * Test using hardcoded properties
+     */
+    public void testWithoutFile()
     {
         Context ctx = null;
+
         try
         {
             ctx = new InitialContext(_properties);
@@ -60,6 +75,41 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
             fail("Error loading context:" + ne);
         }
 
+        checkPropertiesMatch(ctx, "Using hardcoded properties: ");
+    }
+
+    /**
+     * Test using properties from example file
+     */
+    public void testWithFile()
+    {
+        Context ctx = null;
+
+        try
+        {
+            ctx = new InitialContext(_fileProperties);
+        }
+        catch (Exception e)
+        {
+            fail("Error loading context:" + e);
+        }
+
+        checkPropertiesMatch(ctx, "Using properties from file: ");
+    }
+
+    public void tearDown()
+    {
+        _properties = null;
+        _fileProperties = null;
+    }
+
+    public static junit.framework.Test suite()
+    {
+        return new junit.framework.TestSuite(PropertiesFileInitialContextFactoryTest.class);
+    }
+
+    private void checkPropertiesMatch(Context ctx, String errorInfo)
+    {
         try
         {
             AMQConnectionFactory cf = (AMQConnectionFactory) ctx.lookup("local");
@@ -67,7 +117,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         }
         catch (NamingException ne)
         {
-            fail("Unable to create Connection Factory:" + ne);
+            fail(errorInfo + "Unable to create Connection Factory:" + ne);
         }
 
         try
@@ -77,7 +127,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         }
         catch (NamingException ne)
         {
-            fail("Unable to create queue:" + ne);
+            fail(errorInfo + "Unable to create queue:" + ne);
         }
 
         try
@@ -87,7 +137,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         }
         catch (Exception ne)
         {
-            fail("Unable to create topic:" + ne);
+            fail(errorInfo + "Unable to create topic:" + ne);
         }
 
         try
@@ -97,12 +147,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         }
         catch (NamingException ne)
         {
-            fail("Unable to create direct destination:" + ne);
+            fail(errorInfo + "Unable to create direct destination:" + ne);
         }
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(PropertiesFileInitialContextFactoryTest.class);
     }
 }
