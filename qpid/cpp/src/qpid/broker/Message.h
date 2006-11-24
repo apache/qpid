@@ -63,6 +63,7 @@ namespace qpid {
                     const string& exchange, const string& routingKey, 
                     bool mandatory, bool immediate);
             Message(qpid::framing::Buffer& buffer);
+            Message();
             ~Message();
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
             void addContent(qpid::framing::AMQContentBody::shared_ptr data);
@@ -88,12 +89,39 @@ namespace qpid {
             u_int64_t contentSize() const { return size; }
             u_int64_t getPersistenceId() const { return persistenceId; }
             void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
+
+            void decode(qpid::framing::Buffer& buffer);
+            void decodeHeader(qpid::framing::Buffer& buffer);
+            void decodeContent(qpid::framing::Buffer& buffer);
+
             void encode(qpid::framing::Buffer& buffer);
+            void encodeHeader(qpid::framing::Buffer& buffer);
+            void encodeContent(qpid::framing::Buffer& buffer);
             /**
-             * @returns the size of the buffer needed to encode this message
+             * @returns the size of the buffer needed to encode this
+             * message in its entirety
              */
             u_int32_t encodedSize();
-            
+            /**
+             * @returns the size of the buffer needed to encode the
+             * 'header' of this message (not just the header frame,
+             * but other meta data e.g.routing key and exchange)
+             */
+            u_int32_t encodedHeaderSize();
+            /**
+             * @returns the size of the buffer needed to encode the
+             * (possibly partial) content held by this message
+             */
+            u_int32_t encodedContentSize();
+            /**
+             * Releases the in-memory content data held by this message.
+             */
+            void releaseContent();
+            /**
+             * If headers have been received, returns the expected
+             * content size else returns 0.
+             */
+            u_int64_t expectedContentSize();
         };
 
     }

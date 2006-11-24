@@ -18,8 +18,11 @@
  * under the License.
  *
  */
+#include <qpid/Exception.h>
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageBuilder.h>
+#include <qpid/broker/NullMessageStore.h>
+#include <qpid/framing/Buffer.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>
@@ -39,11 +42,58 @@ class MessageBuilderTest : public CppUnit::TestCase
         }
     };
 
+    class TestMessageStore : public NullMessageStore
+    {
+        Buffer* header;
+        Buffer* content;
+        const u_int32_t contentBufferSize;
+        
+    public:
+
+        void stage(Message::shared_ptr& msg)
+        {
+            if (msg->getPersistenceId() == 0) {
+                header = new Buffer(msg->encodedHeaderSize());
+                msg->encodeHeader(*header);                
+                content = new Buffer(contentBufferSize);
+                msg->encodeContent(*content);
+            } else if (!header || !content) {
+                throw qpid::Exception("Buffers not initialised!");
+            } else {
+                msg->encodeContent(*content);
+            }
+            msg->setPersistenceId(1);
+        }
+
+        Message::shared_ptr getRestoredMessage()
+        {
+            Message::shared_ptr msg(new Message());
+            if (header) {
+                header->flip();
+                msg->decodeHeader(*header);
+                delete header;
+                header = 0; 
+                if (content) {
+                    content->flip();
+                    msg->decodeContent(*content);
+                    delete content;
+                    content = 0;
+                }
+            }
+            return msg;
+        }
+        
+        //dont care about any of the other methods:
+        TestMessageStore(u_int32_t _contentBufferSize) : NullMessageStore(false), header(0), content(0), 
+                                                         contentBufferSize(_contentBufferSize) {}
+        ~TestMessageStore(){}
+    };
 
     CPPUNIT_TEST_SUITE(MessageBuilderTest);
     CPPUNIT_TEST(testHeaderOnly);
     CPPUNIT_TEST(test1ContentFrame);
     CPPUNIT_TEST(test2ContentFrames);
+    CPPUNIT_TEST(testStaging);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -105,6 +155,40 @@ class MessageBuilderTest : public CppUnit::TestCase
         builder.addContent(part2);
         CPPUNIT_ASSERT(handler.msg);
         CPPUNIT_ASSERT_EQUAL(message, handler.msg);
+    }
+
+    void testStaging(){
+        DummyHandler handler;
+        TestMessageStore store(50);//more than enough for two frames of 14 bytes
+        MessageBuilder builder(&handler, &store, 5);
+
+        string data1("abcdefg");
+        string data2("hijklmn");
+
+        Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
+        header->setContentSize(14);
+        BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());
+        properties->setMessageId("MyMessage");
+        properties->getHeaders().setString("abc", "xyz");
+
+        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
+        AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
+        
+        builder.initialise(message);
+        builder.setHeader(header);
+        builder.addContent(part1);
+        builder.addContent(part2);
+        CPPUNIT_ASSERT(handler.msg);
+        CPPUNIT_ASSERT_EQUAL(message, handler.msg);
+
+        Message::shared_ptr restored = store.getRestoredMessage();
+        CPPUNIT_ASSERT_EQUAL(message->getExchange(), restored->getExchange());
+        CPPUNIT_ASSERT_EQUAL(message->getRoutingKey(), restored->getRoutingKey());
+        CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getMessageId(), restored->getHeaderProperties()->getMessageId());
+        CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getHeaders().getString("abc"), 
+                             restored->getHeaderProperties()->getHeaders().getString("abc"));
+        CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, restored->contentSize());
     }
 };
 
