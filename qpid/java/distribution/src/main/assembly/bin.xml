@@ -65,7 +65,7 @@
     </fileSet>
   </fileSets>
   <files>
-    <!-- due to a bug in the assembly plugin (MASSEMBLY-133) you have
+    <!-- due to a bug in the assembly plugin (MASSEMBLY-153) you have
          to use decimal numbers to specify fileMode -->
     <file>
       <source>../common/etc/qpid-run.conf</source>
