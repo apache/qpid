@@ -29,9 +29,7 @@ import org.apache.log4j.BasicConfigurator;
 public class TestPublisher {
 
     private static final Logger _logger = Logger.getLogger(TestAMSPubSub.class);
-    private static final String _defaultPayloadPath = "C:/Requirements/examplexml/test.xml";
-
-       private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+    private static final String _defaultPayloadPath = "/tmp";
 
      /**
      * Test main for class using default of local file for message payload

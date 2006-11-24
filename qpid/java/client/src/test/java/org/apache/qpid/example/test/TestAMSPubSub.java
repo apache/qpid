@@ -32,11 +32,10 @@ import org.apache.log4j.BasicConfigurator;
 public class TestAMSPubSub {
 
     private static final Logger _logger = Logger.getLogger(TestAMSPubSub.class);
-    private static final String _defaultPayloadPath = "C:/Requirements/examplexml/test.xml";
+    private static final String _defaultPayloadPath = "/tmp";
 
     private static Subscriber subscriber;
 
-    private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
 
      /**
      * Test main for class using default of local file for message payload
@@ -53,8 +52,8 @@ public class TestAMSPubSub {
         //create publisher and subscriber
         subscriber = new Subscriber();
 
-        //subscribe to the topic
-        testPubSub.subscribe(args);
+        //subscribe 
+        testPubSub.subscribe();
 
         //publish a message
         if (args.length == 1)
@@ -76,12 +75,9 @@ public class TestAMSPubSub {
 
     }
 
-    private void subscribe(String[] args)
+    private void subscribe()
     {
-        Properties props = System.getProperties();
-        subscriber.subscribe(props.getProperty(Statics.HOST_PROPERTY),
-                                props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                                props.getProperty(Statics.VIRTUAL_PATH_PROPERTY),props.getProperty(Statics.QUEUE_PROPERTY));
+        subscriber.subscribe();
     }
 
     private void publish(String payloadPath)

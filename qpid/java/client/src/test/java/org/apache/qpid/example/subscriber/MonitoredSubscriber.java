@@ -21,24 +21,26 @@ package org.apache.qpid.example.subscriber;
 import org.apache.log4j.Logger;
 import org.apache.qpid.example.shared.Statics;
 
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.JMSException;
-import javax.jms.Queue;
+import javax.jms.*;
 
 /**
  * Subclass of Subscriber which consumes a heartbeat message
- * Author: Marnie McCormack
- * Date: 12-Sep-2006
- * Time: 09:41:07
- * Copyright JPMorgan Chase 2006
  */
 
 public class MonitoredSubscriber extends Subscriber
 {
+    protected String _monitorDestinationName;
+
     private static final Logger _logger = Logger.getLogger(MonitoredSubscriber.class);
 
     private static MessageConsumer _monitorConsumer;
+
+    public MonitoredSubscriber()
+    {
+        super();
+        //lookup queue name and append suffix
+        _monitorDestinationName = _destinationName + Statics.MONITOR_QUEUE_SUFFIX;
+    }
 
     public static class MonitorMessageListener implements MessageListener
     {
@@ -79,39 +81,32 @@ public class MonitoredSubscriber extends Subscriber
 
     /*
     * Subscribes to Queue and attaches additional monitor listener
-    * @param hostdetails - for broker connection in host1:port1;host2:port2 format
-    * @param username - for connection to the broker
-    * @password - for connection to the broker
-    * @virtualpath
     */
-    public void subscribeAndMonitor(String hostdetails, String username, String password,
-                                      String virtualPath, String queueName)
+    public void subscribeAndMonitor()
     {
-        Queue queue;
-
         try
         {
-            //Create monitor comsumer for failover purposes
-            if (queueName==null||queueName.length()==0)
-            {
-                queue = getSession(_connection).createQueue(Statics.QUEUE_NAME);
-            }
-            else
-            {
-                queue = getSession(_connection).createQueue(queueName);
-            }
+            _connection = _connectionFactory.createConnection();
 
-            _monitorConsumer = getSession(_connection).createConsumer(queue);
+             //create a transactional session
+            Session session =  _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+
+            //Queue is non-exclusive and not deleted when last consumer detaches
+            Destination destination = session.createQueue(_monitorDestinationName);
+
+            //Create a consumer with a destination of our queue which will use defaults for prefetch etc
+            _monitorConsumer = session.createConsumer(destination);
 
             //give the monitor message listener a name of it's own
-            _monitorConsumer.setMessageListener(new MonitoredSubscriber.MonitorMessageListener("MonitorListener " + System.currentTimeMillis()));
+            _monitorConsumer.setMessageListener(new MonitoredSubscriber.MonitorMessageListener
+                ("MonitorListener " + System.currentTimeMillis()));
 
             MonitoredSubscriber._logger.info("Starting monitored subscription ...");
 
             MonitoredSubscriber._connection.start();
 
             //and now start ordinary consumption too
-            subscribe(hostdetails,username,password,virtualPath,queueName);
+            subscribe();
         }
         catch (Throwable t)
         {
