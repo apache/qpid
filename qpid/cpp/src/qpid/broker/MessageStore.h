@@ -47,6 +47,25 @@ namespace qpid {
             virtual void recover(RecoveryManager& queues) = 0;
 
             /**
+             * Stores a messages before it has been enqueued
+             * (enqueueing automatically stores the message so this is
+             * only required if storage is required prior to that
+             * point). If the message has not yet been stored it will
+             * store the headers and any available content. If the
+             * message has already been stored it will append any
+             * currently held content.
+             */
+            virtual void stage(Message::shared_ptr& msg) = 0;
+            
+            /**
+             * Destroys a previously staged message. This only needs
+             * to be called if the message is never enqueued. (Once
+             * enqueued, deletion will be automatic when the message
+             * is dequeued from all queues it was enqueued onto).
+             */
+            virtual void destroy(Message::shared_ptr& msg) = 0;
+
+            /**
              * Enqueues a message, storing the message if it has not
              * been previously stored and recording that the given
              * message is on the given queue.

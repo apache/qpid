@@ -43,6 +43,16 @@ void MessageStoreModule::recover(RecoveryManager& registry)
     store->recover(registry);
 }
 
+void MessageStoreModule::stage(Message::shared_ptr& msg)
+{
+    store->stage(msg);
+}
+
+void MessageStoreModule::destroy(Message::shared_ptr& msg)
+{
+    store->destroy(msg);
+}
+
 void MessageStoreModule::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid)
 {
     store->enqueue(ctxt, msg, queue, xid);

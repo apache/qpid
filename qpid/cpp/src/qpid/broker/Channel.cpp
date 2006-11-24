@@ -167,6 +167,8 @@ void Channel::handlePublish(Message* _message, Exchange::shared_ptr _exchange){
 
 void Channel::handleHeader(AMQHeaderBody::shared_ptr header){
     messageBuilder.setHeader(header);
+    //at this point, decide based on the size of the message whether we want
+    //to stage it by saving content directly to disk as it arrives
 }
 
 void Channel::handleContent(AMQContentBody::shared_ptr content){
