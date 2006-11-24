@@ -60,7 +60,7 @@
       <directory>target</directory>
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <includes>
-	<include>qpid-incubator.jar</include>
+	<include>qpid-incubating.jar</include>
       </includes>
     </fileSet>
   </fileSets>
