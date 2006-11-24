@@ -18,29 +18,41 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing;
+package org.apache.qpid.util;
 
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class AMQMethodBodyFactory implements BodyFactory
+public class ConcurrentLinkedQueueAtomicSize<E> extends ConcurrentLinkedQueue<E>
 {
-    private static final Logger _log = Logger.getLogger(AMQMethodBodyFactory.class);
-    
-    private static final AMQMethodBodyFactory _instance = new AMQMethodBodyFactory();
-    
-    public static AMQMethodBodyFactory getInstance()
+    AtomicInteger _size = new AtomicInteger(0);
+
+    public int size()
     {
-        return _instance;
-    }
-    
-    private AMQMethodBodyFactory()
-    {
-        _log.debug("Creating method body factory");
+        return _size.get();
     }
 
-    public AMQBody createBody(ByteBuffer in) throws AMQFrameDecodingException
+    public boolean offer(E o)
     {
-        return MethodBodyDecoderRegistry.get(in.getUnsignedShort(), in.getUnsignedShort());        
+
+        if (super.offer(o))
+        {
+            _size.incrementAndGet();
+            return true;
+        }
+
+        return false;
+    }
+
+    public E poll()
+    {
+        E e = super.poll();
+
+        if (e != null)
+        {
+            _size.decrementAndGet();
+        }
+
+        return e;
     }
 }
