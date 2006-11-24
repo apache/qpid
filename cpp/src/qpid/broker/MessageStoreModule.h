@@ -39,6 +39,8 @@ namespace qpid {
             void create(const Queue& queue);
             void destroy(const Queue& queue);
             void recover(RecoveryManager& queues);
+            void stage(Message::shared_ptr& msg);
+            void destroy(Message::shared_ptr& msg);
             void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             void committed(const string * const xid);
