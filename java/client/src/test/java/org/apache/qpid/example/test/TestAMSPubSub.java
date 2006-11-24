@@ -1,10 +1,20 @@
-/**
- * Class that uses an input file for message content and doesn't archive it up after passing
- * to the AMS publisher
- * Author: Marnie McCormack
- * Date: 18-Jul-2006
- * Time: 14:54:31
- * Copyright JPMorgan Chase 2006
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.qpid.example.test;
 
@@ -22,11 +32,10 @@ import org.apache.log4j.BasicConfigurator;
 public class TestAMSPubSub {
 
     private static final Logger _logger = Logger.getLogger(TestAMSPubSub.class);
-    private static final String _defaultPayloadPath = "C:/Requirements/examplexml/test.xml";
+    private static final String _defaultPayloadPath = "/tmp";
 
     private static Subscriber subscriber;
 
-    private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
 
      /**
      * Test main for class using default of local file for message payload
@@ -43,8 +52,8 @@ public class TestAMSPubSub {
         //create publisher and subscriber
         subscriber = new Subscriber();
 
-        //subscribe to the topic
-        testPubSub.subscribe(args);
+        //subscribe 
+        testPubSub.subscribe();
 
         //publish a message
         if (args.length == 1)
@@ -66,12 +75,9 @@ public class TestAMSPubSub {
 
     }
 
-    private void subscribe(String[] args)
+    private void subscribe()
     {
-        Properties props = System.getProperties();
-        subscriber.subscribe(props.getProperty(Statics.HOST_PROPERTY),
-                                props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                                props.getProperty(Statics.VIRTUAL_PATH_PROPERTY),props.getProperty(Statics.QUEUE_PROPERTY));
+        subscriber.subscribe();
     }
 
     private void publish(String payloadPath)

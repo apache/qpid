@@ -1,28 +1,26 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.framing;
 
-import junit.framework.JUnit4TestAdapter;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.xml.security.utils.Base64;
-import org.apache.xml.security.exceptions.Base64DecodingException;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,10 +29,11 @@ import java.io.Reader;
 import java.util.Enumeration;
 import java.util.Properties;
 
-public class FieldTableTest
+import junit.framework.TestCase;
+
+public class FieldTableTest extends TestCase
 {
-    @Test
-    public void dataDump() throws IOException, AMQFrameDecodingException, Base64DecodingException
+    public void testDataDump() throws IOException, AMQFrameDecodingException
     {
         byte[] data = readBase64("content.txt");
         System.out.println("Got " + data.length + " bytes of data");
@@ -51,19 +50,17 @@ public class FieldTableTest
     }
 
     /*
-    @Test
-    public void case1() throws AMQFrameDecodingException, IOException
+    public void testCase1() throws AMQFrameDecodingException, IOException
     {
-        testEncoding(load("FieldTableTest.properties"));
+        doTestEncoding(load("FieldTableTest.properties"));
     }
 
-    @Test
-    public void case2() throws AMQFrameDecodingException, IOException
+    public void testCase2() throws AMQFrameDecodingException, IOException
     {
-        testEncoding(load("FieldTableTest2.properties"));
+        doTestEncoding(load("FieldTableTest2.properties"));
     }
     */
-    void testEncoding(FieldTable table) throws AMQFrameDecodingException
+    void doTestEncoding(FieldTable table) throws AMQFrameDecodingException
     {
         assertEquivalent(table, encodeThenDecode(table));
     }
@@ -101,10 +98,11 @@ public class FieldTableTest
         return ((BasicContentHeaderProperties) header.properties).getHeaders();
     }
 
-    byte[] readBase64(String name) throws IOException, Base64DecodingException
+    byte[] readBase64(String name) throws IOException
     {
         String content = read(new InputStreamReader(getClass().getResourceAsStream(name)));
-        return Base64.decode(content);
+
+        return org.apache.commons.codec.binary.Base64.decodeBase64(content.getBytes());
     }
 
     FieldTable load(String name) throws IOException
@@ -155,6 +153,6 @@ public class FieldTableTest
 
     public static junit.framework.Test suite()
     {
-        return new JUnit4TestAdapter(FieldTableTest.class);
+        return new junit.framework.TestSuite(FieldTableTest.class);
     }
 }

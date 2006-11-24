@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.qpid.example.publisher;
 
 import org.apache.log4j.Logger;
@@ -9,10 +27,6 @@ import java.util.Properties;
 /**
  * Class that sends heartbeat messages to allow monitoring of message consumption
  * Sends regular (currently 20 seconds apart) heartbeat message
- * Author: Marnie McCormack
- * Date: 20-Jul-2006
- * Time: 09:56:56
- * Copyright JPMorgan Chase 2006
  */
 public class MonitorMessageDispatcher {
 
@@ -104,10 +118,7 @@ public class MonitorMessageDispatcher {
        Properties props = System.getProperties();
 
        //Create a _publisher using failover details and constant for monitor queue
-       _monitorPublisher = new MonitorPublisher(props.getProperty(Statics.HOST_PROPERTY),
-                               props.getProperty(Statics.CLIENT_PROPERTY), Statics.MONITOR_QUEUE,
-                               props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                               props.getProperty(Statics.VIRTUAL_PATH_PROPERTY), props.getProperty(Statics.ARCHIVE_PATH));
+       _monitorPublisher = new MonitorPublisher();
 
        _monitorPublisher.setName(MonitorMessageDispatcher.DEFAULT_MONITOR_PUB_NAME);
        return _monitorPublisher;

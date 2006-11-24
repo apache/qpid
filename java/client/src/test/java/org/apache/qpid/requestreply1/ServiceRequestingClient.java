@@ -1,18 +1,21 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.requestreply1;
@@ -165,15 +168,14 @@ public class ServiceRequestingClient implements ExceptionListener
     }
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
                                    String vpath, String commandQueueName,
-                                   final int messageCount, final int messageDataLength, boolean persistent) throws AMQException, URLSyntaxException
+                                   final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
     {
         _messageCount = messageCount;
         MESSAGE_DATA = createMessagePayload(messageDataLength);
         try
         {
             createConnection(brokerHosts, clientID, username, password, vpath);
-            //_session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            _session = (Session) _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            _session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
 
             _connection.setExceptionListener(this);
@@ -182,7 +184,7 @@ public class ServiceRequestingClient implements ExceptionListener
             AMQQueue destination = new AMQQueue(commandQueueName);
             _producer = (MessageProducer) _session.createProducer(destination);
             _producer.setDisableMessageTimestamp(true);
-            _producer.setDeliveryMode(persistent?DeliveryMode.PERSISTENT:DeliveryMode.NON_PERSISTENT);
+            _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
             _tempDestination = new AMQQueue("TempResponse" +
                                             Long.toString(System.currentTimeMillis()), true);
@@ -193,7 +195,6 @@ public class ServiceRequestingClient implements ExceptionListener
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
             _producer.send(first);
-            _session.commit(); // TODO REMOVE
             try
             {
                 Thread.sleep(1000);
@@ -233,7 +234,6 @@ public class ServiceRequestingClient implements ExceptionListener
             }
             _producer.send(msg);
         }
-        _session.commit(); // TODO REMOVE
         _log.info("Finished sending " + _messageCount + " messages");
     }
 
@@ -268,7 +268,7 @@ public class ServiceRequestingClient implements ExceptionListener
             String clientID = address.getHostName() + System.currentTimeMillis();
             ServiceRequestingClient client = new ServiceRequestingClient(args[0], clientID, args[1], args[2], args[3],
                                                                          args[4], Integer.parseInt(args[5]),
-                                                                         messageDataLength, true);
+                                                                         messageDataLength);
             Object waiter = new Object();
             client.run(waiter);
             synchronized (waiter)
