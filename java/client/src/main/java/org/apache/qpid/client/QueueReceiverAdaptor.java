@@ -20,41 +20,21 @@
  */
 package org.apache.qpid.client;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.Topic;
-import javax.jms.TopicSubscriber;
+import javax.jms.*;
 
 /**
- * Wraps a MessageConsumer to fulfill the extended TopicSubscriber contract
- *
+ * Class that wraps a MessageConsumer for backwards JMS compatibility
+ * Returned by methods in AMQSession etc
  */
-class TopicSubscriberAdaptor implements TopicSubscriber
-{
-    private final Topic _topic;
-    private final MessageConsumer _consumer;
-    private final boolean _noLocal;
+public class QueueReceiverAdaptor implements QueueReceiver {
 
-    TopicSubscriberAdaptor(Topic topic, MessageConsumer consumer, boolean noLocal)
+    protected MessageConsumer _consumer;
+    protected Queue _queue;
+
+    protected QueueReceiverAdaptor(Queue queue, MessageConsumer consumer)
     {
-        _topic = topic;
         _consumer = consumer;
-        _noLocal = noLocal;
-    }
-    TopicSubscriberAdaptor(Topic topic, BasicMessageConsumer consumer)
-    {
-        this(topic, consumer, consumer.isNoLocal());
-    }
-    public Topic getTopic() throws JMSException
-    {
-        return _topic;
-    }
-
-    public boolean getNoLocal() throws JMSException
-    {
-        return _noLocal;
+        _queue = queue;
     }
 
     public String getMessageSelector() throws JMSException
@@ -69,7 +49,7 @@ class TopicSubscriberAdaptor implements TopicSubscriber
 
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
-        _consumer.setMessageListener(messageListener);
+       _consumer.setMessageListener(messageListener);
     }
 
     public Message receive() throws JMSException
@@ -91,4 +71,16 @@ class TopicSubscriberAdaptor implements TopicSubscriber
     {
         _consumer.close();
     }
+
+    /**
+     * Return the queue associated with this receiver
+     * @return
+     * @throws JMSException
+     */
+    public Queue getQueue() throws JMSException
+    {
+       return _queue;
+    }
+
+
 }

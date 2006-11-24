@@ -1,18 +1,21 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.client.message;
@@ -25,8 +28,9 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.JmsNotImplementedException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableKeyEnumeration;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.PropertyFieldTable;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -39,16 +43,19 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
-//    protected Map _messageProperties;
 
-    public static final char BOOLEAN_PROPERTY_PREFIX = 'B';
-    public static final char BYTE_PROPERTY_PREFIX = 'b';
-    public static final char SHORT_PROPERTY_PREFIX = 's';
-    public static final char INT_PROPERTY_PREFIX = 'i';
-    public static final char LONG_PROPERTY_PREFIX = 'l';
-    public static final char FLOAT_PROPERTY_PREFIX = 'f';
-    public static final char DOUBLE_PROPERTY_PREFIX = 'd';
-    public static final char STRING_PROPERTY_PREFIX = 'S';
+    //todo Remove these and Change _headers to use a subclass of PropertyFieldTable that limits
+    // the properties that can be added... or suitably handles the values that cannot be added to the
+    // AMQP header field table.
+    public static final char BOOLEAN_PROPERTY_PREFIX = PropertyFieldTable.BOOLEAN_PROPERTY_PREFIX;
+    public static final char BYTE_PROPERTY_PREFIX = PropertyFieldTable.BYTE_PROPERTY_PREFIX;
+    public static final char SHORT_PROPERTY_PREFIX = PropertyFieldTable.SHORT_PROPERTY_PREFIX;
+    public static final char INT_PROPERTY_PREFIX = PropertyFieldTable.INT_PROPERTY_PREFIX;
+    public static final char LONG_PROPERTY_PREFIX = PropertyFieldTable.LONG_PROPERTY_PREFIX;
+    public static final char FLOAT_PROPERTY_PREFIX = PropertyFieldTable.FLOAT_PROPERTY_PREFIX;
+    public static final char DOUBLE_PROPERTY_PREFIX = PropertyFieldTable.DOUBLE_PROPERTY_PREFIX;
+    public static final char STRING_PROPERTY_PREFIX = PropertyFieldTable.STRING_PROPERTY_PREFIX ;
+
 
     protected boolean _redelivered;
 
@@ -250,8 +257,18 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         }
         else
         {
-            // TODO: fix this
-            return getJmsContentHeaderProperties().getHeaders().containsKey(STRING_PROPERTY_PREFIX + propertyName);
+            Iterator keys = getJmsContentHeaderProperties().getHeaders().keySet().iterator();
+
+            while (keys.hasNext())
+            {
+                String key = (String) keys.next();
+
+                if (key.endsWith(propertyName))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -486,9 +503,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public void setStringProperty(String propertyName, String value) throws JMSException
     {
         checkPropertyName(propertyName);
-        createPropertyMapIfRequired();
-        propertyName = STRING_PROPERTY_PREFIX + propertyName;
-        getJmsContentHeaderProperties().getHeaders().put(propertyName, value);
+        getJmsContentHeaderProperties().getHeaders().put(STRING_PROPERTY_PREFIX + propertyName, value);
     }
 
     private void createPropertyMapIfRequired()
@@ -501,7 +516,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     public void setObjectProperty(String string, Object object) throws JMSException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        //todo this should be changed to something else.. the Header doesn't support objects.
+        throw new RuntimeException("Not Implemented");
     }
 
     public void acknowledge() throws JMSException
@@ -622,10 +638,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
-        if (getJmsContentHeaderProperties().getHeaders() == null)
-        {
-            getJmsContentHeaderProperties().setHeaders(new FieldTable());
-        }
+        createPropertyMapIfRequired();
     }
 
     public FieldTable populateHeadersFromMessageProperties()

@@ -1,18 +1,21 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.client.message;
@@ -44,7 +47,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         getJmsContentHeaderProperties().setEncoding(encoding);
     }
 
-    JMSTextMessage(long deliveryTag, ByteBuffer data, BasicContentHeaderProperties contentHeader)
+    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(deliveryTag, contentHeader, data);
@@ -59,7 +62,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
 
     JMSTextMessage(String text) throws JMSException
     {
-        super((ByteBuffer)null);
+        super((ByteBuffer) null);
         setText(text);
     }
 
@@ -110,7 +113,8 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         catch (UnsupportedEncodingException e)
         {
             // should never occur
-            throw new JMSException("Unable to decode string data");
+            JMSException jmse = new JMSException("Unable to decode string data");
+            jmse.setLinkedException(e);
         }
     }
 

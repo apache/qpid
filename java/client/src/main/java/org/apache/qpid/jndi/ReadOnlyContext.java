@@ -46,7 +46,7 @@ import java.util.Map;
  * String envEntry2 = (String) componentContext.lookup("env/myEntry2");
  * </code>
  *
- * @version $Revision: 1.2 $ $Date: 2005/08/27 03:52:39 $
+ * @version $Revision: 473072 $ $Date: 2006-11-09 21:04:38 +0000 (Thu, 09 Nov 2006) $
  */
 public class ReadOnlyContext implements Context, Serializable
 {
