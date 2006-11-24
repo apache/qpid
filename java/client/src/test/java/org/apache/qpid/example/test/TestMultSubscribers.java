@@ -32,7 +32,7 @@ import org.apache.log4j.BasicConfigurator;
 public class TestMultSubscribers {
 
     private static final Logger _logger = Logger.getLogger(TestMultSubscribers.class);
-    private static final String _defaultPayloadPath = "C:/Requirements/examplexml/test.xml";
+    private static final String _defaultPayloadPath = "/tmp";
 
     private static Subscriber subscriber1;
     private static Subscriber subscriber2;
@@ -84,12 +84,8 @@ public class TestMultSubscribers {
     private void subscribe(String[] args)
     {
         Properties props = System.getProperties();
-        subscriber1.subscribe(props.getProperty(Statics.HOST_PROPERTY),
-                                props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                                props.getProperty(Statics.VIRTUAL_PATH_PROPERTY),props.getProperty(Statics.QUEUE_PROPERTY));
-        subscriber2.subscribe(props.getProperty(Statics.HOST_PROPERTY), 
-                                props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                                props.getProperty(Statics.VIRTUAL_PATH_PROPERTY),props.getProperty(Statics.QUEUE_PROPERTY));
+        subscriber1.subscribe();
+        subscriber2.subscribe();
 
     }
 

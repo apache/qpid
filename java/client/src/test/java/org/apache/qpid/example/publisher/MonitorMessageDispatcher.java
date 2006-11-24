@@ -27,10 +27,6 @@ import java.util.Properties;
 /**
  * Class that sends heartbeat messages to allow monitoring of message consumption
  * Sends regular (currently 20 seconds apart) heartbeat message
- * Author: Marnie McCormack
- * Date: 20-Jul-2006
- * Time: 09:56:56
- * Copyright JPMorgan Chase 2006
  */
 public class MonitorMessageDispatcher {
 
@@ -122,10 +118,7 @@ public class MonitorMessageDispatcher {
        Properties props = System.getProperties();
 
        //Create a _publisher using failover details and constant for monitor queue
-       _monitorPublisher = new MonitorPublisher(props.getProperty(Statics.HOST_PROPERTY),
-                               props.getProperty(Statics.CLIENT_PROPERTY), Statics.MONITOR_QUEUE,
-                               props.getProperty(Statics.USER_PROPERTY), props.getProperty(Statics.PWD_PROPERTY),
-                               props.getProperty(Statics.VIRTUAL_PATH_PROPERTY), props.getProperty(Statics.ARCHIVE_PATH));
+       _monitorPublisher = new MonitorPublisher();
 
        _monitorPublisher.setName(MonitorMessageDispatcher.DEFAULT_MONITOR_PUB_NAME);
        return _monitorPublisher;

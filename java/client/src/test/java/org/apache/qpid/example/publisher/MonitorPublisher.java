@@ -27,10 +27,6 @@ import org.apache.log4j.Logger;
 /**
  * Subclass of Publisher which uses QPID functionality to send a heartbeat message
  * Note immediate flag not available via JMS MessageProducer
- * Author: Marnie McCormack
- * Date: 12-Sep-2006
- * Time: 09:41:07
- * Copyright JPMorgan Chase 2006
  */
 public class MonitorPublisher extends Publisher
 {
@@ -39,16 +35,9 @@ public class MonitorPublisher extends Publisher
 
     BasicMessageProducer _producer;
 
-    public MonitorPublisher(String host, int port, String clientID, String queueName,
-                            String user, String password, String virtualPath, String destinationDir)
+    public MonitorPublisher()
     {
-        super(host,port,clientID,queueName,user,password,virtualPath,destinationDir);
-    }
-
-    public MonitorPublisher(String hostdetails, String clientID, String queueName,
-                            String user, String password, String virtualPath, String destinationDir)
-    {
-        super(hostdetails,clientID,queueName,user,password,virtualPath,destinationDir);
+        super();
     }
 
      /*

@@ -20,9 +20,6 @@ package org.apache.qpid.example.shared;
 
 /**
  * Constants used by AMS Publisher/Subscriber classes
- * Author: Marnie McCormack
- * Date: 18-Jul-2006
- * Time: 09:19:33
  */
 public class Statics {
 
@@ -30,7 +27,7 @@ public class Statics {
 
     public static final String QUEUE_NAME = "EXAMPLE_QUEUE";
 
-    public static final String MONITOR_QUEUE = "MONITOR_QUEUE";
+    public static final String MONITOR_QUEUE_SUFFIX = "_MONITOR";
 
     public static final String HOST_PROPERTY = "host";
 

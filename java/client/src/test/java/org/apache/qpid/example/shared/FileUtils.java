@@ -22,10 +22,6 @@ import java.io.*;
 
 /**
  * Class that provides file related utility methods for utility use
- * Author: Marnie McCormack
- * Date: 20-Jul-2006
- * Time: 08:17:16
- * Copyright JPMorgan Chase 2006
  */
 public class FileUtils {
 
