@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include <qpid/broker/MessageStore.h>
+#include <qpid/broker/NullMessageStore.h>
 #include <qpid/broker/RecoveryManager.h>
 #include <qpid/broker/TxPublish.h>
 #include <qpid_test_plugin.h>
@@ -35,7 +35,7 @@ using namespace qpid::framing;
 class TxPublishTest : public CppUnit::TestCase  
 {
 
-    class TestMessageStore : public MessageStore
+    class TestMessageStore : public NullMessageStore
     {
     public:
         vector< pair<string, Message::shared_ptr> > enqueued;
@@ -46,15 +46,7 @@ class TxPublishTest : public CppUnit::TestCase
         }
         
         //dont care about any of the other methods:
-        void create(const Queue&){}
-        void destroy(const Queue&){}
-        void recover(RecoveryManager&){}
-        void dequeue(TransactionContext*, Message::shared_ptr&, const Queue&, const string * const){}
-        void committed(const string * const){}
-        void aborted(const string * const){}
-        std::auto_ptr<TransactionContext> begin(){ return std::auto_ptr<TransactionContext>(); }
-        void commit(TransactionContext*){}
-        void abort(TransactionContext*){}        
+        TestMessageStore() : NullMessageStore(false) {}
         ~TestMessageStore(){}
     };
     

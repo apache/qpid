@@ -24,6 +24,7 @@
 #include <qpid/QpidError.h>
 #include <qpid/broker/Exchange.h>
 #include <qpid/broker/Message.h>
+#include <qpid/broker/MessageStore.h>
 #include <qpid/framing/AMQContentBody.h>
 #include <qpid/framing/AMQHeaderBody.h>
 #include <qpid/framing/BasicPublishBody.h>
@@ -37,13 +38,16 @@ namespace qpid {
                 virtual void complete(Message::shared_ptr&) = 0;
                 virtual ~CompletionHandler(){}
             };
-            MessageBuilder(CompletionHandler* _handler);
+            MessageBuilder(CompletionHandler* _handler, MessageStore* const store = 0, u_int64_t stagingThreshold = 0);
             void initialise(Message::shared_ptr& msg);
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr& header);
             void addContent(qpid::framing::AMQContentBody::shared_ptr& content);
         private:
             Message::shared_ptr message;
             CompletionHandler* handler;
+            MessageStore* const store;
+            const u_int64_t stagingThreshold;
+            bool staging;
 
             void route();
         };

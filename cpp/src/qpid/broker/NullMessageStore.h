@@ -32,17 +32,21 @@ namespace qpid {
          * A null implementation of the MessageStore interface
          */
         class NullMessageStore : public MessageStore{
+            const bool warn;
         public:
-            void create(const Queue& queue);
-            void destroy(const Queue& queue);
-            void recover(RecoveryManager& queues);
-            void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
-            void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
-            void committed(const string * const xid);
-            void aborted(const string * const xid);
-            std::auto_ptr<TransactionContext> begin();
-            void commit(TransactionContext* ctxt);
-            void abort(TransactionContext* ctxt);
+            NullMessageStore(bool warn = true);
+            void virtual create(const Queue& queue);
+            void virtual destroy(const Queue& queue);
+            void virtual recover(RecoveryManager& queues);
+            void virtual stage(Message::shared_ptr& msg);
+            void virtual destroy(Message::shared_ptr& msg);
+            void virtual enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
+            void virtual dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
+            void virtual committed(const string * const xid);
+            void virtual aborted(const string * const xid);
+            virtual std::auto_ptr<TransactionContext> begin();
+            void virtual commit(TransactionContext* ctxt);
+            void virtual abort(TransactionContext* ctxt);
             ~NullMessageStore(){}
         };
     }
