@@ -58,11 +58,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ant</groupId>
-            <artifactId>ant-junit</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
