@@ -20,7 +20,7 @@ package org.apache.qpid.example.publisher;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionFactory;
 
 import org.apache.qpid.jms.Session;
 
@@ -30,14 +30,15 @@ import javax.jms.DeliveryMode;
 import javax.jms.Queue;
 import javax.jms.MessageProducer;
 import javax.jms.Connection;
+import javax.naming.InitialContext;
 
-
-import org.apache.qpid.example.shared.ConnectionException;
-import org.apache.qpid.example.shared.Statics;
+import org.apache.qpid.example.shared.InitialContextHelper;
 
 public class Publisher
 {
     private static final Logger _log = Logger.getLogger(Publisher.class);
+
+    protected InitialContextHelper _contextHelper;
 
     protected Connection _connection;
 
@@ -51,27 +52,33 @@ public class Publisher
 
     protected Queue _destination;
 
+    protected static final String _defaultDestinationDir = "/tmp";
+
     //constructor for use with a single host
-    public Publisher(String host, int port, String clientID, String queueName,
-                     String user, String password, String virtualPath, String destinationDir)
+    public Publisher()
     {
         try
         {
-            createConnection(host, port, clientID, user, password, virtualPath);
+            //get an initial context from default properties
+            _contextHelper = new InitialContextHelper(null);
+            InitialContext ctx = _contextHelper.getInitialContext();
+
+            //then create a connection using the AMQConnectionFactory
+            AMQConnectionFactory cf = (AMQConnectionFactory) ctx.lookup("local");
+            _connection = cf.createConnection();
 
             //create a transactional session
             _session = (Session) _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
-            //now using a queue rather than a topic
-            //AMQTopic destination = new AMQTopic(topicName);
+            //lookup the example queue and use it
             //Queue is non-exclusive and not deleted when last consumer detaches
-            _destination = _session.createQueue(queueName);
+            _destination = _session.createQueue((String)ctx.lookup("MyQueue"));
 
             //create a message producer
             _producer = _session.createProducer(_destination);
 
             //set destination dir for files that have been processed
-            _destinationDir = destinationDir;
+            _destinationDir = _defaultDestinationDir;
 
             _connection.start();
         }
@@ -82,44 +89,9 @@ public class Publisher
         }
     }
 
-    //constructor that allows for multiple host details to be provided for failover
-    public Publisher(String hostdetails, String clientID, String queueName,
-                     String user, String password, String virtualPath, String destinationDir)
-    {
-        try
-        {
-            if (queueName==null||queueName.length()==0)
-            {
-                queueName = Statics.QUEUE_NAME;
-            }
-            createConnectionWithFailover(hostdetails, clientID, user, password, virtualPath);
-
-            //create a transactional session
-            _session = (Session) _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-
-            //now using a queue rather than a topic
-            //AMQTopic destination = new AMQTopic(topicName);
-            //Queue is non-exclusive and not deleted when last consumer detaches
-            _destination = _session.createQueue(queueName);
-
-            //create a message producer
-            _producer = _session.createProducer(_destination);
-
-            //set destination dir for files that have been processed
-            _destinationDir = destinationDir;
-
-            _connection.start();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            _log.error(e);
-        }
-    }
-
-    /*
+    /**
     * Publishes a non-persistent message using transacted session
-    */
+    **/
     public boolean sendMessage(Message message)
     {
         try
@@ -184,34 +156,6 @@ public class Publisher
     public void setDestinationDir(String destinationDir)
     {
         _destinationDir = destinationDir;
-    }
-
-    //ONly using one set of host details
-    private void createConnection(String host, int port, String clientID, String user, String password, String virtualPath)
-                                   throws ConnectionException
-    {
-        try
-        {
-            _connection = new AMQConnection(host, port, user, password, clientID, virtualPath);
-        }
-        catch (Exception e)
-        {
-            throw new ConnectionException(e.toString());
-        }
-    }
-
-    //Create connection with more than one set of host details for failover
-    private void createConnectionWithFailover(String hostdetails, String clientID, String user, String password, String virtualPath)
-                                   throws ConnectionException
-    {
-        try
-        {
-            _connection = new AMQConnection(hostdetails, user, password, clientID, virtualPath);
-        }
-        catch (Exception e)
-        {
-            throw new ConnectionException(e.toString());
-        }
     }
 
     public String getName()

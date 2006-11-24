@@ -20,12 +20,6 @@ package org.apache.qpid.example.publisher;
 
 import org.apache.log4j.Logger;
 
-/**
- * Author: Marnie McCormack
- * Date: 18-Jul-2006
- * Time: 11:13:23
- * Copyright JPMorgan Chase 2006
- */
 public class MessageFactoryException extends Exception {
 
     private int _errorCode;
