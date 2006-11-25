@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<project name="XMS.AMQ.Common" default="build">
+    <property name="nant.settings.currentframework" value="net-1.0" />
+    <property name="basename" value="XMSCommon"/>
+    <property name="debug" value="true"/>
+    <property name="CommonCollectionsDir" value="../CommonCollections"/>
+    <property name="MINADir" value="../minadotnet"/>
+
+    <if test="${debug}">
+        <property name="targetdir" value="bin/${nant.settings.currentframework}/Debug"/>
+    </if>
+    <ifnot test="${debug}">
+        <property name="targetdir" value="bin/${nant.settings.currentframework}/Release"/>
+    </ifnot>
+
+    <target name="clean">
+        <delete>
+            <fileset>
+                <include name="${targetdir}/${basename}.dll"/>
+                <include name="${targetdir}/${basename}.pdb"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="init">
+        <mkdir dir="${targetdir}"/>
+    </target>
+
+    <target name="build" depends="init">
+        <csc target="library" output="${targetdir}/${basename}.dll" debug="${debug}">
+            <sources>
+                <include name="**/*.cs"/>
+                <exclude name="Properties/Settings.Designer.cs" />
+            </sources>
+            <references>
+                <lib>
+                    <include name="${CommonCollectionsDir}/${targetdir}" />
+                    <include name="${MINADir}/${targetdir}" />
+                    <include name="lib/**" />
+                </lib>
+                <include name="CommonCollections.dll" />
+                <include name="log4net.dll" />
+                <include name="MINA.dll" />
+                <include name="IBM.XMS.dll" />
+            </references>
+        </csc>
+    </target>
+</project>
