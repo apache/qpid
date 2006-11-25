@@ -303,6 +303,9 @@
         <property name="release.src.name" value="${project.name}-java-${release.fullversion}-src"/>
         <property name="build.release.src.dir" value="${build.release}/${release.src.name}"/>
 
+        <echo message="${release.src.name}" />
+        <echo message="${build.release.src.dir}" />
+   
         <!-- Ensure there is nothing in our target bin dir -->
         <delete dir="${build.release.src.dir}"/>
         <mkdir dir="${build.release.src.dir}"/>
