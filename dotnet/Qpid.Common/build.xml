@@ -1,0 +1,64 @@
+<project name="AMQ Dot Net Framing Layer" default="generate">
+    <property name="amq.home" value="../../.."/>
+    <path id="amq.home.path">
+      <pathelement location="${amq.home}"/>
+    </path>
+
+    <pathconvert targetos="unix" property="amq.home.fixed" refid="amq.home.path"/>
+
+<!--
+    <property name="amq.asl" value="${amq.home.fixed}/amqp.org/specs/amqp.xml"/>
+-->
+    <property name="amq.asl" value="amqp.xml"/>
+
+    <property name="stylesheet" value="stylesheets/framing.xsl"/>
+    <property name="registry_stylesheet" value="stylesheets/registry.xsl"/>
+    <property name="registry_template" value="resources/registry.template"/>
+    <property name="saxon.jar" value="lib/saxon/saxon8.jar"/>
+    <property name="generated.src" value="generated"/>
+    <property name="static.src" value="src"/>
+    <property name="resources" value="resources"/>
+    <property name="base.lib" value="lib"/>
+
+    <path id="project.classpath">
+        <fileset dir="${base.lib}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="prepare">
+        <mkdir dir="classes"/>
+    </target>
+
+    <target name="regenerate" depends="clean, generate" description="generates code">
+    </target>
+
+    <target name="check-generate">
+        <uptodate property="generateNotRequired" targetfile="${generated.src}/results.out" srcfile="${amq.asl}"/>
+    </target>
+
+    <target name="generate" depends="check-generate" unless="${generateNotRequired}" description="generates code">
+        <mkdir dir="${generated.src}"/>
+        <java jar="${saxon.jar}" fork="true">
+            <arg value="-o"/>
+            <arg value="${generated.src}/results.out"/>
+            <arg value="${amq.asl}"/>
+            <arg value="${stylesheet}"/>
+            <arg value="asl_base=${asl.base}"/>
+            <arg value="registry_name=MainRegistry"/>
+        </java>
+        <java jar="${saxon.jar}" fork="true">
+            <arg value="-o"/>
+            <arg value="${generated.src}/registry.out"/>
+            <arg value="${registry_template}"/>
+            <arg value="${registry_stylesheet}"/>
+        </java>
+    </target>
+
+    <target name="clean" depends="prepare" description="deletes any products of the compile and generate tasks">
+        <delete>
+            <fileset dir="classes" includes="**/*"/>
+            <fileset dir="${generated.src}" includes="**/*"/>
+        </delete>
+    </target>
+</project>
