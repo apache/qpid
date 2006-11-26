@@ -2,7 +2,7 @@
 
 Usage() 
 {
-  echo "usage: $0 dotnet11|dotnet20|mono20 release-number (e.g. 2.0.1)"
+  echo "usage: $0 dotnet11|dotnet20|mono release-number (e.g. 2.0.1)"
   exit 2
 }
 
@@ -17,8 +17,8 @@ if [[ $dotNetVersion == "dotnet11" ]]; then
   binDir=Qpid.Client.Tests/bin/FX1_1/Release
 elif [[ $dotNetVersion == "dotnet20" ]]; then
   binDir=qpid.client.tests/bin/release
-elif [[ $dotNetVersion == "mono20" ]]; then
-  binDir=build/mono20
+elif [[ $dotNetVersion == "mono" ]]; then
+  binDir=build/mono
 else
   Usage
 fi
