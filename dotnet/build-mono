@@ -7,7 +7,9 @@
 # Note: XBuild is a clone of MSBuild.
 #
 
-MCS_FLAGS="-debug+"
+#MCS_FLAGS="-debug+"
+MCS_FLAGS="-optimize"
+outDir=$PWD/build/mono
 
 FindExternalReferences() 
 {
@@ -66,7 +68,6 @@ Build()
   )
 }
 
-outDir=$PWD/build/mono20
 mkdir -p $outDir
 
 # Tried to magically get projects from Qpid.NET.sln but wrong order for building..
