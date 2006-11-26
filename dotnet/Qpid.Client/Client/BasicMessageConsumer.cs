@@ -316,7 +316,11 @@ namespace Qpid.Client
                 {
                     if (_messageListener != null)
                     {
+#if __MonoCS__
+                        _messageListener(jmsMessage);
+#else
                         _messageListener.Invoke(jmsMessage);
+#endif
                     }
                     else
                     {

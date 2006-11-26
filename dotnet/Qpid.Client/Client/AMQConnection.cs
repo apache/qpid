@@ -90,7 +90,7 @@ namespace Qpid.Client
         /// <summary>
         /// Maps from session id (Integer) to AmqChannel instance
         /// </summary>
-        private readonly LinkedHashtable _sessions = new LinkedHashtable();
+        private readonly IDictionary _sessions = new LinkedHashtable();
 
         private ExceptionListenerDelegate _exceptionListener;
 
@@ -551,7 +551,11 @@ namespace Qpid.Client
                 {
                     Interlocked.Exchange(ref _closed, CLOSED);
                 }
+#if __MonoCS__
+                _exceptionListener(xe);
+#else
                 _exceptionListener.Invoke(xe);
+#endif
             }
             else
             {

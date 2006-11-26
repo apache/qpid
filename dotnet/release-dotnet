@@ -2,7 +2,7 @@
 
 Usage() 
 {
-  echo "usage: $0 1.1|2.0 release-number (e.g. 2.0.1)"
+  echo "usage: $0 dotnet11|dotnet20|mono20 release-number (e.g. 2.0.1)"
   exit 2
 }
 
@@ -11,12 +11,14 @@ if [[ $# -ne 2 ]]; then
 fi
 
 dotNetVersion=$1
-releaseName=Qpid.NET-$2-FX$dotNetVersion
+releaseName=Qpid.NET-$2-$dotNetVersion
 
-if [[ $dotNetVersion == "1.1" ]]; then
+if [[ $dotNetVersion == "dotnet11" ]]; then
   binDir=Qpid.Client.Tests/bin/FX1_1/Release
-elif [[ $dotNetVersion == "2.0" ]]; then
-  binDir=Qpid.Client.Tests/bin/Release
+elif [[ $dotNetVersion == "dotnet20" ]]; then
+  binDir=qpid.client.tests/bin/release
+elif [[ $dotNetVersion == "mono20" ]]; then
+  binDir=build/mono20
 else
   Usage
 fi
@@ -28,15 +30,14 @@ filesToRelease="
   Qpid.Codec.dll
   Qpid.Common.dll
   Qpid.Messaging.dll
-  log4net.dll
-  log4net.xml"
+  log4net.dll"
 
-releaseDir=build/$releaseName
+releaseDir=build/release/$releaseName
 mkdir -p $releaseDir
 
 for file in $filesToRelease; do
   cp $binDir/$file $releaseDir
 done
 
-cd build
+cd build/release
 jar -cvMf $releaseName.zip $releaseName
