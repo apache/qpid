@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.queue.QueueRegistry;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,11 +48,7 @@ public class SkeletonMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-    }
-
-    public void put(AMQMessage msg)
-    {
-    }
+    }    
 
     public void removeMessage(long messageId)
     {
@@ -98,5 +95,25 @@ public class SkeletonMessageStore implements MessageStore
     public long getNewMessageId()
     {
         return _messageId.getAndIncrement();
+    }
+
+    public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
+    {
+
+    }
+
+    public void storeMessageMetaData(long messageId, MessageMetaData messageMetaData) throws AMQException
+    {
+
+    }
+
+    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    {
+        return null;
+    }
+
+    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    {
+        return null;
     }
 }

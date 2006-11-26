@@ -167,6 +167,21 @@ public class AMQMessage
         }
     }
 
+    /**
+     * Used in testing only. This allows the passing of the content header immediately
+     * on construction.
+     * @param messageId
+     * @param publishBody
+     * @param txnContext
+     * @param contentHeader
+     */
+    public AMQMessage(long messageId, BasicPublishBody publishBody, TransactionalContext txnContext,
+                      ContentHeaderBody contentHeader) throws AMQException
+    {
+        this(messageId, publishBody, txnContext);
+        setContentHeaderBody(contentHeader);
+    }
+
     protected AMQMessage(AMQMessage msg) throws AMQException
     {
         _publisher = msg._publisher;

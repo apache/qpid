@@ -26,13 +26,21 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.AMQException;
 
 import junit.framework.TestCase;
 
+import java.util.LinkedList;
+
 class MessageTestHelper extends TestCase
 {
     private final MessageStore _messageStore = new SkeletonMessageStore();
+
+    private final TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, null,
+                                                                                 new LinkedList<RequiredDeliveryException>());
 
     MessageTestHelper() throws Exception
     {
@@ -48,7 +56,8 @@ class MessageTestHelper extends TestCase
     {
         BasicPublishBody publish = new BasicPublishBody();
         publish.immediate = immediate;
-        return new AMQMessage(_messageStore, publish, new ContentHeaderBody(), null);
+        return new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
+                              new ContentHeaderBody());        
     }
 
 }
