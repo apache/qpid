@@ -1,18 +1,21 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.server.protocol;
@@ -76,7 +79,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private boolean _closed;
 
-    private long _maxNoOfChannels;
+    private long _maxNoOfChannels = 1000;
 
     /* AMQP Version for this session */
 
@@ -102,34 +105,21 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
          * Represents the channel attributes sent with channel data.
          */
         private String[] _channelAtttibuteNames = { "ChannelId",
-                                                    "ChannelName",
                                                     "Transactional",
                                                     "DefaultQueue",
                                                     "UnacknowledgedMessageCount"};
         private String[] _channelAttributeDescriptions = { "Channel Identifier",
-                                                           "Channel Name",
                                                            "is Channel Transactional?",
                                                            "Default Queue Name",
                                                            "Unacknowledged Message Count"};
         private OpenType[] _channelAttributeTypes = { SimpleType.INTEGER,
-                                                      SimpleType.OBJECTNAME,
                                                       SimpleType.BOOLEAN,
                                                       SimpleType.STRING,
                                                       SimpleType.INTEGER};
-        /**
-         * Channels in the list will be indexed according to channelId.
-         */
-        private String[] _indexNames = { "ChannelId" };
 
-        /**
-         * represents the data type for channel data.
-         */
-        private CompositeType _channelType = null;
-        /**
-         * Datatype for list of channelsType.
-         */
-        private TabularType  _channelsType = null;
-
+        private String[] _indexNames = { "ChannelId" };  //Channels in the list will be indexed according to channelId.
+        private CompositeType _channelType = null;       // represents the data type for channel data
+        private TabularType  _channelsType = null;       // Datatype for list of channelsType
         private TabularDataSupport _channelsList = null;
 
         @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
@@ -151,13 +141,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             try
             {
                 _channelType = new CompositeType("channel",
-                                              "a Channel",
+                                              "Channel Details",
                                               _channelAtttibuteNames,
                                               _channelAttributeDescriptions,
                                               _channelAttributeTypes);
 
                 _channelsType = new TabularType("channelsType",
-                                       "List of available channelsType",
+                                       "List of available channels",
                                        _channelType,
                                        _indexNames);
             }
@@ -213,7 +203,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 {
                     throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
                 }
-                channel.commit();
+                if (channel.isTransactional())
+                {
+                    channel.commit();
+                }
             }
             catch(AMQException ex)
             {
@@ -230,7 +223,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 {
                     throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
                 }
-                channel.rollback();
+                if (channel.isTransactional())
+                {
+                    channel.rollback();
+                }
             }
             catch(AMQException ex)
             {
@@ -250,20 +246,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             for (Map.Entry<Integer, AMQChannel> entry : _channelMap.entrySet())
             {
                 AMQChannel channel = entry.getValue();
-                //ManagedChannel channel = (AMQChannelMBean)amqChannel.getManagedObject();
-                ObjectName channelObjectName = null;
-
-                try
-                {
-                    channelObjectName = channel.getObjectName();
-                }
-                catch (MalformedObjectNameException ex)
-                {
-                    _logger.error("Unable to create object name: ", ex);
-                }
-
                 Object[] itemValues = {channel.getChannelId(),
-                                       channelObjectName,
+                                       channel.isTransactional(),
                                        (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
                                        channel.getUnacknowledgedMessageMap().size()};
 
@@ -414,7 +398,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             }
             else
             {
-                contentFrameReceived(frame);                
+                contentFrameReceived(frame);
             }
         }
     }

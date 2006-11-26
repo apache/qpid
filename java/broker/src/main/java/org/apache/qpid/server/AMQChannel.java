@@ -1,18 +1,21 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.server;
@@ -32,12 +35,10 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.TxnBuffer;
-import org.apache.qpid.server.txn.NonTransactionalContext;
 
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,7 +53,9 @@ public class AMQChannel
 
     //private boolean _transactional;
 
-    private long _prefetchCount;
+    private long _prefetch_HighWaterMark;
+
+    private long _prefetch_LowWaterMark;
 
     /**
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
@@ -103,7 +106,8 @@ public class AMQChannel
             throws AMQException
     {
         _channelId = channelId;
-        _prefetchCount = DEFAULT_PREFETCH;
+        _prefetch_HighWaterMark = DEFAULT_PREFETCH;
+        _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
         // TODO: fix me to pass in the txn context or at least have a factory for it
@@ -118,6 +122,14 @@ public class AMQChannel
         _txnContext = new LocalTransactionalContext(_messageStore, new TxnBuffer(_messageStore), _returnMessages);
     }
 
+    public boolean isTransactional()
+    {
+        // this does not look great but there should only be one "non-transactional"
+        // transactional context, while there could be several transactional ones in
+        // theory
+        return !(_txnContext instanceof NonTransactionalContext);
+    }
+
     public int getChannelId()
     {
         return _channelId;
@@ -125,13 +137,34 @@ public class AMQChannel
 
     public long getPrefetchCount()
     {
-        return _prefetchCount;
+        return _prefetch_HighWaterMark;
     }
 
     public void setPrefetchCount(long prefetchCount)
     {
-        _prefetchCount = prefetchCount;
+        _prefetch_HighWaterMark = prefetchCount;
     }
+
+    public long getPrefetchLowMarkCount()
+    {
+        return _prefetch_LowWaterMark;
+    }
+
+    public void setPrefetchLowMarkCount(long prefetchCount)
+    {
+        _prefetch_LowWaterMark = prefetchCount;
+    }
+
+    public long getPrefetchHighMarkCount()
+    {
+        return _prefetch_HighWaterMark;
+    }
+
+    public void setPrefetchHighMarkCount(long prefetchCount)
+    {
+        _prefetch_HighWaterMark = prefetchCount;
+    }
+
 
     public void setPublishFrame(BasicPublishBody publishBody, AMQProtocolSession publisher) throws AMQException
     {
@@ -296,11 +329,6 @@ public class AMQChannel
         if (q != null)
         {
             q.unregisterProtocolSession(session, _channelId, consumerTag);
-        }
-        else
-        {
-            throw new AMQException(_log, "Consumer tag " + consumerTag + " not known to channel " +
-                                         _channelId);
         }
     }
 
@@ -487,12 +515,22 @@ public class AMQChannel
 
     private void checkSuspension()
     {
-        boolean suspend = _unacknowledgedMessageMap.size() >= _prefetchCount;
+        boolean suspend;
+        suspend = _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark;
+
         setSuspended(suspend);
     }
 
     public void setSuspended(boolean suspended)
     {
+        boolean isSuspended = _suspended.get();
+
+        if (isSuspended && !suspended)
+        {
+            // Continue being suspended if we are above the _prefetch_LowWaterMark
+            suspended = _unacknowledgedMessageMap.size() > _prefetch_LowWaterMark;
+        }
+
         boolean wasSuspended = _suspended.getAndSet(suspended);
         if (wasSuspended != suspended)
         {
@@ -530,17 +568,10 @@ public class AMQChannel
     public String toString()
     {
         StringBuilder sb = new StringBuilder(30);
-        sb.append("Channel: id ").append(_channelId).append(", transaction context: ").append(_txnContext);
-        sb.append(", prefetch count: ").append(_prefetchCount);
+        sb.append("Channel: id ").append(_channelId).append(", transaction mode: ").append(isTransactional());
+        sb.append(", prefetch marks: ").append(_prefetch_LowWaterMark);
+        sb.append("/").append(_prefetch_HighWaterMark);
         return sb.toString();
-    }
-
-    public ObjectName getObjectName()
-            throws MalformedObjectNameException
-    {
-        StringBuilder sb = new StringBuilder(30);
-        sb.append("Channel:id=").append(_channelId);
-        return new ObjectName(sb.toString());
     }
 
     public void setDefaultQueue(AMQQueue queue)
