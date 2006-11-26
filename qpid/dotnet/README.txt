@@ -37,19 +37,29 @@ To build .NET 1.1 executables via MsBee (to bin/FX_1_1/Debug):
 
   $ build-dotnet11
 
+To build for Mono on Linux (to build/mono20):
+
+  $ build-mono20
+
 
 Releasing
 =========
 
 For .NET 1.1
 
-  $ release-dotnet 1.1 1.0M1
+  $ release dotnet11 1.0M1
 
-Generates ./build/Qpid.NET-1.0M1-FX1.1.zip
+Generates ./build/release/Qpid.NET-1.0M1-dotnet11.zip
 
 For .NET 2.0
 
-  $ release-dotnet 2.0 1.0M1
+  $ release dotnet20 1.0M1
 
-Generates ./build/Qpid.NET-1.0M1-FX2.0.zip
+Generates ./build/release/Qpid.NET-1.0M1-dotnet20.zip
+
+For Mono
+
+  $ release mono20 1.0M1
+
+Generates ./build/release/Qpid.NET-1.0M1-mono20.zip
 
