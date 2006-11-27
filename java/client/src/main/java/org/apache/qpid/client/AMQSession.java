@@ -991,7 +991,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public QueueSender createSender(Queue queue) throws JMSException
     {
-        return (QueueSender) createProducer(queue);
+        //return (QueueSender) createProducer(queue);
+    	return new QueueSenderAdapter(createProducer(queue),queue);
     }
 
     public Topic createTopic(String topicName) throws JMSException
@@ -1070,7 +1071,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public TopicPublisher createPublisher(Topic topic) throws JMSException
     {
-        return (TopicPublisher) createProducer(topic);
+        //return (TopicPublisher) createProducer(topic);
+    	return new TopicPublisherAdapter(createProducer(topic), topic);
     }
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
