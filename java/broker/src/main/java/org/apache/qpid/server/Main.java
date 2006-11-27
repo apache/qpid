@@ -20,25 +20,13 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.qpid.framing.ProtocolVersionList;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
-import org.apache.qpid.server.protocol.AMQPProtocolProvider;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.transport.ConnectorConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.management.*;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -48,20 +36,40 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.pool.ReadWriteThreadModel;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.ManagedBroker;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
+import org.apache.qpid.server.protocol.AMQPProtocolProvider;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.transport.ConnectorConfiguration;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
-
+import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.StringTokenizer;
 import java.util.Collection;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Main entry point for AMQPD.
@@ -439,9 +447,9 @@ public class Main implements ProtocolVersionList
         {
             new AMQBrokerManager().register();
         }
-        catch (NotCompliantMBeanException ex)
+        catch (JMException ex)
         {
-            throw new AMQException("Exception occured in creating AMQBrokerManager MBean.");    
+            throw new AMQException("Exception occured in creating AMQBrokerManager MBean");    
         }
     }
 
@@ -450,8 +458,7 @@ public class Main implements ProtocolVersionList
      * Broker level management features like creating and deleting exchanges and queue.
      */
     @MBeanDescription("This MBean exposes the broker level management features")
-    private final class AMQBrokerManager extends AMQManagedObject
-                                         implements ManagedBroker
+    private final class AMQBrokerManager extends AMQManagedObject implements ManagedBroker
     {
         private final QueueRegistry    _queueRegistry;
         private final ExchangeRegistry _exchangeRegistry;
@@ -459,10 +466,9 @@ public class Main implements ProtocolVersionList
         private final MessageStore     _messageStore;
 
         @MBeanConstructor("Creates the Broker Manager MBean")
-        protected AMQBrokerManager()  throws NotCompliantMBeanException
+        protected AMQBrokerManager()  throws JMException
         {
             super(ManagedBroker.class, ManagedBroker.TYPE);
-
             IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
             _queueRegistry    = appRegistry.getQueueRegistry();
             _exchangeRegistry = appRegistry.getExchangeRegistry();
@@ -483,10 +489,7 @@ public class Main implements ProtocolVersionList
          * @param autoDelete
          * @throws JMException
          */
-        public void createNewExchange(String exchangeName,
-                                      String type,
-                                      boolean durable,
-                                      boolean autoDelete)
+        public void createNewExchange(String exchangeName, String type, boolean durable, boolean autoDelete)
             throws JMException
         {
             try
@@ -494,14 +497,9 @@ public class Main implements ProtocolVersionList
                 synchronized(_exchangeRegistry)
                 {
                     Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
-
                     if (exchange == null)
                     {
-                        exchange = _exchangeFactory.createExchange(exchangeName,
-                                                               type,        //eg direct
-                                                               durable,
-                                                               autoDelete,
-                                                               0);         //ticket no
+                        exchange = _exchangeFactory.createExchange(exchangeName, type, durable, autoDelete, 0);
                         _exchangeRegistry.registerExchange(exchange);
                     }
                     else
@@ -522,8 +520,7 @@ public class Main implements ProtocolVersionList
          * @param exchangeName
          * @throws JMException
          */
-        public void unregisterExchange(String exchangeName)
-            throws JMException
+        public void unregisterExchange(String exchangeName) throws JMException
         {
             boolean inUse = false;
             // TODO
@@ -550,33 +547,28 @@ public class Main implements ProtocolVersionList
          * @param autoDelete
          * @throws JMException
          */
-        public void createQueue(String queueName,
-                                boolean durable,
-                                String owner,
-                                boolean autoDelete)
+        public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
             throws JMException
         {
             AMQQueue queue = _queueRegistry.getQueue(queueName);
-            if (queue == null)
-            {
-                try
-                {
-                    queue = new AMQQueue(queueName, durable, owner, autoDelete, _queueRegistry);
-                    if (queue.isDurable() && !queue.isAutoDelete())
-                    {
-                        _messageStore.createQueue(queue);
-                    }
-                    _queueRegistry.registerQueue(queue);
-                }
-                catch (AMQException ex)
-                {
-                    _logger.error("Error in creating queue " + queueName, ex);
-                    throw new MBeanException(ex, ex.toString());
-                }
-            }
-            else
+            if (queue != null)
             {
                 throw new JMException("The queue \"" + queueName + "\" already exists.");
+            }
+            
+            try
+            {
+                queue = new AMQQueue(queueName, durable, owner, autoDelete, _queueRegistry);
+                if (queue.isDurable() && !queue.isAutoDelete())
+                {
+                    _messageStore.createQueue(queue);
+                }
+                _queueRegistry.registerQueue(queue);
+            }
+            catch (AMQException ex)
+            {
+                _logger.error("Error in creating queue " + queueName, ex);
+                throw new MBeanException(ex, ex.toString());
             }
         }
 
