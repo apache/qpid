@@ -24,15 +24,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.openmbean.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,53 +52,36 @@ public class DestNameExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Direct Exchange")
     private final class DestNameExchangeMBean extends ExchangeMBean
     {
-        private String[]   _bindingItemNames = {"BindingKey", "QueueNames"};
-        private String[]   _bindingItemDescriptions = {"Binding key", "Queue Names"};
-        private String[]   _bindingItemIndexNames = {"BindingKey"};
+        // open mbean data types for representing exchange bindings
+        private String[]   _bindingItemNames = {"Routing Key", "Queue Names"};
+        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
         private OpenType[] _bindingItemTypes = new OpenType[2];
-
         private CompositeType      _bindingDataType = null;
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
         @MBeanConstructor("Creates an MBean for AMQ direct exchange")
-        public DestNameExchangeMBean()  throws NotCompliantMBeanException
+        public DestNameExchangeMBean()  throws JMException
         {
             super();
+            _exchangeType = "direct";
             init();
         }
 
         /**
          * initialises the OpenType objects.
          */
-        private void init()
+        private void init() throws OpenDataException
         {
-            try
-            {
-                _bindingItemTypes[0] = SimpleType.STRING;
-                //_bindingItemTypes[1] = ArrayType.getArrayType(SimpleType.STRING);
-                _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
-
-                _bindingDataType = new CompositeType("QueueBinding",
-                                             "Binding key and bound Queue names",
-                                             _bindingItemNames,
-                                             _bindingItemDescriptions,
-                                             _bindingItemTypes);
-                _bindinglistDataType = new TabularType("Bindings",
-                                             "List of queue bindings for " + getName() ,
-                                             _bindingDataType,
-                                             _bindingItemIndexNames);
-            }
-            catch(OpenDataException ex)
-            {
-                //It should never occur.
-                _logger.error("OpenDataTypes could not be created.", ex);
-                throw new RuntimeException(ex);
-            }
+            _bindingItemTypes[0] = SimpleType.STRING;
+            _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
+            _bindingDataType = new CompositeType("Exchange Binding", "Routing key and Queue names",
+                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+            _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
+                                                 _bindingDataType, _bindingItemIndexNames);
         }
 
-        public TabularData viewBindings()
-            throws OpenDataException
+        public TabularData bindings() throws OpenDataException
         {
             Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
             _bindingList = new TabularDataSupport(_bindinglistDataType);
@@ -116,20 +98,16 @@ public class DestNameExchange extends AbstractExchange
                 }
 
                 Object[] bindingItemValues = {key, queueList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
-                                                                     _bindingItemNames,
-                                                                     bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 
             return _bindingList;
         }
 
-        public void createBinding(String queueName, String binding)
-                throws JMException
+        public void createNewBinding(String queueName, String binding) throws JMException
         {
             AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
-
             if (queue == null)
             {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
@@ -155,10 +133,10 @@ public class DestNameExchange extends AbstractExchange
         {
             return new DestNameExchangeMBean();
         }
-        catch (NotCompliantMBeanException ex)
+        catch (JMException ex)
         {
-            _logger.error("Exception occured in creating the DestNameExchenge", ex);
-            throw new AMQException("Exception occured in creating the DestNameExchenge", ex);
+            _logger.error("Exception occured in creating the direct exchange mbean", ex);
+            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
         }
     }
 
@@ -172,8 +150,7 @@ public class DestNameExchange extends AbstractExchange
         }
         else
         {
-            _logger.debug("Binding queue " + queue + " with routing key " + routingKey
-                          + " to exchange " + this);
+            _logger.debug("Binding queue " + queue + " with routing key " + routingKey + " to exchange " + this);
         }
     }
 

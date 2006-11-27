@@ -25,14 +25,16 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 
+import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
     private String _name;
 
     protected boolean _durable;
-
+    protected String _exchangeType;
     protected int _ticket;
 
     protected ExchangeMBean _exchangeMbean;
@@ -64,6 +66,11 @@ public abstract class AbstractExchange implements Exchange, Managable
             return _name;
         }
 
+        public String getExchangeType()
+        {
+            return _exchangeType;
+        }
+
         public Integer getTicketNo()
         {
             return _ticket;
@@ -77,6 +84,13 @@ public abstract class AbstractExchange implements Exchange, Managable
         public boolean isAutoDelete()
         {
             return _autoDelete;
+        }
+
+        public ObjectName getObjectName() throws MalformedObjectNameException
+        {
+            String objNameString = super.getObjectName().toString();
+            objNameString = objNameString + ",ExchangeType=" + _exchangeType;
+            return new ObjectName(objNameString);
         }
 
     } // End of MBean class

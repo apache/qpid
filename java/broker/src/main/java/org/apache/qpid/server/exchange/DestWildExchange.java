@@ -22,18 +22,17 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
-import javax.management.openmbean.*;
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.NotCompliantMBeanException;
+import javax.management.openmbean.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,55 +52,41 @@ public class DestWildExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Topic Exchange")
     private final class DestWildExchangeMBean extends ExchangeMBean
     {
-        private String[]   _bindingItemNames = {"BindingKey", "QueueNames"};
-        private String[]   _bindingItemDescriptions = {"Binding key", "Queue Names"};
-        private String[]   _bindingItemIndexNames = {"BindingKey"};
+        // open mbean data types for representing exchange bindings
+        private String[]   _bindingItemNames = {"Routing Key", "Queue Names"};
+        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
         private OpenType[] _bindingItemTypes = new OpenType[2];
-
         private CompositeType      _bindingDataType = null;
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
         @MBeanConstructor("Creates an MBean for AMQ topic exchange")
-        public DestWildExchangeMBean()  throws NotCompliantMBeanException
+        public DestWildExchangeMBean() throws JMException
         {
             super();
+            _exchangeType = "topic";
             init();
         }
 
         /**
          * initialises the OpenType objects.
          */
-        private void init()
+        private void init() throws OpenDataException
         {
-            try
-            {
-                _bindingItemTypes[0] = SimpleType.STRING;
-                _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
-
-                _bindingDataType = new CompositeType("QueueBinding",
-                                             "Binding key and bound Queue names",
-                                             _bindingItemNames,
-                                             _bindingItemDescriptions,
-                                             _bindingItemTypes);
-                _bindinglistDataType = new TabularType("Bindings",
-                                             "List of queue bindings for " + getName(),
-                                             _bindingDataType,
-                                             _bindingItemIndexNames);
-            }
-            catch(OpenDataException ex)
-            {
-                //It should never occur.
-                _logger.error("OpenDataTypes could not be created.", ex);
-                throw new RuntimeException(ex);
-            }
+            _bindingItemTypes[0] = SimpleType.STRING;
+            _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
+            _bindingDataType = new CompositeType("Exchange Binding", "Routing key and Queue names",
+                                         _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+            _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
+                                         _bindingDataType, _bindingItemIndexNames);
         }
 
-        public TabularData viewBindings()
-            throws OpenDataException
+        /**
+         * returns exchange bindings in tabular form
+         */
+        public TabularData bindings() throws OpenDataException
         {
             _bindingList = new TabularDataSupport(_bindinglistDataType);
-
             for (Map.Entry<String, List<AMQQueue>> entry : _routingKey2queues.entrySet())
             {
                 String key = entry.getKey();
@@ -114,20 +99,16 @@ public class DestWildExchange extends AbstractExchange
                 }
 
                 Object[] bindingItemValues = {key, queueList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
-                                                                     _bindingItemNames,
-                                                                     bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 
             return _bindingList;
         }
 
-        public void createBinding(String queueName, String binding)
-            throws JMException
+        public void createNewBinding(String queueName, String binding) throws JMException
         {
             AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
-
             if (queue == null)
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
 
@@ -217,10 +198,10 @@ public class DestWildExchange extends AbstractExchange
         {
             return new DestWildExchangeMBean();
         }
-        catch (NotCompliantMBeanException ex)
+        catch (JMException ex)
         {
-            _logger.error("Exception occured in creating the DestWildExchenge", ex);
-            throw new AMQException("Exception occured in creating the DestWildExchenge", ex);
+            _logger.error("Exception occured in creating the topic exchenge mbean", ex);
+            throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
         }
     }
 }

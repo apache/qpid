@@ -32,7 +32,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.openmbean.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -80,53 +79,39 @@ public class HeadersExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Headers Exchange")
     private final class HeadersExchangeMBean extends ExchangeMBean
     {
-        private String[]   _bindingItemNames = {"Queue", "HeaderBinding"};
-        private String[]   _bindingItemDescriptions = {"Queue Name", "Header attribute bindings"};
-        private String[]   _bindingItemIndexNames = {"HeaderBinding"};
-        private OpenType[] _bindingItemTypes = new OpenType[2];
-
+        // open mbean data types for representing exchange bindings
+        private String[]   _bindingItemNames = {"S.No.", "Queue Name", "Header Bindings"};
+        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
+        private OpenType[] _bindingItemTypes = new OpenType[3];
         private CompositeType      _bindingDataType = null;
         private TabularType        _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
         @MBeanConstructor("Creates an MBean for AMQ Headers exchange")
-        public HeadersExchangeMBean()  throws NotCompliantMBeanException
+        public HeadersExchangeMBean()  throws JMException
         {
             super();
+            _exchangeType = "headers";
             init();
         }
         /**
          * initialises the OpenType objects.
          */
-        private void init()
+        private void init() throws OpenDataException
         {
-            try
-            {
-                _bindingItemTypes[0] = SimpleType.STRING;
-                _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
-
-                _bindingDataType = new CompositeType("QueueAndHeaderAttributesBinding",
-                                             "Queue name and header bindings",
-                                             _bindingItemNames,
-                                             _bindingItemDescriptions,
-                                             _bindingItemTypes);
-                _bindinglistDataType = new TabularType("HeaderBindings",
-                                             "List of queue bindings for " + getName(),
-                                             _bindingDataType,
-                                             _bindingItemIndexNames);
-            }
-            catch(OpenDataException ex)
-            {
-                //It should never occur.
-                _logger.error("OpenDataTypes could not be created.", ex);
-                throw new RuntimeException(ex);
-            }
+            _bindingItemTypes[0] = SimpleType.INTEGER;
+            _bindingItemTypes[1] = SimpleType.STRING;
+            _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
+            _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
+                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+            _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
+                                                 _bindingDataType, _bindingItemIndexNames);
         }
 
-        public TabularData viewBindings()
-            throws OpenDataException
+        public TabularData bindings() throws OpenDataException
         {
             _bindingList = new TabularDataSupport(_bindinglistDataType);
+            int count = 1;
             for (Iterator<Registration> itr = _bindings.iterator(); itr.hasNext();)
             {
                 Registration registration = itr.next();
@@ -144,10 +129,8 @@ public class HeadersExchange extends AbstractExchange
                     mappingList.add(key + "=" + value);
                 }
 
-                Object[] bindingItemValues = {queueName, mappingList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
-                                                                     _bindingItemNames,
-                                                                     bindingItemValues);
+                Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 
@@ -161,8 +144,7 @@ public class HeadersExchange extends AbstractExchange
          * @param binding
          * @throws JMException
          */
-        public void createBinding(String queueName, String binding)
-            throws JMException
+        public void createNewBinding(String queueName, String binding) throws JMException
         {
             AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
 
@@ -240,7 +222,7 @@ public class HeadersExchange extends AbstractExchange
         {
             return new HeadersExchangeMBean();
         }
-        catch (NotCompliantMBeanException ex)
+        catch (JMException ex)
         {
             _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
             throw new AMQException("Exception occured in creating the HeadersExchangeMBean", ex);
