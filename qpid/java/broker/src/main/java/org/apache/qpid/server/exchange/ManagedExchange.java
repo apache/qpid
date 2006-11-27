@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.server.management.MBeanAttribute;
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.server.queue.ManagedQueue;
 
 import javax.management.openmbean.TabularData;
 import javax.management.JMException;
@@ -44,8 +45,11 @@ public interface ManagedExchange
      * @return the name of the exchange.
      * @throws IOException
      */
-    @MBeanAttribute(name="Name", description="Name of exchange")
+    @MBeanAttribute(name="Name", description=TYPE + " Name")
     String getName() throws IOException;
+
+    @MBeanAttribute(name="ExchangeType", description="Exchange Type")
+    String getExchangeType() throws IOException;
 
     @MBeanAttribute(name="TicketNo", description="Exchange Ticket No")
     Integer getTicketNo() throws IOException;
@@ -74,8 +78,8 @@ public interface ManagedExchange
      * @throws IOException
      * @throws JMException
      */
-    @MBeanOperation(name="viewBindings", description="view the queue bindings for this exchange")
-    TabularData viewBindings() throws IOException, JMException;
+    @MBeanOperation(name="bindings", description="view the queue bindings for this exchange")
+    TabularData bindings() throws IOException, JMException;
 
     /**
      * Creates new binding with the given queue and binding.
@@ -83,11 +87,11 @@ public interface ManagedExchange
      * @param binding
      * @throws JMException
      */
-    @MBeanOperation(name="createBinding",
-                         description="create a new binding with this exchange",
-                         impact= MBeanOperationInfo.ACTION)
-    void createBinding(@MBeanOperationParameter(name="queue name", description="queue name") String queueName,
-                       @MBeanOperationParameter(name="binding", description="queue binding")String binding)
+    @MBeanOperation(name="createNewBinding",
+                    description="create a new binding with this exchange",
+                    impact= MBeanOperationInfo.ACTION)
+    void createNewBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
+                          @MBeanOperationParameter(name="Binding", description="New binding")String binding)
         throws JMException;
 
 }
