@@ -217,7 +217,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     public void setJMSType(String string) throws JMSException
     {
-        throw new JMSException("Cannot set JMS Type - it is implicitly defined based on message type");
+        //throw new JMSException("Cannot set JMS Type - it is implicitly defined based on message type");
+    	// this is not spec comliant, should not throw the message
     }
 
     public long getJMSExpiration() throws JMSException
