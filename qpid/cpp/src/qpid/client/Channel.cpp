@@ -220,19 +220,21 @@ void Channel::publish(Message& msg, const Exchange& exchange, const std::string&
     AMQBody::shared_ptr body(static_pointer_cast<AMQBody, AMQHeaderBody>(msg.header));
     out->send(new AMQFrame(id, body));
     
-    int data_length = data.length();
+    u_int64_t data_length = data.length();
     if(data_length > 0){
-        //TODO fragmentation of messages, need to know max frame size for connection
-        int frag_size = con->getMaxFrameSize() - 4;
+        u_int32_t frag_size = con->getMaxFrameSize() - 8;//frame itself uses 8 bytes
         if(data_length < frag_size){
             out->send(new AMQFrame(id, new AMQContentBody(data)));
         }else{
-            int frag_count = data_length / frag_size;
-            for(int i = 0; i < frag_count; i++){
-                int pos = i*frag_size;
-                int len = i < frag_count - 1 ? frag_size : data_length - pos;
-                string frag(data.substr(pos, len));
-                out->send(new AMQFrame(id, new AMQContentBody(frag)));          
+            u_int32_t offset = 0;
+            u_int32_t remaining = data_length - offset;
+            while (remaining > 0) {
+                u_int32_t length = remaining > frag_size ? frag_size : remaining;
+                string frag(data.substr(offset, length));
+                out->send(new AMQFrame(id, new AMQContentBody(frag)));                          
+                
+                offset += length;
+                remaining = data_length - offset;
             }
         }
     }
