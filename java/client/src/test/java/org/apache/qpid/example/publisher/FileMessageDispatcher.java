@@ -19,7 +19,7 @@
 package org.apache.qpid.example.publisher;
 
 import org.apache.log4j.Logger;
-import java.util.Properties;
+
 import java.io.File;
 
 import org.apache.qpid.example.shared.FileUtils;
@@ -34,12 +34,17 @@ import javax.jms.JMSException;
  */
 public class FileMessageDispatcher {
 
-    private static final Logger _logger = Logger.getLogger(FileMessageDispatcher.class);
+    protected static final Logger _logger = Logger.getLogger(FileMessageDispatcher.class);
 
-    private static Publisher _publisher = null;
+    protected static Publisher _publisher = null;
 
-    private static final String DEFAULT_PUB_NAME = "Publisher";
-
+    /**
+     * To use this main method you need to specify a path or file to use for input
+     * This class then uses file contents from the dir/file specified to generate
+     * messages to publish
+     * Intended to be a very simple way to get going with publishing using the broker
+     * @param args - must specify one value, the path to file(s) for publisher
+     */
     public static void main(String[] args)
     {
 
@@ -52,7 +57,7 @@ public class FileMessageDispatcher {
         {
             try
             {
-                //publish message(s) from file(s) and send message to monitor queue
+                //publish message(s) from file(s) to configured queue
                 publish(args[0]);
 
                 //Move payload file(s) to archive location as no error
@@ -60,7 +65,8 @@ public class FileMessageDispatcher {
             }
             catch(Exception e)
             {
-                System.err.println("Error trying to dispatch message: " + e);
+                //log error and exit
+                _logger.error("Error trying to dispatch message: " + e);
                 System.exit(1);
             }
             finally
@@ -81,8 +87,12 @@ public class FileMessageDispatcher {
         System.exit(0);
     }
 
-
-    //Publish files or file as message
+    /**
+     * Publish the content of a file or files from a directory as messages
+     * @param path - from main args
+     * @throws JMSException
+     * @throws MessageFactoryException - if cannot create message from file content
+     */
     public static void publish(String path) throws JMSException, MessageFactoryException
     {
         File tempFile = new File(path);
@@ -100,7 +110,7 @@ public class FileMessageDispatcher {
                 for (File file : files)
                 {
                     //Create message factory passing in payload path
-                    MessageFactory factory = new MessageFactory(getPublisher().getSession(), file.toString());
+                    FileMessageFactory factory = new FileMessageFactory(getPublisher().getSession(), file.toString());
 
                     //Send the message generated from the payload using the _publisher
                     getPublisher().sendMessage(factory.createEventMessage());
@@ -110,16 +120,18 @@ public class FileMessageDispatcher {
         }
         else
         {
-            //handle as single file
+            //handle a single file
             //Create message factory passing in payload path
-            MessageFactory factory = new MessageFactory(getPublisher().getSession(),tempFile.toString());
+            FileMessageFactory factory = new FileMessageFactory(getPublisher().getSession(),tempFile.toString());
 
             //Send the message generated from the payload using the _publisher
             getPublisher().sendMessage(factory.createEventMessage());
         }
     }
 
-    //cleanup publishers
+    /**
+     * Cleanup before exit
+     */
     public static void cleanup()
     {
         if (getPublisher() != null)
@@ -128,8 +140,8 @@ public class FileMessageDispatcher {
         }
     }
 
-    /*
-     * Returns a _publisher for a queue
+    /**
+     * @return A Publisher instance
      */
     private static Publisher getPublisher()
     {
@@ -141,7 +153,6 @@ public class FileMessageDispatcher {
        //Create a _publisher
        _publisher = new Publisher();
 
-       _publisher.setName(DEFAULT_PUB_NAME);
        return _publisher;
     }
 
