@@ -1,9 +1,4 @@
 
-https://issues.apache.org/jira/browse/QPID-134
-* Failover.
-  * Review new API methods for fail over requirements.
-    i.e. lock on mutex for non-blocking methods, FailoverSupport (for blocking methods)
-
 https://issues.apache.org/jira/browse/QPID-135
 * transactions Tx.Select and Tx.Commit
   * Do the TxSelect message after opening a transactional channel
