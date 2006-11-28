@@ -232,7 +232,7 @@ namespace Qpid.Client.Protocol
             {
                 _closingChannels.Remove(channelId);
                 AmqChannel channel = (AmqChannel) _channelId2SessionMap[channelId];
-                channel.Closed(new AMQException(_logger, code, text));
+                channel.ClosedWithException(new AMQException(_logger, code, text));
                 return true;
             }
             else

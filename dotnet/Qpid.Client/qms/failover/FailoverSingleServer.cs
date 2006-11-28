@@ -112,7 +112,7 @@ namespace Qpid.Client.qms.failover
                 {
                     _retries = int.Parse(retries);
                 }
-                catch (FormatException nfe)
+                catch (FormatException)
                 {
                     _retries = DEFAULT_SERVER_RETRIES;
                 }

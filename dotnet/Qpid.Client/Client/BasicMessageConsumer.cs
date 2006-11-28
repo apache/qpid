@@ -34,14 +34,6 @@ namespace Qpid.Client
 
         private bool _noLocal;
 
-        /// We need to store the "raw" field table so that we can resubscribe in the event of failover being required.
-//        private FieldTable _rawSelectorFieldTable;
-//
-//        public FieldTable RawSelectorFieldTable
-//        {
-//            get { return _rawSelectorFieldTable; }
-//        }
-
         /**
          * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
          */
