@@ -69,9 +69,9 @@ public class Subscriber
         }
     }
 
-    /*
-    * Listener class that handles messages
-    */
+    /**
+     * Listener class that handles messages
+     */
     public static class ExampleMessageListener implements MessageListener
     {
         private String _name;
@@ -82,10 +82,10 @@ public class Subscriber
 
         }
 
-        /*
-        * Listens for message callbacks, handles and then acknowledges them
-        * @param message - the message received
-        */
+        /**
+         * Listens for message callbacks, handles and then acknowledges them
+         * @param message - the message received
+         */
         public void onMessage(javax.jms.Message message)
         {
             _log.info(_name + " got message '" + message + "'");
@@ -113,9 +113,9 @@ public class Subscriber
         }
     }
 
-    /*
-    * Subscribes to example Queue and attaches listener
-    */
+    /**
+     * Subscribes to example Queue and attaches listener
+     */
     public void subscribe()
     {
         _log.info("Starting subscription ...");
@@ -160,14 +160,18 @@ public class Subscriber
         }
     }
 
+    /**
+     * Set destination (queue or topic) name
+     * @param name
+     */
     public void setDestinationName(String name)
     {
         _destinationName = name;
     }
 
-    /*
-    * stop consuming and close connection
-    */
+    /**
+     * Stop consuming and close connection
+     */
     public void stop()
     {
         try

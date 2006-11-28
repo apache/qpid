@@ -42,6 +42,9 @@ public class MonitoredSubscriber extends Subscriber
         _monitorDestinationName = _destinationName + Statics.MONITOR_QUEUE_SUFFIX;
     }
 
+    /**
+     * MessageListener implementation for this subscriber
+     */
     public static class MonitorMessageListener implements MessageListener
     {
         private String _name;
@@ -52,9 +55,10 @@ public class MonitoredSubscriber extends Subscriber
 
         }
 
-        /*
-        * Listens for heartbeat messages and acknowledges them
-        */
+        /**
+         * Listens for heartbeat messages and acknowledges them
+         * @param message
+         */
         public void onMessage(javax.jms.Message message)
         {
             _logger.info(_name + " monitor got message '" + message + "'");
@@ -79,9 +83,9 @@ public class MonitoredSubscriber extends Subscriber
         }
     }
 
-    /*
-    * Subscribes to Queue and attaches additional monitor listener
-    */
+    /**
+     * Subscribes to Queue and attaches additional monitor listener
+     */
     public void subscribeAndMonitor()
     {
         try
@@ -115,7 +119,9 @@ public class MonitoredSubscriber extends Subscriber
         }
     }
 
-    //stop consuming
+    /**
+     * Stop consuming
+     */
     public void stopMonitor()
     {
         try
