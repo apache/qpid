@@ -377,7 +377,7 @@ namespace Qpid.Client
          * unilaterally.
          * @param e the exception that caused this session to be closed. Null causes the
          */
-        public void Closed(Exception e)
+        public void ClosedWithException(Exception e)
         {
             lock (_connection.FailoverMutex)
             {

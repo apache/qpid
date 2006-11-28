@@ -53,7 +53,7 @@ namespace Qpid.Client.Transport.Socket.Blocking
         {
             _socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            IPHostEntry ipHostInfo = Dns.Resolve(_host);
+            IPHostEntry ipHostInfo = Dns.Resolve(_host); // Note: don't fix this warning. We do this for .NET 1.1 compatibility.
             IPAddress ipAddress = ipHostInfo.AddressList[0];
 
             IPEndPoint ipe = new IPEndPoint(ipAddress, _port);
