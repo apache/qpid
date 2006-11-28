@@ -16,7 +16,7 @@ releaseName=Qpid.NET-$2-$dotNetVersion
 if [[ $dotNetVersion == "dotnet11" ]]; then
   binDir=Qpid.Client.Tests/bin/FX1_1/Release
 elif [[ $dotNetVersion == "dotnet20" ]]; then
-  binDir=qpid.client.tests/bin/release
+  binDir=qpid.client.tests/bin/Release
 elif [[ $dotNetVersion == "mono" ]]; then
   binDir=build/mono
 else
