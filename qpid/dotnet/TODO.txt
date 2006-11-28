@@ -1,7 +1,6 @@
 
 https://issues.apache.org/jira/browse/QPID-134
 * Failover.
-  * record and replay necessary commands.
   * Review new API methods for fail over requirements.
     i.e. lock on mutex for non-blocking methods, FailoverSupport (for blocking methods)
 
