@@ -110,7 +110,6 @@ namespace Qpid.Client
                 _logger.Info("Dispatcher thread terminating for channel " + _containingChannel._channelId);
             }
 
-//            private void DispatchMessage(UnprocessedMessage message)
             private void DispatchMessage(UnprocessedMessage message)
             {
                 if (message.DeliverBody != null)
@@ -458,17 +457,6 @@ namespace Qpid.Client
             throw new NotImplementedException();
         }
 
-//        public IMessagePublisher CreatePublisher(string exchangeName, string exchangeClass)
-//        {
-//            return CreatePublisher(exchangeClass, exchangeName, null);
-//        }
-
-//        public IMessagePublisher CreatePublisher(string exchangeName, string exchangeClass, string routingKey)
-//        {
-//            return CreatePublisherBuilder().withExchangeName(exchangeName)
-//                .withRoutingKey(routingKey).Create();
-//        }
-
         public IMessagePublisher CreatePublisher(string exchangeName, string routingKey, DeliveryMode deliveryMode,
                                                long timeToLive, bool immediate, bool mandatory, int priority)
         {
@@ -477,28 +465,6 @@ namespace Qpid.Client
             return CreateProducerImpl(exchangeName, routingKey, deliveryMode,
                 timeToLive, immediate, mandatory, priority);
         }
-
-        // TODO: Create a producer that doesn't require an IDestination.
-//        private IMessagePublisher CreateProducerImpl(IDestination destination)                
-//        {
-//            lock (_closingLock)
-//            {
-//                CheckNotClosed();
-//
-//                AMQDestination amqd = (AMQDestination)destination;
-//
-//                try
-//                {
-//                    return new BasicMessageProducer(amqd, _transacted, _channelId,
-//                                                    this, GetNextProducerId());
-//                }
-//                catch (AMQException e)
-//                {
-//                    _logger.Error("Error creating message producer: " + e, e);
-//                    throw new QpidException("Error creating message producer", e);
-//                }
-//            }
-//        }
 
         public IMessagePublisher CreateProducerImpl(string exchangeName, string routingKey,
                                                     DeliveryMode deliveryMode,
@@ -566,32 +532,10 @@ namespace Qpid.Client
             }
         }
 
-//        public IDestination CreateQueue(string queueName)
-//        {
-//            return new AMQQueue(queueName);
-//        }
-//
-//        public IDestination CreateTopic(String topicName)
-//        {
-//            return new AMQTopic(topicName);
-//        }
-
         public IFieldTable CreateFieldTable()
         {
             return new FieldTable();
         }
-
-//        public IDestination CreateTemporaryQueue()
-//        {
-//            return new AMQQueue("TempQueue" + DateTime.Now.Ticks.ToString(), true);
-//
-////            return new AMQTemporaryQueue(); // XXX: port AMQTemporaryQueue and AMQQueue changes.
-//        }
-
-//        public IDestination CreateTemporaryTopic()
-//        {
-//            throw new NotImplementedException(); // FIXME
-//        }
 
         public void Unsubscribe(String name)
         {
@@ -828,27 +772,6 @@ namespace Qpid.Client
             _connection.ProtocolWriter.Write(queueBind);
         }
 
-
-//        /**
-//         * Declare the queue.
-//         * @param amqd
-//         * @param protocolHandler
-//         * @return the queue name. This is useful where the broker is generating a queue name on behalf of the client.
-//         * @throws AMQException
-//         */
-//        private String DeclareQueue(AMQDestination amqd)
-//        {
-//            // For queues (but not topics) we generate the name in the client rather than the
-//            // server. This allows the name to be reused on failover if required. In general,
-//            // the destination indicates whether it wants a name generated or not.
-//            if (amqd.IsNameRequired)
-//            {
-//                amqd.QueueName = GenerateUniqueName();
-//            }
-//
-//            return DoDeclareQueue(amqd);
-//        }
-
         private String ConsumeFromQueue(String queueName, int prefetch,
                                     bool noLocal, bool exclusive, AcknowledgeMode acknowledgeMode)
         {
@@ -883,16 +806,6 @@ namespace Qpid.Client
         {
             return new MessagePublisherBuilder(this);
         }
-
-//        public void Publish(string exchangeName, string routingKey, bool mandatory, bool immediate,
-//                           IMessage message, DeliveryMode deliveryMode, int priority, uint timeToLive,
-//                           bool disableTimestamps)
-//        {
-//            lock (Connection.FailoverMutex)
-//            {
-//                DoBasicPublish(exchangeName, routingKey, mandatory, immediate, (AbstractQmsMessage)message, deliveryMode, timeToLive, priority, disableTimestamps);
-//            }
-//        }
 
         internal void BasicPublish(string exchangeName, string routingKey, bool mandatory, bool immediate,
                                    AbstractQmsMessage message, DeliveryMode deliveryMode, int priority, uint timeToLive,
@@ -1053,8 +966,6 @@ namespace Qpid.Client
             AMQFrame exchangeDeclareFrame = ExchangeDeclareBody.CreateAMQFrame(
                 channelId, ticket, exchangeName, exchangeClass, passive, durable, autoDelete, xinternal, noWait, args);
             
-//            Console.WriteLine(string.Format("XXX AMQP:DeclareExchange frame=[{0}]", exchangeDeclareFrame));
-
             // FIXME: Probably need to record the exchangeDeclareBody for later replay.
             ExchangeDeclareBody exchangeDeclareBody = (ExchangeDeclareBody)exchangeDeclareFrame.BodyFrame;
 //            Console.WriteLine(string.Format("XXX AMQP:DeclareExchangeBody=[{0}]", exchangeDeclareBody));
