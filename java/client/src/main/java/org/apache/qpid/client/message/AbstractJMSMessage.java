@@ -34,6 +34,8 @@ import org.apache.qpid.framing.PropertyFieldTable;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -54,12 +56,14 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public static final char LONG_PROPERTY_PREFIX = PropertyFieldTable.LONG_PROPERTY_PREFIX;
     public static final char FLOAT_PROPERTY_PREFIX = PropertyFieldTable.FLOAT_PROPERTY_PREFIX;
     public static final char DOUBLE_PROPERTY_PREFIX = PropertyFieldTable.DOUBLE_PROPERTY_PREFIX;
-    public static final char STRING_PROPERTY_PREFIX = PropertyFieldTable.STRING_PROPERTY_PREFIX ;
+    public static final char STRING_PROPERTY_PREFIX = PropertyFieldTable.STRING_PROPERTY_PREFIX;
 
 
     protected boolean _redelivered;
 
     protected ByteBuffer _data;
+    private boolean _readableProperties = false;
+    private boolean _readableMessage = false;
 
     protected AbstractJMSMessage(ByteBuffer data)
     {
@@ -69,6 +73,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         {
             _data.acquire();
         }
+        _readableProperties = (_contentHeaderProperties != null);
+        _readableMessage = (data != null);
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data) throws AMQException
@@ -79,6 +85,9 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         {
             _data.acquire();
         }
+
+        _readableProperties = (_contentHeaderProperties != null);
+        _readableMessage = data != null;
     }
 
     protected AbstractJMSMessage(BasicContentHeaderProperties contentHeader, long deliveryTag)
@@ -170,7 +179,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         if (!(destination instanceof AMQDestination))
         {
             throw new IllegalArgumentException("ReplyTo destination my be an AMQ destination - passed argument was type " +
-                    destination.getClass());
+                                               destination.getClass());
         }
         final AMQDestination amqd = (AMQDestination) destination;
 
@@ -216,9 +225,9 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     }
 
     public void setJMSType(String string) throws JMSException
-    {
+    {        
         //throw new JMSException("Cannot set JMS Type - it is implicitly defined based on message type");
-    	// this is not spec comliant, should not throw the message
+        // this is not spec comliant, should not throw the message
     }
 
     public long getJMSExpiration() throws JMSException
@@ -247,7 +256,16 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         {
             getJmsContentHeaderProperties().getHeaders().clear();
         }
+
+        _readableProperties = false;
     }
+
+    public void clearBody() throws JMSException
+    {
+        clearBodyImpl();
+        _readableMessage = false;
+    }
+
 
     public boolean propertyExists(String propertyName) throws JMSException
     {
@@ -460,6 +478,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         //getJmsContentHeaderProperties().headers.put(BOOLEAN_PROPERTY_PREFIX + propertyName, Boolean.valueOf(b));
         getJmsContentHeaderProperties().getHeaders().put(BOOLEAN_PROPERTY_PREFIX + propertyName, b ? new Long(1) : new Long(0));
@@ -467,42 +486,49 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(BYTE_PROPERTY_PREFIX + propertyName, new Byte(b));
     }
 
     public void setShortProperty(String propertyName, short i) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(SHORT_PROPERTY_PREFIX + propertyName, new Short(i));
     }
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(INT_PROPERTY_PREFIX + propertyName, new Integer(i));
     }
 
     public void setLongProperty(String propertyName, long l) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(LONG_PROPERTY_PREFIX + propertyName, new Long(l));
     }
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(FLOAT_PROPERTY_PREFIX + propertyName, new Float(f));
     }
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(DOUBLE_PROPERTY_PREFIX + propertyName, new Double(v));
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException
     {
+        checkWritableProperties();
         checkPropertyName(propertyName);
         getJmsContentHeaderProperties().getHeaders().put(STRING_PROPERTY_PREFIX + propertyName, value);
     }
@@ -533,7 +559,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         }
     }
 
-    public abstract void clearBody() throws JMSException;
+
+    /**
+     * This forces concrete classes to implement clearBody()
+     *
+     * @throws JMSException
+     */
+    public abstract void clearBodyImpl() throws JMSException;
 
     /**
      * Get a String representation of the body of the message. Used in the
@@ -604,7 +636,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
                                 break;
                             default:
                                 buf.append("<unknown type (identifier " +
-                                        typeIdentifier + ") ");
+                                           typeIdentifier + ") ");
                         }
                         buf.append(String.valueOf(entry.getValue()));
                     }
@@ -630,6 +662,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     private void checkPropertyName(String propertyName)
     {
+
         if (propertyName == null)
         {
             throw new IllegalArgumentException("Property name must not be null");
@@ -688,4 +721,44 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         }
         return _data;
     }
+
+    protected void checkReadable() throws MessageNotReadableException
+    {
+        if (!_readableMessage)
+        {
+            throw new MessageNotReadableException("You need to call reset() to make the message readable");
+        }
+    }
+
+    protected void checkWritable() throws MessageNotWriteableException
+    {
+        if (_readableMessage)
+        {
+            throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
+        }
+    }
+
+    protected void checkWritableProperties() throws MessageNotWriteableException
+    {
+        if (_readableProperties)
+        {
+            throw new MessageNotWriteableException("You need to call clearProperties() to make the message writable");
+        }
+    }
+
+    public boolean isReadable()
+    {
+        return _readableMessage;
+    }
+
+    public boolean isWritable()
+    {
+        return !_readableMessage;
+    }
+
+    public void reset() throws JMSException
+    {
+        _readableMessage = true;
+    }
+
 }
