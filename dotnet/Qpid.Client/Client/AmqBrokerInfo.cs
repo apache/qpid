@@ -27,17 +27,16 @@ namespace Qpid.Client
 {
     public class AmqBrokerInfo : BrokerInfo
     {
-        private string _host = "localhost";
-        private int _port = 5672;
-        private string _transport = "amqp";
-        
         public readonly string URL_FORMAT_EXAMPLE =
             "<transport>://<hostname>[:<port Default=\""+BrokerDetailsConstants.DEFAULT_PORT+"\">][?<option>='<value>'[,<option>='<value>']]";
 
         public const long DEFAULT_CONNECT_TIMEOUT = 30000L;
 
+        private string _host = "localhost";
+        private int _port = 5672;
+        private string _transport = "amqp";
         private Hashtable _options = new Hashtable();
-        
+
         public AmqBrokerInfo()
         {
         }
@@ -204,7 +203,7 @@ namespace Qpid.Client
                 {
                     return long.Parse((string)_options[BrokerDetailsConstants.OPTIONS_CONNECT_TIMEOUT]);
                 }
-                catch (FormatException nfe)
+                catch (FormatException)
                 {
                     //Do nothing as we will use the default below.
                 }
@@ -238,24 +237,24 @@ namespace Qpid.Client
 
             return sb.ToString();
         }
-
-        public override bool Equals(object o)
-        {
-            if (!(o is BrokerInfo))
-            {
-                return false;
-            }
-
-            BrokerInfo bd = (BrokerInfo) o;
-
-            return StringEqualsIgnoreCase(_host, bd.getHost()) &&
-                   (_port == bd.getPort()) &&
-                   StringEqualsIgnoreCase(_transport, bd.getTransport()) &&
-                   (useSSL() == bd.useSSL());
-
-            //todo do we need to compare all the options as well?
-        }
         
+		public override bool Equals(object obj)
+		{
+	        if (!(obj is BrokerInfo))
+	        {
+	            return false;
+	        }
+	
+	        BrokerInfo bd = (BrokerInfo) obj;
+	        return StringEqualsIgnoreCase(_host, bd.getHost()) &&
+	        	_port == bd.getPort();
+		}
+    	
+		public override int GetHashCode()
+		{
+			return _host.ToLower().GetHashCode() ^ _port.GetHashCode();
+		}
+
         // TODO: move to util class.
         private bool StringEqualsIgnoreCase(string one, string two)
         {
