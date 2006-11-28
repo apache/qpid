@@ -21,6 +21,7 @@
 #ifndef _MessageBuilder_
 #define _MessageBuilder_
 
+#include <memory>
 #include <qpid/QpidError.h>
 #include <qpid/broker/Exchange.h>
 #include <qpid/broker/Message.h>
@@ -47,7 +48,6 @@ namespace qpid {
             CompletionHandler* handler;
             MessageStore* const store;
             const u_int64_t stagingThreshold;
-            bool staging;
 
             void route();
         };
