@@ -1,22 +1,24 @@
 
+https://issues.apache.org/jira/browse/QPID-134
 * Failover.
   * record and replay necessary commands.
   * Review new API methods for fail over requirements.
     i.e. lock on mutex for non-blocking methods, FailoverSupport (for blocking methods)
 
+https://issues.apache.org/jira/browse/QPID-135
 * transactions Tx.Select and Tx.Commit
   * Do the TxSelect message after opening a transactional channel
 
+https://issues.apache.org/jira/browse/QPID-136
 * createSession with prefetch (warning: prefetch partly added)
   * Do the BasicQos message after opening channel (sets up prefetch).
 
-* Port Connection URL support.
-
+https://issues.apache.org/jira/browse/QPID-137
 * .NET currently only supports no-ack mode. Allow acknowledgement support.
   * Implement the PreAcknowledge ack mode. Add preDeliver/postDeliver methods in AmqSession like the Java client.
   * Implement Recover() with Basic.Recover.
 
-* Blocking receive i.e. Basic.Get
+* Port Connection URL support.
 
 * Implement durable subscriptions.
 
@@ -26,3 +28,5 @@
   Compare against blocking socket transport and configure default appropriately.
 
 * support multiple versions of AMQP from the same client.
+
+* Blocking receive i.e. Basic.Get
