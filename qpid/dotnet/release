@@ -23,7 +23,7 @@ else
   Usage
 fi
 
-filesToRelease="
+binFilesToRelease="
   Qpid.Buffer.dll
   Qpid.Client.Transport.Socket.Blocking.dll
   Qpid.Client.dll
@@ -32,11 +32,19 @@ filesToRelease="
   Qpid.Messaging.dll
   log4net.dll"
 
+filesToRelease="
+  LICENCE.txt
+  NOTICE.txt"
+
 releaseDir=build/release/$releaseName
 mkdir -p $releaseDir
 
-for file in $filesToRelease; do
+for file in $binFilesToRelease; do
   cp $binDir/$file $releaseDir
+done
+
+for file in $filesToRelease; do
+  cp $file $releaseDir
 done
 
 cd build/release
