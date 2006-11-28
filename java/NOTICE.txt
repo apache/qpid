@@ -37,3 +37,6 @@ includes (binary only):
           JMS CTS is available from http://www.exolab.org/
              
 
+JMS Compliance:
+	- Qpid M1 uses the JMS API's but makes no representation that this 
+	  release is JMS compliant
