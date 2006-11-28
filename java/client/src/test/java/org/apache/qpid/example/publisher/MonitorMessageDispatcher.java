@@ -20,8 +20,9 @@ package org.apache.qpid.example.publisher;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.BasicConfigurator;
-import org.apache.qpid.example.shared.Statics;
+
 import javax.jms.*;
+
 import java.util.Properties;
 
 /**
@@ -32,14 +33,18 @@ public class MonitorMessageDispatcher {
 
     private static final Logger _logger = Logger.getLogger(MonitorMessageDispatcher.class);
 
-    private static MonitorPublisher _monitorPublisher = null;
+    protected static MonitorPublisher _monitorPublisher = null;
 
-    private static final String DEFAULT_MONITOR_PUB_NAME = "MonitorPublisher";
+    protected static final String DEFAULT_MONITOR_PUB_NAME = "MonitorPublisher";
 
+    /**
+     * Easy entry point for running a message dispatcher for monitoring consumption
+     * @param args
+     */
     public static void main(String[] args)
     {
 
-        //@TODO switch on logging appropriately at your app level
+        //Switch on logging appropriately for your app
         BasicConfigurator.configure();
 
         try
@@ -61,7 +66,7 @@ public class MonitorMessageDispatcher {
                 }
                 catch(UndeliveredMessageException a)
                 {
-                    //@TODO trigger application specific failure handling here
+                    //trigger application specific failure handling here
                     _logger.error("Problem delivering monitor message");
                     break;
                 }
@@ -69,8 +74,7 @@ public class MonitorMessageDispatcher {
         }
         catch(Exception e)
         {
-
-            System.err.println("Error trying to dispatch AMS monitor message: " + e);
+            _logger.error("Error trying to dispatch AMS monitor message: " + e);
             System.exit(1);
         }
         finally
@@ -84,15 +88,21 @@ public class MonitorMessageDispatcher {
         System.exit(1);
     }
 
-    //Publish heartbeat message
+    /**
+     * Publish heartbeat message
+     * @throws JMSException
+     * @throws UndeliveredMessageException
+     */
     public static void publish() throws JMSException, UndeliveredMessageException
     {
         //Send the message generated from the payload using the _publisher
         getMonitorPublisher().sendImmediateMessage
-          (MessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(),"monitor:" +System.currentTimeMillis()));
+          (FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(),"monitor:" +System.currentTimeMillis()));
     }
 
-    //cleanup publishers
+    /**
+     * Cleanup publishers
+     */
     public static void cleanup()
     {
         if (getMonitorPublisher() != null)
@@ -113,9 +123,6 @@ public class MonitorMessageDispatcher {
        {
            return _monitorPublisher;
        }
-
-       //Create _publisher using system properties
-       Properties props = System.getProperties();
 
        //Create a _publisher using failover details and constant for monitor queue
        _monitorPublisher = new MonitorPublisher();
