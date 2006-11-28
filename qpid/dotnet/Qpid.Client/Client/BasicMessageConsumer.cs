@@ -255,6 +255,7 @@ namespace Qpid.Client
 
         public override void Close()
         {
+            // FIXME: Don't we need FailoverSupport here (as we have SyncWrite). i.e. rather than just locking FailOverMutex
             lock (_channel.Connection.FailoverMutex)
             {
                 lock (_closingLock)
