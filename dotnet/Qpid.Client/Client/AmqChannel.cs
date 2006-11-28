@@ -300,20 +300,15 @@ namespace Qpid.Client
             CheckNotClosed();
             CheckTransacted(); // throws IllegalOperationException if not a transacted session
 
-            /*Channel.Rollback frame = new Channel.Rollback();
-            frame.channelId = _channelId;
-            frame.confirmTag = 1;*/
-
-            //        try
-            //        {
-            //            _connection.getProtocolHandler().writeCommandFrameAndWaitForReply(frame, new ChannelReplyListener(_channelId));
-            //        }
-            //        catch (AMQException e)
-            //        {
-            //            throw new JMSException("Error rolling back session: " + e);
-            //        }
-            throw new NotImplementedException();
-            //_logger.Info("Transaction rolled back on channel " + _channelId);
+            try
+            {
+                _connection.ConvenientProtocolWriter.SyncWrite(
+                        TxRollbackBody.CreateAMQFrame(_channelId), typeof(TxRollbackOkBody));
+            }
+            catch (AMQException e)
+            {
+                throw new QpidException("Failed to rollback", e);
+            }
         }
 
         public override void Close()
