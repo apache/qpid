@@ -738,23 +738,25 @@ namespace Qpid.Client
         }
 
         /**
-         * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
+         * For all channels, and for all consumers in those sessions, resubscribe. This is called during failover handling.
          * The caller must hold the failover mutex before calling this method.
          */
-        public void ResubscribeSessions()
+        public void ResubscribeChannels()
         {
-            ArrayList sessions = new ArrayList(_sessions.Values);
-            _log.Info(String.Format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.Count));
-            foreach (AmqChannel s in sessions)
+            ArrayList channels = new ArrayList(_sessions.Values);
+            _log.Info(String.Format("Resubscribing sessions = {0} sessions.size={1}", channels, channels.Count));
+            foreach (AmqChannel channel in channels)
             {
-                _protocolSession.AddSessionByChannel(s.ChannelId, s);
-                ReopenChannel(s.ChannelId, (ushort)s.DefaultPrefetch, s.Transacted);
-                s.Resubscribe();
+                _protocolSession.AddSessionByChannel(channel.ChannelId, channel);
+                ReopenChannel(channel.ChannelId, (ushort)channel.DefaultPrefetch, channel.Transacted);
+                channel.ReplayOnFailOver();
             }
         }
 
         private void ReopenChannel(ushort channelId, ushort prefetch, bool transacted)
         {
+            _log.Info(string.Format("Reopening channel id={0} prefetch={1} transacted={2}",
+                channelId, prefetch, transacted));
             try
             {
                 createChannelOverWire(channelId, prefetch, transacted);
@@ -781,7 +783,6 @@ namespace Qpid.Client
                     typeof (BasicQosOkBody));                
             }
             
-
             if (transacted)
             {
                 if (_log.IsDebugEnabled)

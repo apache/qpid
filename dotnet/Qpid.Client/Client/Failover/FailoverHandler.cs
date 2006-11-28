@@ -121,7 +121,7 @@ namespace Qpid.Client.Failover
                         if (_connection.FirePreResubscribe())
                         {
                             _log.Info("Resubscribing on new connection");
-                            _connection.ResubscribeSessions();
+                            _connection.ResubscribeChannels();
                         }
                         else
                         {
