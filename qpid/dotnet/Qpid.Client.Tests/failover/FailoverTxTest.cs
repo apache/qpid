@@ -59,32 +59,34 @@ namespace Qpid.Client.Tests.failover
             _log.Info("connectionInfo = " + connectionInfo);
             _log.Info("connection.asUrl = " + _connection.toURL());
 
-            IChannel channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge);
+            IChannel receivingChannel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge);
 
-            string queueName = channel.GenerateUniqueName();
+            string queueName = receivingChannel.GenerateUniqueName();
 
             // Queue.Declare
-            channel.DeclareQueue(queueName, false, true, true);
+            receivingChannel.DeclareQueue(queueName, false, true, true);
 
             // No need to call Queue.Bind as automatically bound to default direct exchange.
-            channel.Bind(queueName, "amq.direct", queueName);
+            receivingChannel.Bind(queueName, "amq.direct", queueName);
 
-            channel.CreateConsumerBuilder(queueName).Create().OnMessage = new MessageReceivedDelegate(onMessage);
+            receivingChannel.CreateConsumerBuilder(queueName).Create().OnMessage = new MessageReceivedDelegate(onMessage);
 
             _connection.Start();
 
-            sendInTx(queueName);
+            publishInTx(queueName);
+
+            Thread.Sleep(2000); // Wait a while for last messages.
 
             _connection.Close();
             _log.Info("FailoverTxText complete");
         }
 
-        private void sendInTx(string routingKey)
+        private void publishInTx(string routingKey)
         {
             _log.Info("sendInTx");
-            bool transacted = false;
-            IChannel channel = _connection.CreateChannel(transacted, AcknowledgeMode.NoAcknowledge);
-            IMessagePublisher publisher = channel.CreatePublisherBuilder()
+            bool transacted = true;
+            IChannel publishingChannel = _connection.CreateChannel(transacted, AcknowledgeMode.NoAcknowledge);
+            IMessagePublisher publisher = publishingChannel.CreatePublisherBuilder()
                 .withRoutingKey(routingKey)
                 .Create();
 
@@ -92,12 +94,12 @@ namespace Qpid.Client.Tests.failover
             {
                 for (int j = 1; j <= NUM_MESSAGES; ++j)
                 {
-                    ITextMessage msg = channel.CreateTextMessage("Tx=" + i + " msg=" + j);
+                    ITextMessage msg = publishingChannel.CreateTextMessage("Tx=" + i + " msg=" + j);
                     _log.Info("sending message = " + msg.Text);
                     publisher.Send(msg);
                     Thread.Sleep(SLEEP_MILLIS);
                 }
-                if (transacted) channel.Commit();
+                if (transacted) publishingChannel.Commit();
             }
         }
 

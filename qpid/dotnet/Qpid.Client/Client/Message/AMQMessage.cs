@@ -31,22 +31,27 @@ namespace Qpid.Client.Message
         /// </summary>
         protected AmqChannel _channel;
 
-        public AMQMessage(IContentHeaderProperties properties)
+        private long _deliveryTag;
+
+        public AMQMessage(IContentHeaderProperties properties, long deliveryTag)
         {
             _contentHeaderProperties = properties;
+            _deliveryTag = deliveryTag;
+        }
+
+        public AMQMessage(IContentHeaderProperties properties) : this(properties, -1)
+        {
+        }
+
+        public long DeliveryTag
+        {
+            get { return _deliveryTag; }
         }
 
         public AmqChannel Channel
         {
-            get
-            {
-                return _channel;
-            }
-
-            set
-            {
-                _channel = value;
-            }
+            get { return _channel; }
+            set { _channel = value; }
         }
     }
 }
