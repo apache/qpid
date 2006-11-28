@@ -768,6 +768,8 @@ namespace Qpid.Client
                                                                   acknowledgeMode == AcknowledgeMode.NoAcknowledge,
                                                                   exclusive, true);
 
+            _replayFrames.Add(basicConsume);
+
             _connection.ProtocolWriter.Write(basicConsume);
             return tag;
         }
