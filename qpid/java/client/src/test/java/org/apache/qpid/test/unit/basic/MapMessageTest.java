@@ -132,16 +132,48 @@ public class MapMessageTest extends TestCase implements MessageListener
             assertEqual(m.getInt("messageNumber"), count);
             assertEqual(m.getBoolean("odd"), count / 2 == 0);
 
-//            try
-//            {
-//                m.setInt("testint", 3);
-//                fail("Message should not be writeable");
-//            }
-//            catch (MessageNotWriteableException mnwe)
-//            {
-//                //normal execution
-//            }
+            try
+            {
+                m.setInt("testint", 3);
+                fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
 
+            m.clearBody();
+
+            try
+            {
+                m.setInt("testint", 3);
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
+              //Check property write status
+            try
+            {
+                m.setStringProperty("test", "test");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearProperties();
+
+            try
+            {
+                m.setStringProperty("test", "test");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
 
             count++;
         }
