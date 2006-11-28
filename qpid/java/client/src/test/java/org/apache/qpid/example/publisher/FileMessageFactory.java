@@ -25,13 +25,19 @@ import org.apache.qpid.example.shared.Statics;
 import java.io.*;
 import javax.jms.*;
 
-public class MessageFactory
+public class FileMessageFactory
 {
-    private final Session _session;
-    private final String _payload;
-    private final String _filename;
+    protected final Session _session;
+    protected final String _payload;
+    protected final String _filename;
 
-    public MessageFactory(Session session, String filename) throws MessageFactoryException
+    /**
+     * Contructs and instance using a filename from which content will be used to create message
+     * @param session
+     * @param filename
+     * @throws MessageFactoryException
+     */
+    public FileMessageFactory(Session session, String filename) throws MessageFactoryException
     {
         try
         {
@@ -45,9 +51,13 @@ public class MessageFactory
         }
     }
 
-    /*
-    * Creates message and sets filename property on it
-    */
+    /**
+     * Creates a text message and sets filename property on it
+     * The filename property is purely intended to provide visibility
+     * of file content passing trhough the broker using example classes
+     * @return  Message - a TextMessage with content from file
+     * @throws JMSException
+     */
     public Message createEventMessage() throws JMSException
     {
         TextMessage msg = _session.createTextMessage();
@@ -56,9 +66,13 @@ public class MessageFactory
         return msg;
     }
 
-    /*
-    * Creates message from a string for use by the monitor
-    */
+    /**
+     * Creates message from a string for use by the monitor
+     * @param session
+     * @param textMsg - message content
+     * @return Message - TextMessage with content from String
+     * @throws JMSException
+     */
     public static Message createSimpleEventMessage(Session session, String textMsg) throws JMSException
     {
         TextMessage msg = session.createTextMessage();

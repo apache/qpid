@@ -22,14 +22,14 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 
-import org.apache.qpid.jms.Session;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.DeliveryMode;
 import javax.jms.Queue;
 import javax.jms.MessageProducer;
 import javax.jms.Connection;
+import javax.jms.Session;
+
 import javax.naming.InitialContext;
 
 import org.apache.qpid.example.shared.InitialContextHelper;
@@ -44,7 +44,7 @@ public class Publisher
 
     protected Session _session;
 
-    private MessageProducer _producer;
+    protected MessageProducer _producer;
 
     protected String _destinationDir;
 
@@ -54,7 +54,10 @@ public class Publisher
 
     protected static final String _defaultDestinationDir = "/tmp";
 
-    //constructor for use with a single host
+    /**
+     * Creates a Publisher instance using properties from example.properties
+     * See InitialContextHelper for details of how context etc created
+     */
     public Publisher()
     {
         try
@@ -68,7 +71,7 @@ public class Publisher
             _connection = cf.createConnection();
 
             //create a transactional session
-            _session = (Session) _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            _session = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
             //lookup the example queue and use it
             //Queue is non-exclusive and not deleted when last consumer detaches
@@ -90,8 +93,9 @@ public class Publisher
     }
 
     /**
-    * Publishes a non-persistent message using transacted session
-    **/
+     * Publishes a non-persistent message using transacted session
+     * Note that persistent is the default mode for send - so need to specify for transient
+     */
     public boolean sendMessage(Message message)
     {
         try
@@ -124,6 +128,9 @@ public class Publisher
         return true;
     }
 
+    /**
+     * Cleanup resources before exit
+     */
     public void cleanup()
     {
         try
@@ -138,11 +145,15 @@ public class Publisher
         }
         catch(Exception e)
         {
-            System.err.println("Error trying to cleanup publisher " + e);
+            _log.error("Error trying to cleanup publisher " + e);
             System.exit(1);
         }
     }
 
+    /**
+     * Exposes session
+     * @return  Session
+     */
     public Session getSession()
     {
         return _session;
