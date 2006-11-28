@@ -430,7 +430,7 @@ namespace Qpid.Client
                 _log.Info("Closing channel " + channel);
                 if (cause != null)
                 {
-                    channel.Closed(cause);
+                    channel.ClosedWithException(cause);
                 }
                 else
                 {
