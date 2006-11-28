@@ -33,7 +33,7 @@ namespace Qpid.Client.Tests.failover
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(FailoverTxTest));
 
-        const int NUM_ITERATIONS = 3;
+        const int NUM_ITERATIONS = 10;
         const int NUM_MESSAGES = 10;
         const int SLEEP_MILLIS = 500;
 
@@ -59,17 +59,17 @@ namespace Qpid.Client.Tests.failover
             _log.Info("connectionInfo = " + connectionInfo);
             _log.Info("connection.asUrl = " + _connection.toURL());
 
-            IChannel session = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge);
+            IChannel channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge);
 
-            string queueName = session.GenerateUniqueName();
+            string queueName = channel.GenerateUniqueName();
 
             // Queue.Declare
-            session.DeclareQueue(queueName, false, true, true);
+            channel.DeclareQueue(queueName, false, true, true);
 
             // No need to call Queue.Bind as automatically bound to default direct exchange.
-//            channel.Bind(queueName, exchangeName, routingKey);
+            channel.Bind(queueName, "amq.direct", queueName);
 
-            session.CreateConsumerBuilder(queueName).Create().OnMessage = new MessageReceivedDelegate(onMessage);
+            channel.CreateConsumerBuilder(queueName).Create().OnMessage = new MessageReceivedDelegate(onMessage);
 
             _connection.Start();
 
@@ -83,8 +83,8 @@ namespace Qpid.Client.Tests.failover
         {
             _log.Info("sendInTx");
             bool transacted = false;
-            IChannel session = _connection.CreateChannel(transacted, AcknowledgeMode.NoAcknowledge);
-            IMessagePublisher publisher = session.CreatePublisherBuilder()
+            IChannel channel = _connection.CreateChannel(transacted, AcknowledgeMode.NoAcknowledge);
+            IMessagePublisher publisher = channel.CreatePublisherBuilder()
                 .withRoutingKey(routingKey)
                 .Create();
 
@@ -92,12 +92,12 @@ namespace Qpid.Client.Tests.failover
             {
                 for (int j = 1; j <= NUM_MESSAGES; ++j)
                 {
-                    ITextMessage msg = session.CreateTextMessage("Tx=" + i + " msg=" + j);
+                    ITextMessage msg = channel.CreateTextMessage("Tx=" + i + " msg=" + j);
                     _log.Info("sending message = " + msg.Text);
                     publisher.Send(msg);
                     Thread.Sleep(SLEEP_MILLIS);
                 }
-                if (transacted) session.Commit();
+                if (transacted) channel.Commit();
             }
         }
 
