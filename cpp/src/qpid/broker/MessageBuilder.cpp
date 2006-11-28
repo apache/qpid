@@ -20,25 +20,23 @@
  */
 #include <qpid/broker/MessageBuilder.h>
 
+#include <qpid/broker/InMemoryContent.h>
+#include <qpid/broker/LazyLoadedContent.h>
+
 using namespace qpid::broker;
 using namespace qpid::framing;
+using std::auto_ptr;
 
 MessageBuilder::MessageBuilder(CompletionHandler* _handler, MessageStore* const _store, u_int64_t _stagingThreshold) : 
     handler(_handler),
     store(_store),
-    stagingThreshold(_stagingThreshold),
-    staging(false)
+    stagingThreshold(_stagingThreshold)
 {}
 
 void MessageBuilder::route(){
-    if (staging && store) {
-        store->stage(message);
-        message->releaseContent();
-    }
     if (message->isComplete()) {
         if (handler) handler->complete(message);
         message.reset();
-        staging = false;
     }
 }
 
@@ -54,7 +52,14 @@ void MessageBuilder::setHeader(AMQHeaderBody::shared_ptr& header){
         THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got header before publish.");
     }
     message->setHeader(header);
-    staging = stagingThreshold && header->getContentSize() >= stagingThreshold;
+    if (stagingThreshold && header->getContentSize() >= stagingThreshold) {
+        store->stage(message);
+        auto_ptr<Content> content(new LazyLoadedContent(store, message->getPersistenceId(), message->expectedContentSize()));
+        message->setContent(content);
+    } else {
+        auto_ptr<Content> content(new InMemoryContent());
+        message->setContent(content);
+    }
     route();
 }
 

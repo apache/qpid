@@ -51,9 +51,9 @@ namespace qpid {
              * (enqueueing automatically stores the message so this is
              * only required if storage is required prior to that
              * point). If the message has not yet been stored it will
-             * store the headers and any available content. If the
-             * message has already been stored it will append any
-             * currently held content.
+             * store the headers as well as any content passed in. A
+             * persistence id will be set on the message which can be
+             * used to load the content or to append to it.
              */
             virtual void stage(Message::shared_ptr& msg) = 0;
             
@@ -64,6 +64,21 @@ namespace qpid {
              * is dequeued from all queues it was enqueued onto).
              */
             virtual void destroy(Message::shared_ptr& msg) = 0;
+
+            /**
+             * Appends content to a previously staged message
+             */
+            virtual void appendContent(u_int64_t msgId, const std::string& data) = 0;
+
+            /**
+             * Loads (a section) of content data for the specified
+             * message id (previously set on the message through a
+             * call to stage or enqueue) into data. The offset refers
+             * to the content only (i.e. an offset of 0 implies that
+             * the start of the content should be loaded, not the
+             * headers or related meta-data).
+             */
+            virtual void loadContent(u_int64_t msgId, std::string& data, u_int64_t offset, u_int32_t length) = 0;
 
             /**
              * Enqueues a message, storing the message if it has not

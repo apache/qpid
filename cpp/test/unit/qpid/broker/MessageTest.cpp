@@ -77,13 +77,10 @@ class MessageTest : public CppUnit::TestCase
 
         DummyHandler handler;
         msg->deliver(&handler, 0, "ignore", 0, 100); 
-        CPPUNIT_ASSERT_EQUAL((size_t) 4, handler.frames.size());
-        AMQContentBody::shared_ptr contentBody1(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
-        AMQContentBody::shared_ptr contentBody2(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[3]->getBody()));
-        CPPUNIT_ASSERT(contentBody1);
-        CPPUNIT_ASSERT(contentBody2);
-        CPPUNIT_ASSERT_EQUAL(data1, contentBody1->getData());
-        CPPUNIT_ASSERT_EQUAL(data2, contentBody2->getData());
+        CPPUNIT_ASSERT_EQUAL((size_t) 3, handler.frames.size());
+        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
+        CPPUNIT_ASSERT(contentBody);
+        CPPUNIT_ASSERT_EQUAL(data1 + data2, contentBody->getData());
     }
 };
 

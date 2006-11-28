@@ -21,8 +21,10 @@
 #ifndef _Message_
 #define _Message_
 
+#include <memory>
 #include <boost/shared_ptr.hpp>
 #include <qpid/broker/ConnectionToken.h>
+#include <qpid/broker/Content.h>
 #include <qpid/broker/TxBuffer.h>
 #include <qpid/framing/AMQContentBody.h>
 #include <qpid/framing/AMQHeaderBody.h>
@@ -32,6 +34,7 @@
 namespace qpid {
     namespace broker {
 
+        class MessageStore;
         using qpid::framing::string;
         /**
          * Represents an AMQP message, i.e. a header body, a list of
@@ -39,9 +42,6 @@ namespace qpid {
          * request.
          */
         class Message{
-            typedef std::vector<qpid::framing::AMQContentBody::shared_ptr> content_list;
-            typedef content_list::iterator content_iterator;
-
             const ConnectionToken* const publisher;
             string exchange;
             string routingKey;
@@ -49,7 +49,7 @@ namespace qpid {
             const bool immediate;
             bool redelivered;
             qpid::framing::AMQHeaderBody::shared_ptr header;
-            content_list content;
+            std::auto_ptr<Content> content;
             u_int64_t size;
             u_int64_t persistenceId;
 
@@ -62,7 +62,7 @@ namespace qpid {
             Message(const ConnectionToken* const publisher, 
                     const string& exchange, const string& routingKey, 
                     bool mandatory, bool immediate);
-            Message(qpid::framing::Buffer& buffer);
+            Message(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
             Message();
             ~Message();
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
@@ -90,9 +90,9 @@ namespace qpid {
             u_int64_t getPersistenceId() const { return persistenceId; }
             void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
 
-            void decode(qpid::framing::Buffer& buffer);
+            void decode(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
             void decodeHeader(qpid::framing::Buffer& buffer);
-            void decodeContent(qpid::framing::Buffer& buffer);
+            void decodeContent(qpid::framing::Buffer& buffer, u_int32_t contentChunkSize = 0);
 
             void encode(qpid::framing::Buffer& buffer);
             void encodeHeader(qpid::framing::Buffer& buffer);
@@ -114,14 +114,22 @@ namespace qpid {
              */
             u_int32_t encodedContentSize();
             /**
-             * Releases the in-memory content data held by this message.
+             * Releases the in-memory content data held by this
+             * message. Must pass in a store from which the data can
+             * be reloaded.
              */
-            void releaseContent();
+            void releaseContent(MessageStore* store);
             /**
              * If headers have been received, returns the expected
              * content size else returns 0.
              */
             u_int64_t expectedContentSize();
+            /**
+             * Sets the 'content' implementation of this message (the
+             * message controls the lifecycle of the content instance
+             * it uses).
+             */
+            void setContent(std::auto_ptr<Content>& content);
         };
 
     }
