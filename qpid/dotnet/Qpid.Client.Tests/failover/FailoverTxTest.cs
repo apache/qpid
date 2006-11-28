@@ -34,7 +34,8 @@ namespace Qpid.Client.Tests.failover
         private static readonly ILog _log = LogManager.GetLogger(typeof(FailoverTxTest));
 
         const int NUM_ITERATIONS = 10;
-        const int NUM_MESSAGES = 10;
+        const int NUM_COMMITED_MESSAGES = 10;
+        const int NUM_ROLLEDBACK_MESSAGES = 5;
         const int SLEEP_MILLIS = 500;
 
         AMQConnection _connection;
@@ -92,9 +93,18 @@ namespace Qpid.Client.Tests.failover
 
             for (int i = 1; i <= NUM_ITERATIONS; ++i)
             {
-                for (int j = 1; j <= NUM_MESSAGES; ++j)
+                for (int j = 1; j <= NUM_ROLLEDBACK_MESSAGES; ++j)
                 {
-                    ITextMessage msg = publishingChannel.CreateTextMessage("Tx=" + i + " msg=" + j);
+                    ITextMessage msg = publishingChannel.CreateTextMessage("Tx=" + i + " rolledBackMsg=" + j);
+                    _log.Info("sending message = " + msg.Text);
+                    publisher.Send(msg);
+                    Thread.Sleep(SLEEP_MILLIS);
+                }
+                if (transacted) publishingChannel.Rollback();
+
+                for (int j = 1; j <= NUM_COMMITED_MESSAGES; ++j)
+                {
+                    ITextMessage msg = publishingChannel.CreateTextMessage("Tx=" + i + " commitedMsg=" + j);
                     _log.Info("sending message = " + msg.Text);
                     publisher.Send(msg);
                     Thread.Sleep(SLEEP_MILLIS);
