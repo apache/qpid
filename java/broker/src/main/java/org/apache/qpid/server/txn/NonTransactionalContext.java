@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -60,7 +61,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         _channel = channel;
         _returnMessages = returnMessages;
-        _messageStore = messageStore;        
+        _messageStore = messageStore;
     }
 
     public void beginTranIfNecessary() throws AMQException
@@ -167,5 +168,10 @@ public class NonTransactionalContext implements TransactionalContext
             _messageStore.commitTran();
             _inTran = false;
         }
+    }
+
+    public void messageProcessed(AMQProtocolSession protocolSession) throws AMQException
+    {
+        _channel.processReturns(protocolSession);
     }
 }

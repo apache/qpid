@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.ack;
 
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.txn.TransactionalContext;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public interface UnacknowledgedMessageMap
 {
@@ -61,5 +62,13 @@ public interface UnacknowledgedMessageMap
     int size();
 
     void clear();
+
+    UnacknowledgedMessage get(long deliveryTag);
+
+    /**
+     * Get the set of delivery tags that are outstanding.
+     * @return a set of delivery tags
+     */
+    Set<Long> getDeliveryTags();
 }
 

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,23 +20,22 @@
  */
 package org.apache.qpid.server.txn;
 
+import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 
 import java.util.LinkedList;
 
-import junit.framework.TestCase;
-
 public class TxnBufferTest extends TestCase
 {
-    private final LinkedList<MockOp> ops = new LinkedList<MockOp>();  
+    private final LinkedList<MockOp> ops = new LinkedList<MockOp>();
 
     public void testCommit() throws AMQException
     {
         MockStore store = new MockStore();
 
-        TxnBuffer buffer = new TxnBuffer(store);
+        TxnBuffer buffer = new TxnBuffer();
         buffer.enlist(new MockOp().expectPrepare().expectCommit());
         //check relative ordering
         MockOp op = new MockOp().expectPrepare().expectPrepare().expectCommit().expectCommit();
@@ -54,7 +53,7 @@ public class TxnBufferTest extends TestCase
     {
         MockStore store = new MockStore();
 
-        TxnBuffer buffer = new TxnBuffer(store);
+        TxnBuffer buffer = new TxnBuffer();
         buffer.enlist(new MockOp().expectRollback());
         buffer.enlist(new MockOp().expectRollback());
         buffer.enlist(new MockOp().expectRollback());
@@ -68,17 +67,17 @@ public class TxnBufferTest extends TestCase
     public void testCommitWithFailureDuringPrepare() throws AMQException
     {
         MockStore store = new MockStore();
-        store.expectBegin().expectAbort();
+        store.beginTran();
 
-        TxnBuffer buffer = new TxnBuffer(store);
-        buffer.containsPersistentChanges();
+        TxnBuffer buffer = new TxnBuffer();
+        buffer.enlist(new StoreMessageOperation(store));
         buffer.enlist(new MockOp().expectPrepare().expectUndoPrepare());
         buffer.enlist(new TxnTester(store));
         buffer.enlist(new MockOp().expectPrepare().expectUndoPrepare());
         buffer.enlist(new FailedPrepare());
         buffer.enlist(new MockOp());
 
-        buffer.commit();        
+        buffer.commit();
         validateOps();
         store.validate();
     }
@@ -86,14 +85,15 @@ public class TxnBufferTest extends TestCase
     public void testCommitWithPersistance() throws AMQException
     {
         MockStore store = new MockStore();
-        store.expectBegin().expectCommit();
+        store.beginTran();
+        store.expectCommit();
 
-        TxnBuffer buffer = new TxnBuffer(store);
+        TxnBuffer buffer = new TxnBuffer();
         buffer.enlist(new MockOp().expectPrepare().expectCommit());
         buffer.enlist(new MockOp().expectPrepare().expectCommit());
         buffer.enlist(new MockOp().expectPrepare().expectCommit());
+        buffer.enlist(new StoreMessageOperation(store));
         buffer.enlist(new TxnTester(store));
-        buffer.containsPersistentChanges();
 
         buffer.commit();
         validateOps();
@@ -114,7 +114,7 @@ public class TxnBufferTest extends TestCase
     }
 
     class MockOp implements TxnOp
-    {        
+    {
         final Object PREPARE = "PREPARE";
         final Object COMMIT = "COMMIT";
         final Object UNDO_PREPARE = "UNDO_PREPARE";
@@ -195,16 +195,15 @@ public class TxnBufferTest extends TestCase
 
         public void beginTran() throws AMQException
         {
-            assertEquals(expected.removeLast(), BEGIN);
             inTran = true;
         }
-        
+
         public void commitTran() throws AMQException
         {
             assertEquals(expected.removeLast(), COMMIT);
             inTran = false;
         }
-        
+
         public void abortTran() throws AMQException
         {
             assertEquals(expected.removeLast(), ABORT);
@@ -249,7 +248,7 @@ public class TxnBufferTest extends TestCase
     }
 
     class NullOp implements TxnOp
-    {        
+    {
         public void prepare() throws AMQException
         {
         }
@@ -265,7 +264,7 @@ public class TxnBufferTest extends TestCase
     }
 
     class FailedPrepare extends NullOp
-    {        
+    {
         public void prepare() throws AMQException
         {
             throw new AMQException("Fail!");
@@ -273,7 +272,7 @@ public class TxnBufferTest extends TestCase
     }
 
     class TxnTester extends NullOp
-    {        
+    {
         private final MessageStore store;
 
         TxnTester(MessageStore store)

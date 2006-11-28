@@ -23,6 +23,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 
 import java.util.List;
@@ -62,12 +63,6 @@ public class LocalTransactionalContext implements TransactionalContext
 
     public void deliver(AMQMessage message, AMQQueue queue) throws AMQException
     {
-        // don't create a transaction unless needed
-        if (message.isPersistent())
-        {
-            _txnBuffer.containsPersistentChanges();
-        }
-
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
         // Following that (and ordering is important), an op will
@@ -121,6 +116,11 @@ public class LocalTransactionalContext implements TransactionalContext
         // Not required in this transactional context
     }
 
+    public void messageProcessed(AMQProtocolSession protocolSession) throws AMQException
+    {
+        // Not required in this transactional context
+    }
+
     public void beginTranIfNecessary() throws AMQException
     {
         if (!_inTran)
@@ -134,16 +134,11 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         if (_ackOp != null)
         {
-            _ackOp.consolidate();
-            if (_ackOp.checkPersistent())
-            {
-                _txnBuffer.containsPersistentChanges();
-            }
+            _ackOp.consolidate();            
             //already enlisted, after commit will reset regardless of outcome
             _ackOp = null;
         }
 
         _txnBuffer.commit();
-        //TODO: may need to return 'immediate' messages at this point
     }
 }

@@ -29,6 +29,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.MessageRouter;
+import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -110,7 +111,7 @@ public class AMQChannel
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
-        // TODO: fix me to pass in the txn context or at least have a factory for it
+        // by default the session is non-transactional
         _txnContext = new NonTransactionalContext(_messageStore, this, _returnMessages);
     }
 
@@ -119,7 +120,7 @@ public class AMQChannel
      */
     public void setLocalTransactional()
     {
-        _txnContext = new LocalTransactionalContext(_messageStore, new TxnBuffer(_messageStore), _returnMessages);
+        _txnContext = new LocalTransactionalContext(_messageStore, new TxnBuffer(), _returnMessages);
     }
 
     public boolean isTransactional()
@@ -168,9 +169,10 @@ public class AMQChannel
 
     public void setPublishFrame(BasicPublishBody publishBody, AMQProtocolSession publisher) throws AMQException
     {
-        _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), publishBody, _txnContext);
+        _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), publishBody,
+                                         _txnContext);
         // TODO: used in clustering only I think (RG)
-        //_currentMessage.setPublisher(publisher);
+        _currentMessage.setPublisher(publisher);
     }
 
     public void publishContentHeader(ContentHeaderBody contentHeaderBody)
@@ -194,7 +196,7 @@ public class AMQChannel
         }
     }
 
-    public void publishContentBody(ContentBody contentBody)
+    public void publishContentBody(ContentBody contentBody, AMQProtocolSession protocolSession)
             throws AMQException
     {
         if (_currentMessage == null)
@@ -208,6 +210,9 @@ public class AMQChannel
         {
             if (_currentMessage.addContentBodyFrame(contentBody))
             {
+                // callback to allow the context to do any post message processing
+                // primary use is to allow message return processing in the non-tx case
+                _txnContext.messageProcessed(protocolSession);
                 _currentMessage = null;
             }
         }
@@ -222,7 +227,14 @@ public class AMQChannel
 
     protected void routeCurrentMessage() throws AMQException
     {
-        _exchanges.routeContent(_currentMessage);
+        try
+        {
+            _exchanges.routeContent(_currentMessage);
+        }
+        catch (NoRouteException e)
+        {
+            _returnMessages.add(e);
+        }
     }
 
     /*protected void routeCurrentMessage2() throws AMQException

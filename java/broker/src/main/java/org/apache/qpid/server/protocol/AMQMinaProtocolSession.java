@@ -368,7 +368,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             ProtocolInitiation pi = (ProtocolInitiation) message;
             // this ensures the codec never checks for a PI message again
             ((AMQDecoder)_codecFactory.getDecoder()).setExpectProtocolInitiation(false);
-            try {
+            try
+            {
                 pi.checkVersion(this); // Fails if not correct
                 // This sets the protocol version (and hence framing classes) for this session.
                 _major = pi.protocolMajor;
@@ -378,7 +379,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 AMQFrame response = ConnectionStartBody.createAMQFrame((short)0, pi.protocolMajor, pi.protocolMinor, null,
                                                                        mechanisms.getBytes(), locales.getBytes());
                 _minaProtocolSession.write(response);
-            } catch (AMQException e) {
+            }
+            catch (AMQException e)
+            {
                 _logger.error("Received incorrect protocol initiation", e);
                 /* Find last protocol version in protocol version list. Make sure last protocol version
                 listed in the build file (build-module.xml) is the latest version which will be used
@@ -474,7 +477,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content body frame received: " + frame);
         }
-        getChannel(frame.channel).publishContentBody((ContentBody)frame.bodyFrame);
+        getChannel(frame.channel).publishContentBody((ContentBody)frame.bodyFrame, this);
     }
 
     /**

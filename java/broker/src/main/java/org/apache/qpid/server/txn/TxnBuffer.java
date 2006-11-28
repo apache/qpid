@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,6 @@ package org.apache.qpid.server.txn;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,47 +32,20 @@ import java.util.List;
  */
 public class TxnBuffer
 {
-    private boolean _containsPersistentChanges = false;
-    private final MessageStore _store;
     private final List<TxnOp> _ops = new ArrayList<TxnOp>();
     private static final Logger _log = Logger.getLogger(TxnBuffer.class);
 
-    public TxnBuffer(MessageStore store)
+    public TxnBuffer()
     {
-        _store = store;
-    }
-
-    public void containsPersistentChanges()
-    {
-        _containsPersistentChanges = true;
     }
 
     public void commit() throws AMQException
     {
-        if (_containsPersistentChanges)
+        if (prepare())
         {
-            _log.debug("Begin Transaction.");
-            if (prepare())
+            for (TxnOp op : _ops)
             {
-                _log.debug("Transaction Succeeded");
-                for (TxnOp op : _ops)
-                {
-                    op.commit();
-                }
-            }
-            else
-            {
-                _log.debug("Transaction Failed");                
-            }
-        }
-        else
-        {
-            if (prepare())
-            {
-                for (TxnOp op : _ops)
-                {
-                    op.commit();
-                }
+                op.commit();
             }
         }
         _ops.clear();

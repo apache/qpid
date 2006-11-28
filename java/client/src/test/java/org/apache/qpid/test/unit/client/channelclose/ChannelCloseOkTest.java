@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,19 +20,16 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
+import junit.framework.TestCase;
+import junit.textui.TestRunner;
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.test.VMBrokerSetup;
-import org.apache.log4j.Logger;
 
 import javax.jms.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
 
 /**
  * Due to bizarre exception handling all sessions are closed if you get
@@ -66,6 +63,7 @@ public class ChannelCloseOkTest extends TestCase
     {
         super.setUp();
 
+        TransportConnection.createVMBroker(1);
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
 
         _destination1 = new AMQQueue("q1", true);
@@ -194,7 +192,15 @@ public class ChannelCloseOkTest extends TestCase
         {
             while (received.size() < count)
             {
-                received.wait();
+                try
+                {
+                    received.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    _log.info("Interrupted: " + e);
+                    throw e;
+                }
             }
         }
     }
@@ -211,6 +217,6 @@ public class ChannelCloseOkTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(ChannelCloseOkTest.class));
+        return new junit.framework.TestSuite(ChannelCloseOkTest.class);
     }
 }

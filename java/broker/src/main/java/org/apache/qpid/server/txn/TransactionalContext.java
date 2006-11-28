@@ -12,6 +12,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -30,4 +31,6 @@ public interface TransactionalContext
                             UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException;
 
     void messageFullyReceived(boolean persistent) throws AMQException;
+
+    void messageProcessed(AMQProtocolSession protocolSession) throws AMQException;
 }

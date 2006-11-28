@@ -98,6 +98,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             {
                 visitor.callback(msg);
             }
+            visitor.visitComplete();
         }
     }
 
@@ -186,11 +187,20 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             }
         }
     }
-    private UnacknowledgedMessage get(long key)
+
+    public UnacknowledgedMessage get(long key)
     {
         synchronized (_lock)
         {
             return _map.get(key);
+        }
+    }
+
+    public Set<Long> getDeliveryTags()
+    {
+        synchronized (_lock)
+        {
+            return _map.keySet();
         }
     }
 
