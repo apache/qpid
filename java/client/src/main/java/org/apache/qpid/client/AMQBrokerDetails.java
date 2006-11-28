@@ -56,7 +56,7 @@ public class AMQBrokerDetails implements BrokerDetails
             {
                 //todo this list of valid transports should be enumerated somewhere
                 if ((!(transport.equalsIgnoreCase("vm") ||
-                        transport.equalsIgnoreCase("tcp"))))
+                       transport.equalsIgnoreCase("tcp"))))
                 {
                     if (transport.equalsIgnoreCase("localhost"))
                     {
@@ -65,7 +65,7 @@ public class AMQBrokerDetails implements BrokerDetails
                     }
                     else
                     {
-                        if (url.charAt(transport.length()) == ':' && url.charAt(transport.length()+1) != '/' )
+                        if (url.charAt(transport.length()) == ':' && url.charAt(transport.length() + 1) != '/')
                         {
                             //Then most likely we have a host:port value
                             connection = new URI(DEFAULT_TRANSPORT + "://" + url);
@@ -88,7 +88,7 @@ public class AMQBrokerDetails implements BrokerDetails
             if (transport == null)
             {
                 URLHelper.parseError(-1, "Unknown transport:'" + transport + "'" +
-                        " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
+                                         " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
             }
 
             setTransport(transport);
@@ -107,12 +107,45 @@ public class AMQBrokerDetails implements BrokerDetails
 
             if (port == -1)
             {
-                // Another fix for Java 1.5 URI handling
+                // Fix for when there is port data but it is not automatically parseable by getPort().
                 String auth = connection.getAuthority();
 
-                if (auth != null && auth.startsWith(":"))
+                if (auth != null && auth.contains(":"))
                 {
-                    setPort(Integer.parseInt(auth.substring(1)));
+                    int start = auth.indexOf(":") + 1;
+                    int end = start;
+                    boolean looking = true;
+                    boolean found = false;
+                    //Walk the authority looking for a port value.
+                    while (looking)
+                    {
+                        try
+                        {
+                            end++;
+                            Integer.parseInt(auth.substring(start, end));
+
+                            if (end >= auth.length())
+                            {
+                                looking = false;
+                                found = true;
+                            }
+                        }
+                        catch (NumberFormatException nfe)
+                        {
+                            looking = false;
+                        }
+
+                    }
+                    if (found)
+                    {
+                        setPort(Integer.parseInt(auth.substring(start, end)));
+                    }
+                    else
+                    {
+                        URLHelper.parseError(connection.toString().indexOf(connection.getAuthority()) + end - 1,
+                                             "Illegal character in port number", connection.toString());
+                    }
+
                 }
                 else
                 {
@@ -134,7 +167,7 @@ public class AMQBrokerDetails implements BrokerDetails
         {
             if (uris instanceof URLSyntaxException)
             {
-                throw (URLSyntaxException) uris;
+                throw(URLSyntaxException) uris;
             }
 
             URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
@@ -245,9 +278,9 @@ public class AMQBrokerDetails implements BrokerDetails
         BrokerDetails bd = (BrokerDetails) o;
 
         return _host.equalsIgnoreCase(bd.getHost()) &&
-                (_port == bd.getPort()) &&
-                _transport.equalsIgnoreCase(bd.getTransport()) &&
-                (useSSL() == bd.useSSL());
+               (_port == bd.getPort()) &&
+               _transport.equalsIgnoreCase(bd.getTransport()) &&
+               (useSSL() == bd.useSSL());
 
         //todo do we need to compare all the options as well?
     }
