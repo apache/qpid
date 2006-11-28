@@ -56,13 +56,19 @@ class MessageBuilderTest : public CppUnit::TestCase
                 header = new Buffer(msg->encodedHeaderSize());
                 msg->encodeHeader(*header);                
                 content = new Buffer(contentBufferSize);
-                msg->encodeContent(*content);
-            } else if (!header || !content) {
-                throw qpid::Exception("Buffers not initialised!");
+                msg->setPersistenceId(1);
             } else {
-                msg->encodeContent(*content);
+                throw qpid::Exception("Message already staged!");
             }
-            msg->setPersistenceId(1);
+        }
+
+        void appendContent(u_int64_t msgId, const string& data)
+        {
+            if (msgId == 1) {
+                content->putRawData(data);
+            } else {
+                throw qpid::Exception("Invalid message id!");
+            }
         }
 
         Message::shared_ptr getRestoredMessage()
@@ -159,7 +165,7 @@ class MessageBuilderTest : public CppUnit::TestCase
 
     void testStaging(){
         DummyHandler handler;
-        TestMessageStore store(50);//more than enough for two frames of 14 bytes
+        TestMessageStore store(14);
         MessageBuilder builder(&handler, &store, 5);
 
         string data1("abcdefg");

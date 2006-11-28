@@ -53,6 +53,16 @@ void MessageStoreModule::destroy(Message::shared_ptr& msg)
     store->destroy(msg);
 }
 
+void MessageStoreModule::appendContent(u_int64_t msgId, const std::string& data)
+{
+    store->appendContent(msgId, data);
+}
+
+void MessageStoreModule::loadContent(u_int64_t msgId, string& data, u_int64_t offset, u_int32_t length)
+{
+    store->loadContent(msgId, data, offset, length);
+}
+
 void MessageStoreModule::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid)
 {
     store->enqueue(ctxt, msg, queue, xid);
