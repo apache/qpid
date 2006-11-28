@@ -125,19 +125,53 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         {
             actual.add(m.getObject());
 
-//            try
-//            {
-//                m.setObject("Test text");
-//                Assert.fail("Message should not be writeable");
-//            }
-//            catch (MessageNotWriteableException mnwe)
-//            {
-//                //normal execution
-//            }
+            try
+            {
+                m.setObject("Test text");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearBody();
+
+            try
+            {
+                m.setObject("Test text");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
+              //Check property write status
+            try
+            {
+                m.setStringProperty("test", "test");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearProperties();
+
+            try
+            {
+                m.setStringProperty("test", "test");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
 
         }
 
         assertEqual(messages.iterator(), actual.iterator());
+
     }
 
     private static void assertEqual(Iterator expected, Iterator actual)

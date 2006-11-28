@@ -36,7 +36,6 @@ import java.nio.charset.CharacterCodingException;
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
     static final String MIME_TYPE = "application/java-object-stream";
-    private final boolean _readonly;
 
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
@@ -56,7 +55,6 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
-        _readonly = (data != null);
         getJmsContentHeaderProperties().setContentType(MIME_TYPE);
     }
 
@@ -66,10 +64,9 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
     JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
     {
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-        _readonly = data != null;
     }
 
-    public void clearBody() throws JMSException
+    public void clearBodyImpl() throws JMSException
     {
         if (_data != null)
         {
@@ -90,10 +87,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
     public void setObject(Serializable serializable) throws JMSException
     {
-        if (_readonly)
-        {
-            throw new MessageNotWriteableException("Message is not writable.");
-        }
+        checkWritable();
 
         if (_data == null)
         {

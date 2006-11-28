@@ -122,15 +122,49 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             actual.add(m.getText());
 
-//            try
-//            {
-//                m.setText("Test text");
-//                Assert.fail("Message should not be writeable");
-//            }
-//            catch (MessageNotWriteableException mnwe)
-//            {
-//                //normal execution
-//            }
+            //Check body write status            
+            try
+            {
+                m.setText("Test text");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearBody();
+
+            try
+            {
+                m.setText("Test text");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
+            //Check property write status
+            try
+            {
+                m.setStringProperty("test", "test");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearProperties();
+
+            try
+            {
+                m.setStringProperty("test", "test");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
 
         }
 

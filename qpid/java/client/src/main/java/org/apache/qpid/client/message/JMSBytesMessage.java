@@ -37,7 +37,6 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
 {
     private static final String MIME_TYPE = "application/octet-stream";
 
-    private boolean _readable = false;
 
     /**
      * The default initial size of the buffer. The buffer expands automatically.
@@ -65,7 +64,6 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
             _data.setAutoExpand(true);
         }
-        _readable = (data != null);
     }
 
     JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
@@ -74,13 +72,11 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
         getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-        _readable = true;
     }
 
-    public void clearBody() throws JMSException
+    public void clearBodyImpl() throws JMSException
     {
         _data.clear();
-        _readable = false;
     }
 
     public String toBodyString() throws JMSException
@@ -139,13 +135,6 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         return _data.limit();
     }
 
-    private void checkReadable() throws MessageNotReadableException
-    {
-        if (!_readable)
-        {
-            throw new MessageNotReadableException("You need to call reset() to make the message readable");
-        }
-    }
 
     /**
      * Check that there is at least a certain number of bytes available to read
@@ -158,14 +147,6 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         if (_data.remaining() < len)
         {
             throw new MessageEOFException("Unable to read " + len + " bytes");
-        }
-    }
-
-    private void checkWritable() throws MessageNotWriteableException
-    {
-        if (_readable)
-        {
-            throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
         }
     }
 
@@ -392,13 +373,8 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
 
     public void reset() throws JMSException
     {
-        //checkWritable();
+        super.reset();
         _data.flip();
-        _readable = true;
     }
 
-    public boolean isReadable()
-    {
-        return _readable;
-    }
 }
