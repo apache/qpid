@@ -310,29 +310,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
-    // FIXME Connection now parses but result is wrong QPID-71
-    /*
-    public void testWrongOptionSeparatorInBroker()
-    {
-        String url = "amqp://user:@/test?brokerlist='tcp://localhost:5672+option='value''";
 
-        try
-        {
-            AMQConnectionURL connection = new AMQConnectionURL(url);
-
-            Float version = Float.parseFloat(System.getProperty("java.specification.version"));
-            if (version > 1.5)
-            {
-                fail("URL Should not parse on Java " + version + " Connection is:" + connection);
-            }
-        }
-        catch (URLSyntaxException urise)
-        {
-            assertTrue(urise.getReason().equals("Illegal character in port number"));
-        }
-
-    }
-    */
 
     public void testWrongOptionSeparatorInOptions()
     {
@@ -349,18 +327,6 @@ public class ConnectionURLTest extends TestCase
 
     }
 
-    public void testTransportsDefaultToTCP() throws URLSyntaxException
-    {
-        String url = "amqp://guest:guest@/test?brokerlist='localhost:5672;myhost:5673'&failover='roundrobin'";
-
-        AMQConnectionURL connection = new AMQConnectionURL(url);
-
-        BrokerDetails broker = connection.getBrokerDetails(0);
-        assertTrue(broker.getTransport().equals("tcp"));
-
-        broker = connection.getBrokerDetails(1);
-        assertTrue(broker.getTransport().equals("tcp"));
-    }
 
     public void testNoUserDetailsProvidedWithClientID()
 
