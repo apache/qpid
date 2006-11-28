@@ -343,6 +343,7 @@ namespace Qpid.Client
 
         public void CloseSession(AmqChannel channel)
         {
+            // FIXME: Don't we need FailoverSupport here (as we have SyncWrite).
             _protocolSession.CloseSession(channel);
             
             AMQFrame frame = ChannelCloseBody.CreateAMQFrame(
