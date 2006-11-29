@@ -39,7 +39,8 @@ namespace Qpid.Client.Message
             _deliveryTag = deliveryTag;
         }
 
-        public AMQMessage(IContentHeaderProperties properties) : this(properties, -1)
+        public AMQMessage(IContentHeaderProperties properties)
+            : this(properties, -1)
         {
         }
 

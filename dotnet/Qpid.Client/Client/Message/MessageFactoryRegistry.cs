@@ -58,7 +58,7 @@ namespace Qpid.Client.Message
         /// <returns>the message.</returns>
         /// <exception cref="AMQException"/>
         /// <exception cref="QpidException"/>
-        public AbstractQmsMessage CreateMessage(ulong messageNbr, bool redelivered,
+        public AbstractQmsMessage CreateMessage(long messageNbr, bool redelivered,
                                                 ContentHeaderBody contentHeader,
                                                 IList bodies)
         {

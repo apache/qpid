@@ -124,7 +124,7 @@ namespace Qpid.Client
                     }
                     else
                     {
-                        consumer.NotifyMessage(message, _containingChannel.AcknowledgeMode, _containingChannel.ChannelId);
+                        consumer.NotifyMessage(message, _containingChannel.ChannelId);
                     }
                 }
                 else
@@ -595,22 +595,6 @@ namespace Qpid.Client
             }
         }
         
-        /// <summary>
-        /// Send an acknowledgement for all messages up to a specified number on this session.
-        /// <param name="messageNbr">the message number up to an including which all messages will be acknowledged.</param>
-        /// </summary>
-        public void SendAcknowledgement(ulong messageNbr)
-        {
-            /*if (_logger.IsDebugEnabled)
-            {
-                _logger.Debug("Channel Ack being sent for channel id " + _channelId + " and message number " + messageNbr);
-            }*/
-            /*Channel.Ack frame = new Channel.Ack();
-            frame.channelId = _channelId;
-            frame.messageNbr = messageNbr;
-            _connection.getProtocolHandler().writeFrame(frame);*/
-        }
-
         internal void Start()
         {
             _dispatcher = new Dispatcher(this);
@@ -815,7 +799,7 @@ namespace Qpid.Client
                 currentTime = DateTime.UtcNow.Ticks;
                 message.Timestamp = currentTime;
             }
-            byte[] payload = message.Data;
+            byte[] payload = message.Data.ToByteArray();
             BasicContentHeaderProperties contentHeaderProperties = message.ContentHeaderProperties;
 
             if (timeToLive > 0)
@@ -986,10 +970,10 @@ namespace Qpid.Client
          * @param multiple    if true will acknowledge all messages up to and including the one specified by the
          *                    delivery tag
          */
-        public void AcknowledgeMessage(long deliveryTag, bool multiple)
+        public void AcknowledgeMessage(ulong deliveryTag, bool multiple)
         {
-            // XXX: cast to ulong evil?
-            AMQFrame ackFrame = BasicAckBody.CreateAMQFrame(_channelId, (ulong)deliveryTag, multiple);
+            AMQFrame ackFrame = BasicAckBody.CreateAMQFrame(_channelId, deliveryTag, multiple);
+            _logger.Info("XXX sending ack: " + ackFrame);
             if (_logger.IsDebugEnabled)
             {
                 _logger.Debug("Sending ack for delivery tag " + deliveryTag + " on channel " + _channelId);
