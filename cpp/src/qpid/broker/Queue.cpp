@@ -42,7 +42,7 @@ Queue::Queue(const string& _name, u_int32_t _autodelete,
     exclusive(0),
     persistenceId(0)
 {
-    if(autodelete) lastUsed = Time::now().msecs();
+    if(autodelete) lastUsed = now()/TIME_MSEC;
 }
 
 Queue::~Queue(){
@@ -137,7 +137,7 @@ void Queue::consume(Consumer* c, bool requestExclusive){
 void Queue::cancel(Consumer* c){
     Mutex::ScopedLock locker(lock);
     consumers.erase(find(consumers.begin(), consumers.end(), c));
-    if(autodelete && consumers.empty()) lastUsed = Time::now().msecs();
+    if(autodelete && consumers.empty()) lastUsed = now()*TIME_MSEC;
     if(exclusive == c) exclusive = 0;
 }
 
@@ -170,7 +170,7 @@ u_int32_t Queue::getConsumerCount() const{
 
 bool Queue::canAutoDelete() const{
     Mutex::ScopedLock locker(lock);
-    return lastUsed && (Time::now().msecs() - lastUsed > autodelete);
+    return lastUsed && (now()*TIME_MSEC - lastUsed > autodelete);
 }
 
 void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)

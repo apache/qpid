@@ -22,18 +22,41 @@
  *
  */
 
-#include <errno.h>
+#include <cerrno>
 #include <string>
 #include <qpid/QpidError.h>
 
 namespace qpid {
 namespace sys {
 
-std::string errnoToString();
+/**
+ * Exception with message from errno.
+ */
+class PosixError : public qpid::QpidError
+{
+  public:
+    static std::string getMessage(int errNo);
+    
+    PosixError(int errNo, const qpid::SrcLine& location) throw();
+    
+    ~PosixError() throw() {}
+    
+    int getErrNo() { return errNo; }
 
-#define CHECK0(N) if ((N)!=0) THROW_QPID_ERROR(INTERNAL_ERROR, errnoToString())
-#define CHECKNN(N) if ((N)<0) THROW_QPID_ERROR(INTERNAL_ERROR, errnoToString())
+    Exception* clone() const throw() { return new PosixError(*this); }
+        
+    void throwSelf() { throw *this; }
+
+  private:
+    int errNo;
+};
+
 }}
 
+/** Create a PosixError for the current file/line and errno. */
+#define QPID_POSIX_ERROR(errNo) ::qpid::sys::PosixError(errNo, SRCLINE)
 
+/** Throw a posix error if errNo is non-zero */
+#define QPID_POSIX_THROW_IF(ERRNO)              \
+    if ((ERRNO) != 0) throw QPID_POSIX_ERROR((ERRNO))
 #endif  /*!_posix_check_h*/

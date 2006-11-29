@@ -107,7 +107,7 @@ int main(int argc, char** argv){
             
             connection.close();
         } catch(qpid::QpidError error) {
-            std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+            std::cout << error.what() << std::endl;
         }        
     } else {
         try {
@@ -133,7 +133,7 @@ int main(int argc, char** argv){
             
             connection.close();
         } catch(qpid::QpidError error) {
-            std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+            std::cout << error.what() << std::endl;
         }
     }
 }

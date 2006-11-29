@@ -16,33 +16,17 @@
  *
  */
 
-#include <qpid/sys/EventChannel.h>
+#include "Runnable.h"
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace sys {
 
-/** Epoll-based implementation of the event channel */
-class EpollEventChannel : public EventChannel
+Runnable::~Runnable() {}
+
+Runnable::Functor Runnable::functor() 
 {
-  public:
-
-    EpollEventChannel();
-    ~EpollEventChannel();
-
-    virtual void post(ReadEvent& event);
-    virtual void post(WriteEvent& event);
-    virtual void post(AcceptEvent& event);
-    virtual void post(NotifyEvent& event);
-
-    inline void post(Event& event);
-
-    virtual Event* getEvent();
-
-    virtual void dispose(void* buffer, size_t size);
-
-  private:
-    int epollFd;
-    
-};
+    return boost::bind(&Runnable::run, this);
+}
 
 }}

@@ -1,3 +1,5 @@
+#ifndef _Runnable_
+#define _Runnable_
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,18 +20,28 @@
  * under the License.
  *
  */
-#ifndef _Runnable_
-#define _Runnable_
+
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace sys {
 
-/** Base class for classes that run in a thread. */
+/**
+ * Interface for objects that can be run, e.g. in a thread.
+ */
 class Runnable
 {
   public:
-    virtual ~Runnable() {}
+    /** Type to represent a runnable as a Functor */
+    typedef boost::function0<void> Functor;
+    
+    virtual ~Runnable();
+
+    /** Derived classes override run(). */
     virtual void run() = 0;
+
+    /** Create a functor object that will call this->run(). */
+    Functor functor();
 };
 
 }}

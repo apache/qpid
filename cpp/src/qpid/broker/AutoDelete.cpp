@@ -63,7 +63,7 @@ void AutoDelete::run(){
     Monitor::ScopedLock l(monitor);
     while(!stopped){
         process();
-        monitor.wait(period * Time::NSEC_PER_MSEC);
+        monitor.wait(period*TIME_MSEC);
     }
 }
 

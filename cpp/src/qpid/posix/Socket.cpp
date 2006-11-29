@@ -20,6 +20,7 @@
  */
 
 #include <sys/socket.h>
+#include <sys/errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -31,60 +32,87 @@
 
 using namespace qpid::sys;
 
-Socket::Socket() : socket(::socket (PF_INET, SOCK_STREAM, 0))
+Socket Socket::createTcp() 
 {
-    CHECKNN(socket == 0);
+    int s = ::socket (PF_INET, SOCK_STREAM, 0);
+    if (s < 0) throw QPID_POSIX_ERROR(errno);
+    return s;
 }
 
-void
-Socket::setTimeout(long msecs)
+Socket::Socket(int descriptor) : socket(descriptor) {}
+
+void Socket::setTimeout(Time interval)
 {
     struct timeval tv;
-    tv.tv_sec = msecs / 1000;
-    tv.tv_usec = (msecs % 1000)*1000;
+    tv.tv_sec = interval/TIME_SEC;
+    tv.tv_usec = (interval%TIME_SEC)/TIME_USEC;
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-void
-Socket::connect(const std::string& host, int port)
+void Socket::connect(const std::string& host, int port)
 {
     struct sockaddr_in name;
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
     struct hostent* hp = gethostbyname ( host.c_str() );
-    if (hp == 0) CHECK0(-1);     // TODO aconway 2006-11-09: error message?
+    if (hp == 0) throw QPID_POSIX_ERROR(errno);
     memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-    CHECK0(::connect(socket, (struct sockaddr*)(&name), sizeof(name)));
+    if (::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0)
+        throw QPID_POSIX_ERROR(errno);
 }
 
 void
 Socket::close()
 {
     if (socket == 0) return;
-    CHECK0(::close(socket));
+    if (::close(socket) < 0) throw QPID_POSIX_ERROR(errno);
     socket = 0;
 }
 
 ssize_t
-Socket::send(const char* data, size_t size)
+Socket::send(const void* data, size_t size)
 {
     ssize_t sent = ::send(socket, data, size, 0);
     if (sent < 0) {
         if (errno == ECONNRESET) return SOCKET_EOF;
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        CHECK0(sent);
+        throw QPID_POSIX_ERROR(errno);
     }
     return sent;
 }
 
 ssize_t
-Socket::recv(char* data, size_t size)
+Socket::recv(void* data, size_t size)
 {
     ssize_t received = ::recv(socket, data, size, 0);
     if (received < 0) {
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
-        CHECK0(received);
+        throw QPID_POSIX_ERROR(errno);
     }
     return received;
+}
+
+int Socket::listen(int port, int backlog) 
+{
+    struct sockaddr_in name;
+    name.sin_family = AF_INET;
+    name.sin_port = htons(port);
+    name.sin_addr.s_addr = 0;
+    if (::bind(socket, (struct sockaddr*)&name, sizeof(name)) < 0)
+        throw QPID_POSIX_ERROR(errno);
+    if (::listen(socket, backlog) < 0)
+        throw QPID_POSIX_ERROR(errno);
+    
+    socklen_t namelen = sizeof(name);
+    if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)
+        throw QPID_POSIX_ERROR(errno);
+
+    return ntohs(name.sin_port);
+}
+
+
+int Socket::fd() 
+{
+    return socket;
 }

@@ -38,7 +38,7 @@ class Listener : public MessageListener{
     const bool transactional;
     bool init;
     int count;
-    int64_t start;
+    Time start;
     
     void shutdown();
     void report();
@@ -96,7 +96,7 @@ int main(int argc, char** argv){
             channel.run();
             connection.close();
         }catch(qpid::QpidError error){
-            std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+            std::cout << error.what() << std::endl;
         }
     }
 }
@@ -106,7 +106,7 @@ Listener::Listener(Channel* _channel, const std::string& _responseq, bool tx) :
 
 void Listener::received(Message& message){
     if(!init){        
-        start = Time::now().msecs();
+        start = now();
         count = 0;
         init = true;
     }
@@ -128,10 +128,11 @@ void Listener::shutdown(){
 }
 
 void Listener::report(){
-    int64_t finish = Time::now().msecs();
-    int64_t time = finish - start;
+    Time finish = now();
+    Time time = finish - start;
     std::stringstream reportstr;
-    reportstr << "Received " << count << " messages in " << time << " ms.";
+    reportstr << "Received " << count << " messages in "
+              << time/TIME_MSEC << " ms.";
     Message msg;
     msg.setData(reportstr.str());
     channel->publish(msg, string(), responseQueue);

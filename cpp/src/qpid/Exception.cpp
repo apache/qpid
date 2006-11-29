@@ -21,4 +21,22 @@
 
 #include <qpid/Exception.h>
 
-qpid::Exception::~Exception() throw() {}
+namespace qpid {
+
+Exception::Exception() throw() {}
+
+Exception::Exception(const std::string& str) throw() : whatStr(str) {}
+
+Exception::Exception(const char* str) throw() : whatStr(str) {}
+
+Exception::~Exception() throw() {}
+
+const char* Exception::what() const throw() { return whatStr.c_str(); }
+
+std::string Exception::toString() const throw() { return whatStr; }
+
+Exception* Exception::clone() const throw() { return new Exception(*this); }
+
+void Exception::throwSelf() const  { throw *this; }
+
+} // namespace qpid
