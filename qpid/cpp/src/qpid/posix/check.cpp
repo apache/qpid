@@ -19,15 +19,21 @@
  *
  */
 
-#include <qpid/QpidError.h>
+#include <cerrno>
 #include "check.h" 
 
 namespace qpid {
 namespace sys {
 
-std::string errnoToString() {
+std::string
+PosixError::getMessage(int errNo)
+{
     char buf[512];
-    return strerror_r(errno, buf, sizeof(buf));
+    return std::string(strerror_r(errNo, buf, sizeof(buf)));
 }
 
+PosixError::PosixError(int errNo, const qpid::SrcLine& loc) throw()
+    : qpid::QpidError(INTERNAL_ERROR + errNo, getMessage(errNo), loc)
+{ }
+    
 }}

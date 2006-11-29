@@ -87,7 +87,8 @@ void qpid::sys::check(apr_status_t status, const std::string& file, const int li
         const int size = 50;
         char tmp[size];
         std::string msg(apr_strerror(status, tmp, size));
-        throw QpidError(APR_ERROR + ((int) status), msg, file, line);
+        throw QpidError(APR_ERROR + ((int) status), msg,
+                        qpid::SrcLine(file, line));
     }
 }
 

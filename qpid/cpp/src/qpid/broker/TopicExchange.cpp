@@ -82,7 +82,8 @@ void TopicPattern::normalize() {
 
 namespace {
 // TODO aconway 2006-09-20: Ineficient to convert every routingKey to a string.
-// Need more efficient Tokens impl that can operate on a string in place.
+// Need StringRef class that operates on a string in place witout copy.
+// Should be applied everywhere strings are extracted from frames.
 // 
 bool do_match(Tokens::const_iterator pattern_begin,  Tokens::const_iterator pattern_end, Tokens::const_iterator target_begin,  Tokens::const_iterator target_end)
 {

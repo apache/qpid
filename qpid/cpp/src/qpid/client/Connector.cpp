@@ -44,6 +44,7 @@ Connector::Connector(bool _debug, u_int32_t buffer_size) :
 Connector::~Connector(){ }
 
 void Connector::connect(const std::string& host, int port){
+    socket = Socket::createTcp();
     socket.connect(host, port);
     closed = false;
     receiver = Thread(this);
@@ -92,7 +93,7 @@ void Connector::writeToSocket(char* data, size_t available){
     while(written < available && !closed){
 	ssize_t sent = socket.send(data + written, available-written);
         if(sent > 0) {
-            lastOut = Time::now().msecs();
+            lastOut = now() * TIME_MSEC;
             written += sent;
         }
     }
@@ -106,17 +107,17 @@ void Connector::handleClosed(){
 
 void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
-        int64_t now = Time::now().msecs();
+         Time t = now() * TIME_MSEC;
         if(status == Socket::SOCKET_TIMEOUT) {
-            if(idleIn && (now - lastIn > idleIn)){
+            if(idleIn && (t - lastIn > idleIn)){
                 timeoutHandler->idleIn();
             }
         }else if(status == Socket::SOCKET_EOF){
             handleClosed();
         }else{
-            lastIn = now;
+            lastIn = t;
         }
-        if(idleOut && (now - lastOut > idleOut)){
+        if(idleOut && (t - lastOut > idleOut)){
             timeoutHandler->idleOut();
         }
     }
@@ -140,7 +141,7 @@ void Connector::setWriteTimeout(u_int16_t t){
 }
 
 void Connector::setSocketTimeout(){
-    socket.setTimeout(timeout);
+    socket.setTimeout(timeout*TIME_MSEC);
 }
 
 void Connector::setTimeoutHandler(TimeoutHandler* handler){
@@ -171,7 +172,9 @@ void Connector::run(){
 	    }
 	}
     }catch(QpidError error){
-	std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+	std::cout << "Error [" << error.code << "] " << error.msg
+                  << " (" << error.location.file << ":" << error.location.line
+                  << ")" << std::endl;
         handleClosed();
     }
 }

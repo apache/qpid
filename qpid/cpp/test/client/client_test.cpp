@@ -90,7 +90,9 @@ int main(int argc, char**)
 	con.close();	
 	std::cout << "Closed connection." << std::endl;
     }catch(qpid::QpidError error){
-	std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+	std::cout << "Error [" << error.code << "] " << error.msg << " ("
+                  << error.location.file << ":" << error.location.line
+                  << ")" << std::endl;
 	return 1;
     }
     return 0;

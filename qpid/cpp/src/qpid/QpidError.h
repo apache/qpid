@@ -21,29 +21,47 @@
  *
  */
 #include <string>
+#include <memory>
+#include <ostream>
 #include <qpid/Exception.h>
 
 namespace qpid {
 
-    class QpidError : public Exception { 
-      public:
-        const int code;
-        const std::string msg;
-        const std::string file;
-        const int line;
+struct SrcLine {
+  public:
+    SrcLine(const std::string& file_="", int line_=0) :
+        file(file_), line(line_) {}
 
-        QpidError(int _code, const std::string& _msg, const std::string& _file, int _line) throw();
-        ~QpidError() throw();
-    };
+    std::string file;
+    int line;
+};
+    
+class QpidError : public Exception { 
+  public:
+    const int code;
+    const std::string msg;
+    const SrcLine location;
 
-#define THROW_QPID_ERROR(A, B) throw QpidError(A, B, __FILE__, __LINE__)
+    QpidError();
+    QpidError(int _code, const std::string& _msg, const SrcLine& _loc) throw();
+    ~QpidError() throw();
+    Exception* clone() const throw();
+    void throwSelf() const;
+};
 
-}
 
-#define PROTOCOL_ERROR 10000
-#define APR_ERROR 20000
-#define FRAMING_ERROR 30000
-#define CLIENT_ERROR 40000
-#define INTERNAL_ERROR 50000
+} // namespace qpid
+
+#define SRCLINE ::qpid::SrcLine(__FILE__, __LINE__)
+
+#define QPID_ERROR(CODE, MESSAGE) ::qpid::QpidError((CODE), (MESSAGE), SRCLINE)
+
+#define THROW_QPID_ERROR(CODE, MESSAGE) throw QPID_ERROR(CODE,MESSAGE)
+
+const int PROTOCOL_ERROR = 10000;
+const int APR_ERROR = 20000;
+const int FRAMING_ERROR = 30000;
+const int CLIENT_ERROR = 40000;
+const int INTERNAL_ERROR = 50000;
 
 #endif

@@ -1,3 +1,5 @@
+#ifndef _AutoDelete_
+#define _AutoDelete_
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,9 +20,6 @@
  * under the License.
  *
  */
-#ifndef _AutoDelete_
-#define _AutoDelete_
-
 #include <iostream>
 #include <queue>
 #include <qpid/sys/Monitor.h>

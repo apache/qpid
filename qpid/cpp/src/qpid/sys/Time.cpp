@@ -27,36 +27,33 @@ namespace sys {
 // APR ================================================================
 #if USE_APR
 
-Time Time::now() {
-    return Time(apr_time_now(), NSEC_PER_USEC);
-}
-
-void Time::set(int64_t ticks, long nsec_per_tick) {
-    time = (ticks * nsec_per_tick) / NSEC_PER_USEC;
-}
-
-int64_t Time::nsecs() const {
-    return time * NSEC_PER_USEC;
-}
+Time now() { return apr_time_now() * TIME_USEC; }
 
 // POSIX================================================================
 #else 
 
-Time Time::now() {
-    Time t;
-    clock_gettime(CLOCK_REALTIME, &t.time);
-    return t;
+Time now() {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return toTime(ts);
 }
 
-void Time::set(int64_t ticks, long nsec_per_tick) {
-    int64_t ns = ticks * nsec_per_tick;
-    time.tv_sec  = ns / NSEC_PER_SEC;
-    time.tv_nsec = ns % NSEC_PER_SEC;
+struct timespec toTimespec(const Time& t) {
+    struct timespec ts;
+    toTimespec(ts, t);
+    return ts;
 }
 
-int64_t Time::nsecs() const {
-    return time.tv_sec * NSEC_PER_SEC + time.tv_nsec;
+struct timespec& toTimespec(struct timespec& ts, const Time& t) {
+    ts.tv_sec  = t / TIME_SEC;
+    ts.tv_nsec = t % TIME_SEC;
+    return  ts;
 }
+
+Time toTime(const struct timespec& ts) {
+    return ts.tv_sec*TIME_SEC + ts.tv_nsec;
+}
+
 
 #endif
 }}
