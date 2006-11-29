@@ -40,16 +40,7 @@ namespace Qpid.Client.Tests
             {
                 QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
                 
-                bool local = true;
-                
-                if (local)
-                {
-                    connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));                                    
-                } 
-                else
-                {
-                    connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "eqd-lxamq01.uk.jpmorgan.com", 8099, false));
-                }
+                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));                                    
                 _connection = new AMQConnection(connectionInfo);
                 _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 1);
             }
