@@ -20,7 +20,7 @@
  */
 
 #ifdef USE_APR
-#  include <apr-1/apr_thread_mutex.h>
+#  include <apr_thread_mutex.h>
 #  include <qpid/apr/APRBase.h>
 #  include <qpid/apr/APRPool.h>
 #else
