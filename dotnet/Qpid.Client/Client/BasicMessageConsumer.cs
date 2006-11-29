@@ -50,9 +50,11 @@ namespace Qpid.Client
             set { _noLocal = value; }
         }
 
+        private AcknowledgeMode _acknowledgeMode;
+
         public AcknowledgeMode AcknowledgeMode
         {
-            get { return _channel.AcknowledgeMode; }
+            get { return _acknowledgeMode; }
         }
 
         private MessageReceivedDelegate _messageListener;
@@ -114,6 +116,7 @@ namespace Qpid.Client
             _noLocal = noLocal;
             _messageFactory = messageFactory;
             _channel = channel;
+            _acknowledgeMode = _channel.AcknowledgeMode;
         }
 
         #region IMessageConsumer Members
