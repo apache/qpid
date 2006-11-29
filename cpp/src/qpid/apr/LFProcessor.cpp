@@ -134,8 +134,8 @@ void LFProcessor::run(){
                 session->stopProcessing();
             }
         }
-    }catch(QpidError error){
-	std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+    }catch(std::exception e){
+	std::cout << e.what() << std::endl;
     }
 }
 

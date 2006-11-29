@@ -114,11 +114,13 @@ int main(int argc, char** argv){
             int64_t sum(0);
             for(int i = 0; i < batchSize; i++){
                 if(i > 0 && args.getDelay()) sleep(args.getDelay());
-                int64_t time = publisher.publish(args.getMessages(), args.getSubscribers(), args.getSize());
+                Time time = publisher.publish(
+                    args.getMessages(), args.getSubscribers(), args.getSize());
                 if(!max || time > max) max = time;
                 if(!min || time < min) min = time;
                 sum += time;
-                std::cout << "Completed " << (i+1) << " of " << batchSize << " in " << time << "ms" << std::endl;
+                std::cout << "Completed " << (i+1) << " of " << batchSize
+                          << " in " << time/TIME_MSEC << "ms" << std::endl;
             }
             publisher.terminate();
             int64_t avg = sum / batchSize;
@@ -129,7 +131,7 @@ int main(int argc, char** argv){
             channel.close();
             connection.close();
         }catch(qpid::QpidError error){
-            std::cout << "Error [" << error.code << "] " << error.msg << " (" << error.file << ":" << error.line << ")" << std::endl;
+            std::cout << error.what() << std::endl;
         }
     }
 }
@@ -153,7 +155,7 @@ void Publisher::waitForCompletion(int msgs){
 int64_t Publisher::publish(int msgs, int listeners, int size){
     Message msg;
     msg.setData(generateData(size));
-    int64_t start = Time::now().msecs();
+    Time start = now();
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
@@ -170,7 +172,7 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
         waitForCompletion(listeners);
     }
 
-    int64_t finish(Time::now().msecs());
+    Time finish = now();
     return finish - start; 
 }
 

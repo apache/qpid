@@ -216,7 +216,7 @@ void Connection::error(int code, const string& msg, int classid, int methodid){
 }
 
 void Connection::channelException(Channel* channel, AMQMethodBody* method, QpidError& e){
-    std::cout << "Caught error from channel [" << e.code << "] " << e.msg << " (" << e.file << ":" << e.line << ")" << std::endl;
+    std::cout << "Caught error from channel [" << e.code << "] " << e.msg << " (" << e.location.file << ":" << e.location.line << ")" << std::endl;
     int code = e.code == PROTOCOL_ERROR ? e.code - PROTOCOL_ERROR : 500;
     string msg = e.msg;
     if(method == 0){

@@ -40,11 +40,17 @@ namespace sys {
 class Thread
 {
   public:
+    inline static Thread current();
+    inline static void yield();
+
     inline Thread();
     inline explicit Thread(qpid::sys::Runnable*);
+    inline explicit Thread(qpid::sys::Runnable&);
+    
     inline void join();
-    inline static Thread current();
 
+    inline long id();
+        
   private:
 #ifdef USE_APR
     static void* APR_THREAD_FUNC runRunnable(apr_thread_t* thread, void *data);
@@ -68,10 +74,19 @@ Thread::Thread(Runnable* runnable) {
         apr_thread_create(&thread, 0, runRunnable, runnable, APRPool::get()));
 }
 
+Thread::Thread(Runnable& runnable) {
+    CHECK_APR_SUCCESS(
+        apr_thread_create(&thread, 0, runRunnable, &runnable, APRPool::get()));
+}
+
 void Thread::join(){
     apr_status_t status;
     if (thread != 0) 
         CHECK_APR_SUCCESS(apr_thread_join(&status, thread));
+}
+
+long Thread::id() {
+    return long(thread);
 }
 
 Thread::Thread(apr_thread_t* t) : thread(t) {}
@@ -83,15 +98,29 @@ Thread Thread::current(){
     return Thread(thr);
 }
 
+void Thread::yield() 
+{
+    apr_thread_yield();
+}
+
+
 // POSIX ================================================================
 #else
 
 Thread::Thread(Runnable* runnable) {
-    CHECK0(pthread_create(&thread, NULL, runRunnable, runnable));
+    QPID_POSIX_THROW_IF(pthread_create(&thread, NULL, runRunnable, runnable));
+}
+
+Thread::Thread(Runnable& runnable) {
+    QPID_POSIX_THROW_IF(pthread_create(&thread, NULL, runRunnable, &runnable));
 }
 
 void Thread::join(){
-    if (thread != 0) CHECK0(pthread_join(thread, 0));
+    QPID_POSIX_THROW_IF(pthread_join(thread, 0));
+}
+
+long Thread::id() {
+    return long(thread);
 }
 
 Thread::Thread(pthread_t thr) : thread(thr) {}
@@ -99,6 +128,13 @@ Thread::Thread(pthread_t thr) : thread(thr) {}
 Thread Thread::current() {
     return Thread(pthread_self());
 }
+
+void Thread::yield() 
+{
+    QPID_POSIX_THROW_IF(pthread_yield());
+}
+
+
 #endif
 
 }}

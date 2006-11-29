@@ -43,7 +43,8 @@ void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i != bindings.end()) {
         bindings.erase(i);
-        // TODO aconway 2006-09-14: What about the ExchangeBinding object? Don't we have to verify routingKey/args match?
+        // TODO aconway 2006-09-14: What about the ExchangeBinding object?
+        // Don't we have to verify routingKey/args match?
     }
 }
 

@@ -23,6 +23,7 @@
  */
 
 #include <string>
+#include <qpid/sys/Time.h>
 
 #ifdef USE_APR
 #  include <apr_network_io.h>
@@ -34,10 +35,18 @@ namespace sys {
 class Socket
 {
   public:
-    Socket();
+    /** Create an initialized TCP socket */
+    static Socket createTcp();
 
+    /** Create a socket wrapper for descriptor. */
+#ifdef USE_APR
+    Socket(apr_socket_t* descriptor = 0);
+#else
+    Socket(int descriptor = 0);
+#endif
+    
     /** Set timeout for read and write */
-    void setTimeout(long msecs);
+    void setTimeout(Time interval);
 
     void connect(const std::string& host, int port);
 
@@ -46,19 +55,30 @@ class Socket
     enum { SOCKET_TIMEOUT=-2, SOCKET_EOF=-3 } ErrorCode;
 
     /** Returns bytes sent or an ErrorCode value < 0. */
-    ssize_t send(const char* data, size_t size);
+    ssize_t send(const void* data, size_t size);
 
     /**
      * Returns bytes received, an ErrorCode value < 0 or 0
      * if the connection closed in an orderly manner.
      */
-    ssize_t recv(char* data, size_t size);
+    ssize_t recv(void* data, size_t size);
 
+    /** Bind to a port and start listening.
+     *@param port 0 means choose an available port.
+     *@param backlog maximum number of pending connections.
+     *@return The bound port.
+     */
+    int listen(int port = 0, int backlog = 10);
+
+    /** Get file descriptor */
+    int fd(); 
+    
   private:
 #ifdef USE_APR    
     apr_socket_t* socket;
 #else
-    int socket;
+    void init() const;
+    mutable int socket;         // Initialized on demand. 
 #endif
 };
 

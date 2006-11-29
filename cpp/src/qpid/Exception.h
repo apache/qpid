@@ -25,6 +25,7 @@
 #include <exception>
 #include <string>
 #include <memory>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid
 {
@@ -37,42 +38,24 @@ class Exception : public std::exception
     std::string whatStr;
 
   public:
-    Exception() throw() {}
-    Exception(const std::string& str) throw() : whatStr(str) {}
-    Exception(const char* str) throw() : whatStr(str) {}
+    Exception() throw();
+    Exception(const std::string& str) throw();
+    Exception(const char* str) throw();
+    Exception(const std::exception&) throw();
+
     virtual ~Exception() throw();
 
-    virtual const char* what() const throw() { return whatStr.c_str(); }
-    virtual std::string toString() const throw() { return whatStr; }
+    virtual const char* what() const throw();
+    virtual std::string toString() const throw();
+
+    virtual Exception* clone() const throw();
+    virtual void throwSelf() const;
+
+    typedef boost::shared_ptr<Exception> shared_ptr;
 };
 
-/**
- * Wrapper for heap-allocated exceptions. Use like this:
- * <code>
- * std::auto_ptr<Exception> ex = new SomeEx(...)
- * HeapException hex(ex);       // Takes ownership
- * throw hex;                   // Auto-deletes ex
- * </code>
- */
-class HeapException : public Exception, public std::auto_ptr<Exception>
-{
-  public:
-    HeapException() {}
-    HeapException(std::auto_ptr<Exception> e) : std::auto_ptr<Exception>(e) {}
 
-    HeapException& operator=(std::auto_ptr<Exception>& e) {
-        std::auto_ptr<Exception>::operator=(e);
-        return *this;
-    }
 
-    ~HeapException() throw() {}
-    
-    virtual const char* what() const throw() { return (*this)->what(); }
-    virtual std::string toString() const throw() {
-        return (*this)->toString();
-    }
-};
-    
 }
 
 #endif  /*!_Exception_*/
