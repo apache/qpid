@@ -22,6 +22,7 @@ using System;
 using System.Text;
 using Qpid.Framing;
 using Qpid.Messaging;
+using Qpid.Buffer;
 
 namespace Qpid.Client.Message
 {
@@ -29,34 +30,58 @@ namespace Qpid.Client.Message
     {
         private const string MIME_TYPE = "text/plain";
 
-        private byte[] _data;
-
         private string _decodedValue;
 
-        public QpidTextMessage() : this(null, null)
-        {        
+        //public QpidTextMessage() : this(null, null)
+        //{        
+        //}
+
+        //public QpidTextMessage(byte[] data, String encoding) : base()
+        //{
+        //    // the superclass has instantied a content header at this point
+        //    ContentHeaderProperties.ContentType= MIME_TYPE;
+        //    _data = data;
+        //    ContentHeaderProperties.Encoding = encoding;
+        //}
+
+        //public QpidTextMessage(ulong messageNbr, byte[] data, BasicContentHeaderProperties contentHeader)
+        //    : base(messageNbr, contentHeader)
+        //{            
+        //    contentHeader.ContentType = MIME_TYPE;
+        //    _data = data;
+        //}
+
+        //public QpidTextMessage(byte[] data) : this(data, null)
+        //{            
+        //}
+
+        //public QpidTextMessage(string text)
+        //{
+        //    Text = text;
+        //}
+
+        internal QpidTextMessage() : this(null, null)
+        {
         }
 
-        public QpidTextMessage(byte[] data, String encoding) : base()
+        QpidTextMessage(ByteBuffer data, String encoding) : base(data)
         {
-            // the superclass has instantied a content header at this point
-            ContentHeaderProperties.ContentType= MIME_TYPE;
-            _data = data;
+            ContentHeaderProperties.ContentType = MIME_TYPE;
             ContentHeaderProperties.Encoding = encoding;
         }
 
-        public QpidTextMessage(ulong messageNbr, byte[] data, BasicContentHeaderProperties contentHeader)
-            : base(messageNbr, contentHeader)
-        {            
+        internal QpidTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+            :base(deliveryTag, contentHeader, data)
+        {
             contentHeader.ContentType = MIME_TYPE;
             _data = data;
         }
 
-        public QpidTextMessage(byte[] data) : this(data, null)
-        {            
+        QpidTextMessage(ByteBuffer data) : this(data, null)
+        {
         }
 
-        public QpidTextMessage(string text)
+        QpidTextMessage(String text) : base((ByteBuffer)null)
         {
             Text = text;
         }
@@ -70,18 +95,6 @@ namespace Qpid.Client.Message
         public override string ToBodyString()
         {
             return Text;
-        }
-
-        public override byte[] Data
-        {
-            get
-            {
-                return _data;
-            }
-            set
-            {
-                _data = value;
-            }
         }
 
         public override string MimeType
@@ -109,27 +122,29 @@ namespace Qpid.Client.Message
                     if (ContentHeaderProperties.Encoding != null)
                     {
                         // throw ArgumentException if the encoding is not supported
-                        _decodedValue = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetString(_data);
+                        _decodedValue = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetString(_data.ToByteArray());
                     }
                     else
                     {
-                        _decodedValue = Encoding.Default.GetString(_data);
+                        _decodedValue = Encoding.Default.GetString(_data.ToByteArray());
                     }
                     return _decodedValue;                    
                 }
             }
 
             set
-            {            
+            {
+                byte[] bytes;
                 if (ContentHeaderProperties.Encoding == null)
                 {
-                    _data = Encoding.Default.GetBytes(value);
+                    bytes = Encoding.Default.GetBytes(value);
                 }
                 else
                 {
                     // throw ArgumentException if the encoding is not supported
-                    _data = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetBytes(value);
+                    bytes = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetBytes(value);
                 }
+                _data = HeapByteBuffer.wrap(bytes, bytes.Length);
                 _decodedValue = value;
             }
         }
