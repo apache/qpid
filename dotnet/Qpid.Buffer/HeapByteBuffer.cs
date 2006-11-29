@@ -385,6 +385,11 @@ namespace Qpid.Buffer
         {
             return new HeapByteBuffer(bytes, length);
         }
+
+        public static HeapByteBuffer wrap(byte[] bytes)
+        {
+            return new HeapByteBuffer(bytes, bytes.Length);
+        }
     }
 }
 
