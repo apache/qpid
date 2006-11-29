@@ -22,60 +22,28 @@
  *
  */
 
+#include <sys/errno.h>
 #include <boost/noncopyable.hpp>
+#include <qpid/sys/Mutex.h>
+#include <qpid/sys/Time.h>
 
 #ifdef USE_APR
-#  include <apr_thread_mutex.h>
-#  include <apr_thread_cond.h>
-#  include <qpid/apr/APRBase.h>
-#  include <qpid/apr/APRPool.h>
-#else
-#  include <pthread.h>
-#  include <qpid/sys/Time.h>
-#  include <qpid/posix/check.h>
+#  include <apr-1/apr_thread_cond.h>
 #endif
 
 namespace qpid {
 namespace sys {
 
-template <class L>
-class ScopedLock
-{
-  public:
-    ScopedLock(L& l) : mutex(l) { l.lock(); }
-    ~ScopedLock() { mutex.unlock(); }
-  private:
-    L& mutex;
-};
-
-
-class Mutex : private boost::noncopyable
-{
-  public:
-    typedef ScopedLock<Mutex> ScopedLock;
-    
-    inline Mutex();
-    inline ~Mutex();
-    inline void lock();
-    inline void unlock();
-    inline void trylock();
-
-  protected:
-#ifdef USE_APR
-    apr_thread_mutex_t* mutex;
-#else
-    pthread_mutex_t mutex;
-#endif
-};
-
-/** A condition variable and a mutex */
+/**
+ * A monitor is a condition variable and a mutex
+ */
 class Monitor : public Mutex
 {
   public:
     inline Monitor();
     inline ~Monitor();
     inline void wait();
-    inline bool wait(int64_t nsecs);
+    inline bool wait(const Time& absoluteTime);
     inline void notify();
     inline void notifyAll();
 
@@ -91,25 +59,6 @@ class Monitor : public Mutex
 // APR ================================================================
 #ifdef USE_APR
 
-Mutex::Mutex() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, APRPool::get()));
-}
-
-Mutex::~Mutex(){
-    CHECK_APR_SUCCESS(apr_thread_mutex_destroy(mutex));
-}
-
-void Mutex::lock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_lock(mutex));
-}
-void Mutex::unlock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
-}
-
-void Mutex::trylock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
-}
-
 Monitor::Monitor() {
     CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, APRPool::get()));
 }
@@ -122,10 +71,10 @@ void Monitor::wait() {
     CHECK_APR_SUCCESS(apr_thread_cond_wait(condition, mutex));
 }
 
-bool Monitor::wait(int64_t nsecs){
+bool Monitor::wait(const Time& absoluteTime){
     // APR uses microseconds.
-    apr_status_t status = apr_thread_cond_timedwait(
-        condition, mutex, nsecs/1000);
+    apr_status_t status =
+        apr_thread_cond_timedwait(condition, mutex, absoluteTime/TIME_USEC);
     if(status != APR_TIMEUP) CHECK_APR_SUCCESS(status);
     return status == 0;
 }
@@ -138,93 +87,41 @@ void Monitor::notifyAll(){
     CHECK_APR_SUCCESS(apr_thread_cond_broadcast(condition));
 }
 
-
-}}
-
-
-// POSIX ================================================================
 #else
-/**
- * PODMutex is a POD, can be static-initialized with
- * PODMutex m = QPID_PODMUTEX_INITIALIZER
- */
-struct PODMutex 
-{
-    typedef ScopedLock<PODMutex> ScopedLock;
-
-    inline void lock();
-    inline void unlock();
-    inline void trylock();
-
-    // Must be public to be a POD:
-    pthread_mutex_t mutex;
-};
-
-#define QPID_MUTEX_INITIALIZER { PTHREAD_MUTEX_INITIALIZER }
-
-
-void PODMutex::lock() {
-    CHECK0(pthread_mutex_lock(&mutex));
-}
-void PODMutex::unlock() {
-    CHECK0(pthread_mutex_unlock(&mutex));
-}
-
-void PODMutex::trylock() {
-    CHECK0(pthread_mutex_trylock(&mutex));
-}
-
-
-Mutex::Mutex() {
-    CHECK0(pthread_mutex_init(&mutex, 0));
-}
-
-Mutex::~Mutex(){
-    CHECK0(pthread_mutex_destroy(&mutex));
-}
-
-void Mutex::lock() {
-    CHECK0(pthread_mutex_lock(&mutex));
-}
-void Mutex::unlock() {
-    CHECK0(pthread_mutex_unlock(&mutex));
-}
-
-void Mutex::trylock() {
-    CHECK0(pthread_mutex_trylock(&mutex));
-}
+// POSIX ================================================================
 
 Monitor::Monitor() {
-    CHECK0(pthread_cond_init(&condition, 0));
+    QPID_POSIX_THROW_IF(pthread_cond_init(&condition, 0));
 }
 
 Monitor::~Monitor() {
-    CHECK0(pthread_cond_destroy(&condition));
+    QPID_POSIX_THROW_IF(pthread_cond_destroy(&condition));
 }
 
 void Monitor::wait() {
-    CHECK0(pthread_cond_wait(&condition, &mutex));
+    QPID_POSIX_THROW_IF(pthread_cond_wait(&condition, &mutex));
 }
 
-bool Monitor::wait(int64_t nsecs){
-    Time t(nsecs);
-    int status = pthread_cond_timedwait(&condition, &mutex, &t.getTimespec());
-    if(status != 0) {
-        if (errno == ETIMEDOUT) return false;
-        CHECK0(status);
+bool Monitor::wait(const Time& absoluteTime){
+    struct timespec ts;
+    toTimespec(ts, absoluteTime);
+    int status = pthread_cond_timedwait(&condition, &mutex, &ts);
+    if (status != 0) {
+        if (status == ETIMEDOUT) return false;
+        throw QPID_POSIX_ERROR(status);
     }
     return true;
 }
 
 void Monitor::notify(){
-    CHECK0(pthread_cond_signal(&condition));
+    QPID_POSIX_THROW_IF(pthread_cond_signal(&condition));
 }
 
 void Monitor::notifyAll(){
-    CHECK0(pthread_cond_broadcast(&condition));
+    QPID_POSIX_THROW_IF(pthread_cond_broadcast(&condition));
 }
+#endif  /*USE_APR*/
 
 
 }}
-#endif  /*USE_APR*/
 #endif  /*!_sys_Monitor_h*/

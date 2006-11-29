@@ -27,21 +27,24 @@
 
 using namespace qpid::sys;
 
-Socket::Socket()
-{
+Socket Socket::createTcp() {
+    Socket s;
     CHECK_APR_SUCCESS(
         apr_socket_create(
-            &socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
+            &s.socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
             APRPool::get()));
+    return s;
 }
 
-void Socket::setTimeout(long msecs)
-{
-    apr_socket_timeout_set(socket, msecs*1000);
+Socket::Socket(apr_socket_t* s) {
+    socket = s;
 }
 
-void Socket::connect(const std::string& host, int port)
-{
+void Socket::setTimeout(Time interval) {
+    apr_socket_timeout_set(socket, interval/TIME_USEC);
+}
+
+void Socket::connect(const std::string& host, int port) {
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(
         apr_sockaddr_info_get(
@@ -50,27 +53,28 @@ void Socket::connect(const std::string& host, int port)
     CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
 }
 
-void Socket::close()
-{
+void Socket::close() {
     if (socket == 0) return;
     CHECK_APR_SUCCESS(apr_socket_close(socket));
     socket = 0;
 }
 
-ssize_t Socket::send(const char* data, size_t size)
+ssize_t Socket::send(const void* data, size_t size)
 {
     apr_size_t sent = size;
-    apr_status_t status = apr_socket_send(socket, data, &sent);
+    apr_status_t status =
+        apr_socket_send(socket, reinterpret_cast<const char*>(data), &sent);
     if (APR_STATUS_IS_TIMEUP(status)) return SOCKET_TIMEOUT;
     if (APR_STATUS_IS_EOF(status)) return SOCKET_EOF;
     CHECK_APR_SUCCESS(status);
     return sent;
 }
 
-ssize_t Socket::recv(char* data, size_t size)
+ssize_t Socket::recv(void* data, size_t size)
 {
     apr_size_t received = size;
-    apr_status_t status = apr_socket_recv(socket, data, &received);
+    apr_status_t status =
+        apr_socket_recv(socket, reinterpret_cast<char*>(data), &received);
     if (APR_STATUS_IS_TIMEUP(status)) return SOCKET_TIMEOUT;
     CHECK_APR_SUCCESS(status);
      return received;

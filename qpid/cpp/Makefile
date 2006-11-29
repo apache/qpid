@@ -72,6 +72,7 @@ $(BUILDDIRS):
 
 ## Library rules
 
+## DONT COMMIT
 LIB_common  := $(call LIBFILE,common,1.0)
 DIRS_common := qpid qpid/framing qpid/sys qpid/$(PLATFORM)
 $(LIB_common): $(call OBJECTS, $(DIRS_common))
@@ -79,13 +80,13 @@ $(LIB_common): $(call OBJECTS, $(DIRS_common))
 
 LIB_client  := $(call LIBFILE,client,1.0)
 DIRS_client := qpid/client
-$(LIB_client): $(call OBJECTS,$(DIRS_client)) $(LIB_common)
-	$(LIB_COMMAND)
+$(LIB_client): $(call OBJECTS,$(DIRS_client)) 
+	$(LIB_COMMAND) $(LIB_common)
 
 LIB_broker  := $(call LIBFILE,broker,1.0)
 DIRS_broker := qpid/broker
-$(LIB_broker): $(call OBJECTS,$(DIRS_broker)) $(LIB_common)
-	$(LIB_COMMAND)
+$(LIB_broker): $(call OBJECTS,$(DIRS_broker)) 
+	$(LIB_COMMAND) $(LIB_common)
 
 ## Daemon executable
 $(BINDIR)/qpidd: $(OBJDIR)/qpidd.o $(LIB_common) $(LIB_broker)
@@ -94,12 +95,20 @@ $(BINDIR)/qpidd: $(OBJDIR)/qpidd.o $(LIB_common) $(LIB_broker)
 all-nogen: $(BINDIR)/qpidd
 
 ## Unit tests.
-UNITTEST_SRC:=$(shell find test/unit -name *Test.cpp)
-UNITTEST_SRC:=$(filter-out test/unit/qpid/$(IGNORE)/%,$(UNITTEST_SRC))
-UNITTESTS:=$(UNITTEST_SRC:test/unit/%.cpp=$(TESTDIR)/%.so)
+define UNITTEST_GROUP
+UNITTEST_SRC_$1 := $(wildcard $(DIRS_$1:%=test/unit/%/*Test.cpp))
+UNITTEST_SO_$1 := $$(UNITTEST_SRC_$1:test/unit/%.cpp=$(TESTDIR)/%.so)
+$$(UNITTEST_SO_$1): $(LIB_$1)
+UNITTESTS := $$(UNITTESTS) $$(UNITTEST_SO_$1)
+endef
 
-unittest: all 
+$(eval $(call UNITTEST_GROUP,common))
+$(eval $(call UNITTEST_GROUP,broker))
+$(eval $(call UNITTEST_GROUP,client))
+
+unittest: $(UNITTESTS)
 	DllPlugInTester -c -b $(UNITTESTS:.cpp=.so)
+
 all-nogen: $(UNITTESTS)
 
 ## Run python tests
@@ -143,7 +152,7 @@ all-nogen: $(CLIENT_TEST_EXE)
 client: $(CLIENT_TEST_EXE)
 
 ## include dependencies
-DEPFILES:=$(wildcard $(OBJDIR)/*.d $(OBJDIR)/*/*.d $(OBJDIR)/*/*/*.d)
+DEPFILES:=$(shell find $(OBJDIR) $(TESTDIR) -name "*.d")
 ifdef DEPFILES
 -include $(DEPFILES)
 endif

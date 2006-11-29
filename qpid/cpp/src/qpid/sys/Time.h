@@ -33,43 +33,25 @@
 namespace qpid {
 namespace sys {
 
-class Time
-{
-  public:
-    static Time now();
- 
-    enum {
-        NSEC_PER_SEC=1000*1000*1000,
-        NSEC_PER_MSEC=1000*1000,
-        NSEC_PER_USEC=1000
-    };
+/** Time in nanoseconds */
+typedef int64_t Time;
 
-    inline Time(int64_t ticks=0, long nsec_per_tick=1);
+Time now();
 
-    void set(int64_t ticks, long nsec_per_tick=1);
-        
-    inline int64_t msecs() const;
-    inline int64_t usecs() const;
-    int64_t nsecs() const;
+/** Nanoseconds per second. */
+const Time TIME_SEC  = 1000*1000*1000;
+/** Nanoseconds per millisecond */
+const Time TIME_MSEC = 1000*1000;
+/** Nanoseconds per microseconds. */
+const Time TIME_USEC = 1000;
+/** Nanoseconds per nanosecond. */
+const Time TIME_NSEC = 1;
 
 #ifndef USE_APR
-    const struct timespec& getTimespec() const { return time; }
-    struct timespec& getTimespec() { return time; }
+struct timespec toTimespec(const Time& t);
+struct timespec& toTimespec(struct timespec& ts, const Time& t);
+Time toTime(const struct timespec& ts);
 #endif
-    
-  private:
-#ifdef USE_APR
-    apr_time_t time;
-#else
-    struct timespec time;
-#endif
-};
-
-Time::Time(int64_t ticks, long nsec_per_tick) { set(ticks, nsec_per_tick); }
-
-int64_t Time::msecs() const { return nsecs() / NSEC_PER_MSEC; }
-
-int64_t Time::usecs() const { return nsecs() / NSEC_PER_USEC; }
 
 }}
 
