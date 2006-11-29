@@ -220,14 +220,7 @@ namespace Qpid.Client.Tests.failover
             {
                 QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
                 connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
-//                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
-
-                //connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "eqd-lxamq01", 7672, false));
-                
-                
-                //connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "eqd-lxamq01.uk.jpmorgan.com", 8099, false));
-
-                
+                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));               
                 DoFailoverTest(connectionInfo);
                 while (true)
                 {
