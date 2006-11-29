@@ -28,7 +28,7 @@
 #include <qpid/sys/Time.h>
 
 #ifdef USE_APR
-#  include <apr-1/apr_thread_cond.h>
+#  include <apr_thread_cond.h>
 #endif
 
 namespace qpid {
