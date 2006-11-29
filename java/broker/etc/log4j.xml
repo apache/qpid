@@ -34,9 +34,9 @@
         </layout>
     </appender>
 
-    <category name="org.apache.qpid.server.queue">
+    <!--<category name="org.apache.qpid.server.queue">
         <priority value="debug"/>
-    </category>
+    </category>-->
 
     <root>
         <priority value="info"/>

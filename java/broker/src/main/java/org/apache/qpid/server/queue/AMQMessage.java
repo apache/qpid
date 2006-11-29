@@ -450,11 +450,6 @@ public class AMQMessage
         _deliveredToConsumer = true;
     }
 
-    /*public void registerQueue(AMQQueue queue)
-    {
-        _destinationQueues.add(queue);
-    } */
-
     private void deliver() throws AMQException
     {
         // first we allow the handle to know that the message has been fully received. This is useful if it is
@@ -531,7 +526,7 @@ public class AMQMessage
         return buf;
     }
 
-private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, String replyText) throws AMQException
+    private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, String replyText) throws AMQException
     {
         AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId, replyCode, replyText, getPublishBody().exchange,
                                                               getPublishBody().routingKey);

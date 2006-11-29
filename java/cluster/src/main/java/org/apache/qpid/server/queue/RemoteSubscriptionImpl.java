@@ -49,7 +49,7 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
     {
         try
         {
-            _groupMgr.send(_peer, new SimpleSendable(msg.getPayload()));
+            _groupMgr.send(_peer, new SimpleSendable(msg));
         }
         catch (AMQException e)
         {

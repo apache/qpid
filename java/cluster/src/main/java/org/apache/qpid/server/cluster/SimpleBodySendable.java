@@ -18,29 +18,28 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.server.queue.AMQMessage;
 
-import java.util.Iterator;
-
-public class SimpleSendable implements Sendable
+/**
+ */
+public class SimpleBodySendable implements Sendable
 {
-    private final AMQMessage _message;
+    private final AMQBody _body;
 
-    public SimpleSendable(AMQMessage message)
+    public SimpleBodySendable(AMQBody body)
     {
-        _message = message;
+        _body = body;
     }
 
     public void send(int channel, Member member) throws AMQException
     {
-        member.send(new AMQFrame(channel, _message.getPublishBody()));
-        member.send(new AMQFrame(channel, _message.getContentHeaderBody()));
-        Iterator<ContentBody> it = _message.getContentBodyIterator();
-        while (it.hasNext())
-        {
-            member.send(new AMQFrame(channel, it.next()));
-        }
+        member.send(new AMQFrame(channel, _body));
     }
+
+    public String toString()
+    {
+        return _body.toString();
+    }
+
 }

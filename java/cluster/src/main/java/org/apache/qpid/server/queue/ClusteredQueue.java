@@ -58,10 +58,10 @@ public class ClusteredQueue extends AMQQueue
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public void deliver(AMQMessage message) throws AMQException
+    public void process(AMQMessage msg) throws AMQException
     {
-        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", message, this));
-        super.deliver(message);
+        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", msg, this));
+        super.process(msg);
     }
 
     protected void autodelete() throws AMQException
@@ -74,7 +74,7 @@ public class ClusteredQueue extends AMQQueue
             //send deletion request to all other members:
             QueueDeleteBody request = new QueueDeleteBody();
             request.queue = getName();
-            _groupMgr.broadcast(new SimpleSendable(request));
+            _groupMgr.broadcast(new SimpleBodySendable(request));
         }
     }
 
@@ -86,7 +86,7 @@ public class ClusteredQueue extends AMQQueue
         //signal other members:
         BasicCancelBody request = new BasicCancelBody();
         request.consumerTag = getName();
-        _groupMgr.broadcast(new SimpleSendable(request));
+        _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 
     public void addRemoteSubcriber(MemberHandle peer)
