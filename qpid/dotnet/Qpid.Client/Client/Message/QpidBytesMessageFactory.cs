@@ -21,40 +21,52 @@
 using System;
 using System.Collections;
 using Qpid.Framing;
+using Qpid.Buffer;
 
 namespace Qpid.Client.Message
 {
     public class QpidBytesMessageFactory : AbstractQmsMessageFactory
     {
-        protected override AbstractQmsMessage CreateMessageWithBody(ulong messageNbr,
-                                                                    ContentHeaderBody contentHeader,
-                                                                    IList bodies)
+        //protected override AbstractQmsMessage CreateMessageWithBody(long messageNbr,
+        //                                                            ContentHeaderBody contentHeader,
+        //                                                            IList bodies)
+        //{
+        //    byte[] data;
+
+        //    // we optimise the non-fragmented case to avoid copying
+        //    if (bodies != null && bodies.Count == 1)
+        //    {
+        //        data = ((ContentBody)bodies[0]).Payload;
+        //    }
+        //    else
+        //    {
+        //        data = new byte[(long)contentHeader.BodySize];
+        //        int currentPosition = 0;
+        //        foreach (ContentBody cb in bodies)
+        //        {
+        //            Array.Copy(cb.Payload, 0, data, currentPosition, cb.Payload.Length);
+        //            currentPosition += cb.Payload.Length;
+        //        }
+        //    }
+
+        //    return new QpidBytesMessage(messageNbr, data, contentHeader);
+        //}
+
+        //public override AbstractQmsMessage CreateMessage()
+        //{
+        //    return new QpidBytesMessage();
+        //}
+
+        protected override AbstractQmsMessage CreateMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader)
         {
-            byte[] data;
-
-            // we optimise the non-fragmented case to avoid copying
-            if (bodies != null && bodies.Count == 1)
-            {
-                data = ((ContentBody)bodies[0]).Payload;
-            }
-            else
-            {
-                data = new byte[(long)contentHeader.BodySize];
-                int currentPosition = 0;
-                foreach (ContentBody cb in bodies)
-                {
-                    Array.Copy(cb.Payload, 0, data, currentPosition, cb.Payload.Length);
-                    currentPosition += cb.Payload.Length;
-                }
-            }
-
-            return new QpidBytesMessage(messageNbr, data, contentHeader);
+            return new QpidBytesMessage(deliveryTag, contentHeader, data);
         }
 
         public override AbstractQmsMessage CreateMessage()
         {
             return new QpidBytesMessage();
         }
+
     }
 }
 

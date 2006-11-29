@@ -34,7 +34,7 @@ namespace Qpid.Client.Message
         /// <param name="bodies"></param>
         /// <returns></returns>
         /// <exception cref="QpidMessagingException">if the message cannot be created</exception>
-        AbstractQmsMessage CreateMessage(ulong messageNbr, bool redelivered,
+        AbstractQmsMessage CreateMessage(long deliverTag, bool redelivered,
                                          ContentHeaderBody contentHeader,
                                          IList bodies);
 

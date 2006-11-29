@@ -265,11 +265,11 @@ namespace Qpid.Client
             int _prefetch;
             AMQConnection _connection;
             
-            public CreateChannelFailoverSupport(AMQConnection connection, bool transacted, AcknowledgeMode acknowledgementMode, int prefetch)
+            public CreateChannelFailoverSupport(AMQConnection connection, bool transacted, AcknowledgeMode acknowledgeMode, int prefetch)
             {
                 _connection = connection;
                 _transacted = transacted;
-                _acknowledgeMode = acknowledgementMode;
+                _acknowledgeMode = acknowledgeMode;
                 _prefetch = prefetch;
             }
 

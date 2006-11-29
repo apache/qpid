@@ -23,6 +23,7 @@ using System.IO;
 using System.Text;
 using Qpid.Framing;
 using Qpid.Messaging;
+using Qpid.Buffer;
 
 namespace Qpid.Client.Message
 {
@@ -50,7 +51,7 @@ namespace Qpid.Client.Message
         /// </summary>
         /// <param name="data">if data is not null, the message is immediately in read only mode. if data is null, it is in
         /// write-only mode</param>        
-        QpidBytesMessage(byte[] data) : base()
+        QpidBytesMessage(ByteBuffer data) : base(data)
         {
             // superclass constructor has instantiated a content header at this point
             ContentHeaderProperties.ContentType = MIME_TYPE;
@@ -61,21 +62,22 @@ namespace Qpid.Client.Message
             }
             else
             {
-                _dataStream = new MemoryStream(data);
-                _bodyLength = data.Length;
+                _dataStream = new MemoryStream(data.ToByteArray());
+                _bodyLength = data.ToByteArray().Length;
                 _reader = new BinaryReader(_dataStream);
             }
         }
 
-        public QpidBytesMessage(ulong messageNbr, byte[] data, ContentHeaderBody contentHeader)
+        internal QpidBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-            : base(messageNbr, (BasicContentHeaderProperties) contentHeader.Properties)
-        {                        
+            : base(messageNbr, (BasicContentHeaderProperties)contentHeader.Properties, data)
+        {
             ContentHeaderProperties.ContentType = MIME_TYPE;
-            _dataStream = new MemoryStream(data);
-            _bodyLength = data.Length;
+            _dataStream = new MemoryStream(data.ToByteArray());
+            _bodyLength = data.ToByteArray().Length;
             _reader = new BinaryReader(_dataStream);
         }
+
 
         public override void ClearBody()
         {
@@ -119,27 +121,27 @@ namespace Qpid.Client.Message
             }
         }
 
-        public override byte[] Data
-        {
-            get
-            {
-                if (_dataStream == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    byte[] data = new byte[_dataStream.Length];
-                    _dataStream.Position = 0;
-                    _dataStream.Read(data, 0, (int) _dataStream.Length);
-                    return data;
-                }
-            }
-            set
-            {
-                throw new NotSupportedException("Cannot set data payload except during construction");
-            }
-        }
+        //public override byte[] Data
+        //{
+        //    get
+        //    {
+        //        if (_dataStream == null)
+        //        {
+        //            return null;
+        //        }
+        //        else
+        //        {
+        //            byte[] data = new byte[_dataStream.Length];
+        //            _dataStream.Position = 0;
+        //            _dataStream.Read(data, 0, (int) _dataStream.Length);
+        //            return data;
+        //        }
+        //    }
+        //    set
+        //    {
+        //        throw new NotSupportedException("Cannot set data payload except during construction");
+        //    }
+        //}
 
         public override string MimeType
         {
