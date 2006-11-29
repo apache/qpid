@@ -1,8 +1,4 @@
 
-https://issues.apache.org/jira/browse/QPID-135
-* transactions Tx.Select and Tx.Commit
-  * Do the TxSelect message after opening a transactional channel
-
 https://issues.apache.org/jira/browse/QPID-136
 * createSession with prefetch (warning: prefetch partly added)
   * Do the BasicQos message after opening channel (sets up prefetch).
