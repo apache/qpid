@@ -1,5 +1,7 @@
 #!/bin/bash
 
+buildType="release" # change to "debug" to build a debug release
+
 if [[ $# -eq 1 ]]; then
   name=$1
 elif [[ $# -ne 0 ]]; then
@@ -26,8 +28,8 @@ mkdir $dir
 #
 mkdir $dir/lib
 cp \
-  build/apr-release/lib/libqpid_client.so.1.0 \
-  build/apr-release/lib/libqpid_common.so.1.0 \
+  build/apr-$buildType/lib/libqpid_client.so.1.0 \
+  build/apr-$buildType/lib/libqpid_common.so.1.0 \
   $dir/lib
 cp -r ~/local/apr-1.2.7 $dir/lib
 cp -r ~/local/boost-1.33.1 $dir/lib
