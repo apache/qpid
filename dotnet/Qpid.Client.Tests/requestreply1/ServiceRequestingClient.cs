@@ -53,7 +53,7 @@ namespace Qpid.Client.Tests
             try
             {
                 _publisher = _channel.CreatePublisherBuilder()
-                    .withRoutingKey(_commandQueueName)
+                    .WithRoutingKey(_commandQueueName)
                     .Create();
                 _publisher.DisableMessageTimestamp = true; // XXX: need a "with" for this in builder?
                 _publisher.DeliveryMode = DeliveryMode.NonPersistent;  // XXX: need a "with" for this in builder?
@@ -74,9 +74,10 @@ namespace Qpid.Client.Tests
             _channel.DeclareQueue(replyQueueName, false, true, true);
 
             IMessageConsumer messageConsumer = _channel.CreateConsumerBuilder(replyQueueName)
-                .withPrefetch(100)
-                .withNoLocal(true)
-                .withExclusive(true).Create();
+                .WithPrefetchLow(100)
+                .WithPrefetchHigh(200)
+                .WithNoLocal(true)
+                .WithExclusive(true).Create();
  
             _startTime = DateTime.Now.Ticks;
 
