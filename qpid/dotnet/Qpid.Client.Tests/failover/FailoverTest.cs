@@ -78,8 +78,8 @@ namespace Qpid.Client.Tests.failover
 
 //            _publisher = _channel.CreatePublisher(exchangeName, exchangeClass, routingKey);
             _publisher = _channel.CreatePublisherBuilder()
-                .withRoutingKey(routingKey)
-                .withExchangeName(exchangeName)
+                .WithRoutingKey(routingKey)
+                .WithExchangeName(exchangeName)
                 .Create();
             _publisher.Send(msg);
         }
@@ -206,8 +206,8 @@ namespace Qpid.Client.Tests.failover
 
                 //return _channel.CreatePublisher(exchangeName, exchangeClass, routingKey);
                 return _session.CreatePublisherBuilder()
-                    .withExchangeName(exchangeName)
-                    .withRoutingKey(routingKey)
+                    .WithExchangeName(exchangeName)
+                    .WithRoutingKey(routingKey)
                     .Create();
             }
         }
