@@ -37,10 +37,11 @@ namespace qpid {
 
         class AMQFrame : virtual public AMQDataBlock
         {
+            static AMQP_MethodVersionMap versionMap;
+            
             u_int16_t channel;
             u_int8_t type;//used if the body is decoded separately from the 'head'
             AMQBody::shared_ptr body;
-            AMQP_MethodVersionMap versionMap;
 			AMQBody::shared_ptr createMethodBody(Buffer& buffer);
             
         public:
