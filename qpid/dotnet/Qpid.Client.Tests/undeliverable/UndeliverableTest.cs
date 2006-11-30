@@ -81,11 +81,11 @@ namespace Qpid.Client.Tests
 
             // Send a test message to a non-existant queue on the default exchange. See if message is returned!
             MessagePublisherBuilder builder = _channel.CreatePublisherBuilder()
-                .withRoutingKey("Non-existant route key!")
-                .withMandatory(true);
+                .WithRoutingKey("Non-existant route key!")
+                .WithMandatory(true);
             if (exchangeName != null)
             {
-                builder.withExchangeName(exchangeName);
+                builder.WithExchangeName(exchangeName);
             }
             IMessagePublisher publisher = builder.Create();
             publisher.Send(_channel.CreateTextMessage("Hiya!"));
