@@ -38,9 +38,9 @@ void MessageStoreModule::destroy(const Queue& queue)
     store->destroy(queue);
 }
 
-void MessageStoreModule::recover(RecoveryManager& registry)
+void MessageStoreModule::recover(RecoveryManager& registry, const MessageStoreSettings* const settings)
 {
-    store->recover(registry);
+    store->recover(registry, settings);
 }
 
 void MessageStoreModule::stage(Message::shared_ptr& msg)
@@ -53,14 +53,14 @@ void MessageStoreModule::destroy(Message::shared_ptr& msg)
     store->destroy(msg);
 }
 
-void MessageStoreModule::appendContent(u_int64_t msgId, const std::string& data)
+void MessageStoreModule::appendContent(Message* const msg, const std::string& data)
 {
-    store->appendContent(msgId, data);
+    store->appendContent(msg, data);
 }
 
-void MessageStoreModule::loadContent(u_int64_t msgId, string& data, u_int64_t offset, u_int32_t length)
+void MessageStoreModule::loadContent(Message* const msg, string& data, u_int64_t offset, u_int32_t length)
 {
-    store->loadContent(msgId, data, offset, length);
+    store->loadContent(msg, data, offset, length);
 }
 
 void MessageStoreModule::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid)
