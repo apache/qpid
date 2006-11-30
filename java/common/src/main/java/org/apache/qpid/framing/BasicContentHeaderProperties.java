@@ -241,7 +241,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             }
         }
     }
-    
+
     public void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
             throws AMQFrameDecodingException
     {
@@ -402,6 +402,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             decodeUpToContentType();
         }
     }
+
     public String getContentType()
     {
         decodeContentTypeIfNecessary();
@@ -431,6 +432,12 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
     public FieldTable getHeaders()
     {
         decodeHeadersIfNecessary();
+
+        if (_headers == null)
+        {
+            _headers = new FieldTable();
+        }
+
         return _headers;
     }
 
@@ -587,6 +594,6 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
     public String toString()
     {
-        return "reply-to = " + _replyTo + " propertyFlags = " + _propertyFlags;   
+        return "reply-to = " + _replyTo + " propertyFlags = " + _propertyFlags;
     }
 }
