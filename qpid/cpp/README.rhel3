@@ -9,6 +9,12 @@ Install boost-1.33.1 into ~/local/boost-1.33.1
 
 Install cppunit-1.11.4 into ~/local/cppunit-1.11.4
 
+If you want a standard release build skip this step. If you want a debug
+build do the following:
+
+  1. Edit options-rhel3.mk. Comment out definition of RELEASE.
+  2. Edit release.client.rhel3. Change buildType to "debug".
+
 Build using the following command:
 
   $ ./build.rhel3
@@ -20,3 +26,4 @@ Generate cppclient tarball:
 or if you want to name the release:
 
   $ ./release.client.rhel3 1.0-RC1
+
