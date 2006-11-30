@@ -2,6 +2,7 @@
 # Expects dependencies in ~/local
 #
 
+# Comment out the setting of RELEASE to build a debug release.
 RELEASE := 1
 
 # Configure Boost.
