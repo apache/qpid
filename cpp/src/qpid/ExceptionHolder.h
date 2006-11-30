@@ -47,6 +47,8 @@ class ExceptionHolder : public Exception, public boost::shared_ptr<Exception>
     ExceptionHolder(const Exception& e) throw() : shared_ptr(e.clone()) {}
     ExceptionHolder(const std::exception& e);
 
+    ~ExceptionHolder() throw() {}
+
     const char* what() const throw() { return (*this)->what(); }
     std::string toString() const throw() { return (*this)->toString(); }
     virtual Exception* clone() const throw() { return (*this)->clone(); }

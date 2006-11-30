@@ -28,6 +28,7 @@ test: unittest pythontest
 
 .PHONY: show-vars
 show-vars:
+	@echo RELEASE=$(RELEASE)
 	@echo APR_LDFLAGS=$(APR_LDFLAGS)
 	@echo APR_CFLAGS=$(APR_CFLAGS)
 	@echo CXXFLAGS=$(CXXFLAGS)
