@@ -27,6 +27,16 @@
 
 namespace qpid {
     namespace broker {
+        struct MessageStoreSettings
+        {
+            /**
+             * Messages whose content length is larger than this value
+             * will be staged (i.e. will have thier data written to
+             * disk as it arrives) and will load their data lazily. On
+             * recovery therefore, only the headers should be loaded.
+             */
+            u_int64_t stagingThreshold;
+        };
         /**
          * An abstraction of the persistent storage for messages.
          */
@@ -44,7 +54,7 @@ namespace qpid {
             /**
              * Request recovery of queue and message state from store
              */
-            virtual void recover(RecoveryManager& queues) = 0;
+            virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0) = 0;
 
             /**
              * Stores a messages before it has been enqueued
@@ -68,17 +78,17 @@ namespace qpid {
             /**
              * Appends content to a previously staged message
              */
-            virtual void appendContent(u_int64_t msgId, const std::string& data) = 0;
+            virtual void appendContent(Message* const msg, const std::string& data) = 0;
 
             /**
              * Loads (a section) of content data for the specified
-             * message id (previously set on the message through a
-             * call to stage or enqueue) into data. The offset refers
-             * to the content only (i.e. an offset of 0 implies that
-             * the start of the content should be loaded, not the
-             * headers or related meta-data).
+             * message (previously stored through a call to stage or
+             * enqueue) into data. The offset refers to the content
+             * only (i.e. an offset of 0 implies that the start of the
+             * content should be loaded, not the headers or related
+             * meta-data).
              */
-            virtual void loadContent(u_int64_t msgId, std::string& data, u_int64_t offset, u_int32_t length) = 0;
+            virtual void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length) = 0;
 
             /**
              * Enqueues a message, storing the message if it has not

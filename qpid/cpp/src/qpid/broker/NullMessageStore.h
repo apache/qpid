@@ -37,11 +37,11 @@ namespace qpid {
             NullMessageStore(bool warn = true);
             virtual void create(const Queue& queue);
             virtual void destroy(const Queue& queue);
-            virtual void recover(RecoveryManager& queues);
+            virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
             virtual void stage(Message::shared_ptr& msg);
             virtual void destroy(Message::shared_ptr& msg);
-            virtual void appendContent(u_int64_t msgId, const std::string& data);
-            virtual void loadContent(u_int64_t msgId, std::string& data, u_int64_t offset, u_int32_t length);
+            virtual void appendContent(Message* const msg, const std::string& data);
+            virtual void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length);
             virtual void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             virtual void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
             virtual void committed(const string * const xid);

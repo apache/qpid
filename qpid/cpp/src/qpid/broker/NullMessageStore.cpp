@@ -40,7 +40,7 @@ void NullMessageStore::destroy(const Queue& queue)
     if (warn) std::cout << "WARNING: Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::recover(RecoveryManager&)
+void NullMessageStore::recover(RecoveryManager&, const MessageStoreSettings* const)
 {
     if (warn) std::cout << "WARNING: Persistence not enabled, no recovery of queues or messages." << std::endl;
 }
@@ -55,12 +55,12 @@ void NullMessageStore::destroy(Message::shared_ptr&)
     if (warn) std::cout << "WARNING: No need to destroy staged message. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::appendContent(u_int64_t, const string&)
+void NullMessageStore::appendContent(Message* const, const string&)
 {
     if (warn) std::cout << "WARNING: Can't append content. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::loadContent(u_int64_t, string&, u_int64_t, u_int32_t)
+void NullMessageStore::loadContent(Message* const, string&, u_int64_t, u_int32_t)
 {
     if (warn) std::cout << "WARNING: Can't load content. Persistence not enabled." << std::endl;
 }
