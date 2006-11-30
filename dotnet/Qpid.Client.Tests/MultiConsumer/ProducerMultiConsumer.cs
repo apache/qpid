@@ -70,8 +70,8 @@ namespace Qpid.Client.Tests
         {
             base.Init();
             _publisher = _channel.CreatePublisherBuilder()
-                .withRoutingKey(_commandQueueName)
-                .withExchangeName(ExchangeNameDefaults.TOPIC)
+                .WithRoutingKey(_commandQueueName)
+                .WithExchangeName(ExchangeNameDefaults.TOPIC)
                 .Create();
 
             _publisher.DisableMessageTimestamp = true;
@@ -85,7 +85,7 @@ namespace Qpid.Client.Tests
                 _channel.Bind(queueName, ExchangeNameDefaults.TOPIC, _commandQueueName);
 
                 _consumers[i] = _channel.CreateConsumerBuilder(queueName)
-                    .withPrefetch(100).Create();
+                    .WithPrefetchLow(100).Create();
                 _consumers[i].OnMessage = new MessageReceivedDelegate(OnMessage);
             }
             _connection.Start();

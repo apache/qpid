@@ -22,13 +22,16 @@ namespace Qpid.Messaging
 {
     public class MessageConsumerBuilder
     {
-        private int _prefetch = 0;
+        public const int DEFAULT_PREFETCH_HIGH = 5000;
+
         private bool _noLocal = false;
         private bool _exclusive = false;
         private bool _durable = false;
         private string _subscriptionName = null;
         private IChannel _channel;
         private readonly string _queueName;
+        private int _prefetchLow = 2500;
+        private int _prefetchHigh = DEFAULT_PREFETCH_HIGH;
 
         public MessageConsumerBuilder(IChannel channel, string queueName)
         {
@@ -36,31 +39,37 @@ namespace Qpid.Messaging
             _queueName = queueName;
         }
 
-        public MessageConsumerBuilder withPrefetch(int prefetch)
+        public MessageConsumerBuilder WithPrefetchLow(int prefetchLow)
         {
-            _prefetch = prefetch;
+            _prefetchLow = prefetchLow;
             return this;
         }
 
-        public MessageConsumerBuilder withNoLocal(bool noLocal)
+        public MessageConsumerBuilder WithPrefetchHigh(int prefetchHigh)
+        {
+            _prefetchHigh = prefetchHigh;
+            return this;
+        }
+
+        public MessageConsumerBuilder WithNoLocal(bool noLocal)
         {
             _noLocal = noLocal;
             return this;
         }
 
-        public MessageConsumerBuilder withExclusive(bool exclusive)
+        public MessageConsumerBuilder WithExclusive(bool exclusive)
         {
             _exclusive = exclusive;
             return this;
         }
 
-        public MessageConsumerBuilder withDurable(bool durable)
+        public MessageConsumerBuilder WithDurable(bool durable)
         {
             _durable = durable;
             return this;
         }
 
-        public MessageConsumerBuilder withSubscriptionName(string subscriptionName)
+        public MessageConsumerBuilder WithSubscriptionName(string subscriptionName)
         {
             _subscriptionName = subscriptionName;
             return this;
@@ -68,7 +77,7 @@ namespace Qpid.Messaging
 
         public IMessageConsumer Create()
         {
-            return _channel.CreateConsumer(_queueName, _prefetch, _noLocal, _exclusive, _durable, _subscriptionName);
+            return _channel.CreateConsumer(_queueName, _prefetchLow, _prefetchHigh, _noLocal, _exclusive, _durable, _subscriptionName);
         }
     }
 }

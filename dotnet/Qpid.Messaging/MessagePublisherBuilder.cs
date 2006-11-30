@@ -47,37 +47,37 @@ namespace Qpid.Messaging
             _channel = channel;
         }
 
-        public MessagePublisherBuilder withRoutingKey(string routingKey)
+        public MessagePublisherBuilder WithRoutingKey(string routingKey)
         {
             _routingKey = routingKey;
             return this;
         }
 
-        public MessagePublisherBuilder withExchangeName(string exchangeName)
+        public MessagePublisherBuilder WithExchangeName(string exchangeName)
         {
             _exchangeName = exchangeName;
             return this;
         }
 
-        public MessagePublisherBuilder withDeliveryMode(DeliveryMode deliveryMode)
+        public MessagePublisherBuilder WithDeliveryMode(DeliveryMode deliveryMode)
         {
             _deliveryMode = deliveryMode;
             return this;
         }
 
-        public MessagePublisherBuilder withTimeToLive(long timeToLive)
+        public MessagePublisherBuilder WithTimeToLive(long timeToLive)
         {
             _timeToLive = timeToLive;
             return this;
         }
 
-        public MessagePublisherBuilder withImmediate(bool immediate)
+        public MessagePublisherBuilder WithImmediate(bool immediate)
         {
             _immediate = immediate;
             return this;
         }
 
-        public MessagePublisherBuilder withMandatory(bool mandatory)
+        public MessagePublisherBuilder WithMandatory(bool mandatory)
         {
             _mandatory = mandatory;
             return this;

@@ -24,7 +24,7 @@ using System.Collections;
 namespace Qpid.Collections
 {
     public abstract class BlockingQueue : Queue
-    {        
+    {
         /**
          * Inserts the specified element into this queue if it is possible to do
          * so immediately without violating capacity restrictions, returning

@@ -60,7 +60,8 @@ namespace Qpid.Messaging
         MessageConsumerBuilder CreateConsumerBuilder(string queueName);
 
         IMessageConsumer CreateConsumer(string queueName,
-                                        int prefetch,
+                                        int prefetchLow, 
+                                        int prefetchHigh,
                                         bool noLocal,
                                         bool exclusive,
                                         bool durable,
