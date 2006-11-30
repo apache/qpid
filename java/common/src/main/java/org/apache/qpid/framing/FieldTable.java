@@ -71,10 +71,10 @@ public class FieldTable extends LinkedHashMap
             Object value;
             switch (type)
             {
-                case 'S':
+                case'S':
                     value = EncodingUtils.readLongString(buffer);
                     break;
-                case 'I':
+                case'I':
                     value = new Long(buffer.getUnsignedInt());
                     break;
                 default:
@@ -313,10 +313,5 @@ public class FieldTable extends LinkedHashMap
         }
 
         return encodingSize;
-    }   
-
-    public Enumeration keys()
-    {
-        return new FieldTableKeyEnumeration(this);
     }
 }

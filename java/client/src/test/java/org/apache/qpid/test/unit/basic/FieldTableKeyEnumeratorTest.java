@@ -25,6 +25,8 @@ import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import javax.jms.JMSException;
 
@@ -41,13 +43,21 @@ public class FieldTableKeyEnumeratorTest extends TestCase
         result.put("four", 4L);
         result.put("five", 5L);
 
-        Enumeration e = result.keys();
+        Iterator iterator = result.keySet().iterator();
 
-        assertTrue("one".equals(e.nextElement()));
-        assertTrue("two".equals(e.nextElement()));
-        assertTrue("three".equals(e.nextElement()));
-        assertTrue("four".equals(e.nextElement()));
-        assertTrue("five".equals(e.nextElement()));
+        try
+        {
+            assertTrue("one".equals(iterator.next()));
+            assertTrue("two".equals(iterator.next()));
+            assertTrue("three".equals(iterator.next()));
+            assertTrue("four".equals(iterator.next()));
+            assertTrue("five".equals(iterator.next()));
+        }
+        catch (NoSuchElementException e)
+        {
+            fail("All elements should be found.");
+        }
+
     }
 
     public void testPropertEnu()
