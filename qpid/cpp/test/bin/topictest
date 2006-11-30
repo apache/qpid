@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Run the c++ or java topic test
 
 . `dirname $0`/env

@@ -24,20 +24,24 @@
 
 using namespace qpid::framing;
 
-// AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware and link these hard-wired numbers to that version
-AMQFrame::AMQFrame() : versionMap(8, 0) {}
+// This only works as a static as the version is currently fixed to 8.0
+// TODO: When the class is version-aware this will need to change
+AMQP_MethodVersionMap AMQFrame::versionMap(8,0);
+
+// AMQP version management change - kpvdr 2-11-17
+// TODO: Make this class version-aware
+AMQFrame::AMQFrame() {}
 
 // AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware and link these hard-wired numbers to that version
+// TODO: Make this class version-aware
 AMQFrame::AMQFrame(u_int16_t _channel, AMQBody* _body) :
-channel(_channel), body(_body), versionMap(8, 0)
+channel(_channel), body(_body)
 {}
 
 // AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware and link these hard-wired numbers to that version
+// TODO: Make this class version-aware
 AMQFrame::AMQFrame(u_int16_t _channel, AMQBody::shared_ptr& _body) :
-channel(_channel), body(_body), versionMap(8, 0)
+channel(_channel), body(_body)
 {}
 
 AMQFrame::~AMQFrame() {}
