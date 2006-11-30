@@ -201,7 +201,11 @@ void Message::releaseContent(MessageStore* store)
 {
     if (!content.get() || content->size() > 0) {
         //set content to lazy loading mode (but only if there is stored content):
-        content = std::auto_ptr<Content>(new LazyLoadedContent(store, getPersistenceId(), expectedContentSize()));
+
+        //Note: the LazyLoadedContent instance contains a raw pointer to the message, however it is
+        //      then set as a member of that message so its lifetime is guaranteed to be no longer than
+        //      that of the message itself
+        content = std::auto_ptr<Content>(new LazyLoadedContent(store, this, expectedContentSize()));
     }
 }
 

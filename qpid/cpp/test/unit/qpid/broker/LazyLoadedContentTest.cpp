@@ -55,7 +55,7 @@ class LazyLoadedContentTest : public CppUnit::TestCase
     public:
         TestMessageStore(const string& _content) : content(_content) {}
 
-        void loadContent(u_int64_t, string& data, u_int64_t offset, u_int32_t length)
+        void loadContent(Message* const, string& data, u_int64_t offset, u_int32_t length)
         {
             if (offset + length <= content.size()) {
                 data = content.substr(offset, length);
@@ -96,7 +96,7 @@ public:
     void load(string& in, size_t outCount, string* out, u_int32_t framesize)
     {
         TestMessageStore store(in);
-        LazyLoadedContent content(&store, 1, in.size());
+        LazyLoadedContent content(&store, 0, in.size());
         DummyHandler handler;
         u_int16_t channel = 3;
         content.send(&handler, channel, framesize);         

@@ -28,10 +28,10 @@ namespace qpid {
     namespace broker {
         class LazyLoadedContent : public Content{
             MessageStore* const store;
-            const u_int64_t msgId;
+            Message* const msg;
             const u_int64_t expectedSize;
         public:
-            LazyLoadedContent(MessageStore* const store, u_int64_t msgId, u_int64_t expectedSize);
+            LazyLoadedContent(MessageStore* const store, Message* const msg, u_int64_t expectedSize);
             void add(qpid::framing::AMQContentBody::shared_ptr data);
             u_int32_t size();
             void send(qpid::framing::OutputHandler* out, int channel, u_int32_t framesize);
