@@ -1,29 +1,23 @@
 Building on RHEL3 without access to root (i.e. no yum)
 ======================================================
 
-Install make-3.80 into ~/local/make-3.80
+Install or soft link the following:
 
-Install apr-1.2.7 into ~/local/apr-1.2.7.
+  make-3.80 into ~/local/make-3.80
+  apr-1.2.7 into ~/local/apr-1.2.7.
+  boost-1.33.1 into ~/local/boost-1.33.1
+  cppunit-1.11.4 into ~/local/cppunit-1.11.4
+  JDK 5.0 to ~/local/jdk-1.5
 
-Install boost-1.33.1 into ~/local/boost-1.33.1
-
-Install cppunit-1.11.4 into ~/local/cppunit-1.11.4
-
-If you want a standard release build skip this step. If you want a debug
-build do the following:
-
-  1. Edit options-rhel3.mk. Comment out definition of RELEASE.
-  2. Edit release.client.rhel3. Change buildType to "debug".
-
-Build using the following command:
+Build using the following command (builds release and debug profiles):
 
   $ ./build.rhel3
 
-Generate cppclient tarball:
+Generate cpp-client tarball (includes release and debug libs):
 
-  $ ./release.client.rhel3
+  $ ./release.client.rhel3      # will use the svn revision as release number
 
-or if you want to name the release:
+or if you want to explicitly name the release version:
 
   $ ./release.client.rhel3 1.0-RC1
 
