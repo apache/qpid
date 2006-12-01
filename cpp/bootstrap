@@ -1,0 +1,8 @@
+#!/bin/sh
+aclocal -I m4
+autoheader
+libtoolize --automake
+automake
+autoconf
+./configure --enable-warnings --prefix=/tmp/qpid-inst CXXFLAGS=-g
+
