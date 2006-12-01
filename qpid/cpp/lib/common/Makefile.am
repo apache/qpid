@@ -1,11 +1,10 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
-LIBS = -lapr-1
+AM_CXXFLAGS = $(WARNING_CFLAGS)
 
-INCLUDES = \
-  -I$(shell apr-1-config --includedir) \
-  -I$(top_srcdir)/gen \
-  -I$(top_srcdir)/lib/common/sys \
-  -I$(top_srcdir)/lib/common/framing
+INCLUDES =				\
+  -I$(top_srcdir)/gen			\
+  -I$(top_srcdir)/lib/common/sys	\
+  -I$(top_srcdir)/lib/common/framing	\
+  $(APR_CXXFLAGS)
 
 apr = sys/apr
 apr_src =			\
@@ -24,7 +23,7 @@ apr_src =			\
   $(apr)/Thread.cpp
 
 posix = sys/posix
-posix_src =  					\
+posix_src =					\
   $(posix)/PosixAcceptor.cpp			\
   $(posix)/Socket.cpp				\
   $(posix)/Thread.cpp				\
@@ -43,6 +42,7 @@ gen     = $(srcdir)/../../gen
 
 lib_LTLIBRARIES = libcommon.la
 libcommon_la_LIBADD =		\
+  $(APR_LIBS)			\
   $(LIB_DLOPEN)			\
   $(LIB_CLOCK_GETTIME)
 

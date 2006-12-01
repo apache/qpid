@@ -1,10 +1,10 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
-INCLUDES = \
-  -I$(shell apr-1-config --includedir) \
-  -I$(top_srcdir)/gen \
-  -I$(top_srcdir)/lib/common \
-  -I$(top_srcdir)/lib/common/sys \
-  -I$(top_srcdir)/lib/common/framing
+AM_CXXFLAGS = $(WARNING_CFLAGS)
+INCLUDES =				\
+  -I$(top_srcdir)/gen			\
+  -I$(top_srcdir)/lib/common		\
+  -I$(top_srcdir)/lib/common/sys	\
+  -I$(top_srcdir)/lib/common/framing	\
+  $(APR_CXXFLAGS)
 
 lib_LTLIBRARIES = libclient.la
 libclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
