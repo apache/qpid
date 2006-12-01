@@ -18,37 +18,16 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
+#include <sys/Thread.h>
+
 using namespace qpid::sys;
+using qpid::sys::Runnable;
 
-Broker::shared_ptr broker;
+void* APR_THREAD_FUNC Thread::runRunnable(apr_thread_t* thread, void *data) {
+    reinterpret_cast<Runnable*>(data)->run();
+    CHECK_APR_SUCCESS(apr_thread_exit(thread, APR_SUCCESS));
+    return NULL;
+} 
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}

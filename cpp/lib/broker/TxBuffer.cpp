@@ -18,37 +18,38 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <TxBuffer.h>
 
+using std::mem_fun;
 using namespace qpid::broker;
-using namespace qpid::sys;
 
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+bool TxBuffer::prepare(TransactionalStore* const store)
+{
+    std::auto_ptr<TransactionContext> ctxt;
+    if(store) ctxt = store->begin();
+    for(op_iterator i = ops.begin(); i < ops.end(); i++){
+        if(!(*i)->prepare(ctxt.get())){
+            if(store) store->abort(ctxt.get());
+            return false;
+        }
+    }
+    if(store) store->commit(ctxt.get());
+    return true;
 }
 
-int main(int argc, char** argv)
+void TxBuffer::commit()
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    for_each(ops.begin(), ops.end(), mem_fun(&TxOp::commit));
+    ops.clear();
+}
+
+void TxBuffer::rollback()
+{
+    for_each(ops.begin(), ops.end(), mem_fun(&TxOp::rollback));
+    ops.clear();
+}
+
+void TxBuffer::enlist(TxOp* const op)
+{
+    ops.push_back(op);
 }

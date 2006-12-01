@@ -18,37 +18,32 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <AccumulatedAck.h>
 
+using std::less_equal;
+using std::bind2nd;
 using namespace qpid::broker;
-using namespace qpid::sys;
 
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+void AccumulatedAck::update(u_int64_t tag, bool multiple){
+    if(multiple){
+        if(tag > range) range = tag;
+        //else don't care, it is already counted
+    }else if(tag > range){
+        individual.push_back(tag);
+    }
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+void AccumulatedAck::consolidate(){
+    individual.sort();
+    //remove any individual tags that are covered by range
+    individual.remove_if(bind2nd(less_equal<u_int64_t>(), range));
+}
+
+void AccumulatedAck::clear(){
+    range = 0;
+    individual.clear();
+}
+
+bool AccumulatedAck::covers(u_int64_t tag) const{
+    return tag <= range || find(individual.begin(), individual.end(), tag) != individual.end();
 }

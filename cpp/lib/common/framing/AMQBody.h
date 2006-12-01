@@ -18,37 +18,34 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <boost/shared_ptr.hpp>
+#include <amqp_types.h>
+#include <Buffer.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#ifndef _AMQBody_
+#define _AMQBody_
 
-Broker::shared_ptr broker;
+namespace qpid {
+    namespace framing {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+        class AMQBody
+        {
+          public:
+            typedef boost::shared_ptr<AMQBody> shared_ptr;
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+            virtual ~AMQBody();
+            virtual u_int32_t size() const = 0;
+            virtual u_int8_t type() const = 0;
+            virtual void encode(Buffer& buffer) const = 0;
+            virtual void decode(Buffer& buffer, u_int32_t size) = 0;
+            virtual void print(std::ostream& out) const;
+        };
+
+        std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
+
+        enum body_types {METHOD_BODY = 1, HEADER_BODY = 2, CONTENT_BODY = 3, HEARTBEAT_BODY = 8};
     }
-    return 1;
 }
+
+
+#endif

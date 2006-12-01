@@ -18,37 +18,33 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <ClientQueue.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+qpid::client::Queue::Queue() : name(""), autodelete(true), exclusive(true){}
 
-Broker::shared_ptr broker;
+qpid::client::Queue::Queue(std::string _name) : name(_name), autodelete(false), exclusive(false){}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+qpid::client::Queue::Queue(std::string _name, bool temp) : name(_name), autodelete(temp), exclusive(temp){}
+
+qpid::client::Queue::Queue(std::string _name, bool _autodelete, bool _exclusive) 
+  : name(_name), autodelete(_autodelete), exclusive(_exclusive){}
+
+const std::string& qpid::client::Queue::getName() const{
+    return name;
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+void qpid::client::Queue::setName(const std::string& _name){
+    name = _name;
 }
+
+bool qpid::client::Queue::isAutoDelete() const{
+    return autodelete;
+}
+
+bool qpid::client::Queue::isExclusive() const{
+    return exclusive;
+}
+
+
+
+

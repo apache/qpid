@@ -18,37 +18,29 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <amqp_types.h>
+#include <Buffer.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#ifndef _HeaderProperties_
+#define _HeaderProperties_
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace framing {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+    enum header_classes{BASIC = 60};
+
+    class HeaderProperties
+    {
+	
+    public:
+	inline virtual ~HeaderProperties(){}
+	virtual u_int8_t classId() = 0;
+	virtual u_int32_t size() const = 0;
+	virtual void encode(Buffer& buffer) const = 0;
+	virtual void decode(Buffer& buffer, u_int32_t size) = 0;
+    };
+}
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+
+#endif

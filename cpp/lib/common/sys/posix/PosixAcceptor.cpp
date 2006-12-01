@@ -18,37 +18,31 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <sys/Acceptor.h>
+#include <Exception.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace sys {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+namespace {
+void fail() { throw qpid::Exception("PosixAcceptor not implemented"); }
 }
 
-int main(int argc, char** argv)
+class PosixAcceptor : public Acceptor {
+  public:
+    virtual int16_t getPort() const { fail(); return 0; }
+    virtual void run(qpid::sys::SessionHandlerFactory* ) { fail(); }
+    virtual void shutdown() { fail(); }
+};
+
+// Define generic Acceptor::create() to return APRAcceptor.
+    Acceptor::shared_ptr Acceptor::create(int16_t , int, int, bool)
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    return Acceptor::shared_ptr(new PosixAcceptor());
 }
+
+// Must define Acceptor virtual dtor.
+Acceptor::~Acceptor() {}
+
+}}

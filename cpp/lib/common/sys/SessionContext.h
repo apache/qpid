@@ -18,37 +18,24 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#ifndef _SessionContext_
+#define _SessionContext_
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <OutputHandler.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace sys {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
+/**
+ * Provides the output handler associated with a connection.
+ */
+class SessionContext : public virtual qpid::framing::OutputHandler 
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+  public:
+    virtual void close() = 0;
+};
+
+}}
+
+
+#endif
