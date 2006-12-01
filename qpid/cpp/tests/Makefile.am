@@ -1,16 +1,13 @@
-# TODO aconway 2006-11-30: nasty hack, should be done by automake?
-abs_builddir = @abs_builddir@
-
-AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
-INCLUDES = \
-  -I$(shell apr-1-config --includedir) \
-  -I$(top_srcdir)/gen \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/client \
-  -I$(top_srcdir)/lib/broker \
-  -I$(top_srcdir)/lib/common \
-  -I$(top_srcdir)/lib/common/sys \
-  -I$(top_srcdir)/lib/common/framing
+AM_CXXFLAGS = $(WARNING_CFLAGS)
+INCLUDES =				\
+  -I$(top_srcdir)/gen			\
+  -I$(top_srcdir)/lib			\
+  -I$(top_srcdir)/lib/client		\
+  -I$(top_srcdir)/lib/broker		\
+  -I$(top_srcdir)/lib/common		\
+  -I$(top_srcdir)/lib/common/sys	\
+  -I$(top_srcdir)/lib/common/framing	\
+  $(APR_CXXFLAGS)
 
 # FIXME: -lcppunit must come from autoconf
 
@@ -63,7 +60,7 @@ posix_tests =		\
 unit_tests =		\
   $(broker_tests)	\
   $(framing_tests)	\
-  $(misc_tests)		
+  $(misc_tests)
 
 
 noinst_PROGRAMS = $(client_tests)
@@ -77,15 +74,16 @@ run-unit-tests: $(check_LTLIBRARIES)
 # TODO aconway 2006-12-01: Should also check for qpidd.
 run-python-tests: $(check_LTLIBRARIES)
 	../src/qpidd > qpidd.log 2>&1 &
-	cd ../../python ; ./run-tests -v -I cpp_failing.txt	
+	cd ../../python ; ./run-tests -v -I cpp_failing.txt
 
 
 include gen.mk
 
+abs_builddir = @abs_builddir@
 extra_libs = -lcppunit
-lib_client = ../lib/client/libclient.la
-lib_common = ../lib/common/libcommon.la
-lib_broker = ../lib/broker/libbroker.la
+lib_client = $(abs_builddir)/../lib/client/libclient.la
+lib_common = $(abs_builddir)/../lib/common/libcommon.la
+lib_broker = $(abs_builddir)/../lib/broker/libbroker.la
 
 gen.mk: Makefile.am
 	(					\
@@ -94,12 +92,13 @@ gen.mk: Makefile.am
 	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)'; \
 	  done;					\
 	  libs=;				\
+	  pwd=`pwd`;				\
 	  for i in $(unit_tests); do		\
 	    libs="$$libs $${i}.la";		\
 	    echo $${i}_la_SOURCES = $$i.cpp;	\
 	    echo $${i}_la_LIBADD = '$$(lib_common)';			\
 	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';	\
-	    echo $${i}_la_LDFLAGS = '-module -rpath $$(abs_builddir)';	\
+	    echo $${i}_la_LDFLAGS = '-module -rpath $$pwd';	\
 	  done;					\
 	  echo "check_LTLIBRARIES =$$libs";	\
 	)					\
