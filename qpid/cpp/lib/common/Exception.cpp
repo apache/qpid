@@ -18,37 +18,25 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <Exception.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+Exception::Exception() throw() {}
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+Exception::Exception(const std::string& str) throw() : whatStr(str) {}
+
+Exception::Exception(const char* str) throw() : whatStr(str) {}
+
+Exception::~Exception() throw() {}
+
+const char* Exception::what() const throw() { return whatStr.c_str(); }
+
+std::string Exception::toString() const throw() { return whatStr; }
+
+Exception* Exception::clone() const throw() { return new Exception(*this); }
+
+void Exception::throwSelf() const  { throw *this; }
+
+} // namespace qpid

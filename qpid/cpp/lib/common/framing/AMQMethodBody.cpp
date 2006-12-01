@@ -18,37 +18,29 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <AMQMethodBody.h>
+#include <QpidError.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
-
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+void qpid::framing::AMQMethodBody::encode(Buffer& buffer) const{
+    buffer.putShort(amqpClassId());
+    buffer.putShort(amqpMethodId());
+    encodeContent(buffer);
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+void qpid::framing::AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/){
+    decodeContent(buffer);
+}
+
+bool qpid::framing::AMQMethodBody::match(AMQMethodBody* other) const{
+    return other != 0 && other->amqpClassId() == amqpClassId() && other->amqpMethodId() == amqpMethodId();
+}
+
+void qpid::framing::AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channel*/){
+    THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
+}
+
+
+std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQMethodBody& m){
+    m.print(out);
+    return out;
 }

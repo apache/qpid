@@ -18,37 +18,25 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <Buffer.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#ifndef _AMQDataBlock_
+#define _AMQDataBlock_
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace framing {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
+class AMQDataBlock
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+public:
+    virtual ~AMQDataBlock() {}
+    virtual void encode(Buffer& buffer) = 0; 
+    virtual bool decode(Buffer& buffer) = 0; 
+    virtual u_int32_t size() const = 0;
+};
+
 }
+}
+
+
+#endif

@@ -18,37 +18,38 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
 #include <iostream>
-#include <memory>
+#include <amqp_framing.h>
+#include <qpid_test_plugin.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+using namespace qpid::framing;
 
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
+class FieldTableTest : public CppUnit::TestCase  
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+    CPPUNIT_TEST_SUITE(FieldTableTest);
+    CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST_SUITE_END();
+
+  public:
+
+    void testMe() 
+    {
+        FieldTable ft;
+        ft.setString("A", "BCDE");
+        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft.getString("A"));
+
+        Buffer buffer(100);
+        buffer.putFieldTable(ft);
+        buffer.flip();     
+        FieldTable ft2;
+        buffer.getFieldTable(ft2);
+        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft2.getString("A"));
+
     }
-    return 1;
-}
+};
+
+
+// Make this test suite a plugin.
+CPPUNIT_PLUGIN_IMPLEMENT();
+CPPUNIT_TEST_SUITE_REGISTRATION(FieldTableTest);
+

@@ -18,37 +18,29 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#ifndef _ExchangeRegistry_
+#define _ExchangeRegistry_
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <map>
+#include <BrokerExchange.h>
+#include <sys/Monitor.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace broker {
+    struct UnknownExchangeTypeException{};
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+    class ExchangeRegistry{
+        typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
+        ExchangeMap exchanges;
+        qpid::sys::Mutex lock;
+    public:
+        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type) throw(UnknownExchangeTypeException);
+        void destroy(const std::string& name);
+        Exchange::shared_ptr get(const std::string& name);
+        Exchange::shared_ptr getDefault();
+    };
+}
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+
+#endif

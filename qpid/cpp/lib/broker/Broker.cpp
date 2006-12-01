@@ -18,37 +18,42 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
 #include <iostream>
 #include <memory>
+#include <Broker.h>
+
 
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-Broker::shared_ptr broker;
+Broker::Broker(const Configuration& config) :
+    acceptor(Acceptor::create(config.getPort(),
+                              config.getConnectionBacklog(),
+                              config.getWorkerThreads(),
+                              config.isTrace())),
+    factory(config.getStore())
+{ }
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
 
-int main(int argc, char** argv)
+Broker::shared_ptr Broker::create(int16_t port) 
 {
     Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    config.setPort(port);
+    return create(config);
 }
+
+Broker::shared_ptr Broker::create(const Configuration& config) {
+    return Broker::shared_ptr(new Broker(config));
+}    
+        
+void Broker::run() {
+    acceptor->run(&factory);
+}
+
+void Broker::shutdown() {
+    acceptor->shutdown();
+}
+
+Broker::~Broker() { }
+
+const int16_t Broker::DEFAULT_PORT(5672);
