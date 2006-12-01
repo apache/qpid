@@ -64,6 +64,9 @@ void Queue::deliver(Message::shared_ptr& msg){
 void Queue::recover(Message::shared_ptr& msg){
     queueing = true;
     messages.push(msg);
+    if (store && msg->expectedContentSize() != msg->encodedContentSize()) {
+        msg->releaseContent(store);
+    }
 }
 
 void Queue::process(Message::shared_ptr& msg){
