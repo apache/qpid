@@ -92,13 +92,12 @@ gen.mk: Makefile.am
 	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)'; \
 	  done;					\
 	  libs=;				\
-	  pwd=`pwd`;				\
 	  for i in $(unit_tests); do		\
 	    libs="$$libs $${i}.la";		\
 	    echo $${i}_la_SOURCES = $$i.cpp;	\
 	    echo $${i}_la_LIBADD = '$$(lib_common)';			\
 	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';	\
-	    echo $${i}_la_LDFLAGS = '-module -rpath $$pwd';	\
+	    echo $${i}_la_LDFLAGS = "-module -rpath `pwd`";	\
 	  done;					\
 	  echo "check_LTLIBRARIES =$$libs";	\
 	)					\
