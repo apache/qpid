@@ -31,7 +31,8 @@ AC_ARG_ENABLE(warnings,
    yes|no) ;;
    *)      AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
  esac],
-              [enableval=no])
+ [enableval=yes])
+ 
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
 # qpid-dev list.

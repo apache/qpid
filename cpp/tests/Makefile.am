@@ -1,8 +1,9 @@
 # TODO aconway 2006-11-30: nasty hack, should be done by automake?
 abs_builddir = @abs_builddir@
 
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
 INCLUDES = \
+  -I$(shell apr-1-config --includedir) \
   -I$(top_srcdir)/gen \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/client \
@@ -62,16 +63,22 @@ posix_tests =		\
 unit_tests =		\
   $(broker_tests)	\
   $(framing_tests)	\
-  $(misc_tests)		\
-  $(posix_tests)
+  $(misc_tests)		
+
 
 noinst_PROGRAMS = $(client_tests)
 
-check: run-unit-tests
+check: run-unit-tests run-python-tests
 
 .PHONY: run-unit-tests
 run-unit-tests: $(check_LTLIBRARIES)
 	DllPlugInTester -c -b .libs/*.so
+
+# TODO aconway 2006-12-01: Should also check for qpidd.
+run-python-tests: $(check_LTLIBRARIES)
+	../src/qpidd > qpidd.log 2>&1 &
+	cd ../../python ; ./run-tests -v -I cpp_failing.txt	
+
 
 include gen.mk
 
