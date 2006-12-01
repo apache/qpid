@@ -1,29 +1,44 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
+LIBS = -lapr-1
+
 INCLUDES = \
+  -I$(shell apr-1-config --includedir) \
   -I$(top_srcdir)/gen \
   -I$(top_srcdir)/lib/common/sys \
   -I$(top_srcdir)/lib/common/framing
 
-# This is a kludge to include the contents of the apr/ directory.
-# For now, we don't use it.
-EXTRA_DIST =			\
-  sys/apr/APRAcceptor.cpp	\
-  sys/apr/APRBase.cpp		\
-  sys/apr/APRBase.h		\
-  sys/apr/APRPool.cpp		\
-  sys/apr/APRPool.h		\
-  sys/apr/APRSocket.cpp		\
-  sys/apr/APRSocket.h		\
-  sys/apr/LFProcessor.cpp	\
-  sys/apr/LFProcessor.h		\
-  sys/apr/LFSessionContext.cpp	\
-  sys/apr/LFSessionContext.h	\
-  sys/apr/Socket.cpp		\
-  sys/apr/Thread.cpp
+apr = sys/apr
+apr_src =			\
+  $(apr)/APRAcceptor.cpp	\
+  $(apr)/APRBase.cpp		\
+  $(apr)/APRBase.h		\
+  $(apr)/APRPool.cpp		\
+  $(apr)/APRPool.h		\
+  $(apr)/APRSocket.cpp		\
+  $(apr)/APRSocket.h		\
+  $(apr)/LFProcessor.cpp	\
+  $(apr)/LFProcessor.h		\
+  $(apr)/LFSessionContext.cpp	\
+  $(apr)/LFSessionContext.h	\
+  $(apr)/Socket.cpp		\
+  $(apr)/Thread.cpp
 
+posix = sys/posix
+posix_src =  					\
+  $(posix)/PosixAcceptor.cpp			\
+  $(posix)/Socket.cpp				\
+  $(posix)/Thread.cpp				\
+  $(posix)/check.cpp				\
+  $(posix)/check.h				\
+  $(posix)/EventChannel.cpp			\
+  $(posix)/EventChannel.h			\
+  $(posix)/EventChannelThreads.cpp		\
+  $(posix)/EventChannelThreads.h
+
+EXTRA_DIST=$(posix_src)
+platform_src = $(apr_src)
 
 framing = framing
-posix   = sys/posix
 gen     = $(srcdir)/../../gen
 
 lib_LTLIBRARIES = libcommon.la
@@ -36,6 +51,7 @@ libcommon_la_LDFLAGS =		\
   $(LIBTOOL_VERSION_INFO_ARG)
 
 libcommon_la_SOURCES =				\
+  $(platform_src)				\
   $(framing)/AMQBody.cpp			\
   $(framing)/AMQBody.h				\
   $(framing)/AMQContentBody.cpp			\
@@ -75,15 +91,6 @@ libcommon_la_SOURCES =				\
   $(gen)/AMQP_ClientProxy.cpp			\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
-  $(posix)/PosixAcceptor.cpp			\
-  $(posix)/Socket.cpp				\
-  $(posix)/Thread.cpp				\
-  $(posix)/check.cpp				\
-  $(posix)/check.h				\
-  $(posix)/EventChannel.cpp			\
-  $(posix)/EventChannel.h			\
-  $(posix)/EventChannelThreads.cpp		\
-  $(posix)/EventChannelThreads.h		\
   Exception.cpp					\
   Exception.h					\
   ExceptionHolder.cpp				\
