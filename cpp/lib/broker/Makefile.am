@@ -1,5 +1,6 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) -DUSE_APR=1
 INCLUDES = \
+  -I$(shell apr-1-config --includedir) \
   -I$(top_srcdir)/gen \
   -I$(top_srcdir)/lib/common \
   -I$(top_srcdir)/lib/common/sys \
