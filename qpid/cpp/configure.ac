@@ -32,7 +32,7 @@ AC_ARG_ENABLE(warnings,
    *)      AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
  esac],
  [enableval=yes])
- 
+
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
 # qpid-dev list.
@@ -79,6 +79,14 @@ LIBTOOL_VERSION_INFO_ARG=$QPID_CURRENT:$QPID_REVISION:$QPID_AGE
 AC_SUBST(LIBTOOL_VERSION_INFO_ARG)
 
 gl_CLOCK_TIME
+
+APR_MINIMUM_VERSION=1.2.7
+PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
+
+APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
+AC_SUBST(APR_CXXFLAGS)
+AC_SUBST(APR_LIBS)
+
 
 AC_CONFIG_FILES([
   Makefile
