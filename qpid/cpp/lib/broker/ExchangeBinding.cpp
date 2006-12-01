@@ -18,37 +18,18 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <ExchangeBinding.h>
+#include <BrokerExchange.h>
 
 using namespace qpid::broker;
-using namespace qpid::sys;
+using namespace qpid::framing;
 
-Broker::shared_ptr broker;
+ExchangeBinding::ExchangeBinding(Exchange* _e, Queue::shared_ptr _q, const string& _key, const FieldTable* _args) : e(_e), q(_q), key(_key), args(_args){}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+void ExchangeBinding::cancel(){
+    e->unbind(q, key, args);
+    delete this;
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+ExchangeBinding::~ExchangeBinding(){
 }

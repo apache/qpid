@@ -18,37 +18,25 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <RecoveryManager.h>
 
 using namespace qpid::broker;
-using namespace qpid::sys;
 
-Broker::shared_ptr broker;
+RecoveryManager::RecoveryManager(QueueRegistry& _queues, ExchangeRegistry& _exchanges) : queues(_queues), exchanges(_exchanges) {}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+RecoveryManager::~RecoveryManager() {}
+
+Queue::shared_ptr RecoveryManager::recoverQueue(const string& name)
+{
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
+    Exchange::shared_ptr exchange = exchanges.getDefault();
+    if (exchange) {
+        exchange->bind(result.first, result.first->getName(), 0);
+    }
+    return result.first;
 }
 
-int main(int argc, char** argv)
+Exchange::shared_ptr RecoveryManager::recoverExchange(const string& name, const string& type)
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    return exchanges.declare(name, type).first;
 }

@@ -1,3 +1,6 @@
+#ifndef _OutputHandler_
+#define _OutputHandler_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,37 +21,19 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <boost/noncopyable.hpp>
+#include <AMQFrame.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+namespace qpid {
+namespace framing {
 
-Broker::shared_ptr broker;
+class OutputHandler : private boost::noncopyable {
+  public:
+    virtual ~OutputHandler() {}
+    virtual void send(AMQFrame* frame) = 0;
+};
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+}}
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+
+#endif

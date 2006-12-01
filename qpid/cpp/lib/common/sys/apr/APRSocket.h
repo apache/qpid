@@ -18,37 +18,31 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#ifndef _APRSocket_
+#define _APRSocket_
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <apr_network_io.h>
+#include <Buffer.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace sys {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+    class APRSocket
+    {
+	apr_socket_t* const socket;
+        volatile bool closed;
+    public:
+	APRSocket(apr_socket_t* socket);
+        void read(qpid::framing::Buffer& b);
+        void write(qpid::framing::Buffer& b);
+        void close();
+        bool isOpen();
+        u_int8_t read();
+	~APRSocket();
+    };
+
+}
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+
+#endif

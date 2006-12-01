@@ -3,6 +3,9 @@
 == Prerequisites ==
 
 Required to build:
+ * autoconf 2.59: http://www.gnu.org/software/autoconf
+ * automake 1.9.6: http://www.gnu.org/software/automake
+ * libtool 1.5: http://www.gnu.org/software/libtool
  * Apache Portable Runtime 1.2.7:  http://apr.apache.org
  * CppUnit 1.11.4: http://cppunit.sourceforge.net
  * boost 1.33.1: http://www.boost.org
@@ -13,69 +16,79 @@ Optional: to generate documentation from source code comments you need:
 
 If you use yum to install packages:
 
-# yum install apr apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
+# yum install apr autoconf automake apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
+
+== Recent changes ==
+
+There have been two major changes on the C++ hierarchy:
+  - adds autoconf, automake, libtool support
+  - makes the hierarchy flatter and renames a few files (e.g., Queue.h,
+  Queue.cpp) that appeared twice, once under client/ and again under broker/.
+
+In the process, I've changed many #include directives, mostly
+to remove a qpid/ or qpid/framing/ prefix from the file name argument.
+Although most changes were to .cpp and .h files under qpid/cpp/, there
+were also several to template files under qpid/gentools, and even one
+to CppGenerator.java.
+
+Nearly all files are moved to a new position in the hierarchy.
+The new hierarchy looks like this:
+
+  src               # this is the new home of qpidd.cpp
+  tests             # all tests are here.  See Makefile.am.
+  gen               # As before, all generated files go here.
+  lib               # This is just a container for the 3 lib dirs:
+  lib/client
+  lib/broker
+  lib/common
+  lib/common/framing
+  lib/common/sys
+  lib/common/sys/posix
+  lib/common/sys/apr
+  build-aux
+  m4
 
 == Building ==
 
-You can have mutltiple builds in the same working copy. 
-For example for a release build using APR platform:
+As we smooth off the rough edges with the new build setup the steps
+for the most common development tasks will be scripted and/or
+simplified and this README will be updated accordingly.
 
-  make USE_APR=1 RELEASE=1
+Before building a fresh checkout do:
+ ./bootstrap
 
-This will create build/apr-release containing the bin/ lib/ and test/ subdirs.
+This generates config, makefiles and the like - check the script for
+details. You only need to do this once, "make" will keep everything up
+to date thereafter (including re-generating configuration & Makefiles
+if the automake templates change etc.)
 
-You can set your preferred defaults in options-local.mk.
+To build and test everything:
+  make
+  make check
 
-Generated code goes in build/gen and is shared between all builds.
+This builds in the source tree. You can have multiple builds in the
+same working copy with different configuration. For example you can do
+the following to build twice, once for debug, the other with
+optimization:
 
-All other build output is under build/<build name>/
- * bin/ lib/ - executables and libraries.
- * test/ - test executables, directories with unit test .so plugins.
- * obj/ - compiled .o files.
- * include - exported header files
-
-Main targets:
- * test: (default) build & run all tests
- * all: build all
- * usage: this message
- * unittest: run unit tests
- * pythontest: run python tests.
- * doxygen: generate documentation in build/html
- * clean: cleans the current build only. Does not clean generated code.
- * spotless: cleans up all build output and removes the build directory.
-
-=== Source Tree ===
-
-The source tree is structured as follows:
- * src/ - .h and .cpp source files, directories mirror namespaces.
-  * qpid/
-   * sys/ - system portability abstractions: threading, io etc.
-   * posix/ - posix implementations for sys
-   * apr/ - portable APR implementation for sys
-   * framing - encoding/decoding AMQP messages
-   * client - client classes.
-   * broker - broker classes.
- * etc/ - Non-c++ resources, e.g. stylesheets.
- * test/ 
-  * unit/ - unit tests (cppunit plugins), directories mirror namespaces.
-  * include/ - .h files used by tests
-  * client/ - sources for client test executables.
-
-Build system principles:
- * Single Makefile (see http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html)
- * Calculate sources from directories, no explicit source lists.
- * Corresponding .cpp and .h files in same directory for easy editing.
- * Source directory structure mirrors C++ namespaces.
+  make distclean
+  mkdir .build-dbg .build-opt
+  (cd .build-opt
+   ../configure --enable-warnings --prefix=/tmp/x && make && make check)
+  (cd .build-dbg
+   ../configure --enable-warnings CXXFLAGS=-g --prefix=/tmp/x \
+     && make && make check)
 
 === Portability ===
 
-All system calls are abstracted by classes in qpid/sys. This provides
-an object-oriented C++ API and contains platform-specific code.
+All system calls are abstracted by classes under lib/common/sys. This
+provides an object-oriented C++ API and contains platform-specific
+code.
 
-These wrappers should be mainlly inline by-value classes so they
-impose no run-time penalty compared do direct system calls.
+These wrappers are mainlly inline by-value classes so they impose no
+run-time penalty compared do direct system calls.
 
-Initially we will have a full POSIX implementation and a portable 
+Initially we will have a full linux implementation and a portable 
 implementation suffcient for the client using the APR portability
 library. The implementations may change in future but the interface
 for qpid code outside the qpid/sys namespace should remain stable.

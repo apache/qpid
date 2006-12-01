@@ -18,37 +18,28 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <DeletingTxOp.h>
 
 using namespace qpid::broker;
-using namespace qpid::sys;
 
-Broker::shared_ptr broker;
+DeletingTxOp::DeletingTxOp(TxOp* const _delegate) : delegate(_delegate){}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+bool DeletingTxOp::prepare(TransactionContext* ctxt) throw(){
+    return delegate && delegate->prepare(ctxt);
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+void DeletingTxOp::commit() throw(){
+    if(delegate){
+        delegate->commit();
+        delete delegate;
+        delegate = 0;
     }
-    return 1;
+}
+
+void DeletingTxOp::rollback() throw(){
+    if(delegate){
+        delegate->rollback();
+        delete delegate;
+        delegate = 0;
+    }
 }

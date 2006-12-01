@@ -18,37 +18,25 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#ifndef _Prefetch_
+#define _Prefetch_
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <amqp_types.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+    namespace broker {
+        /**
+         * Count and total size of asynchronously delivered
+         * (i.e. pushed) messages that have acks outstanding.
+         */
+        struct Prefetch{
+            u_int32_t size;
+            u_int16_t count;
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+            void reset() { size = 0; count = 0; }
+        };
     }
-    return 1;
 }
+
+
+#endif

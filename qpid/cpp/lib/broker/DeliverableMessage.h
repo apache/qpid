@@ -18,37 +18,24 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#ifndef _DeliverableMessage_
+#define _DeliverableMessage_
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <Deliverable.h>
+#include <BrokerMessage.h>
+#include <BrokerQueue.h>
 
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+namespace qpid {
+    namespace broker {
+        class DeliverableMessage : public Deliverable{
+            Message::shared_ptr msg;
+        public:
+            DeliverableMessage(Message::shared_ptr& msg);
+            virtual void deliverTo(Queue::shared_ptr& queue);
+            virtual ~DeliverableMessage(){}
+        };
     }
-    return 1;
 }
+
+
+#endif

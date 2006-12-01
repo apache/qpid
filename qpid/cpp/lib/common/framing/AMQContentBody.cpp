@@ -18,37 +18,26 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
+#include <AMQContentBody.h>
 #include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
-
-Broker::shared_ptr broker;
-
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
+qpid::framing::AMQContentBody::AMQContentBody(){
 }
 
-int main(int argc, char** argv)
+qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
+}
+
+u_int32_t qpid::framing::AMQContentBody::size() const{
+    return data.size();
+}
+void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
+    buffer.putRawData(data);
+}
+void qpid::framing::AMQContentBody::decode(Buffer& buffer, u_int32_t _size){
+    buffer.getRawData(data, _size);
+}
+
+void qpid::framing::AMQContentBody::print(std::ostream& out) const
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    out << "content (" << size() << " bytes)";
 }

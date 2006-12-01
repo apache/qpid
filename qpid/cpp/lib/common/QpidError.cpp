@@ -18,37 +18,27 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <QpidError.h>
+#include <sstream>
 
-Broker::shared_ptr broker;
+using namespace qpid;
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+QpidError::QpidError() : code(0) {}
 
-int main(int argc, char** argv)
+QpidError::QpidError(int _code, const std::string& _msg,
+                     const SrcLine& _loc) throw()
+    : code(_code), msg(_msg), location(_loc)
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+    std::ostringstream os;
+    os << "Error [" << code << "] " << msg << " ("
+       << location.file << ":" << location.line << ")";
+    whatStr = os.str();
 }
+
+QpidError::~QpidError() throw() {}
+
+Exception* QpidError::clone() const throw() { return new QpidError(*this); }
+
+void QpidError::throwSelf() const  { throw *this; }
+
