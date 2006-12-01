@@ -2,21 +2,19 @@
 
 == Prerequisites ==
 
-Required to build:
+As per README-dist plus:
  * autoconf 2.59: http://www.gnu.org/software/autoconf
  * automake 1.9.6: http://www.gnu.org/software/automake
  * libtool 1.5: http://www.gnu.org/software/libtool
- * Apache Portable Runtime 1.2.2:  http://apr.apache.org
  * CppUnit 1.11.4: http://cppunit.sourceforge.net
- * boost 1.33.1: http://www.boost.org
 
 Optional: to generate documentation from source code comments you need:
  * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/
  * graphviz 2.8: http://www.graphviz.org/
 
-If you use yum to install packages:
+If you use yum to install packages, do the command from the README-dist then:
 
-# yum install apr autoconf automake apr-devel cppunit cppunit-devel boost boost-devel doxygen graphviz
+# yum install apr-devel cppunit-devel boost-devel doxygen graphviz
 
 == Recent changes ==
 
