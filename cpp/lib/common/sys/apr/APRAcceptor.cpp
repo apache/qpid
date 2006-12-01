@@ -37,11 +37,15 @@ class APRAcceptor : public Acceptor
     virtual void shutdown();
 
   private:
+    void shutdownImpl();
+
+  private:
     int16_t port;
     bool trace;
     LFProcessor processor;
     apr_socket_t* socket;
     volatile bool running;
+    Mutex shutdownLock;
 };
 
 // Define generic Acceptor::create() to return APRAcceptor.
@@ -88,22 +92,29 @@ void APRAcceptor::run(SessionHandlerFactory* factory) {
             LFSessionContext* session = new LFSessionContext(APRPool::get(), client, &processor, trace);
             session->init(factory->create(session));
         }else{
-            running = false;
-            if(status != APR_EINTR){
-                std::cout << "ERROR: " << get_desc(status) << std::endl;
+            Mutex::ScopedLock locker(shutdownLock);                
+            if(running) {
+                if(status != APR_EINTR){
+                    std::cout << "ERROR: " << get_desc(status) << std::endl;
+                }
+                shutdownImpl();
             }
         }
     }
-    shutdown();
 }
 
 void APRAcceptor::shutdown() {
-    // TODO aconway 2006-10-12: Cleanup, this is not thread safe.
+    Mutex::ScopedLock locker(shutdownLock);                
     if (running) {
-        running = false;
-        processor.stop();
-        CHECK_APR_SUCCESS(apr_socket_close(socket));
+        shutdownImpl();
     }
+}
+
+void APRAcceptor::shutdownImpl() {
+    Mutex::ScopedLock locker(shutdownLock);                
+    running = false;
+    processor.stop();
+    CHECK_APR_SUCCESS(apr_socket_close(socket));
 }
 
 
