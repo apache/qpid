@@ -20,7 +20,8 @@
  */
 #include <Broker.h>
 #include <Configuration.h>
-// FIXME #include <sys/signal.h>
+// FIXME 
+#include <signal.h>
 #include <iostream>
 #include <memory>
 
@@ -43,7 +44,8 @@ int main(int argc, char** argv)
             config.usage();
         }else{
             broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
+// FIXME             
+            signal(SIGINT, handle_signal);
             broker->run();
         }
         return 0;
