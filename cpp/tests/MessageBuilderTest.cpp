@@ -62,9 +62,9 @@ class MessageBuilderTest : public CppUnit::TestCase
             }
         }
 
-        void appendContent(u_int64_t msgId, const string& data)
+        void appendContent(Message* msg, const string& data)
         {
-            if (msgId == 1) {
+            if (msg) {
                 content->putRawData(data);
             } else {
                 throw qpid::Exception("Invalid message id!");
