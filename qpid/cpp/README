@@ -6,12 +6,12 @@ Required to build:
  * autoconf 2.59: http://www.gnu.org/software/autoconf
  * automake 1.9.6: http://www.gnu.org/software/automake
  * libtool 1.5: http://www.gnu.org/software/libtool
- * Apache Portable Runtime 1.2.7:  http://apr.apache.org
+ * Apache Portable Runtime 1.2.2:  http://apr.apache.org
  * CppUnit 1.11.4: http://cppunit.sourceforge.net
  * boost 1.33.1: http://www.boost.org
 
 Optional: to generate documentation from source code comments you need:
- * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/ 
+ * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/
  * graphviz 2.8: http://www.graphviz.org/
 
 If you use yum to install packages:
@@ -85,18 +85,18 @@ All system calls are abstracted by classes under lib/common/sys. This
 provides an object-oriented C++ API and contains platform-specific
 code.
 
-These wrappers are mainlly inline by-value classes so they impose no
+These wrappers are mainly inline by-value classes so they impose no
 run-time penalty compared do direct system calls.
 
-Initially we will have a full linux implementation and a portable 
-implementation suffcient for the client using the APR portability
+Initially we will have a full linux implementation and a portable
+implementation sufficient for the client using the APR portability
 library. The implementations may change in future but the interface
 for qpid code outside the qpid/sys namespace should remain stable.
 
 
 === Unit tests ===
 
-Unit tests are built as .so files containing CppUnit plugins. 
+Unit tests are built as .so files containing CppUnit plugins.
 
 DllPlugInTester is provided as part of cppunit. You can use it to run
 any subset of the unit tests. See Makefile for examples.
@@ -106,9 +106,9 @@ surprisingly this will fail with "can't load plugin":
  DllPluginTester foobar.so
 
 Instead you need to say:
- DllPluginTester ./foobar.so 
- 
-Reason: DllPluginTester uses dlopen() which searches for shlibs 
+ DllPluginTester ./foobar.so
+
+Reason: DllPluginTester uses dlopen() which searches for shlibs
 in the standard places unless the filename contains a "/".  In
 that case it just tries to open the filename.
 
@@ -131,6 +131,3 @@ UML-esque dependency diagrams that are ''extremely'' useful in navigating
 around the code, especially for newcomers.
 
 To try it out "make doxygen" then open doxygen/html/index.html
-
-
-
