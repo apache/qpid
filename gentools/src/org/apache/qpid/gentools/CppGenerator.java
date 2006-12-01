@@ -1125,7 +1125,7 @@ public class CppGenerator extends Generator
         while (mItr.hasNext())
         {
             AmqpMethod method = thisClass.methodMap.get(mItr.next());
-            sb.append(indent + "#include <qpid/framing/" + thisClass.name +
+            sb.append(indent + "#include <" + thisClass.name +
                 Utils.firstUpper(method.name) + "Body.h>" + cr);
         }
         return sb.toString();       
