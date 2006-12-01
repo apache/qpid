@@ -1,3 +1,5 @@
+#ifndef _InputHandler_
+#define _InputHandler_
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,37 +20,20 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <AMQFrame.h>
+#include <boost/noncopyable.hpp>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace framing {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+class InputHandler : private boost::noncopyable {
+  public:
+    virtual ~InputHandler() {}
+    virtual void received(AMQFrame* frame) = 0;
+};
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+}}
+
+
+#endif

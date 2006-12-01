@@ -18,37 +18,15 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <NameGenerator.h>
+#include <sstream>
 
 using namespace qpid::broker;
-using namespace qpid::sys;
 
-Broker::shared_ptr broker;
+NameGenerator::NameGenerator(const std::string& _base) : base(_base), counter(1) {}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
-
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
+std::string NameGenerator::generate(){
+    std::stringstream ss;
+    ss << base << counter++;
+    return ss.str();
 }

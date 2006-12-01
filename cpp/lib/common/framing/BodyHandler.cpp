@@ -18,37 +18,37 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
+#include <boost/shared_ptr.hpp>
+#include <BodyHandler.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+using namespace qpid::framing;
+using namespace boost;
 
-Broker::shared_ptr broker;
+BodyHandler::~BodyHandler() {}
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+void BodyHandler::handleBody(AMQBody::shared_ptr& body){
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+    switch(body->type())
+    {
+
+    case METHOD_BODY:
+	handleMethod(dynamic_pointer_cast<AMQMethodBody, AMQBody>(body));
+	break;
+ 
+   case HEADER_BODY:
+	handleHeader(dynamic_pointer_cast<AMQHeaderBody, AMQBody>(body));
+	break;
+
+    case CONTENT_BODY:
+	handleContent(dynamic_pointer_cast<AMQContentBody, AMQBody>(body));
+	break;
+
+    case HEARTBEAT_BODY:
+	handleHeartbeat(dynamic_pointer_cast<AMQHeartbeatBody, AMQBody>(body));
+	break;
+
+    default:
+	throw UnknownBodyType(body->type());
     }
-    return 1;
+
 }

@@ -1,3 +1,6 @@
+#ifndef _sys_Acceptor_h
+#define _sys_Acceptor_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,37 +21,27 @@
  * under the License.
  *
  */
-#include <Broker.h>
-#include <Configuration.h>
-// FIXME #include <sys/signal.h>
-#include <iostream>
-#include <memory>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include <stdint.h>
+#include <SharedObject.h>
 
-Broker::shared_ptr broker;
+namespace qpid {
+namespace sys {
 
-void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
-    broker->shutdown();
-}
+class SessionHandlerFactory;
 
-int main(int argc, char** argv)
+class Acceptor : public qpid::SharedObject<Acceptor>
 {
-    Configuration config;
-    try {
-        config.parse(argc, argv);
-        if(config.isHelp()){
-            config.usage();
-        }else{
-            broker = Broker::create(config);
-// FIXME             qpid::sys::signal(SIGINT, handle_signal);
-            broker->run();
-        }
-        return 0;
-    } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
-    }
-    return 1;
-}
+  public:
+    static Acceptor::shared_ptr create(int16_t port, int backlog, int threads, bool trace = false);
+    virtual ~Acceptor() = 0;
+    virtual int16_t getPort() const = 0;
+    virtual void run(qpid::sys::SessionHandlerFactory* factory) = 0;
+    virtual void shutdown() = 0;
+};
+
+}}
+
+
+    
+#endif  /*!_sys_Acceptor_h*/
