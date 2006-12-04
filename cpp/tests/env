@@ -13,9 +13,9 @@ pathmunge () {
 
 if [ -z QPID_ROOT ] ; then echo "You must set QPID_ROOT" ; fi
  
-pathmunge $QPID_ROOT/cpp/test/bin
-pathmunge $QPID_ROOT/cpp/build/*/bin
-pathmunge $QPID_ROOT/cpp/build/*/test
+pathmunge $QPID_ROOT/cpp/tests
+# pathmunge $QPID_ROOT/cpp/build/*/bin
+# pathmunge $QPID_ROOT/cpp/build/*/test
 
 export QPID_HOME=${QPID_HOME:-$QPID_ROOT/java/build}
 pathmunge $QPID_HOME/bin
