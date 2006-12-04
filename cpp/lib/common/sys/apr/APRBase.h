@@ -52,7 +52,7 @@ namespace sys {
     };
 
     //this is also a convenient place for a helper function for error checking:
-    void check(apr_status_t status, const std::string& file, const int line);
+    void check(apr_status_t status, const char* file, const int line);
     std::string get_desc(apr_status_t status);
 
 #define CHECK_APR_SUCCESS(A) qpid::sys::check(A, __FILE__, __LINE__); 
