@@ -102,7 +102,7 @@ namespace Qpid.Client
                     // Fix for when there is port data but it is not automatically parseable by getPort().
                     String auth = connection.Authority;
 
-                    if (auth != null && auth.Contains(":"))
+                    if (auth != null && auth.IndexOf(':') != -1)
                     {
                         int start = auth.IndexOf(":") + 1;
                         int end = start;

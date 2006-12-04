@@ -123,7 +123,7 @@ namespace Qpid.Client.Tests.failover
             if (useThread)
             {
                 NoWaitConsumer noWaitConsumer = new NoWaitConsumer(this, consumer, _noWait);
-                new Thread(noWaitConsumer.Run).Start();
+                new Thread(new ThreadStart(noWaitConsumer.Run)).Start();
             }
             else
             {
