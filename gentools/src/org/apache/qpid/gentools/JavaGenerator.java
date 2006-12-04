@@ -355,11 +355,15 @@ public class JavaGenerator extends Generator
 	{
 		String domainType = globalDomainMap.getDomainType(domainName, version);
 		if (domainType == null)
-			throw new AmqpTypeMappingException("Domain type \"" + domainName + "\" not found in Java typemap.");
-                DomainInfo info = typeMap.get(domainType);
-                if (info == null) {
-                    throw new AmqpTypeMappingException("Unknown type: \"" + domainType + "\"");
-                }
+        {
+			throw new AmqpTypeMappingException("Domain type \"" + domainName +
+                "\" not found in Java typemap.");
+        }
+        DomainInfo info = typeMap.get(domainType);
+        if (info == null)
+        {
+            throw new AmqpTypeMappingException("Unknown domain: \"" + domainType + "\"");
+        }
 		return info.type;
 	}
 
