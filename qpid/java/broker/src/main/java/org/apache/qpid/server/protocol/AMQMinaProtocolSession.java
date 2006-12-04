@@ -367,6 +367,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 int i = pv.length - 1;
                 _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
                 // TODO: Close connection (but how to wait until message is sent?)
+                // ritchiem 2006-12-04 will this not do?
+//                WriteFuture future = _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+//                future.join();
+//                close connection
+
             }
         }
         else
