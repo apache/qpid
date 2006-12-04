@@ -1,0 +1,937 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.management.ui.views;
+
+import javax.management.openmbean.TabularDataSupport;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.model.AttributeData;
+import org.apache.qpid.management.ui.model.ManagedAttributeModel;
+import org.eclipse.jface.viewers.IColorProvider;
+import org.eclipse.jface.viewers.IFontProvider;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseMoveListener;
+import org.eclipse.swt.events.MouseTrackListener;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.Form;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+
+
+public class AttributesTabControl extends TabControl
+{    
+    private FormToolkit  _toolkit;
+    private Form _form;    
+    private Table _table = null;
+    private TableViewer _tableViewer = null;
+    private static final int[] tableWidths = new int[] {300, 300};
+    private static final String DESCRIPTION = "Description";
+    private static final String UPDATE_BUTTON = "Update";
+    private final String[] _tableTitles = {"Attribute Name", "Value"};
+    
+    private DisposeListener tableDisposeListener = new DisposeListenerImpl();
+    final Image image;
+    private Button _detailsButton  = null;
+    private Button _editButton  = null;
+    private Button _graphButton = null;
+    private Button _refreshButton = null;
+    private boolean disableEditing = false;
+    
+    private static final String MAX_VALUE = "MaxValue";
+    private static final String GRAPH_VALUES = "GraphValues";
+    private int GRAPH_WIDTH = 700;
+    private int GRAPH_HEIGHT = 450;
+    private int GRAPH_ITEM_GAP = 100;
+    private int startX = 80;
+    private int startY = 60;
+    
+    static int number = 0;
+    
+    public AttributesTabControl(TabFolder tabFolder)
+    {
+        super(tabFolder);
+        _toolkit = new FormToolkit(_tabFolder.getDisplay());
+        _form = _toolkit.createForm(_tabFolder);
+        GridLayout gridLayout = new GridLayout(2, false);      
+        gridLayout.marginWidth = 0;
+        gridLayout.marginHeight = 0;       
+        _form.getBody().setLayout(gridLayout);
+        
+        image = Display.getCurrent().getSystemImage(SWT.ICON_INFORMATION);
+        createWidgets();         
+    }
+    
+    public Control getControl()
+    {
+        return _form;
+    }
+    
+    protected void createWidgets()
+    {
+        createTable();
+        createTableViewer();                
+        createButtons();        
+        addTableListeners();        
+    }
+    
+    private void createTable()
+    {
+        _table = _toolkit.createTable(_form.getBody(),  SWT.FULL_SELECTION);        
+        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 6);
+        _table.setLayoutData(gridData);
+        
+        for (int i = 0; i < _tableTitles.length; ++i)
+        {
+            final TableColumn column = new TableColumn(_table, SWT.NONE);
+            column.setText(_tableTitles[i]);
+            column.setWidth(tableWidths[i]);
+            column.setResizable(false);
+        }
+        
+        _table.setLinesVisible (true);
+        _table.setHeaderVisible (true);
+    }
+    
+    private void createTableViewer()
+    {
+        _tableViewer = new TableViewer(_table);
+        _tableViewer.setUseHashlookup(true);
+        //_tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 6));
+        
+        // Set the column properties that will be used in callbacks to recognize
+        // the column on which we will want to operate
+        _tableViewer.setColumnProperties(_tableTitles);
+        /*
+        // Create the cell editors
+        CellEditor[] cellEditors = new CellEditor[_tableTitles.length];
+        
+        
+        TextCellEditor textEditor = new TextCellEditor(_table);
+        cellEditors[0] = textEditor;
+        textEditor = new TextCellEditor(_table);
+        cellEditors[1] = textEditor;
+        
+        // Assign the cell editors to the viewer 
+        _tableViewer.setCellEditors(cellEditors);
+        _tableViewer.setCellModifier(new TableCellModifier());
+        */
+        
+        
+        
+        _tableViewer.setContentProvider(new ContentProviderImpl());
+        _tableViewer.setLabelProvider(new LabelProviderImpl());
+        
+    }
+    
+    private void createButtons()
+    {
+        addDetailsButton();
+        addEditButton();
+        addGraphButton();
+        addRefreshButton();
+    }
+    
+    
+    private void addDetailsButton()
+    {
+        // Create and configure the button for attribute details
+        _detailsButton = _toolkit.createButton(_form.getBody(), 
+                                               Constants.BUTTON_DETAILS,
+                                               SWT.PUSH | SWT.CENTER);
+        
+        _detailsButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        gridData.widthHint = 80;
+        _detailsButton.setLayoutData(gridData);
+        _detailsButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    disableEditing = true;
+                    int index = _table.getSelectionIndex();
+                    TableItem item = _table.getItem(index);                   
+                    createDetailsPopup((AttributeData)item.getData());
+                    disableEditing = false;
+                    setFocus();
+                }
+            });
+    }
+    
+    private void addEditButton()
+    {
+        // Create and configure the button for editing attribute
+        _editButton = _toolkit.createButton(_form.getBody(), 
+                                               Constants.BUTTON_EDIT_ATTRIBUTE,
+                                               SWT.PUSH | SWT.CENTER);
+        _editButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        gridData.widthHint = 80;
+        _editButton.setLayoutData(gridData);
+        _editButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    int index = _table.getSelectionIndex();
+                    TableItem item = _table.getItem(index);
+                    createDetailsPopup((AttributeData)item.getData());
+                    setFocus();
+                }
+            });
+    }
+    
+    private void addGraphButton()
+    {
+        _graphButton = _toolkit.createButton(_form.getBody(), 
+                                               Constants.BUTTON_GRAPH,
+                                               SWT.PUSH | SWT.CENTER);
+        _graphButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        gridData.widthHint = 80;
+        _graphButton.setLayoutData(gridData);
+        _graphButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent event)
+                {
+                    int selectionIndex = _table.getSelectionIndex();
+                    AttributeData data = (AttributeData)_table.getItem(selectionIndex).getData();
+                    createGraph(data);
+                    setFocus();
+                }
+            });
+    }
+    
+    private void addRefreshButton()
+    {    
+        // Create and configure the "Refresh" button
+        _refreshButton = _toolkit.createButton(_form.getBody(),
+                                               Constants.BUTTON_REFRESH,
+                                               SWT.PUSH | SWT.CENTER);
+
+        _refreshButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        gridData.widthHint = 80;
+        _refreshButton.setLayoutData(gridData);
+        _refreshButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    // refresh the attributes list                
+                    refresh(_mbean);
+                }
+            });
+    }
+
+    private void addTableListeners()
+    {
+        _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
+            public void selectionChanged(SelectionChangedEvent evt)
+            {
+                IStructuredSelection ss = (IStructuredSelection)evt.getSelection();
+                checkForEnablingButtons((AttributeData)ss.getFirstElement());
+            }
+        });
+        
+        MouseListenerImpl listener = new MouseListenerImpl();
+        _tableViewer.getTable().addMouseTrackListener(listener);
+        _tableViewer.getTable().addMouseMoveListener(listener);
+        _tableViewer.getTable().addMouseListener(listener);
+        
+        _table.addDisposeListener(tableDisposeListener);
+        
+        // _table is equal to _tableViewer.getControl()
+        _table.addListener(SWT.MeasureItem, new Listener() {  
+            public void handleEvent(Event event)
+            {    
+                event.height = event.gc.getFontMetrics().getHeight()  * 3/2;
+            }  
+        });  
+        
+        // Below to be worked on to set an image in front of each row.
+        /*
+        _table.addListener(SWT.PaintItem, new Listener() {  
+            public void handleEvent(Event event)
+            {    
+                int x = event.x + event.width;
+                Rectangle rect = image.getBounds();
+                int offset = Math.max(0, (event.height - rect.height) / 2);
+                event.gc.drawImage(image, event.x, event.y + offset);
+            }  
+        });
+        */ 
+    }
+    
+    private class MouseListenerImpl implements MouseTrackListener, MouseMoveListener,
+                                               KeyListener, MouseListener
+                                               
+    {
+        Shell tooltipShell = null;
+        Label tooltipLabel = null;
+        public void mouseHover(MouseEvent event)
+        {
+            TableItem item = _table.getItem (new Point (event.x, event.y));
+            
+            if (item != null)
+            {
+                AttributeData data = (AttributeData)item.getData();
+                if (tooltipShell != null  && !tooltipShell.isDisposed ()) tooltipShell.dispose ();
+                tooltipShell = new Shell(_table.getShell(), SWT.ON_TOP | SWT.NO_FOCUS | SWT.TOOL);
+                tooltipShell.setBackground(event.display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+                FillLayout layout = new FillLayout();
+                layout.marginWidth = 2;
+                tooltipShell.setLayout(layout);
+                tooltipLabel = new Label(tooltipShell, SWT.NONE);
+                tooltipLabel.setForeground(event.display.getSystemColor(SWT.COLOR_INFO_FOREGROUND));
+                tooltipLabel.setBackground(event.display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+                tooltipLabel.setText(data.getDescription());
+                tooltipLabel.setData("_TABLEITEM", item);
+                tooltipLabel.addListener(SWT.MouseExit, tooltipLabelListener);
+                tooltipLabel.addListener(SWT.MouseDown, tooltipLabelListener);
+                Point size = tooltipShell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+                Rectangle rect = item.getBounds(0);
+                Point pt = _table.toDisplay(rect.x, rect.y);
+                tooltipShell.setBounds(pt.x, pt.y, size.x, size.y);
+                tooltipShell.setVisible(true);
+            }
+        }
+        public void mouseEnter(MouseEvent e)
+        {
+        }
+        public void mouseExit(MouseEvent e)
+        {
+        }
+        
+        // MouseMoveListener implementation
+        public void mouseMove(MouseEvent event)
+        {
+            if (tooltipShell == null)
+                return;
+            
+            tooltipShell.dispose();
+            tooltipShell = null;
+            tooltipLabel = null;
+        }
+        
+        // KeyListener implementation
+        public void keyPressed(KeyEvent e)
+        {
+            if (tooltipShell == null)
+                return;
+            
+            tooltipShell.dispose();
+            tooltipShell = null;
+            tooltipLabel = null;
+        }     
+        public void keyReleased(KeyEvent e)
+        {
+            
+        }
+        
+        // MouseListener implementation
+        public void mouseDoubleClick(MouseEvent event)
+        {
+            if (tooltipShell != null)
+            {
+                tooltipShell.dispose();
+                tooltipShell = null;
+                tooltipLabel = null;
+            }
+            Table table = (Table)event.getSource();
+            int selectionIndex = table.getSelectionIndex();
+            AttributeData data = (AttributeData)table.getItem(selectionIndex).getData();
+            createDetailsPopup(data);
+        }
+        public void mouseDown(MouseEvent e)
+        {
+            if (tooltipShell != null)
+            {
+                tooltipShell.dispose();
+                tooltipShell = null;
+                tooltipLabel = null;
+            }
+        }
+        public void mouseUp(MouseEvent e)
+        {
+            
+        }
+    } // end of MouseListenerImpl
+    
+    public void createDetailsPopup(AttributeData data)
+    {
+        int width = 500;
+        int height = 250;
+        if (data.getValue() instanceof TabularDataSupport)
+        {
+            width = 650;
+            height = 450;
+        }
+        
+        Display display = Display.getCurrent();
+        Shell shell = ViewUtility.createPopupShell("Attribute", width, height);
+        createDetailsPopupContents(shell, data);
+
+        shell.open();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
+        shell.dispose();
+    }
+    
+    final Listener tooltipLabelListener = new Listener ()
+    {
+        public void handleEvent (Event event)
+        {
+            Label label = (Label)event.widget;
+            Shell shell = label.getShell();
+            switch (event.type)
+            {
+                case SWT.MouseDown:
+                    Event e = new Event();
+                    e.item = (TableItem)label.getData ("_TABLEITEM");
+                    _table.setSelection(new TableItem[] {(TableItem)e.item});
+                    shell.dispose();
+                    _table.setFocus();
+                    break;
+                case SWT.MouseExit:
+                    shell.dispose();
+                    break;
+            }
+        }
+    };
+    
+    
+    private void createDetailsPopupContents(Composite shell, AttributeData attribute)
+    {
+        GridLayout layout = new GridLayout(2, false);
+        layout.horizontalSpacing = 10;
+        layout.verticalSpacing = 10;
+        layout.marginHeight = 20;
+        layout.marginWidth = 20;
+        
+        Composite parent = new Composite(shell, SWT.NONE);
+        parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        parent.setLayout(layout);
+
+        // Name
+        Label label = new Label(parent, SWT.NONE);               
+        label.setText(_tableTitles[0]);
+        GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
+        label.setLayoutData(layoutData);
+        Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
+        value.setText(attribute.getName());
+        value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+        
+        // Description
+        label = new Label(parent, SWT.NONE);
+        label.setText(DESCRIPTION);
+        label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
+        value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
+        value.setText(attribute.getDescription());
+        value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        
+        // value
+        label = new Label(parent, SWT.NONE);
+        label.setText(_tableTitles[1]);
+        label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
+        
+        if (!attribute.isReadable())
+        {
+            value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
+            value.setText("");
+            value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        }
+        else
+        {
+            if (attribute.getValue() instanceof TabularDataSupport)
+            {
+                Composite composite = new Composite(parent, SWT.BORDER);
+                composite.setLayout(new GridLayout());
+                composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+                ViewUtility.createTabularDataHolder(composite,(TabularDataSupport)attribute.getValue());
+            }
+            else
+            {
+                int style = 0;
+                if (attribute.isWritable())
+                {
+                    style = SWT.BEGINNING | SWT.BORDER;
+                    value = new Text(parent, style);
+                    value.addVerifyListener(new VerifyListener()
+                        {
+                        public void verifyText(VerifyEvent event)
+                        {
+                            String string = event.text;
+                            char [] chars = new char [string.length ()];
+                            string.getChars (0, chars.length, chars, 0);
+                            for (int i=0; i<chars.length; i++)
+                            {
+                                if (!('0' <= chars [i] && chars [i] <= '9'))
+                                {
+                                    event.doit = false;
+                                    return;
+                                }
+                            }
+                        }
+                        });
+                    
+                    // set data to access in the listener
+                    parent.setData(attribute);
+                }
+                else
+                {
+                    style = SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY;
+                    value = new Text(parent, style);
+                }
+                
+                value.setText(attribute.getValue().toString());
+                value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+            }
+        }  
+        
+        
+        // Update button
+        Button updateButton = addUpdateButton(parent);
+        updateButton.setData(value);
+        if (!attribute.isWritable())
+        {
+            updateButton.setVisible(false);
+        }
+        
+        if (disableEditing)
+        {
+            value.setEditable(false);
+            updateButton.setVisible(false);
+        }
+    }
+    
+    private Button addUpdateButton(Composite parent)
+    {
+        final Button updateButton = new Button(parent, SWT.PUSH | SWT.CENTER);
+        // set the data to access in the listener
+        parent.setData(UPDATE_BUTTON, updateButton);
+        
+        updateButton.setText(UPDATE_BUTTON);
+        GridData gridData = new GridData (SWT.CENTER, SWT.BOTTOM, true, true, 2, 1);
+        gridData.widthHint = 100;
+        updateButton.setLayoutData(gridData);
+        updateButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent event)
+                {
+                    Button button = (Button)event.widget;
+                    Text text = (Text)button.getData();
+                    AttributeData data = (AttributeData)button.getParent().getData();
+                    MBeanUtility.updateAttribute(_mbean, data, text.getText());
+                    button.getShell().close();
+                    refresh();
+                }
+            });
+        
+        return updateButton;
+    }    
+
+    // Refresh from the server registry
+    private void refresh()
+    {
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(_mbean);
+        ManagedAttributeModel attributesList = serverRegistry.getAttributeModel(_mbean);
+        _tableViewer.setInput(attributesList);
+    }
+    
+    // Refreshes the attribute tab by querying the mbean server for latest values
+    @Override
+    public void refresh(ManagedBean mbean) 
+    {
+        _mbean = mbean;        
+        if (_mbean == null)
+        {
+            _tableViewer.setInput(null);
+            return;
+        }
+        ManagedAttributeModel attributesList = MBeanUtility.getAttributes(mbean);
+        _tableViewer.setInput(attributesList);
+        _table.setItemCount(attributesList.getCount());
+       
+        // No attribtue selected when refreshing the tab
+        checkForEnablingButtons(null);
+        _form.layout();
+    }
+    
+    public void setFocus()
+    {
+        _table.setFocus();
+    }
+    
+    private void checkForEnablingButtons(AttributeData attribute)
+    {
+        if (attribute == null)
+        {
+            _detailsButton.setEnabled(false);
+            _editButton.setEnabled(false);
+            _graphButton.setEnabled(false);
+            _refreshButton.setEnabled(false);
+            return;
+        }
+        
+        _detailsButton.setEnabled(true);
+        _refreshButton.setEnabled(true);
+        if (attribute.isWritable())
+        {
+            _editButton.setEnabled(true);
+            _graphButton.setEnabled(false);
+        }
+        else
+        {
+            _editButton.setEnabled(false);
+            if (attribute.isNumber())
+            {
+                _graphButton.setEnabled(true);
+            }
+            else
+            {
+                _graphButton.setEnabled(false);
+            }
+        }
+    }
+    
+    private void createGraph(final AttributeData data)
+    {       
+        Display display = Display.getCurrent();        
+        Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX);
+        shell.setText(_mbean.getName());
+        int x = display.getBounds().width;
+        int y = display.getBounds().height;
+        shell.setBounds(x/4, y/4, GRAPH_WIDTH, GRAPH_HEIGHT);
+        shell.setLayout(new FillLayout());
+        
+        final Canvas canvas = new Canvas(shell, SWT.NONE);
+        long currentValue = Long.parseLong(data.getValue().toString());
+        long mValue = getGraphMaxValue(currentValue);
+        canvas.setData(MAX_VALUE, mValue); 
+        canvas.setData(GRAPH_VALUES, new long[] {0,0,0,0,0,currentValue});
+        
+        canvas.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+        canvas.addPaintListener(new PaintListener()
+            {
+                public void paintControl(PaintEvent event)
+                {
+                    Canvas canvas = (Canvas)event.widget;
+                    int maxX = canvas.getSize().x;
+                    int maxY = canvas.getSize().y;
+                    event.gc.fillRectangle(canvas.getBounds());
+                    event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+                    event.gc.setLineWidth(4);
+                    
+                    Object canvasData = canvas.getData(MAX_VALUE);
+                    String str = canvasData.toString();
+                    long maxValue = Long.parseLong(str);
+                    // Set the graph dimensions
+                    event.gc.drawText("0", startX - 40, maxY - startY - 10);
+                    event.gc.drawText("" + maxValue/2, startX - 40, maxY/2);
+                    event.gc.drawText("" + maxValue, startX - 40, startY);
+                    
+                    // horizontal line
+                    event.gc.drawLine(startX, maxY - startY, maxX - 60, maxY - startY);
+                    // vertical line
+                    event.gc.drawLine(startX, maxY - startY, startX, startY);
+                    // set graph text
+                    event.gc.drawText(data.getName(), startX - 40, startY - 40);
+                    event.gc.drawText("25 sec", startX, maxY - startY + 10);
+                    event.gc.drawText("20 sec", startX + GRAPH_ITEM_GAP, maxY - startY + 10);
+                    event.gc.drawText("15 sec", startX + GRAPH_ITEM_GAP * 2, maxY - startY + 10);
+                    event.gc.drawText("10 sec", startX + GRAPH_ITEM_GAP * 3, maxY - startY + 10);
+                    event.gc.drawText(" 5 sec", startX + GRAPH_ITEM_GAP * 4, maxY - startY + 10);
+                    event.gc.drawText(" 0 sec", startX + GRAPH_ITEM_GAP * 5, maxY - startY + 10);
+                    
+                    // plot the graph now for values
+                    event.gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
+                    canvasData = canvas.getData(GRAPH_VALUES);
+                    long[] graphValues = (long[]) canvasData;
+                    for (int i = 0; i < graphValues.length; i++)
+                    {
+                        int x = startX + i * GRAPH_ITEM_GAP;
+                        int yTotalLength = (maxY - 2 * startY);
+                        float ratio = ((float)graphValues[i]/(float)maxValue);
+                        int itemlength = (int)(yTotalLength *  ratio);
+                        int y = maxY - startY - itemlength;
+                        event.gc.drawLine(x, maxY- startY, x, y);
+                        event.gc.drawText(String.valueOf(graphValues[i]), x, y - 20);
+                    }
+                }            
+            });
+        
+        shell.open();
+        
+        // Set up the timer for the animation
+        Runnable runnable = new Runnable()
+        {
+          public void run()
+          {
+            try
+            {
+                animate(canvas, data);
+                Display.getCurrent().timerExec(Constants.TIMER_INTERVAL, this);
+            }
+            catch(Exception ex)
+            {
+                MBeanUtility.handleException(ex);
+            }
+          }
+        };
+
+        // Launch the timer
+        display.timerExec(Constants.TIMER_INTERVAL, runnable);
+        
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
+        
+        // Kill the timer
+        display.timerExec(-1, runnable);
+        shell.dispose();
+    }
+    
+    public AttributeData getSelectionAttribute()
+    {
+        int index = _table.getSelectionIndex();
+        if (index == -1)
+            return null;
+        
+        return (AttributeData)_table.getItem(index).getData();
+    }
+    
+    private void animate(Canvas canvas, AttributeData data) throws Exception
+    {
+        String attribute = data.getName();
+        int value = MBeanUtility.refreshAttribute(_mbean, attribute);
+        Object canvasData = canvas.getData(GRAPH_VALUES);
+        long[] graphValues = (long[]) canvasData;
+        
+        for (int i = 0; i < graphValues.length -1; i++)
+        {
+            graphValues[i] = graphValues[i + 1];            
+        }
+        graphValues[graphValues.length - 1] = value;
+        
+        canvasData = canvas.getData(MAX_VALUE);
+        long maxValue = Long.parseLong(String.valueOf(canvasData));
+        if (maxValue < value)
+        {
+            maxValue = getGraphMaxValue(value);
+            canvas.setData(MAX_VALUE, maxValue);
+        }
+        
+        canvas.redraw();
+    }
+    
+    private long getGraphMaxValue(long maxAttributeValue)
+    {
+        long maxGraphValue = 100;
+        long temp = maxAttributeValue * 3/2;
+        if (temp > maxGraphValue)
+        {
+            long modulus = temp % 100;
+            maxGraphValue = temp + ( 100 - modulus);
+        } 
+        
+        return maxGraphValue;
+    }
+    
+    private class ContentProviderImpl  implements IStructuredContentProvider
+    {
+        
+        public void inputChanged(Viewer v, Object oldInput, Object newInput)
+        {
+            
+        }
+        
+        public void dispose()
+        {
+            
+        }
+        
+        public Object[] getElements(Object parent)
+        {
+            return ((ManagedAttributeModel)parent).getAttributes();
+        }
+    }
+    
+    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider, 
+                                                                     IFontProvider,
+                                                                     IColorProvider
+    {
+
+        AttributeData attribute = null;
+        public String getColumnText(Object element, int columnIndex)
+        {
+            String result = "";
+            attribute = (AttributeData) element;
+            
+            switch (columnIndex)
+            {
+                case 0 : // attribute name column 
+                    result = ViewUtility.getDisplayText(attribute.getName());
+                    break;
+                case 1 : // attribute value column 
+                    if (attribute.getValue() != null)
+                        result = String.valueOf(attribute.getValue());
+                    break;
+                default :
+                    result = "";
+            }
+            
+            return result;
+        }
+        
+        public Image getColumnImage(Object element, int columnIndex)
+        {
+            return null;
+        }
+        
+        public Font getFont(Object element)
+        {
+            return ApplicationRegistry.getFont(Constants.FONT_TABLE_CELL);
+        }
+        
+        public Color getForeground(Object element)
+        {
+            attribute = (AttributeData) element;
+            if (attribute.isWritable())
+                return Display.getCurrent().getSystemColor(SWT.COLOR_DARK_BLUE);
+            else
+                return Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
+        }
+        public Color getBackground(Object element)
+        {
+            return _form.getBackground();
+        }
+    }
+    
+    private class DisposeListenerImpl implements DisposeListener
+    {
+        public void widgetDisposed(DisposeEvent e)
+        {
+            
+        }
+    }
+    
+    /*
+    class TableCellModifier implements ICellModifier 
+    {
+        
+        public boolean canModify(Object element, String property)
+        {
+            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
+            if (columnIndex == 0)
+                return false;
+            
+            return true;
+        }
+        
+        public Object getValue(Object element, String property) {
+
+            // Find the index of the column
+            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
+            Attribute attribute = (Attribute)element;
+     
+            
+            Object result = null;
+            
+            switch (columnIndex)
+            {
+                case 0 : // attribute name column 
+                    result = attribute.getName();
+                    break;
+                case 1 : // attribute value column 
+                    result = attribute.getValue();
+                    break;
+                default :
+                    result = "";
+            }
+            
+            return result;
+        }
+        
+        
+        public void modify(Object element, String property, Object value)
+        {
+            // Find the index of the column
+            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
+            
+            if (columnIndex == 1)
+            {
+                //TODO
+                // update the attribute value and call the MBean setAttribute method
+                // then refresh the attribute tab with new values
+            }
+        }
+    }
+    */
+    
+}
