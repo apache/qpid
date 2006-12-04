@@ -20,7 +20,6 @@
  */
 using System;
 using System.Net;
-using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Qpid.Client.qms;
 
