@@ -103,7 +103,7 @@ namespace Qpid.Client.Tests.failover
             _connection.ConnectionListener = this;
             _log.Info("connection = " + _connection);
             _log.Info("connectionInfo = " + connectionInfo);
-            _log.Info("connection.asUrl = " + _connection.toURL());
+            _log.Info("connection.AsUrl = " + _connection.toURL());
 
             _log.Info("AcknowledgeMode is " + _acknowledgeMode);
             IChannel receivingChannel = _connection.CreateChannel(false, _acknowledgeMode);

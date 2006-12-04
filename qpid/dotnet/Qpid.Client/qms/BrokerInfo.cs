@@ -26,7 +26,7 @@ namespace Qpid.Client.qms
     /// Know URL option names.
     /// <seealso cref="ConnectionInfo"/>
     /// </summary>
-    public class BrokerDetailsConstants
+    public class BrokerInfoConstants
     {
         public const String OPTIONS_RETRY = "retries";
         public const String OPTIONS_SSL = ConnectionUrlConstants.OPTIONS_SSL;

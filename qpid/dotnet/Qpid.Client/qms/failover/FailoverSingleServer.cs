@@ -45,9 +45,9 @@ namespace Qpid.Client.qms.failover
 
         public FailoverSingleServer(ConnectionInfo connectionDetails)
         {
-            if (connectionDetails.getBrokerCount() > 0)
+            if (connectionDetails.GetBrokerCount() > 0)
             {
-                setBroker(connectionDetails.GetBrokerDetails(0));
+                setBroker(connectionDetails.GetBrokerInfo(0));
             }
             else
             {
@@ -105,7 +105,7 @@ namespace Qpid.Client.qms.failover
             }
             _brokerDetail = broker;
 
-            String retries = broker.getOption(BrokerDetailsConstants.OPTIONS_RETRY);
+            String retries = broker.getOption(BrokerInfoConstants.OPTIONS_RETRY);
             if (retries != null)
             {
                 try
