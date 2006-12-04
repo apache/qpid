@@ -26,19 +26,20 @@ endif
 EXTRA_DIST += timestamp
 $(generated_sources): timestamp
 
-EXTRA_DIST += gen-src.mk
+DISTCLEANFILES = gen-src.mk
 gen-src.mk: timestamp
 	( echo 'generated_sources = \'					\
 	  && ls *.cpp *.h | sort -u | sed 's/.*/  & \\/;$$s/ \\//'	\
 	) > $@-t
 if BUILD_IN_MESSAGE_TREE
-	( echo 'java_sources = \'					\
+	( echo if BUILD_IN_MESSAGE_TREE;				\
+	  echo 'java_sources = \'					\
 	    && find $(gentools_srcdir) -name '*.java'			\
-		| sort -u | sed 's/.*/  & \\/;$$s/ \\//'		\
-	) >> $@-t
-	( echo 'cxx_templates = \'					\
+		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
+	  echo 'cxx_templates = \'					\
 	    && find $(gentools_dir)/templ.cpp -name '*.tmpl'		\
-		| sort -u | sed 's/.*/  & \\/;$$s/ \\//'		\
+		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
+	  echo endif							\
 	) >> $@-t
 endif
 	mv $@-t $@
