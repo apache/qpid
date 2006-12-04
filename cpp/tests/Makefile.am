@@ -1,4 +1,4 @@
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)
 INCLUDES =				\
   -I$(top_srcdir)/gen			\
   -I$(top_srcdir)/lib			\
@@ -8,8 +8,6 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/sys	\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
-
-# FIXME: -lcppunit must come from autoconf
 
 # FIXME: have e.g., topicall, run as part of "make check"?
 EXTRA_DIST =		\
@@ -80,7 +78,7 @@ run-python-tests: $(check_LTLIBRARIES)
 include gen.mk
 
 abs_builddir = @abs_builddir@
-extra_libs = -lcppunit
+extra_libs = $(CPPUNIT_LIBS)
 lib_client = $(abs_builddir)/../lib/client/libclient.la
 lib_common = $(abs_builddir)/../lib/common/libcommon.la
 lib_broker = $(abs_builddir)/../lib/broker/libbroker.la
