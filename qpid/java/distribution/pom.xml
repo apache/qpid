@@ -34,6 +34,7 @@
         <topDirectoryLocation>..</topDirectoryLocation>
         <java.source.version>1.5</java.source.version>
         <qpid.version>${pom.version}</qpid.version>
+        <qpid.targetDir>${project.build.directory}</qpid.targetDir>
     </properties>
 
     <dependencies>
@@ -74,6 +75,7 @@
                             <descriptor>src/main/assembly/bin.xml</descriptor>
                         </descriptors>
                         <finalName>qpid-${pom.version}</finalName>
+                        <outputDirectory>${qpid.targetDir}</outputDirectory>
                     </configuration>
                 </plugin>
                 <plugin>
