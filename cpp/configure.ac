@@ -33,6 +33,19 @@ AC_ARG_ENABLE(warnings,
  esac],
  [enableval=yes])
 
+# Turn on this automake conditional if we are in a qpid
+# hierarchy (i.e. with gentools/ and specs/ sibling directories),
+# and if we have working java + javac.
+build=yes
+AC_CHECK_PROGS([JAVA],  [java],  [no])
+AC_CHECK_PROGS([JAVAC], [javac], [no])
+build=yes
+test x$JAVA  = xno && build=no
+test x$JAVAC = xno && build=no
+test -d $srcdir/../gentools || build=no
+test -d $srcdir/../specs    || build=no
+AM_CONDITIONAL([BUILD_IN_MESSAGE_TREE], [test x$build = xyes])
+
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
 # qpid-dev list.
