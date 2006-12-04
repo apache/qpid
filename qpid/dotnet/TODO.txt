@@ -1,6 +1,4 @@
 
-* Port Connection URL support.
-
 * Implement durable subscriptions.
 
 * SSL. SSLStream composed over NetworkStream.
