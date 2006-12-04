@@ -39,15 +39,16 @@ namespace Qpid.Client.qms
       */
     public interface ConnectionInfo
     {
-        string asUrl();
+        string AsUrl();
 
-        string getFailoverMethod();
+        string GetFailoverMethod();
+        void SetFailoverMethod(string failoverMethod);
 
-        string getFailoverOption(string key);
+        string GetFailoverOption(string key);
 
-        int getBrokerCount();
+        int GetBrokerCount();
 
-        BrokerInfo GetBrokerDetails(int index);
+        BrokerInfo GetBrokerInfo(int index);
 
         void AddBrokerInfo(BrokerInfo broker);
 
@@ -57,20 +58,20 @@ namespace Qpid.Client.qms
 
         void SetClientName(string clientName);
 
-        string getUsername();
+        string GetUsername();
 
         void setUsername(string username);
 
-        string getPassword();
+        string GetPassword();
 
-        void setPassword(string password);
+        void SetPassword(string password);
 
-        string getVirtualHost();
+        string GetVirtualHost();
 
-        void setVirtualHost(string virtualHost);
+        void SetVirtualHost(string virtualHost);
 
-        string getOption(string key);
+        string GetOption(string key);
 
-        void setOption(string key, string value);
+        void SetOption(string key, string value);
     }
 }

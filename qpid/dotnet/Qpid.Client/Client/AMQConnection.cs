@@ -128,7 +128,7 @@ namespace Qpid.Client
             }
             _log.Info("ConnectionInfo: " + connectionInfo);
             _connectionInfo = connectionInfo;
-            _log.Info("password = " + _connectionInfo.getPassword());
+            _log.Info("password = " + _connectionInfo.GetPassword());
             _failoverPolicy = new FailoverPolicy(connectionInfo);
 
             // We are not currently connected.
@@ -503,7 +503,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.getUsername();
+                return _connectionInfo.GetUsername();
             }
         }
 
@@ -511,7 +511,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.getPassword();
+                return _connectionInfo.GetPassword();
             }
         }
 
@@ -519,7 +519,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.getVirtualHost();
+                return _connectionInfo.GetVirtualHost();
             }
         }
 
@@ -796,7 +796,7 @@ namespace Qpid.Client
 
         public String toURL()
         {
-            return _connectionInfo.asUrl();
+            return _connectionInfo.AsUrl();
         }
 
         class HeartBeatThread
