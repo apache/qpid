@@ -110,7 +110,14 @@ public class PropertyValueTest extends TestCase implements MessageListener
 //            m.setIntProperty("Int", (int) Integer.MAX_VALUE);
             m.setJMSCorrelationID("Correlation");
             m.setJMSPriority(100);
-            m.setJMSReplyTo(_session.createQueue("TestReply"));
+
+            // Set Q
+            //m.setJMSReplyTo(_session.Queue("TestReply"));
+
+            // Temporary Queue
+            Queue q = _session.createTemporaryQueue();
+            m.setJMSReplyTo(q);//Queue("TestReply"));
+            m.setStringProperty("TempQueue", q.toString());
 //            m.setJMSType("Test");
             m.setLongProperty("UnsignedInt", (long) 4294967295L);
 //            m.setLongProperty("Long", (long) Long.MAX_VALUE);
@@ -157,8 +164,15 @@ public class PropertyValueTest extends TestCase implements MessageListener
                                 "Correlation", m.getJMSCorrelationID());
 //            Assert.assertEquals("Check Priority properties are correctly transported",
 //                                100, m.getJMSPriority());
+
+            //Set Queue
+//            Assert.assertEquals("Check ReplyTo properties are correctly transported",
+//                                _session.createQueue("TestReply"), m.getJMSReplyTo());
+
+            //Temporary Queue
             Assert.assertEquals("Check ReplyTo properties are correctly transported",
-                                _session.createQueue("TestReply"), m.getJMSReplyTo());
+                                m.getStringProperty("TempQueue"), m.getJMSReplyTo().toString());
+
 //            Assert.assertEquals("Check Type properties are correctly transported",
 //                                "Test", m.getJMSType());
 //            Assert.assertEquals("Check Short properties are correctly transported",
