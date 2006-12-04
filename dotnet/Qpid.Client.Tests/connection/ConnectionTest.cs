@@ -43,7 +43,7 @@ namespace Qpid.Client.Tests.connection
         public void passwordFailureConnection()
         {
             ConnectionInfo connectionInfo = new QpidConnectionInfo();
-            connectionInfo.setPassword("rubbish");
+            connectionInfo.SetPassword("rubbish");
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo());
             try
             {

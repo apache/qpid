@@ -65,7 +65,7 @@ namespace Qpid.Client.qms.failover
 
         public FailoverRoundRobin(ConnectionInfo connectionDetails)
         {
-            if (!(connectionDetails.getBrokerCount() > 0))
+            if (!(connectionDetails.GetBrokerCount() > 0))
             {
                 throw new ArgumentException("At least one broker details must be specified.");
             }
@@ -75,7 +75,7 @@ namespace Qpid.Client.qms.failover
             //There is no current broker at startup so set it to -1.
             _currentBrokerIndex = -1;
 
-            String cycleRetries = _connectionDetails.getFailoverOption(ConnectionUrlConstants.OPTIONS_FAILOVER_CYCLE);
+            String cycleRetries = _connectionDetails.GetFailoverOption(ConnectionUrlConstants.OPTIONS_FAILOVER_CYCLE);
 
             if (cycleRetries != null)
             {
@@ -106,7 +106,7 @@ namespace Qpid.Client.qms.failover
         {
             return ((_currentCycleRetries < _cycleRetries)
                    || (_currentServerRetry < _serverRetries)
-                   || (_currentBrokerIndex < (_connectionDetails.getBrokerCount() - 1)));
+                   || (_currentBrokerIndex < (_connectionDetails.GetBrokerCount() - 1)));
         }
 
         public void attainedConnection()
@@ -122,12 +122,12 @@ namespace Qpid.Client.qms.failover
                 return null;
             }
 
-            return _connectionDetails.GetBrokerDetails(_currentBrokerIndex);
+            return _connectionDetails.GetBrokerInfo(_currentBrokerIndex);
         }
 
         public BrokerInfo getNextBrokerDetails()
         {
-            if (_currentBrokerIndex == (_connectionDetails.getBrokerCount() - 1))
+            if (_currentBrokerIndex == (_connectionDetails.GetBrokerCount() - 1))
             {
                 if (_currentServerRetry < _serverRetries)
                 {
@@ -135,13 +135,13 @@ namespace Qpid.Client.qms.failover
                     {
                         _currentBrokerIndex = 0;
 
-                        setBroker(_connectionDetails.GetBrokerDetails(_currentBrokerIndex ));
+                        setBroker(_connectionDetails.GetBrokerInfo(_currentBrokerIndex ));
 
-                        _logger.Info("First Run using " + _connectionDetails.GetBrokerDetails(_currentBrokerIndex));
+                        _logger.Info("First Run using " + _connectionDetails.GetBrokerInfo(_currentBrokerIndex));
                     }
                     else
                     {
-                        _logger.Info("Retrying " + _connectionDetails.GetBrokerDetails(_currentBrokerIndex));
+                        _logger.Info("Retrying " + _connectionDetails.GetBrokerInfo(_currentBrokerIndex));
                     }
 
                     _currentServerRetry++;
@@ -152,7 +152,7 @@ namespace Qpid.Client.qms.failover
                     //failed to connect to first broker
                     _currentBrokerIndex = 0;
 
-                    setBroker(_connectionDetails.GetBrokerDetails(_currentBrokerIndex ));
+                    setBroker(_connectionDetails.GetBrokerInfo(_currentBrokerIndex ));
 
                     // This is zero rather than -1 as we are already retrieving the details.
                     _currentServerRetry = 0;
@@ -167,13 +167,13 @@ namespace Qpid.Client.qms.failover
                     {
                         _currentBrokerIndex = 0;
 
-                        setBroker(_connectionDetails.GetBrokerDetails(_currentBrokerIndex ));
+                        setBroker(_connectionDetails.GetBrokerInfo(_currentBrokerIndex ));
 
-                        _logger.Info("First Run using " + _connectionDetails.GetBrokerDetails(_currentBrokerIndex));
+                        _logger.Info("First Run using " + _connectionDetails.GetBrokerInfo(_currentBrokerIndex));
                     }
                     else
                     {
-                        _logger.Info("Retrying " + _connectionDetails.GetBrokerDetails(_currentBrokerIndex));
+                        _logger.Info("Retrying " + _connectionDetails.GetBrokerInfo(_currentBrokerIndex));
                     }
                     _currentServerRetry++;
                 }
@@ -181,13 +181,13 @@ namespace Qpid.Client.qms.failover
                 {
                     _currentBrokerIndex++;
 
-                     setBroker(_connectionDetails.GetBrokerDetails(_currentBrokerIndex ));
+                     setBroker(_connectionDetails.GetBrokerInfo(_currentBrokerIndex ));
                     // This is zero rather than -1 as we are already retrieving the details.
                     _currentServerRetry = 0;
                 }
             }
 
-            return _connectionDetails.GetBrokerDetails(_currentBrokerIndex);
+            return _connectionDetails.GetBrokerInfo(_currentBrokerIndex);
         }
 
         public void setBroker(BrokerInfo broker)
@@ -196,7 +196,7 @@ namespace Qpid.Client.qms.failover
 
             int index = _connectionDetails.GetAllBrokerInfos().IndexOf(broker);
 
-            String serverRetries = broker.getOption(BrokerDetailsConstants.OPTIONS_RETRY);
+            String serverRetries = broker.getOption(BrokerInfoConstants.OPTIONS_RETRY);
 
             if (serverRetries != null)
             {
@@ -230,7 +230,7 @@ namespace Qpid.Client.qms.failover
 
             sb.Append(GetType().Name).Append("\n");
 
-            sb.Append("Broker count: ").Append(_connectionDetails.getBrokerCount());
+            sb.Append("Broker count: ").Append(_connectionDetails.GetBrokerCount());
             sb.Append("\ncurrent broker index: ").Append(_currentBrokerIndex);
 
             sb.Append("\nCycle Retries: ").Append(_cycleRetries);
@@ -239,13 +239,13 @@ namespace Qpid.Client.qms.failover
             sb.Append("\nCurrent Retry:").Append(_currentServerRetry);
             sb.Append("\n");
 
-            for(int i=0; i < _connectionDetails.getBrokerCount() ; i++)
+            for(int i=0; i < _connectionDetails.GetBrokerCount() ; i++)
             {
                 if (i == _currentBrokerIndex)
                 {
                     sb.Append(">");
                 }
-                sb.Append(_connectionDetails.GetBrokerDetails(i));
+                sb.Append(_connectionDetails.GetBrokerInfo(i));
                 sb.Append("\n");
             }
 

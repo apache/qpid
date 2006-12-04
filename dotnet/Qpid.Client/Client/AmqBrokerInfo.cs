@@ -28,7 +28,7 @@ namespace Qpid.Client
     public class AmqBrokerInfo : BrokerInfo
     {
         public readonly string URL_FORMAT_EXAMPLE =
-            "<transport>://<hostname>[:<port Default=\""+BrokerDetailsConstants.DEFAULT_PORT+"\">][?<option>='<value>'[,<option>='<value>']]";
+            "<transport>://<hostname>[:<port Default=\""+BrokerInfoConstants.DEFAULT_PORT+"\">][?<option>='<value>'[,<option>='<value>']]";
 
         public const long DEFAULT_CONNECT_TIMEOUT = 30000L;
 
@@ -41,106 +41,133 @@ namespace Qpid.Client
         {
         }
 
-        // TODO: port URL parsing.
         public AmqBrokerInfo(string url)
         {
-            throw new NotImplementedException();
-//            this();
-//            // URL should be of format tcp://host:port?option='value',option='value'
-//            try
-//            {
-//                URI connection = new URI(url);
-//
-//                string transport = connection.getScheme();
-//
-//                // Handles some defaults to minimise changes to existing broker URLS e.g. localhost
-//                if (transport != null)
+            // URL should be of format tcp://host:port?option='value',option='value'
+            try
+            {
+                Uri connection = new Uri(url);
+
+                String transport = connection.Scheme;
+
+                // Handles some defaults to minimise changes to existing broker URLS e.g. localhost
+                if (transport != null)
+                {
+                    transport = transport.ToLower();
+                    //todo this list of valid transports should be enumerated somewhere
+                    if ((!(transport.Equals("vm") || transport.Equals("tcp"))))
+                    {
+                        if (transport.Equals("localhost"))
+                        {
+                            connection = new Uri(BrokerInfoConstants.DEFAULT_TRANSPORT + "://" + url);
+                            transport = connection.Scheme;
+                        }
+                        else
+                        {
+                            if (url[transport.Length] == ':' && url[transport.Length + 1] != '/')
+                            {
+                                //Then most likely we have a host:port value
+                                connection = new Uri(BrokerInfoConstants.DEFAULT_TRANSPORT + "://" + url);
+                                transport = connection.Scheme;
+                            }
+                            else
+                            {
+                                URLHelper.parseError(0, transport.Length, "Unknown transport", url);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    //Default the transport
+                    connection = new Uri(BrokerInfoConstants.DEFAULT_TRANSPORT + "://" + url);
+                    transport = connection.Scheme;
+                }
+
+                if (transport == null)
+                {
+                    URLHelper.parseError(-1, "Unknown transport:'" + transport + "'" +
+                                             " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
+                }
+
+                setTransport(transport);
+
+                String host = connection.Host;
+                if (!host.Equals("default")) setHost(host);
+
+                int port = connection.Port;
+
+                if (port == -1)
+                {
+                    // Fix for when there is port data but it is not automatically parseable by getPort().
+                    String auth = connection.Authority;
+
+                    if (auth != null && auth.Contains(":"))
+                    {
+                        int start = auth.IndexOf(":") + 1;
+                        int end = start;
+                        bool looking = true;
+                        bool found = false;
+                        //Walk the authority looking for a port value.
+                        while (looking)
+                        {
+                            try
+                            {
+                                end++;
+                                int.Parse(auth.Substring(start, end-start+1));
+
+                                if (end >= auth.Length)
+                                {
+                                    looking = false;
+                                    found = true;
+                                }
+                            }
+                            catch (Exception nfe) // XXX: should catch only "NumberFormatException" here
+                            {
+                                looking = false;
+                            }
+
+                        }
+                        if (found)
+                        {
+                            setPort(int.Parse(auth.Substring(start, end-start+1)));
+                        }
+                        else
+                        {
+                            URLHelper.parseError(connection.ToString().IndexOf(connection.Authority) + end - 1,
+                                                 "Illegal character in port number", connection.ToString());
+                        }
+                    }
+                    else
+                    {
+                        setPort(BrokerInfoConstants.DEFAULT_PORT);
+                    }
+                }
+                else
+                {
+                    setPort(port);
+                }
+
+                String queryString = connection.Query;
+                if (queryString.Length > 0 && queryString[0] == '?')
+                {
+                    queryString = queryString.Substring(1);
+                }
+
+                URLHelper.parseOptions(_options, queryString);
+
+                //Fragment is #string (not used)
+            }
+            catch (UriFormatException uris)
+            {
+                throw uris;
+//                if (uris is UrlSyntaxException)
 //                {
-//                    //todo this list of valid transports should be enumerated somewhere
-//                    if ((!(transport.equalsIgnoreCase("vm") ||
-//                            transport.equalsIgnoreCase("tcp"))))
-//                    {
-//                        if (transport.equalsIgnoreCase("localhost"))
-//                        {
-//                            connection = new URI(DEFAULT_TRANSPORT + "://" + url);
-//                            transport = connection.getScheme();
-//                        }
-//                        else
-//                        {
-//                            if (url.charAt(transport.length()) == ':' && url.charAt(transport.length()+1) != '/' )
-//                            {
-//                                //Then most likely we have a host:port value
-//                                connection = new URI(DEFAULT_TRANSPORT + "://" + url);
-//                                transport = connection.getScheme();
-//                            }
-//                            else
-//                            {
-//                                URLHelper.parseError(0, transport.length(), "Unknown transport", url);
-//                            }
-//                        }
-//                    }
-//                }
-//                else
-//                {
-//                    //Default the transport
-//                    connection = new URI(DEFAULT_TRANSPORT + "://" + url);
-//                    transport = connection.getScheme();
-//                }
-//
-//                if (transport == null)
-//                {
-//                    URLHelper.parseError(-1, "Unknown transport:'" + transport + "'" +
-//                            " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
-//                }
-//
-//                setTransport(transport);
-//
-//                string host = connection.getHost();
-//
-//                // Fix for Java 1.5
-//                if (host == null)
-//                {
-//                    host = "";
-//                }
-//
-//                setHost(host);
-//
-//                int port = connection.getPort();
-//
-//                if (port == -1)
-//                {
-//                    // Another fix for Java 1.5 URI handling
-//                    string auth = connection.getAuthority();
-//
-//                    if (auth != null && auth.startsWith(":"))
-//                    {
-//                        setPort(Integer.parseInt(auth.substring(1)));
-//                    }
-//                    else
-//                    {
-//                        setPort(DEFAULT_PORT);
-//                    }
-//                }
-//                else
-//                {
-//                    setPort(port);
-//                }
-//
-//                string querystring = connection.getQuery();
-//
-//                URLHelper.parseOptions(_options, querystring);
-//
-//                //Fragment is #string (not used)
-//            }
-//            catch (URISyntaxException uris)
-//            {
-//                if (uris instanceof URLSyntaxException)
-//                {
-//                    throw (URLSyntaxException) uris;
+//                    throw uris;
 //                }
 //
 //                URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
-//            }
+            }
         }
 
         public AmqBrokerInfo(string transport, string host, int port, bool useSSL) : this()
@@ -151,7 +178,7 @@ namespace Qpid.Client
 
             if (useSSL)
             {
-                setOption(BrokerDetailsConstants.OPTIONS_SSL, "true");
+                setOption(BrokerInfoConstants.OPTIONS_SSL, "true");
             }
         }
 
@@ -197,11 +224,11 @@ namespace Qpid.Client
 
         public long getTimeout()
         {
-            if (_options.ContainsKey(BrokerDetailsConstants.OPTIONS_CONNECT_TIMEOUT))
+            if (_options.ContainsKey(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT))
             {
                 try
                 {
-                    return long.Parse((string)_options[BrokerDetailsConstants.OPTIONS_CONNECT_TIMEOUT]);
+                    return long.Parse((string)_options[BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT]);
                 }
                 catch (FormatException)
                 {
@@ -209,12 +236,12 @@ namespace Qpid.Client
                 }
             }
 
-            return BrokerDetailsConstants.DEFAULT_CONNECT_TIMEOUT;
+            return BrokerInfoConstants.DEFAULT_CONNECT_TIMEOUT;
         }
 
         public void setTimeout(long timeout)
         {
-            setOption(BrokerDetailsConstants.OPTIONS_CONNECT_TIMEOUT, timeout.ToString());
+            setOption(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT, timeout.ToString());
         }
 
         public override string ToString()
@@ -247,8 +274,9 @@ namespace Qpid.Client
 	
 	        BrokerInfo bd = (BrokerInfo) obj;
 	        return StringEqualsIgnoreCase(_host, bd.getHost()) &&
-	        	_port == bd.getPort();
-		}
+	        	_port == bd.getPort() &&
+                _transport == bd.getTransport();
+        }
     	
 		public override int GetHashCode()
 		{
@@ -296,9 +324,9 @@ namespace Qpid.Client
             // or simply force users to conform to OPTIONS_SSL
             // todo make case insensitive by trying ssl Ssl sSl ssL SSl SsL sSL SSL
 
-            if (_options.ContainsKey(BrokerDetailsConstants.OPTIONS_SSL))
+            if (_options.ContainsKey(BrokerInfoConstants.OPTIONS_SSL))
             {
-                return StringEqualsIgnoreCase((string)_options[BrokerDetailsConstants.OPTIONS_SSL], "true");
+                return StringEqualsIgnoreCase((string)_options[BrokerInfoConstants.OPTIONS_SSL], "true");
             }
 
             return false;
@@ -306,7 +334,7 @@ namespace Qpid.Client
 
         public void useSSL(bool ssl)
         {
-            setOption(BrokerDetailsConstants.OPTIONS_SSL, ssl.ToString());
+            setOption(BrokerInfoConstants.OPTIONS_SSL, ssl.ToString());
         }
     }
 }

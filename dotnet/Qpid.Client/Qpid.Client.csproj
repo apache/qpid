@@ -103,6 +103,7 @@
     <Compile Include="qms\failover\FailoverMethod.cs" />
     <Compile Include="qms\failover\FailoverRoundRobin.cs" />
     <Compile Include="qms\failover\FailoverSingleServer.cs" />
+    <Compile Include="qms\UrlSyntaxException.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Qpid.Codec\Qpid.Codec.csproj">
