@@ -176,9 +176,16 @@ public class CppGenerator extends Generator
 	{
 		String domainType = getDomainType(domainName, version);
 		if (domainType == null)
+        {
 			throw new AmqpTypeMappingException("Domain type \"" + domainName +
 				"\" not found in C++ typemap.");
-		return typeMap.get(domainType).type;
+        }
+        DomainInfo info = typeMap.get(domainType);
+        if (info == null)
+        {
+            throw new AmqpTypeMappingException("Unknown domain: \"" + domainType + "\"");
+        }
+        return info.type;
 	}
 	
 	// === Abstract methods from class Generator - C++-specific implementation ===
