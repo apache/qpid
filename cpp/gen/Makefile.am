@@ -1,6 +1,3 @@
-# TODO aconway 2006-11-30: nasty hack, should be done by automake?
-abs_srcdir = @abs_srcdir@
-
 include gen-src.mk
 
 BUILT_SOURCES = $(generated_sources)
@@ -10,21 +7,20 @@ BUILT_SOURCES = $(generated_sources)
 EXTRA_DIST = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 
-gentools_dir = $(abs_srcdir)/../../gentools
-spec_dir = $(abs_srcdir)/../../specs
+gentools_dir = $(srcdir)/../../gentools
+spec_dir = $(srcdir)/../../specs
 spec = $(spec_dir)/amqp-8.0.xml
+gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
-# FIXME: add dependencies?
-timestamp: $(spec)
-	if test -d $(gentools_dir); then			\
-	  rm -f $(generated_sources);				\
-	  (cd $(gentools_dir)/src/org/apache/qpid/gentools &&	\
-	   rm -f *.class && javac *.java);			\
-	  java -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
-	    -c -o . -t $(gentools_dir)/templ.cpp $(spec);	\
-	else							\
-	  echo "warning: failed to regenerate gen/*.{cpp,h}" 1>&2;	\
-	fi
+timestamp: $(spec) $(java_sources) $(cxx_templates)
+if BUILD_IN_MESSAGE_TREE
+	rm -f $(generated_sources)
+	(cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java);	\
+	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main	\
+	  -c -o . -t $(gentools_dir)/templ.cpp $(spec)
+else
+	echo "warning: failed to regenerate gen/*.{cpp,h}" 1>&2
+endif
 	touch timestamp
 
 EXTRA_DIST += timestamp
@@ -35,4 +31,14 @@ gen-src.mk: timestamp
 	( echo 'generated_sources = \'					\
 	  && ls *.cpp *.h | sort -u | sed 's/.*/  & \\/;$$s/ \\//'	\
 	) > $@-t
+if BUILD_IN_MESSAGE_TREE
+	( echo 'java_sources = \'					\
+	    && find $(gentools_srcdir) -name '*.java'			\
+		| sort -u | sed 's/.*/  & \\/;$$s/ \\//'		\
+	) >> $@-t
+	( echo 'cxx_templates = \'					\
+	    && find $(gentools_dir)/templ.cpp -name '*.tmpl'		\
+		| sort -u | sed 's/.*/  & \\/;$$s/ \\//'		\
+	) >> $@-t
+endif
 	mv $@-t $@
