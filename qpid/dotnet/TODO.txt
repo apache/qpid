@@ -5,9 +5,7 @@
 
 * SSL. SSLStream composed over NetworkStream.
 
-* Implement a Async IO socket transport.
-  Compare against blocking socket transport and configure default appropriately.
-
 * support multiple versions of AMQP from the same client.
 
-* Blocking receive i.e. Basic.Get
+* Implement a Async IO socket transport.
+  Compare against blocking socket transport and configure default appropriately.
