@@ -56,9 +56,9 @@ namespace Qpid.Client.qms
 
             _methodsRetries = 0;
 
-            if (connectionInfo.getFailoverMethod() == null)
+            if (connectionInfo.GetFailoverMethod() == null)
             {
-                if (connectionInfo.getBrokerCount() > 1)
+                if (connectionInfo.GetBrokerCount() > 1)
                 {
                     method = new FailoverRoundRobin(connectionInfo);
                 }
@@ -69,7 +69,7 @@ namespace Qpid.Client.qms
             }
             else
             {
-                string failoverMethod = connectionInfo.getFailoverMethod();
+                string failoverMethod = connectionInfo.GetFailoverMethod();
 
     /*
                 if (failoverMethod.equals(FailoverMethod.RANDOM))
