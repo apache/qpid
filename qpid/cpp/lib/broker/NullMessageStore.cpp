@@ -30,7 +30,7 @@ using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
-void NullMessageStore::create(const Queue& queue)
+void NullMessageStore::create(const Queue& queue, const qpid::framing::FieldTable&)
 {
     if (warn) std::cout << "WARNING: Can't create durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
