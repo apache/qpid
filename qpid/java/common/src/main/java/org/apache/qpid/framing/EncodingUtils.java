@@ -286,7 +286,7 @@ public class EncodingUtils
         }
         else
         {
-            return new FieldTable(buffer, length);
+            return FieldTableFactory.newFieldTable(buffer, length);
         }
     }
 
@@ -330,9 +330,9 @@ public class EncodingUtils
             // than constructing one from a char array.
             // this approach here is valid since we know that all the chars are
             // ASCII (0-127)
-            byte[] stringBytes = new byte[(int)length];
-            buffer.get(stringBytes, 0, (int)length);
-            char[] stringChars = new char[(int)length];
+            byte[] stringBytes = new byte[(int) length];
+            buffer.get(stringBytes, 0, (int) length);
+            char[] stringChars = new char[(int) length];
             for (int i = 0; i < stringChars.length; i++)
             {
                 stringChars[i] = (char) stringBytes[i];
@@ -350,7 +350,7 @@ public class EncodingUtils
         }
         else
         {
-            byte[] result = new byte[(int)length];
+            byte[] result = new byte[(int) length];
             buffer.get(result);
             return result;
         }
@@ -388,7 +388,7 @@ public class EncodingUtils
         // TODO: Doesn't support embedded quotes properly.
         String[] expressions = selector.split(" +");
 
-        FieldTable result = new FieldTable();
+        FieldTable result = FieldTableFactory.newFieldTable();
 
         for (int i = 0; i < expressions.length; i++)
         {
@@ -481,7 +481,7 @@ public class EncodingUtils
     public static char[] convertToHexCharArray(byte[] from)
     {
         int length = from.length;
-        char[]    result_buff = new char[length * 2 + 2];
+        char[] result_buff = new char[length * 2 + 2];
 
         result_buff[0] = '0';
         result_buff[1] = 'x';
