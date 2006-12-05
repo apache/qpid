@@ -52,7 +52,7 @@ void Configuration::parse(int argc, char** argv){
             matched = (*i)->parse(position, argv, argc);
         }
         if(!matched){
-            std::cout<< "Warning: skipping unrecognised option " << argv[position] << std::endl;
+            std::cerr<< "Warning: skipping unrecognised option " << argv[position] << std::endl;
             position++;
         }
     }
