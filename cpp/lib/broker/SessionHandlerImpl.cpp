@@ -256,7 +256,7 @@ void SessionHandlerImpl::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16
 
 void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, const string& name, 
                                                    bool passive, bool durable, bool exclusive, 
-                                                   bool autoDelete, bool nowait, const qpid::framing::FieldTable& /*arguments*/){
+                                                   bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments){
     Queue::shared_ptr queue;
     if (passive && !name.empty()) {
 	queue = parent->getQueue(name, channel);
@@ -268,8 +268,8 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
 	if (queue_created.second) { // This is a new queue
 	    parent->getChannel(channel)->setDefaultQueue(queue);
 
-            //create persistent record if required
-            queue_created.first->create();
+            //apply settings & create persistent record if required
+            queue_created.first->create(arguments);
 
 	    //add default binding:
 	    parent->exchanges->getDefault()->bind(queue, name, 0);
