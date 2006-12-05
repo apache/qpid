@@ -15,9 +15,9 @@ gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 timestamp: $(spec) $(java_sources) $(cxx_templates)
 if BUILD_IN_MESSAGE_TREE
 	rm -f $(generated_sources)
-	(cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java);	\
-	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main	\
-	  -c -o . -t $(gentools_dir)/templ.cpp $(spec)
+	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
+	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
+	        -c -o . -t $(gentools_dir)/templ.cpp $(spec)
 else
 	echo "warning: failed to regenerate gen/*.{cpp,h}" 1>&2
 endif
@@ -28,15 +28,15 @@ $(generated_sources): timestamp
 
 DISTCLEANFILES = gen-src.mk
 gen-src.mk: timestamp
-	( echo 'generated_sources = \'					\
+	( echo 'generated_sources = '\\					\
 	  && ls *.cpp *.h | sort -u | sed 's/.*/  & \\/;$$s/ \\//'	\
 	) > $@-t
 if BUILD_IN_MESSAGE_TREE
 	( echo if BUILD_IN_MESSAGE_TREE;				\
-	  echo 'java_sources = \'					\
+	  echo 'java_sources = '\\					\
 	    && find $(gentools_srcdir) -name '*.java'			\
 		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
-	  echo 'cxx_templates = \'					\
+	  echo 'cxx_templates = '\\					\
 	    && find $(gentools_dir)/templ.cpp -name '*.tmpl'		\
 		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
 	  echo endif							\
