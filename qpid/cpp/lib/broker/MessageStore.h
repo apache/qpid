@@ -22,6 +22,7 @@
 #define _MessageStore_
 
 #include <BrokerMessage.h>
+#include <FieldTable.h>
 #include <RecoveryManager.h>
 #include <TransactionalStore.h>
 
@@ -45,7 +46,7 @@ namespace qpid {
             /**
              * Record the existance of a durable queue
              */
-            virtual void create(const Queue& queue) = 0;
+            virtual void create(const Queue& queue, const qpid::framing::FieldTable& settings) = 0;
             /**
              * Destroy a durable queue
              */

@@ -21,8 +21,14 @@
 #include <QueuePolicy.h>
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 
-QueuePolicy::QueuePolicy(u_int32_t _maxCount, u_int64_t _maxSize) : maxCount(_maxCount), maxSize(_maxSize) {}
+QueuePolicy::QueuePolicy(u_int32_t _maxCount, u_int64_t _maxSize) : 
+    maxCount(_maxCount), maxSize(_maxSize) {}
+
+QueuePolicy::QueuePolicy(const FieldTable& settings) :
+    maxCount(getInt(settings, maxCountKey, 0)), 
+    maxSize(getInt(settings, maxSizeKey, 0)) {}
 
 void QueuePolicy::enqueued(Message::shared_ptr& msg, MessageStore* store)
 {
@@ -47,3 +53,23 @@ bool QueuePolicy::checkSize(Message::shared_ptr& msg)
     return maxSize && (size += msg->contentSize()) > maxSize;
 }
 
+void QueuePolicy::update(FieldTable& settings)
+{
+    if (maxCount) settings.setInt(maxCountKey, maxCount);
+    if (maxSize) settings.setInt(maxSizeKey, maxSize);    
+}
+
+
+int QueuePolicy::getInt(const FieldTable& settings, const std::string& key, int defaultValue)
+{
+    //Note: currently field table only contain signed 32 bit ints, which
+    //      restricts the values that can be set on the queue policy.
+    try {
+        return settings.getInt(key); 
+    } catch (FieldNotFoundException& ignore) {
+        return defaultValue;
+    }
+}
+
+const std::string QueuePolicy::maxCountKey("qpid.max_count");
+const std::string QueuePolicy::maxSizeKey("qpid.max_size");

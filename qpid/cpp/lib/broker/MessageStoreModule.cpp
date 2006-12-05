@@ -28,9 +28,9 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 {
 }
 
-void MessageStoreModule::create(const Queue& queue)
+void MessageStoreModule::create(const Queue& queue, const qpid::framing::FieldTable& settings)
 {
-    store->create(queue);
+    store->create(queue, settings);
 }
 
 void MessageStoreModule::destroy(const Queue& queue)
