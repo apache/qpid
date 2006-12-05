@@ -23,13 +23,14 @@
 
 #include <memory>
 #include <boost/shared_ptr.hpp>
-#include <ConnectionToken.h>
-#include <Content.h>
-#include <TxBuffer.h>
 #include <AMQContentBody.h>
 #include <AMQHeaderBody.h>
 #include <BasicHeaderProperties.h>
+#include <ConnectionToken.h>
+#include <Content.h>
 #include <OutputHandler.h>
+#include <Mutex.h>
+#include <TxBuffer.h>
 
 namespace qpid {
     namespace broker {
@@ -52,6 +53,7 @@ namespace qpid {
             std::auto_ptr<Content> content;
             u_int64_t size;
             u_int64_t persistenceId;
+            qpid::sys::Mutex contentLock;
 
             void sendContent(qpid::framing::OutputHandler* out, 
                              int channel, u_int32_t framesize);

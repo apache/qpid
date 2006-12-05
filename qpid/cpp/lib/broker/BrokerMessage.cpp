@@ -32,6 +32,7 @@
 using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
+using namespace qpid::sys;
 
 Message::Message(const ConnectionToken* const _publisher, 
                  const string& _exchange, const string& _routingKey, 
@@ -100,6 +101,7 @@ void Message::sendContent(OutputHandler* out, int channel, u_int32_t framesize){
     AMQBody::shared_ptr headerBody = static_pointer_cast<AMQBody, AMQHeaderBody>(header);
     out->send(new AMQFrame(channel, headerBody));
 
+    Mutex::ScopedLock locker(contentLock);
     if (content.get()) content->send(out, channel, framesize);
 }
 
@@ -173,6 +175,7 @@ void Message::encodeHeader(Buffer& buffer)
 
 void Message::encodeContent(Buffer& buffer)
 {
+    Mutex::ScopedLock locker(contentLock);
     if (content.get()) content->encode(buffer);
 }
 
@@ -183,6 +186,7 @@ u_int32_t Message::encodedSize()
 
 u_int32_t Message::encodedContentSize()
 {
+    Mutex::ScopedLock locker(contentLock);
     return content.get() ? content->size() : 0;
 }
 
@@ -200,6 +204,7 @@ u_int64_t Message::expectedContentSize()
 
 void Message::releaseContent(MessageStore* store)
 {
+    Mutex::ScopedLock locker(contentLock);
     if (!content.get() || content->size() > 0) {
         //set content to lazy loading mode (but only if there is stored content):
 
@@ -212,5 +217,6 @@ void Message::releaseContent(MessageStore* store)
 
 void Message::setContent(std::auto_ptr<Content>& _content)
 {
+    Mutex::ScopedLock locker(contentLock);
     content = _content;
 }

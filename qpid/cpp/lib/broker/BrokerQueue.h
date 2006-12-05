@@ -22,6 +22,7 @@
 #define _Queue_
 
 #include <vector>
+#include <memory>
 #include <queue>
 #include <boost/shared_ptr.hpp>
 #include <amqp_types.h>
@@ -29,7 +30,9 @@
 #include <ConnectionToken.h>
 #include <Consumer.h>
 #include <BrokerMessage.h>
+#include <FieldTable.h>
 #include <sys/Monitor.h>
+#include <QueuePolicy.h>
 
 namespace qpid {
     namespace broker {
@@ -41,6 +44,7 @@ namespace qpid {
         struct ExclusiveAccessException{};
 
         using std::string;
+
         /**
          * The brokers representation of an amqp queue. Messages are
          * delivered to a queue from where they can be dispatched to
@@ -62,9 +66,13 @@ namespace qpid {
             int64_t lastUsed;
             Consumer* exclusive;
             mutable u_int64_t persistenceId;
+            std::auto_ptr<QueuePolicy> policy;
 
+            void pop();
+            void push(Message::shared_ptr& msg);
             bool startDispatching();
             bool dispatch(Message::shared_ptr& msg);
+            void setPolicy(std::auto_ptr<QueuePolicy> policy);
 
         public:
             
@@ -77,7 +85,7 @@ namespace qpid {
                   const ConnectionToken* const owner = 0);
             ~Queue();
 
-            void create();
+            void create(const qpid::framing::FieldTable& settings);
             void destroy();
             /**
              * Informs the queue of a binding that should be cancelled on
