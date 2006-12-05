@@ -26,6 +26,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::sys;
+using namespace qpid::framing;
 
 Queue::Queue(const string& _name, u_int32_t _autodelete, 
              MessageStore* const _store,
@@ -62,8 +63,7 @@ void Queue::deliver(Message::shared_ptr& msg){
 }
 
 void Queue::recover(Message::shared_ptr& msg){
-    queueing = true;
-    messages.push(msg);
+    push(msg);
     if (store && msg->expectedContentSize() != msg->encodedContentSize()) {
         msg->releaseContent(store);
     }
@@ -72,8 +72,7 @@ void Queue::recover(Message::shared_ptr& msg){
 void Queue::process(Message::shared_ptr& msg){
     Mutex::ScopedLock locker(lock);
     if(queueing || !dispatch(msg)){
-        queueing = true;
-        messages.push(msg);
+        push(msg);
     }
 }
 
@@ -116,7 +115,7 @@ void Queue::dispatch(){
     while(proceed){
         Mutex::ScopedLock locker(lock);
         if(!messages.empty() && dispatch(messages.front())){
-            messages.pop();
+            pop();
         }else{
             dispatching = false;
             proceed = false;
@@ -149,7 +148,7 @@ Message::shared_ptr Queue::dequeue(){
     Message::shared_ptr msg;
     if(!messages.empty()){
         msg = messages.front();
-        messages.pop();
+        pop();
     }
     return msg;
 }
@@ -157,8 +156,17 @@ Message::shared_ptr Queue::dequeue(){
 u_int32_t Queue::purge(){
     Mutex::ScopedLock locker(lock);
     int count = messages.size();
-    while(!messages.empty()) messages.pop();
+    while(!messages.empty()) pop();
     return count;
+}
+
+void Queue::pop(){
+    messages.pop();
+}
+
+void Queue::push(Message::shared_ptr& msg){
+    queueing = true;
+    messages.push(msg);
 }
 
 u_int32_t Queue::getMessageCount() const{
@@ -190,8 +198,30 @@ void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const st
     }
 }
 
-void Queue::create()
+namespace 
 {
+    const std::string qpidMaxSize("qpid.max_size");
+    const std::string qpidMaxCount("qpid.max_count");
+}
+
+void Queue::create(const FieldTable& settings)
+{
+    //Note: currently field table only contain signed 32 bit ints, which
+    //      restricts the values that can be set on the queue policy.
+    u_int32_t maxCount(0);
+    try {
+        maxCount = settings.getInt(qpidMaxSize); 
+    } catch (FieldNotFoundException& ignore) {
+    }
+    u_int32_t maxSize(0);
+    try {
+        maxSize = settings.getInt(qpidMaxCount);
+    } catch (FieldNotFoundException& ignore) {
+    }
+    if (maxCount || maxSize) {
+        setPolicy(std::auto_ptr<QueuePolicy>(new QueuePolicy(maxCount, maxSize)));
+    }
+ 
     if (store) {
         store->create(*this);
     }
@@ -202,4 +232,9 @@ void Queue::destroy()
     if (store) {
         store->destroy(*this);
     }
+}
+
+void Queue::setPolicy(std::auto_ptr<QueuePolicy> _policy)
+{
+    policy = _policy;
 }

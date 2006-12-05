@@ -59,6 +59,8 @@ libbroker_la_SOURCES =				\
   NullMessageStore.cpp				\
   NullMessageStore.h				\
   Prefetch.h					\
+  QueuePolicy.cpp				\
+  QueuePolicy.h					\
   QueueRegistry.cpp				\
   QueueRegistry.h				\
   RecoveryManager.cpp				\
