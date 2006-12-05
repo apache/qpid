@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership. The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+ 
+    http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied. See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
 <project name="org.apache.qpid.management.ui" default="build.update.jar" basedir=".">
 
     <property name="basews" value="${ws}"/>
@@ -24,6 +42,7 @@
     <property name="bundleJavacTarget" value="${javacTarget}"/>
     <property name="bundleBootClasspath" value="${bootclasspath}"/>
     <property name="pluginName" value="org.apache.qpid.management.ui"/>
+    <property name="distName" value="qpidmc"/>
     <property name="version" value="0.1.0"/>
 
     <target name="init" depends="properties">
@@ -144,6 +163,7 @@
         <delete file="${build.result.folder}/src.zip"/>
         <delete file="${plugins.folder}/${pluginName}_${version}.jar"/>
         <delete file="${target.folder}/${pluginName}_${version}.zip"/>
+        <delete file="${target.folder}/${distName}_${version}.zip"/>
         <delete dir="${temp.folder}"/>
     </target>
 
@@ -170,26 +190,26 @@
         <antcall target="build.update.jar"/>
         <antcall target="build.sources"/>
         <antcall target="gather.sources">
-            <param name="destination.temp.folder" value="${temp.folder}/${pluginName}"/>
+            <param name="destination.temp.folder" value="${temp.folder}/${distName}"/>
         </antcall>
-            <copy todir="${temp.folder}/${pluginName}/plugins" failonerror="true" overwrite="false">
-                <fileset dir="${plugins.folder}" includes="**"  />
-            </copy>
-         <copy todir="${temp.folder}/${pluginName}/bin" failonerror="true" overwrite="false">
-                <fileset dir="${basedir}/bin" includes="**" />
+        <copy todir="${temp.folder}/${distName}/plugins" failonerror="true" overwrite="false">
+            <fileset dir="${plugins.folder}" includes="**"  />
         </copy>
-            <copy todir="${temp.folder}/${pluginName}" failonerror="true" overwrite="false">
-                <fileset dir="${basedir}" includes="startup.jar,plugin.xml,META-INF/,icons/,plugin.properties,splash.bmp"/>
-            </copy>
-            <copy todir="${temp.folder}/${pluginName}/configuration" failonerror="true" overwrite="false">
-                <fileset dir="${basedir}/configuration" includes="**"/>
-            </copy>
+        <copy todir="${temp.folder}/${distName}/bin" failonerror="true" overwrite="false">
+            <fileset dir="${basedir}/bin" includes="**" />
+        </copy>
+        <copy todir="${temp.folder}/${distName}" failonerror="true" overwrite="false">
+            <fileset dir="${basedir}" includes="startup.jar,plugin.xml,META-INF/,icons/,plugin.properties,splash.bmp"/>
+        </copy>
+        <copy todir="${temp.folder}/${distName}/configuration" failonerror="true" overwrite="false">
+            <fileset dir="${basedir}/configuration" includes="**"/>
+        </copy>
         
-            <delete>
-                <fileset dir="${temp.folder}" includes="**/*.bin${logExtension}"/>
-            </delete>
-            <zip destfile="${target.folder}/${pluginName}_${version}.zip" basedir="${temp.folder}" filesonly="true" whenempty="skip" update="false"/>
-            <delete dir="${temp.folder}"/>
-        </target>
+        <delete>
+            <fileset dir="${temp.folder}" includes="**/*.bin${logExtension}"/>
+        </delete>
+        <zip destfile="${target.folder}/${distName}_${version}.zip" basedir="${temp.folder}" filesonly="true" whenempty="skip" update="false"/>
+        <delete dir="${temp.folder}"/>
+    </target>
 
 </project>
