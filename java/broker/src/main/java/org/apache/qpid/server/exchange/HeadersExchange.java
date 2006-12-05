@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -154,7 +155,7 @@ public class HeadersExchange extends AbstractExchange
             }
 
             String[] bindings  = binding.split(",");
-            FieldTable fieldTable = new FieldTable();
+            FieldTable fieldTable = FieldTableFactory.newFieldTable();
             for (int i = 0; i < bindings.length; i++)
             {
                 String[] keyAndValue = bindings[i].split("=");
