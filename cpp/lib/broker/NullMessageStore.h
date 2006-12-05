@@ -35,7 +35,7 @@ namespace qpid {
             const bool warn;
         public:
             NullMessageStore(bool warn = true);
-            virtual void create(const Queue& queue);
+            virtual void create(const Queue& queue, const qpid::framing::FieldTable& settings);
             virtual void destroy(const Queue& queue);
             virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
             virtual void stage(Message::shared_ptr& msg);
