@@ -20,48 +20,21 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import org.apache.qpid.framing.PropertyFieldTable;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import javax.jms.JMSException;
 
 import junit.framework.TestCase;
 
-public class FieldTableKeyEnumeratorTest extends TestCase
+public class FieldTablePropertyTest extends TestCase
 {
-    public void testKeyEnumeration()
-    {
-        FieldTable result = FieldTableFactory.newFieldTable();
-        result.put("one", 1L);
-        result.put("two", 2L);
-        result.put("three", 3L);
-        result.put("four", 4L);
-        result.put("five", 5L);
-
-        Iterator iterator = result.keySet().iterator();
-
-        try
-        {
-            assertTrue("one".equals(iterator.next()));
-            assertTrue("two".equals(iterator.next()));
-            assertTrue("three".equals(iterator.next()));
-            assertTrue("four".equals(iterator.next()));
-            assertTrue("five".equals(iterator.next()));
-        }
-        catch (NoSuchElementException e)
-        {
-            fail("All elements should be found.");
-        }
-
-    }
-
-    public void testPropertEnu()
+    public void testPropertyNames()
     {
         try
         {
@@ -74,7 +47,7 @@ public class FieldTableKeyEnumeratorTest extends TestCase
 
             Enumeration e = text.getPropertyNames();
 
-            assertTrue("Boolean1".equals(e.nextElement()));
+            assertEquals("Boolean1", e.nextElement());
             assertTrue("Boolean2".equals(e.nextElement()));
             assertTrue("Int".equals(e.nextElement()));
             assertTrue("Long".equals(e.nextElement()));
@@ -87,6 +60,6 @@ public class FieldTableKeyEnumeratorTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(FieldTableKeyEnumeratorTest.class);
+        return new junit.framework.TestSuite(FieldTablePropertyTest.class);
     }
 }

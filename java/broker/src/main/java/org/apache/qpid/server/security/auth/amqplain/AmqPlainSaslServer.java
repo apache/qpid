@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.amqplain;
 
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.security.sasl.SaslServer;
@@ -54,7 +55,7 @@ public class AmqPlainSaslServer implements SaslServer
     {
         try
         {
-            final FieldTable ft = new FieldTable(ByteBuffer.wrap(response), response.length);
+            final FieldTable ft = FieldTableFactory.newFieldTable(ByteBuffer.wrap(response), response.length);
             String username = (String) ft.get("LOGIN");
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", username);

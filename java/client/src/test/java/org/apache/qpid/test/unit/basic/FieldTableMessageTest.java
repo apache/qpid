@@ -26,10 +26,12 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableTest;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +41,9 @@ import junit.framework.TestCase;
 
 public class FieldTableMessageTest extends TestCase implements MessageListener
 {
+
+    private static final Logger _logger = Logger.getLogger(FieldTableMessageTest.class);
+
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
@@ -50,7 +55,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));        
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
     }
 
     protected void tearDown() throws Exception
@@ -80,7 +85,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
 
     private FieldTable load() throws IOException
     {
-        FieldTable result = new FieldTable();
+        FieldTable result = FieldTableFactory.newFieldTable();
         result.put("one", 1L);
         result.put("two", 2L);
         result.put("three", 3L);
@@ -128,7 +133,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
         for (Object m : received)
         {
             ByteBuffer buffer = ((JMSBytesMessage) m).getData();
-            FieldTable actual = new FieldTable(buffer, buffer.remaining());
+            FieldTable actual = FieldTableFactory.newFieldTable(buffer, buffer.remaining());
             new FieldTableTest().assertEquivalent(_expected, actual);
         }
     }

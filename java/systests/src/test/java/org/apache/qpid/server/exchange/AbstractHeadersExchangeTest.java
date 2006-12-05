@@ -20,26 +20,25 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.NoConsumersException;
+import junit.framework.TestCase;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.HashSet;
-
-import junit.framework.TestCase;
+import java.util.List;
+import java.util.Set;
 
 public class AbstractHeadersExchangeTest extends TestCase
 {
@@ -105,7 +104,7 @@ public class AbstractHeadersExchangeTest extends TestCase
 
     static FieldTable getHeaders(String... entries)
     {
-        FieldTable headers = new FieldTable();
+        FieldTable headers = FieldTableFactory.newFieldTable();
         for (String s : entries)
         {
             String[] parts = s.split("=", 2);

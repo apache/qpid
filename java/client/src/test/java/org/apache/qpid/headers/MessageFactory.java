@@ -22,6 +22,7 @@ package org.apache.qpid.headers;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
@@ -127,14 +128,14 @@ class MessageFactory
 
     FieldTable getConsumerBinding()
     {
-        FieldTable binding = new FieldTable();
+        FieldTable binding = FieldTableFactory.newFieldTable();
         binding.put("SF0000", "value");
         return binding;
     }
 
     FieldTable getControllerBinding()
     {
-        FieldTable binding = new FieldTable();
+        FieldTable binding = FieldTableFactory.newFieldTable();
         binding.put("SCONTROL", "value");
         return binding;
     }
