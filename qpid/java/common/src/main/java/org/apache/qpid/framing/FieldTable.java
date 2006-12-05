@@ -1,317 +1,96 @@
 /*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.    
+ *
+ * 
  */
 package org.apache.qpid.framing;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Enumeration;
 
-/**
- * From the protocol document:
- * field-table      = short-integer *field-value-pair
- * field-value-pair = field-name field-value
- * field-name       = short-string
- * field-value      = 'S' long-string
- * / 'I' long-integer
- * / 'D' decimal-value
- * / 'T' long-integer
- * decimal-value    = decimals long-integer
- * decimals         = OCTET
- */
-public class FieldTable extends LinkedHashMap
+public interface FieldTable extends Map
 {
-    private static final Logger _logger = Logger.getLogger(FieldTable.class);
-    private long _encodedSize = 0;
+    void writeToBuffer(ByteBuffer buffer);
 
-    public FieldTable()
-    {
-        super();
-    }
+    void setFromBuffer(ByteBuffer buffer, long length) throws AMQFrameDecodingException;    
 
-    /**
-     * Construct a new field table.
-     *
-     * @param buffer the buffer from which to read data. The length byte must be read already
-     * @param length the length of the field table. Must be > 0.
-     * @throws AMQFrameDecodingException if there is an error decoding the table
-     */
-    public FieldTable(ByteBuffer buffer, long length) throws AMQFrameDecodingException
-    {
-        super();
-        final boolean debug = _logger.isDebugEnabled();
-        assert length > 0;
-        _encodedSize = length;
-        int sizeRead = 0;
-        while (sizeRead < _encodedSize)
-        {
-            int sizeRemaining = buffer.remaining();
-            final String key = EncodingUtils.readShortString(buffer);
-            // TODO: use proper charset decoder
-            byte iType = buffer.get();
-            final char type = (char) iType;
-            Object value;
-            switch (type)
-            {
-                case'S':
-                    value = EncodingUtils.readLongString(buffer);
-                    break;
-                case'I':
-                    value = new Long(buffer.getUnsignedInt());
-                    break;
-                default:
-                    String msg = "Field '" + key + "' - unsupported field table type: " + type;
-                    //some extra debug information...
-                    msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
-                    throw new AMQFrameDecodingException(msg);
-            }
-            sizeRead += (sizeRemaining - buffer.remaining());
+    byte[] getDataAsBytes();
 
-            if (debug)
-            {
-                _logger.debug("FieldTable::FieldTable(buffer," + length + "): Read type '" + type + "', key '" + key + "', value '" + value + "' (now read " + sizeRead + " of " + length + " encoded bytes)...");
-            }
+    public long getEncodedSize();
 
-            // we deliberately want to call put in the parent class since we do
-            // not need to do the size calculations
-            super.put(key, value);
-        }
+    Object put(Object key, Object value);
 
-        if (debug)
-        {
-            _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
-        }
-    }
+    Object remove(Object key);
 
-    public void writeToBuffer(ByteBuffer buffer)
-    {
-        final boolean debug = _logger.isDebugEnabled();
 
-        if (debug)
-        {
-            _logger.debug("FieldTable::writeToBuffer: Writing encoded size of " + _encodedSize + "...");
-        }
+    public Enumeration getPropertyNames();
 
-        // write out the total length, which we have kept up to date as data is added
-        EncodingUtils.writeUnsignedInteger(buffer, _encodedSize);
-        final Iterator it = this.entrySet().iterator();
-        while (it.hasNext())
-        {
-            Map.Entry me = (Map.Entry) it.next();
-            String key = (String) me.getKey();
+    public boolean propertyExists(String propertyName);
 
-            EncodingUtils.writeShortStringBytes(buffer, key);
-            Object value = me.getValue();
+    //Getters
 
-            if (debug)
-            {
-                _logger.debug("FieldTable::writeToBuffer: Writing key '" + key + "' of type " + value.getClass() + ", value '" + value + "'...");
-            }
+    public Boolean getBoolean(String string);
 
-            if (value instanceof byte[])
-            {
-                buffer.put((byte) 'S');
-                EncodingUtils.writeLongstr(buffer, (byte[]) value);
-            }
-            else if (value instanceof String)
-            {
-                // TODO: look at using proper charset encoder
-                buffer.put((byte) 'S');
-                EncodingUtils.writeLongStringBytes(buffer, (String) value);
-            }
-            else if (value instanceof Long)
-            {
-                // TODO: look at using proper charset encoder
-                buffer.put((byte) 'I');
-                EncodingUtils.writeUnsignedInteger(buffer, ((Long) value).longValue());
-            }
-            else
-            {
-                // Should never get here
-                throw new IllegalArgumentException("Key '" + key + "': Unsupported type in field table, type: " + ((value == null) ? "null-object" : value.getClass()));
-            }
-        }
+    public Byte getByte(String string);
 
-        if (debug)
-        {
-            _logger.debug("FieldTable::writeToBuffer: Done.");
-        }
-    }
+    public Short getShort(String string);
 
-    public byte[] getDataAsBytes()
-    {
-        final ByteBuffer buffer = ByteBuffer.allocate((int) _encodedSize); // XXX: Is cast a problem?
-        final Iterator it = this.entrySet().iterator();
-        while (it.hasNext())
-        {
-            Map.Entry me = (Map.Entry) it.next();
-            String key = (String) me.getKey();
-            EncodingUtils.writeShortStringBytes(buffer, key);
-            Object value = me.getValue();
-            if (value instanceof byte[])
-            {
-                buffer.put((byte) 'S');
-                EncodingUtils.writeLongstr(buffer, (byte[]) value);
-            }
-            else if (value instanceof String)
-            {
-                // TODO: look at using proper charset encoder
-                buffer.put((byte) 'S');
-                EncodingUtils.writeLongStringBytes(buffer, (String) value);
-            }
-            else if (value instanceof char[])
-            {
-                // TODO: look at using proper charset encoder
-                buffer.put((byte) 'S');
-                EncodingUtils.writeLongStringBytes(buffer, (char[]) value);
-            }
-            else if (value instanceof Long || value instanceof Integer)
-            {
-                // TODO: look at using proper charset encoder
-                buffer.put((byte) 'I');
-                EncodingUtils.writeUnsignedInteger(buffer, ((Long) value).longValue());
-            }
-            else
-            {
-                // Should never get here
-                assert false;
-            }
-        }
-        final byte[] result = new byte[(int) _encodedSize];
-        buffer.flip();
-        buffer.get(result);
-        buffer.release();
-        return result;
-    }
+    public Integer getInteger(String string);
 
-    public Object put(Object key, Object value)
-    {
-        final boolean debug = _logger.isDebugEnabled();
+    public Long getLong(String string);
 
-        if (key == null)
-        {
-            throw new IllegalArgumentException("All keys must be Strings - was passed: null");
-        }
-        else if (!(key instanceof String))
-        {
-            throw new IllegalArgumentException("All keys must be Strings - was passed: " + key.getClass());
-        }
+    public Float getFloat(String string);
 
-        Object existing;
+    public Double getDouble(String string);
 
-        if ((existing = super.remove(key)) != null)
-        {
-            if (debug)
-            {
-                _logger.debug("Found duplicate of key '" + key + "', previous value '" + existing + "' (" + existing.getClass() + "), to be replaced by '" + value + "', (" + value.getClass() + ") - stack trace of source of duplicate follows...", new Throwable().fillInStackTrace());
-            }
+    public String getString(String string);
 
-            // If we are in effect deleting the value (see comment on null values being deleted
-            // below) then we also need to remove the name from the encoding length.
-            if (value == null)
-            {
-                _encodedSize -= EncodingUtils.encodedShortStringLength((String) key);
-            }
+    public Character getCharacter(String string);
 
-            // FIXME: Should be able to short-cut this process if the old and new values are
-            // the same object and/or type and size...
-            _encodedSize -= getEncodingSize(existing);
-        }
-        else
-        {
-            if (value != null)
-            {
-                _encodedSize += EncodingUtils.encodedShortStringLength((String) key);
-            }
-        }
+    public byte[] getBytes(String string);
 
-        // For now: Setting a null value is the equivalent of deleting it.
-        // This is ambiguous in the JMS spec and needs thrashing out and potentially
-        // testing against other implementations.
-        if (value != null)
-        {
-            _encodedSize += getEncodingSize(value);
-        }
+    public Object getObject(String string);
 
-        return super.put(key, value);
-    }
+    // Setters
+    public Object setBoolean(String string, boolean b);
 
-    public Object remove(Object key)
-    {
-        if (super.containsKey(key))
-        {
-            final Object value = super.remove(key);
-            _encodedSize -= EncodingUtils.encodedShortStringLength((String) key);
+    public Object setByte(String string, byte b);
 
-            // This check is, for now, unnecessary (we don't store null values).
-            if (value != null)
-            {
-                _encodedSize -= getEncodingSize(value);
-            }
+    public Object setShort(String string, short i);
 
-            return value;
-        }
-        else
-        {
-            return null;
-        }
-    }
+    public Object setInteger(String string, int i);
 
-    /**
-     * @return unsigned integer
-     */
-    public long getEncodedSize()
-    {
-        return _encodedSize;
-    }
+    public Object setLong(String string, long l);
 
-    /**
-     * @return integer
-     */
-    private static int getEncodingSize(Object value)
-    {
-        int encodingSize;
+    public Object setFloat(String string, float v);
 
-        // the extra byte if for the type indicator that is written out
-        if (value instanceof String)
-        {
-            encodingSize = 1 + EncodingUtils.encodedLongStringLength((String) value);
-        }
-        else if (value instanceof char[])
-        {
-            encodingSize = 1 + EncodingUtils.encodedLongStringLength((char[]) value);
-        }
-        else if (value instanceof Integer)
-        {
-            encodingSize = 1 + 4;
-        }
-        else if (value instanceof Long)
-        {
-            encodingSize = 1 + 4;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported type in field table: " + value.getClass());
-        }
+    public Object setDouble(String string, double v);
 
-        return encodingSize;
-    }
+    public Object setString(String string, String string1);
+
+    public Object setChar(String string, char c);
+
+    public Object setBytes(String string, byte[] bytes);
+
+    public Object setBytes(String string, byte[] bytes, int start, int length);
+
+    public Object setObject(String string, Object object);
+
 }

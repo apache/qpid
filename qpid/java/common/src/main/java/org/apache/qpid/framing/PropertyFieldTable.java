@@ -21,19 +21,27 @@
 package org.apache.qpid.framing;
 
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
 //extends FieldTable
-public class PropertyFieldTable
+public class PropertyFieldTable implements FieldTable, Map
 {
-
     private static final Logger _logger = Logger.getLogger(PropertyFieldTable.class);
+
+
+    public static final char AMQP_DECIMAL_PROPERTY_PREFIX = 'D';
+    public static final char AMQP_UNSIGNEDINT_PROPERTY_PREFIX = 'I';
+    public static final char AMQP_TIMESTAMP_PROPERTY_PREFIX = 'T';
+    public static final char AMQP_STRING_PROPERTY_PREFIX = 'S';
 
     public static final char BOOLEAN_PROPERTY_PREFIX = 'B';
     public static final char BYTE_PROPERTY_PREFIX = 'b';
@@ -42,10 +50,12 @@ public class PropertyFieldTable
     public static final char LONG_PROPERTY_PREFIX = 'l';
     public static final char FLOAT_PROPERTY_PREFIX = 'f';
     public static final char DOUBLE_PROPERTY_PREFIX = 'd';
-    public static final char STRING_PROPERTY_PREFIX = 'S';
+    public static final char STRING_PROPERTY_PREFIX = AMQP_STRING_PROPERTY_PREFIX;
     public static final char CHAR_PROPERTY_PREFIX = 'c';
     public static final char BYTES_PROPERTY_PREFIX = 'y';
 
+    //Our custom prefix for encoding across the wire
+    private static final char XML_PROPERTY_PREFIX = 'X';
 
     private static final String BOOLEAN = "boolean";
     private static final String BYTE = "byte";
@@ -66,7 +76,7 @@ public class PropertyFieldTable
 
     private LinkedHashMap<String, Object> _properties;
     private LinkedHashMap<String, String> _propertyNamesTypeMap;
-
+    private long _encodedSize = 0;
 
     public PropertyFieldTable()
     {
@@ -84,73 +94,37 @@ public class PropertyFieldTable
         }
         catch (Exception e)
         {
-            System.out.println(textFormat);
-            e.printStackTrace();
+            _logger.error("Unable to decode PropertyFieldTable format:" + textFormat, e);
         }
+    }
 
+    /**
+     * Construct a new field table.
+     *
+     * @param buffer the buffer from which to read data. The length byte must be read already
+     * @param length the length of the field table. Must be > 0.
+     * @throws AMQFrameDecodingException if there is an error decoding the table
+     */
+    public PropertyFieldTable(ByteBuffer buffer, long length) throws AMQFrameDecodingException
+    {
+        this();
+        setFromBuffer(buffer, length);
     }
 
     // ************  Getters
 
-    public Boolean getBoolean(String string)
+    private Object get(String propertyName, char prefix)
     {
-        return (Boolean) _properties.get(BOOLEAN_PROPERTY_PREFIX + string);
-    }
+        String type = _propertyNamesTypeMap.get(propertyName);
 
-    public Byte getByte(String string)
-    {
-        return (Byte) _properties.get(BYTE_PROPERTY_PREFIX + string);
-    }
-
-    public Short getShort(String string)
-    {
-        return (Short) _properties.get(SHORT_PROPERTY_PREFIX + string);
-    }
-
-    public Integer getInteger(String string)
-    {
-        return (Integer) _properties.get(INT_PROPERTY_PREFIX + string);
-    }
-
-    public Long getLong(String string)
-    {
-        return (Long) _properties.get(LONG_PROPERTY_PREFIX + string);
-    }
-
-    public Float getFloat(String string)
-    {
-        return (Float) _properties.get(FLOAT_PROPERTY_PREFIX + string);
-    }
-
-    public Double getDouble(String string)
-    {
-        return (Double) _properties.get(DOUBLE_PROPERTY_PREFIX + string);
-    }
-
-    public String getString(String string)
-    {
-        return (String) _properties.get(STRING_PROPERTY_PREFIX + string);
-    }
-
-    public Character getCharacter(String string)
-    {
-        return (Character) _properties.get(CHAR_PROPERTY_PREFIX + string);
-    }
-
-    public byte[] getBytes(String string)
-    {
-        return (byte[]) _properties.get(BYTES_PROPERTY_PREFIX + string);
-    }
-
-    public Object getObject(String string)
-    {
-        String typestring = _propertyNamesTypeMap.get(string);
-
-        if (typestring != null && !typestring.equals(""))
+        if (type == null)
         {
-            char type = typestring.charAt(0);
-
-            return _properties.get(type + string);
+            return null;
+        }
+        
+        if (type.equals("" + prefix))
+        {
+            return _properties.get(propertyName);
         }
         else
         {
@@ -158,91 +132,196 @@ public class PropertyFieldTable
         }
     }
 
+    public Boolean getBoolean(String string)
+    {
+        Object o = get(string, BOOLEAN_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Boolean) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Byte getByte(String string)
+    {
+        Object o = get(string, BYTE_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Byte) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Short getShort(String string)
+    {
+        Object o = get(string, SHORT_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Short) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Integer getInteger(String string)
+    {
+        Object o = get(string, INT_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Integer) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Long getLong(String string)
+    {
+        Object o = get(string, LONG_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Long) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Float getFloat(String string)
+    {
+        Object o = get(string, FLOAT_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Float) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Double getDouble(String string)
+    {
+        Object o = get(string, DOUBLE_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Double) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public String getString(String string)
+    {
+        Object o = get(string, STRING_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (String) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Character getCharacter(String string)
+    {
+        Object o = get(string, CHAR_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (Character) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public byte[] getBytes(String string)
+    {
+        Object o = get(string, BYTES_PROPERTY_PREFIX);
+        if (o != null)
+        {
+            return (byte[]) o;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public Object getObject(String string)
+    {
+        return _properties.get(string);
+    }
+
     // ************  Setters
 
-
-    public void setBoolean(String string, boolean b)
+    public Object setBoolean(String string, boolean b)
     {
-        checkPropertyName(string, BOOLEAN_PROPERTY_PREFIX);
-
-
-        _propertyNamesTypeMap.put(string, "" + BOOLEAN_PROPERTY_PREFIX);
-        _properties.put(BOOLEAN_PROPERTY_PREFIX + string, b);// ? new Long(1) : new Long(0));
+        return put(BOOLEAN_PROPERTY_PREFIX + string, b);
     }
 
-    public void setByte(String string, byte b)
+    public Object setByte(String string, byte b)
     {
-        checkPropertyName(string, BYTE_PROPERTY_PREFIX);
-
-
-        _properties.put(BYTE_PROPERTY_PREFIX + string, b);
+        return put(BYTE_PROPERTY_PREFIX + string, b);
     }
 
-    public void setShort(String string, short i)
+    public Object setShort(String string, short i)
     {
-        checkPropertyName(string, SHORT_PROPERTY_PREFIX);
-
-
-        _properties.put(SHORT_PROPERTY_PREFIX + string, i);
+        return put(SHORT_PROPERTY_PREFIX + string, i);
     }
 
-    public void setInteger(String string, int i)
+    public Object setInteger(String string, int i)
     {
-        checkPropertyName(string, INT_PROPERTY_PREFIX);
-
-
-        _properties.put(INT_PROPERTY_PREFIX + string, i);
+        return put(INT_PROPERTY_PREFIX + string, i);
     }
 
-    public void setLong(String string, long l)
+    public Object setLong(String string, long l)
     {
-        checkPropertyName(string, LONG_PROPERTY_PREFIX);
-
-
-        _properties.put(LONG_PROPERTY_PREFIX + string, l);
+        return put(LONG_PROPERTY_PREFIX + string, l);
     }
 
-    public void setFloat(String string, float v)
+    public Object setFloat(String string, float v)
     {
-        checkPropertyName(string, FLOAT_PROPERTY_PREFIX);
-
-
-        _properties.put(FLOAT_PROPERTY_PREFIX + string, v);
+        return put(FLOAT_PROPERTY_PREFIX + string, v);
     }
 
-    public void setDouble(String string, double v)
+    public Object setDouble(String string, double v)
     {
-        checkPropertyName(string, DOUBLE_PROPERTY_PREFIX);
-
-
-        _properties.put(DOUBLE_PROPERTY_PREFIX + string, v);
+        return put(DOUBLE_PROPERTY_PREFIX + string, v);
     }
 
-    public void setString(String string, String string1)
+    public Object setString(String string, String string1)
     {
-        checkPropertyName(string, STRING_PROPERTY_PREFIX);
-
-
-        _properties.put(STRING_PROPERTY_PREFIX + string, string1);
+        return put(STRING_PROPERTY_PREFIX + string, string1);
     }
 
-    public void setChar(String string, char c)
+    public Object setChar(String string, char c)
     {
-        checkPropertyName(string, CHAR_PROPERTY_PREFIX);
-
-        _properties.put(CHAR_PROPERTY_PREFIX + string, c);
+        return put(CHAR_PROPERTY_PREFIX + string, c);
     }
 
-    public void setBytes(String string, byte[] bytes)
+    public Object setBytes(String string, byte[] bytes)
     {
-        setBytes(string, bytes, 0, bytes.length);
+        return setBytes(string, bytes, 0, bytes.length);
     }
 
-    public void setBytes(String string, byte[] bytes, int start, int length)
+    public Object setBytes(String string, byte[] bytes, int start, int length)
     {
-        checkPropertyName(string, BYTES_PROPERTY_PREFIX);
-
-        _properties.put(BYTES_PROPERTY_PREFIX + string, sizeByteArray(bytes, start, length));
+        return put(BYTES_PROPERTY_PREFIX + string, sizeByteArray(bytes, start, length));
     }
 
     private byte[] sizeByteArray(byte[] bytes, int start, int length)
@@ -259,65 +338,65 @@ public class PropertyFieldTable
     }
 
 
-    public void setObject(String string, Object object)
+    public Object setObject(String string, Object object)
     {
         if (object instanceof Boolean)
         {
-            setBoolean(string, (Boolean) object);
+            return setBoolean(string, (Boolean) object);
         }
         else
         {
             if (object instanceof Byte)
             {
-                setByte(string, (Byte) object);
+                return setByte(string, (Byte) object);
             }
             else
             {
                 if (object instanceof Short)
                 {
-                    setShort(string, (Short) object);
+                    return setShort(string, (Short) object);
                 }
                 else
                 {
                     if (object instanceof Integer)
                     {
-                        setInteger(string, (Integer) object);
+                        return setInteger(string, (Integer) object);
                     }
                     else
                     {
                         if (object instanceof Long)
                         {
-                            setLong(string, (Long) object);
+                            return setLong(string, (Long) object);
                         }
                         else
                         {
                             if (object instanceof Float)
                             {
-                                setFloat(string, (Float) object);
+                                return setFloat(string, (Float) object);
                             }
                             else
                             {
                                 if (object instanceof Double)
                                 {
-                                    setDouble(string, (Double) object);
+                                    return setDouble(string, (Double) object);
                                 }
                                 else
                                 {
                                     if (object instanceof String)
                                     {
-                                        setString(string, (String) object);
+                                        return setString(string, (String) object);
                                     }
                                     else
                                     {
                                         if (object instanceof Character)
                                         {
-                                            setChar(string, (Character) object);
+                                            return setChar(string, (Character) object);
                                         }
                                         else
                                         {
                                             if (object instanceof byte[])
                                             {
-                                                setBytes(string, (byte[]) object);
+                                                return setBytes(string, (byte[]) object);
                                             }
                                         }
                                     }
@@ -328,8 +407,7 @@ public class PropertyFieldTable
                 }
             }
         }
-
-
+        return null;
     }
 
     // ***** Methods
@@ -344,12 +422,16 @@ public class PropertyFieldTable
         {
             String key = (String) keys.next();
 
-            names.add(key.substring(1));
+            names.add(key);
         }
 
         return names.elements();
     }
 
+    public boolean propertyExists(String propertyName)
+    {
+        return _propertyNamesTypeMap.containsKey(propertyName);
+    }
 
     public boolean itemExists(String string)
     {
@@ -366,7 +448,6 @@ public class PropertyFieldTable
         }
         return false;
     }
-
 
     public String toString()
     {
@@ -390,25 +471,8 @@ public class PropertyFieldTable
             else
             {
                 buf.append('\n');
-                buf.append(propertyXML(propertyName, true));
 
-                if (propertyName.charAt(0) == BYTES_PROPERTY_PREFIX)
-                {
-                    //remove '>'
-                    buf.deleteCharAt(buf.length() - 1);
-
-                    byte[] bytes = (byte[]) entry.getValue();
-                    buf.append(" length='").append(bytes.length).append("'>");
-
-                    buf.append(byteArrayToXML(propertyName.substring(1), bytes));
-                }
-                else
-                {
-
-                    buf.append(String.valueOf(entry.getValue()));
-                }
-                buf.append(propertyXML(propertyName, false));
-
+                buf.append(valueAsXML(table._propertyNamesTypeMap.get(propertyName) + propertyName, entry.getValue()));
             }
         }
         buf.append("\n");
@@ -417,8 +481,45 @@ public class PropertyFieldTable
         return buf.toString();
     }
 
-    private void checkPropertyName(String propertyName, char propertyPrefix)
+    private static String valueAsXML(String name, Object value)
     {
+        char propertyPrefix = name.charAt(0);
+        String propertyName = name.substring(1);
+
+
+        StringBuffer buf = new StringBuffer();
+        // Start Tag
+        buf.append(propertyXML(name, true));
+
+        // Value
+        if (propertyPrefix == BYTES_PROPERTY_PREFIX)
+        {
+            //remove '>'
+            buf.deleteCharAt(buf.length() - 1);
+
+            byte[] bytes = (byte[]) value;
+            buf.append(" length='").append(bytes.length).append("'>");
+
+            buf.append(byteArrayToXML(propertyName, bytes));
+        }
+        else
+        {
+            buf.append(String.valueOf(value));
+        }
+
+        //End Tag
+        buf.append(propertyXML(name, false));
+
+        return buf.toString();
+    }
+
+    private Object checkPropertyName(String name)
+    {
+        String propertyName = name.substring(1);
+        char propertyPrefix = name.charAt(0);
+
+        Object previous = null;
+
         if (propertyName == null)
         {
             throw new IllegalArgumentException("Property name must not be null");
@@ -432,15 +533,29 @@ public class PropertyFieldTable
 
         if (currentValue != null)
         {
-            _properties.remove(currentValue + propertyName);
+            previous = _properties.remove(currentValue + propertyName);
+
+            // If we are in effect deleting the value (see comment on null values being deleted
+            // below) then we also need to remove the name from the encoding length.
+            if (previous == null)
+            {
+                _encodedSize -= EncodingUtils.encodedShortStringLength(propertyName);
+            }
+
+            // FIXME: Should be able to short-cut this process if the old and new values are
+            // the same object and/or type and size...
+            _encodedSize -= getEncodingSize(currentValue + propertyName, previous);
         }
 
         _propertyNamesTypeMap.put(propertyName, "" + propertyPrefix);
+
+        return previous;
     }
 
-    private static String propertyXML(String propertyName, boolean start)
+    private static String propertyXML(String name, boolean start)
     {
-        char typeIdentifier = propertyName.charAt(0);
+        char propertyPrefix = name.charAt(0);
+        String propertyName = name.substring(1);
 
         StringBuffer buf = new StringBuffer();
 
@@ -453,8 +568,7 @@ public class PropertyFieldTable
             buf.append("</");
         }
 
-
-        switch (typeIdentifier)
+        switch (propertyPrefix)
         {
             case BOOLEAN_PROPERTY_PREFIX:
                 buf.append(BOOLEAN);
@@ -487,14 +601,13 @@ public class PropertyFieldTable
                 buf.append(CHAR);
                 break;
             default:
-                buf.append(UNKNOWN + " (identifier ").append(typeIdentifier).append(")");
+                buf.append(UNKNOWN + " (identifier ").append(propertyPrefix).append(")");
                 break;
         }
 
-
         if (start)
         {
-            buf.append(" name='").append(propertyName.substring(1)).append("'");
+            buf.append(" name='").append(propertyName).append("'");
         }
 
         buf.append(">");
@@ -519,8 +632,6 @@ public class PropertyFieldTable
 
     private void processBytesXMLLine(String xmlline)
     {
-        String type = xmlline.substring(1, xmlline.indexOf(" "));
-
         String propertyName = xmlline.substring(xmlline.indexOf('\'') + 1,
                                                 xmlline.indexOf('\'', xmlline.indexOf('\'') + 1));
         String value = xmlline.substring(xmlline.indexOf(">") + 1,
@@ -545,7 +656,6 @@ public class PropertyFieldTable
         {
             String token = tokenizer.nextToken();
 
-
             if (token.equals(PROPERTY_FIELD_TABLE_CLOSE_XML)
                 || token.equals(BYTES_CLOSE_XML))
             {
@@ -555,7 +665,6 @@ public class PropertyFieldTable
             if (token.equals(BYTES_CLOSE_XML))
             {
                 processing_bytes = false;
-
             }
 
             if (processing)
@@ -578,10 +687,8 @@ public class PropertyFieldTable
             {
                 processing = true;
             }
-
         }
     }
-
 
     private void processXMLLine(String xmlline)
     {
@@ -611,11 +718,39 @@ public class PropertyFieldTable
         }
         if (type.equals(BYTES))
         {
-            Integer length = Integer.parseInt(xmlline.substring(
-                    xmlline.lastIndexOf("=") + 2
-                    , xmlline.lastIndexOf("'")));
+            int headerEnd = xmlline.indexOf('>');
+            String bytesHeader = xmlline.substring(0, headerEnd);
+
+            //Extract length value
+            Integer length = Integer.parseInt(bytesHeader.substring(
+                    bytesHeader.lastIndexOf("=") + 2
+                    , bytesHeader.lastIndexOf("'")));
+
+
             byte[] bytes = new byte[length];
             setBytes(propertyName, bytes);
+
+            //Check if the line contains all the byte values
+            // This is needed as the XMLLine sent across the wire is the bytes value
+
+            int byteStart = xmlline.indexOf('<', headerEnd);
+
+            if (byteStart > 0)
+            {
+                while (!xmlline.startsWith(BYTES_CLOSE_XML, byteStart))
+                {
+                    //This should be the next byte line
+                    int bytePrefixEnd = xmlline.indexOf('>', byteStart) + 1;
+                    int byteEnd = xmlline.indexOf('>', bytePrefixEnd) + 1;
+
+                    String byteline = xmlline.substring(byteStart, byteEnd);
+
+                    processBytesXMLLine(byteline);
+
+                    byteStart = xmlline.indexOf('<', byteEnd);
+                }
+            }
+
         }
         if (type.equals(SHORT))
         {
@@ -651,6 +786,311 @@ public class PropertyFieldTable
         }
     }
 
+    // *************************  Byte Buffer Processing
+
+    public void writeToBuffer(ByteBuffer buffer)
+    {
+        final boolean debug = _logger.isDebugEnabled();
+
+        if (debug)
+        {
+            _logger.debug("FieldTable::writeToBuffer: Writing encoded size of " + _encodedSize + "...");
+        }
+
+        EncodingUtils.writeUnsignedInteger(buffer, _encodedSize);
+
+        putDataInBuffer(buffer);
+    }
+
+    public byte[] getDataAsBytes()
+    {
+        final ByteBuffer buffer = ByteBuffer.allocate((int) _encodedSize); // FIXME XXX: Is cast a problem?
+
+        putDataInBuffer(buffer);
+
+        final byte[] result = new byte[(int) _encodedSize];
+        buffer.flip();
+        buffer.get(result);
+        buffer.release();
+        return result;
+    }
+
+
+    public int size()
+    {
+        return _properties.size();
+    }
+
+    public boolean isEmpty()
+    {
+        return _properties.isEmpty();
+    }
+
+    public boolean containsKey(Object key)
+    {
+        return _properties.containsKey(key);
+    }
+
+    public boolean containsValue(Object value)
+    {
+        return _properties.containsValue(value);
+    }
+
+    public Object get(Object key)
+    {
+        return _properties.get(key);
+    }
+
+
+    public Object put(Object key, Object value)
+    {
+        return setObject(key.toString(), value);
+    }
+
+    protected Object put(String key, Object value)
+    {
+        Object previous = checkPropertyName(key);
+
+
+        String propertyName = key.substring(1);
+        char propertyPrefix = _propertyNamesTypeMap.get(propertyName).charAt(0);
+
+        if (value != null)
+        {
+            //Add the size of the propertyName
+            _encodedSize += EncodingUtils.encodedShortStringLength(propertyName);
+
+            // For now: Setting a null value is the equivalent of deleting it.
+            // This is ambiguous in the JMS spec and needs thrashing out and potentially
+            // testing against other implementations.
+
+            //Add the size of the content
+            _encodedSize += getEncodingSize(key, value);
+        }
+
+        _properties.put((String) propertyName, value);
+
+        return previous;
+    }
+
+    public Object remove(Object key)
+    {
+        if (key instanceof String)
+        {
+            throw new IllegalArgumentException("Property key be a string");
+        }
+
+        char propertyPrefix = ((String) key).charAt(0);
+
+        if (_properties.containsKey(key))
+        {
+            final Object value = _properties.remove(key);
+            // plus one for the type
+            _encodedSize -= EncodingUtils.encodedShortStringLength(((String) key));
+
+            // This check is, for now, unnecessary (we don't store null values).
+            if (value != null)
+            {
+                _encodedSize -= getEncodingSize(propertyPrefix + (String) key, value);
+            }
+
+            return value;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public void putAll(Map t)
+    {
+        Iterator it = t.keySet().iterator();
+
+        while (it.hasNext())
+        {
+            Object key = it.next();
+            put(key, t.get(key));
+        }
+    }
+
+    public void clear()
+    {
+        _properties.clear();
+        _propertyNamesTypeMap.clear();
+    }
+
+    public Set keySet()
+    {
+        return _properties.keySet();
+    }
+
+    public Collection values()
+    {
+        return _properties.values();
+    }
+
+    public Set entrySet()
+    {
+        return _properties.entrySet();
+    }
+
+    public long getEncodedSize()
+    {
+        return _encodedSize;
+    }
+
+
+    private void putDataInBuffer(ByteBuffer buffer)
+    {
+        final Iterator it = _properties.entrySet().iterator();
+
+        //If there are values then write out the encoded Size... could check _encodedSize != 0
+        // write out the total length, which we have kept up to date as data is added
+
+
+        while (it.hasNext())
+        {
+            Map.Entry me = (Map.Entry) it.next();
+            String propertyName = (String) me.getKey();
+
+            //The type value
+            char propertyPrefix = _propertyNamesTypeMap.get(propertyName).charAt(0);
+            //The actual param name skipping type
+
+            EncodingUtils.writeShortStringBytes(buffer, propertyName);
+            Object value = me.getValue();
+
+            switch (propertyPrefix)
+            {
+
+                case STRING_PROPERTY_PREFIX:
+                    // TODO: look at using proper charset encoder
+                    buffer.put((byte) STRING_PROPERTY_PREFIX);
+                    EncodingUtils.writeLongStringBytes(buffer, (String) value);
+                    break;
+
+                case AMQP_UNSIGNEDINT_PROPERTY_PREFIX:
+                case LONG_PROPERTY_PREFIX:
+                case INT_PROPERTY_PREFIX:
+                case BOOLEAN_PROPERTY_PREFIX:
+                case BYTE_PROPERTY_PREFIX:
+                case SHORT_PROPERTY_PREFIX:
+                case FLOAT_PROPERTY_PREFIX:
+                case DOUBLE_PROPERTY_PREFIX:
+                case CHAR_PROPERTY_PREFIX:
+                case BYTES_PROPERTY_PREFIX:
+                case XML_PROPERTY_PREFIX:
+                    // Encode as XML
+                    buffer.put((byte) XML_PROPERTY_PREFIX);
+                    EncodingUtils.writeLongStringBytes(buffer, valueAsXML(propertyPrefix + propertyName, value));
+                    break;
+                default:
+                {
+
+                    // Should never get here
+                    throw new IllegalArgumentException("Key '" + propertyName + "': Unsupported type in field table, type: " + ((value == null) ? "null-object" : value.getClass()));
+                }
+            }
+        }
+    }
+
+
+    public void setFromBuffer(ByteBuffer buffer, long length) throws AMQFrameDecodingException
+    {
+        final boolean debug = _logger.isDebugEnabled();
+
+        int sizeRead = 0;
+        while (sizeRead < length)
+        {
+            int sizeRemaining = buffer.remaining();
+            final String key = EncodingUtils.readShortString(buffer);
+            // TODO: use proper charset decoder
+            byte iType = buffer.get();
+            final char type = (char) iType;
+            Object value = null;
+
+            switch (type)
+            {
+                case STRING_PROPERTY_PREFIX:
+                    value = EncodingUtils.readLongString(buffer);
+                    break;
+                case LONG_PROPERTY_PREFIX:
+                case INT_PROPERTY_PREFIX:
+                case BOOLEAN_PROPERTY_PREFIX:
+                case BYTE_PROPERTY_PREFIX:
+                case SHORT_PROPERTY_PREFIX:
+                case FLOAT_PROPERTY_PREFIX:
+                case DOUBLE_PROPERTY_PREFIX:
+                case CHAR_PROPERTY_PREFIX:
+                case BYTES_PROPERTY_PREFIX:
+                case XML_PROPERTY_PREFIX:
+                    processXMLLine(EncodingUtils.readLongString(buffer));
+                    break;
+                default:
+                    String msg = "Field '" + key + "' - unsupported field table type: " + type + ".";
+                    //some extra debug information...
+                    msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
+                    throw new AMQFrameDecodingException(msg);
+            }
+
+            sizeRead += (sizeRemaining - buffer.remaining());
+
+            if (debug)
+            {
+                _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + type + "', key '" + key + "', value '" + value + "' (now read " + sizeRead + " of " + length + " encoded bytes)...");
+            }
+
+            if (type != XML_PROPERTY_PREFIX)
+            {
+                setObject(key, value);
+            }
+        }
+
+        if (debug)
+        {
+            _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
+        }
+    }
+
+
+    /**
+     * @param name  the property name with type prefix
+     * @param value the property value
+     * @return integer
+     */
+    private static int getEncodingSize(String name, Object value)
+    {
+        int encodingSize;
+
+        char propertyPrefix = name.charAt(0);
+
+        switch (propertyPrefix)
+        {
+            // the extra byte if for the type indicator that is written out
+            case STRING_PROPERTY_PREFIX:
+                encodingSize = 1 + EncodingUtils.encodedLongStringLength((String) value);
+                break;
+            case LONG_PROPERTY_PREFIX:
+            case INT_PROPERTY_PREFIX:
+            case BOOLEAN_PROPERTY_PREFIX:
+            case BYTE_PROPERTY_PREFIX:
+            case SHORT_PROPERTY_PREFIX:
+            case FLOAT_PROPERTY_PREFIX:
+            case DOUBLE_PROPERTY_PREFIX:
+            case CHAR_PROPERTY_PREFIX:
+            case BYTES_PROPERTY_PREFIX:
+            case XML_PROPERTY_PREFIX:
+                encodingSize = 1 + EncodingUtils.encodedLongStringLength(valueAsXML(name, value));
+                break;
+            default:
+                //encodingSize = 1 + EncodingUtils.encodedLongStringLength(String.valueOf(value));
+                //  We are using XML String encoding
+                throw new IllegalArgumentException("Unsupported type in field table: " + value.getClass());
+        }
+
+// the extra byte for the type indicator is calculated in the name
+        return encodingSize;
+    }
+
 
 }
-

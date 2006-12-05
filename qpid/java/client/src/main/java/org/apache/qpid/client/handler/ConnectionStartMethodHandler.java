@@ -32,6 +32,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
@@ -117,7 +118,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             }
 
             stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-            FieldTable clientProperties = new FieldTable();
+            FieldTable clientProperties = FieldTableFactory.newFieldTable();
             clientProperties.put("instance", ps.getClientID());
             clientProperties.put("product", "Qpid");
             clientProperties.put("version", "1.0");

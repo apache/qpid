@@ -47,6 +47,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     private final List<String> messages = new ArrayList<String>();
     private int _count = 100;
     public String _connectionString = "vm://:1";
+    private byte[] _bytes = {99, 98, 97, 96, 95};
 
     protected void setUp() throws Exception
     {
@@ -104,8 +105,30 @@ public class MapMessageTest extends TestCase implements MessageListener
             MapMessage message = _session.createMapMessage();
 
             message.setBoolean("odd", i / 2 == 0);
+            message.setByte("byte", (byte) Byte.MAX_VALUE);
+
+            message.setBytes("bytes", _bytes);
+            message.setChar("char", (char) 'c');
+            message.setDouble("double", (double) Double.MAX_VALUE);
+            message.setFloat("float", (float) Float.MAX_VALUE);
+
             message.setInt("messageNumber", i);
+            message.setInt("int", (int) Integer.MAX_VALUE);
+
+            message.setLong("long", (long) Long.MAX_VALUE);
+            message.setShort("short", (short) Short.MAX_VALUE);
             message.setString("message", text);
+
+
+            message.setObject("object-bool", true);
+            message.setObject("object-byte", Byte.MAX_VALUE);
+            message.setObject("object-bytes", _bytes);
+            message.setObject("object-char", 'c');
+            message.setObject("object-double", Double.MAX_VALUE);
+            message.setObject("object-float", Float.MAX_VALUE);
+            message.setObject("object-int", Integer.MAX_VALUE);
+            message.setObject("object-long", Long.MAX_VALUE);
+            message.setObject("object-short", Short.MAX_VALUE);
 
             producer.send(message);
         }
@@ -130,7 +153,31 @@ public class MapMessageTest extends TestCase implements MessageListener
         {
             actual.add(m.getString("message"));
             assertEqual(m.getInt("messageNumber"), count);
-            assertEqual(m.getBoolean("odd"), count / 2 == 0);
+
+
+            assertEqual(count / 2 == 0, m.getBoolean("odd"));
+            assertEqual((byte) Byte.MAX_VALUE, m.getByte("byte"));
+
+            assertBytesEqual(_bytes, m.getBytes("bytes"));
+            assertEqual((char) 'c', m.getChar("char"));
+            assertEqual((double) Double.MAX_VALUE, m.getDouble("double"));
+            assertEqual((float) Float.MAX_VALUE, m.getFloat("float"));
+
+            assertEqual(count, m.getInt("messageNumber"));
+            assertEqual((int) Integer.MAX_VALUE, m.getInt("int"));
+            assertEqual((long) Long.MAX_VALUE, m.getLong("long"));
+            assertEqual((short) Short.MAX_VALUE, m.getShort("short"));
+
+            assertEqual(true, m.getObject("object-bool"));
+            assertEqual(Byte.MAX_VALUE, m.getObject("object-byte"));
+            assertBytesEqual(_bytes, (byte[]) m.getObject("object-bytes"));
+            assertEqual('c', m.getObject("object-char"));
+            assertEqual(Double.MAX_VALUE, m.getObject("object-double"));
+            assertEqual(Float.MAX_VALUE, m.getObject("object-float"));
+            assertEqual(Integer.MAX_VALUE, m.getObject("object-int"));
+            assertEqual(Long.MAX_VALUE, m.getObject("object-long"));
+            assertEqual(Short.MAX_VALUE, m.getObject("object-short"));
+
 
             try
             {
@@ -153,7 +200,7 @@ public class MapMessageTest extends TestCase implements MessageListener
                 Assert.fail("Message should be writeable");
             }
 
-              //Check property write status
+            //Check property write status
             try
             {
                 m.setStringProperty("test", "test");
@@ -180,6 +227,17 @@ public class MapMessageTest extends TestCase implements MessageListener
 
         assertEqual(messages.iterator(), actual.iterator());
     }
+
+    private void assertBytesEqual(byte[] expected, byte[] actual)
+    {
+        Assert.assertEquals(expected.length, actual.length);
+
+        for (int index = 0; index < expected.length; index++)
+        {
+            Assert.assertEquals(expected[index], actual[index]);
+        }
+    }
+
 
     private static void assertEqual(Iterator expected, Iterator actual)
     {

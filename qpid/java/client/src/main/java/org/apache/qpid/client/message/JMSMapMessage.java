@@ -23,10 +23,10 @@ package org.apache.qpid.client.message;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.PropertyFieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 import java.util.Enumeration;
 
 public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessage
@@ -58,7 +58,7 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
         try
         {
-            _map = new PropertyFieldTable(getText());
+            _map = FieldTableFactory.newFieldTable(getText());
         }
         catch (JMSException e)
         {
@@ -74,7 +74,7 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
         {
             _data.release();
         }
-        _data = null;     
+        _data = null;
     }
 
     public String toBodyString() throws JMSException

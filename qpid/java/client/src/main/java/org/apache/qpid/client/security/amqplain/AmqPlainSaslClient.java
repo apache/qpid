@@ -21,6 +21,7 @@
 package org.apache.qpid.client.security.amqplain;
 
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
@@ -71,7 +72,7 @@ public class AmqPlainSaslClient implements SaslClient
         {
             throw new SaslException("Error handling SASL callbacks: " + e, e);
         }
-        FieldTable table = new FieldTable();
+        FieldTable table = FieldTableFactory.newFieldTable();
         table.put("LOGIN", nameCallback.getName());
         table.put("PASSWORD", pwdCallback.getPassword());
         return table.getDataAsBytes();

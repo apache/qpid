@@ -25,6 +25,10 @@ import junit.framework.TestCase;
 
 import java.util.Enumeration;
 
+import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.common.ByteBufferProxy;
+import org.apache.mina.common.support.BaseByteBuffer;
+
 public class PropertyFieldTableTest extends TestCase
 {
 
@@ -206,7 +210,7 @@ public class PropertyFieldTableTest extends TestCase
 
         PropertyFieldTable table2 = new PropertyFieldTable(table1XML);
 
-        Assert.assertEquals(table1XML, table2.toString());        
+        Assert.assertEquals(table1XML, table2.toString());
     }
 
     public void testKeyEnumeration()
@@ -271,6 +275,117 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(Integer.MAX_VALUE, table.getObject("object-int"));
         Assert.assertEquals(Long.MAX_VALUE, table.getObject("object-long"));
         Assert.assertEquals(Short.MAX_VALUE, table.getObject("object-short"));
+    }
+
+
+    public void testwriteBuffer()
+    {
+        byte[] bytes = {99, 98, 97, 96, 95};
+
+        PropertyFieldTable table = new PropertyFieldTable();
+        table.setBoolean("bool", true);
+        table.setByte("byte", Byte.MAX_VALUE);
+
+        table.setBytes("bytes", bytes);
+        table.setChar("char", 'c');
+        table.setDouble("double", Double.MAX_VALUE);
+        table.setFloat("float", Float.MAX_VALUE);
+        table.setInteger("int", Integer.MAX_VALUE);
+        table.setLong("long", Long.MAX_VALUE);
+        table.setShort("short", Short.MAX_VALUE);
+
+
+        final ByteBuffer buffer = ByteBuffer.allocate((int) table.getEncodedSize()); // FIXME XXX: Is cast a problem?
+
+        table.writeToBuffer(buffer);
+
+        buffer.flip();
+
+        long length = buffer.getUnsignedInt();
+
+        try
+        {
+            PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
+
+            Assert.assertEquals((Boolean) true, table2.getBoolean("bool"));
+            Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));
+            assertBytesEqual(bytes, table2.getBytes("bytes"));
+            Assert.assertEquals((Character) 'c', table2.getCharacter("char"));
+            Assert.assertEquals(Double.MAX_VALUE, table2.getDouble("double"));
+            Assert.assertEquals(Float.MAX_VALUE, table2.getFloat("float"));
+            Assert.assertEquals((Integer) Integer.MAX_VALUE, table2.getInteger("int"));
+            Assert.assertEquals((Long) Long.MAX_VALUE, table2.getLong("long"));
+            Assert.assertEquals((Short) Short.MAX_VALUE, table2.getShort("short"));
+        }
+        catch (AMQFrameDecodingException e)
+        {
+            e.printStackTrace();
+            fail("PFT should be instantiated from bytes." + e.getCause());
+        }
+    }
+
+    public void testEncodingSize()
+    {
+        FieldTable result = FieldTableFactory.newFieldTable();
+        int size = 0;
+        result.put("one", 1L);
+        // size is 1(size) + bytes for short string
+        size = 1 + 3; // 1 + key length
+        // or size is 1(the type) + number of bytes (4bytes worth) + bytes
+        size += 1 + 4;                 // 1 + 4 + value length
+        size += "<long name='one'>1</long>".length(); // this is the xml encoding for a long.
+        assertEquals(size, result.getEncodedSize());
+
+        result.put("two", 2L);
+        size += 1 + 3; // 1 + key length
+        size += 1 + 4;                 // 1 + 4 + value length
+        size += "<long name='two'>2</long>".length(); // this is the xml encoding for a long.
+        assertEquals(size, result.getEncodedSize());
+
+        result.put("three", 3L);
+        size += 1 + 5; // 1 + key length
+        size += 1 + 4;                 // 1 + 4 + value length
+        size += "<long name='three'>3</long>".length(); // this is the xml encoding for a long.
+        assertEquals(size, result.getEncodedSize());
+
+        result.put("four", 4L);
+        size += 1 + 4; // 1 + key length
+        size += 1 + 4;                 // 1 + 4 + value length
+        size += "<long name='four'>4</long>".length(); // this is the xml encoding for a long.
+        assertEquals(size, result.getEncodedSize());
+
+        result.put("five", 5L);
+        size += 1 + 4; // 1 + key length
+        size += 1 + 4;                 // 1 + 4 + value length
+        size += "<long name='five'>5</long>".length(); // this is the xml encoding for a long.
+        assertEquals(size, result.getEncodedSize());
+
+        //fixme should perhaps be expanded to incorporate all types.
+
+        final ByteBuffer buffer = ByteBuffer.allocate((int) result.getEncodedSize()); // FIXME XXX: Is cast a problem?
+
+        result.writeToBuffer(buffer);
+
+        buffer.flip();
+
+        long length = buffer.getUnsignedInt();
+
+        try
+        {
+            PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
+
+            Assert.assertEquals((Long) 1L, table2.getLong("one"));
+            Assert.assertEquals((Long) 2L, table2.getLong("two"));
+            Assert.assertEquals((Long) 3L, table2.getLong("three"));
+            Assert.assertEquals((Long) 4L, table2.getLong("four"));
+            Assert.assertEquals((Long) 5L, table2.getLong("five"));
+        }
+        catch (AMQFrameDecodingException e)
+        {
+            e.printStackTrace();
+            fail("PFT should be instantiated from bytes." + e.getCause());
+        }
+
     }
 
     private void assertBytesEqual(byte[] expected, byte[] actual)

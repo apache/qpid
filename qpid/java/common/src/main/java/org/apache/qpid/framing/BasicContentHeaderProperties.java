@@ -435,7 +435,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
         if (_headers == null)
         {
-            setHeaders(new FieldTable());
+            setHeaders(FieldTableFactory.newFieldTable());
         }
 
         return _headers;
