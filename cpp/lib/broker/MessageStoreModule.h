@@ -36,7 +36,7 @@ namespace qpid {
             qpid::sys::Module<MessageStore> store;
         public:
             MessageStoreModule(const std::string& name);
-            void create(const Queue& queue);
+            void create(const Queue& queue, const qpid::framing::FieldTable& settings);
             void destroy(const Queue& queue);
             void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
             void stage(Message::shared_ptr& msg);

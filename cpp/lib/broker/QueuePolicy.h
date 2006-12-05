@@ -22,22 +22,31 @@
 #define _QueuePolicy_
 
 #include <BrokerMessage.h>
+#include <FieldTable.h>
 
 namespace qpid {
     namespace broker {
         class QueuePolicy
         {
+            static const std::string maxCountKey;
+            static const std::string maxSizeKey;
+
             const u_int32_t maxCount;
             const u_int64_t maxSize;
             u_int32_t count;
             u_int64_t size;
             
+            static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
             bool checkCount(Message::shared_ptr& msg);
             bool checkSize(Message::shared_ptr& msg);
         public:
             QueuePolicy(u_int32_t maxCount, u_int64_t maxSize);
+            QueuePolicy(const qpid::framing::FieldTable& settings);
             void enqueued(Message::shared_ptr& msg, MessageStore* store);
             void dequeued(Message::shared_ptr& msg, MessageStore* store);
+            void update(qpid::framing::FieldTable& settings);
+            u_int32_t getMaxCount() const { return maxCount; }
+            u_int64_t getMaxSize() const { return maxSize; }           
         };
     }
 }

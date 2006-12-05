@@ -161,12 +161,14 @@ u_int32_t Queue::purge(){
 }
 
 void Queue::pop(){
-    messages.pop();
+    if (policy.get()) policy->dequeued(messages.front(), store);
+    messages.pop();    
 }
 
 void Queue::push(Message::shared_ptr& msg){
     queueing = true;
     messages.push(msg);
+    if (policy.get()) policy->enqueued(messages.front(), store);
 }
 
 u_int32_t Queue::getMessageCount() const{
@@ -206,24 +208,17 @@ namespace
 
 void Queue::create(const FieldTable& settings)
 {
-    //Note: currently field table only contain signed 32 bit ints, which
-    //      restricts the values that can be set on the queue policy.
-    u_int32_t maxCount(0);
-    try {
-        maxCount = settings.getInt(qpidMaxSize); 
-    } catch (FieldNotFoundException& ignore) {
-    }
-    u_int32_t maxSize(0);
-    try {
-        maxSize = settings.getInt(qpidMaxCount);
-    } catch (FieldNotFoundException& ignore) {
-    }
-    if (maxCount || maxSize) {
-        setPolicy(std::auto_ptr<QueuePolicy>(new QueuePolicy(maxCount, maxSize)));
-    }
- 
     if (store) {
-        store->create(*this);
+        store->create(*this, settings);
+    }
+    configure(settings);
+}
+
+void Queue::configure(const FieldTable& settings)
+{
+    QueuePolicy* _policy = new QueuePolicy(settings);
+    if (_policy->getMaxCount() || _policy->getMaxSize()) {
+        setPolicy(std::auto_ptr<QueuePolicy>(_policy));
     }
 }
 
@@ -237,4 +232,9 @@ void Queue::destroy()
 void Queue::setPolicy(std::auto_ptr<QueuePolicy> _policy)
 {
     policy = _policy;
+}
+
+const QueuePolicy* const Queue::getPolicy()
+{
+    return policy.get();
 }

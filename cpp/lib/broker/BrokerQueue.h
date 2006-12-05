@@ -66,7 +66,7 @@ namespace qpid {
             int64_t lastUsed;
             Consumer* exclusive;
             mutable u_int64_t persistenceId;
-            std::auto_ptr<QueuePolicy> policy;
+            std::auto_ptr<QueuePolicy> policy;            
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -86,6 +86,7 @@ namespace qpid {
             ~Queue();
 
             void create(const qpid::framing::FieldTable& settings);
+            void configure(const qpid::framing::FieldTable& settings);
             void destroy();
             /**
              * Informs the queue of a binding that should be cancelled on
@@ -135,6 +136,8 @@ namespace qpid {
              * dequeues from memory only
              */
             Message::shared_ptr dequeue();
+
+            const QueuePolicy* const getPolicy();
         };
     }
 }
