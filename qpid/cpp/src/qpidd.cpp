@@ -20,7 +20,6 @@
  */
 #include <Broker.h>
 #include <Configuration.h>
-// FIXME 
 #include <signal.h>
 #include <iostream>
 #include <memory>
@@ -44,7 +43,6 @@ int main(int argc, char** argv)
             config.usage();
         }else{
             broker = Broker::create(config);
-// FIXME             
             signal(SIGINT, handle_signal);
             broker->run();
         }
