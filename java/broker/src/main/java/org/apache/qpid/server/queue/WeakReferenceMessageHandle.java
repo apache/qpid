@@ -41,7 +41,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException
     {
-        ContentHeaderBody chb = _contentHeaderBody.get();
+        ContentHeaderBody chb = (_contentHeaderBody != null?_contentHeaderBody.get():null);
         if (chb == null)
         {
             MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
@@ -87,7 +87,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public BasicPublishBody getPublishBody(long messageId) throws AMQException
     {
-        BasicPublishBody bpb = _publishBody.get();
+        BasicPublishBody bpb = (_publishBody != null?_publishBody.get():null);
         if (bpb == null)
         {
             MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);

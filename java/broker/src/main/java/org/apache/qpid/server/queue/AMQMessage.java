@@ -54,23 +54,8 @@ public class AMQMessage
 
     private AMQMessageHandle _messageHandle;
 
-    /**
-     * Stored temporarily until the header has been received at which point it is used when
-     * constructing the handle
-     */
-    private BasicPublishBody _publishBody;
-
-    /**
-     * Also stored temporarily.
-     */
-    private ContentHeaderBody _contentHeaderBody;
-
-    /**
-     * Keeps a track of how many bytes we have received in body frames
-     */
-    private long _bodyLengthReceived = 0;
-
-    private final TransactionalContext _txnContext;
+    // TODO: ideally this should be able to go into the transient message date - check this! (RG)
+    private TransactionalContext _txnContext;
 
     /**
      * Flag to indicate whether message has been delivered to a
@@ -79,12 +64,7 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
 
-    /**
-     * This is stored during routing, to know the queues to which this message should immediately be
-     * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
-     * by the message handle.
-     */
-    private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
+    private TransientMessageData _transientMessageData = new TransientMessageData();
 
     /**
      * Used to iterate through all the body frames associated with this message. Will not
@@ -160,11 +140,27 @@ public class AMQMessage
     {
         _messageId = messageId;
         _txnContext = txnContext;
-        _publishBody = publishBody;
+        _transientMessageData.setPublishBody(publishBody);
         if (_log.isDebugEnabled())
         {
             _log.debug("Message created with id " + messageId);
         }
+    }
+
+    /**
+     * Used when recovering, i.e. when the message store is creating references to messages.
+     * In that case, the normal enqueue/routingComplete is not done since the recovery process
+     * is responsible for routing the messages to queues.
+     * @param messageId
+     * @param store
+     * @param factory
+     * @throws AMQException
+     */
+    public AMQMessage(long messageId, MessageStore store, MessageHandleFactory factory) throws AMQException
+    {
+        _messageId = messageId;
+        _messageHandle = factory.createMessageHandle(messageId, store, true);
+        _transientMessageData = null;
     }
 
     /**
@@ -200,7 +196,7 @@ public class AMQMessage
                       MessageHandleFactory messageHandleFactory) throws AMQException
     {
         this(messageId, publishBody, txnContext, contentHeader);
-        _destinationQueues = destinationQueues;
+        _transientMessageData.setDestinationQueues(destinationQueues);
         routingComplete(messageStore, messageHandleFactory);
         for (ContentBody cb : contentBodies)
         {
@@ -214,6 +210,7 @@ public class AMQMessage
         _messageHandle = msg._messageHandle;
         _txnContext = msg._txnContext;
         _deliveredToConsumer = msg._deliveredToConsumer;
+        _transientMessageData = msg._transientMessageData;
     }
 
     public Iterator<AMQDataBlock> getBodyFrameIterator(int channel)
@@ -228,9 +225,9 @@ public class AMQMessage
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        if (_contentHeaderBody != null)
+        if (_transientMessageData != null)
         {
-            return _contentHeaderBody;
+            return _transientMessageData.getContentHeaderBody();
         }
         else
         {
@@ -241,7 +238,7 @@ public class AMQMessage
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
-        _contentHeaderBody = contentHeaderBody;
+        _transientMessageData.setContentHeaderBody(contentHeaderBody);
     }
 
     public void routingComplete(MessageStore store, MessageHandleFactory factory) throws AMQException
@@ -255,12 +252,12 @@ public class AMQMessage
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
-        for (AMQQueue q : _destinationQueues)
+        for (AMQQueue q : _transientMessageData.getDestinationQueues())
         {
             _messageHandle.enqueue(_messageId, q);
         }
 
-        if (_contentHeaderBody.bodySize == 0)
+        if (_transientMessageData.getContentHeaderBody().bodySize == 0)
         {
             deliver();
         }
@@ -268,7 +265,7 @@ public class AMQMessage
 
     public boolean addContentBodyFrame(ContentBody contentBody) throws AMQException
     {
-        _bodyLengthReceived += contentBody.getSize();
+        _transientMessageData.addBodyLength(contentBody.getSize());
         _messageHandle.addContentBodyFrame(_messageId, contentBody);
         if (isAllContentReceived())
         {
@@ -283,7 +280,7 @@ public class AMQMessage
 
     public boolean isAllContentReceived() throws AMQException
     {
-        return _bodyLengthReceived == _contentHeaderBody.bodySize;
+        return _transientMessageData.isAllContentReceived();
     }
 
     public long getMessageId()
@@ -384,7 +381,7 @@ public class AMQMessage
      */
     public void enqueue(AMQQueue queue) throws AMQException
     {
-        _destinationQueues.add(queue);
+        _transientMessageData.addDestinationQueue(queue);
     }
 
     public void dequeue(AMQQueue queue) throws AMQException
@@ -394,11 +391,9 @@ public class AMQMessage
 
     public boolean isPersistent() throws AMQException
     {
-        if (_contentHeaderBody != null)
+        if (_transientMessageData != null)
         {
-            //todo remove literal values to a constant file such as AMQConstants in common
-            return _contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
-                 ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+            return _transientMessageData.isPersistent();
         }
         else
         {
@@ -425,9 +420,9 @@ public class AMQMessage
     public BasicPublishBody getPublishBody() throws AMQException
     {
         BasicPublishBody pb;
-        if (_publishBody != null)
+        if (_transientMessageData != null)
         {
-            pb = _publishBody;
+            pb = _transientMessageData.getPublishBody();
         }
         else
         {
@@ -452,26 +447,30 @@ public class AMQMessage
 
     private void deliver() throws AMQException
     {
-        // first we allow the handle to know that the message has been fully received. This is useful if it is
-        // maintaining any calculated values based on content chunks
+        // we get a reference to the destination queues now so that we can clear the
+        // transient message data as quickly as possible
+        List<AMQQueue> destinationQueues = _transientMessageData.getDestinationQueues();
         try
         {
-            _messageHandle.setPublishAndContentHeaderBody(_messageId, _publishBody, _contentHeaderBody);
-            _publishBody = null;
-            _contentHeaderBody = null;
+            // first we allow the handle to know that the message has been fully received. This is useful if it is
+            // maintaining any calculated values based on content chunks
+            _messageHandle.setPublishAndContentHeaderBody(_messageId, _transientMessageData.getPublishBody(),
+                                                          _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
             _txnContext.messageFullyReceived(isPersistent());
-            for (AMQQueue q : _destinationQueues)
+
+            _transientMessageData = null;
+
+            for (AMQQueue q : destinationQueues)
             {
                 _txnContext.deliver(this, q);
             }
         }
         finally
         {
-            _destinationQueues.clear();
-            _destinationQueues = null;
+            destinationQueues.clear();
             decrementReference();
         }
     }

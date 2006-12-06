@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,6 @@ package org.apache.qpid.client.failover;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.failover.FailoverException;
 
 import javax.jms.JMSException;
 
@@ -56,7 +55,7 @@ public abstract class FailoverSupport
                 }
                 catch (FailoverException e)
                 {
-                    _log.info("Failover exception caught during operation");
+                    _log.info("Failover exception caught during operation: " + e, e);
                 }
             }
         }
