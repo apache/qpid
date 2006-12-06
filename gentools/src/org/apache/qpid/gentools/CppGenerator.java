@@ -176,9 +176,16 @@ public class CppGenerator extends Generator
 	{
 		String domainType = getDomainType(domainName, version);
 		if (domainType == null)
+        {
 			throw new AmqpTypeMappingException("Domain type \"" + domainName +
 				"\" not found in C++ typemap.");
-		return typeMap.get(domainType).type;
+        }
+        DomainInfo info = typeMap.get(domainType);
+        if (info == null)
+        {
+            throw new AmqpTypeMappingException("Unknown domain: \"" + domainType + "\"");
+        }
+        return info.type;
 	}
 	
 	// === Abstract methods from class Generator - C++-specific implementation ===
@@ -1125,7 +1132,7 @@ public class CppGenerator extends Generator
         while (mItr.hasNext())
         {
             AmqpMethod method = thisClass.methodMap.get(mItr.next());
-            sb.append(indent + "#include <qpid/framing/" + thisClass.name +
+            sb.append(indent + "#include <" + thisClass.name +
                 Utils.firstUpper(method.name) + "Body.h>" + cr);
         }
         return sb.toString();       

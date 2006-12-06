@@ -58,8 +58,9 @@ namespace Qpid.Client.Tests
             _channel.Bind(queueName, _serviceName, null, CreatePatternAsFieldTable());
 
             IMessageConsumer consumer = _channel.CreateConsumerBuilder(queueName)
-                .withPrefetch(100)
-                .withNoLocal(true)
+                .WithPrefetchLow(100)
+                .WithPrefetchHigh(500)
+                .WithNoLocal(true)
                 .Create();
 
             consumer.OnMessage = new MessageReceivedDelegate(OnMessage);

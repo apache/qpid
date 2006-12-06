@@ -1,22 +1,9 @@
 
-https://issues.apache.org/jira/browse/QPID-136
-* createSession with prefetch (warning: prefetch partly added)
-  * Do the BasicQos message after opening channel (sets up prefetch).
-
-https://issues.apache.org/jira/browse/QPID-137
-* .NET currently only supports no-ack mode. Allow acknowledgement support.
-  * Implement the PreAcknowledge ack mode. Add preDeliver/postDeliver methods in AmqSession like the Java client.
-  * Implement Recover() with Basic.Recover.
-
-* Port Connection URL support.
-
 * Implement durable subscriptions.
 
 * SSL. SSLStream composed over NetworkStream.
 
-* Implement a Async IO socket transport.
-  Compare against blocking socket transport and configure default appropriately.
-
 * support multiple versions of AMQP from the same client.
 
-* Blocking receive i.e. Basic.Get
+* Implement a Async IO socket transport.
+  Compare against blocking socket transport and configure default appropriately.

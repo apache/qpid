@@ -70,16 +70,6 @@ public class TestSubscription implements Subscription
     {
     }
 
-    public boolean hasFilters()
-    {
-        return false;
-    }
-
-    public boolean hasInterest(AMQMessage msg)
-    {
-        return true;
-    }
-
     public int hashCode()
     {
         return key.hashCode();

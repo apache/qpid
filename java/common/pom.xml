@@ -46,7 +46,7 @@
     </properties>
 
     <build>
-        <plugins>
+        <plugins>          
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -77,19 +77,6 @@
         </plugins>
     </build>
 
-    <repositories>
-     <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>java.net repository</id>
-            <name>Maven 1.x Repository</name>
-            <url>httsp://maven-repository.dev.java.net/nonav/repository/</url>
-            <layout>legacy</layout>
-        </repository>
-
-
-    </repositories>
     <dependencies>
         <dependency>
             <groupId>log4j</groupId>
@@ -99,16 +86,7 @@
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
         </dependency>
-        <!-- dependency>
-            <groupId>grizzly</groupId>
-            <artifactId>grizzly</artifactId>
-            <version>1.0.4</version>
-        </dependency -->
          <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-jms_1.1_spec</artifactId>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>

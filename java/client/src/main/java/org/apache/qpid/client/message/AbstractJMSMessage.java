@@ -58,8 +58,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         {
             _data.acquire();
         }
-        // ContentHeaderProperties are just created and so are empty
-        //_readableProperties = (_contentHeaderProperties != null);
+        _readableProperties = false;
         _readableMessage = (data != null);
     }
 
@@ -425,15 +424,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
             buf.append("\nJMS priority: ").append(getJMSPriority());
             buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
             buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
-            buf.append("\nJMS Type: ").append(String.valueOf(getJMSType()));
-            buf.append("\nJMS CorrelationID: ").append(String.valueOf(getJMSCorrelationID()));
-            buf.append("\nJMS Destination: NOT IMPLEMENTED");//.append(String.valueOf(getJMSDestination()));
-            buf.append("\nJMS MessageID: ").append(String.valueOf(getJMSMessageID()));
-            buf.append("\nJMS Redelivered: ").append(String.valueOf(getJMSRedelivered()));
-            buf.append("\nProperty Names: ").append(String.valueOf(getPropertyNames()));
-
             buf.append("\nAMQ message number: ").append(_deliveryTag);
-
             buf.append("\nProperties:");
             if (getJmsContentHeaderProperties().getHeaders().isEmpty())
             {

@@ -64,9 +64,9 @@ public class URLHelper
                 if (valueIndex + 1 < options.length())
                 {
                     if (options.charAt(valueIndex + 1) == DEFAULT_OPTION_SEPERATOR ||
-                        options.charAt(valueIndex + 1) == ALTERNATIVE_OPTION_SEPARATOR ||
-                        options.charAt(valueIndex + 1) == BROKER_SEPARATOR ||
-                        options.charAt(valueIndex + 1) == '\'')
+                            options.charAt(valueIndex + 1) == ALTERNATIVE_OPTION_SEPARATOR ||
+                            options.charAt(valueIndex + 1) == BROKER_SEPARATOR ||
+                            options.charAt(valueIndex + 1) == '\'')
                     {
                         nestedQuotes--;
 //                        System.out.println(
@@ -119,7 +119,7 @@ public class URLHelper
             else
             {
                 parseError(sepIndex, "Unterminated option. Possible illegal option separator:'" +
-                                     options.charAt(sepIndex) + "'", options);
+                        options.charAt(sepIndex) + "'", options);
             }
         }
 

@@ -23,7 +23,6 @@ package org.apache.qpid.topic;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 
-
 import javax.jms.*;
 
 /**
@@ -43,28 +42,22 @@ class MessageFactory
         this(session, 256);
     }
 
-    public MessageFactory(Session session, int size) throws JMSException
-    {
-        this(session, "topictest.messages", size);
-    }
-
-
-    MessageFactory(Session session, String topicMessages, int size) throws JMSException
+    MessageFactory(Session session, int size) throws JMSException
     {
         _session = session;
-        if (session instanceof AMQSession)
+        if(session instanceof AMQSession)
         {
-            _topic = new AMQTopic(topicMessages);
+            _topic = new AMQTopic("topictest.messages");
             _control = new AMQTopic("topictest.control");
         }
         else
         {
-            _topic = session.createTopic(topicMessages);
+            _topic = session.createTopic("topictest.messages");
             _control = session.createTopic("topictest.control");
         }
         _payload = new byte[size];
 
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
             _payload[i] = (byte) DATA[i % DATA.length];
         }

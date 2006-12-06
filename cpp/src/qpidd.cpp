@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,11 +18,14 @@
  * under the License.
  *
  */
-#include <qpid/broker/Broker.h>
-#include <qpid/broker/Configuration.h>
-#include <qpid/sys/signal.h>
+#include <Broker.h>
+#include <Configuration.h>
+#include <signal.h>
 #include <iostream>
 #include <memory>
+#include <config.h>
+
+static char const* programName = "qpidd";
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -30,7 +33,7 @@ using namespace qpid::sys;
 Broker::shared_ptr broker;
 
 void handle_signal(int /*signal*/){
-    std::cout << "Shutting down..." << std::endl;
+    std::cerr << "Shutting down..." << std::endl;
     broker->shutdown();
 }
 
@@ -38,17 +41,20 @@ int main(int argc, char** argv)
 {
     Configuration config;
     try {
-        config.parse(argc, argv);
+        config.parse(programName, argc, argv);
         if(config.isHelp()){
             config.usage();
+        }else if(config.isVersion()){
+            std::cout << programName << " (" << PACKAGE_NAME << ") version "
+                      << PACKAGE_VERSION << std::endl;
         }else{
             broker = Broker::create(config);
-            qpid::sys::signal(SIGINT, handle_signal);
+            signal(SIGINT, handle_signal);
             broker->run();
         }
         return 0;
     } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
     }
     return 1;
 }

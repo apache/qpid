@@ -26,10 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.filter.FilterManager;
-import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 /**
@@ -55,37 +52,24 @@ public class SubscriptionImpl implements Subscription
      * True if messages need to be acknowledged
      */
     private final boolean _acks;
-    private FilterManager _filters;
 
     public static class Factory implements SubscriptionFactory
     {
-        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters) throws AMQException
-        {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters);
-        }
-
         public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks)
                 throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, null);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks);
         }
 
         public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
                 throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag);
         }
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
                             String consumerTag, boolean acks)
-            throws AMQException
-    {
-        this(channelId, protocolSession, consumerTag, acks, null);
-    }
-
-    public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks, FieldTable filters)
             throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
@@ -99,9 +83,14 @@ public class SubscriptionImpl implements Subscription
         this.consumerTag = consumerTag;
         sessionKey = protocolSession.getKey();
         _acks = acks;
-        _filters = FilterManagerFactory.createManager(filters);
     }
 
+    public SubscriptionImpl(int channel, AMQProtocolSession protocolSession,
+                            String consumerTag)
+            throws AMQException
+    {
+        this(channel, protocolSession, consumerTag, false);
+    }
 
     public boolean equals(Object o)
     {
@@ -142,7 +131,7 @@ public class SubscriptionImpl implements Subscription
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately. 
-
+            
             // By doing this _before_ the send we ensure that it
             // doesn't get sent if it can't be dequeued, preventing
             // duplicate delivery on recovery.
@@ -187,16 +176,6 @@ public class SubscriptionImpl implements Subscription
     public void queueDeleted(AMQQueue queue)
     {
         channel.queueDeleted(queue);
-    }
-
-    public boolean hasFilters()
-    {
-        return _filters != null;
-    }
-
-    public boolean hasInterest(AMQMessage msg)
-    {
-        return _filters.allAllow(msg);
     }
 
     private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)

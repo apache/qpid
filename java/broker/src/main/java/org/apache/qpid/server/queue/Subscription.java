@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.filter.MessageFilter;
 
 public interface Subscription
 {
@@ -30,8 +29,4 @@ public interface Subscription
     boolean isSuspended();
 
     void queueDeleted(AMQQueue queue);
-
-    boolean hasFilters();
-
-    boolean hasInterest(AMQMessage msg);
 }

@@ -33,6 +33,7 @@ namespace Qpid.Client
 
         public bool IsDurable
         {
+           
             get { return _isDurable; }
         }
 

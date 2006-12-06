@@ -43,8 +43,8 @@ namespace Qpid.Client.Tests
             try
             {
                 _publisher = _channel.CreatePublisherBuilder()
-                    .withExchangeName(_commandExchangeName)
-                    .withMandatory(true)
+                    .WithExchangeName(_commandExchangeName)
+                    .WithMandatory(true)
                     .Create();
 
                 // Disabling timestamps - a performance optimisation where timestamps and TTL/expiration 

@@ -60,8 +60,9 @@ namespace Qpid.Client.Tests
             _channel.DeclareQueue(_serviceName, false, false, false);
 
             IMessageConsumer consumer = _channel.CreateConsumerBuilder(_serviceName)
-                .withPrefetch(100)
-                .withNoLocal(true)
+                .WithPrefetchLow(100)
+                .WithPrefetchHigh(500)
+                .WithNoLocal(true)
                 .Create();
             consumer.OnMessage = new MessageReceivedDelegate(OnMessage);
         }
@@ -100,8 +101,8 @@ namespace Qpid.Client.Tests
 //                Console.WriteLine("ReplyTo.RoutingKey = " + _replyToRoutingKey);
 
                 _destinationPublisher = _channel.CreatePublisherBuilder()
-                    .withExchangeName(_replyToExchangeName)
-                    .withRoutingKey(_replyToRoutingKey)
+                    .WithExchangeName(_replyToExchangeName)
+                    .WithRoutingKey(_replyToRoutingKey)
                     .Create();
                 _destinationPublisher.DisableMessageTimestamp = true;
                 _destinationPublisher.DeliveryMode = DeliveryMode.NonPersistent;

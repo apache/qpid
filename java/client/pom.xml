@@ -122,9 +122,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/JNDIReferenceableTest.java</exclude>
-			<exclude>**/DurableSubscriptionTest.java</exclude>
                     </excludes>
-	
                 </configuration>
             </plugin>
         </plugins>
