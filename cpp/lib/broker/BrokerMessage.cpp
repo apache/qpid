@@ -53,7 +53,9 @@ Message::Message(Buffer& buffer, bool headersOnly, u_int32_t contentChunkSize) :
 
 Message::Message() : publisher(0), mandatory(false), immediate(false), redelivered(false), size(0), persistenceId(0){}
 
-Message::~Message(){}
+Message::~Message(){
+    if (content.get()) content->destroy();
+}
 
 void Message::setHeader(AMQHeaderBody::shared_ptr _header){
     this->header = _header;
@@ -205,6 +207,9 @@ u_int64_t Message::expectedContentSize()
 void Message::releaseContent(MessageStore* store)
 {
     Mutex::ScopedLock locker(contentLock);
+    if (!isPersistent() && persistenceId == 0) {
+        store->stage(this);
+    }
     if (!content.get() || content->size() > 0) {
         //set content to lazy loading mode (but only if there is stored content):
 

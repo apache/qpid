@@ -189,14 +189,14 @@ bool Queue::canAutoDelete() const{
 void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
 {
     if (msg->isPersistent() && store) {
-        store->enqueue(ctxt, msg, *this, xid);
+        store->enqueue(ctxt, msg.get(), *this, xid);
     }
 }
 
 void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
 {
     if (msg->isPersistent() && store) {
-        store->dequeue(ctxt, msg, *this, xid);
+        store->dequeue(ctxt, msg.get(), *this, xid);
     }
 }
 

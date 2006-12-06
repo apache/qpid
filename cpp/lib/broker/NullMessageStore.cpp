@@ -45,12 +45,12 @@ void NullMessageStore::recover(RecoveryManager&, const MessageStoreSettings* con
     if (warn) std::cout << "WARNING: Persistence not enabled, no recovery of queues or messages." << std::endl;
 }
 
-void NullMessageStore::stage(Message::shared_ptr&)
+void NullMessageStore::stage(Message* const)
 {
     if (warn) std::cout << "WARNING: Can't stage message. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::destroy(Message::shared_ptr&)
+void NullMessageStore::destroy(Message* const)
 {
     if (warn) std::cout << "WARNING: No need to destroy staged message. Persistence not enabled." << std::endl;
 }
@@ -65,12 +65,12 @@ void NullMessageStore::loadContent(Message* const, string&, u_int64_t, u_int32_t
     if (warn) std::cout << "WARNING: Can't load content. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::enqueue(TransactionContext*, Message::shared_ptr&, const Queue& queue, const string * const)
+void NullMessageStore::enqueue(TransactionContext*, Message* const, const Queue& queue, const string * const)
 {
     if (warn) std::cout << "WARNING: Can't enqueue message onto '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::dequeue(TransactionContext*, Message::shared_ptr&, const Queue& queue, const string * const)
+void NullMessageStore::dequeue(TransactionContext*, Message* const, const Queue& queue, const string * const)
 {
     if (warn) std::cout << "WARNING: Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }

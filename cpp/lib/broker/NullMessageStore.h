@@ -38,12 +38,12 @@ namespace qpid {
             virtual void create(const Queue& queue, const qpid::framing::FieldTable& settings);
             virtual void destroy(const Queue& queue);
             virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
-            virtual void stage(Message::shared_ptr& msg);
-            virtual void destroy(Message::shared_ptr& msg);
+            virtual void stage(Message* const msg);
+            virtual void destroy(Message* const msg);
             virtual void appendContent(Message* const msg, const std::string& data);
             virtual void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length);
-            virtual void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
-            virtual void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid);
+            virtual void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
+            virtual void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
             virtual void committed(const string * const xid);
             virtual void aborted(const string * const xid);
             virtual std::auto_ptr<TransactionContext> begin();
