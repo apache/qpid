@@ -31,7 +31,7 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize) :
+Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize, MessageStore* const _store, u_int64_t _stagingThreshold) :
     id(_id), 
     out(_out), 
     currentDeliveryTag(1),
@@ -40,8 +40,8 @@ Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize) :
     prefetchCount(0),
     framesize(_framesize),
     tagGenerator("sgen"),
-    store(0),
-    messageBuilder(this){
+    store(_store),
+    messageBuilder(this, _store, _stagingThreshold){
 
     outstanding.reset();
 }

@@ -32,6 +32,7 @@ class ConfigurationTest : public CppUnit::TestCase
     CPPUNIT_TEST(testPortLongForm);
     CPPUNIT_TEST(testPortShortForm);
     CPPUNIT_TEST(testStore);
+    CPPUNIT_TEST(testStagingThreshold);
     CPPUNIT_TEST(testVarious);
     CPPUNIT_TEST_SUITE_END();
 
@@ -68,6 +69,15 @@ class ConfigurationTest : public CppUnit::TestCase
         conf.parse("ignore", 3, argv);
         std::string expected("my-store-module.so");
         CPPUNIT_ASSERT_EQUAL(expected, conf.getStore());
+    }
+
+    void testStagingThreshold() 
+    {
+        Configuration conf;
+        char* argv[] = {"ignore", "--staging-threshold", "123456789"};
+        conf.parse("ignore", 3, argv);
+        long expected = 123456789;
+        CPPUNIT_ASSERT_EQUAL(expected, conf.getStagingThreshold());
     }
 
     void testVarious() 

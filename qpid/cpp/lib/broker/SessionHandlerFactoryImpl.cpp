@@ -39,9 +39,9 @@ const std::string amq_fanout("amq.fanout");
 const std::string amq_match("amq.match");
 }
 
-SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, u_int32_t _timeout) : 
+SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, u_int64_t _stagingThreshold, u_int32_t _timeout) : 
     store(_store.empty() ? (MessageStore*)  new NullMessageStore() : (MessageStore*) new MessageStoreModule(_store)), 
-    queues(store.get()), timeout(_timeout), cleaner(&queues, timeout/10)
+    queues(store.get()), settings(_timeout, _stagingThreshold), cleaner(&queues, _timeout/10)
 {
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);
@@ -51,7 +51,8 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, 
 
     if(store.get()) {
         RecoveryManager recoverer(queues, exchanges);
-        store->recover(recoverer);
+        MessageStoreSettings storeSettings = { settings.stagingThreshold };
+        store->recover(recoverer, &storeSettings);
     }
 
     cleaner.start();
@@ -59,7 +60,7 @@ SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, 
 
 SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt)
 {
-    return new SessionHandlerImpl(ctxt, &queues, &exchanges, &cleaner, timeout);
+    return new SessionHandlerImpl(ctxt, &queues, &exchanges, &cleaner, settings);
 }
 
 SessionHandlerFactoryImpl::~SessionHandlerFactoryImpl()

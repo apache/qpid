@@ -35,7 +35,7 @@ SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context,
                                        QueueRegistry* _queues, 
                                        ExchangeRegistry* _exchanges, 
                                        AutoDelete* _cleaner,
-                                       const u_int32_t _timeout) :
+                                       const Settings& _settings) :
     context(_context), 
 // AMQP version management change - kpvdr 2006-11-17
 // TODO: Make this class version-aware and link these hard-wired numbers to that version
@@ -43,7 +43,7 @@ SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context,
     queues(_queues), 
     exchanges(_exchanges),
     cleaner(_cleaner),
-    timeout(_timeout),
+    settings(_settings),
     basicHandler(new BasicHandlerImpl(this)),
     channelHandler(new ChannelHandlerImpl(this)),
     connectionHandler(new ConnectionHandlerImpl(this)),
@@ -200,7 +200,8 @@ void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
 
 
 void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const string& /*outOfBand*/){
-    parent->channels[channel] = new Channel(parent->context, channel, parent->framemax);
+    parent->channels[channel] = new Channel(parent->context, channel, parent->framemax, 
+                                            parent->queues->getStore(), parent->settings.stagingThreshold);
     parent->client.getChannel().openOk(channel);
 } 
         
@@ -262,7 +263,7 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
 	queue = parent->getQueue(name, channel);
     } else {
 	std::pair<Queue::shared_ptr, bool> queue_created =  
-            parent->queues->declare(name, durable, autoDelete ? parent->timeout : 0, exclusive ? parent : 0);
+            parent->queues->declare(name, durable, autoDelete ? parent->settings.timeout : 0, exclusive ? parent : 0);
 	queue = queue_created.first;
 	assert(queue);
 	if (queue_created.second) { // This is a new queue

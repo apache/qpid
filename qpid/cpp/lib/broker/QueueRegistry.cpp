@@ -73,3 +73,7 @@ string QueueRegistry::generateName(){
     } while(queues.find(name) != queues.end());
     return name;
 }
+
+MessageStore* const QueueRegistry::getStore() const {
+    return store;
+}

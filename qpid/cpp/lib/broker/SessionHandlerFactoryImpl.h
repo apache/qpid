@@ -31,6 +31,7 @@
 #include <sys/SessionHandler.h>
 #include <sys/SessionHandlerFactory.h>
 #include <sys/TimeoutHandler.h>
+#include <SessionHandlerImpl.h>
 #include <memory>
 
 namespace qpid {
@@ -41,10 +42,10 @@ namespace qpid {
             std::auto_ptr<MessageStore> store;
             QueueRegistry queues;
             ExchangeRegistry exchanges;
-            const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
+            const Settings settings;
             AutoDelete cleaner;
         public:
-            SessionHandlerFactoryImpl(const std::string& store = "", u_int32_t timeout = 30000);
+            SessionHandlerFactoryImpl(const std::string& store = "", u_int64_t stagingThreshold = 0, u_int32_t timeout = 30000);
             virtual qpid::sys::SessionHandler* create(qpid::sys::SessionContext* ctxt);
             virtual ~SessionHandlerFactoryImpl();
         };

@@ -36,7 +36,7 @@
 #include <NameGenerator.h>
 #include <Prefetch.h>
 #include <BrokerQueue.h>
-#include <TransactionalStore.h>
+#include <MessageStore.h>
 #include <TxAck.h>
 #include <TxBuffer.h>
 #include <TxPublish.h>
@@ -85,7 +85,7 @@ namespace qpid {
             qpid::sys::Mutex deliveryLock;
             TxBuffer txBuffer;
             AccumulatedAck accumulatedAck;
-            TransactionalStore* store;
+            MessageStore* const store;
             MessageBuilder messageBuilder;//builder for in-progress message
             Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
 
@@ -95,7 +95,8 @@ namespace qpid {
             bool checkPrefetch(Message::shared_ptr& msg);
         
         public:
-            Channel(qpid::framing::OutputHandler* out, int id, u_int32_t framesize);
+            Channel(qpid::framing::OutputHandler* out, int id, u_int32_t framesize, 
+                    MessageStore* const _store = 0, u_int64_t stagingThreshold = 0);
             ~Channel();
             inline void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
             inline Queue::shared_ptr getDefaultQueue(){ return defaultQueue; }
