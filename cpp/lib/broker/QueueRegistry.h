@@ -74,6 +74,12 @@ class QueueRegistry{
      */
     string generateName();
 
+    /**
+     * Return the message store used.
+     */
+    MessageStore* const getStore() const;
+
+
   private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;

@@ -60,6 +60,14 @@ struct ConnectionException : public std::exception {
     const char* what() const throw() { return text.c_str(); }
 };
 
+class Settings {
+public:
+    const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
+    const u_int64_t stagingThreshold;
+
+    Settings(u_int32_t _timeout, u_int64_t _stagingThreshold) : timeout(_timeout), stagingThreshold(_stagingThreshold) {}
+};
+
 class SessionHandlerImpl : public virtual qpid::sys::SessionHandler, 
                            public virtual qpid::framing::AMQP_ServerOperations, 
                            public virtual ConnectionToken
@@ -72,7 +80,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     QueueRegistry* queues;
     ExchangeRegistry* const exchanges;
     AutoDelete* const cleaner;
-    const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
+    const Settings settings;
 
     std::auto_ptr<BasicHandler> basicHandler;
     std::auto_ptr<ChannelHandler> channelHandler;
@@ -104,7 +112,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     
   public:
     SessionHandlerImpl(qpid::sys::SessionContext* context, QueueRegistry* queues, 
-                       ExchangeRegistry* exchanges, AutoDelete* cleaner, const u_int32_t timeout);
+                       ExchangeRegistry* exchanges, AutoDelete* cleaner, const Settings& settings);
     virtual void received(qpid::framing::AMQFrame* frame);
     virtual void initiated(qpid::framing::ProtocolInitiation* header);
     virtual void idleOut();

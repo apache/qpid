@@ -32,6 +32,7 @@ Configuration::Configuration() :
     maxConnections("max-connections", "Set the maximum number of connections the broker can accept (default=500).", 500),
     connectionBacklog("connection-backlog", "Set the connection backlog for the servers socket (default=10)", 10),
     store('s', "store", "Set the message store module to use (default='' which implies no store)", ""),
+    stagingThreshold("staging-threshold", "Set the message size threshold above which messages will be written to disk as they arrive (default=5,000,000)", 5000000),
     help("help", "Print usage information", false),
     version("version", "Print version information", false)
 {
@@ -41,6 +42,7 @@ Configuration::Configuration() :
     options.push_back(&maxConnections);
     options.push_back(&connectionBacklog);
     options.push_back(&store);
+    options.push_back(&stagingThreshold);
     options.push_back(&help);
     options.push_back(&version);
 }
@@ -105,6 +107,11 @@ int Configuration::getConnectionBacklog() const {
 const std::string& Configuration::getStore() const {
     return store.getValue();
 }
+
+long Configuration::getStagingThreshold() const {
+    return stagingThreshold.getValue();
+}
+
 
 Configuration::Option::Option(const char _flag, const string& _name, const string& _desc) :
     flag(string("-") + _flag), name("--" +_name), desc(_desc) {}
@@ -190,6 +197,28 @@ bool Configuration::IntOption::needsValue() const {
 
 void Configuration::IntOption::setValue(const std::string& _value){
     value = atoi(_value.c_str());
+}
+
+// Long Option:
+
+Configuration::LongOption::LongOption(const char _flag, const string& _name, const string& _desc, const long _value) :
+    Option(_flag,_name,_desc), defaultValue(_value), value(_value) {}
+
+Configuration::LongOption::LongOption(const string& _name, const string& _desc, const long _value) :
+    Option(_name,_desc), defaultValue(_value), value(_value) {}
+
+Configuration::LongOption::~LongOption(){}
+
+long Configuration::LongOption::getValue() const {
+    return value;
+}
+
+bool Configuration::LongOption::needsValue() const {
+    return true;
+}
+
+void Configuration::LongOption::setValue(const std::string& _value){
+    value = atol(_value.c_str());
 }
 
 // Bool Option:
