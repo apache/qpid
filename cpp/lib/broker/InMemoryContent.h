@@ -36,6 +36,7 @@ namespace qpid {
             u_int32_t size();
             void send(qpid::framing::OutputHandler* out, int channel, u_int32_t framesize);
             void encode(qpid::framing::Buffer& buffer);
+            void destroy();
             ~InMemoryContent(){}
         };
     }

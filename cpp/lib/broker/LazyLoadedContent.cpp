@@ -56,3 +56,8 @@ void LazyLoadedContent::encode(Buffer&)
 {
     //do nothing as all content is written as soon as it is added 
 }
+
+void LazyLoadedContent::destroy()
+{
+    store->destroy(msg);
+}

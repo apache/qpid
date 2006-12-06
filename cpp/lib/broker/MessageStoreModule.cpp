@@ -43,12 +43,12 @@ void MessageStoreModule::recover(RecoveryManager& registry, const MessageStoreSe
     store->recover(registry, settings);
 }
 
-void MessageStoreModule::stage(Message::shared_ptr& msg)
+void MessageStoreModule::stage(Message* const msg)
 {
     store->stage(msg);
 }
 
-void MessageStoreModule::destroy(Message::shared_ptr& msg)
+void MessageStoreModule::destroy(Message* const msg)
 {
     store->destroy(msg);
 }
@@ -63,12 +63,12 @@ void MessageStoreModule::loadContent(Message* const msg, string& data, u_int64_t
     store->loadContent(msg, data, offset, length);
 }
 
-void MessageStoreModule::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid)
+void MessageStoreModule::enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid)
 {
     store->enqueue(ctxt, msg, queue, xid);
 }
 
-void MessageStoreModule::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const string * const xid)
+void MessageStoreModule::dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid)
 {
     store->dequeue(ctxt, msg, queue, xid);
 }
