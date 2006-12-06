@@ -25,6 +25,8 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
+import org.apache.qpid.server.message.MessageDecorator;
+import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.qpid.AMQException;
 
 import java.util.ArrayList;
@@ -33,17 +35,20 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
  */
 public class AMQMessage
 {
+    public static final String JMS_MESSAGE = "jms.message";
+
     private final Set<Object> _tokens = new HashSet<Object>();
 
     private AMQProtocolSession _publisher;
 
-    private final BasicPublishBody  _publishBody;
+    private final BasicPublishBody _publishBody;
 
     private ContentHeaderBody _contentHeaderBody;
 
@@ -83,6 +88,7 @@ public class AMQMessage
      * messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
+    private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
 
 
     public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody)
@@ -96,17 +102,19 @@ public class AMQMessage
         _publishBody = publishBody;
         _store = messageStore;
         _contentBodies = new LinkedList<ContentBody>();
+        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _storeWhenComplete = storeWhenComplete;
     }
 
     public AMQMessage(MessageStore store, long messageId, BasicPublishBody publishBody,
                       ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
             throws AMQException
-    
+
     {
         _publishBody = publishBody;
         _contentHeaderBody = contentHeaderBody;
         _contentBodies = contentBodies;
+        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _messageId = messageId;
         _store = store;
         storeMessage();
@@ -116,7 +124,7 @@ public class AMQMessage
                       ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
             throws AMQException
     {
-        this(store, store.getNewMessageId(), publishBody, contentHeaderBody, contentBodies);        
+        this(store, store.getNewMessageId(), publishBody, contentHeaderBody, contentBodies);
     }
 
     protected AMQMessage(AMQMessage msg) throws AMQException
@@ -270,7 +278,7 @@ public class AMQMessage
             {
                 _store.removeMessage(_messageId);
             }
-            catch(AMQException e)
+            catch (AMQException e)
             {
                 //to maintain consistency, we revert the count
                 incrementReference();
@@ -291,7 +299,7 @@ public class AMQMessage
 
     public boolean checkToken(Object token)
     {
-        if(_tokens.contains(token))
+        if (_tokens.contains(token))
         {
             return true;
         }
@@ -307,7 +315,7 @@ public class AMQMessage
         //if the message is not persistent or the queue is not durable
         //we will not need to recover the association and so do not
         //need to record it
-        if(isPersistent() && queue.isDurable())
+        if (isPersistent() && queue.isDurable())
         {
             _store.enqueueMessage(queue.getName(), _messageId);
         }
@@ -317,7 +325,7 @@ public class AMQMessage
     {
         //only record associations where both queue and message will survive
         //a restart, so only need to remove association if this is the case
-        if(isPersistent() && queue.isDurable())
+        if (isPersistent() && queue.isDurable())
         {
             _store.dequeueMessage(queue.getName(), _messageId);
         }
@@ -325,14 +333,14 @@ public class AMQMessage
 
     public boolean isPersistent() throws AMQException
     {
-        if(_contentHeaderBody == null)
+        if (_contentHeaderBody == null)
         {
             throw new AMQException("Cannot determine delivery mode of message. Content header not found.");
         }
 
         //todo remove literal values to a constant file such as AMQConstants in common
         return _contentHeaderBody.properties instanceof BasicContentHeaderProperties
-                &&((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+               && ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
     }
 
     public void setTxnBuffer(TxnBuffer buffer)
@@ -346,13 +354,15 @@ public class AMQMessage
     }
 
     /**
-     * Called to enforce the 'immediate' flag. 
+     * Called to enforce the 'immediate' flag.
+     *
      * @throws NoConsumersException if the message is marked for
-     * immediate delivery but has not been marked as delivered to a
-     * consumer
+     *                              immediate delivery but has not been marked as delivered to a
+     *                              consumer
      */
-    public void checkDeliveredToConsumer() throws NoConsumersException{
-        if(isImmediate() && !_deliveredToConsumer)
+    public void checkDeliveredToConsumer() throws NoConsumersException
+    {
+        if (isImmediate() && !_deliveredToConsumer)
         {
             throw new NoConsumersException(_publishBody, _contentHeaderBody, _contentBodies);
         }
@@ -362,7 +372,43 @@ public class AMQMessage
      * Called when this message is delivered to a consumer. (used to
      * implement the 'immediate' flag functionality).
      */
-    public void setDeliveredToConsumer(){
+    public void setDeliveredToConsumer()
+    {
         _deliveredToConsumer = true;
+    }
+
+
+    public MessageDecorator getDecodedMessage(String type)
+    {
+        MessageDecorator msgtype = null;
+
+        if (_decodedMessages != null)
+        {
+            msgtype = _decodedMessages.get(type);
+
+            if (msgtype == null)
+            {
+                msgtype = decorateMessage(type);
+            }
+        }
+
+        return msgtype;
+    }
+
+    private MessageDecorator decorateMessage(String type)
+    {
+        MessageDecorator msgdec = null;
+
+        if (type.equals(JMS_MESSAGE))
+        {
+            msgdec = new JMSMessage(this);
+        }
+
+        if (msgdec != null)
+        {
+            _decodedMessages.put(type, msgdec);
+        }
+
+        return msgdec;
     }
 }

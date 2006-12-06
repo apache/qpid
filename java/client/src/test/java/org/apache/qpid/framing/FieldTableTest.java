@@ -33,6 +33,33 @@ import junit.framework.TestCase;
 
 public class FieldTableTest extends TestCase
 {
+
+    public void testEncoding()
+    {
+        FieldTable table = FieldTableFactory.newFieldTable();
+
+        String key = "String";
+        String value = "Hello";
+        table.put(key, value);
+
+        //Add one for the type encoding
+        int size = EncodingUtils.encodedShortStringLength(key) + 1 +
+                   EncodingUtils.encodedLongStringLength(value);
+
+        assertEquals(table.getEncodedSize(), size);
+        
+        key = "Integer";
+        Integer number = new Integer(60);
+        table.put(key, number);
+
+        //Add one for the type encoding
+        size += EncodingUtils.encodedShortStringLength(key) + 1 + 4;
+
+
+        assertEquals(table.getEncodedSize(), size);
+    }
+
+
     public void testDataDump() throws IOException, AMQFrameDecodingException
     {
         byte[] data = readBase64("content.txt");
@@ -46,7 +73,7 @@ public class FieldTableTest extends TestCase
         ByteBuffer buffer = ByteBuffer.allocate(data.length);
         buffer.put(data);
         buffer.flip();
-        FieldTable table = new FieldTable(buffer, size);
+        FieldTable table = FieldTableFactory.newFieldTable(buffer, size);
     }
 
     /*
@@ -107,7 +134,7 @@ public class FieldTableTest extends TestCase
 
     FieldTable load(String name) throws IOException
     {
-        return populate(new FieldTable(), read(name));
+        return populate(FieldTableFactory.newFieldTable(), read(name));
     }
 
     Properties read(String name) throws IOException
@@ -123,11 +150,12 @@ public class FieldTableTest extends TestCase
         {
             String key = (String) i.nextElement();
             String value = properties.getProperty(key);
-            try{
+            try
+            {
                 int ival = Integer.parseInt(value);
                 table.put(key, (long) ival);
             }
-            catch(NumberFormatException e)
+            catch (NumberFormatException e)
             {
                 table.put(key, value);
             }
@@ -144,7 +172,8 @@ public class FieldTableTest extends TestCase
     {
         StringBuffer buffer = new StringBuffer();
         String line = in.readLine();
-        while (line != null){
+        while (line != null)
+        {
             buffer.append(line).append(" ");
             line = in.readLine();
         }

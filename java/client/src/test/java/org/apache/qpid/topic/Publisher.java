@@ -51,7 +51,7 @@ public class Publisher implements MessageListener
         _factory.createControlConsumer().setMessageListener(this);
         _connection.start();
 
-        if(warmup > 0)
+        if (warmup > 0)
         {
             System.out.println("Runing warmup (" + warmup + " msgs)");
             long time = batch(warmup, consumerCount);
@@ -59,11 +59,14 @@ public class Publisher implements MessageListener
         }
 
         long[] times = new long[batches];
-        for(int i = 0; i < batches; i++)
+        for (int i = 0; i < batches; i++)
         {
-            if(i > 0) Thread.sleep(delay*1000);
+            if (i > 0)
+            {
+                Thread.sleep(delay * 1000);
+            }
             times[i] = batch(msgCount, consumerCount);
-            System.out.println("Batch " + (i+1) + " of " + batches + " completed in " + times[i] + " ms.");
+            System.out.println("Batch " + (i + 1) + " of " + batches + " completed in " + times[i] + " ms.");
         }
 
         long min = min(times);
@@ -106,7 +109,7 @@ public class Publisher implements MessageListener
     private void waitForCompletion(int consumers) throws Exception
     {
         System.out.println("Waiting for completion...");
-        synchronized (_lock)
+        synchronized(_lock)
         {
             while (_count > 0)
             {
@@ -121,7 +124,7 @@ public class Publisher implements MessageListener
         System.out.println("Received report " + _factory.getReport(message) + " " + --_count + " remaining");
         if (_count == 0)
         {
-            synchronized (_lock)
+            synchronized(_lock)
             {
                 _lock.notify();
             }
@@ -131,7 +134,7 @@ public class Publisher implements MessageListener
     static long min(long[] times)
     {
         long min = times.length > 0 ? times[0] : 0;
-        for(int i = 0; i < times.length; i++)
+        for (int i = 0; i < times.length; i++)
         {
             min = Math.min(min, times[i]);
         }
@@ -141,7 +144,7 @@ public class Publisher implements MessageListener
     static long max(long[] times)
     {
         long max = times.length > 0 ? times[0] : 0;
-        for(int i = 0; i < times.length; i++)
+        for (int i = 0; i < times.length; i++)
         {
             max = Math.max(max, times[i]);
         }
@@ -151,14 +154,25 @@ public class Publisher implements MessageListener
     static long avg(long[] times, long min, long max)
     {
         long sum = 0;
-        for(int i = 0; i < times.length; i++)
+        for (int i = 0; i < times.length; i++)
         {
             sum += times[i];
         }
-        sum -= min;
-        sum -= max;
 
-        return (sum / (times.length - 2));
+        int divisor = times.length;
+        //remove max and min from averages
+        if (times.length > 2)
+        {
+            sum -= min;
+            sum -= max;
+            divisor -= 2;
+        }
+        else
+        {
+            System.out.println("More batches are required to generate a meaninful average.");
+        }
+
+        return (sum / divisor);
     }
 
     public static void main(String[] argv) throws Exception

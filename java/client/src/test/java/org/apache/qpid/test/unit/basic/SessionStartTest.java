@@ -24,8 +24,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.JMSException;
@@ -104,7 +102,7 @@ public class SessionStartTest extends TestCase implements MessageListener
 
     public static void main(String[] argv) throws Exception
     {
-        SessionStartTest test = new SessionStartTest();
+        SelectorTest test = new SelectorTest();
         test._connectionString = argv.length == 0 ? "localhost:5672" : argv[0];
         test.setUp();
         test.test();
@@ -112,6 +110,6 @@ public class SessionStartTest extends TestCase implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(SessionStartTest.class));
+        return new VMBrokerSetup(new junit.framework.TestSuite(SelectorTest.class));
     }
 }

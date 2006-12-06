@@ -18,30 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing;
+package org.apache.qpid.management.ui;
 
-import java.util.Enumeration;
-import java.util.Iterator;
-
-
-public class FieldTableKeyEnumeration implements Enumeration
+/**
+ * Interface defining the application's command IDs.
+ * Key bindings can be defined for specific commands.
+ * To associate an action with a command, use IAction.setActionDefinitionId(commandId).
+ *
+ * @see org.eclipse.jface.action.IAction#setActionDefinitionId(String)
+ */
+public interface ICommandIds
 {
-    protected FieldTable _table;
-    protected Iterator _iterator;
-
-    public FieldTableKeyEnumeration(FieldTable ft)
-    {
-        _table = ft;
-        _iterator = ft.keySet().iterator();
-    }
-
-    public boolean hasMoreElements()
-    {
-        return _iterator.hasNext();
-    }
-
-    public Object nextElement()
-    {
-        return _iterator.next();
-    }
+    //public static final String CMD_ADD_SERVER = "org.apache.qpid.management.ui.add";
+    //public static final String CMD_RECONNECT_SERVER = "org.apache.qpid.management.ui.reconnect";
+    //public static final String CMD_DISCONNECT_SERVER = "org.apache.qpid.management.ui.disconnect";
+    //public static final String CMD_REFRESH = "org.apache.qpid.management.ui.actions.refresh";
 }

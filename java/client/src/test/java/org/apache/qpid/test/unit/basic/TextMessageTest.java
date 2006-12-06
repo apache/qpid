@@ -21,13 +21,11 @@
 package org.apache.qpid.test.unit.basic;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,6 +37,8 @@ import junit.framework.Assert;
 
 public class TextMessageTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(TextMessageTest.class);
+
     private AMQConnection _connection;
     private Destination _destination;
     private AMQSession _session;
@@ -100,7 +100,11 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             String text = "Message " + i;
             messages.add(text);
-            producer.send(_session.createTextMessage(text));
+            Message m = _session.createTextMessage(text);
+            m.setStringProperty("String", "hello");
+
+            _logger.info("Sending Msg:" + m);
+            producer.send(m);
         }
     }
 

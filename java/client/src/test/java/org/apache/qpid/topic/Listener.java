@@ -45,10 +45,10 @@ public class Listener implements MessageListener
     {
         _connection = connection;
         _session = connection.createSession(false, ackMode);
-        _factory = new MessageFactory(_session);
+        _factory = new MessageFactory(_session, "topictest.messages.#", 256);
 
         //register for events
-        if(name == null)
+        if (name == null)
         {
             _factory.createTopicConsumer().setMessageListener(this);
         }
@@ -61,9 +61,10 @@ public class Listener implements MessageListener
 
         _controller = _factory.createControlPublisher();
         System.out.println("Waiting for messages " +
-                Config.getAckModeDescription(ackMode)
-                + (name == null ? "" : " (subscribed with name " + name + " and client id " + connection.getClientID() + ")")
-                + "...");
+                           Config.getAckModeDescription(ackMode)
+                           + (name == null ? "" : " (subscribed with name " + name + " and client id " + connection.getClientID() + ")")
+                           + " with Messages on Topic: " + _factory.getTopic()                           
+                           + "...");
 
     }
 
@@ -75,7 +76,7 @@ public class Listener implements MessageListener
             _connection.stop();
             _connection.close();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             e.printStackTrace(System.out);
         }
@@ -89,7 +90,7 @@ public class Listener implements MessageListener
             _controller.send(_factory.createReportResponseMessage(msg));
             System.out.println("Sent report: " + msg);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             e.printStackTrace(System.out);
         }
@@ -103,18 +104,18 @@ public class Listener implements MessageListener
 
     public void onMessage(Message message)
     {
-        if(!init)
+        if (!init)
         {
             start = System.currentTimeMillis();
             count = 0;
             init = true;
         }
 
-        if(_factory.isShutdown(message))
+        if (_factory.isShutdown(message))
         {
             shutdown();
         }
-        else if(_factory.isReport(message))
+        else if (_factory.isReport(message))
         {
             //send a report:
             report();
@@ -132,7 +133,7 @@ public class Listener implements MessageListener
         config.setOptions(argv);
 
         Connection con = config.createConnection();
-        if(config.getClientId() != null)
+        if (config.getClientId() != null)
         {
             con.setClientID(config.getClientId());
         }
