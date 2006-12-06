@@ -31,36 +31,36 @@
       <directory>src/main/release</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
       <includes>
-	<include>DISCLAIMER</include>
+    <include>DISCLAIMER</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
       <includes>
-	<include>*.txt</include>
+    <include>*.txt</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>src/main/release/etc</directory>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <includes>
-	<include>logging.properties</include>
-	<include>log4j.properties</include>
+    <include>logging.properties</include>
+    <include>log4j.properties</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>src/main/release/docs</directory>
       <outputDirectory>qpid-${qpid.version}/docs</outputDirectory>
       <includes>
-	<include>RELEASE_NOTES.txt</include>
+    <include>RELEASE_NOTES.txt</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>target</directory>
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <includes>
-	<include>qpid-incubating.jar</include>
+    <include>qpid-incubating.jar</include>
       </includes>
     </fileSet>
   </fileSets>
@@ -145,7 +145,26 @@
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <unpack>false</unpack>
       <excludes>
-	<exclude>org.apache.qpid:qpid-distribution</exclude>
+        <exclude>org.apache.qpid:qpid-distribution</exclude>
+        <exclude>org.apache.qpid.management:org.apache.qpid.management.ui</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.commands</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.contenttype</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.expressions</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.jobs</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.runtime</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.runtime.compatibility.auth</exclude>
+        <exclude>org.eclipse.core:org.eclipse.core.runtime.compatibility.registry</exclude>
+        <exclude>org.eclipse.equinox:org.eclipse.equinox.common</exclude>
+        <exclude>org.eclipse.equinox:org.eclipse.equinox.preferences</exclude>
+        <exclude>org.eclipse.equinox:org.eclipse.equinox.registry</exclude>
+        <exclude>org.eclipse.help:org.eclipse.help</exclude>
+        <exclude>org.eclipse.jface:org.eclipse.jface</exclude>
+        <exclude>org.eclipse.osgi:org.eclipse.osgi</exclude>
+        <exclude>org.eclipse.swt:org.eclipse.swt</exclude>
+        <exclude>org.eclipse.swt:org.eclipse.swt.win32.win32.x86</exclude>
+        <exclude>org.eclipse.ui:org.eclipse.ui</exclude>
+        <exclude>org.eclipse.ui:org.eclipse.ui.forms</exclude>
+        <exclude>org.eclipse.ui:org.eclipse.ui.workbench</exclude>
       </excludes>
       <scope>runtime</scope>
     </dependencySet>
