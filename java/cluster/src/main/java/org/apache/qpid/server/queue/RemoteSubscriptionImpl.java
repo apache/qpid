@@ -88,9 +88,19 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
 
     public void queueDeleted(AMQQueue queue)
     {
-        if(queue instanceof ClusteredQueue)
+        if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).removeAllRemoteSubscriber(_peer);
         }
+    }
+
+    public boolean hasFilters()
+    {
+        return false;
+    }
+
+    public boolean hasInterest(AMQMessage msg)
+    {
+        return true;
     }
 }

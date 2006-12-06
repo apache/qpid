@@ -74,7 +74,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             }
             try
             {
-                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue,  session, !body.noAck);
+                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue,  session, !body.noAck, body.filter);
                 if(!body.nowait)
                 {
                     session.writeFrame(BasicConsumeOkBody.createAMQFrame(channelId, consumerTag));

@@ -62,12 +62,12 @@ public class URLSyntaxException extends URISyntaxException
 
         if (getIndex() > -1)
         {
-            if (_length != -1)
+            if (_length > 1)
             {
                 sb.append(" between indicies ");
                 sb.append(getIndex());
                 sb.append(" and ");
-                sb.append(_length);
+                sb.append(getIndex() + _length);
             }
             else
             {
