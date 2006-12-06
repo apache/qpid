@@ -50,7 +50,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         
     public:
 
-        void stage(Message::shared_ptr& msg)
+        void stage(Message* const msg)
         {
             if (msg->getPersistenceId() == 0) {
                 header = new Buffer(msg->encodedHeaderSize());
@@ -69,6 +69,11 @@ class MessageBuilderTest : public CppUnit::TestCase
             } else {
                 throw qpid::Exception("Invalid message id!");
             }
+        }
+
+        void destroy(Message* msg)
+        {
+            CPPUNIT_ASSERT(msg->getPersistenceId());
         }
 
         Message::shared_ptr getRestoredMessage()
@@ -164,37 +169,42 @@ class MessageBuilderTest : public CppUnit::TestCase
     }
 
     void testStaging(){
-        DummyHandler handler;
+        //store must be the last thing to be destroyed or destructor
+        //of Message fails (it uses the store to call destroy if lazy
+        //loaded content is in use)
         TestMessageStore store(14);
-        MessageBuilder builder(&handler, &store, 5);
-
-        string data1("abcdefg");
-        string data2("hijklmn");
-
-        Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(14);
-        BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());
-        properties->setMessageId("MyMessage");
-        properties->getHeaders().setString("abc", "xyz");
-
-        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
-        AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
-        
-        builder.initialise(message);
-        builder.setHeader(header);
-        builder.addContent(part1);
-        builder.addContent(part2);
-        CPPUNIT_ASSERT(handler.msg);
-        CPPUNIT_ASSERT_EQUAL(message, handler.msg);
-
-        Message::shared_ptr restored = store.getRestoredMessage();
-        CPPUNIT_ASSERT_EQUAL(message->getExchange(), restored->getExchange());
-        CPPUNIT_ASSERT_EQUAL(message->getRoutingKey(), restored->getRoutingKey());
-        CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getMessageId(), restored->getHeaderProperties()->getMessageId());
-        CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getHeaders().getString("abc"), 
-                             restored->getHeaderProperties()->getHeaders().getString("abc"));
-        CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, restored->contentSize());
+        {
+            DummyHandler handler;
+            MessageBuilder builder(&handler, &store, 5);
+            
+            string data1("abcdefg");
+            string data2("hijklmn");
+            
+            Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+            AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
+            header->setContentSize(14);
+            BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());
+            properties->setMessageId("MyMessage");
+            properties->getHeaders().setString("abc", "xyz");
+            
+            AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
+            AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
+            
+            builder.initialise(message);
+            builder.setHeader(header);
+            builder.addContent(part1);
+            builder.addContent(part2);
+            CPPUNIT_ASSERT(handler.msg);
+            CPPUNIT_ASSERT_EQUAL(message, handler.msg);
+            
+            Message::shared_ptr restored = store.getRestoredMessage();
+            CPPUNIT_ASSERT_EQUAL(message->getExchange(), restored->getExchange());
+            CPPUNIT_ASSERT_EQUAL(message->getRoutingKey(), restored->getRoutingKey());
+            CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getMessageId(), restored->getHeaderProperties()->getMessageId());
+            CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getHeaders().getString("abc"), 
+                                 restored->getHeaderProperties()->getHeaders().getString("abc"));
+            CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, restored->contentSize());
+        }
     }
 };
 
