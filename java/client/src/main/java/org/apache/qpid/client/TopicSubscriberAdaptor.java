@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -43,37 +44,45 @@ class TopicSubscriberAdaptor implements TopicSubscriber
         _consumer = consumer;
         _noLocal = noLocal;
     }
+    
     TopicSubscriberAdaptor(Topic topic, BasicMessageConsumer consumer)
     {
         this(topic, consumer, consumer.isNoLocal());
     }
+    
     public Topic getTopic() throws JMSException
     {
+    	checkPreConditions();
         return _topic;
     }
 
     public boolean getNoLocal() throws JMSException
     {
+    	checkPreConditions();
         return _noLocal;
     }
 
     public String getMessageSelector() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.getMessageSelector();
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.getMessageListener();
     }
 
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
+    	checkPreConditions();
         _consumer.setMessageListener(messageListener);
     }
 
     public Message receive() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.receive();
     }
 
@@ -84,6 +93,7 @@ class TopicSubscriberAdaptor implements TopicSubscriber
 
     public Message receiveNoWait() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.receiveNoWait();
     }
 
@@ -91,4 +101,22 @@ class TopicSubscriberAdaptor implements TopicSubscriber
     {
         _consumer.close();
     }
+    
+    private void checkPreConditions() throws javax.jms.IllegalStateException{
+    	BasicMessageConsumer msgConsumer = (BasicMessageConsumer)_consumer;
+    	
+    	if (msgConsumer.isClosed() ){
+			throw new javax.jms.IllegalStateException("Consumer is closed");
+		}
+		
+		if(_topic == null){
+			throw new UnsupportedOperationException("Topic is null");
+		}
+		
+		AMQSession session = msgConsumer.getSession();
+		
+		if(session == null || session.isClosed()){
+			throw new UnsupportedOperationException("Invalid Session");
+		}
+	}
 }
