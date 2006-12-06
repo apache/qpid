@@ -36,6 +36,14 @@
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
     </properties>
+    
+    <repositories>
+      <repository>
+        <id>repo1.maven.org</id>
+        <name>Maven eclipse Repository</name>
+        <url>http://repo1.maven.org/eclipse</url>
+      </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -51,6 +59,11 @@
         <dependency>
             <groupId>${pom.groupId}</groupId>
             <artifactId>qpid-client</artifactId>
+            <version>${pom.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${pom.groupId}.management</groupId>
+            <artifactId>org.apache.qpid.management.ui</artifactId>
             <version>${pom.version}</version>
         </dependency>
     </dependencies>
@@ -116,6 +129,7 @@
                                 <descriptor>src/main/assembly/bin.xml</descriptor>
                                 <descriptor>src/main/assembly/client-bin.xml</descriptor>
                                 <descriptor>src/main/assembly/src.xml</descriptor>
+                                <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
                             </descriptors>
                             <finalName>qpid-${pom.version}</finalName>
                         </configuration>
