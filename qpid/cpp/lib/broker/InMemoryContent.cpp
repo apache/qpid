@@ -67,3 +67,7 @@ void InMemoryContent::encode(Buffer& buffer)
         (*i)->encode(buffer);
     }        
 }
+
+void InMemoryContent::destroy()
+{
+}

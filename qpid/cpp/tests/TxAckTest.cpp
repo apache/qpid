@@ -37,9 +37,9 @@ class TxAckTest : public CppUnit::TestCase
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector<Message::shared_ptr> dequeued;
+        vector<Message*> dequeued;
 
-        void dequeue(TransactionContext*, Message::shared_ptr& msg, const Queue& /*queue*/, const string * const /*xid*/)
+        void dequeue(TransactionContext*, Message* const msg, const Queue& /*queue*/, const string * const /*xid*/)
         {
             dequeued.push_back(msg);
         }
@@ -86,13 +86,13 @@ public:
         op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 7, store.dequeued.size());
         CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
-        CPPUNIT_ASSERT_EQUAL(messages[0], store.dequeued[0]);//msg 1
-        CPPUNIT_ASSERT_EQUAL(messages[1], store.dequeued[1]);//msg 2
-        CPPUNIT_ASSERT_EQUAL(messages[2], store.dequeued[2]);//msg 3
-        CPPUNIT_ASSERT_EQUAL(messages[3], store.dequeued[3]);//msg 4
-        CPPUNIT_ASSERT_EQUAL(messages[4], store.dequeued[4]);//msg 5
-        CPPUNIT_ASSERT_EQUAL(messages[6], store.dequeued[5]);//msg 7
-        CPPUNIT_ASSERT_EQUAL(messages[8], store.dequeued[6]);//msg 9
+        CPPUNIT_ASSERT_EQUAL(messages[0].get(), store.dequeued[0]);//msg 1
+        CPPUNIT_ASSERT_EQUAL(messages[1].get(), store.dequeued[1]);//msg 2
+        CPPUNIT_ASSERT_EQUAL(messages[2].get(), store.dequeued[2]);//msg 3
+        CPPUNIT_ASSERT_EQUAL(messages[3].get(), store.dequeued[3]);//msg 4
+        CPPUNIT_ASSERT_EQUAL(messages[4].get(), store.dequeued[4]);//msg 5
+        CPPUNIT_ASSERT_EQUAL(messages[6].get(), store.dequeued[5]);//msg 7
+        CPPUNIT_ASSERT_EQUAL(messages[8].get(), store.dequeued[6]);//msg 9
     }
 
     void testCommit()

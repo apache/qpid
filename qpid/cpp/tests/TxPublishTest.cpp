@@ -38,11 +38,11 @@ class TxPublishTest : public CppUnit::TestCase
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector< pair<string, Message::shared_ptr> > enqueued;
+        vector< pair<string, Message*> > enqueued;
         
-        void enqueue(TransactionContext*, Message::shared_ptr& msg, const Queue& queue, const string * const /*xid*/)
+        void enqueue(TransactionContext*, Message* const msg, const Queue& queue, const string * const /*xid*/)
         {
-            enqueued.push_back(pair<string, Message::shared_ptr>(queue.getName(),msg));
+            enqueued.push_back(pair<string, Message*>(queue.getName(),msg));
         }
         
         //dont care about any of the other methods:
@@ -59,7 +59,7 @@ class TxPublishTest : public CppUnit::TestCase
     TestMessageStore store;
     Queue::shared_ptr queue1;
     Queue::shared_ptr queue2;
-    Message::shared_ptr msg;
+    Message::shared_ptr const msg;
     TxPublish op;
     
     
@@ -82,9 +82,9 @@ public:
         op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 2, store.enqueued.size());
         CPPUNIT_ASSERT_EQUAL(string("queue1"), store.enqueued[0].first);
-        CPPUNIT_ASSERT_EQUAL(msg, store.enqueued[0].second);
+        CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[0].second);
         CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
-        CPPUNIT_ASSERT_EQUAL(msg, store.enqueued[1].second);
+        CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[1].second);
     }
 
     void testCommit()

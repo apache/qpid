@@ -39,7 +39,9 @@ namespace qpid {
             u_int64_t stagingThreshold;
         };
         /**
-         * An abstraction of the persistent storage for messages.
+         * An abstraction of the persistent storage for messages. (In
+         * all methods, any pointers/references to queues or messages
+         * are valid only for the duration of the call).
          */
         class MessageStore : public TransactionalStore{
         public:
@@ -66,7 +68,7 @@ namespace qpid {
              * persistence id will be set on the message which can be
              * used to load the content or to append to it.
              */
-            virtual void stage(Message::shared_ptr& msg) = 0;
+            virtual void stage(Message* const msg) = 0;
             
             /**
              * Destroys a previously staged message. This only needs
@@ -74,7 +76,7 @@ namespace qpid {
              * enqueued, deletion will be automatic when the message
              * is dequeued from all queues it was enqueued onto).
              */
-            virtual void destroy(Message::shared_ptr& msg) = 0;
+            virtual void destroy(Message* const msg) = 0;
 
             /**
              * Appends content to a previously staged message
@@ -102,7 +104,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const std::string * const xid) = 0;
+            virtual void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const std::string * const xid) = 0;
             /**
              * Dequeues a message, recording that the given message is
              * no longer on the given queue and deleting the message
@@ -114,7 +116,7 @@ namespace qpid {
              * distributed transaction in which the operation takes
              * place or null for 'local' transactions
              */
-            virtual void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const Queue& queue, const std::string * const xid) = 0;
+            virtual void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const std::string * const xid) = 0;
             /**
              * Treat all enqueue/dequeues where this xid was specified as being committed.
              */

@@ -53,7 +53,7 @@ void MessageBuilder::setHeader(AMQHeaderBody::shared_ptr& header){
     }
     message->setHeader(header);
     if (stagingThreshold && header->getContentSize() >= stagingThreshold) {
-        store->stage(message);
+        store->stage(message.get());
         message->releaseContent(store);
     } else {
         auto_ptr<Content> content(new InMemoryContent());
