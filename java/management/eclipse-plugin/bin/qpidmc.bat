@@ -52,4 +52,4 @@ goto exit
 rem Slurp the command line arguments. This loop allows for an unlimited number
 rem of agruments (up to the command line limit, anyway).
 
-"%JAVA_HOME%\bin\java" -Xms40m -Xmx256m -Declipse.consoleLog=true  -jar %QPIDMC_HOME%\startup.jar org.eclipse.core.launcher.Main -name "Qpid Management Console" -nosplash -application org.apache.qpid.management.ui.application -data %QPIDMC_HOME%\data -configuration "file:%QPIDMC_HOME%/configuration" -os win32 -ws win32 -arch x86
+"%JAVA_HOME%\bin\java" -Xms40m -Xmx256m -Declipse.consoleLog=true  -jar %QPIDMC_HOME%\startup.jar org.eclipse.core.launcher.Main -launcher %QPIDMC_HOME%\qpidmc.exe -name "Qpid Management Console" -showsplash 600 -data %QPIDMC_HOME%\data -configuration "file:%QPIDMC_HOME%/configuration" -os win32 -ws win32 -arch x86
