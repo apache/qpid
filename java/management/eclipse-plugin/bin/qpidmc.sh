@@ -18,4 +18,4 @@
 # under the License.
 #
 
-"$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=true -jar $QPIDMC_HOME/startup.jar org.eclipse.core.launcher.Main -name "Qpid Management Console" -showsplash 600 -application org.apache.qpid.management.ui.application -data $QPIDMC_HOME/data -configuration "file:$QPIDMC_HOME/configuration"
+"$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=true -jar $QPIDMC_HOME/startup.jar org.eclipse.core.launcher.Main -launcher $QPIDMC_HOME/qpidmc.exe -name "Qpid Management Console" -showsplash 600 -data $QPIDMC_HOME/data -configuration "file:$QPIDMC_HOME/configuration"
