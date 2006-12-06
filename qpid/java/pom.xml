@@ -105,6 +105,7 @@
         <module>client</module>
         <module>cluster</module>
         <module>systests</module>
+        <module>management/eclipse-plugin</module>
     </modules>
 
     <build>
