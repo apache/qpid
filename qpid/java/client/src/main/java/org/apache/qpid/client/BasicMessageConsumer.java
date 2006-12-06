@@ -159,11 +159,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public String getMessageSelector() throws JMSException
     {
+    	checkPreConditions();
         return _messageSelector;
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
+    	checkPreConditions();
         return (MessageListener) _messageListener.get();
     }
 
@@ -179,7 +181,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
 
         //if the current listener is non-null and the session is not stopped, then
         //it is an error to call this method.
@@ -277,7 +279,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
 
         acquireReceiving();
 
@@ -311,7 +313,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
 
         acquireReceiving();
 
@@ -520,7 +522,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private void deregisterConsumer()
     {
-        _session.deregisterConsumer(_consumerTag);
+    	_session.deregisterConsumer(_consumerTag);
     }
 
     public String getConsumerTag()
@@ -529,7 +531,20 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     public void setConsumerTag(String consumerTag)
-    {
+    {    	
         _consumerTag = consumerTag;
     }
+
+	public AMQSession getSession() {
+		return _session;
+	}
+	
+	private void checkPreConditions() throws JMSException{
+    	
+		this.checkNotClosed();
+		
+		if(_session == null || _session.isClosed()){
+			throw new UnsupportedOperationException("Invalid Session");
+		}
+	}
 }
