@@ -143,6 +143,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void setDisableMessageID(boolean b) throws JMSException
     {
+    	checkPreConditions();
         checkNotClosed();
         // IGNORED
     }
@@ -156,7 +157,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void setDisableMessageTimestamp(boolean b) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         _disableTimestamps = b;
     }
 
@@ -168,7 +169,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void setDeliveryMode(int i) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         if (i != DeliveryMode.NON_PERSISTENT && i != DeliveryMode.PERSISTENT)
         {
             throw new JMSException("DeliveryMode must be either NON_PERSISTENT or PERSISTENT. Value of " + i +
@@ -185,7 +186,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void setPriority(int i) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         if (i < 0 || i > 9)
         {
             throw new IllegalArgumentException("Priority of " + i + " is illegal. Value must be in range 0 to 9");
@@ -201,7 +202,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void setTimeToLive(long l) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         if (l < 0)
         {
             throw new IllegalArgumentException("Time to live must be non-negative - supplied value was " + l);
@@ -229,6 +230,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void send(Message message) throws JMSException
     {
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, _deliveryMode, _messagePriority, _timeToLive,
@@ -238,6 +240,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void send(Message message, int deliveryMode) throws JMSException
     {
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, deliveryMode, _messagePriority, _timeToLive,
@@ -247,6 +250,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void send(Message message, int deliveryMode, boolean immediate) throws JMSException
     {
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, deliveryMode, _messagePriority, _timeToLive,
@@ -257,6 +261,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Message message, int deliveryMode, int priority,
                      long timeToLive) throws JMSException
     {
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage)message, deliveryMode, priority, timeToLive, _mandatory,
@@ -266,7 +271,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public void send(Destination destination, Message message) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -279,7 +284,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                      int priority, long timeToLive)
             throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -292,7 +297,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                      int priority, long timeToLive, boolean mandatory)
             throws JMSException
     {
-        checkNotClosed();
+        checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -305,7 +310,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                      int priority, long timeToLive, boolean mandatory, boolean immediate)
             throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -319,7 +324,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                      boolean immediate, boolean waitUntilSent)
             throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -334,7 +339,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         {
             throw new JMSException("Unsupported destination class: " +
                                    (destination != null ? destination.getClass() : null));
-        }
+        }        
         declareDestination((AMQDestination)destination);
     }
 
@@ -481,4 +486,20 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         checkNotClosed();
         _encoding = encoding;
     }
+    
+	private void checkPreConditions() throws IllegalStateException, JMSException {
+		checkNotClosed();
+		
+		if(_destination == null){
+			throw new UnsupportedOperationException("Destination is null");
+		}
+		
+		if(_session == null || _session.isClosed()){
+			throw new UnsupportedOperationException("Invalid Session");
+		}
+	}
+
+	public AMQSession getSession() {
+		return _session;
+	}
 }

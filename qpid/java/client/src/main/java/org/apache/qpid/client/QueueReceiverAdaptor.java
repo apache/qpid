@@ -39,31 +39,37 @@ public class QueueReceiverAdaptor implements QueueReceiver {
 
     public String getMessageSelector() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.getMessageSelector();
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.getMessageListener();
     }
 
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
+    	checkPreConditions();
        _consumer.setMessageListener(messageListener);
     }
 
     public Message receive() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.receive();
     }
 
     public Message receive(long l) throws JMSException
     {
+    	checkPreConditions();
         return _consumer.receive(l);
     }
 
     public Message receiveNoWait() throws JMSException
     {
+    	checkPreConditions();
         return _consumer.receiveNoWait();
     }
 
@@ -79,8 +85,26 @@ public class QueueReceiverAdaptor implements QueueReceiver {
      */
     public Queue getQueue() throws JMSException
     {
+    	checkPreConditions();
        return _queue;
     }
 
+    private void checkPreConditions() throws javax.jms.IllegalStateException {
+    	BasicMessageConsumer msgConsumer = (BasicMessageConsumer)_consumer;
+    	
+    	if (msgConsumer.isClosed() ){
+			throw new javax.jms.IllegalStateException("Consumer is closed");
+		}
+		
+		if(_queue == null){
+			throw new UnsupportedOperationException("Queue is null");
+		}
+		
+		AMQSession session = msgConsumer.getSession();
+		
+		if(session == null || session.isClosed()){
+			throw new UnsupportedOperationException("Invalid Session");
+		}
+	}
 
 }
