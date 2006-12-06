@@ -31,6 +31,8 @@ namespace Qpid.Client.Message
     {
         private const string MIME_TYPE = "application/octet-stream";
 
+        private const int DEFAULT_BUFFER_INITIAL_SIZE = 1024;
+
         /// <summary>
         /// The backingstore for the data
         /// </summary>
@@ -57,6 +59,8 @@ namespace Qpid.Client.Message
             ContentHeaderProperties.ContentType = MIME_TYPE;
             if (data == null)
             {
+                _data = ByteBuffer.Allocate(DEFAULT_BUFFER_INITIAL_SIZE);
+                //_data.AutoExpand = true;
                 _dataStream = new MemoryStream();
                 _writer = new BinaryWriter(_dataStream);
             }
@@ -76,21 +80,26 @@ namespace Qpid.Client.Message
             _dataStream = new MemoryStream(data.ToByteArray());
             _bodyLength = data.ToByteArray().Length;
             _reader = new BinaryReader(_dataStream);
+        
         }
 
-
-        public override void ClearBody()
+        public override void ClearBodyImpl()
         {
-            if (_reader != null)
-            {
-                _reader.Close();
-                _reader = null;
-            }
-            _dataStream = new MemoryStream();
-            _bodyLength = 0;
-            
-            _writer = new BinaryWriter(_dataStream);
+            _data.Clear();
         }
+
+//        public override void ClearBody()
+//        {
+//            if (_reader != null)
+//            {
+//                _reader.Close();
+//                _reader = null;
+//            }
+//            _dataStream = new MemoryStream();
+//            _bodyLength = 0;
+//            
+//            _writer = new BinaryWriter(_dataStream);
+//        }
 
         public override string ToBodyString()
         {
@@ -156,7 +165,8 @@ namespace Qpid.Client.Message
             get
             {
                 CheckReadable();
-                return _bodyLength;
+                return _data.Limit; // XXX
+//                return _bodyLength;
             }
         }
 
@@ -164,13 +174,14 @@ namespace Qpid.Client.Message
         ///  
         /// </summary>
         /// <exception cref="MessageNotReadableException">if the message is in write mode</exception>
-        private void CheckReadable() 
-        {
-            if (_reader == null)
-            {
-                throw new MessageNotReadableException("You need to call reset() to make the message readable");
-            }
-        }
+//        private void CheckReadable() 
+//        {
+//
+//            if (_reader == null)
+//            {
+//                throw new MessageNotReadableException("You need to call reset() to make the message readable");
+//            }
+//        }
 
         private void CheckWritable()
         {
@@ -565,18 +576,21 @@ namespace Qpid.Client.Message
 
         public void Reset()
         {
-            CheckWritable();
-            try
-            {
-                _writer.Close();
-                _writer = null;
-                _reader = new BinaryReader(_dataStream);
-                _bodyLength = (int) _dataStream.Length;
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            base.Reset();
+            _data.Flip();
+
+//            CheckWritable();
+//            try
+//            {
+//                _writer.Close();
+//                _writer = null;
+//                _reader = new BinaryReader(_dataStream);
+//                _bodyLength = (int) _dataStream.Length;
+//            }
+//            catch (IOException e)
+//            {
+//                throw new QpidException(e.ToString(), e);
+//            }
         }        
     }
 }

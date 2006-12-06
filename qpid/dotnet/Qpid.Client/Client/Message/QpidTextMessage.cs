@@ -86,8 +86,12 @@ namespace Qpid.Client.Message
             Text = text;
         }
 
-        public override void ClearBody()
+        public override void ClearBodyImpl()
         {
+            if (_data != null)
+            {
+                _data.Release();
+            }
             _data = null;
             _decodedValue = null;
         }

@@ -41,4 +41,3 @@ namespace Qpid.Codec.Support
         }       
     }
 }
-
