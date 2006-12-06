@@ -63,6 +63,20 @@ namespace qpid {
                 virtual void setValue(int _value) { value = _value; }
             };
 
+            class LongOption : public Option{
+                const long defaultValue;
+                int value;
+            public:
+                LongOption(char flag, const std::string& name, const std::string& desc, const long value = 0);
+                LongOption(const std::string& name, const std::string& desc, const long value = 0);
+                virtual ~LongOption();
+
+                long getValue() const;
+                virtual bool needsValue() const;
+                virtual void setValue(const std::string& value);
+                virtual void setValue(int _value) { value = _value; }
+            };
+
             class StringOption : public Option{
                 const std::string defaultValue;
                 std::string value;
@@ -96,6 +110,7 @@ namespace qpid {
             IntOption maxConnections;
             IntOption connectionBacklog;
             StringOption store;
+            LongOption stagingThreshold;
             BoolOption help;
             BoolOption version;
             char const *programName;
@@ -123,6 +138,7 @@ namespace qpid {
             int getMaxConnections() const;
             int getConnectionBacklog() const;
             const std::string& getStore() const;
+            long getStagingThreshold() const;
 
             void setHelp(bool b) { help.setValue(b); }
             void setVersion(bool b) { version.setValue(b); }
@@ -132,6 +148,7 @@ namespace qpid {
             void setMaxConnections(int i) { maxConnections.setValue(i); }
             void setConnectionBacklog(int i) { connectionBacklog.setValue(i); }
             void setStore(const std::string& s) { store.setValue(s); }
+            void setStagingThreshold(long l) { stagingThreshold.setValue(l); }
 
             void usage();
         };
