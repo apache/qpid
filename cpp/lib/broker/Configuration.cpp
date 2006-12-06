@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,18 +20,20 @@
  */
 #include <Configuration.h>
 #include <string.h>
+#include <config.h>
 
 using namespace qpid::broker;
 using namespace std;
 
-Configuration::Configuration() : 
+Configuration::Configuration() :
     trace('t', "trace", "Print incoming & outgoing frames to the console (default=false)", false),
-    port('p', "port", "Sets the port to listen on (default=5672)", 5672),
-    workerThreads("worker-threads", "Sets the number of worker threads to use (default=5).", 5),
-    maxConnections("max-connections", "Sets the maximum number of connections the broker can accept (default=500).", 500),
-    connectionBacklog("connection-backlog", "Sets the connection backlog for the servers socket (default=10)", 10),
-    store('s', "store", "Sets the message store module to use (default='' which implies no store)", ""),
-    help("help", "Prints usage information", false)
+    port('p', "port", "Set the port to listen on (default=5672)", 5672),
+    workerThreads("worker-threads", "Set the number of worker threads to use (default=5).", 5),
+    maxConnections("max-connections", "Set the maximum number of connections the broker can accept (default=500).", 500),
+    connectionBacklog("connection-backlog", "Set the connection backlog for the servers socket (default=10)", 10),
+    store('s', "store", "Set the message store module to use (default='' which implies no store)", ""),
+    help("help", "Print usage information", false),
+    version("version", "Print version information", false)
 {
     options.push_back(&trace);
     options.push_back(&port);
@@ -40,11 +42,13 @@ Configuration::Configuration() :
     options.push_back(&connectionBacklog);
     options.push_back(&store);
     options.push_back(&help);
+    options.push_back(&version);
 }
 
 Configuration::~Configuration(){}
 
-void Configuration::parse(int argc, char** argv){
+void Configuration::parse(char const *progName, int argc, char** argv){
+    programName = progName;
     int position = 1;
     while(position < argc){
         bool matched(false);
@@ -59,13 +63,23 @@ void Configuration::parse(int argc, char** argv){
 }
 
 void Configuration::usage(){
+    std::cout << "Usage: " << programName << " [OPTION]..." << std::endl
+	      << "Start the Qpid broker daemon." << std::endl << std::endl
+	      << "Options:" << std::endl;
     for(op_iterator i = options.begin(); i < options.end(); i++){
         (*i)->print(std::cout);
     }
+
+    std::cout << std::endl << "Report bugs to <" << PACKAGE_BUGREPORT << ">."
+	      << std::endl;
 }
 
 bool Configuration::isHelp() const {
     return help.getValue();
+}
+
+bool Configuration::isVersion() const {
+    return version.getValue();
 }
 
 bool Configuration::isTrace() const {
@@ -92,10 +106,10 @@ const std::string& Configuration::getStore() const {
     return store.getValue();
 }
 
-Configuration::Option::Option(const char _flag, const string& _name, const string& _desc) : 
+Configuration::Option::Option(const char _flag, const string& _name, const string& _desc) :
     flag(string("-") + _flag), name("--" +_name), desc(_desc) {}
 
-Configuration::Option::Option(const string& _name, const string& _desc) : 
+Configuration::Option::Option(const string& _name, const string& _desc) :
     flag(""), name("--" + _name), desc(_desc) {}
 
 Configuration::Option::~Option(){}
@@ -121,12 +135,14 @@ bool Configuration::Option::parse(int& i, char** argv, int argc){
 }
 
 void Configuration::Option::print(ostream& out) const {
-    out << "    ";
+    out << "  ";
     if(flag.length() > 0){
-        out << flag << " or ";
+        out << flag << ", ";
+    } else {
+        out << "    ";
     }
     out << name;
-    if(needsValue()) out << "<value>";
+    if(needsValue()) out << " <value>";
     out << std::endl;
     out << "            " << desc << std::endl;
 }
@@ -134,10 +150,10 @@ void Configuration::Option::print(ostream& out) const {
 
 // String Option:
 
-Configuration::StringOption::StringOption(const char _flag, const string& _name, const string& _desc, const string _value) : 
+Configuration::StringOption::StringOption(const char _flag, const string& _name, const string& _desc, const string _value) :
     Option(_flag,_name,_desc), defaultValue(_value), value(_value) {}
 
-Configuration::StringOption::StringOption(const string& _name, const string& _desc, const string _value) : 
+Configuration::StringOption::StringOption(const string& _name, const string& _desc, const string _value) :
     Option(_name,_desc), defaultValue(_value), value(_value) {}
 
 Configuration::StringOption::~StringOption(){}
@@ -156,10 +172,10 @@ void Configuration::StringOption::setValue(const std::string& _value){
 
 // Int Option:
 
-Configuration::IntOption::IntOption(const char _flag, const string& _name, const string& _desc, const int _value) : 
+Configuration::IntOption::IntOption(const char _flag, const string& _name, const string& _desc, const int _value) :
     Option(_flag,_name,_desc), defaultValue(_value), value(_value) {}
 
-Configuration::IntOption::IntOption(const string& _name, const string& _desc, const int _value) : 
+Configuration::IntOption::IntOption(const string& _name, const string& _desc, const int _value) :
     Option(_name,_desc), defaultValue(_value), value(_value) {}
 
 Configuration::IntOption::~IntOption(){}
@@ -178,10 +194,10 @@ void Configuration::IntOption::setValue(const std::string& _value){
 
 // Bool Option:
 
-Configuration::BoolOption::BoolOption(const char _flag, const string& _name, const string& _desc, const bool _value) : 
+Configuration::BoolOption::BoolOption(const char _flag, const string& _name, const string& _desc, const bool _value) :
     Option(_flag,_name,_desc), defaultValue(_value), value(_value) {}
 
-Configuration::BoolOption::BoolOption(const string& _name, const string& _desc, const bool _value) : 
+Configuration::BoolOption::BoolOption(const string& _name, const string& _desc, const bool _value) :
     Option(_name,_desc), defaultValue(_value), value(_value) {}
 
 Configuration::BoolOption::~BoolOption(){}
