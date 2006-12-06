@@ -93,16 +93,30 @@ AC_SUBST(LIBTOOL_VERSION_INFO_ARG)
 
 gl_CLOCK_TIME
 
-APR_MINIMUM_VERSION=1.2.2
-PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
-
-APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
-AC_SUBST(APR_CXXFLAGS)
-
 CPPUNIT_MINIMUM_VERSION=1.10.2
 PKG_CHECK_MODULES([CPPUNIT], [cppunit >= $CPPUNIT_MINIMUM_VERSION])
 CPPUNIT_CXXFLAGS=$CPPUNIT_CFLAGS
 AC_SUBST(CPPUNIT_CXXFLAGS)
+
+AC_ARG_ENABLE(apr,
+[  --enable-apr   use the Apache Portable Runtime library (default)
+   --disable-apr  do not use the Apache Portable Runtime library],
+[case $enable_APR in
+   yes|no) ;;
+   *)      AC_MSG_ERROR([invalid APR enable/disable value: $enable_APR]) ;;
+  esac],
+[enable_APR=yes])
+
+APR_MINIMUM_VERSION=1.2.2
+AC_SUBST(APR_MINIMUM_VERSION)
+AC_SUBST(APR_CXXFLAGS)
+AC_SUBST(USE_APR)
+
+if test "$enable_APR" = yes; then
+  PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
+  APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
+  USE_APR=1
+fi
 
 AC_CONFIG_FILES([
   Makefile
