@@ -144,7 +144,7 @@
          </property>
          <property
                name="windowImages"
-               value="icons/qpidmc32.gif">
+               value="icons/qpidmc16.gif,icons/qpidmc32.gif">
          </property>
          <property
                name="aboutText"
