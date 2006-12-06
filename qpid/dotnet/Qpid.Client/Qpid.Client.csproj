@@ -42,6 +42,7 @@
     <Compile Include="Client\AMQConnectionException.cs" />
     <Compile Include="Client\AMQDestination.cs" />
     <Compile Include="Client\AmqChannel.cs" />
+    <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />
     <Compile Include="Client\BasicMessageConsumer.cs" />
     <Compile Include="Client\BasicMessageProducer.cs" />
@@ -106,13 +107,13 @@
     <Compile Include="qms\UrlSyntaxException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Qpid.Codec\Qpid.Codec.csproj">
-      <Project>{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}</Project>
-      <Name>Qpid.Codec</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Qpid.Buffer\Qpid.Buffer.csproj">
       <Project>{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}</Project>
       <Name>Qpid.Buffer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qpid.Codec\Qpid.Codec.csproj">
+      <Project>{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}</Project>
+      <Name>Qpid.Codec</Name>
     </ProjectReference>
     <ProjectReference Include="..\Qpid.Messaging\Qpid.Messaging.csproj">
       <Project>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</Project>
