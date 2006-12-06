@@ -41,7 +41,7 @@ class ConfigurationTest : public CppUnit::TestCase
     {
         Configuration conf;
         char* argv[] = {"ignore", "--help"};
-        conf.parse(2, argv);
+        conf.parse("ignore", 2, argv);
         CPPUNIT_ASSERT(conf.isHelp());
     }
 
@@ -49,7 +49,7 @@ class ConfigurationTest : public CppUnit::TestCase
     {
         Configuration conf;
         char* argv[] = {"ignore", "--port", "6789"};
-        conf.parse(3, argv);
+        conf.parse("ignore", 3, argv);
         CPPUNIT_ASSERT_EQUAL(6789, conf.getPort());
     }
 
@@ -57,7 +57,7 @@ class ConfigurationTest : public CppUnit::TestCase
     {
         Configuration conf;
         char* argv[] = {"ignore", "-p", "6789"};
-        conf.parse(3, argv);
+        conf.parse("ignore", 3, argv);
         CPPUNIT_ASSERT_EQUAL(6789, conf.getPort());
     }
 
@@ -65,7 +65,7 @@ class ConfigurationTest : public CppUnit::TestCase
     {
         Configuration conf;
         char* argv[] = {"ignore", "--store", "my-store-module.so"};
-        conf.parse(3, argv);
+        conf.parse("ignore", 3, argv);
         std::string expected("my-store-module.so");
         CPPUNIT_ASSERT_EQUAL(expected, conf.getStore());
     }
@@ -74,7 +74,7 @@ class ConfigurationTest : public CppUnit::TestCase
     {        
         Configuration conf;
         char* argv[] = {"ignore", "-t", "--worker-threads", "10"};
-        conf.parse(4, argv);
+        conf.parse("ignore", 4, argv);
         CPPUNIT_ASSERT_EQUAL(5672, conf.getPort());//default
         CPPUNIT_ASSERT_EQUAL(10, conf.getWorkerThreads());
         CPPUNIT_ASSERT(conf.isTrace());
