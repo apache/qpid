@@ -97,6 +97,8 @@ namespace qpid {
             IntOption connectionBacklog;
             StringOption store;
             BoolOption help;
+            BoolOption version;
+            char const *programName;
 
             typedef std::vector<Option*>::iterator op_iterator;
             std::vector<Option*> options;
@@ -111,9 +113,10 @@ namespace qpid {
             Configuration();
             ~Configuration();
 
-            void parse(int argc, char** argv);
+            void parse(char const*, int argc, char** argv);
 
             bool isHelp() const;
+            bool isVersion() const;
             bool isTrace() const;
             int getPort() const;
             int getWorkerThreads() const;
@@ -122,6 +125,7 @@ namespace qpid {
             const std::string& getStore() const;
 
             void setHelp(bool b) { help.setValue(b); }
+            void setVersion(bool b) { version.setValue(b); }
             void setTrace(bool b) { trace.setValue(b); }
             void setPort(int i) { port.setValue(i); }
             void setWorkerThreads(int i) { workerThreads.setValue(i); }
