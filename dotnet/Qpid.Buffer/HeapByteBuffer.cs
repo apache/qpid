@@ -126,8 +126,11 @@ namespace Qpid.Buffer
         }
 
         public override byte[] ToByteArray()
-        {            
-            return _underlyingData;         
+        {
+            // Return copy of bytes remaining.
+            byte[] result = new byte[Remaining];
+            Array.Copy(_underlyingData, _position, result, 0, Remaining);
+            return result;
         }
 
         private void CheckSpace(int size)

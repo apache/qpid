@@ -23,6 +23,7 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using System.Threading;
 using log4net;
+using Qpid.Buffer;
 using Qpid.Client.Message;
 using Qpid.Collections;
 using Qpid.Framing;
@@ -801,7 +802,25 @@ namespace Qpid.Client
                 currentTime = DateTime.UtcNow.Ticks;
                 message.Timestamp = currentTime;
             }
-            byte[] payload = message.Data.ToByteArray();
+
+            //
+            // Very nasty temporary hack for GRM. Will be altered ASAP.
+            //
+            if (message is QpidBytesMessage)
+            {
+                QpidBytesMessage msg = (QpidBytesMessage) message;
+                if (!msg.IsReadable)
+                {
+                    msg.Reset();
+                }
+            }
+
+            ByteBuffer buf = message.Data;
+            byte[] payload = null;
+            if (buf != null)
+            {
+                payload = buf.ToByteArray();
+            }
             BasicContentHeaderProperties contentHeaderProperties = message.ContentHeaderProperties;
 
             if (timeToLive > 0)

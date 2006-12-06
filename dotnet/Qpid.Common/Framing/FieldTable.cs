@@ -74,7 +74,7 @@ namespace Qpid.Framing
                         value = buffer.GetUnsignedInt();
                         break;
                     default:
-                        throw new AMQFrameDecodingException("Unsupported field table type: " + type);
+                        throw new AMQFrameDecodingException("Unsupported field table type: '" + type + "' charcode" + (int)type);
                 }
                 sizeRead += (sizeRemaining - buffer.Remaining);
                 
