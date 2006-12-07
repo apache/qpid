@@ -24,8 +24,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.MessageListener;
@@ -36,6 +34,7 @@ import javax.jms.ObjectMessage;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -44,6 +43,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     private AMQConnection connection;
     private AMQDestination destination;
     private AMQSession session;
+    private MessageProducer producer;
     private Serializable[] data;
     private volatile boolean waiting;
     private int received;
@@ -57,6 +57,13 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "/test_path");
         destination = new AMQQueue(randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+
+        //set up a consumer
+        session.createConsumer(destination).setMessageListener(this);
+        connection.start();
+
+        //create a publisher
+         producer = session.createProducer(destination, false, false, true);
         A a1 = new A(1, "A");
         A a2 = new A(2, "a");
         B b = new B(1, "B");
@@ -83,7 +90,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         _broker = broker;
     }
 
-    public void test() throws Exception
+    public void testSendAndReceive() throws Exception
     {
         try
         {
@@ -102,16 +109,68 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         }
     }
 
+    public void testSetObjectPropertyForString() throws Exception
+    {
+        String testStringProperty = "TestStringProperty";
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestStringProperty",testStringProperty);
+        assertEquals(testStringProperty, msg.getObjectProperty("TestStringProperty"));
+    }
+
+    public void testSetObjectPropertyForBoolean() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestBooleanProperty",Boolean.TRUE);
+        assertEquals(Boolean.TRUE, msg.getObjectProperty("TestBooleanProperty"));
+    }
+
+    public void testSetObjectPropertyForByte() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestByteProperty",Byte.MAX_VALUE);
+        assertEquals(Byte.MAX_VALUE, msg.getObjectProperty("TestByteProperty"));
+    }
+
+    public void testSetObjectPropertyForShort() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestShortProperty",Short.MAX_VALUE);
+        assertEquals(Short.MAX_VALUE, msg.getObjectProperty("TestShortProperty"));
+    }
+    public void testSetObjectPropertyForInteger() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestIntegerProperty",Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, msg.getObjectProperty("TestIntegerProperty"));
+    }
+
+    public void testSetObjectPropertyForDouble() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestDoubleProperty",Double.MAX_VALUE);
+        assertEquals(Double.MAX_VALUE, msg.getObjectProperty("TestDoubleProperty"));
+    }
+
+    public void testSetObjectPropertyForFloat() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestFloatProperty",Float.MAX_VALUE);
+        assertEquals(Float.MAX_VALUE, msg.getObjectProperty("TestFloatProperty"));
+    }
+
+    public void testSetObjectPropertyForByteArray() throws Exception
+    {
+        byte[] array = {1,2,3,4,5};
+        ObjectMessage msg = session.createObjectMessage(data[0]);
+        msg.setObjectProperty("TestByteArrayProperty",array);
+        assertTrue(Arrays.equals(array,(byte[])msg.getObjectProperty("TestByteArrayProperty")));
+    }
+
+
+
+
     private void send() throws Exception
     {
-        //set up a consumer
-        session.createConsumer(destination).setMessageListener(this);
-        connection.start();
-
-        //create a publisher
-        MessageProducer producer = session.createProducer(destination, false, false, true);
-
-
         for (int i = 0; i < data.length; i++)
         {
             ObjectMessage msg;
@@ -207,7 +266,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         {
             System.out.println("Usage: <broker>");
         }
-        new ObjectMessageTest(broker).test();
+        new ObjectMessageTest(broker).testSendAndReceive();
     }
 
     private static class A implements Serializable
