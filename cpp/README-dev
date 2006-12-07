@@ -4,9 +4,10 @@
 
 As per README-dist plus:
  * autoconf 2.59: http://www.gnu.org/software/autoconf
- * automake 1.9.6: http://www.gnu.org/software/automake
+ * automake 1.9.2: http://www.gnu.org/software/automake
  * libtool 1.5: http://www.gnu.org/software/libtool
  * CppUnit 1.10.2: http://cppunit.sourceforge.net
+   Note: Ensure cppunit-config is in your PATH.
 
 Optional: to re-generated generated code from the XML specification:
  * java 5
