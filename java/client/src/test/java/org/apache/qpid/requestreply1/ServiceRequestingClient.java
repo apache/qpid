@@ -107,6 +107,7 @@ public class ServiceRequestingClient implements ExceptionListener
             }
             try
             {
+                m.getPropertyNames();
                 if (m.propertyExists("timeSent"))
                 {
                     long timeSent = Long.parseLong(m.getStringProperty("timeSent"));
