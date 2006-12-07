@@ -61,8 +61,7 @@
               flags="s" byline="true"/>
 
       <!-- Create directory; generate from specification file -->
-      <mkdir dir="${generated.dir}_${@{ver}.amqp(major)}_${@{ver}.amqp(minor)}"/>
-      <saxon out="${generated.dir}_${@{ver}.amqp(major)}_${@{ver}.amqp(minor)}/results.out"
+      <saxon out="${generated.dir}/results.out"
              src="${specs.dir}/amqp-@{ver}.xml" 
              xsl="${spec.stylesheet}">
         <arg value="major=${@{ver}.amqp(major)}"/>
@@ -70,14 +69,14 @@
         <arg value="registry_name=MainRegistry"/>
       </saxon>
       <!--  -->
-      <saxon out="${generated.dir}_${@{ver}.amqp(major)}_${@{ver}.amqp(minor)}/cluster.out"
+      <saxon out="${generated.dir}/cluster.out"
              src="${cluster.asl}"
              xsl="${spec.stylesheet}">
         <arg value="major=${@{ver}.amqp(major)}"/>
         <arg value="minor=${@{ver}.amqp(minor)}"/>
         <arg value="registry_name=ClusterRegistry"/>
       </saxon>
-      <saxon out="${generated.dir}_${@{ver}.amqp(major)}_${@{ver}.amqp(minor)}/registry.out"
+      <saxon out="${generated.dir}/registry.out"
              src="${registry.template}"
              xsl="${registry.stylesheet}">
         <arg value="major=${@{ver}.amqp(major)}"/>
