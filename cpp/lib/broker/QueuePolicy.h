@@ -21,7 +21,6 @@
 #ifndef _QueuePolicy_
 #define _QueuePolicy_
 
-#include <BrokerMessage.h>
 #include <FieldTable.h>
 
 namespace qpid {
@@ -37,14 +36,14 @@ namespace qpid {
             u_int64_t size;
             
             static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
-            bool checkCount(Message::shared_ptr& msg);
-            bool checkSize(Message::shared_ptr& msg);
+
         public:
             QueuePolicy(u_int32_t maxCount, u_int64_t maxSize);
             QueuePolicy(const qpid::framing::FieldTable& settings);
-            void enqueued(Message::shared_ptr& msg, MessageStore* store);
-            void dequeued(Message::shared_ptr& msg, MessageStore* store);
+            void enqueued(u_int64_t size);
+            void dequeued(u_int64_t size);
             void update(qpid::framing::FieldTable& settings);
+            bool limitExceeded();
             u_int32_t getMaxCount() const { return maxCount; }
             u_int64_t getMaxSize() const { return maxSize; }           
         };
