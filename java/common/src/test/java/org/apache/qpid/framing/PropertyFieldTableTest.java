@@ -329,35 +329,28 @@ public class PropertyFieldTableTest extends TestCase
         FieldTable result = FieldTableFactory.newFieldTable();
         int size = 0;
         result.put("one", 1L);
-        // size is 1(size) + bytes for short string
-        size = 1 + 3; // 1 + key length
-        // or size is 1(the type) + number of bytes (4bytes worth) + bytes
-        size += 1 + 4;                 // 1 + 4 + value length
-        size += "<long name='one'>1</long>".length(); // this is the xml encoding for a long.
+        size = EncodingUtils.encodedShortStringLength("one");
+        size += 1 + EncodingUtils.encodedLongLength();
         assertEquals(size, result.getEncodedSize());
 
         result.put("two", 2L);
-        size += 1 + 3; // 1 + key length
-        size += 1 + 4;                 // 1 + 4 + value length
-        size += "<long name='two'>2</long>".length(); // this is the xml encoding for a long.
+        size += EncodingUtils.encodedShortStringLength("two");
+        size += 1 + EncodingUtils.encodedLongLength();
         assertEquals(size, result.getEncodedSize());
 
         result.put("three", 3L);
-        size += 1 + 5; // 1 + key length
-        size += 1 + 4;                 // 1 + 4 + value length
-        size += "<long name='three'>3</long>".length(); // this is the xml encoding for a long.
+        size += EncodingUtils.encodedShortStringLength("three");
+        size += 1 + EncodingUtils.encodedLongLength();
         assertEquals(size, result.getEncodedSize());
 
         result.put("four", 4L);
-        size += 1 + 4; // 1 + key length
-        size += 1 + 4;                 // 1 + 4 + value length
-        size += "<long name='four'>4</long>".length(); // this is the xml encoding for a long.
+        size += EncodingUtils.encodedShortStringLength("four");
+        size += 1 + EncodingUtils.encodedLongLength();
         assertEquals(size, result.getEncodedSize());
 
         result.put("five", 5L);
-        size += 1 + 4; // 1 + key length
-        size += 1 + 4;                 // 1 + 4 + value length
-        size += "<long name='five'>5</long>".length(); // this is the xml encoding for a long.
+        size += EncodingUtils.encodedShortStringLength("five");
+        size += 1 + EncodingUtils.encodedLongLength();
         assertEquals(size, result.getEncodedSize());
 
         //fixme should perhaps be expanded to incorporate all types.
