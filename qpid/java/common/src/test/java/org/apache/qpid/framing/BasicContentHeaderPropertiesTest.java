@@ -27,7 +27,8 @@ import java.util.HashMap;
 import junit.framework.TestCase;
 
 
-public class BasicContentHeaderPropertiesTest extends TestCase {
+public class BasicContentHeaderPropertiesTest extends TestCase
+{
 
     BasicContentHeaderProperties _testProperties;
     PropertyFieldTable _testTable;
@@ -37,123 +38,155 @@ public class BasicContentHeaderPropertiesTest extends TestCase {
     /**
      * Currently only test setting/getting String, int and boolean props
      */
-    public BasicContentHeaderPropertiesTest() {
-         _testProperties = new BasicContentHeaderProperties();
+    public BasicContentHeaderPropertiesTest()
+    {
+        _testProperties = new BasicContentHeaderProperties();
     }
 
     public void setUp()
     {
         HashMap _testMap = new HashMap(10);
-        _testMap.put("TestString",_testString);
-        _testMap.put("Testint",_testint);
+        _testMap.put("TestString", _testString);
+        _testMap.put("Testint", _testint);
         _testTable = new PropertyFieldTable();
         _testTable.putAll(_testMap);
         _testProperties = new BasicContentHeaderProperties();
         _testProperties.setHeaders(_testTable);
     }
 
-    public void testGetPropertyListSize() {
+    public void testGetPropertyListSize()
+    {
         //needs a better test but at least we're exercising the code !
+         // FT size is encoded in an int
+        int expectedSize = EncodingUtils.encodedIntegerLength();
+
+        expectedSize += EncodingUtils.encodedShortStringLength("TestInt");
+        // 1 is for the Encoding Letter. here an 'i'
+        expectedSize += 1 + EncodingUtils.encodedIntegerLength();
+
+        expectedSize += EncodingUtils.encodedShortStringLength("TestString");
+        // 1 is for the Encoding Letter. here an 'S'
+        expectedSize += 1 + EncodingUtils.encodedLongStringLength(_testString);
+
+
         int size = _testProperties.getPropertyListSize();
-        assertEquals(83,size);
+
+        assertEquals(expectedSize, size);
     }
 
-    public void testGetSetPropertyFlags() {
+    public void testGetSetPropertyFlags()
+    {
         _testProperties.setPropertyFlags(99);
-        assertEquals(99,_testProperties.getPropertyFlags());
+        assertEquals(99, _testProperties.getPropertyFlags());
     }
 
-    public void testWritePropertyListPayload() {
+    public void testWritePropertyListPayload()
+    {
         ByteBuffer buf = ByteBuffer.allocate(300);
         _testProperties.writePropertyListPayload(buf);
     }
 
-    public void testPopulatePropertiesFromBuffer() throws Exception {
+    public void testPopulatePropertiesFromBuffer() throws Exception
+    {
         ByteBuffer buf = ByteBuffer.allocate(300);
-        _testProperties.populatePropertiesFromBuffer(buf,99,99);
+        _testProperties.populatePropertiesFromBuffer(buf, 99, 99);
     }
 
-    public void testSetGetContentType() {
+    public void testSetGetContentType()
+    {
         String contentType = "contentType";
         _testProperties.setContentType(contentType);
-        assertEquals(contentType,_testProperties.getContentType());
+        assertEquals(contentType, _testProperties.getContentType());
     }
 
-    public void testSetGetEncoding() {
+    public void testSetGetEncoding()
+    {
         String encoding = "encoding";
         _testProperties.setEncoding(encoding);
-        assertEquals(encoding,_testProperties.getEncoding());
+        assertEquals(encoding, _testProperties.getEncoding());
     }
 
-    public void testSetGetHeaders() {
+    public void testSetGetHeaders()
+    {
         _testProperties.setHeaders(_testTable);
-        assertEquals(_testTable,_testProperties.getHeaders());
+        assertEquals(_testTable, _testProperties.getHeaders());
     }
 
-    public void testSetGetDeliveryMode() {
+    public void testSetGetDeliveryMode()
+    {
         byte deliveryMode = 1;
         _testProperties.setDeliveryMode(deliveryMode);
-        assertEquals(deliveryMode,_testProperties.getDeliveryMode());
+        assertEquals(deliveryMode, _testProperties.getDeliveryMode());
     }
 
-    public void testSetGetPriority() {
+    public void testSetGetPriority()
+    {
         byte priority = 1;
         _testProperties.setPriority(priority);
-        assertEquals(priority,_testProperties.getPriority());
+        assertEquals(priority, _testProperties.getPriority());
     }
 
-    public void testSetGetCorrelationId() {
+    public void testSetGetCorrelationId()
+    {
         String correlationId = "correlationId";
         _testProperties.setCorrelationId(correlationId);
-        assertEquals(correlationId,_testProperties.getCorrelationId());
+        assertEquals(correlationId, _testProperties.getCorrelationId());
     }
 
-    public void testSetGetReplyTo() {
+    public void testSetGetReplyTo()
+    {
         String replyTo = "replyTo";
         _testProperties.setReplyTo(replyTo);
-        assertEquals(replyTo,_testProperties.getReplyTo());
+        assertEquals(replyTo, _testProperties.getReplyTo());
     }
 
-    public void testSetGetExpiration() {
+    public void testSetGetExpiration()
+    {
         long expiration = 999999999;
         _testProperties.setExpiration(expiration);
-        assertEquals(expiration,_testProperties.getExpiration());
+        assertEquals(expiration, _testProperties.getExpiration());
     }
 
-    public void testSetGetMessageId() {
+    public void testSetGetMessageId()
+    {
         String messageId = "messageId";
         _testProperties.setMessageId(messageId);
-        assertEquals(messageId,_testProperties.getMessageId());
+        assertEquals(messageId, _testProperties.getMessageId());
     }
 
-    public void testSetGetTimestamp() {
+    public void testSetGetTimestamp()
+    {
         long timestamp = 999999999;
         _testProperties.setTimestamp(timestamp);
-        assertEquals(timestamp,_testProperties.getTimestamp());
+        assertEquals(timestamp, _testProperties.getTimestamp());
     }
 
-    public void testSetGetType() {
+    public void testSetGetType()
+    {
         String type = "type";
         _testProperties.setType(type);
-        assertEquals(type,_testProperties.getType());
+        assertEquals(type, _testProperties.getType());
     }
 
-    public void testSetGetUserId() {
+    public void testSetGetUserId()
+    {
         String userId = "userId";
         _testProperties.setUserId(userId);
-        assertEquals(userId,_testProperties.getUserId());
+        assertEquals(userId, _testProperties.getUserId());
     }
 
-    public void testSetGetAppId() {
+    public void testSetGetAppId()
+    {
         String appId = "appId";
         _testProperties.setAppId(appId);
-        assertEquals(appId,_testProperties.getAppId());
+        assertEquals(appId, _testProperties.getAppId());
     }
 
-    public void testSetGetClusterId() {
+    public void testSetGetClusterId()
+    {
         String clusterId = "clusterId";
         _testProperties.setClusterId(clusterId);
-        assertEquals(clusterId,_testProperties.getClusterId());
+        assertEquals(clusterId, _testProperties.getClusterId());
     }
 
 }
