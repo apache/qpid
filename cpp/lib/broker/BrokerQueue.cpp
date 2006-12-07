@@ -161,14 +161,19 @@ u_int32_t Queue::purge(){
 }
 
 void Queue::pop(){
-    if (policy.get()) policy->dequeued(messages.front(), store);
+    if (policy.get()) policy->dequeued(messages.front()->contentSize());
     messages.pop();    
 }
 
 void Queue::push(Message::shared_ptr& msg){
     queueing = true;
     messages.push(msg);
-    if (policy.get()) policy->enqueued(messages.front(), store);
+    if (policy.get()) {
+        policy->enqueued(msg->contentSize());
+        if (policy->limitExceeded()) {
+            msg->releaseContent(store);
+        }
+    }
 }
 
 u_int32_t Queue::getMessageCount() const{
