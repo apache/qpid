@@ -1,6 +1,9 @@
-The current MINA version is taken from rev 463149.
+This Qpid distribution includes a snapshot of MINA that has not been
+released by the Apache MINA project.  The snapshot is taken from MINA
+rev 463149.  To obtain the associated source code, use a Subversion
+client to access the repository and check out this revision using the
+following command:
+svn co http://svn.apache.org/repos/asf/mina/trunk -r463149
 
-If you need to get the source please visit https://svn.apache.org/repos/asf/mina/trunk
-If you do svn co https://svn.apache.org/repos/asf/mina/trunk -r463149
+For more information about MINA, visit http://mina.apache.org/
 
-visit http://mina.apache.org/ to get more info about the project
