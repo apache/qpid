@@ -229,8 +229,8 @@ class BasicTests(TestBase):
         self.assertEqual("Three", msg3b.content.body)
         self.assertEqual("Five", msg5b.content.body)
 
-        self.assertTrue(msg3b.redelivered)
-        self.assertTrue(msg5b.redelivered)
+        self.assertEqual(True, msg3b.redelivered)
+        self.assertEqual(True, msg5b.redelivered)
 
         try:
             extra = queue2.get(timeout=1)
