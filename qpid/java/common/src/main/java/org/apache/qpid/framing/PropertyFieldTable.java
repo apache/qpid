@@ -37,7 +37,6 @@ public class PropertyFieldTable implements FieldTable, Map
 {
     private static final Logger _logger = Logger.getLogger(PropertyFieldTable.class);
 
-
     public static final char AMQP_DECIMAL_PROPERTY_PREFIX = 'D';
     public static final char AMQP_UNSIGNEDINT_PROPERTY_PREFIX = 'I';
     public static final char AMQP_TIMESTAMP_PROPERTY_PREFIX = 'T';
@@ -533,6 +532,8 @@ public class PropertyFieldTable implements FieldTable, Map
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
+        checkIdentiferFormat(propertyName);
+
         String currentValue = _propertyNamesTypeMap.get(propertyName);
 
         if (currentValue != null)
@@ -554,6 +555,105 @@ public class PropertyFieldTable implements FieldTable, Map
         _propertyNamesTypeMap.put(propertyName, "" + propertyPrefix);
 
         return previous;
+    }
+
+
+    protected static void checkIdentiferFormat(String propertyName)
+    {
+
+//        AMQP Spec: 4.2.5.5 Field Tables
+//        Guidelines for implementers:
+//           * Field names MUST start with a letter, '$' or '#' and may continue with
+//             letters, '$' or '#', digits, or underlines, to a maximum length of 128
+//             characters.
+//           * The server SHOULD validate field names and upon receiving an invalid
+//             field name, it SHOULD signal a connection exception with reply code
+//             503 (syntax error). Conformance test: amq_wlp_table_01.
+//           * A peer MUST handle duplicate fields by using only the first instance.
+
+//        JMS requirements 3.5.1 Property Names
+//        Identifiers:
+//        - An identifier is an unlimited-length character sequence that must begin
+//          with a Java identifier start character; all following characters must be Java
+//          identifier part characters. An identifier start character is any character for
+//          which the method Character.isJavaIdentifierStart returns true. This includes
+//          '_' and '$'. An identifier part character is any character for which the
+//          method Character.isJavaIdentifierPart returns true.
+//        - Identifiers cannot be the names NULL, TRUE, or FALSE.
+//        – Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or
+//          ESCAPE.
+//        – Identifiers are either header field references or property references. The
+//          type of a property value in a message selector corresponds to the type
+//          used to set the property. If a property that does not exist in a message is
+//          referenced, its value is NULL. The semantics of evaluating NULL values
+//          in a selector are described in Section 3.8.1.2, “Null Values.”
+//        – The conversions that apply to the get methods for properties do not
+//          apply when a property is used in a message selector expression. For
+//          example, suppose you set a property as a string value, as in the
+//          following:
+//              myMessage.setStringProperty("NumberOfOrders", "2");
+//          The following expression in a message selector would evaluate to false,
+//          because a string cannot be used in an arithmetic expression:
+//          "NumberOfOrders > 1"
+//        – Identifiers are case sensitive.
+//        – Message header field references are restricted to JMSDeliveryMode,
+//          JMSPriority, JMSMessageID, JMSTimestamp, JMSCorrelationID, and
+//          JMSType. JMSMessageID, JMSCorrelationID, and JMSType values may be
+//          null and if so are treated as a NULL value.
+
+
+        if (Boolean.getBoolean("strict-jms"))
+        {
+            // JMS start character
+            if (!(Character.isJavaIdentifierStart(propertyName.charAt(0))))
+            {
+                throw new IllegalArgumentException("Identifier '" + propertyName + "' does not start with a valid JMS identifier start character");
+            }
+
+            // JMS part character
+            int length = propertyName.length();
+            for (int c = 1; c < length; c++)
+            {
+                if (!(Character.isJavaIdentifierPart(propertyName.charAt(c))))
+                {
+                    throw new IllegalArgumentException("Identifier '" + propertyName + "' contains an invalid JMS identifier character");
+                }
+            }
+
+            // JMS invalid names
+            if (!(propertyName.equals("NULL")
+                  || propertyName.equals("TRUE")
+                  || propertyName.equals("FALSE")
+                  || propertyName.equals("NOT")
+                  || propertyName.equals("AND")
+                  || propertyName.equals("OR")
+                  || propertyName.equals("BETWEEN")
+                  || propertyName.equals("LIKE")
+                  || propertyName.equals("IN")
+                  || propertyName.equals("IS")
+                  || propertyName.equals("ESCAPE")))
+            {
+                throw new IllegalArgumentException("Identifier '" + propertyName + "' is not allowed in JMS");
+            }
+
+        }
+        else
+        {
+            // AMQP length limit
+            if (propertyName.length() > 128)
+            {
+                throw new IllegalArgumentException("AMQP limits property names to 128 characters");
+            }
+
+            // AMQ start character
+            if (!(Character.isLetter(propertyName.charAt(0))
+                  || propertyName.charAt(0) == '$'
+                  || propertyName.charAt(0) == '#'))
+            {
+                throw new IllegalArgumentException("Identifier '" + propertyName + "' does not start with a valid AMQP start character");
+            }
+        }
+
     }
 
     private static String propertyXML(String name, boolean start)
