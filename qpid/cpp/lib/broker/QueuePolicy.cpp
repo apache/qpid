@@ -24,33 +24,27 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 
 QueuePolicy::QueuePolicy(u_int32_t _maxCount, u_int64_t _maxSize) : 
-    maxCount(_maxCount), maxSize(_maxSize) {}
+    maxCount(_maxCount), maxSize(_maxSize), count(0), size(0) {}
 
 QueuePolicy::QueuePolicy(const FieldTable& settings) :
     maxCount(getInt(settings, maxCountKey, 0)), 
-    maxSize(getInt(settings, maxSizeKey, 0)) {}
+    maxSize(getInt(settings, maxSizeKey, 0)), count(0), size(0) {}
 
-void QueuePolicy::enqueued(Message::shared_ptr& msg, MessageStore* store)
+void QueuePolicy::enqueued(u_int64_t _size)
 {
-    if (checkCount(msg) || checkSize(msg)) {
-        msg->releaseContent(store);
-    }
+    if (maxCount) count++;
+    if (maxSize) size += _size;
 }
 
-void QueuePolicy::dequeued(Message::shared_ptr& msg, MessageStore* /*store*/)
+void QueuePolicy::dequeued(u_int64_t _size)
 {
     if (maxCount) count--;
-    if (maxSize) size -= msg->contentSize();
+    if (maxSize) size -= _size;
 }
 
-bool QueuePolicy::checkCount(Message::shared_ptr& /*msg*/)
+bool QueuePolicy::limitExceeded()
 {
-    return maxCount && ++count > maxCount;
-}
-
-bool QueuePolicy::checkSize(Message::shared_ptr& msg)
-{
-    return maxSize && (size += msg->contentSize()) > maxSize;
+    return (maxSize && size > maxSize) || (maxCount && count > maxCount);
 }
 
 void QueuePolicy::update(FieldTable& settings)

@@ -36,6 +36,7 @@ broker_tests =		\
   MessageTest		\
   QueueRegistryTest	\
   QueueTest		\
+  QueuePolicyTest	\
   TopicExchangeTest	\
   TxAckTest		\
   TxBufferTest		\
