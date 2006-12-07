@@ -11,7 +11,7 @@ Optional: if you want to run the qpid unit tests:
  
 If you use yum to install packages you can do:
 
-  # yum install apr boost
+  # yum install apr apr-devel boost boost-devel cppunit cppunit-devel
 
 == Building ==
 

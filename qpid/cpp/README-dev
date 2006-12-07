@@ -8,13 +8,17 @@ As per README-dist plus:
  * libtool 1.5: http://www.gnu.org/software/libtool
  * CppUnit 1.10.2: http://cppunit.sourceforge.net
 
-Optional: to generate documentation from source code comments you need:
+Optional: to re-generated generated code from the XML specification:
+ * java 5
+
+Optional: to generate documentation you need:
  * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/
  * graphviz 2.8: http://www.graphviz.org/
+ * help2man 1.36: http://www.gnu.org/software/help2man/
 
 If you use yum to install packages, do the command from the README-dist then:
 
-# yum install apr-devel cppunit-devel boost-devel doxygen graphviz
+# yum install doxygen graphviz
 
 == Recent changes ==
 
