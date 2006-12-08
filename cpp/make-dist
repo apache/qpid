@@ -28,7 +28,7 @@ else
   fi
 fi
 
-releaseName=qpid-cpp-dev-${version}
+releaseName=qpid-cpp-dev-${version}-$(uname -s)-$(uname -p)
 releaseDir=release/$releaseName
 
 if [[ -d $releaseDir ]]; then
