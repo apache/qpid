@@ -129,6 +129,7 @@ AC_CONFIG_FILES([
   lib/broker/Makefile
   src/Makefile
   tests/Makefile
+  docs/api/Makefile
   ])
 
 AC_OUTPUT
