@@ -71,9 +71,10 @@ run-unit-tests: $(check_LTLIBRARIES)
 	DllPlugInTester -c -b .libs/*.so
 
 run-python-tests: $(check_LTLIBRARIES) ../src/qpidd
-	../src/qpidd > qpidd.log 2>&1 & echo $$! > qpidd.pid
+	../src/qpidd > qpidd.log 2>&1 & pid=$$!;	\
+	trap 'status=$$?; kill $$pid; exit $$status' 0;	\
+	trap '(exit $$?); exit $$?' 1 2 13 15;		\
 	cd ../../python ; ./run-tests -v -I cpp_failing.txt
-	kill `cat qpidd.pid`
 
 include gen.mk
 
