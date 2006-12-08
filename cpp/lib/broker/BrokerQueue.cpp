@@ -65,6 +65,8 @@ void Queue::deliver(Message::shared_ptr& msg){
 void Queue::recover(Message::shared_ptr& msg){
     push(msg);
     if (store && msg->expectedContentSize() != msg->encodedContentSize()) {
+        //content has not been loaded, need to ensure that lazy loading mode is set:
+        //TODO: find a nicer way to do this
         msg->releaseContent(store);
     }
 }
