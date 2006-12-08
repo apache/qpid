@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = README-dist DESIGN LICENSE.txt NOTICE.txt README.rhel3
 
-SUBDIRS = gen lib tests src docs/api
+SUBDIRS = gen lib tests src docs/api man
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
