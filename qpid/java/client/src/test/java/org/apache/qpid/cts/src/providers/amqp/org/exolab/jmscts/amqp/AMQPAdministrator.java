@@ -41,7 +41,7 @@
  * Copyright 2001, 2003 (C) Exoffice Technologies Inc. All Rights Reserved.
  *
  */
-package org.exolab.jmscts.amqp;
+package org.apache.qpid.cts.src.providers.amqp.org.exolab.jmscts.amqp;
 
 import org.apache.qpid.client.*;
 import org.exolab.jmscts.provider.Administrator;
