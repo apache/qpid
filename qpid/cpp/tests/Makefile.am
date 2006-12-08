@@ -70,11 +70,10 @@ check: run-unit-tests run-python-tests
 run-unit-tests: $(check_LTLIBRARIES)
 	DllPlugInTester -c -b .libs/*.so
 
-# TODO aconway 2006-12-01: Should also check for qpidd.
-run-python-tests: $(check_LTLIBRARIES)
-	../src/qpidd > qpidd.log 2>&1 &
+run-python-tests: $(check_LTLIBRARIES) ../src/qpidd
+	../src/qpidd > qpidd.log 2>&1 & echo $$! > qpidd.pid
 	cd ../../python ; ./run-tests -v -I cpp_failing.txt
-
+	kill `cat qpidd.pid`
 
 include gen.mk
 
