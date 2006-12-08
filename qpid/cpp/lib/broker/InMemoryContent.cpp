@@ -33,8 +33,7 @@ u_int32_t InMemoryContent::size()
 {
     int sum(0);
     for (content_iterator i = content.begin(); i != content.end(); i++) {
-        sum += (*i)->size() + 8;//8 extra bytes for the frame
-        //TODO: have to get rid of the frame stuff from encoded data
+        sum += (*i)->size();
     }
     return sum;
 }
