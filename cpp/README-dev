@@ -2,24 +2,32 @@
 
 == Prerequisites ==
 
-As per README-dist plus:
- * autoconf 2.59: http://www.gnu.org/software/autoconf
- * automake 1.9.2: http://www.gnu.org/software/automake
- * libtool 1.5: http://www.gnu.org/software/libtool
- * CppUnit 1.10.2: http://cppunit.sourceforge.net
-   Note: Ensure cppunit-config is in your PATH.
+If you have taken the sources from SVN you will need the following
+packages (or later) to build Qpid.  We prefer to avoid spending time
+accommodating older versions of these packages, so please make sure
+that you have the latest stable version.
+  
+ * autoconf   <http://www.gnu.org/software/autoconf/>
+ * automake   <http://www.gnu.org/software/automake/>
+ * cppunit    <http://cppunit.sourceforge.net>
+ * help2man   <http://www.gnu.org/software/help2man/>
+ * libtool    <http://www.gnu.org/software/libtool/>
+ * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (aka pkg-config)
+
 
 Optional: to re-generated generated code from the XML specification:
+
  * java 5
 
 Optional: to generate documentation you need:
- * doxygen 1.4.6: http://sourceforge.net/projects/doxygen/
- * graphviz 2.8: http://www.graphviz.org/
- * help2man 1.36: http://www.gnu.org/software/help2man/
+
+ * doxygen    <http://sourceforge.net/projects/doxygen/>
+ * graphviz   <http://www.graphviz.org/>
+ * help2man   <http://www.gnu.org/software/help2man/>
 
 If you use yum to install packages, do the command from the README-dist then:
 
-# yum install doxygen graphviz
+# yum install apr-devel cppunit-devel pkgconfig boost-devel doxygen graphviz
 
 == Recent changes ==
 
