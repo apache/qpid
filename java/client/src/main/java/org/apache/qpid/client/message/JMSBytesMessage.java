@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.AMQException;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ContentHeaderBody;
 
-import javax.jms.*;
-import java.io.*;
-import java.nio.charset.Charset;
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
-    private static final String MIME_TYPE = "application/octet-stream";       
+    private static final String MIME_TYPE = "application/octet-stream";
 
     JMSBytesMessage()
     {
@@ -52,21 +52,21 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
 
     JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
-    {       
+    {
         super(messageNbr, contentHeader, data);
     }
 
     public String getMimeType()
     {
         return MIME_TYPE;
-    }                
+    }
 
     public long getBodyLength() throws JMSException
     {
         checkReadable();
         return _data.limit();
     }
-    
+
     public boolean readBoolean() throws JMSException
     {
         checkReadable();
@@ -257,6 +257,8 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         try
         {
             _data.putString(string, Charset.forName("UTF-8").newEncoder());
+            // we must add the null terminator manually
+            _data.put((byte)0);
         }
         catch (CharacterCodingException e)
         {
@@ -285,6 +287,51 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         {
             throw new NullPointerException("Argument must not be null");
         }
-        _data.putObject(object);
-    }    
+        Class clazz = object.getClass();
+        if (clazz == Byte.class)
+        {
+            writeByte((Byte) object);
+        }
+        else if (clazz == Boolean.class)
+        {
+            writeBoolean((Boolean) object);
+        }
+        else if (clazz == byte[].class)
+        {
+            writeBytes((byte[]) object);
+        }
+        else if (clazz == Short.class)
+        {
+            writeShort((Short) object);
+        }
+        else if (clazz == Character.class)
+        {
+            writeChar((Character) object);
+        }
+        else if (clazz == Integer.class)
+        {
+            writeInt((Integer) object);
+        }
+        else if (clazz == Long.class)
+        {
+            writeLong((Long) object);
+        }
+        else if (clazz == Float.class)
+        {
+            writeFloat((Float) object);
+        }
+        else if (clazz == Double.class)
+        {
+            writeDouble((Double) object);
+        }
+        else if (clazz == String.class)
+        {
+            writeUTF((String) object);
+        }
+        else
+        {
+            throw new MessageFormatException("Only primitives plus byte arrays and String are valid types");
+        }
+    }
+
 }

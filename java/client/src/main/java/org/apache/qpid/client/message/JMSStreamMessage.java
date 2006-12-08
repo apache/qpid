@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
-import javax.jms.StreamMessage;
 import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
-import java.nio.charset.Charset;
+import javax.jms.StreamMessage;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 /**
  * @author Apache Software Foundation
@@ -33,53 +34,53 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
 {
     private static final String MIME_TYPE="jms/stream-message";
 
-    private static final String[] _typeNames = {
-            "boolean",
-            "byte",
-            "short",
-            "char",
-            "int",
-            "long",
-            "float",
-            "double",
-            "utf string"};
+    private static final String[] _typeNames = { "boolean",
+                                                 "byte",
+                                                 "byte array",
+                                                 "short",
+                                                 "char",
+                                                 "int",
+                                                 "long",
+                                                 "float",
+                                                 "double",
+                                                 "utf string" };
 
     private static final byte BOOLEAN_TYPE = (byte) 1;
 
     private static final byte BYTE_TYPE = (byte) 2;
 
-    private static final byte SHORT_TYPE = (byte) 3;
+    private static final byte BYTEARRAY_TYPE = (byte) 3;
 
-    private static final byte CHAR_TYPE = (byte) 4;
+    private static final byte SHORT_TYPE = (byte) 4;
 
-    private static final byte INT_TYPE = (byte) 5;
+    private static final byte CHAR_TYPE = (byte) 5;
 
-    private static final byte LONG_TYPE = (byte) 6;
+    private static final byte INT_TYPE = (byte) 6;
 
-    private static final byte FLOAT_TYPE = (byte) 7;
+    private static final byte LONG_TYPE = (byte) 7;
 
-    private static final byte DOUBLE_TYPE = (byte) 8;
+    private static final byte FLOAT_TYPE = (byte) 8;
 
-    private static final byte STRING_TYPE = (byte) 9;
+    private static final byte DOUBLE_TYPE = (byte) 9;
+
+    private static final byte STRING_TYPE = (byte) 10;
+
+    /**
+     * This is set when reading a byte array. The readBytes(byte[]) method supports multiple calls to read
+     * a byte array in multiple chunks, hence this is used to track how much is left to be read
+     */
+    private int _byteArrayRemaining = -1;
 
     public String getMimeType()
     {
         return MIME_TYPE;
     }
 
-    public boolean readBoolean() throws JMSException
-    {
-        checkReadable();
-        checkAvailable(2);
-        readAndCheckType(BOOLEAN_TYPE);
-        return _data.get() != 0;
-    }
-
     private void readAndCheckType(byte type) throws MessageFormatException
     {
         if (_data.get() != type)
         {
-            throw new MessageFormatException("Type " + _typeNames[type] + " not found next in stream");
+            throw new MessageFormatException("Type " + _typeNames[type - 1] + " not found next in stream");
         }
     }
 
@@ -88,11 +89,29 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         _data.put(type);
     }
 
+    public boolean readBoolean() throws JMSException
+    {
+        checkReadable();
+        checkAvailable(2);
+        readAndCheckType(BOOLEAN_TYPE);
+        return readBooleanImpl();
+    }
+
+    private boolean readBooleanImpl()
+    {
+        return _data.get() != 0;
+    }
+
     public byte readByte() throws JMSException
     {
         checkReadable();
         checkAvailable(2);
         readAndCheckType(BYTE_TYPE);
+        return readByteImpl();
+    }
+
+    private byte readByteImpl()
+    {
         return _data.get();
     }
 
@@ -101,6 +120,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(3);
         readAndCheckType(SHORT_TYPE);
+        return readShortImpl();
+    }
+
+    private short readShortImpl()
+    {
         return _data.getShort();
     }
 
@@ -115,6 +139,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(3);
         readAndCheckType(CHAR_TYPE);
+        return readCharImpl();
+    }
+
+    private char readCharImpl()
+    {
         return _data.getChar();
     }
 
@@ -123,6 +152,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(5);
         readAndCheckType(INT_TYPE);
+        return readIntImpl();
+    }
+
+    private int readIntImpl()
+    {
         return _data.getInt();
     }
 
@@ -131,6 +165,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(9);
         readAndCheckType(LONG_TYPE);
+        return readLongImpl();
+    }
+
+    private long readLongImpl()
+    {
         return _data.getLong();
     }
 
@@ -139,6 +178,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(5);
         readAndCheckType(FLOAT_TYPE);
+        return readFloatImpl();
+    }
+
+    private float readFloatImpl()
+    {
         return _data.getFloat();
     }
 
@@ -147,8 +191,13 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         checkReadable();
         checkAvailable(9);
         readAndCheckType(DOUBLE_TYPE);
+        return readDoubleImpl();
+    }
+
+    private double readDoubleImpl()
+    {
         return _data.getDouble();
-    }    
+    }
 
     public String readString() throws JMSException
     {
@@ -157,6 +206,11 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         // single byte when using UTF-8 encoding
         checkAvailable(2);
         readAndCheckType(STRING_TYPE);
+        return readStringImpl();
+    }
+
+    private String readStringImpl() throws JMSException
+    {
         try
         {
             return _data.getString(Charset.forName("UTF-8").newDecoder());
@@ -176,10 +230,42 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
             throw new IllegalArgumentException("byte array must not be null");
         }
         checkReadable();
-        int count = (_data.remaining() >= bytes.length ? bytes.length : _data.remaining());
+        // first call
+        if (_byteArrayRemaining == -1)
+        {
+            // type discriminator plus array size
+            checkAvailable(5);
+            readAndCheckType(BYTEARRAY_TYPE);
+            int size = _data.getInt();
+            // size of -1 indicates null
+            if (size == -1)
+            {
+                return -1;
+            }
+            else
+            {
+                if (size > _data.remaining())
+                {
+                    throw new MessageEOFException("Byte array has stated size " + size + " but message only contains " +
+                                                  _data.remaining() + " bytes");
+                }
+                else
+                {
+                    _byteArrayRemaining = size;
+                }
+            }
+        }
+
+        return readBytesImpl(bytes);
+    }
+
+    private int readBytesImpl(byte[] bytes)
+    {
+        int count = (_byteArrayRemaining >= bytes.length ? bytes.length : _byteArrayRemaining);
+        _byteArrayRemaining -= count;
         if (count == 0)
         {
-            return -1;
+            return 0;
         }
         else
         {
@@ -190,7 +276,55 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
 
     public Object readObject() throws JMSException
     {
-        return null;
+        checkReadable();
+        checkAvailable(1);
+        byte type = _data.get();
+        Object result = null;
+        switch (type)
+        {
+            case BOOLEAN_TYPE:
+                result = readBooleanImpl();
+                break;
+            case BYTE_TYPE:
+                result = readByteImpl();
+                break;
+            case BYTEARRAY_TYPE:
+                checkAvailable(4);
+                int size = _data.getInt();
+                if (size == -1)
+                {
+                    result = null;
+                }
+                else
+                {
+                    _byteArrayRemaining = size;
+                    result = new byte[size];
+                    readBytesImpl(new byte[size]);
+                }
+                break;
+            case SHORT_TYPE:
+                result = readShortImpl();
+                break;
+            case CHAR_TYPE:
+                result = readCharImpl();
+                break;
+            case INT_TYPE:
+                result = readIntImpl();
+                break;
+            case LONG_TYPE:
+                result = readLongImpl();
+                break;
+            case FLOAT_TYPE:
+                result = readFloatImpl();
+                break;
+            case DOUBLE_TYPE:
+                result = readDoubleImpl();
+                break;
+            case STRING_TYPE:
+                result = readStringImpl();
+                break;
+        }
+        return result;
     }
 
     public void writeBoolean(boolean b) throws JMSException
@@ -256,6 +390,8 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         try
         {
             _data.putString(string, Charset.forName("UTF-8").newEncoder());
+            // we must write the null terminator ourselves
+            _data.put((byte)0);
         }
         catch (CharacterCodingException e)
         {
@@ -268,13 +404,22 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public void writeBytes(byte[] bytes) throws JMSException
     {
         checkWritable();
-        _data.put(bytes);
+        writeBytes(bytes, 0, bytes == null?0:bytes.length);
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) throws JMSException
     {
         checkWritable();
-        _data.put(bytes, offset, length);
+        writeTypeDiscriminator(BYTEARRAY_TYPE);
+        if (bytes == null)
+        {
+            _data.putInt(-1);
+        }
+        else
+        {
+            _data.putInt(length);
+            _data.put(bytes, offset, length);
+        }
     }
 
     public void writeObject(Object object) throws JMSException
@@ -284,6 +429,50 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         {
             throw new NullPointerException("Argument must not be null");
         }
-        _data.putObject(object);
+        Class clazz = object.getClass();
+        if (clazz == Byte.class)
+        {
+            writeByte((Byte) object);
+        }
+        else if (clazz == Boolean.class)
+        {
+            writeBoolean((Boolean) object);
+        }
+        else if (clazz == byte[].class)
+        {
+            writeBytes((byte[]) object);
+        }
+        else if (clazz == Short.class)
+        {
+            writeShort((Short) object);
+        }
+        else if (clazz == Character.class)
+        {
+            writeChar((Character) object);
+        }
+        else if (clazz == Integer.class)
+        {
+            writeInt((Integer) object);
+        }
+        else if (clazz == Long.class)
+        {
+            writeLong((Long) object);
+        }
+        else if (clazz == Float.class)
+        {
+            writeFloat((Float) object);
+        }
+        else if (clazz == Double.class)
+        {
+            writeDouble((Double) object);
+        }
+        else if (clazz == String.class)
+        {
+            writeString((String) object);
+        }
+        else
+        {
+            throw new MessageFormatException("Only primitives plus byte arrays and String are valid types");
+        }
     }
 }
