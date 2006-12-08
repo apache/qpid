@@ -21,6 +21,8 @@
 <project name="Qpid Common Protocol Versions" default="generate">
 
   <property name="saxon.jar" value="lib/saxon/saxon8.jar"/>
+  <!-- temporarily hard-wired XML spec version for build avoidance -->
+  <property name="amqp.xml" value="${specs.dir}/amqp-8.0.xml"/>
   
   <macrodef name="saxon">
     <attribute name="out"/>
@@ -85,11 +87,10 @@
     </sequential>
   </macrodef>
 
-<!--  <uptodate property="generated" targetfile="${generated.dir}/results.out"
-            srcfile="${amqp.xml}"/> -->
+  <uptodate property="generated" targetfile="${generated.dir}/results.out"
+            srcfile="${amqp.xml}"/>
 
-<!--  <target name="generate" unless="generated"> -->
-  <target name="generate">
+  <target name="generate" unless="generated">
     <mkdir dir="${generated.dir}"/>
     <copy file="src/main/versions/ProtocolVersionList.java.tmpl" tofile="${proto_version}"
             overwrite="true"/>
