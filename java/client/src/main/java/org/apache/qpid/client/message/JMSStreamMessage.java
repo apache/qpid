@@ -263,6 +263,10 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     {
         int count = (_byteArrayRemaining >= bytes.length ? bytes.length : _byteArrayRemaining);
         _byteArrayRemaining -= count;
+        if (_byteArrayRemaining == 0)
+        {
+            _byteArrayRemaining = -1;            
+        }
         if (count == 0)
         {
             return 0;

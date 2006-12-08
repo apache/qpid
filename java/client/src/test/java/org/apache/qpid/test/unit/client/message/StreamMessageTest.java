@@ -215,12 +215,32 @@ public class StreamMessageTest extends TestCase
     {
         JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         byte[] bytes = {2, 3};
-        bm.writeBytes(bytes);        
+        bm.writeBytes(bytes);
+        bm.writeBytes(null);
+        bm.writeBytes(new byte[]{});
         bm.reset();
         int len = bm.readBytes(bytes);
         assertEquals(2, len);
         len = bm.readBytes(bytes);
         assertEquals(-1, len);
+        len = bm.readBytes(bytes);
+        assertEquals(0, len);
+    }
+
+    public void testReadMultipleByteArrays() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        byte[] bytes = {2, 3, 4};
+        bm.writeBytes(bytes);
+        bm.writeBytes(bytes);
+        bm.reset();
+        byte[] result = new byte[2];
+        int len = bm.readBytes(result);
+        assertEquals(2, len);
+        len = bm.readBytes(result);
+        assertEquals(1, len);
+        len = bm.readBytes(result);
+        assertEquals(2, len);        
     }
 
     public void testEOFByte() throws Exception
@@ -398,61 +418,7 @@ public class StreamMessageTest extends TestCase
             fail("expected MessageEOFException, got " + e);
         }
     }
-
-    /**
-     * Tests that the readBytes() method populates the passed in array
-     * correctly
-     * @throws Exception
-     */
-    public void testReadBytes() throws Exception
-    {
-        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[2];
-        int count = bm.readBytes(result);
-        assertEquals((byte)3, result[0]);
-        assertEquals((byte)4, result[1]);
-        assertEquals(2, count);
-    }
-
-    public void testReadBytesEOF() throws Exception
-    {
-        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[2];
-        bm.readBytes(result);
-        int count = bm.readBytes(result);
-        assertEquals(-1, count);
-    }
-
-    public void testReadBytesWithLargerArray() throws Exception
-    {
-        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[3];
-        int count = bm.readBytes(result);
-        assertEquals(2, count);
-        assertEquals((byte)3, result[0]);
-        assertEquals((byte)4, result[1]);
-        assertEquals((byte)0, result[2]);
-    }
-
-    public void testToBodyString() throws Exception
-    {
-        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
-        final String testText = "This is a test";
-        bm.writeString(testText);
-        bm.reset();
-        String result = bm.toBodyString();
-        assertEquals(testText, result);
-    }
-
+    
     public void testToBodyStringWithNull() throws Exception
     {
         JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
