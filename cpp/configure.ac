@@ -25,6 +25,8 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
 
+AM_MISSING_PROG([HELP2MAN], [help2man])
+
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings   turn on lots of compiler warnings (recommended)],
 [case "${enableval}" in
@@ -128,6 +130,7 @@ AC_CONFIG_FILES([
   lib/client/Makefile
   lib/broker/Makefile
   src/Makefile
+  man/Makefile
   tests/Makefile
   docs/api/Makefile
   ])
