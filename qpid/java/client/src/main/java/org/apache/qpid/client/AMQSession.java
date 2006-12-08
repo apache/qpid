@@ -939,6 +939,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public Queue createQueue(String queueName) throws JMSException
     {
+    	checkNotClosed();
         if (queueName.indexOf('/') == -1)
         {
             return new AMQQueue(queueName);
@@ -968,6 +969,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public QueueReceiver createReceiver(Queue queue) throws JMSException
     {
+    	checkNotClosed();
         AMQQueue dest = (AMQQueue) queue;
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest);
         return new QueueReceiverAdaptor(dest, consumer);
@@ -983,6 +985,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException
     {
+    	checkNotClosed();
         AMQQueue dest = (AMQQueue) queue;
         BasicMessageConsumer consumer = (BasicMessageConsumer)
                 createConsumer(dest, messageSelector);
@@ -991,12 +994,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public QueueSender createSender(Queue queue) throws JMSException
     {
+    	checkNotClosed();
         //return (QueueSender) createProducer(queue);
         return new QueueSenderAdapter(createProducer(queue), queue);
     }
 
     public Topic createTopic(String topicName) throws JMSException
     {
+    	checkNotClosed();
+    	
         if (topicName.indexOf('/') == -1)
         {
             return new AMQTopic(topicName);
@@ -1026,6 +1032,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public TopicSubscriber createSubscriber(Topic topic) throws JMSException
     {
+    	checkNotClosed();
         AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
     }
@@ -1041,6 +1048,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException
     {
+    	checkNotClosed();
         AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
     }
@@ -1054,6 +1062,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
+    	checkNotClosed();
         AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
     }
@@ -1064,6 +1073,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
             throws JMSException
     {
+    	checkNotClosed();
         AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
         return new TopicSubscriberAdaptor(dest, consumer);
@@ -1071,27 +1081,32 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public TopicPublisher createPublisher(Topic topic) throws JMSException
     {
+    	checkNotClosed();
         //return (TopicPublisher) createProducer(topic);
         return new TopicPublisherAdapter(createProducer(topic), topic);
     }
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
     {
+    	checkNotClosed();
         throw new UnsupportedOperationException("Queue browsing not supported");
     }
 
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
+    	checkNotClosed();
         throw new UnsupportedOperationException("Queue browsing not supported");
     }
 
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
+    	checkNotClosed();
         return new AMQTemporaryQueue();
     }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
+    	checkNotClosed();
         return new AMQTemporaryTopic();
     }
 
