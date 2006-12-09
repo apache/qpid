@@ -37,8 +37,7 @@ import java.nio.charset.CharacterCodingException;
  * @author Apache Software Foundation
  */
 public abstract class AbstractBytesMessage extends AbstractJMSMessage
-{
-    private boolean _readable = false;
+{    
 
     /**
      * The default initial size of the buffer. The buffer expands automatically.
@@ -66,7 +65,6 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
             _data.setAutoExpand(true);
         }
-        _readable = (data != null);
     }
 
     AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
@@ -75,15 +73,13 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
         getJmsContentHeaderProperties().setContentType(getMimeType());
-        _readable = true;
     }
 
-    public void clearBody() throws JMSException
+    public void clearBodyImpl() throws JMSException
     {
         _data.clear();
-        _readable = false;
     }
-
+    
     public String toBodyString() throws JMSException
     {
         checkReadable();
@@ -128,15 +124,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
             return data;
         }
     }
-
-    protected void checkReadable() throws MessageNotReadableException
-    {
-        if (!_readable)
-        {
-            throw new MessageNotReadableException("You need to call reset() to make the message readable");
-        }
-    }
-
+    
     /**
      * Check that there is at least a certain number of bytes available to read
      *
@@ -151,23 +139,9 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         }
     }
 
-    protected void checkWritable() throws MessageNotWriteableException
-    {
-        if (_readable)
-        {
-            throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
-        }
-    }
-
     public void reset() throws JMSException
     {
-        //checkWritable();
+        super.reset();
         _data.flip();
-        _readable = true;
-    }
-
-    public boolean isReadable()
-    {
-        return _readable;
-    }
+    }    
 }

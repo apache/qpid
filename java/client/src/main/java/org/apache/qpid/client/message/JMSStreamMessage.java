@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.AMQException;
+import org.apache.mina.common.ByteBuffer;
+
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
@@ -32,7 +36,7 @@ import java.nio.charset.Charset;
  */
 public class JMSStreamMessage extends AbstractBytesMessage implements StreamMessage
 {
-    private static final String MIME_TYPE="jms/stream-message";
+    public static final String MIME_TYPE="jms/stream-message";
 
     private static final String[] _typeNames = { "boolean",
                                                  "byte",
@@ -70,6 +74,29 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
      * a byte array in multiple chunks, hence this is used to track how much is left to be read
      */
     private int _byteArrayRemaining = -1;
+
+    JMSStreamMessage()
+    {
+        this(null);
+    }
+    
+    /**
+     * Construct a stream message with existing data.
+     *
+     * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
+     *             set to auto expand
+     */
+    JMSStreamMessage(ByteBuffer data)
+    {
+        super(data); // this instanties a content header
+    }
+
+
+    JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+            throws AMQException
+    {
+        super(messageNbr, contentHeader, data);
+    }
 
     public String getMimeType()
     {
