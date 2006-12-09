@@ -103,6 +103,7 @@ public class MessageFactoryRegistry
         mf.registerFactory("text/xml", new JMSTextMessageFactory());
         mf.registerFactory("application/octet-stream", new JMSBytesMessageFactory());
         mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
+        mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
         mf.registerFactory(null, new JMSBytesMessageFactory());
         return mf;
     }
