@@ -27,6 +27,7 @@ import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.framing.*;
@@ -367,13 +368,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public StreamMessage createStreamMessage() throws JMSException
     {
-        checkNotClosed();
-        throw new UnsupportedOperationException("Stream messages not supported");
+        synchronized (_connection.getFailoverMutex())
+        {
+            checkNotClosed();
+
+            try
+            {
+                return (StreamMessage) _messageFactoryRegistry.createMessage(JMSStreamMessage.MIME_TYPE);
+            }
+            catch (AMQException e)
+            {
+                throw new JMSException("Unable to create text message: " + e);
+            }
+        }
     }
 
     public TextMessage createTextMessage() throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
+        synchronized (_connection.getFailoverMutex())
         {
             checkNotClosed();
 

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,26 +20,21 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.AMQException;
+
 import javax.jms.JMSException;
 
-public class TestMessageHelper
+public class JMSStreamMessageFactory extends AbstractJMSMessageFactory
 {
-    public static JMSTextMessage newJMSTextMessage() throws JMSException
+    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws
+                                                                                                                   AMQException
     {
-        return new JMSTextMessage();
+        return new JMSStreamMessage(deliveryTag, contentHeader, data);
     }
 
-    public static JMSBytesMessage newJMSBytesMessage() throws JMSException
-    {
-        return new JMSBytesMessage();
-    }
-
-    public static JMSMapMessage newJMSMapMessage() throws JMSException
-    {
-        return new JMSMapMessage();
-    }
-
-    public static JMSStreamMessage newJMSStreamMessage()
+    public AbstractJMSMessage createMessage() throws JMSException
     {
         return new JMSStreamMessage();
     }
