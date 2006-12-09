@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,28 +20,20 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.AMQException;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ContentHeaderBody;
 
+import javax.jms.BytesMessage;
 import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageEOFException;
-import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
-public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.BytesMessage
+public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
     private static final String MIME_TYPE = "application/octet-stream";
-
-
-    /**
-     * The default initial size of the buffer. The buffer expands automatically.
-     */
-    private static final int DEFAULT_BUFFER_INITIAL_SIZE = 1024;
 
     JMSBytesMessage()
     {
@@ -57,71 +49,12 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
     JMSBytesMessage(ByteBuffer data)
     {
         super(data); // this instanties a content header
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-
-        if (_data == null)
-        {
-            _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
-            _data.setAutoExpand(true);
-        }
     }
 
     JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
-        // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-    }
-
-    public void clearBodyImpl() throws JMSException
-    {
-        _data.clear();
-    }
-
-    public String toBodyString() throws JMSException
-    {
-        checkReadable();
-        try
-        {
-            return getText();
-        }
-        catch (IOException e)
-        {
-            throw new JMSException(e.toString());
-        }
-    }
-
-    /**
-     * We reset the stream before and after reading the data. This means that toString() will always output
-     * the entire message and also that the caller can then immediately start reading as if toString() had
-     * never been called.
-     *
-     * @return
-     * @throws IOException
-     */
-    private String getText() throws IOException
-    {
-        // this will use the default platform encoding
-        if (_data == null)
-        {
-            return null;
-        }
-        int pos = _data.position();
-        _data.rewind();
-        // one byte left is for the end of frame marker
-        if (_data.remaining() == 0)
-        {
-            // this is really redundant since pos must be zero
-            _data.position(pos);
-            return null;
-        }
-        else
-        {
-            String data = _data.getString(Charset.forName("UTF8").newDecoder());
-            _data.position(pos);
-            return data;
-        }
+        super(messageNbr, contentHeader, data);
     }
 
     public String getMimeType()
@@ -133,21 +66,6 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
     {
         checkReadable();
         return _data.limit();
-    }
-
-
-    /**
-     * Check that there is at least a certain number of bytes available to read
-     *
-     * @param len the number of bytes
-     * @throws MessageEOFException if there are less than len bytes available to read
-     */
-    private void checkAvailable(int len) throws MessageEOFException
-    {
-        if (_data.remaining() < len)
-        {
-            throw new MessageEOFException("Unable to read " + len + " bytes");
-        }
     }
 
     public boolean readBoolean() throws JMSException
@@ -340,6 +258,8 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         try
         {
             _data.putString(string, Charset.forName("UTF-8").newEncoder());
+            // we must add the null terminator manually
+            _data.put((byte)0);
         }
         catch (CharacterCodingException e)
         {
@@ -368,13 +288,51 @@ public class JMSBytesMessage extends AbstractJMSMessage implements javax.jms.Byt
         {
             throw new NullPointerException("Argument must not be null");
         }
-        _data.putObject(object);
-    }
-
-    public void reset() throws JMSException
-    {
-        super.reset();
-        _data.flip();
+        Class clazz = object.getClass();
+        if (clazz == Byte.class)
+        {
+            writeByte((Byte) object);
+        }
+        else if (clazz == Boolean.class)
+        {
+            writeBoolean((Boolean) object);
+        }
+        else if (clazz == byte[].class)
+        {
+            writeBytes((byte[]) object);
+        }
+        else if (clazz == Short.class)
+        {
+            writeShort((Short) object);
+        }
+        else if (clazz == Character.class)
+        {
+            writeChar((Character) object);
+        }
+        else if (clazz == Integer.class)
+        {
+            writeInt((Integer) object);
+        }
+        else if (clazz == Long.class)
+        {
+            writeLong((Long) object);
+        }
+        else if (clazz == Float.class)
+        {
+            writeFloat((Float) object);
+        }
+        else if (clazz == Double.class)
+        {
+            writeDouble((Double) object);
+        }
+        else if (clazz == String.class)
+        {
+            writeUTF((String) object);
+        }
+        else
+        {
+            throw new MessageFormatException("Only primitives plus byte arrays and String are valid types");
+        }
     }
 
 }

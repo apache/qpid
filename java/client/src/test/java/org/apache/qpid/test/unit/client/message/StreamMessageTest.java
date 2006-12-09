@@ -21,16 +21,19 @@
 package org.apache.qpid.test.unit.client.message;
 
 import junit.framework.TestCase;
-import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
-import javax.jms.MessageEOFException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageEOFException;
 import java.util.HashMap;
 
-public class BytesMessageTest extends TestCase
+/**
+ * @author Apache Software Foundation
+ */
+public class StreamMessageTest extends TestCase
 {
     /**
      * Tests that on creation a call to getBodyLength() throws an exception
@@ -40,8 +43,8 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-            bm.getBodyLength();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+            bm.readByte();
             fail("expected exception did not occur");
         }
         catch (MessageNotReadableException m)
@@ -58,7 +61,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeInt(10);
             bm.reset();
             bm.writeInt(12);
@@ -76,7 +79,7 @@ public class BytesMessageTest extends TestCase
 
     public void testClearBodyMakesWritable() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeInt(10);
         bm.reset();
         bm.clearBody();
@@ -85,7 +88,7 @@ public class BytesMessageTest extends TestCase
 
     public void testWriteBoolean() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeBoolean(true);
         bm.writeBoolean(false);
         bm.reset();
@@ -97,27 +100,25 @@ public class BytesMessageTest extends TestCase
 
     public void testWriteInt() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeInt(10);
         bm.reset();
-        long len = bm.getBodyLength();
-        assertTrue(len == 4);
         int val = bm.readInt();
         assertTrue(val == 10);
     }
 
     public void testWriteString() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeUTF("Bananas");
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeString("Bananas");
         bm.reset();
-        String res = bm.readUTF();
+        String res = bm.readString();
         assertEquals("Bananas", res);
     }
 
     public void testWriteBytes() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         byte[] bytes = {1,2,3,4};
         bm.writeBytes(bytes, 1, 2);
         bm.reset();
@@ -129,7 +130,7 @@ public class BytesMessageTest extends TestCase
 
     public void testWriteObject() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeObject(new Boolean(true));
         bm.writeObject(new Boolean(false));
         bm.writeObject(new Byte((byte)2));
@@ -151,7 +152,7 @@ public class BytesMessageTest extends TestCase
         assertEquals((short) 29, bm.readShort());
         assertEquals(101, bm.readInt());
         assertEquals(50003222L, bm.readLong());
-        assertEquals("Foobar", bm.readUTF());
+        assertEquals("Foobar", bm.readString());
         assertEquals(1.7f, bm.readFloat());
         assertEquals(8.7d, bm.readDouble());
     }
@@ -160,7 +161,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeObject(new HashMap());
             fail("expected MessageFormatException was not thrown");
         }
@@ -174,7 +175,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeObject(null);
             fail("expected exception did not occur");
         }
@@ -190,61 +191,19 @@ public class BytesMessageTest extends TestCase
 
     public void testReadBoolean() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeBoolean(true);
         bm.reset();
         boolean result = bm.readBoolean();
         assertTrue(result);
     }
 
-    public void testReadUnsignedByte() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte) 9);
-        bm.reset();
-        int result = bm.readUnsignedByte();
-        assertEquals(9, result);
-    }
-
-    public void testReadUnsignedShort() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeShort((byte) 9);
-        bm.reset();
-        int result = bm.readUnsignedShort();
-        assertEquals(9, result);
-    }
-
     public void testReadBytesChecksNull() throws Exception
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.readBytes(null);
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
-        }
-
-        try
-        {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-            bm.readBytes(null, 1);
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
-        }
-    }
-
-    public void testReadBytesChecksMaxSize() throws Exception
-    {
-        try
-        {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-            byte[] bytes = new byte[100];
-            bm.readBytes(bytes, 120);
         }
         catch (IllegalArgumentException e)
         {
@@ -254,57 +213,46 @@ public class BytesMessageTest extends TestCase
 
     public void testReadBytesReturnsCorrectLengths() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         byte[] bytes = {2, 3};
         bm.writeBytes(bytes);
+        bm.writeBytes(null);
+        bm.writeBytes(new byte[]{});
         bm.reset();
         int len = bm.readBytes(bytes);
         assertEquals(2, len);
         len = bm.readBytes(bytes);
         assertEquals(-1, len);
-        len = bm.readBytes(bytes, 2);
-        assertEquals(-1, len);
-        bm.reset();
-        len = bm.readBytes(bytes, 2);
-        assertEquals(2, len);
-        bm.reset();
-        len = bm.readBytes(bytes, 1);
-        assertEquals(1, len);
+        len = bm.readBytes(bytes);
+        assertEquals(0, len);
+    }
 
+    public void testReadMultipleByteArrays() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        byte[] bytes = {2, 3, 4};
+        bm.writeBytes(bytes);
+        bm.writeBytes(bytes);
+        bm.reset();
+        byte[] result = new byte[2];
+        int len = bm.readBytes(result);
+        assertEquals(2, len);
+        len = bm.readBytes(result);
+        assertEquals(1, len);
+        len = bm.readBytes(result);
+        assertEquals(2, len);        
     }
 
     public void testEOFByte() throws Exception
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeByte((byte)1);
             bm.reset();
             bm.readByte();
             // should throw
             bm.readByte();
-            fail("expected exception did not occur");
-        }
-        catch (MessageEOFException m)
-        {
-            // ok
-        }
-        catch (Exception e)
-        {
-            fail("expected MessageEOFException, got " + e);
-        }
-    }
-
-    public void testEOFUnsignedByte() throws Exception
-    {
-        try
-        {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-            bm.writeByte((byte)1);
-            bm.reset();
-            bm.readByte();
-            // should throw
-            bm.readUnsignedByte();
             fail("expected exception did not occur");
         }
         catch (MessageEOFException m)
@@ -321,7 +269,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeBoolean(true);
             bm.reset();
             bm.readBoolean();
@@ -343,7 +291,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeChar('A');
             bm.reset();
             bm.readChar();
@@ -365,7 +313,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeDouble(1.3d);
             bm.reset();
             bm.readDouble();
@@ -387,7 +335,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeFloat(1.3f);
             bm.reset();
             bm.readFloat();
@@ -409,7 +357,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeInt(99);
             bm.reset();
             bm.readInt();
@@ -431,7 +379,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeLong(4L);
             bm.reset();
             bm.readLong();
@@ -453,7 +401,7 @@ public class BytesMessageTest extends TestCase
     {
         try
         {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
             bm.writeShort((short)4);
             bm.reset();
             bm.readShort();
@@ -470,101 +418,10 @@ public class BytesMessageTest extends TestCase
             fail("expected MessageEOFException, got " + e);
         }
     }
-
-    public void testEOFUnsignedShort() throws Exception
-    {
-        try
-        {
-            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-            bm.writeShort((short)4);
-            bm.reset();
-            bm.readUnsignedShort();
-            // should throw
-            bm.readUnsignedShort();
-            fail("expected exception did not occur");
-        }
-        catch (MessageEOFException m)
-        {
-            // ok
-        }
-        catch (Exception e)
-        {
-            fail("expected MessageEOFException, got " + e);
-        }
-    }
-
-    /**
-     * Tests that the readBytes() method populates the passed in array
-     * correctly
-     * @throws Exception
-     */
-    public void testReadBytes() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[2];
-        int count = bm.readBytes(result);
-        assertEquals((byte)3, result[0]);
-        assertEquals((byte)4, result[1]);
-        assertEquals(2, count);
-    }
-
-    public void testReadBytesEOF() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[2];
-        bm.readBytes(result);
-        int count = bm.readBytes(result);
-        assertEquals(-1, count);
-    }
-
-    public void testReadBytesWithLargerArray() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.reset();
-        byte[] result = new byte[3];
-        int count = bm.readBytes(result);
-        assertEquals(2, count);
-        assertEquals((byte)3, result[0]);
-        assertEquals((byte)4, result[1]);
-        assertEquals((byte)0, result[2]);
-    }
-
-    public void testReadBytesWithCount() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        bm.writeByte((byte)3);
-        bm.writeByte((byte)4);
-        bm.writeByte((byte)5);
-        bm.reset();
-        byte[] result = new byte[3];
-        int count = bm.readBytes(result, 2);
-        assertEquals(2, count);
-        assertEquals((byte)3, result[0]);
-        assertEquals((byte)4, result[1]);
-        assertEquals((byte)0, result[2]);
-    }
-
-    public void testToBodyString() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        final String testText = "This is a test";
-        bm.writeUTF(testText);
-        bm.reset();
-        String result = bm.toBodyString();
-        assertEquals(testText, result);
-    }
-
+    
     public void testToBodyStringWithNull() throws Exception
     {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.reset();
         String result = bm.toBodyString();
         assertNull(result);
@@ -572,6 +429,6 @@ public class BytesMessageTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(BytesMessageTest.class);
+        return new junit.framework.TestSuite(StreamMessageTest.class);
     }
 }
