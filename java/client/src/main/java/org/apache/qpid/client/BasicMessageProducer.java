@@ -30,6 +30,7 @@ import org.apache.qpid.framing.*;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import java.io.UnsupportedEncodingException;
@@ -231,6 +232,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Message message) throws JMSException
     {
     	checkPreConditions();
+    	checkInitialDestination();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, _deliveryMode, _messagePriority, _timeToLive,
@@ -241,6 +243,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Message message, int deliveryMode) throws JMSException
     {
     	checkPreConditions();
+    	checkInitialDestination();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, deliveryMode, _messagePriority, _timeToLive,
@@ -251,6 +254,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Message message, int deliveryMode, boolean immediate) throws JMSException
     {
     	checkPreConditions();
+    	checkInitialDestination();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage) message, deliveryMode, _messagePriority, _timeToLive,
@@ -262,6 +266,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                      long timeToLive) throws JMSException
     {
     	checkPreConditions();
+    	checkInitialDestination();
         synchronized (_connection.getFailoverMutex())
         {
             sendImpl(_destination, (AbstractJMSMessage)message, deliveryMode, priority, timeToLive, _mandatory,
@@ -272,6 +277,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Destination destination, Message message) throws JMSException
     {
     	checkPreConditions();
+    	checkDestination(destination);
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -285,6 +291,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             throws JMSException
     {
     	checkPreConditions();
+    	checkDestination(destination);
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -298,6 +305,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             throws JMSException
     {
         checkPreConditions();
+        checkDestination(destination);
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -311,6 +319,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             throws JMSException
     {
     	checkPreConditions();
+    	checkDestination(destination);
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -325,6 +334,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             throws JMSException
     {
     	checkPreConditions();
+    	checkDestination(destination);
         synchronized (_connection.getFailoverMutex())
         {
             validateDestination(destination);
@@ -487,17 +497,30 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         _encoding = encoding;
     }
     
-	private void checkPreConditions() throws IllegalStateException, JMSException {
+	private void checkPreConditions() throws javax.jms.IllegalStateException, JMSException {
 		checkNotClosed();
-		
+				
+		if(_session == null || _session.isClosed()){
+			throw new javax.jms.IllegalStateException("Invalid Session");
+		}
+	}
+	
+	private void checkInitialDestination(){
 		if(_destination == null){
 			throw new UnsupportedOperationException("Destination is null");
 		}
+	}
+	
+	private void checkDestination(Destination suppliedDestination) throws InvalidDestinationException{
+		if (_destination != null && suppliedDestination != null){
+			throw new UnsupportedOperationException("This message producer was created with a Destination, therefore you cannot use an unidentified Destination");
+		}
 		
-		if(_session == null || _session.isClosed()){
-			throw new UnsupportedOperationException("Invalid Session");
+		if (suppliedDestination == null){
+			throw new InvalidDestinationException("Supplied Destination was invalid"); 
 		}
 	}
+	
 
 	public AMQSession getSession() {
 		return _session;
