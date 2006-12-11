@@ -22,11 +22,11 @@
 
 using namespace qpid::broker;
 
-TxPublish::TxPublish(Message::shared_ptr _msg) : msg(_msg) {}
+TxPublish::TxPublish(Message::shared_ptr _msg, const std::string* const _xid) : msg(_msg), xid(_xid) {}
 
 bool TxPublish::prepare(TransactionContext* ctxt) throw(){
     try{
-        for_each(queues.begin(), queues.end(), Prepare(ctxt, msg, 0));
+        for_each(queues.begin(), queues.end(), Prepare(ctxt, msg, xid));
         return true;
     }catch(...){
         std::cout << "TxPublish::prepare() - Failed to prepare" << std::endl;

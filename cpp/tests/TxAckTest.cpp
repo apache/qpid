@@ -37,11 +37,11 @@ class TxAckTest : public CppUnit::TestCase
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector<Message*> dequeued;
+        vector< std::pair<Message*, const string*> > dequeued;
 
-        void dequeue(TransactionContext*, Message* const msg, const Queue& /*queue*/, const string * const /*xid*/)
+        void dequeue(TransactionContext*, Message* const msg, const Queue& /*queue*/, const string * const xid)
         {
-            dequeued.push_back(msg);
+            dequeued.push_back(std::pair<Message*, const string*>(msg, xid));
         }
 
         TestMessageStore() : NullMessageStore(false) {}
@@ -49,6 +49,7 @@ class TxAckTest : public CppUnit::TestCase
     };
 
     CPPUNIT_TEST_SUITE(TxAckTest);
+    CPPUNIT_TEST(testPrepare2pc);
     CPPUNIT_TEST(testPrepare);
     CPPUNIT_TEST(testCommit);
     CPPUNIT_TEST_SUITE_END();
@@ -60,11 +61,12 @@ class TxAckTest : public CppUnit::TestCase
     vector<Message::shared_ptr> messages;
     list<DeliveryRecord> deliveries;
     TxAck op;
+    std::string xid;
 
 
 public:
 
-    TxAckTest() : queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
+    TxAckTest() : queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries, &xid)
     {
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(new Message(0, "exchange", "routing_key", false, false));
@@ -86,13 +88,20 @@ public:
         op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 7, store.dequeued.size());
         CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
-        CPPUNIT_ASSERT_EQUAL(messages[0].get(), store.dequeued[0]);//msg 1
-        CPPUNIT_ASSERT_EQUAL(messages[1].get(), store.dequeued[1]);//msg 2
-        CPPUNIT_ASSERT_EQUAL(messages[2].get(), store.dequeued[2]);//msg 3
-        CPPUNIT_ASSERT_EQUAL(messages[3].get(), store.dequeued[3]);//msg 4
-        CPPUNIT_ASSERT_EQUAL(messages[4].get(), store.dequeued[4]);//msg 5
-        CPPUNIT_ASSERT_EQUAL(messages[6].get(), store.dequeued[5]);//msg 7
-        CPPUNIT_ASSERT_EQUAL(messages[8].get(), store.dequeued[6]);//msg 9
+        int dequeued[] = {0, 1, 2, 3, 4, 6, 8};
+        for (int i = 0; i < 7; i++) {
+            CPPUNIT_ASSERT_EQUAL(messages[dequeued[i]].get(), store.dequeued[i].first);
+        }
+    }
+
+    void testPrepare2pc()
+    {
+        xid = "abcdefg";
+        testPrepare();
+        const string expected(xid);
+        for (int i = 0; i < 7; i++) {
+            CPPUNIT_ASSERT_EQUAL(expected, *store.dequeued[i].second);
+        }
     }
 
     void testCommit()
