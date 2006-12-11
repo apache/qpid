@@ -52,26 +52,32 @@ public class QueueSenderAdapter implements QueueSender {
 	}
 
 	public int getDeliveryMode() throws JMSException {
+		checkPreConditions();
 		return delegate.getDeliveryMode();
 	}
 
 	public Destination getDestination() throws JMSException {
+		checkPreConditions();
 		return delegate.getDestination();
 	}
 
 	public boolean getDisableMessageID() throws JMSException {
+		checkPreConditions();
 		return delegate.getDisableMessageID();
 	}
 
 	public boolean getDisableMessageTimestamp() throws JMSException {
+		checkPreConditions();
 		return delegate.getDisableMessageTimestamp();
 	}
 
 	public int getPriority() throws JMSException {
+		checkPreConditions();
 		return delegate.getPriority();
 	}
 
 	public long getTimeToLive() throws JMSException {
+		checkPreConditions();
 		return delegate.getTimeToLive();
 	}
 
@@ -128,7 +134,7 @@ public class QueueSenderAdapter implements QueueSender {
 		AMQSession session = ((BasicMessageProducer)delegate).getSession();
 		
 		if(session == null || session.isClosed()){
-			throw new UnsupportedOperationException("Invalid Session");
+			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
 }

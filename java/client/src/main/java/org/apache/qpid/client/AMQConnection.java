@@ -54,6 +54,7 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -550,8 +551,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public ConnectionMetaData getMetaData() throws JMSException
     {
         checkNotClosed();
-        // TODO Auto-generated method stub
-        return null;
+        return QpidConnectionMetaData.instance();
+        
     }
 
     public ExceptionListener getExceptionListener() throws JMSException
