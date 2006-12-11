@@ -9,7 +9,8 @@ that you have the latest stable version.
   
  * autoconf   <http://www.gnu.org/software/autoconf/>
  * automake   <http://www.gnu.org/software/automake/>
- * cppunit    <http://cppunit.sourceforge.net>
+ * cppunit    <http://cppunit.sourceforge.net> 
+   Note: Ensure cppunit-config is in your PATH.
  * help2man   <http://www.gnu.org/software/help2man/>
  * libtool    <http://www.gnu.org/software/libtool/>
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (aka pkg-config)
