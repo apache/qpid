@@ -132,7 +132,7 @@ public class TopicPublisherAdapter implements TopicPublisher {
 		
 		AMQSession session = ((BasicMessageProducer)delegate).getSession();
 		if(session == null || session.isClosed()){
-			throw new UnsupportedOperationException("Invalid Session");
+			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
 }

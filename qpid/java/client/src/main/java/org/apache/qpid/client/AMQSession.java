@@ -38,6 +38,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -279,7 +280,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow);
     }
 
-    AMQConnection getAMQConnection()
+    public AMQConnection getAMQConnection()
     {
         return _connection;
     }
@@ -744,6 +745,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public QueueReceiver createQueueReceiver(Destination destination) throws JMSException
     {
+    	checkValidDestination(destination);    	
         AMQQueue dest = (AMQQueue) destination;
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(destination);
         return new QueueReceiverAdaptor(dest, consumer);
@@ -759,6 +761,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public QueueReceiver createQueueReceiver(Destination destination, String messageSelector) throws JMSException
     {
+    	checkValidDestination(destination);
         AMQQueue dest = (AMQQueue) destination;
         BasicMessageConsumer consumer = (BasicMessageConsumer)
                 createConsumer(destination, messageSelector);
@@ -767,17 +770,20 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, null);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, messageSelector);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
             throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false, messageSelector);
     }
 
@@ -787,6 +793,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           boolean exclusive,
                                           String selector) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumer(destination, prefetch, prefetch, noLocal, exclusive, selector, null);
     }
 
@@ -798,6 +805,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           boolean exclusive,
                                           String selector) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumer(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null);
     }
 
@@ -808,6 +816,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector,
                                           FieldTable rawSelector) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive,
                                   selector, rawSelector);
     }
@@ -820,6 +829,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector,
                                           FieldTable rawSelector) throws JMSException
     {
+    	checkValidDestination(destination);
         return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive,
                                   selector, rawSelector);
     }
@@ -1045,6 +1055,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TopicSubscriber createSubscriber(Topic topic) throws JMSException
     {
     	checkNotClosed();
+    	checkValidTopic(topic);
         AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
     }
@@ -1061,6 +1072,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException
     {
     	checkNotClosed();
+    	checkValidTopic(topic);
         AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
     }
@@ -1075,6 +1087,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
     	checkNotClosed();
+    	checkValidTopic(topic);
         AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
     }
@@ -1086,6 +1099,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             throws JMSException
     {
     	checkNotClosed();
+    	checkValidTopic(topic);
         AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
         return new TopicSubscriberAdaptor(dest, consumer);
@@ -1094,6 +1108,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TopicPublisher createPublisher(Topic topic) throws JMSException
     {
     	checkNotClosed();
+    	checkValidTopic(topic);
         //return (TopicPublisher) createProducer(topic);
         return new TopicPublisherAdapter(createProducer(topic), topic);
     }
@@ -1101,12 +1116,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public QueueBrowser createBrowser(Queue queue) throws JMSException
     {
     	checkNotClosed();
+    	checkValidQueue(queue);
         throw new UnsupportedOperationException("Queue browsing not supported");
     }
 
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
     	checkNotClosed();
+    	checkValidQueue(queue);
         throw new UnsupportedOperationException("Queue browsing not supported");
     }
 
@@ -1124,6 +1141,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void unsubscribe(String name) throws JMSException
     {
+    	checkNotClosed();
+    	    	
         //send a queue.delete for the subscription
         String queue = _connection.getClientID() + ":" + name;
         AMQFrame frame = QueueDeleteBody.createAMQFrame(_channelId, 0, queue, false, false, true);
@@ -1324,5 +1343,26 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _logger.warn("Unsuspending channel");
         AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId, true);
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
+    }
+    
+    /*
+     * I could have combined the last 3 methods, but this way it improves readability
+     */
+    private void checkValidTopic(Topic topic) throws InvalidDestinationException{
+    	if (topic == null){
+    		throw new javax.jms.InvalidDestinationException("Invalid Topic");
+    	}
+    }
+    
+    private void checkValidQueue(Queue queue) throws InvalidDestinationException{
+    	if (queue == null){
+    		throw new javax.jms.InvalidDestinationException("Invalid Queue");
+    	}
+    }
+    
+    private void checkValidDestination(Destination destination) throws InvalidDestinationException{
+    	if (destination == null){
+    		throw new javax.jms.InvalidDestinationException("Invalid Queue");
+    	}
     }
 }
