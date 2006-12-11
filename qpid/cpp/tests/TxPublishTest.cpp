@@ -34,15 +34,22 @@ using namespace qpid::framing;
 
 class TxPublishTest : public CppUnit::TestCase  
 {
+    struct Triple
+    {
+        string first;
+        Message* second;
+        const string* third;
+    };
 
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector< pair<string, Message*> > enqueued;
+        vector<Triple> enqueued;
         
-        void enqueue(TransactionContext*, Message* const msg, const Queue& queue, const string * const /*xid*/)
+        void enqueue(TransactionContext*, Message* const msg, const Queue& queue, const string * const xid)
         {
-            enqueued.push_back(pair<string, Message*>(queue.getName(),msg));
+            Triple args = {queue.getName(), msg, xid};
+            enqueued.push_back(args);
         }
         
         //dont care about any of the other methods:
@@ -52,6 +59,7 @@ class TxPublishTest : public CppUnit::TestCase
     
     CPPUNIT_TEST_SUITE(TxPublishTest);
     CPPUNIT_TEST(testPrepare);
+    CPPUNIT_TEST(testPrepare2pc);
     CPPUNIT_TEST(testCommit);
     CPPUNIT_TEST_SUITE_END();
     
@@ -61,14 +69,14 @@ class TxPublishTest : public CppUnit::TestCase
     Queue::shared_ptr queue2;
     Message::shared_ptr const msg;
     TxPublish op;
-    
+    string xid;
     
 public:
     
     TxPublishTest() : queue1(new Queue("queue1", false, &store, 0)), 
                       queue2(new Queue("queue2", false, &store, 0)), 
                       msg(new Message(0, "exchange", "routing_key", false, false)),
-                      op(msg)
+                      op(msg, &xid)
     {
         msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
         msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
@@ -85,6 +93,15 @@ public:
         CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[0].second);
         CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
         CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[1].second);
+    }
+
+    void testPrepare2pc()
+    {
+        xid = "abcde";
+        const string expected(xid);
+        testPrepare();
+        CPPUNIT_ASSERT_EQUAL(expected, *store.enqueued[0].third);
+        CPPUNIT_ASSERT_EQUAL(expected, *store.enqueued[1].third);        
     }
 
     void testCommit()
