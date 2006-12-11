@@ -303,7 +303,7 @@ public class EncodingUtils
     public static Content readContent(ByteBuffer buffer) throws AMQFrameDecodingException
     {
     	// TODO: New Content class required for AMQP 0-9.
-    	return new Content();
+    	return null;
     }
 
     public static String readShortString(ByteBuffer buffer)
