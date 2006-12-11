@@ -285,6 +285,11 @@ public class JavaGenerator extends Generator
 			"~",											// size
 			"EncodingUtils.writeBooleans(buffer, #)",		// encode expression
 			"# = EncodingUtils.readBooleans(buffer)"));		// decode expression
+		typeMap.put("content", new DomainInfo(
+			"Content",										// Java code type
+			"EncodingUtils.encodedContentLength(#)", 	// size
+			"EncodingUtils.writeContentBytes(buffer, #)", // encode expression
+			"# = EncodingUtils.readContent(buffer)"));	// decode expression
 		typeMap.put("long", new DomainInfo(
 			"long",											// Java code type
 			"4",											// size

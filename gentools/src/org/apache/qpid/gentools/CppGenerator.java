@@ -94,6 +94,11 @@ public class CppGenerator extends Generator
 				"~", 					// size
 		        "",						// encodeExpression
     			""));					// decodeExpression
+		typeMap.put("content", new DomainInfo(
+				"Content",				// type
+				"#.size()", 			// size
+		        "buffer.putContent(#)",	// encodeExpression
+    			"buffer.getContent(#)")); // decodeExpression
 		typeMap.put("long", new DomainInfo(
 				"u_int32_t",			// type
 				"4", 					// size
