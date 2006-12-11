@@ -544,7 +544,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 		this.checkNotClosed();
 		
 		if(_session == null || _session.isClosed()){
-			throw new UnsupportedOperationException("Invalid Session");
+			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
 }
