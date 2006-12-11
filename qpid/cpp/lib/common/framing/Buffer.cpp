@@ -19,6 +19,7 @@
  *
  */
 #include <Buffer.h>
+#include <Content.h> 
 #include <FieldTable.h> 
 
 qpid::framing::Buffer::Buffer(u_int32_t _size) : size(_size), owner(true), position(0), limit(_size){
@@ -160,6 +161,14 @@ void qpid::framing::Buffer::putFieldTable(const FieldTable& t){
 
 void qpid::framing::Buffer::getFieldTable(FieldTable& t){
     t.decode(*this);
+}
+
+void qpid::framing::Buffer::putContent(const Content& c){
+    c.encode(*this);
+}
+
+void qpid::framing::Buffer::getContent(Content& c){
+    c.decode(*this);
 }
 
 void qpid::framing::Buffer::putRawData(const string& s){

@@ -26,6 +26,7 @@
 namespace qpid {
 namespace framing {
 
+class Content;
 class FieldTable;
 
 class Buffer
@@ -70,6 +71,9 @@ public:
 
     void putFieldTable(const FieldTable& t);
     void getFieldTable(FieldTable& t);
+
+    void putContent(const Content& c);
+    void getContent(Content& c);
 
     void putRawData(const string& s);
     void getRawData(string& s, u_int32_t size);
