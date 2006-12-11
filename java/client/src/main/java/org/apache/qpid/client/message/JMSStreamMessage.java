@@ -27,28 +27,13 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import javax.jms.*;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 
 /**
  * @author Apache Software Foundation
  */
 public class JMSStreamMessage extends AbstractBytesMessage implements StreamMessage
 {
-    public static final String MIME_TYPE="jms/stream-message";
-
-    private static final String[] _typeNames = { "boolean",
-                                                 "byte",
-                                                 "byte array",
-                                                 "short",
-                                                 "char",
-                                                 "int",
-                                                 "long",
-                                                 "float",
-                                                 "double",
-                                                 "utf string" };
+    public static final String MIME_TYPE="jms/stream-message";    
 
     private static final byte BOOLEAN_TYPE = (byte) 1;
 
@@ -69,69 +54,6 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     private static final byte DOUBLE_TYPE = (byte) 9;
 
     private static final byte STRING_TYPE = (byte) 10;
-
-    /**
-     * Maps from type on the wire to set of valid types that can be converted to
-     */
-    private static final Map<Byte, Set<Byte>> _typeConversionMap;
-
-    static
-    {
-        _typeConversionMap = new HashMap<Byte, Set<Byte>>();
-        Set<Byte> set = new HashSet<Byte>();
-        set.add(BOOLEAN_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(BOOLEAN_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(BYTE_TYPE);
-        set.add(SHORT_TYPE);
-        set.add(INT_TYPE);
-        set.add(LONG_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(BYTE_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(SHORT_TYPE);
-        set.add(INT_TYPE);
-        set.add(LONG_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(SHORT_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(CHAR_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(CHAR_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(INT_TYPE);
-        set.add(LONG_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(INT_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(LONG_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(LONG_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(FLOAT_TYPE);
-        set.add(DOUBLE_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(FLOAT_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(DOUBLE_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(DOUBLE_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(BOOLEAN_TYPE);
-        set.add(BYTE_TYPE);
-        set.add(SHORT_TYPE);
-        set.add(CHAR_TYPE);
-        set.add(INT_TYPE);
-        set.add(LONG_TYPE);
-        set.add(FLOAT_TYPE);
-        set.add(DOUBLE_TYPE);
-        set.add(STRING_TYPE);
-        _typeConversionMap.put(STRING_TYPE, set);
-        set = new HashSet<Byte>();
-        set.add(BYTEARRAY_TYPE);
-        _typeConversionMap.put(BYTEARRAY_TYPE, set);
-    }
 
     /**
      * This is set when reading a byte array. The readBytes(byte[]) method supports multiple calls to read
@@ -184,7 +106,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public boolean readBoolean() throws JMSException
     {
         byte wireType = readAndCheckType();
-        boolean result = false;
+        boolean result;
         switch (wireType)
         {
             case BOOLEAN_TYPE:
@@ -209,7 +131,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public byte readByte() throws JMSException
     {
         byte wireType = readAndCheckType();
-        byte result = (byte)0;
+        byte result;
         switch (wireType)
         {
             case BYTE_TYPE:
@@ -234,7 +156,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public short readShort() throws JMSException
     {
         byte wireType = readAndCheckType();
-        short result = (short) 0;
+        short result;
         switch (wireType)
         {
             case SHORT_TYPE:
@@ -288,7 +210,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public int readInt() throws JMSException
     {
         byte wireType = readAndCheckType();
-        int result = 0;
+        int result;
         switch (wireType)
         {
             case INT_TYPE:
@@ -321,7 +243,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public long readLong() throws JMSException
     {
         byte wireType = readAndCheckType();
-        long result = 0L;
+        long result;
         switch (wireType)
         {
             case LONG_TYPE:
@@ -358,7 +280,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public float readFloat() throws JMSException
     {
         byte wireType = readAndCheckType();
-        float result = 0f;
+        float result;
         switch (wireType)
         {
             case FLOAT_TYPE:
@@ -383,7 +305,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public double readDouble() throws JMSException
     {
         byte wireType = readAndCheckType();
-        double result = 0d;
+        double result;
         switch (wireType)
         {
             case DOUBLE_TYPE:
@@ -412,7 +334,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     public String readString() throws JMSException
     {
         byte wireType = readAndCheckType();
-        String result = null;
+        String result;
         switch (wireType)
         {
             case STRING_TYPE:
