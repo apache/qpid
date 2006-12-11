@@ -24,10 +24,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageEOFException;
+import javax.jms.*;
 import java.util.HashMap;
 
 /**
@@ -240,7 +237,7 @@ public class StreamMessageTest extends TestCase
         len = bm.readBytes(result);
         assertEquals(1, len);
         len = bm.readBytes(result);
-        assertEquals(2, len);        
+        assertEquals(2, len);
     }
 
     public void testEOFByte() throws Exception
@@ -418,13 +415,181 @@ public class StreamMessageTest extends TestCase
             fail("expected MessageEOFException, got " + e);
         }
     }
-    
+
     public void testToBodyStringWithNull() throws Exception
     {
         JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.reset();
         String result = bm.toBodyString();
         assertNull(result);
+    }
+
+    private void checkConversionsFail(StreamMessage sm, int[] conversions) throws JMSException
+    {
+        for (int conversion : conversions)
+        {
+            try
+            {
+                switch (conversion)
+                {
+                    case 0:
+                        sm.readBoolean();
+                        break;
+                    case 1:
+                        sm.readByte();
+                        break;
+                    case 2:
+                        sm.readShort();
+                        break;
+                    case 3:
+                        sm.readChar();
+                        break;
+                    case 4:
+                        sm.readInt();
+                        break;
+                    case 5:
+                        sm.readLong();
+                        break;
+                    case 6:
+                        sm.readFloat();
+                        break;
+                    case 7:
+                        sm.readDouble();
+                        break;
+                    case 8:
+                        sm.readString();
+                        break;
+                    case 9:
+                        sm.readBytes(new byte[3]);
+                        break;
+                }
+                fail("MessageFormatException was not thrown");
+            }
+            catch (MessageFormatException e)
+            {
+                // PASS
+            }
+            sm.reset();
+        }
+    }
+    public void testBooleanConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeBoolean(true);
+        bm.reset();
+        String result = bm.readString();
+        assertEquals("true", result);
+        bm.reset();
+        checkConversionsFail(bm, new int[]{1,2,3,4,5,6,7,9});
+    }
+
+    public void testByteConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeByte((byte) 43);
+        bm.reset();
+        assertEquals(43, bm.readShort());
+        bm.reset();
+        assertEquals(43, bm.readInt());
+        bm.reset();
+        assertEquals(43, bm.readLong());
+        bm.reset();
+        String result = bm.readString();
+        assertEquals("43", result);
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 3, 6, 7, 9});
+    }
+
+    public void testShortConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeShort((short) 87);
+        bm.reset();
+        assertEquals(87, bm.readInt());
+        bm.reset();
+        assertEquals(87, bm.readLong());
+        bm.reset();
+        assertEquals("87", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 3, 6, 7, });
+    }
+
+    public void testCharConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeChar('d');
+        bm.reset();
+        assertEquals("d", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 2, 4, 5, 6, 7, 9});
+    }
+
+    public void testIntConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeInt(167);
+        bm.reset();
+        assertEquals(167, bm.readLong());
+        bm.reset();
+        assertEquals("167", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 2, 3, 6, 7, 9});
+    }
+
+    public void testLongConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeLong(1678);
+        bm.reset();
+        assertEquals("1678", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 2, 3, 4, 6, 7, 9});
+    }
+
+    public void testFloatConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeFloat(6.2f);
+        bm.reset();
+        assertEquals(6.2d, bm.readDouble(), 0.01);
+        bm.reset();
+        assertEquals("6.2", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 2, 3, 4, 5, 9});
+    }
+
+    public void testDoubleConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeDouble(88.35d);
+        bm.reset();
+        assertEquals("88.35", bm.readString());
+        bm.reset();
+        checkConversionsFail(bm, new int[]{0, 1, 2, 3, 4, 5, 6, 9});
+    }
+
+    public void testStringConversions() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeString("true");
+        bm.reset();
+        assertEquals(true, bm.readBoolean());
+        bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeString("2");
+        bm.reset();
+        assertEquals((byte)2, bm.readByte());        
+        bm.reset();
+        assertEquals((short)2, bm.readShort());
+        bm.reset();
+        assertEquals((int)2, bm.readInt());
+        bm.reset();
+        assertEquals((long)2, bm.readLong());
+        bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeString("5.7");
+        bm.reset();
+        assertEquals(5.7f, bm.readFloat());
+        bm.reset();
+        assertEquals(5.7d, bm.readDouble());
     }
 
     public static junit.framework.Test suite()
