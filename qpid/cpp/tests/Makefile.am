@@ -64,17 +64,8 @@ unit_tests =		\
 
 noinst_PROGRAMS = $(client_tests)
 
-check: run-unit-tests run-python-tests
-
-.PHONY: run-unit-tests
-run-unit-tests: $(check_LTLIBRARIES)
-	DllPlugInTester -c -b .libs/*.so
-
-run-python-tests: $(check_LTLIBRARIES) ../src/qpidd
-	../src/qpidd > qpidd.log 2>&1 & pid=$$!;	\
-	trap 'status=$$?; kill $$pid; exit $$status' 0;	\
-	trap '(exit $$?); exit $$?' 1 2 13 15;		\
-	cd ../../python ; ./run-tests -v -I cpp_failing.txt
+TESTS = run-unit-tests run-python-tests
+EXTRA_DIST += $(TESTS)
 
 include gen.mk
 
