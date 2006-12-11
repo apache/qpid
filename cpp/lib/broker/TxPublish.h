@@ -60,10 +60,11 @@ namespace qpid {
             };
 
             Message::shared_ptr msg;
+            const std::string* const xid;
             std::list<Queue::shared_ptr> queues;
 
         public:
-            TxPublish(Message::shared_ptr msg);
+            TxPublish(Message::shared_ptr msg, const std::string* const xid = 0);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

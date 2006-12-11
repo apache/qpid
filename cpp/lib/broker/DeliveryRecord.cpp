@@ -42,8 +42,12 @@ DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg,
                                                                pull(true){}
 
 
-void DeliveryRecord::discard(TransactionContext* ctxt) const{
-    queue->dequeue(ctxt, msg, 0);
+void DeliveryRecord::discard(TransactionContext* ctxt, const std::string* const xid) const{
+    queue->dequeue(ctxt, msg, xid);
+}
+
+void DeliveryRecord::discard() const{
+    discard(0, 0);
 }
 
 bool DeliveryRecord::matches(u_int64_t tag) const{
