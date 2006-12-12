@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.test;
+package org.apache.qpid.testutil;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
