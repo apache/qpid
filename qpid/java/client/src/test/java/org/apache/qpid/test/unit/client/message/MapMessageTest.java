@@ -25,6 +25,7 @@ import junit.framework.Assert;
 import org.apache.qpid.framing.PropertyFieldTable;
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
+import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -203,7 +204,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getByte("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("MessageFormatException expected");
         }
         catch (NumberFormatException e)
         {
@@ -221,7 +222,12 @@ public class MapMessageTest extends TestCase
         try
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
-            Assert.assertEquals(null, mm.getBytes("random"));
+            mm.getBytes("random");
+            Assert.fail("MessageFormatException expected");
+        }
+        catch (MessageFormatException mfe)
+        {
+            //normal path
         }
         catch (JMSException e)
         {
@@ -235,9 +241,9 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getChar("random");
-            Assert.fail("NullPointerException should be received.");
+            Assert.fail("MessageFormatException expected");
         }
-        catch (NullPointerException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }

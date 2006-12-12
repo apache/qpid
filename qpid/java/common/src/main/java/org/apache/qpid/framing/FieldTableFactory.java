@@ -34,7 +34,7 @@ public class FieldTableFactory
         return new PropertyFieldTable(byteBuffer, length);
     }
 
-    public static PropertyFieldTable newFieldTable(String text)
+    public static FieldTable newFieldTable(String text)
     {
         return new PropertyFieldTable(text);
     }
