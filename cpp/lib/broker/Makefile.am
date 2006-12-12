@@ -6,9 +6,9 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-lib_LTLIBRARIES = libbroker.la
-libbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-libbroker_la_SOURCES =				\
+lib_LTLIBRARIES = libqpidbroker.la
+libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
+libqpidbroker_la_SOURCES =				\
   AccumulatedAck.cpp				\
   AccumulatedAck.h				\
   AutoDelete.cpp				\

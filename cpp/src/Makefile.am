@@ -7,8 +7,8 @@ INCLUDES = \
   -I$(top_srcdir)/lib/common/sys
 
 LDADD =				\
-  ../lib/broker/libbroker.la	\
-  ../lib/common/libcommon.la
+  ../lib/broker/libqpidbroker.la	\
+  ../lib/common/libqpidcommon.la
 
-bin_PROGRAMS = qpidd
+sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp

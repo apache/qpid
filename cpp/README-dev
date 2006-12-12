@@ -15,7 +15,6 @@ that you have the latest stable version.
  * libtool    <http://www.gnu.org/software/libtool/>
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (aka pkg-config)
 
-
 Optional: to re-generated generated code from the XML specification:
 
  * java 5
@@ -28,7 +27,7 @@ Optional: to generate documentation you need:
 
 If you use yum to install packages, do the command from the README-dist then:
 
-# yum install apr-devel cppunit-devel pkgconfig boost-devel doxygen graphviz
+# yum install apr-devel cppunit-devel pkgconfig boost-devel doxygen graphviz help2man pkgconfig
 
 == Recent changes ==
 
@@ -68,6 +67,7 @@ simplified and this README will be updated accordingly.
 
 Before building a fresh checkout do:
  ./bootstrap
+ ./configure
 
 This generates config, makefiles and the like - check the script for
 details. You only need to do this once, "make" will keep everything up
@@ -86,9 +86,9 @@ optimization:
   make distclean
   mkdir .build-dbg .build-opt
   (cd .build-opt
-   ../configure --enable-warnings --prefix=/tmp/x && make && make check)
+   ../configure --prefix=/tmp/x && make && make check)
   (cd .build-dbg
-   ../configure --enable-warnings CXXFLAGS=-g --prefix=/tmp/x \
+   ../configure CXXFLAGS=-g --prefix=/tmp/x \
      && make && make check)
 
 === Portability ===
