@@ -819,7 +819,8 @@ namespace Qpid.Client
             byte[] payload = null;
             if (buf != null)
             {
-                payload = buf.ToByteArray();
+                payload = new byte[buf.remaining()];
+                buf.get(payload);
             }
             BasicContentHeaderProperties contentHeaderProperties = message.ContentHeaderProperties;
 

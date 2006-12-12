@@ -102,13 +102,13 @@ namespace Qpid.Framing
             EncodingUtils.WriteShortStringBytes(buffer, ContentType);
             EncodingUtils.WriteShortStringBytes(buffer, Encoding);
             EncodingUtils.WriteFieldTableBytes(buffer, Headers);
-            buffer.Put(DeliveryMode);
-            buffer.Put(Priority);
+            buffer.put(DeliveryMode);
+            buffer.put(Priority);
             EncodingUtils.WriteShortStringBytes(buffer, CorrelationId);
             EncodingUtils.WriteShortStringBytes(buffer, ReplyTo);
             EncodingUtils.WriteShortStringBytes(buffer, String.Format("{0:D}", Expiration));
             EncodingUtils.WriteShortStringBytes(buffer, MessageId);            
-            buffer.Put(Timestamp);            
+            buffer.put(Timestamp);            
             EncodingUtils.WriteShortStringBytes(buffer, Type);
             EncodingUtils.WriteShortStringBytes(buffer, UserId);
             EncodingUtils.WriteShortStringBytes(buffer, AppId);
@@ -125,9 +125,9 @@ namespace Qpid.Framing
             if ((propertyFlags & (1 << 13)) > 0)
                 Headers = EncodingUtils.ReadFieldTable(buffer);
             if ((propertyFlags & (1 << 12)) > 0)
-                DeliveryMode = buffer.Get();
+                DeliveryMode = buffer.get();
             if ((propertyFlags & (1 << 11)) > 0)
-                Priority = buffer.Get();
+                Priority = buffer.get();
             if ((propertyFlags & (1 << 10)) > 0)
                 CorrelationId = EncodingUtils.ReadShortString(buffer);
             if ((propertyFlags & (1 << 9)) > 0)
