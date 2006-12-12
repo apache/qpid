@@ -1,8 +1,9 @@
 
-html: Doxyfile doxygen.tstamp
+html: user.doxygen doxygen.tstamp
 
-# TODO aconway 2006-12-07: devdoc target to generate doc for all
-# headers, with private/protected functions.
+dist-hook: html
+
+EXTRA_DIST=html
 
 SOURCES = \
   $(wildcard $(topsrcdir)/gen/*.h) \
@@ -12,7 +13,7 @@ SOURCES = \
   $(wildcard $(topsrcdir)/lib/client/*.h) 
 
 doxygen.tstamp: $(SOURCES)
-	doxygen
+	doxygen user.doxygen
 	touch $@
 
 clean-local:
@@ -20,7 +21,7 @@ clean-local:
 
 HTML_TARGET_DIR=$(pkgdatadir)/api/html
 
-install-data-local:
+install-data-local: 
 	installfiles=`echo html/*`; \
 	if test "$$installfiles" = 'html/*'; \
 	then echo '-- Nothing to install' ; \
