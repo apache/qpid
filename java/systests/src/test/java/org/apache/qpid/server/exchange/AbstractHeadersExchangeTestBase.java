@@ -81,25 +81,45 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     protected void routeAndTest(Message m, TestQueue... expected) throws AMQException
     {
-        routeAndTest(m, Arrays.asList(expected));
+        routeAndTest(m, false, Arrays.asList(expected));
+    }
+
+    protected void routeAndTest(Message m, boolean expectReturn, TestQueue... expected) throws AMQException
+    {
+        routeAndTest(m, expectReturn, Arrays.asList(expected));
     }
 
     protected void routeAndTest(Message m, List<TestQueue> expected) throws AMQException
     {
-        route(m);
-        for (TestQueue q : queues)
+        routeAndTest(m, false, expected);
+    }
+
+    protected void routeAndTest(Message m, boolean expectReturn, List<TestQueue> expected) throws AMQException
+    {
+        try
         {
-            if (expected.contains(q))
+            route(m);
+            assertFalse("Expected "+m+" to be returned due to manadatory flag, and lack of routing",expectReturn);
+            for (TestQueue q : queues)
             {
-                assertTrue("Expected " + m + " to be delivered to " + q, m.isInQueue(q));
-                //assert m.isInQueue(q) : "Expected " + m + " to be delivered to " + q;
-            }
-            else
-            {
-                assertFalse("Did not expect " + m + " to be delivered to " + q, m.isInQueue(q));
-                //assert !m.isInQueue(q) : "Did not expect " + m + " to be delivered to " + q;
+                if (expected.contains(q))
+                {
+                    assertTrue("Expected " + m + " to be delivered to " + q, m.isInQueue(q));
+                    //assert m.isInQueue(q) : "Expected " + m + " to be delivered to " + q;
+                }
+                else
+                {
+                    assertFalse("Did not expect " + m + " to be delivered to " + q, m.isInQueue(q));
+                    //assert !m.isInQueue(q) : "Did not expect " + m + " to be delivered to " + q;
+                }
             }
         }
+
+        catch (NoRouteException ex)
+        {
+            assertTrue("Expected "+m+" not to be returned",expectReturn);
+        }
+
     }
 
     static FieldTable getHeaders(String... entries)
