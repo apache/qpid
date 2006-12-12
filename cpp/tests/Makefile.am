@@ -71,9 +71,9 @@ include gen.mk
 
 abs_builddir = @abs_builddir@
 extra_libs = $(CPPUNIT_LIBS)
-lib_client = $(abs_builddir)/../lib/client/libclient.la
-lib_common = $(abs_builddir)/../lib/common/libcommon.la
-lib_broker = $(abs_builddir)/../lib/broker/libbroker.la
+lib_client = $(abs_builddir)/../lib/client/libqpidclient.la
+lib_common = $(abs_builddir)/../lib/common/libqpidcommon.la
+lib_broker = $(abs_builddir)/../lib/broker/libqpidbroker.la
 
 gen.mk: Makefile.am
 	(					\

@@ -41,12 +41,8 @@ AC_ARG_ENABLE(warnings,
 build=yes
 AC_CHECK_PROGS([JAVA],  [java],  [no])
 AC_CHECK_PROGS([JAVAC], [javac], [no])
-build=yes
-test x$JAVA  = xno && build=no
-test x$JAVAC = xno && build=no
-test -d $srcdir/../gentools || build=no
-test -d $srcdir/../specs    || build=no
-AM_CONDITIONAL([BUILD_IN_MESSAGE_TREE], [test x$build = xyes])
+AM_CONDITIONAL([CAN_GENERATE_CODE],
+  [test x$JAVA  = xyes -a  x$JAVAC = xyes -a -d $srcdir/../gentools -a -d $srcdir/../specs ])
 
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
@@ -130,8 +126,8 @@ AC_CONFIG_FILES([
   lib/client/Makefile
   lib/broker/Makefile
   src/Makefile
-  man/Makefile
   tests/Makefile
+  docs/man/Makefile
   docs/api/Makefile
   ])
 

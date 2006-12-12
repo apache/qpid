@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+# qpidd        Startup script for the Qpid messaging daemon.
+#
+# chkconfig: - 85 15
+# description: Qpidd is an AMQP broker. It receives, stores and routes
+#              messages sent using the AMQP protcol.
+# processname: qpidd
+# pidfile: /var/run/qpidd.pid
+# 
+# NB: add config: entries here when qpidd gets a config file.
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/qpidd ]; then
+        . /etc/sysconfig/qpidd
+fi
+
+# Start qpidd in the C locale by default.
+QPIDD_LANG=${QPIDD_LANG-"C"}
+
+qpidd=${QPIDD-/usr/sbin/qpidd}
+prog=qpidd
+pidfile=${PIDFILE-/var/run/qpidd.pid}
+lockfile=${LOCKFILE-/var/lock/subsys/qpidd}
+RETVAL=0
+
+start() {
+        echo -n $"Starting $prog: "
+        LANG=$QPIDD_LANG daemon $qpidd $OPTIONS
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch ${lockfile}
+        return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $prog: "
+	killproc 2 $qpidd
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+
+reload() {
+    echo -n $"Reloading $prog: "
+    killproc $qpidd -HUP
+    RETVAL=$?
+    echo
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status $qpidd
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f ${pidfile} ] ; then
+		stop
+		start
+	fi
+	;;
+  reload)
+        reload
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|reload|status}"
+	exit 1
+esac
+
+exit $RETVAL
