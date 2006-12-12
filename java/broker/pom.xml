@@ -34,6 +34,7 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
+        <amqj.logging.level>warn</amqj.logging.level>
     </properties>
 
     <dependencies>
@@ -92,7 +93,7 @@
                         </property>
                         <property>
                             <name>amqj.logging.level</name>
-                            <value>WARN</value>
+                            <value>${amqj.logging.level}</value>
                         </property>
                         <property>
                             <name>log4j.configuration</name>
