@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,27 +19,20 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.client.transport.TransportConnection;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.MessageNotWriteableException;
+import javax.jms.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import junit.framework.TestCase;
-import junit.framework.Assert;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
@@ -54,6 +47,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
+        TransportConnection.createVMBroker(1);
         try
         {
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
@@ -67,6 +61,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -263,6 +258,6 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(ObjectMessageTest.class));
+        return new junit.framework.TestSuite(ObjectMessageTest.class);
     }
 }

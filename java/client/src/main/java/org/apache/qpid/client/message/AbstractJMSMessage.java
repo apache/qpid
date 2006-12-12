@@ -505,7 +505,14 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         // position beyond the start
         if (_data != null)
         {
-            _data.rewind();
+            if (!_readableMessage)
+            {
+                _data.flip();
+            }
+            else
+            {
+                _data.rewind();
+            }
         }
         return _data;
     }
