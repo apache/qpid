@@ -20,45 +20,31 @@
  */
 using Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Qpid.Buffer
 {
-    public class HeartbeatBody : IBody
-{
-    public const byte TYPE = 8;
-    public static AMQFrame FRAME = new HeartbeatBody().ToFrame();
-
-    public byte BodyType
+    /**
+     * Allocates {@link ByteBuffer}s and manages them.  Please implement this
+     * interface if you need more advanced memory management scheme.
+     */
+    public interface ByteBufferAllocator
     {
-        get
-        {
-            return TYPE;
-        }        
-    }
+        /**
+         * Returns the buffer which is capable of the specified size.
+         * 
+         * @param capacity the capacity of the buffer
+         * @param direct <tt>true</tt> to get a direct buffer,
+         *               <tt>false</tt> to get a heap buffer.
+         */
+        ByteBuffer allocate(int capacity, bool direct);
 
-    public uint Size
-    {
-        get
-        {
-            return 0;//heartbeats we generate have no payload
-        }        
-    }
+        /**
+         * Wraps the specified NIO {@link FixedByteBuffer} into MINA buffer.
+         */
+        ByteBuffer wrap(FixedByteBuffer nioBuffer);
 
-    public void WritePayload(ByteBuffer buffer)
-    {
+        /**
+         * Dispose of this allocator.
+         */
+        void dispose();
     }
-
-    public void PopulateFromBuffer(ByteBuffer buffer, uint size)
-    {
-        if (size > 0)
-        {
-            //allow other implementations to have a payload, but ignore it:
-            buffer.skip((int) size);
-        }
-    }
-
-    public AMQFrame ToFrame()
-    {
-        return new AMQFrame(0, this);
-    }
-}
 }

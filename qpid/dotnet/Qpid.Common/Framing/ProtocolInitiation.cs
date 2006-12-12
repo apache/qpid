@@ -72,12 +72,12 @@ namespace Qpid.Framing
         {
             foreach (char c in Header)
             {
-                buffer.Put((byte) c);
+                buffer.put((byte) c);
             }
-            buffer.Put(ProtocolClass);
-            buffer.Put(ProtocolInstance);
-            buffer.Put(ProtocolMajor);
-            buffer.Put(ProtocolMinor);
+            buffer.put(ProtocolClass);
+            buffer.put(ProtocolInstance);
+            buffer.put(ProtocolMajor);
+            buffer.put(ProtocolMinor);
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Qpid.Framing
                 {
                     return MessageDecoderResult.NOT_OK;
                 }
-                if (inbuf.Remaining < 8)
+                if (inbuf.remaining() < 8)
                 {
                     return MessageDecoderResult.NEED_DATA;
                 }
@@ -108,7 +108,7 @@ namespace Qpid.Framing
                     char[] expected = new char[]{'A', 'M', 'Q', 'P'};
                     for (int i = 0; i < 4; i++)
                     {
-                        if (((char) inbuf.Get()) != expected[i])
+                        if (((char) inbuf.get()) != expected[i])
                         {
                             return MessageDecoderResult.NOT_OK;
                         }
@@ -128,13 +128,13 @@ namespace Qpid.Framing
             public MessageDecoderResult Decode(ByteBuffer inbuf, IProtocolDecoderOutput output)
             {
                 byte[] header = new byte[4];
-                inbuf.Get(header);
+                inbuf.get(header);
                 ProtocolInitiation pi = new ProtocolInitiation();
                 pi.Header = new char[]{'A','M','Q','P'};
-                pi.ProtocolClass = inbuf.Get();
-                pi.ProtocolInstance = inbuf.Get();
-                pi.ProtocolMajor = inbuf.Get();
-                pi.ProtocolMinor = inbuf.Get();
+                pi.ProtocolClass = inbuf.get();
+                pi.ProtocolInstance = inbuf.get();
+                pi.ProtocolMajor = inbuf.get();
+                pi.ProtocolMinor = inbuf.get();
                 output.Write(pi);
                 return MessageDecoderResult.OK;
             }

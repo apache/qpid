@@ -18,47 +18,30 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using System;
 
-namespace Qpid.Framing
+namespace Qpid.Buffer
 {
-    public class HeartbeatBody : IBody
-{
-    public const byte TYPE = 8;
-    public static AMQFrame FRAME = new HeartbeatBody().ToFrame();
-
-    public byte BodyType
+    /**
+     * A {@link RuntimeException} which is thrown when the data the {@link ByteBuffer}
+     * contains is corrupt.
+     */
+    public class BufferDataException : Exception
     {
-        get
+        public BufferDataException()
         {
-            return TYPE;
-        }        
-    }
-
-    public uint Size
-    {
-        get
-        {
-            return 0;//heartbeats we generate have no payload
-        }        
-    }
-
-    public void WritePayload(ByteBuffer buffer)
-    {
-    }
-
-    public void PopulateFromBuffer(ByteBuffer buffer, uint size)
-    {
-        if (size > 0)
-        {
-            //allow other implementations to have a payload, but ignore it:
-            buffer.skip((int) size);
         }
-    }
 
-    public AMQFrame ToFrame()
-    {
-        return new AMQFrame(0, this);
-    }
-}
+        public BufferDataException( String message ) : base(message)
+        {
+        }
+
+        public BufferDataException( String message, Exception cause ) : base(message, cause)
+        {
+        }
+
+        public BufferDataException( Exception cause ) : base("", cause)
+        {
+        }
+    }    
 }

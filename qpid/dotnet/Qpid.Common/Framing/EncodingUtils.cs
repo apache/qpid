@@ -91,14 +91,14 @@ namespace Qpid.Framing
                     encodedString = DEFAULT_ENCODER.GetBytes(s);
                 }
                 // TODO: check length fits in an unsigned byte
-                buffer.Put((byte) encodedString.Length);
-                buffer.Put(encodedString);
+                buffer.put((byte) encodedString.Length);
+                buffer.put(encodedString);
                 
             }
             else
             {
                 // really writing out unsigned byte
-                buffer.Put((byte) 0);
+                buffer.put((byte) 0);
             }
         }
 
@@ -110,17 +110,17 @@ namespace Qpid.Framing
             }
             if (s != null)
             {
-                buffer.Put((uint)s.Length);
+                buffer.put((uint)s.Length);
                 byte[] encodedString = null;
                 lock (DEFAULT_ENCODER)
                 {
                     encodedString = DEFAULT_ENCODER.GetBytes(s);
                 }
-                buffer.Put(encodedString);
+                buffer.put(encodedString);
             }            
             else
             {
-                buffer.Put((uint) 0);
+                buffer.put((uint) 0);
             }
         }
 
@@ -132,7 +132,7 @@ namespace Qpid.Framing
             }
             else
             {
-                buffer.Put((uint) 0);
+                buffer.put((uint) 0);
             }
         }
 
@@ -147,25 +147,25 @@ namespace Qpid.Framing
                 }
             }
 
-            buffer.Put(packedValue);
+            buffer.put(packedValue);
         }
 
         public static void WriteLongstr(ByteBuffer buffer, byte[] data)
         {
             if (data != null)
             {
-                buffer.Put((uint) data.Length);
-                buffer.Put(data);
+                buffer.put((uint) data.Length);
+                buffer.put(data);
             }
             else
             {
-                buffer.Put((uint) 0);
+                buffer.put((uint) 0);
             }
         }
 
         public static bool[] ReadBooleans(ByteBuffer buffer)
         {
-            byte packedValue = buffer.Get();
+            byte packedValue = buffer.get();
             bool[] result = new bool[8];
 
             for (int i = 0; i < 8; i++)
@@ -202,39 +202,46 @@ namespace Qpid.Framing
         /// <exception cref="AMQFrameDecodingException">if the buffer does not contain a decodable short string</exception>
         public static string ReadShortString(ByteBuffer buffer) 
         {
-            byte length = buffer.Get();
+            byte length = buffer.get();
             if (length == 0)
             {
                 return null;
             }
             else
             {
+                byte[] data = new byte[length];
+                buffer.get(data);
+
                 lock (DEFAULT_ENCODER)
                 {
-                    return buffer.GetString(length, DEFAULT_ENCODER);                    
+                    return DEFAULT_ENCODER.GetString(data);
+//                    return buffer.GetString(length, DEFAULT_ENCODER);                    
                 }                
             }
         }
 
         public static string ReadLongString(ByteBuffer buffer)
         {
-            uint length = buffer.GetUnsignedInt();
+            uint length = buffer.getUnsignedInt();
             if (length == 0)
             {
                 return null;
             }
             else
-            {                             
+            {
+                byte[] data = new byte[length];
+                buffer.get(data);
                 lock (DEFAULT_ENCODER)
                 {
-                    return buffer.GetString(length, DEFAULT_ENCODER);
+                    return DEFAULT_ENCODER.GetString(data);
+                    //return buffer.GetString(length, DEFAULT_ENCODER);
                 }                
             }
         }
 
         public static byte[] ReadLongstr(ByteBuffer buffer)
         {
-            uint length = buffer.GetUnsignedInt();
+            uint length = buffer.getUnsignedInt();
             if (length == 0)
             {
                 return null;
@@ -242,7 +249,7 @@ namespace Qpid.Framing
             else
             {
                 byte[] result = new byte[length];
-                buffer.Get(result);
+                buffer.get(result);
                 return result;
             }
         }

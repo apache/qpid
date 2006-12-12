@@ -51,11 +51,11 @@ namespace Qpid.Framing
             }
             // final +1 represents the command end which we know we must require even
             // if there is an empty body
-            if (input.Remaining < 1)
+            if (input.remaining() < 1)
             {
                 return MessageDecoderResult.NEED_DATA;
             }
-            byte type = input.Get();
+            byte type = input.get();
 
             // we have to check this isn't a protocol initiation frame here - we can't tell later on and we end up
             // waiting for more data. This could be improved if MINA supported some kind of state awareness when decoding
@@ -65,7 +65,7 @@ namespace Qpid.Framing
                 return MessageDecoderResult.NOT_OK;
             }
             // zero, channel, body size and end byte
-            if (input.Remaining < (1 + 2 + 4 + 1))
+            if (input.remaining() < (1 + 2 + 4 + 1))
             {
                 return MessageDecoderResult.NEED_DATA;
             }
@@ -80,7 +80,7 @@ namespace Qpid.Framing
                 return MessageDecoderResult.NOT_OK;
             }
 
-            if (input.Remaining < (bodySize + 1))
+            if (input.remaining() < (bodySize + 1))
             {
                 return MessageDecoderResult.NEED_DATA;
             }
@@ -116,7 +116,7 @@ namespace Qpid.Framing
 
         protected Object CreateAndPopulateFrame(ByteBuffer input)
         {
-            byte type = input.Get();            
+            byte type = input.get();            
             ushort channel = input.GetUnsignedShort();
             uint bodySize = input.GetUnsignedInt();
 
@@ -129,7 +129,7 @@ namespace Qpid.Framing
 
             frame.PopulateFromBuffer(input, channel, bodySize, bodyFactory);
 
-            byte marker = input.Get();
+            byte marker = input.get();
             //assert marker == 0xCE;
             return frame;
         }

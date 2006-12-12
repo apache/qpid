@@ -74,12 +74,12 @@ namespace Qpid.Framing
 
         public void WritePayload(ByteBuffer buffer)
         {
-            buffer.Put(_bodyFrame.BodyType);            
+            buffer.put(_bodyFrame.BodyType);            
             // TODO: how does channel get populated
-            buffer.Put(_channel);
-            buffer.Put(_bodyFrame.Size);
+            buffer.put(_channel);
+            buffer.put(_bodyFrame.Size);
             _bodyFrame.WritePayload(buffer);
-            buffer.Put((byte) 0xCE);
+            buffer.put((byte) 0xCE);
         }
 
         #endregion

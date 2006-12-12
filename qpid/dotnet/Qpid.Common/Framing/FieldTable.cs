@@ -60,10 +60,10 @@ namespace Qpid.Framing
             int sizeRead = 0;
             while (sizeRead < _encodedSize)
             {
-                int sizeRemaining = buffer.Remaining;
+                int sizeRemaining = buffer.remaining();
                 string key = EncodingUtils.ReadShortString(buffer);
                 // TODO: use proper charset decoder
-                char type = (char)buffer.Get();
+                char type = (char)buffer.get();
                 object value;
                 switch (type)
                 {
@@ -76,7 +76,7 @@ namespace Qpid.Framing
                     default:
                         throw new AMQFrameDecodingException("Unsupported field table type: '" + type + "' charcode" + (int)type);
                 }
-                sizeRead += (sizeRemaining - buffer.Remaining);
+                sizeRead += (sizeRemaining - buffer.remaining());
                 
                 _hash.Add(key, value);
             }
@@ -123,7 +123,7 @@ namespace Qpid.Framing
         public void WriteToBuffer(ByteBuffer buffer)
         {
             // Write out the total length, which we have kept up to date as data is added.
-            buffer.Put(_encodedSize);
+            buffer.put(_encodedSize);
             WritePayload(buffer);            
         }
 
@@ -136,20 +136,20 @@ namespace Qpid.Framing
                 object value = lde.Value;
                 if (value is byte[])
                 {
-                    buffer.Put((byte) 'S');
+                    buffer.put((byte) 'S');
                     EncodingUtils.WriteLongstr(buffer, (byte[]) value);
                 }
                 else if (value is string)
                 {
                     // TODO: look at using proper charset encoder
-                    buffer.Put((byte) 'S');
+                    buffer.put((byte) 'S');
                     EncodingUtils.WriteLongStringBytes(buffer, (string) value);
                 }
                 else if (value is uint)
                 {
                     // TODO: look at using proper charset encoder
-                    buffer.Put((byte) 'I');
-                    buffer.Put((uint) value);
+                    buffer.put((byte) 'I');
+                    buffer.put((uint) value);
                 }
                 else
                 {
@@ -161,11 +161,11 @@ namespace Qpid.Framing
 
         public byte[] GetDataAsBytes()
         {
-            ByteBuffer buffer = ByteBuffer.Allocate((int)_encodedSize);
+            ByteBuffer buffer = ByteBuffer.allocate((int)_encodedSize);
             WritePayload(buffer);
             byte[] result = new byte[_encodedSize];
-            buffer.Flip();
-            buffer.Get(result);
+            buffer.flip();
+            buffer.get(result);
             //buffer.Release();
             return result;
         }
