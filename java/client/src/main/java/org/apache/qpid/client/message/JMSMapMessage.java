@@ -21,16 +21,21 @@
 package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.PropertyFieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.AMQException;
+import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 import java.util.Enumeration;
 
-public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessage
+public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessage
 {
+    private static final Logger _logger = Logger.getLogger(JMSMapMessage.class);
+
 
     public static final String MIME_TYPE = "jms/map-message";
 
@@ -38,48 +43,38 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     JMSMapMessage() throws JMSException
     {
-        this(null, null);
+        this(null);
     }
 
-    JMSMapMessage(ByteBuffer data, String encoding) throws JMSException
+    JMSMapMessage(ByteBuffer data) throws JMSException
     {
         super(data); // this instantiates a content header
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-        getJmsContentHeaderProperties().setEncoding(encoding);
         _map = new PropertyFieldTable();
     }
 
 
-    JMSMapMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
-        super(deliveryTag, contentHeader, data);
-        contentHeader.setContentType(MIME_TYPE);
+        super(messageNbr, contentHeader, data);
 
-        try
+        if (data != null)
         {
-            _map = FieldTableFactory.newFieldTable(getText());
+
+            long tableSize = EncodingUtils.readInteger(_data);
+            _map = (PropertyFieldTable) FieldTableFactory.newFieldTable(_data, tableSize);
+
         }
-        catch (JMSException e)
+        else
         {
-            throw new AMQException(e.getMessage(), e);
+            _map = (PropertyFieldTable) FieldTableFactory.newFieldTable();
         }
     }
 
-    // AbstractJMSMessage Interface
-
-    public void clearBodyImpl() throws JMSException
-    {
-        if (_data != null)
-        {
-            _data.release();
-        }
-        _data = null;
-    }
 
     public String toBodyString() throws JMSException
     {
-        return _map.toString();
+        return "MapSize:" + _map.getEncodedSize() + "\nMapData:\n" + _map.toString();
     }
 
     public String getMimeType()
@@ -95,7 +90,23 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
         if (b == null)
         {
-            b = Boolean.valueOf(_map.getString(string));
+            if (_map.containsKey(string))
+            {
+                Object str = _map.getObject(string);
+
+                if (str == null || !(str instanceof String))
+                {
+                    throw new MessageFormatException("getBoolean can't use " + string + " item.");
+                }
+                else
+                {
+                    return Boolean.valueOf((String) str);
+                }
+            }
+            else
+            {
+                b = Boolean.valueOf(null);
+            }
         }
 
         return b;
@@ -106,26 +117,55 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
         Byte b = _map.getByte(string);
         if (b == null)
         {
-            b = Byte.valueOf(_map.getString(string));
+            if (_map.containsKey(string))
+            {
+                Object str = _map.getObject(string);
+
+                if (str == null || !(str instanceof String))
+                {
+                    throw new MessageFormatException("getByte can't use " + string + " item.");
+                }
+                else
+                {
+                    return Byte.valueOf((String) str);
+                }
+            }
+            else
+            {
+                b = Byte.valueOf(null);
+            }
         }
+
         return b;
     }
 
     public short getShort(String string) throws JMSException
     {
-        Short s = _map.getShort(string);
-
-        if (s == null)
         {
-            s = Short.valueOf(getByte(string));
-        }
+            Short s = _map.getShort(string);
 
-        return s;
+            if (s == null)
+            {
+                s = Short.valueOf(getByte(string));
+            }
+
+            return s;
+        }
     }
 
     public char getChar(String string) throws JMSException
     {
-        return _map.getCharacter(string);
+
+        Character result = _map.getCharacter(string);
+
+        if (result == null)
+        {
+            throw new MessageFormatException("getChar couldn't find " + string + " item.");
+        }
+        else
+        {
+            return result;
+        }
     }
 
     public int getInt(String string) throws JMSException
@@ -142,6 +182,7 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     public long getLong(String string) throws JMSException
     {
+
         Long l = _map.getLong(string);
 
         if (l == null)
@@ -150,18 +191,38 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
         }
 
         return l;
+
     }
 
     public float getFloat(String string) throws JMSException
     {
+
         Float f = _map.getFloat(string);
 
         if (f == null)
         {
-            f = Float.valueOf(_map.getString(string));
+            if (_map.containsKey(string))
+            {
+                Object str = _map.getObject(string);
+
+                if (str == null || !(str instanceof String))
+                {
+                    throw new MessageFormatException("getFloat can't use " + string + " item.");
+                }
+                else
+                {
+                    return Float.valueOf((String) str);
+                }
+            }
+            else
+            {
+                f = Float.valueOf(null);
+            }
+
         }
 
         return f;
+
     }
 
     public double getDouble(String string) throws JMSException
@@ -182,8 +243,25 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
         if (s == null)
         {
-            Object o = _map.getObject(string);
-            s = o.toString();
+            if (_map.containsKey(string))
+            {
+                Object o = _map.getObject(string);
+                if (o instanceof byte[])
+                {
+                    throw new MessageFormatException("getObject couldn't find " + string + " item.");
+                }
+                else
+                {
+                    if (o == null)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        s = String.valueOf(o);
+                    }
+                }
+            }
         }
 
         return s;
@@ -191,7 +269,16 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     public byte[] getBytes(String string) throws JMSException
     {
-        return _map.getBytes(string);
+
+        byte[] result = _map.getBytes(string);
+
+        if (result == null)
+        {
+            throw new MessageFormatException("getBytes couldn't find " + string + " item.");
+        }
+
+        return result;
+
     }
 
     public Object getObject(String string) throws JMSException
@@ -282,19 +369,9 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     public ByteBuffer getData()
     {
-
-        try
-        {
-            setText(toString());
-            return super.getData();
-        }
-        catch (JMSException e)
-        {
-            // should never occur according to setText
-            //fixme -- what to do if it does occur.
-        }
-
-        return ByteBuffer.allocate(0);
+        //What if _data is null?
+        _map.writeToBuffer(_data);
+        return super.getData();
     }
 
 }

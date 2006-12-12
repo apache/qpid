@@ -100,7 +100,7 @@ public class EncodingUtils
 
     public static int encodedContentLength(Content table)
     {
-    	// TODO: New Content class required for AMQP 0-9.
+        // TODO: New Content class required for AMQP 0-9.
         return 0;
     }
 
@@ -114,7 +114,7 @@ public class EncodingUtils
             {
                 encodedString[i] = (byte) cha[i];
             }
-            writeBytes(buffer,encodedString);
+            writeBytes(buffer, encodedString);
         }
         else
         {
@@ -199,6 +199,12 @@ public class EncodingUtils
         }
     }
 
+
+    public static long unsignedIntegerLength()
+    {
+        return 4;
+    }
+
     public static void writeUnsignedInteger(ByteBuffer buffer, long l)
     {
         // TODO: Is this comparison safe? Do I need to cast RHS to long?
@@ -233,7 +239,7 @@ public class EncodingUtils
 
     public static void writeContentBytes(ByteBuffer buffer, Content content)
     {
-    	// TODO: New Content class required for AMQP 0-9.
+        // TODO: New Content class required for AMQP 0-9.
     }
 
     public static void writeBooleans(ByteBuffer buffer, boolean[] values)
@@ -302,8 +308,8 @@ public class EncodingUtils
 
     public static Content readContent(ByteBuffer buffer) throws AMQFrameDecodingException
     {
-    	// TODO: New Content class required for AMQP 0-9.
-    	return null;
+        // TODO: New Content class required for AMQP 0-9.
+        return null;
     }
 
     public static String readShortString(ByteBuffer buffer)
@@ -601,5 +607,10 @@ public class EncodingUtils
             // really writing out unsigned byte
             buffer.put((byte) 0);
         }
+    }
+
+    public static long encodedCharacterLength()
+    {
+        return encodedShortStringLength("c");
     }
 }

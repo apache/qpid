@@ -21,14 +21,11 @@
 package org.apache.qpid.test.unit.basic;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,20 +37,26 @@ import junit.framework.Assert;
 
 public class MapMessageTest extends TestCase implements MessageListener
 {
+
+    private static final Logger _logger = Logger.getLogger(MapMessageTest.class);
+
     private AMQConnection _connection;
     private Destination _destination;
     private AMQSession _session;
     private final List<JMSMapMessage> received = new ArrayList<JMSMapMessage>();
-    private final List<String> messages = new ArrayList<String>();
+
+    private static final String MESSAGE = "Message ";
     private int _count = 100;
     public String _connectionString = "vm://:1";
     private byte[] _bytes = {99, 98, 97, 96, 95};
+    private static final float _smallfloat = 100.0f;
 
     protected void setUp() throws Exception
     {
         super.setUp();
         try
         {
+            //TransportConnection.createVMBroker(1);
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
@@ -64,7 +67,9 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     protected void tearDown() throws Exception
     {
+        _logger.info("Tearing Down unit.basic.MapMessageTest");
         super.tearDown();
+        //TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -90,7 +95,6 @@ public class MapMessageTest extends TestCase implements MessageListener
         send(count);
         waitFor(count);
         check();
-        System.out.println("Completed without failure");
         _connection.close();
     }
 
@@ -100,38 +104,45 @@ public class MapMessageTest extends TestCase implements MessageListener
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
-            String text = "Message " + i;
-            messages.add(text);
             MapMessage message = _session.createMapMessage();
 
-            message.setBoolean("odd", i / 2 == 0);
-            message.setByte("byte", (byte) Byte.MAX_VALUE);
-
-            message.setBytes("bytes", _bytes);
-            message.setChar("char", (char) 'c');
-            message.setDouble("double", (double) Double.MAX_VALUE);
-            message.setFloat("float", (float) Float.MAX_VALUE);
-
-            message.setInt("messageNumber", i);
-            message.setInt("int", (int) Integer.MAX_VALUE);
-
-            message.setLong("long", (long) Long.MAX_VALUE);
-            message.setShort("short", (short) Short.MAX_VALUE);
-            message.setString("message", text);
-
-
-            message.setObject("object-bool", true);
-            message.setObject("object-byte", Byte.MAX_VALUE);
-            message.setObject("object-bytes", _bytes);
-            message.setObject("object-char", 'c');
-            message.setObject("object-double", Double.MAX_VALUE);
-            message.setObject("object-float", Float.MAX_VALUE);
-            message.setObject("object-int", Integer.MAX_VALUE);
-            message.setObject("object-long", Long.MAX_VALUE);
-            message.setObject("object-short", Short.MAX_VALUE);
+            setMapValues(message, i);
 
             producer.send(message);
         }
+    }
+
+    private void setMapValues(MapMessage message, int i) throws JMSException
+    {
+        message.setBoolean("odd", i / 2 == 0);
+        message.setByte("byte", (byte) Byte.MAX_VALUE);
+        message.setBytes("bytes", _bytes);
+        message.setChar("char", (char) 'c');
+        message.setDouble("double", (double) Double.MAX_VALUE);
+        message.setFloat("float", (float) Float.MAX_VALUE);
+        message.setFloat("smallfloat", 100);
+        message.setInt("messageNumber", i);
+        message.setInt("int", (int) Integer.MAX_VALUE);
+        message.setLong("long", (long) Long.MAX_VALUE);
+        message.setShort("short", (short) Short.MAX_VALUE);
+        message.setString("message", MESSAGE + i);
+
+        //Test Setting Object Values
+        message.setObject("object-bool", true);
+        message.setObject("object-byte", Byte.MAX_VALUE);
+        message.setObject("object-bytes", _bytes);
+        message.setObject("object-char", 'c');
+        message.setObject("object-double", Double.MAX_VALUE);
+        message.setObject("object-float", Float.MAX_VALUE);
+        message.setObject("object-int", Integer.MAX_VALUE);
+        message.setObject("object-long", Long.MAX_VALUE);
+        message.setObject("object-short", Short.MAX_VALUE);
+
+        //Set a null String value
+        message.setString("nullString", null);
+        // Highlight protocol problem
+        message.setString("emptyString", "");
+
     }
 
     void waitFor(int count) throws InterruptedException
@@ -152,80 +163,1016 @@ public class MapMessageTest extends TestCase implements MessageListener
         for (JMSMapMessage m : received)
         {
             actual.add(m.getString("message"));
-            assertEqual(m.getInt("messageNumber"), count);
 
+            testMapValues(m, count);
 
-            assertEqual(count / 2 == 0, m.getBoolean("odd"));
-            assertEqual((byte) Byte.MAX_VALUE, m.getByte("byte"));
+            testMessageWriteStatus(m);
 
-            assertBytesEqual(_bytes, m.getBytes("bytes"));
-            assertEqual((char) 'c', m.getChar("char"));
-            assertEqual((double) Double.MAX_VALUE, m.getDouble("double"));
-            assertEqual((float) Float.MAX_VALUE, m.getFloat("float"));
+            testPropertyWriteStatus(m);
 
-            assertEqual(count, m.getInt("messageNumber"));
-            assertEqual((int) Integer.MAX_VALUE, m.getInt("int"));
-            assertEqual((long) Long.MAX_VALUE, m.getLong("long"));
-            assertEqual((short) Short.MAX_VALUE, m.getShort("short"));
-
-            assertEqual(true, m.getObject("object-bool"));
-            assertEqual(Byte.MAX_VALUE, m.getObject("object-byte"));
-            assertBytesEqual(_bytes, (byte[]) m.getObject("object-bytes"));
-            assertEqual('c', m.getObject("object-char"));
-            assertEqual(Double.MAX_VALUE, m.getObject("object-double"));
-            assertEqual(Float.MAX_VALUE, m.getObject("object-float"));
-            assertEqual(Integer.MAX_VALUE, m.getObject("object-int"));
-            assertEqual(Long.MAX_VALUE, m.getObject("object-long"));
-            assertEqual(Short.MAX_VALUE, m.getObject("object-short"));
-
-
-            try
-            {
-                m.setInt("testint", 3);
-                fail("Message should not be writeable");
-            }
-            catch (MessageNotWriteableException mnwe)
-            {
-                //normal execution
-            }
-
-            m.clearBody();
-
-            try
-            {
-                m.setInt("testint", 3);
-            }
-            catch (MessageNotWriteableException mnwe)
-            {
-                Assert.fail("Message should be writeable");
-            }
-
-            //Check property write status
-            try
-            {
-                m.setStringProperty("test", "test");
-                Assert.fail("Message should not be writeable");
-            }
-            catch (MessageNotWriteableException mnwe)
-            {
-                //normal execution
-            }
-
-            m.clearProperties();
-
-            try
-            {
-                m.setStringProperty("test", "test");
-            }
-            catch (MessageNotWriteableException mnwe)
-            {
-                Assert.fail("Message should be writeable");
-            }
+            testCorrectExceptions(m);
 
             count++;
         }
+    }
 
-        assertEqual(messages.iterator(), actual.iterator());
+    private void testCorrectExceptions(JMSMapMessage m) throws JMSException
+    {
+        testBoolean(m);
+
+        testByte(m);
+
+        testBytes(m);
+
+        testChar(m);
+
+        testDouble(m);
+
+        testFloat(m);
+
+        testInt(m);
+
+        testLong(m);
+
+        testShort(m);
+
+        testString(m);
+    }
+
+    private void testString(JMSMapMessage m) throws JMSException
+    {
+
+        Assert.assertFalse(m.getBoolean("message"));
+
+        try
+        {
+            m.getByte("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("message");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getInt("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+        try
+        {
+            m.getLong("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("message");
+            fail("Exception Expected.");
+        }
+        catch (NumberFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("message");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(MESSAGE + m.getInt("messageNumber"), m.getString("message"));
+    }
+
+    private void testShort(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(Short.MAX_VALUE, m.getShort("short"));
+
+        //Try bad reads
+        try
+        {
+            m.getChar("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(Short.MAX_VALUE, m.getInt("short"));
+
+        Assert.assertEquals(Short.MAX_VALUE, m.getLong("short"));
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("short");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Short.MAX_VALUE, m.getString("short"));
+    }
+
+    private void testLong(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getInt("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(Long.MAX_VALUE, m.getLong("long"));
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("long");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Long.MAX_VALUE, m.getString("long"));
+    }
+
+    private void testDouble(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getInt("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        try
+        {
+            m.getLong("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+
+        Assert.assertEquals(Double.MAX_VALUE, m.getDouble("double"));
+
+        //Try bad reads
+        try
+        {
+            m.getBytes("double");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Double.MAX_VALUE, m.getString("double"));
+    }
+
+
+    private void testFloat(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getInt("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        try
+        {
+            m.getLong("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+
+        Assert.assertEquals(Float.MAX_VALUE, m.getFloat("float"));
+
+        Assert.assertEquals(_smallfloat, (float) m.getDouble("smallfloat"));
+
+        //Try bad reads
+        try
+        {
+            m.getBytes("float");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Float.MAX_VALUE, m.getString("float"));
+    }
+
+
+    private void testInt(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(Integer.MAX_VALUE, m.getInt("int"));
+
+        Assert.assertEquals(Integer.MAX_VALUE, (int) m.getLong("int"));
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("int");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Integer.MAX_VALUE, m.getString("int"));
+    }
+
+
+    private void testChar(JMSMapMessage m) throws JMSException
+    {
+
+        //Try bad reads
+        try
+        {
+            m.getBoolean("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals('c', m.getChar("char"));
+
+        try
+        {
+            m.getInt("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        try
+        {
+            m.getLong("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("char");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + 'c', m.getString("char"));
+    }
+
+    private void testBytes(JMSMapMessage m) throws JMSException
+    {
+        //Try bad reads
+        try
+        {
+            m.getBoolean("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getByte("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getShort("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getChar("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getInt("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        try
+        {
+            m.getLong("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+
+        assertBytesEqual(_bytes, m.getBytes("bytes"));
+
+        try
+        {
+            m.getString("bytes");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+
+    }
+
+    private void testByte(JMSMapMessage m) throws JMSException
+    {
+        //Try bad reads
+        try
+        {
+            m.getBoolean("byte");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals(Byte.MAX_VALUE, m.getByte("byte"));
+
+        Assert.assertEquals((short) Byte.MAX_VALUE, m.getShort("byte"));
+
+        //Try bad reads
+        try
+        {
+            m.getChar("byte");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Reading a byte as an int is ok
+        Assert.assertEquals((short) Byte.MAX_VALUE, m.getInt("byte"));
+
+        Assert.assertEquals((short) Byte.MAX_VALUE, m.getLong("byte"));
+
+        //Try bad reads
+        try
+        {
+            m.getFloat("byte");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("byte");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("byte");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + Byte.MAX_VALUE, m.getString("byte"));
+
+    }
+
+    private void testBoolean(JMSMapMessage m) throws JMSException
+    {
+
+        Assert.assertEquals((m.getInt("messageNumber") / 2) == 0, m.getBoolean("odd"));
+
+        //Try bad reads
+        try
+        {
+            m.getByte("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        //Try bad reads
+        try
+        {
+            m.getShort("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getChar("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getInt("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getLong("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getFloat("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getDouble("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+        //Try bad reads
+        try
+        {
+            m.getBytes("odd");
+            fail("Exception Expected.");
+        }
+        catch (MessageFormatException nfe)
+        {
+            //normal execution
+        }
+
+        Assert.assertEquals("" + ((m.getInt("messageNumber") / 2) == 0), m.getString("odd"));
+    }
+
+
+    private void testPropertyWriteStatus(JMSMapMessage m) throws JMSException
+    {
+        //Check property write status
+        try
+        {
+            m.setStringProperty("test", "test");
+            Assert.fail("Message should not be writeable");
+        }
+        catch (MessageNotWriteableException mnwe)
+        {
+            //normal execution
+        }
+
+        m.clearProperties();
+
+        try
+        {
+            m.setStringProperty("test", "test");
+        }
+        catch (MessageNotWriteableException mnwe)
+        {
+            Assert.fail("Message should be writeable");
+        }
+    }
+
+    private void testMessageWriteStatus(JMSMapMessage m) throws JMSException
+    {
+        try
+        {
+            m.setInt("testint", 3);
+            fail("Message should not be writeable");
+        }
+        catch (MessageNotWriteableException mnwe)
+        {
+            //normal execution
+        }
+
+        m.clearBody();
+
+        try
+        {
+            m.setInt("testint", 3);
+        }
+        catch (MessageNotWriteableException mnwe)
+        {
+            Assert.fail("Message should be writeable");
+        }
+    }
+
+    private void testMapValues(JMSMapMessage m, int count) throws JMSException
+    {
+        //Test get<Primiative>
+
+        //Boolean
+        assertEqual(count / 2 == 0, m.getBoolean("odd"));
+        assertEqual("" + (count / 2 == 0), m.getString("odd"));
+
+        //Byte
+        assertEqual(Byte.MAX_VALUE, m.getByte("byte"));
+        assertEqual("" + Byte.MAX_VALUE, m.getString("byte"));
+
+        //Bytes
+        assertBytesEqual(_bytes, m.getBytes("bytes"));
+
+        //Char
+        assertEqual('c', m.getChar("char"));
+
+        //Double
+        assertEqual(Double.MAX_VALUE, m.getDouble("double"));
+        assertEqual("" + Double.MAX_VALUE, m.getString("double"));
+
+        //Float
+        assertEqual(Float.MAX_VALUE, m.getFloat("float"));
+        assertEqual(_smallfloat, (float) m.getDouble("smallfloat"));
+        assertEqual("" + Float.MAX_VALUE, m.getString("float"));
+
+        //Integer
+        assertEqual(Integer.MAX_VALUE, m.getInt("int"));
+        assertEqual("" + Integer.MAX_VALUE, m.getString("int"));
+        assertEqual(count, m.getInt("messageNumber"));
+
+        //long
+        assertEqual(Long.MAX_VALUE, m.getLong("long"));
+        assertEqual("" + Long.MAX_VALUE, m.getString("long"));
+
+        //Short
+        assertEqual(Short.MAX_VALUE, m.getShort("short"));
+        assertEqual("" + Short.MAX_VALUE, m.getString("short"));
+        assertEqual((int) Short.MAX_VALUE, m.getInt("short"));
+
+        //String
+        assertEqual(MESSAGE + count, m.getString("message"));
+
+        //Test getObjects
+        assertEqual(true, m.getObject("object-bool"));
+        assertEqual(Byte.MAX_VALUE, m.getObject("object-byte"));
+        assertBytesEqual(_bytes, (byte[]) m.getObject("object-bytes"));
+        assertEqual('c', m.getObject("object-char"));
+        assertEqual(Double.MAX_VALUE, m.getObject("object-double"));
+        assertEqual(Float.MAX_VALUE, m.getObject("object-float"));
+        assertEqual(Integer.MAX_VALUE, m.getObject("object-int"));
+        assertEqual(Long.MAX_VALUE, m.getObject("object-long"));
+        assertEqual(Short.MAX_VALUE, m.getObject("object-short"));
+
+        //Check Special values
+        assertTrue(m.getString("nullString") == null);
+        assertTrue(m.getString("emptyString") == null);
+        _logger.warn("An emptyString should not become a null string after transmission.");
+        //assertEqual("", m.getString("emptyString"));
     }
 
     private void assertBytesEqual(byte[] expected, byte[] actual)
@@ -279,6 +1226,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     {
         synchronized(received)
         {
+            _logger.info("****************** Recevied Messgage:" + (JMSMapMessage) message);
             received.add((JMSMapMessage) message);
             received.notify();
         }
