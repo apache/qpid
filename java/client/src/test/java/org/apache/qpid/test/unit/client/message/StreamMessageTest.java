@@ -168,24 +168,6 @@ public class StreamMessageTest extends TestCase
         }
     }
 
-    public void testWriteObjectThrowsNPE() throws Exception
-    {
-        try
-        {
-            JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
-            bm.writeObject(null);
-            fail("expected exception did not occur");
-        }
-        catch (NullPointerException n)
-        {
-            // ok
-        }
-        catch (Exception e)
-        {
-            fail("expected NullPointerException, got " + e);
-        }
-    }
-
     public void testReadBoolean() throws Exception
     {
         JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
@@ -221,7 +203,32 @@ public class StreamMessageTest extends TestCase
         len = bm.readBytes(bytes);
         assertEquals(-1, len);
         len = bm.readBytes(bytes);
+        assertEquals(-1, len);
+        len = bm.readBytes(bytes);
         assertEquals(0, len);
+    }
+
+    public void testReadBytesFollowedByPrimitive() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeBytes(new byte[]{2, 3, 4, 5, 6, 7, 8});
+        bm.writeBytes(new byte[]{2, 3, 4, 5, 6, 7});
+        bm.writeString("Foo");
+        bm.reset();
+        int len;
+        do
+        {
+            len = bm.readBytes(new byte[2]);
+        }
+        while (len == 2);
+
+        do
+        {
+            len = bm.readBytes(new byte[2]);
+        }
+        while (len == 2);
+
+        assertEquals("Foo", bm.readString());
     }
 
     public void testReadMultipleByteArrays() throws Exception
@@ -577,11 +584,11 @@ public class StreamMessageTest extends TestCase
         bm = TestMessageHelper.newJMSStreamMessage();
         bm.writeString("2");
         bm.reset();
-        assertEquals((byte)2, bm.readByte());        
+        assertEquals((byte)2, bm.readByte());
         bm.reset();
         assertEquals((short)2, bm.readShort());
         bm.reset();
-        assertEquals((int)2, bm.readInt());
+        assertEquals(2, bm.readInt());
         bm.reset();
         assertEquals((long)2, bm.readLong());
         bm = TestMessageHelper.newJMSStreamMessage();
@@ -590,6 +597,16 @@ public class StreamMessageTest extends TestCase
         assertEquals(5.7f, bm.readFloat());
         bm.reset();
         assertEquals(5.7d, bm.readDouble());
+    }
+
+    public void testNulls() throws Exception
+    {
+        JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
+        bm.writeString(null);
+        bm.writeObject(null);
+        bm.reset();
+        assertNull(bm.readObject());
+        assertNull(bm.readObject());
     }
 
     public static junit.framework.Test suite()
