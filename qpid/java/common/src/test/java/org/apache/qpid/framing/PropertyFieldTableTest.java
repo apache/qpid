@@ -65,7 +65,14 @@ public class PropertyFieldTableTest extends TestCase
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setBoolean("value", true);
+        //Test Getting right value back
         Assert.assertEquals((Boolean) true, table1.getBoolean("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getBoolean("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("true", table1.getString("value"));
     }
 
     public void testByteLookup()
@@ -73,6 +80,12 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setByte("value", (byte) 1);
         Assert.assertEquals((Byte) (byte) 1, table1.getByte("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getByte("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("1", table1.getString("value"));
     }
 
     public void testShortLookup()
@@ -80,6 +93,12 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setShort("value", Short.MAX_VALUE);
         Assert.assertEquals((Short) Short.MAX_VALUE, table1.getShort("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getShort("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("" + Short.MAX_VALUE, table1.getString("value"));
     }
 
 
@@ -88,6 +107,12 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setChar("value", 'b');
         Assert.assertEquals((Character) 'b', table1.getCharacter("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getCharacter("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("b", table1.getString("value"));
     }
 
     public void testDoubleLookup()
@@ -95,6 +120,13 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setDouble("value", Double.MAX_VALUE);
         Assert.assertEquals(Double.MAX_VALUE, table1.getDouble("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getDouble("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("" + Double.MAX_VALUE, table1.getString("value"));
+
     }
 
     public void testFloatLookup()
@@ -102,6 +134,13 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setFloat("value", Float.MAX_VALUE);
         Assert.assertEquals(Float.MAX_VALUE, table1.getFloat("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getFloat("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("" + Float.MAX_VALUE, table1.getString("value"));
+
     }
 
     public void testIntLookup()
@@ -109,6 +148,13 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setInteger("value", Integer.MAX_VALUE);
         Assert.assertEquals((Integer) Integer.MAX_VALUE, table1.getInteger("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getInteger("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("" + Integer.MAX_VALUE, table1.getString("value"));
+
     }
 
     public void testLongLookup()
@@ -116,6 +162,13 @@ public class PropertyFieldTableTest extends TestCase
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setLong("value", Long.MAX_VALUE);
         Assert.assertEquals((Long) Long.MAX_VALUE, table1.getLong("value"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getLong("Rubbish") == null);
+
+        //Try reading value as a string
+        Assert.assertEquals("" + Long.MAX_VALUE, table1.getString("value"));
+
     }
 
     public void testBytesLookup()
@@ -124,6 +177,9 @@ public class PropertyFieldTableTest extends TestCase
         byte[] bytes = {99, 98, 97, 96, 95};
         table1.setBytes("bytes", bytes);
         assertBytesEqual(bytes, table1.getBytes("bytes"));
+
+        //Looking up an invalid value returns null
+        Assert.assertTrue(table1.getBytes("Rubbish") == null);
     }
 
     // Failed Lookups
@@ -325,6 +381,96 @@ public class PropertyFieldTableTest extends TestCase
     }
 
     public void testEncodingSize()
+    {
+        FieldTable result = FieldTableFactory.newFieldTable();
+        int size = 0;
+
+        result.setBoolean("boolean", true);
+        size += 1 + EncodingUtils.encodedShortStringLength("boolean") + EncodingUtils.encodedBooleanLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+
+        result.setByte("byte", (byte) Byte.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("byte") + EncodingUtils.encodedByteLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+
+        byte[] _bytes = {99, 98, 97, 96, 95};
+
+        result.setBytes("bytes", _bytes);
+        size += 1 + EncodingUtils.encodedShortStringLength("bytes") + 1 + EncodingUtils.encodedByteLength() * _bytes.length;
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setChar("char", (char) 'c');
+        size += 1 + EncodingUtils.encodedShortStringLength("char") + EncodingUtils.encodedCharacterLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setDouble("double", (double) Double.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("double") + EncodingUtils.encodedDoubleLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setFloat("float", (float) Float.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("float") + EncodingUtils.encodedFloatLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setInteger("int", (int) Integer.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("int") + EncodingUtils.encodedIntegerLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+
+        result.setLong("long", (long) Long.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("long") + EncodingUtils.encodedLongLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setShort("short", (short) Short.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("short") + EncodingUtils.encodedShortLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setString("result", "Hello");
+        size += 1 + EncodingUtils.encodedShortStringLength("result") + EncodingUtils.encodedLongStringLength("Hello");
+        Assert.assertEquals(size, result.getEncodedSize());
+
+
+        result.setObject("object-bool", true);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-bool") + EncodingUtils.encodedBooleanLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-byte", Byte.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-byte") + EncodingUtils.encodedByteLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-bytes", _bytes);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-bytes") + 1 + EncodingUtils.encodedByteLength() * _bytes.length;
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-char", 'c');
+        size += 1 + EncodingUtils.encodedShortStringLength("object-char") + EncodingUtils.encodedCharacterLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-double", Double.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-double") + EncodingUtils.encodedDoubleLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-float", Float.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-float") + EncodingUtils.encodedFloatLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-int", Integer.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-int") + EncodingUtils.encodedIntegerLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+
+        result.setObject("object-long", Long.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-long") + EncodingUtils.encodedLongLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+        result.setObject("object-short", Short.MAX_VALUE);
+        size += 1 + EncodingUtils.encodedShortStringLength("object-short") + EncodingUtils.encodedShortLength();
+        Assert.assertEquals(size, result.getEncodedSize());
+
+    }
+
+    public void testEncodingSize1()
     {
         FieldTable result = FieldTableFactory.newFieldTable();
         int size = 0;

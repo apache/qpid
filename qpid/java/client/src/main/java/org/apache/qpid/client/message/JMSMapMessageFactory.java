@@ -36,6 +36,6 @@ public class JMSMapMessageFactory extends AbstractJMSMessageFactory
 
     protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws AMQException
     {
-        return new JMSMapMessage(deliveryTag, (BasicContentHeaderProperties) contentHeader.properties, data);
+        return new JMSMapMessage(deliveryTag, contentHeader, data);
     }
 }
