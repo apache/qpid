@@ -36,7 +36,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     private final int numMessages = 1000;
 
-    private final List<TestSubscription> _subscribers = new ArrayList<TestSubscription>();
+    private final List<SubscriptionTestHelper> _subscribers = new ArrayList<SubscriptionTestHelper>();
     private final Set<Subscription> _active = new HashSet<Subscription>();
     private final List<AMQMessage> _messages = new ArrayList<AMQMessage>();
     private int next = 0;//index to next message to send
@@ -91,7 +91,7 @@ public class ConcurrencyTest extends MessageTestHelper
     {
         for(int i = 0; i < subscriptions; i++)
         {
-            _subscribers.add(new TestSubscription("Subscriber" + i, _received));
+            _subscribers.add(new SubscriptionTestHelper("Subscriber" + i, _received));
         }
     }
 
@@ -174,7 +174,7 @@ public class ConcurrencyTest extends MessageTestHelper
         return random.nextBoolean();
     }
 
-    private TestSubscription randomSubscriber()
+    private SubscriptionTestHelper randomSubscriber()
     {
         return _subscribers.get(random.nextInt(_subscribers.size()));
     }

@@ -48,8 +48,8 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
             _mgr.deliver("Me", messages[i]);
         }
 
-        TestSubscription s1 = new TestSubscription("1");
-        TestSubscription s2 = new TestSubscription("2");
+        SubscriptionTestHelper s1 = new SubscriptionTestHelper("1");
+        SubscriptionTestHelper s2 = new SubscriptionTestHelper("2");
         _subscriptions.addSubscriber(s1);
         _subscriptions.addSubscriber(s2);
 
@@ -88,7 +88,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         }
         int batch = messages.length / 2;
 
-        TestSubscription s1 = new TestSubscription("1");
+        SubscriptionTestHelper s1 = new SubscriptionTestHelper("1");
         _subscriptions.addSubscriber(s1);
 
         for (int i = 0; i < batch; i++)
@@ -147,7 +147,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
     {
         try
         {
-            TestSubscription s = new TestSubscription("A");
+            SubscriptionTestHelper s = new SubscriptionTestHelper("A");
             _subscriptions.addSubscriber(s);
             s.setSuspended(true);
             AMQMessage msg = message(true);

@@ -24,7 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 
-public class HeadersExchangeTest extends AbstractHeadersExchangeTest
+public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
     protected void setUp() throws Exception
     {
