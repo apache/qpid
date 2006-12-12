@@ -19,7 +19,7 @@
  *
  */
 #include <Buffer.h>
-#include <Content.h> 
+#include <FramingContent.h> 
 
 namespace qpid
 {
