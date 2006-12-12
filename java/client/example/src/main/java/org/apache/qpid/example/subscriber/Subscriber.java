@@ -45,7 +45,7 @@ public class Subscriber
 
     protected static AMQConnectionFactory _connectionFactory;
 
-    protected String _destinationName;
+    protected Destination _destination;
 
     public Subscriber()
     {
@@ -58,8 +58,8 @@ public class Subscriber
             //then create a connection using the AMQConnectionFactory
             _connectionFactory = (AMQConnectionFactory) ctx.lookup("local");
 
-            //lookup queue name
-            _destinationName = (String) ctx.lookup("MyQueue");
+            //lookup queue from context
+            _destination = (Destination) ctx.lookup("MyQueue");
 
         }
         catch (Exception e)
@@ -79,7 +79,6 @@ public class Subscriber
         public ExampleMessageListener(String name)
         {
             _name = name;
-
         }
 
         /**
@@ -127,11 +126,8 @@ public class Subscriber
              //create a transactional session
             Session session =  _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
-            //Queue is non-exclusive and not deleted when last consumer detaches
-            Destination destination = session.createQueue(_destinationName);
-
             //Create a consumer with a destination of our queue which will use defaults for prefetch etc
-            _consumer = session.createConsumer(destination);
+            _consumer = session.createConsumer(_destination);
 
             //give the message listener a name of it's own
             _consumer.setMessageListener(new ExampleMessageListener("MessageListener " + System.currentTimeMillis()));
@@ -158,15 +154,6 @@ public class Subscriber
         {
             _log.warn("Exception while Subscriber sleeping",e);
         }
-    }
-
-    /**
-     * Set destination (queue or topic) name
-     * @param name
-     */
-    public void setDestinationName(String name)
-    {
-        _destinationName = name;
     }
 
     /**
