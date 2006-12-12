@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -384,15 +384,15 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     }
 
     public void acknowledge() throws JMSException
-    {                	
+    {
         // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
         // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
         if (_session != null)
         {
         	if (_session.getAMQConnection().isClosed()){
         		throw new javax.jms.IllegalStateException("Connection is already closed");
-        	}       		
-        	
+        	}
+
             // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
             // received on the session
             _session.acknowledgeMessage(_deliveryTag, true);
@@ -546,7 +546,14 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
     public void reset() throws JMSException
     {
-        _readableMessage = true;
+        if (_readableMessage)
+        {
+            _data.rewind();
+        }
+        else
+        {
+            _data.flip();
+            _readableMessage = true;
+        }
     }
-
 }
