@@ -75,7 +75,7 @@ public class Publisher
 
             //lookup the example queue and use it
             //Queue is non-exclusive and not deleted when last consumer detaches
-            _destination = _session.createQueue((String)ctx.lookup("MyQueue"));
+            _destination = (Queue) ctx.lookup("MyQueue");
 
             //create a message producer
             _producer = _session.createProducer(_destination);

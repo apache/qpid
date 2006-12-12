@@ -39,7 +39,7 @@ public class MonitoredSubscriber extends Subscriber
     {
         super();
         //lookup queue name and append suffix
-        _monitorDestinationName = _destinationName + Statics.MONITOR_QUEUE_SUFFIX;
+        _monitorDestinationName = _destination.toString() + Statics.MONITOR_QUEUE_SUFFIX;
     }
 
     /**
