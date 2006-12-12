@@ -19,7 +19,7 @@
  *
  */
 #include <Buffer.h>
-#include <Content.h> 
+#include <FramingContent.h> 
 #include <FieldTable.h> 
 
 qpid::framing::Buffer::Buffer(u_int32_t _size) : size(_size), owner(true), position(0), limit(_size){
