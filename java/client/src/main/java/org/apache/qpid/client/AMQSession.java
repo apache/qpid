@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -728,10 +728,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             public Object operation() throws JMSException
             {
                 checkNotClosed();
-
-                return new BasicMessageProducer(_connection, (AMQDestination) destination, _transacted, _channelId,
-                                                AMQSession.this, _connection.getProtocolHandler(),
-                                                getNextProducerId(), immediate, mandatory, waitUntilSent);
+                long producerId = getNextProducerId();
+                BasicMessageProducer producer = new BasicMessageProducer(_connection, (AMQDestination) destination, _transacted, _channelId,
+                                                                         AMQSession.this, _connection.getProtocolHandler(),
+                                                                         producerId, immediate, mandatory, waitUntilSent);
+                registerProducer(producerId, producer);
+                return producer;
             }
         }.execute(_connection);
     }
@@ -745,7 +747,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public QueueReceiver createQueueReceiver(Destination destination) throws JMSException
     {
-    	checkValidDestination(destination);    	
+    	checkValidDestination(destination);
         AMQQueue dest = (AMQQueue) destination;
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(destination);
         return new QueueReceiverAdaptor(dest, consumer);
@@ -1024,7 +1026,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public Topic createTopic(String topicName) throws JMSException
     {
     	checkNotClosed();
-    	
+
         if (topicName.indexOf('/') == -1)
         {
             return new AMQTopic(topicName);
@@ -1142,7 +1144,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void unsubscribe(String name) throws JMSException
     {
     	checkNotClosed();
-    	    	
+
         //send a queue.delete for the subscription
         String queue = _connection.getClientID() + ":" + name;
         AMQFrame frame = QueueDeleteBody.createAMQFrame(_channelId, 0, queue, false, false, true);
@@ -1344,7 +1346,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId, true);
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
     }
-    
+
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
@@ -1353,13 +1355,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     		throw new javax.jms.InvalidDestinationException("Invalid Topic");
     	}
     }
-    
+
     private void checkValidQueue(Queue queue) throws InvalidDestinationException{
     	if (queue == null){
     		throw new javax.jms.InvalidDestinationException("Invalid Queue");
     	}
     }
-    
+
     private void checkValidDestination(Destination destination) throws InvalidDestinationException{
     	if (destination == null){
     		throw new javax.jms.InvalidDestinationException("Invalid Queue");
