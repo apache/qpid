@@ -36,7 +36,7 @@ public class JNDIBindConnectionFactory
 {
 
     public static final String CONNECTION_FACTORY_BINDING = "amq.ConnectionFactory";
-    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "IBMPerfTestsJNDI";
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
     public static final String DEFAULT_CONNECTION_URL = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
@@ -154,7 +154,7 @@ public class JNDIBindConnectionFactory
                 }
                 catch (NamingException e)
                 {
-
+                    System.out.println("Operation failed: " + e);
                 }
 
                 // Perform the bind
@@ -169,11 +169,11 @@ public class JNDIBindConnectionFactory
             }
             catch (NamingException amqe)
             {
-
+                System.out.println("Operation failed: " + amqe);
             }
             catch (URLSyntaxException e)
             {
-
+                System.out.println("Operation failed: " + e);
             }
 
         }
