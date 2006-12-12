@@ -40,7 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class AbstractHeadersExchangeTest extends TestCase
+public class AbstractHeadersExchangeTestBase extends TestCase
 {
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
