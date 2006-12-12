@@ -28,7 +28,7 @@ import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 import java.util.ArrayList;
 import java.util.Iterator;
