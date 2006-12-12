@@ -90,7 +90,7 @@ namespace Qpid.Client.Message
         {
             if (_data != null)
             {
-                _data.Release();
+                _data.release();
             }
             _data = null;
             _decodedValue = null;
@@ -122,15 +122,20 @@ namespace Qpid.Client.Message
                     return _decodedValue;
                 }
                 else
-                {                    
+                {
+                    // Read remaining bytes.
+                    byte[] bytes = new byte[_data.remaining()];
+                    _data.get(bytes);
+
+                    // Convert to string based on encoding.
                     if (ContentHeaderProperties.Encoding != null)
                     {
                         // throw ArgumentException if the encoding is not supported
-                        _decodedValue = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetString(_data.ToByteArray());
+                        _decodedValue = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetString(bytes);
                     }
                     else
                     {
-                        _decodedValue = Encoding.Default.GetString(_data.ToByteArray());
+                        _decodedValue = Encoding.Default.GetString(bytes);
                     }
                     return _decodedValue;                    
                 }
@@ -148,7 +153,7 @@ namespace Qpid.Client.Message
                     // throw ArgumentException if the encoding is not supported
                     bytes = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetBytes(value);
                 }
-                _data = HeapByteBuffer.wrap(bytes, bytes.Length);
+                _data = ByteBuffer.wrap(bytes);
                 _decodedValue = value;
             }
         }

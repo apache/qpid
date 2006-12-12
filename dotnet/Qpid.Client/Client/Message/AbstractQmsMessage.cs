@@ -63,7 +63,7 @@ namespace Qpid.Client.Message
             _data = data;
             if (_data != null)
             {
-                _data.Acquire();
+                _data.acquire();
             }
             _readableMessage = (data != null);
         }
@@ -74,7 +74,7 @@ namespace Qpid.Client.Message
             _data = data;
             if (_data != null)
             {
-                _data.Acquire();
+                _data.acquire();
             }
             _readableMessage = data != null;
         }
@@ -378,7 +378,7 @@ namespace Qpid.Client.Message
                 // position beyond the start
                 if (_data != null)
                 {
-                    _data.Rewind();
+                    _data.rewind();
                 }
                 return _data;
             }
