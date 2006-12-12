@@ -6,27 +6,28 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-lib_LTLIBRARIES = libclient.la
-libclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-libclient_la_SOURCES =				\
+lib_LTLIBRARIES = libqpidclient.la
+libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
+libqpidclient_la_SOURCES =				\
   ClientChannel.cpp				\
-  ClientChannel.h				\
   ClientExchange.cpp				\
-  ClientExchange.h				\
   ClientMessage.cpp				\
-  ClientMessage.h				\
   ClientQueue.cpp				\
-  ClientQueue.h					\
   Connection.cpp				\
-  Connection.h					\
   Connector.cpp					\
-  Connector.h					\
   IncomingMessage.cpp				\
-  IncomingMessage.h				\
   MessageListener.cpp				\
+  ResponseHandler.cpp				\
+  ReturnedMessageHandler.cpp
+pkginclude_HEADERS =	 			\
+  ClientChannel.h				\
+  ClientExchange.h				\
+  ClientMessage.h				\
+  ClientQueue.h					\
+  Connection.h					\
+  Connector.h					\
+  IncomingMessage.h				\
   MessageListener.h				\
   MethodBodyInstances.h				\
-  ResponseHandler.cpp				\
   ResponseHandler.h				\
-  ReturnedMessageHandler.cpp			\
   ReturnedMessageHandler.h
