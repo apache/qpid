@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.framing.BasicPublishBody;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
@@ -52,6 +53,19 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         routeAndTest(new Message("Message5", "F0000=Aardvark", "F0001=Bear"),
                      q1, q2, q3, q4, q5, q6, q7, q8);
         routeAndTest(new Message("Message6", "F0002"));
+
+        Message m7 = new Message("Message7", "XXXXX");
+
+        BasicPublishBody pb7 = m7.getPublishBody();
+        pb7.mandatory = true;
+        routeAndTest(m7,true);
+
+        Message m8 = new Message("Message8", "F0000");
+        BasicPublishBody pb8 = m8.getPublishBody();
+        pb8.mandatory = true;
+        routeAndTest(m8,false,q1);
+
+
     }
 
     public void testAny() throws AMQException
@@ -69,6 +83,20 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         routeAndTest(new Message("Message4", "F0000", "F0001=Bear"), q1, q2, q3, q4, q6);
         routeAndTest(new Message("Message5", "F0000=Aardvark", "F0001=Bear"), q1, q2, q3, q4, q6);
         routeAndTest(new Message("Message6", "F0002"));
+    }
+
+    public void testMandatory() throws AMQException
+    {
+        TestQueue q1 = bindDefault("F0000");
+        Message m1 = new Message("Message1", "XXXXX");
+        Message m2 = new Message("Message2", "F0000");
+        BasicPublishBody pb1 = m1.getPublishBody();
+        pb1.mandatory = true;
+        BasicPublishBody pb2 = m1.getPublishBody();
+        pb2.mandatory = true;
+        routeAndTest(m1,true);
+
+
     }
 
     public static junit.framework.Test suite()
