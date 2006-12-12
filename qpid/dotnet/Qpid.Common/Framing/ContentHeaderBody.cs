@@ -73,10 +73,10 @@ namespace Qpid.Framing
 
         public void WritePayload(ByteBuffer buffer)
         {
-            buffer.Put(ClassId);
-            buffer.Put(Weight);
-            buffer.Put(BodySize);
-            buffer.Put(Properties.PropertyFlags);
+            buffer.put(ClassId);
+            buffer.put(Weight);
+            buffer.put(BodySize);
+            buffer.put(Properties.PropertyFlags);
             Properties.WritePropertyListPayload(buffer);
         }
 

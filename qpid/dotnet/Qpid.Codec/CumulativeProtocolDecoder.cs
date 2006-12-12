@@ -28,14 +28,13 @@ namespace Qpid.Codec
         ByteBuffer _remaining;
 
         /// <summary>
-        /// Creates a new instance with the 65535 bytes initial capacity of
+        /// Creates a new instance with the 4096 bytes initial capacity of
         /// cumulative buffer.
-        /// Note that capacity is currently fixed as the .NET ByteBuffers does not implement auto-expansion.
         /// </summary>
         protected CumulativeProtocolDecoder()
         {
-            // Needs to be as large as the largest frame to be decoded.
-            _remaining = ByteBuffer.Allocate(65535); // FIXME: Probably should not be fixed.
+            _remaining = ByteBuffer.allocate(4096);
+            _remaining.setAutoExpand(true);
         }
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace Qpid.Codec
         /// </exception>
         public void Decode(ByteBuffer input, IProtocolDecoderOutput output)
         {
-            if (_remaining.Position != 0) // If there were remaining undecoded bytes
+            if (_remaining.position() != 0) // If there were remaining undecoded bytes
             {
                 DecodeRemainingAndInput(input, output);
             }
@@ -68,9 +67,9 @@ namespace Qpid.Codec
             }
             finally
             {
-                if (input.HasRemaining())
+                if (input.hasRemaining())
                 {
-                    _remaining.Put(input);
+                    _remaining.put(input);
                 }
             }
         }
@@ -78,8 +77,8 @@ namespace Qpid.Codec
         private void DecodeRemainingAndInput(ByteBuffer input, IProtocolDecoderOutput output)
         {
             // Concatenate input buffer with left-over bytes.
-            _remaining.Put(input);
-            _remaining.Flip();
+            _remaining.put(input);
+            _remaining.flip();
 
             try
             {
@@ -87,7 +86,7 @@ namespace Qpid.Codec
             }
             finally
             {
-                _remaining.Compact();
+                _remaining.compact();
             }
         }
 
@@ -95,17 +94,17 @@ namespace Qpid.Codec
         {
             for (;;)
             {
-                int oldPos = buf.Position;                    
+                int oldPos = buf.position();
                 bool decoded = DoDecode(buf, output);
                 if (decoded)
                 {                        
-                    if (buf.Position == oldPos)
+                    if (buf.position() == oldPos)
                     {
                         throw new Exception(
                             "doDecode() can't return true when buffer is not consumed.");
                     }
 
-                    if (!buf.HasRemaining())
+                    if (!buf.hasRemaining())
                     {
                         break;
                     }

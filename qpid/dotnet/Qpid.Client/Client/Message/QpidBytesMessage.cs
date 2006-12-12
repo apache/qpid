@@ -36,7 +36,7 @@ namespace Qpid.Client.Message
         /// <summary>
         /// The backingstore for the data
         /// </summary>
-        private MemoryStream _dataStream;
+        private MemoryStream _dataStream; // FIXME: Probably don't need this any more.
 
         private int _bodyLength;                
 
@@ -59,15 +59,17 @@ namespace Qpid.Client.Message
             ContentHeaderProperties.ContentType = MIME_TYPE;
             if (data == null)
             {
-                _data = ByteBuffer.Allocate(DEFAULT_BUFFER_INITIAL_SIZE);
+                _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
                 //_data.AutoExpand = true;
                 _dataStream = new MemoryStream();
                 _writer = new BinaryWriter(_dataStream);
             }
             else
             {
-                _dataStream = new MemoryStream(data.ToByteArray());
-                _bodyLength = data.ToByteArray().Length;
+                byte[] bytes = new byte[data.remaining()];
+                data.get(bytes);
+                _dataStream = new MemoryStream(bytes);
+                _bodyLength = bytes.Length;
                 _reader = new BinaryReader(_dataStream);
             }
         }
@@ -77,15 +79,17 @@ namespace Qpid.Client.Message
             : base(messageNbr, (BasicContentHeaderProperties)contentHeader.Properties, data)
         {
             ContentHeaderProperties.ContentType = MIME_TYPE;
-            _dataStream = new MemoryStream(data.ToByteArray());
-            _bodyLength = data.ToByteArray().Length;
+            byte[] bytes = new byte[data.remaining()];
+            data.get(bytes);
+            _dataStream = new MemoryStream(bytes);
+            _bodyLength = bytes.Length;
             _reader = new BinaryReader(_dataStream);
         
         }
 
         public override void ClearBodyImpl()
         {
-            _data.Clear();
+            _data.clear();
         }
 
 //        public override void ClearBody()
@@ -165,7 +169,7 @@ namespace Qpid.Client.Message
             get
             {
                 CheckReadable();
-                return _data.Limit; // XXX
+                return _data.limit(); // XXX
 //                return _bodyLength;
             }
         }
@@ -577,7 +581,7 @@ namespace Qpid.Client.Message
         public void Reset()
         {
             base.Reset();
-            _data.Flip();
+            _data.flip();
 
 //            CheckWritable();
 //            try

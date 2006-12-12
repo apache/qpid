@@ -71,7 +71,7 @@ namespace Qpid.Client.Transport.Socket.Blocking
         {            
             try
             {
-                _networkStream.Write(byteBuffer.ToByteArray(), byteBuffer.Position, byteBuffer.Limit);
+                _networkStream.Write(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit()); // FIXME
             }
             catch (Exception e)
             {
@@ -87,9 +87,10 @@ namespace Qpid.Client.Transport.Socket.Blocking
             
             int numOctets = _networkStream.Read(bytes, 0, bytes.Length);
 
-            ByteBuffer byteBuffer = HeapByteBuffer.wrap(bytes, numOctets);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            byteBuffer.limit(numOctets);
             
-            byteBuffer.Flip();
+            byteBuffer.flip();
 
             return byteBuffer;
         }

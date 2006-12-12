@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Qpid.Buffer
 {
-    public class HeapByteBuffer : ByteBuffer
+    public class HeapByteBuffer //: ByteBuffer
     {
         private byte[] _underlyingData;
 
@@ -48,7 +48,7 @@ namespace Qpid.Buffer
             _position = length;
         }
 
-        public override int Capacity
+        public /*override*/ int Capacity
         {
             get
             {
@@ -56,7 +56,7 @@ namespace Qpid.Buffer
             }
         }
 
-        public override int Position
+        public /*override*/ int Position
         {
             get
             {
@@ -72,7 +72,7 @@ namespace Qpid.Buffer
         /// Sets this buffer's limit. If the position is larger than the new limit then it is set to the new limit.
         /// </summary>
         /// <value>The new limit value; must be non-negative and no larger than this buffer's capacity</value>
-        public override int Limit
+        public /*override*/ int Limit
         {
             get
             {
@@ -100,7 +100,7 @@ namespace Qpid.Buffer
         /// Returns the number of elements between the current position and the limit
         /// </summary>
         /// <value>The number of elements remaining in this buffer</value>
-        public override int Remaining
+        public /*override*/ int Remaining
         {
             get
             {
@@ -108,24 +108,29 @@ namespace Qpid.Buffer
             }
         }
 
-        public override void Clear()
+        public /*override*/ void Clear()
         {
             _position = 0;
             _limit = Capacity;
         }
 
-        public override void Flip()
+        public /*override*/ void Flip()
         {
             _limit = _position;
             _position = 0;
         }
 
-        public override void Rewind()
+        public /*override*/ void Rewind()
         {
             _position = 0;
         }
 
-        public override byte[] ToByteArray()
+        public byte[] array()
+        {
+            return _underlyingData;
+        }
+
+        public /*override*/ byte[] ToByteArray()
         {
             // Return copy of bytes remaining.
             byte[] result = new byte[Remaining];
@@ -156,7 +161,7 @@ namespace Qpid.Buffer
         /// </summary>
         /// <param name="data">The byte to be written</param>
         /// <exception cref="BufferOverflowException">If this buffer's current position is not smaller than its limit</exception>
-        public override void Put(byte data)
+        public /*override*/ void Put(byte data)
         {
             CheckSpace(1);
             _underlyingData[_position++] = data;
@@ -168,12 +173,12 @@ namespace Qpid.Buffer
         /// </summary>
         /// <param name="data">The data to copy.</param>
         /// <exception cref="BufferOverflowException">If this buffer's current position plus the array length is not smaller than its limit</exception>
-        public override void Put(byte[] data)
+        public /*override*/ void Put(byte[] data)
         {
             Put(data, 0, data.Length);
         }
 
-        public override void Put(byte[] data, int offset, int size)
+        public /*override*/ void Put(byte[] data, int offset, int size)
         {
             if (data == null)
             {
@@ -188,14 +193,14 @@ namespace Qpid.Buffer
         /// Writes the given ushort into this buffer at the current position, and then increments the position.
         /// </summary>
         /// <param name="data">The ushort to be written</param>
-        public override void Put(ushort data)
+        public /*override*/ void Put(ushort data)
         {
             CheckSpace(2);
             _underlyingData[_position++] = (byte) (data >> 8);
             _underlyingData[_position++] = (byte) data;
         }
 
-        public override void Put(uint data)
+        public /*override*/ void Put(uint data)
         {
             CheckSpace(4);
             _underlyingData[_position++] = (byte) (data >> 24);
@@ -204,7 +209,7 @@ namespace Qpid.Buffer
             _underlyingData[_position++] = (byte) data;
         }
 
-        public override void Put(ulong data)
+        public /*override*/ void Put(ulong data)
         {
             CheckSpace(8);
             _underlyingData[_position++] = (byte) (data >> 56);
@@ -222,7 +227,7 @@ namespace Qpid.Buffer
         /// </summary>
         /// <returns>a byte</returns>
         /// <exception cref="BufferUnderflowException">if there are no bytes left to read</exception>
-        public override byte Get()
+        public /*override*/ byte Get()
         {
             CheckSpaceForReading(1);
             return _underlyingData[_position++];
@@ -233,7 +238,7 @@ namespace Qpid.Buffer
         /// </summary>
         /// <param name="destination">The destination array. The array must not
         /// be bigger than the remaining space in the buffer, nor can it be null.</param>
-        public override void Get(byte[] destination)
+        public /*override*/ void Get(byte[] destination)
         {
             if (destination == null)
             {
@@ -250,7 +255,7 @@ namespace Qpid.Buffer
         /// </summary>
         /// <returns>an unsigned short</returns>
         /// <exception cref="BufferUnderflowException">If there are fewer than two bytes remaining in this buffer</exception>
-        public override ushort GetUnsignedShort()
+        public /*override*/ ushort GetUnsignedShort()
         {
             CheckSpaceForReading(2);
             byte upper = _underlyingData[_position++];
@@ -263,7 +268,7 @@ namespace Qpid.Buffer
         /// </summary>
         /// <returns>an unsigned integer</returns>
         /// <exception cref="BufferUnderflowException">If there are fewer than four bytes remaining in this buffer</exception>
-        public override uint GetUnsignedInt()
+        public /*override*/ uint GetUnsignedInt()
         {
             CheckSpaceForReading(4);
             byte b1 = _underlyingData[_position++];
@@ -273,7 +278,7 @@ namespace Qpid.Buffer
             return (uint) ((b1 << 24) + (b2 << 16) + (b3 << 8) + b4);
         }
 
-        public override ulong GetUnsignedLong()
+        public /*override*/ ulong GetUnsignedLong()
         {
             CheckSpaceForReading(8);
             byte b1 = _underlyingData[_position++];
@@ -288,7 +293,7 @@ namespace Qpid.Buffer
                            (b6 << 16) + (b7 << 8) + b8);
         }
 
-        public override string GetString(uint length, Encoding encoder)
+        public /*override*/ string GetString(uint length, Encoding encoder)
         {
             CheckSpaceForReading((int)length);
             string result = encoder.GetString(_underlyingData, _position, (int)length);
@@ -296,31 +301,31 @@ namespace Qpid.Buffer
             return result;
         }
 
-        public override void Acquire()
+        public /*override*/ void Acquire()
         {            
         }
 
-        public override void Release()
+        public /*override*/ void Release()
         {            
         }
 
-        public override bool IsAutoExpand
+        public /*override*/ bool IsAutoExpand
         {
             get { return false; }
             set { }
         }
 
-        public override void Expand(int expectedRemaining)
+        public /*override*/ void Expand(int expectedRemaining)
         {
             throw new NotImplementedException();
         }
 
-        public override void Expand(int pos, int expectedRemaining)
+        public /*override*/ void Expand(int pos, int expectedRemaining)
         {
             throw new NotImplementedException();
         }        
         
-        public override bool Pooled
+        public /*override*/ bool Pooled
         {
             get { return false; }
             set {  }
@@ -336,38 +341,38 @@ namespace Qpid.Buffer
             throw new NotImplementedException();
         }
 
-        public override byte Get(int index)
+        public /*override*/ byte Get(int index)
         {
             throw new NotImplementedException();
         }
 
-        public override void Put(ByteBuffer src)
-        {            
-            if (src == this)
-            {
-                throw new ArgumentException("Cannot copy self into self!");
-            }
-
-            HeapByteBuffer sb;
-            if (src is HeapByteBuffer)
-            {
-                sb = (HeapByteBuffer) src;
-            }
-            else
-            {
-                sb = (HeapByteBuffer)((RefCountingByteBuffer) src).Buf; 
-            }
-            int n = sb.Remaining;
-            if (n > Remaining)
-            {
-                throw new BufferOverflowException("Not enought capacity in this buffer for " + n + " elements - only " + Remaining + " remaining");
-            }
-            Array.Copy(sb._underlyingData, sb._position, _underlyingData, _position, n);
-            sb._position += n;
-            _position += n;            
-        }        
+//        public /*override*/ void Put(ByteBuffer src)
+//        {            
+//            if (src == this)
+//            {
+//                throw new ArgumentException("Cannot copy self into self!");
+//            }
+//
+//            HeapByteBuffer sb;
+//            if (src is HeapByteBuffer)
+//            {
+//                sb = (HeapByteBuffer) src;
+//            }
+//            else
+//            {
+//                sb = (HeapByteBuffer)((RefCountingByteBuffer) src).Buf; 
+//            }
+//            int n = sb.Remaining;
+//            if (n > Remaining)
+//            {
+//                throw new BufferOverflowException("Not enought capacity in this buffer for " + n + " elements - only " + Remaining + " remaining");
+//            }
+//            Array.Copy(sb._underlyingData, sb._position, _underlyingData, _position, n);
+//            sb._position += n;
+//            _position += n;            
+//        }        
         
-        public override void Compact()
+        public /*override*/ void Compact()
         {            
             if (Remaining > 0)
             {                
