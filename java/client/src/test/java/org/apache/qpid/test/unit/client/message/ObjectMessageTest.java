@@ -24,7 +24,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
