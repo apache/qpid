@@ -23,24 +23,24 @@ package org.apache.qpid.server.queue;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestSubscription implements Subscription
+public class SubscriptionTestHelper implements Subscription
 {
     private final List<AMQMessage> messages;
     private final Object key;
     private boolean isSuspended;
 
-    public TestSubscription(Object key)
+    public SubscriptionTestHelper(Object key)
     {
         this(key, new ArrayList<AMQMessage>());
     }
 
-    public TestSubscription(final Object key, final boolean isSuspended)
+    public SubscriptionTestHelper(final Object key, final boolean isSuspended)
     {
         this(key);
         setSuspended(isSuspended);
     }
 
-    TestSubscription(Object key, List<AMQMessage> messages)
+    SubscriptionTestHelper(Object key, List<AMQMessage> messages)
     {
         this.key = key;
         this.messages = messages;
@@ -77,7 +77,7 @@ public class TestSubscription implements Subscription
 
     public boolean equals(Object o)
     {
-        return o instanceof TestSubscription && ((TestSubscription) o).key.equals(key);
+        return o instanceof SubscriptionTestHelper && ((SubscriptionTestHelper) o).key.equals(key);
     }
 
     public String toString()
