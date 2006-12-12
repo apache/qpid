@@ -22,7 +22,7 @@ package org.apache.qpid.test.unit.client.forwardall;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 import junit.framework.TestCase;
 
