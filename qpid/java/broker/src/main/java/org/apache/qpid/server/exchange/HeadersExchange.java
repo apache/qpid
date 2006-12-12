@@ -206,7 +206,18 @@ public class HeadersExchange extends AbstractExchange
         }
         if (!delivered)
         {
-            _logger.warn("Exchange " + getName() + ": message not routable.");
+
+            String msg = "Exchange " + getName() + ": message not routable.";
+
+            if (payload.getPublishBody().mandatory)
+            {
+                throw new NoRouteException(msg, payload);
+            }
+            else
+            {
+                _logger.warn(msg);
+            }
+
         }
     }
 
