@@ -71,10 +71,10 @@ libcommon_la_SOURCES =				\
   $(framing)/BodyHandler.h			\
   $(framing)/Buffer.cpp				\
   $(framing)/Buffer.h				\
-  $(framing)/Content.cpp			\
-  $(framing)/Content.h			\
   $(framing)/FieldTable.cpp			\
   $(framing)/FieldTable.h			\
+  $(framing)/FramingContent.cpp			\
+  $(framing)/FramingContent.h			\
   $(framing)/HeaderProperties.h			\
   $(framing)/InitiationHandler.cpp		\
   $(framing)/InitiationHandler.h		\
