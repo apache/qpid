@@ -47,13 +47,13 @@ public class SubscriptionSetTest extends TestCase
         }
     }
 
-    final TestSubscription sub1 = new TestSubscription("1");
-    final TestSubscription sub2 = new TestSubscription("2");
-    final TestSubscription sub3 = new TestSubscription("3");
+    final SubscriptionTestHelper sub1 = new SubscriptionTestHelper("1");
+    final SubscriptionTestHelper sub2 = new SubscriptionTestHelper("2");
+    final SubscriptionTestHelper sub3 = new SubscriptionTestHelper("3");
 
-    final TestSubscription suspendedSub1 = new TestSubscription("sus1", true);
-    final TestSubscription suspendedSub2 = new TestSubscription("sus2", true);
-    final TestSubscription suspendedSub3 = new TestSubscription("sus3", true);
+    final SubscriptionTestHelper suspendedSub1 = new SubscriptionTestHelper("sus1", true);
+    final SubscriptionTestHelper suspendedSub2 = new SubscriptionTestHelper("sus2", true);
+    final SubscriptionTestHelper suspendedSub3 = new SubscriptionTestHelper("sus3", true);
 
     public void testNextMessage()
     {
@@ -114,7 +114,7 @@ public class SubscriptionSetTest extends TestCase
     public void testNextMessageOverScanning()
     {
         TestSubscriptionSet ss = new TestSubscriptionSet();
-        TestSubscription sub = new TestSubscription("test");
+        SubscriptionTestHelper sub = new SubscriptionTestHelper("test");
         ss.addSubscriber(suspendedSub1);
         ss.addSubscriber(sub);
         ss.addSubscriber(suspendedSub3);

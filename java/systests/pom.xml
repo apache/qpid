@@ -84,16 +84,6 @@
                             <value>file:///${basedir}/src/test/java/log4j.properties</value>
                         </property>
                     </systemProperties>
-                    <includes>
-                        <include>**/server/**/*Test.java</include>
-                        <include>**/test/unit/ack/DisconnectAndRedeliver.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/Abstract*Test*</exclude>
-                        <exclude>**/*PerfTest*</exclude>
-                        <exclude>**/*PerformanceTest*</exclude>
-                        <exclude>**/server/util/ConcurrentTest.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

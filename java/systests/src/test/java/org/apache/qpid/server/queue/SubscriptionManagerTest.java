@@ -30,12 +30,12 @@ public class SubscriptionManagerTest extends TestCase
     {
         assertTrue(mgr.isEmpty());
         assertFalse(mgr.hasActiveSubscribers());
-        TestSubscription s1 = new TestSubscription("S1");
+        SubscriptionTestHelper s1 = new SubscriptionTestHelper("S1");
         mgr.addSubscriber(s1);
         assertFalse(mgr.isEmpty());
         assertTrue(mgr.hasActiveSubscribers());
 
-        TestSubscription s2 = new TestSubscription("S2");
+        SubscriptionTestHelper s2 = new SubscriptionTestHelper("S2");
         mgr.addSubscriber(s2);
 
         s2.setSuspended(true);
@@ -47,18 +47,18 @@ public class SubscriptionManagerTest extends TestCase
         s1.setSuspended(true);
         assertFalse(mgr.hasActiveSubscribers());
 
-        mgr.removeSubscriber(new TestSubscription("S1"));
+        mgr.removeSubscriber(new SubscriptionTestHelper("S1"));
         assertFalse(mgr.isEmpty());
-        mgr.removeSubscriber(new TestSubscription("S2"));
+        mgr.removeSubscriber(new SubscriptionTestHelper("S2"));
         assertTrue(mgr.isEmpty());
     }
 
     public void testRoundRobin()
     {
-        TestSubscription a = new TestSubscription("A");
-        TestSubscription b = new TestSubscription("B");
-        TestSubscription c = new TestSubscription("C");
-        TestSubscription d = new TestSubscription("D");
+        SubscriptionTestHelper a = new SubscriptionTestHelper("A");
+        SubscriptionTestHelper b = new SubscriptionTestHelper("B");
+        SubscriptionTestHelper c = new SubscriptionTestHelper("C");
+        SubscriptionTestHelper d = new SubscriptionTestHelper("D");
         mgr.addSubscriber(a);
         mgr.addSubscriber(b);
         mgr.addSubscriber(c);
@@ -84,7 +84,7 @@ public class SubscriptionManagerTest extends TestCase
         mgr.removeSubscriber(a);
         d.setSuspended(true);
         c.setSuspended(false);
-        Subscription e = new TestSubscription("D");
+        Subscription e = new SubscriptionTestHelper("D");
         mgr.addSubscriber(e);
 
         for (int i = 0; i < 3; i++)
