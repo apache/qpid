@@ -49,15 +49,6 @@ namespace Qpid.Client.Message
             _data = data; // FIXME: Unnecessary - done in base class ctor.
         }
 
-        QpidTextMessage(ByteBuffer data) : this(data, null)
-        {
-        }
-
-        QpidTextMessage(String text) : base((ByteBuffer)null)
-        {
-            Text = text;
-        }
-
         public override void ClearBodyImpl()
         {
             if (_data != null)
