@@ -44,8 +44,9 @@ namespace qpid {
             virtual void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length);
             virtual void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
             virtual void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            virtual void committed(const string * const xid);
-            virtual void aborted(const string * const xid);
+            virtual void prepared(const std::string * const xid);
+            virtual void committed(const std::string * const xid);
+            virtual void aborted(const std::string * const xid);
             virtual std::auto_ptr<TransactionContext> begin();
             virtual void commit(TransactionContext* ctxt);
             virtual void abort(TransactionContext* ctxt);
