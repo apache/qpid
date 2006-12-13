@@ -26,8 +26,6 @@ import junit.framework.TestCase;
 import java.util.Enumeration;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.ByteBufferProxy;
-import org.apache.mina.common.support.BaseByteBuffer;
 
 public class PropertyFieldTableTest extends TestCase
 {
@@ -402,7 +400,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setChar("char", (char) 'c');
-        size += 1 + EncodingUtils.encodedShortStringLength("char") + EncodingUtils.encodedCharacterLength();
+        size += 1 + EncodingUtils.encodedShortStringLength("char") + EncodingUtils.encodedCharLength();
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setDouble("double", (double) Double.MAX_VALUE);
@@ -444,7 +442,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setObject("object-char", 'c');
-        size += 1 + EncodingUtils.encodedShortStringLength("object-char") + EncodingUtils.encodedCharacterLength();
+        size += 1 + EncodingUtils.encodedShortStringLength("object-char") + EncodingUtils.encodedCharLength();
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setObject("object-double", Double.MAX_VALUE);
