@@ -23,6 +23,9 @@ package org.apache.qpid.pool;
 import junit.framework.TestCase;
 import junit.framework.Assert;
 import org.apache.qpid.session.TestSession;
+import org.apache.mina.common.IoFilter;
+import org.apache.mina.common.IoSession;
+import org.apache.mina.common.IdleStatus;
 
 import java.util.concurrent.RejectedExecutionException;
 
@@ -43,7 +46,7 @@ public class PoolingFilterTest extends TestCase
 
     public void testRejectedExecution() throws Exception
     {
-        _pool.filterWrite(null, new TestSession(), null);
+        _pool.filterWrite(new NoOpFilter(), new TestSession(), new IoFilter.WriteRequest("Message"));
 
         //Shutdown the pool
         _executorService.getPool().shutdownNow();
@@ -56,6 +59,46 @@ public class PoolingFilterTest extends TestCase
         catch (RejectedExecutionException rje)
         {
             Assert.fail("RejectedExecutionException should not occur after pool has shutdown:" + rje);
+        }
+    }
+
+    private static class NoOpFilter implements IoFilter.NextFilter
+    {
+
+        public void sessionOpened(IoSession session)
+        {
+        }
+
+        public void sessionClosed(IoSession session)
+        {
+        }
+
+        public void sessionIdle(IoSession session, IdleStatus status)
+        {
+        }
+
+        public void exceptionCaught(IoSession session, Throwable cause)
+        {
+        }
+
+        public void messageReceived(IoSession session, Object message)
+        {
+        }
+
+        public void messageSent(IoSession session, Object message)
+        {
+        }
+
+        public void filterWrite(IoSession session, IoFilter.WriteRequest writeRequest)
+        {
+        }
+
+        public void filterClose(IoSession session)
+        {
+        }
+
+        public void sessionCreated(IoSession session)
+        {
         }
     }
 }
