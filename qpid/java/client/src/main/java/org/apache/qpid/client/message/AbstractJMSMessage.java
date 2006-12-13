@@ -23,6 +23,9 @@ package org.apache.qpid.client.message;
 import org.apache.commons.collections.map.ReferenceMap;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
@@ -136,19 +139,16 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
             Destination dest = (Destination) _destinationCache.get(replyToEncoding);
             if (dest == null)
             {
-                char destType = replyToEncoding.charAt(0);
-                if (destType == 'Q')
+                try
                 {
-                    dest = new AMQQueue(replyToEncoding.substring(1));
+                    BindingURL binding = new AMQBindingURL(replyToEncoding);
+                    dest = AMQDestination.createDestination(binding);
                 }
-                else if (destType == 'T')
-                {
-                    dest = new AMQTopic(replyToEncoding.substring(1));
-                }
-                else
+                catch (URLSyntaxException e)
                 {
                     throw new JMSException("Illegal value in JMS_ReplyTo property: " + replyToEncoding);
                 }
+
                 _destinationCache.put(replyToEncoding, dest);
             }
             return dest;
@@ -163,7 +163,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         }
         if (!(destination instanceof AMQDestination))
         {
-            throw new IllegalArgumentException("ReplyTo destination my be an AMQ destination - passed argument was type " +
+            throw new IllegalArgumentException("ReplyTo destination may only be an AMQDestination - passed argument was type " +
                                                destination.getClass());
         }
         final AMQDestination amqd = (AMQDestination) destination;
@@ -389,9 +389,10 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
         if (_session != null)
         {
-        	if (_session.getAMQConnection().isClosed()){
-        		throw new javax.jms.IllegalStateException("Connection is already closed");
-        	}
+            if (_session.getAMQConnection().isClosed())
+            {
+                throw new javax.jms.IllegalStateException("Connection is already closed");
+            }
 
             // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
             // received on the session
