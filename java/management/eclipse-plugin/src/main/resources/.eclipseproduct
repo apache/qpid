@@ -1,0 +1,5 @@
+#Eclipse Product File
+#Fri Nov 03 14:47:54 GMT 2006
+version=1.0-incubating-M2-SNAPSHOT
+name=Qpid Management Console
+id=org.apache.qpid.manager.gui.product
