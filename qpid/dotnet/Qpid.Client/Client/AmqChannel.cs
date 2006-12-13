@@ -803,19 +803,6 @@ namespace Qpid.Client
                 message.Timestamp = currentTime;
             }
 
-            //
-            // Very nasty temporary hack for GRM. Will be altered ASAP.
-            // FIXME: Remove this hack.
-            //
-            if (message is QpidBytesMessage)
-            {
-                QpidBytesMessage msg = (QpidBytesMessage) message;
-                if (!msg.IsReadable)
-                {
-                    msg.Reset();
-                }
-            }
-
             ByteBuffer buf = message.Data;
             byte[] payload = null;
             if (buf != null)
