@@ -334,7 +334,7 @@ namespace Qpid.Client.Message
         {
             base.Reset();
             _data.flip();
-        }        
+        }
 
         /**
          * Check that there is at least a certain number of bytes available to read
