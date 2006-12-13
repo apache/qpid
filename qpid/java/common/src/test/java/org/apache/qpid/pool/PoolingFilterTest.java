@@ -1,0 +1,61 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.    
+ *
+ * 
+ */
+package org.apache.qpid.pool;
+
+import junit.framework.TestCase;
+import junit.framework.Assert;
+import org.apache.qpid.session.TestSession;
+
+import java.util.concurrent.RejectedExecutionException;
+
+public class PoolingFilterTest extends TestCase
+{
+    private PoolingFilter _pool;
+    ReferenceCountingExecutorService _executorService;
+
+    public void setUp()
+    {
+        //Create Pool
+        _executorService = ReferenceCountingExecutorService.getInstance();
+        _executorService.acquireExecutorService();
+        _pool = new PoolingFilter(_executorService, PoolingFilter.WRITE_EVENTS,
+                                  "AsynchronousWriteFilter");
+
+    }
+
+    public void testRejectedExecution() throws Exception
+    {
+        _pool.filterWrite(null, new TestSession(), null);
+
+        //Shutdown the pool
+        _executorService.getPool().shutdownNow();
+
+        try
+        {
+            //prior to fix for QPID-172 this would throw RejectedExecutionException
+            _pool.filterWrite(null, new TestSession(), null);
+        }
+        catch (RejectedExecutionException rje)
+        {
+            Assert.fail("RejectedExecutionException should not occur after pool has shutdown:" + rje);
+        }
+    }
+}
