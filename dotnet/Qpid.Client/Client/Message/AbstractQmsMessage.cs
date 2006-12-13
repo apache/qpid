@@ -37,7 +37,7 @@ namespace Qpid.Client.Message
         protected bool _redelivered;
 
         protected ByteBuffer _data;
-        private bool _readableMessage = false;
+        protected bool _readableMessage = false;
 
         //protected AbstractQmsMessage() : base(new BasicContentHeaderProperties())
         //{           

@@ -30,35 +30,7 @@ namespace Qpid.Client.Message
     {
         private const string MIME_TYPE = "text/plain";
 
-        private string _decodedValue;
-
-        //public QpidTextMessage() : this(null, null)
-        //{        
-        //}
-
-        //public QpidTextMessage(byte[] data, String encoding) : base()
-        //{
-        //    // the superclass has instantied a content header at this point
-        //    ContentHeaderProperties.ContentType= MIME_TYPE;
-        //    _data = data;
-        //    ContentHeaderProperties.Encoding = encoding;
-        //}
-
-        //public QpidTextMessage(ulong messageNbr, byte[] data, BasicContentHeaderProperties contentHeader)
-        //    : base(messageNbr, contentHeader)
-        //{            
-        //    contentHeader.ContentType = MIME_TYPE;
-        //    _data = data;
-        //}
-
-        //public QpidTextMessage(byte[] data) : this(data, null)
-        //{            
-        //}
-
-        //public QpidTextMessage(string text)
-        //{
-        //    Text = text;
-        //}
+        private string _decodedValue = null;
 
         internal QpidTextMessage() : this(null, null)
         {
@@ -74,7 +46,7 @@ namespace Qpid.Client.Message
             :base(deliveryTag, contentHeader, data)
         {
             contentHeader.ContentType = MIME_TYPE;
-            _data = data;
+            _data = data; // FIXME: Unnecessary - done in base class ctor.
         }
 
         QpidTextMessage(ByteBuffer data) : this(data, null)
@@ -123,6 +95,8 @@ namespace Qpid.Client.Message
                 }
                 else
                 {
+                    _data.rewind();
+
                     // Read remaining bytes.
                     byte[] bytes = new byte[_data.remaining()];
                     _data.get(bytes);

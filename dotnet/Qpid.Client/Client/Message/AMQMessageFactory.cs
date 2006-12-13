@@ -27,26 +27,7 @@ namespace Qpid.Client.Message
 {
     public abstract class AbstractQmsMessageFactory : IMessageFactory
     {
-        //public AbstractQmsMessage CreateMessage(long messageNbr, bool redelivered, ContentHeaderBody contentHeader, IList bodies)
-        //{
-        //    AbstractQmsMessage msg = CreateMessageWithBody(messageNbr, contentHeader, bodies);
-        //    msg.Redelivered = redelivered;
-        //    return msg;
-        //}
-
         public abstract AbstractQmsMessage CreateMessage();
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="messageNbr"></param>
-        ///// <param name="contentHeader"></param>
-        ///// <param name="bodies"></param>
-        ///// <returns></returns>
-        ///// <exception cref="AMQException"></exception>
-        //protected abstract AbstractQmsMessage CreateMessageWithBody(long messageNbr,
-        //                                                            ContentHeaderBody contentHeader,
-        //                                                            IList bodies);
 
         private static readonly ILog _logger = LogManager.GetLogger(typeof (AbstractQmsMessageFactory));
 
