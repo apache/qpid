@@ -42,7 +42,12 @@ namespace client {
 
     class Channel;
 
-class Connection : public virtual qpid::framing::InputHandler, 
+    /**
+     * Represents a connection to an AMQP broker. All communication is
+     * initiated by establishing a connection, then opening one or
+     * more channels over that connection.
+     */
+    class Connection : public virtual qpid::framing::InputHandler, 
         public virtual qpid::sys::TimeoutHandler, 
         public virtual qpid::sys::ShutdownHandler, 
         private virtual qpid::framing::BodyHandler{
@@ -59,7 +64,7 @@ class Connection : public virtual qpid::framing::InputHandler,
 	qpid::framing::OutputHandler* out;
 	ResponseHandler responses;
         volatile bool closed;
-    qpid::framing::ProtocolVersion version;
+        qpid::framing::ProtocolVersion version;
 
         void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
         void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
@@ -72,9 +77,23 @@ class Connection : public virtual qpid::framing::InputHandler,
 	virtual void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
 
     public:
-
+        /**
+         * Creates a connection object, but does not open the
+         * connection.  
+         * 
+         * @param debug turns on tracing for the connection
+         * (i.e. prints details of the frames sent and received to std
+         * out). Optional and defaults to false.
+         * 
+         * @param max_frame_size the maximum frame size that the
+         * client will accept. Optional and defaults to 65536.
+         */
 	Connection(bool debug = false, u_int32_t max_frame_size = 65536);
 	~Connection();
+
+        /**
+         *
+         */
         void open(const std::string& host, int port = 5672, 
                   const std::string& uid = "guest", const std::string& pwd = "guest", 
                   const std::string& virtualhost = "/");
@@ -100,7 +119,6 @@ class Connection : public virtual qpid::framing::InputHandler,
 
 	inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
     };
-
 
 }
 }
