@@ -382,17 +382,6 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             currentTime = System.currentTimeMillis();
             message.setJMSTimestamp(currentTime);
         }
-        //
-        // Very nasty temporary hack for GRM-206. Will be altered ASAP.
-        //
-        if (message instanceof JMSBytesMessage)
-        {
-            JMSBytesMessage msg = (JMSBytesMessage) message;
-            if (!msg.isReadable())
-            {
-                msg.reset();
-            }
-        }
         ByteBuffer payload = message.getData();
         BasicContentHeaderProperties contentHeaderProperties = message.getJmsContentHeaderProperties();
 
