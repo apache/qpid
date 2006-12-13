@@ -18,6 +18,22 @@
  * under the License.
  *
  */
+
+/**
+ * This file provides one half of a test and example of a pub-sub
+ * style of interaction. See topic_listener.cpp for the other half, in
+ * which the logic for subscribers is defined.
+ * 
+ * This file contains the publisher logic. The publisher will send a
+ * number of messages to the exchange with the appropriate routing key
+ * for the logical 'topic'. Once it has done this it will then send a
+ * request that each subscriber report back with the number of message
+ * it has received and the time that elapsed between receiving the
+ * first one and receiving the report request. Once the expected
+ * number of reports are received, it sends out a request that each
+ * subscriber shutdown.
+ */
+
 #include <QpidError.h>
 #include <ClientChannel.h>
 #include <Connection.h>
@@ -34,6 +50,11 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+/**
+ * The publishing logic is defined in this class. It implements
+ * message listener and can therfore be used to receive messages sent
+ * back by the subscribers.
+ */
 class Publisher : public MessageListener{    
     Channel* const channel;
     const std::string controlTopic;
@@ -51,6 +72,9 @@ public:
     void terminate();
 };
 
+/**
+ * A utility class for managing the options passed in to the test
+ */
 class Args{
     string host;
     int port;
