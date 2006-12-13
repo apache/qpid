@@ -6,7 +6,8 @@ If you have taken the sources from SVN you will need the following
 packages (or later) to build Qpid.  We prefer to avoid spending time
 accommodating older versions of these packages, so please make sure
 that you have the latest stable version.
-  
+
+ * GNU make   <http://www.gnu.org/software/make/>
  * autoconf   <http://www.gnu.org/software/autoconf/>
  * automake   <http://www.gnu.org/software/automake/>
  * cppunit    <http://cppunit.sourceforge.net> 

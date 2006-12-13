@@ -65,6 +65,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/BodyHandler.cpp			\
   $(framing)/Buffer.cpp				\
   $(framing)/FieldTable.cpp			\
+  $(framing)/FramingContent.cpp			\
   $(framing)/InitiationHandler.cpp		\
   $(framing)/ProtocolInitiation.cpp		\
   $(framing)/ProtocolVersion.cpp		\
@@ -92,7 +93,6 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/BodyHandler.h			\
   $(framing)/Buffer.h				\
   $(framing)/FieldTable.h			\
-  $(framing)/FramingContent.cpp			\
   $(framing)/FramingContent.h			\
   $(framing)/HeaderProperties.h			\
   $(framing)/InitiationHandler.h		\
@@ -122,3 +122,7 @@ nobase_pkginclude_HEADERS =			\
   sys/Thread.h					\
   sys/Time.h					\
   sys/TimeoutHandler.h
+
+
+# Force build during dist phase so help2man will work.
+dist-hook: $(lib_LTLIBRARIES)
