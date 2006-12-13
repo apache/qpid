@@ -18,48 +18,13 @@
  * under the License.
  *
  */
-using System;
-using System.Collections;
-using Qpid.Framing;
 using Qpid.Buffer;
+using Qpid.Framing;
 
 namespace Qpid.Client.Message
 {
     public class QpidTextMessageFactory : AbstractQmsMessageFactory
-    {
-
-    //    protected override AbstractQmsMessage CreateMessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
-    //                                                                IList bodies)
-    //    {
-    //        byte[] data;
-
-    //        // we optimise the non-fragmented case to avoid copying
-    //        if (bodies != null && bodies.Count == 1)
-    //        {
-    //            data = ((ContentBody)bodies[0]).Payload;
-    //        }
-    //        else
-    //        {
-    //            data = new byte[(int)contentHeader.BodySize];
-    //            int currentPosition = 0;
-    //            foreach (ContentBody cb in bodies)
-    //            {                
-    //                Array.Copy(cb.Payload, 0, data, currentPosition, cb.Payload.Length);
-    //                currentPosition += cb.Payload.Length;
-    //            }
-    //        }
-
-    //        return new QpidTextMessage(messageNbr, data, (BasicContentHeaderProperties)contentHeader.Properties);
-    //    }
-        
-     
-    //    public override AbstractQmsMessage CreateMessage()
-    //    {
-    //        return new QpidTextMessage();
-    //    }      
-
-
-        
+    {        
         public override AbstractQmsMessage CreateMessage()
         {
             return new QpidTextMessage();
@@ -69,7 +34,5 @@ namespace Qpid.Client.Message
         {
             return new QpidTextMessage(deliveryTag, (BasicContentHeaderProperties) contentHeader.Properties, data);
         }
-
     }
 }
-

@@ -27,22 +27,18 @@ using Qpid.Buffer;
 
 namespace Qpid.Client.Message
 {
+    class MessageEOFException : QpidException
+    {
+        public MessageEOFException(string message) : base(message)
+        {
+        }
+    }
+
     public class QpidBytesMessage : AbstractQmsMessage, IBytesMessage
     {
         private const string MIME_TYPE = "application/octet-stream";
 
         private const int DEFAULT_BUFFER_INITIAL_SIZE = 1024;
-
-        /// <summary>
-        /// The backingstore for the data
-        /// </summary>
-        private MemoryStream _dataStream; // FIXME: Probably don't need this any more.
-
-        private int _bodyLength;                
-
-        private BinaryReader _reader;
-
-        private BinaryWriter _writer;
 
         public QpidBytesMessage() : this(null)
         {            
@@ -60,17 +56,7 @@ namespace Qpid.Client.Message
             if (data == null)
             {
                 _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
-                //_data.AutoExpand = true;
-                _dataStream = new MemoryStream();
-                _writer = new BinaryWriter(_dataStream);
-            }
-            else
-            {
-                byte[] bytes = new byte[data.remaining()];
-                data.get(bytes);
-                _dataStream = new MemoryStream(bytes);
-                _bodyLength = bytes.Length;
-                _reader = new BinaryReader(_dataStream);
+                _data.setAutoExpand(true);
             }
         }
 
@@ -78,32 +64,13 @@ namespace Qpid.Client.Message
             // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
             : base(messageNbr, (BasicContentHeaderProperties)contentHeader.Properties, data)
         {
-            ContentHeaderProperties.ContentType = MIME_TYPE;
-            byte[] bytes = new byte[data.remaining()];
-            data.get(bytes);
-            _dataStream = new MemoryStream(bytes);
-            _bodyLength = bytes.Length;
-            _reader = new BinaryReader(_dataStream);
-        
+            ContentHeaderProperties.ContentType = MIME_TYPE;        
         }
 
         public override void ClearBodyImpl()
         {
             _data.clear();
         }
-
-//        public override void ClearBody()
-//        {
-//            if (_reader != null)
-//            {
-//                _reader.Close();
-//                _reader = null;
-//            }
-//            _dataStream = new MemoryStream();
-//            _bodyLength = 0;
-//            
-//            _writer = new BinaryWriter(_dataStream);
-//        }
 
         public override string ToBodyString()
         {
@@ -117,44 +84,30 @@ namespace Qpid.Client.Message
                 throw new QpidException(e.ToString());
             }
         }
-        
-        private string GetText()
-        {                  
-            if (_dataStream != null)
-            {
-                // we cannot just read the underlying buffer since it may be larger than the amount of 
-                // "filled" data. Length is not the same as Capacity.
-                byte[] data = new byte[_dataStream.Length];
-                _dataStream.Read(data, 0, (int)_dataStream.Length);
-                return Encoding.UTF8.GetString(data);
-            }
-            else
+
+        private String GetText()
+        {
+            // this will use the default platform encoding
+            if (_data == null)
             {
                 return null;
             }
+            int pos = _data.position();
+            _data.rewind();
+            // one byte left is for the end of frame marker
+            if (_data.remaining() == 0)
+            {
+                // this is really redundant since pos must be zero
+                _data.position(pos);
+                return null;
+            }
+            else
+            {
+                byte[] data = new byte[_data.remaining()];
+                _data.get(data);
+                return Encoding.UTF8.GetString(data);
+            }
         }
-
-        //public override byte[] Data
-        //{
-        //    get
-        //    {
-        //        if (_dataStream == null)
-        //        {
-        //            return null;
-        //        }
-        //        else
-        //        {
-        //            byte[] data = new byte[_dataStream.Length];
-        //            _dataStream.Position = 0;
-        //            _dataStream.Read(data, 0, (int) _dataStream.Length);
-        //            return data;
-        //        }
-        //    }
-        //    set
-        //    {
-        //        throw new NotSupportedException("Cannot set data payload except during construction");
-        //    }
-        //}
 
         public override string MimeType
         {
@@ -169,27 +122,13 @@ namespace Qpid.Client.Message
             get
             {
                 CheckReadable();
-                return _data.limit(); // XXX
-//                return _bodyLength;
+                return _data.limit();
             }
         }
 
-        /// <summary>
-        ///  
-        /// </summary>
-        /// <exception cref="MessageNotReadableException">if the message is in write mode</exception>
-//        private void CheckReadable() 
-//        {
-//
-//            if (_reader == null)
-//            {
-//                throw new MessageNotReadableException("You need to call reset() to make the message readable");
-//            }
-//        }
-
         private void CheckWritable()
         {
-            if (_reader != null)
+            if (_readableMessage)
             {
                 throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
             }
@@ -198,126 +137,76 @@ namespace Qpid.Client.Message
         public bool ReadBoolean()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadBoolean();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(1);
+            return _data.get() != 0;
         }
 
         public byte ReadByte()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadByte();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(1);
+            return _data.get();
         }
 
         public short ReadSignedByte()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadSByte();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(1);
+            return _data.get();
         }
 
         public short ReadShort()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadInt16();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(2);
+            return _data.getShort();
         }
 
         public char ReadChar()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadChar();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(2);
+            return _data.getChar();
         }
 
         public int ReadInt()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadInt32();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(4);
+            return _data.getInt();
         }
 
         public long ReadLong()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadInt64();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(8);
+            return _data.getLong();
         }
 
         public float ReadFloat()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadSingle();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(4);
+            return _data.getFloat();
         }
 
         public double ReadDouble()
         {
             CheckReadable();
-            try
-            {
-                return _reader.ReadDouble();
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            CheckAvailable(8);
+            return _data.getDouble();
         }
 
         public string ReadUTF()
         {
             CheckReadable();
+            // we check only for one byte since theoretically the string could be only a
+            // single byte when using UTF-8 encoding
+            CheckAvailable(1);
             try
             {
-                byte[] data = _reader.ReadBytes((int)_dataStream.Length);
+                byte[] data = new byte[_data.remaining()];
+                _data.get(data);
                 return Encoding.UTF8.GetString(data);                
             }
             catch (IOException e)
@@ -333,269 +222,132 @@ namespace Qpid.Client.Message
                 throw new ArgumentNullException("bytes");
             }
             CheckReadable();
-            try
-            {                
-                return _reader.Read(bytes, 0, bytes.Length);
-            }
-            catch (IOException e)
+            int count = (_data.remaining() >= bytes.Length ? bytes.Length : _data.remaining());
+            if (count == 0)
             {
-                throw new QpidException(e.ToString(), e);
+                return -1;
+            }
+            else
+            {
+                _data.get(bytes, 0, count);
+                return count;
             }
         }
 
-        public int ReadBytes(byte[] bytes, int count)
+        public int ReadBytes(byte[] bytes, int maxLength)
         {
-            CheckReadable();
             if (bytes == null)
             {
                 throw new ArgumentNullException("bytes");
             }
-            if (count < 0)
+            if (maxLength > bytes.Length)
             {
-                throw new ArgumentOutOfRangeException("count must be >= 0");
+                throw new ArgumentOutOfRangeException("maxLength must be >= 0");
             }
-            if (count > bytes.Length)
+            CheckReadable();
+            int count = (_data.remaining() >= maxLength ? maxLength : _data.remaining());
+            if (count == 0)
             {
-                count = bytes.Length;
+                return -1;
             }
-
-            try
+            else
             {
-                return _reader.Read(bytes, 0, count);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
+                _data.get(bytes, 0, count);
+                return count;
             }
         }
 
         public void WriteBoolean(bool b)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(b);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.put(b ? (byte)1 : (byte)0);
         }
 
         public void WriteByte(byte b)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(b);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.put(b);
         }
 
         public void WriteShort(short i)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(i);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.putShort(i);
         }
 
         public void WriteChar(char c)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(c);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.putChar(c);
         }
 
         public void WriteSignedByte(short value)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(value);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.put((byte)value);
         }
 
         public void WriteDouble(double value)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(value);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.putDouble(value);
         }
 
         public void WriteFloat(float value)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(value);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.putFloat(value);
         }
 
         public void WriteInt(int value)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(value);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.putInt(value);
         }
 
         public void WriteLong(long value)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(value);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
-        }
-        
-        public void Write(int i)
-        {
-            CheckWritable();
-            try
-            {
-                _writer.Write(i);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
-        }
-
-        public void Write(long l)
-        {
-            CheckWritable();
-            try
-            {
-                _writer.Write(l);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
-        }
-
-        public void Write(float v)
-        {
-            CheckWritable();
-            try
-            {
-                _writer.Write(v);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
-        }
-
-        public void Write(double v)
-        {
-            CheckWritable();
-            try
-            {
-                _writer.Write(v);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
-        }
+            _data.putLong(value);
+        }        
 
         public void WriteUTF(string value)
         {
             CheckWritable();
-            try
-            {
-                byte[] encodedData = Encoding.UTF8.GetBytes(value);
-                _writer.Write(encodedData);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            byte[] encodedData = Encoding.UTF8.GetBytes(value);
+            _data.put(encodedData);
         }
 
         public void WriteBytes(byte[] bytes)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(bytes);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.put(bytes);
         }
 
         public void WriteBytes(byte[] bytes, int offset, int length)
         {
             CheckWritable();
-            try
-            {
-                _writer.Write(bytes, offset, length);
-            }
-            catch (IOException e)
-            {
-                throw new QpidException(e.ToString(), e);
-            }
+            _data.put(bytes, offset, length);
         }
 
         public void Reset()
         {
             base.Reset();
             _data.flip();
-
-//            CheckWritable();
-//            try
-//            {
-//                _writer.Close();
-//                _writer = null;
-//                _reader = new BinaryReader(_dataStream);
-//                _bodyLength = (int) _dataStream.Length;
-//            }
-//            catch (IOException e)
-//            {
-//                throw new QpidException(e.ToString(), e);
-//            }
         }        
+
+        /**
+         * Check that there is at least a certain number of bytes available to read
+         *
+         * @param len the number of bytes
+         * @throws MessageEOFException if there are less than len bytes available to read
+         */
+        private void CheckAvailable(int len)
+        {
+            if (_data.remaining() < len)
+            {
+                throw new MessageEOFException("Unable to read " + len + " bytes");
+            }
+        }
     }
 }
-
