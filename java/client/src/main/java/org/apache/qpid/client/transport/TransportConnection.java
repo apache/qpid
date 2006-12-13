@@ -268,7 +268,7 @@ public class TransportConnection
             Object[] params = {port};
             provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
             //Give the broker a second to create
-            _logger.info("Created Instance");
+            _logger.info("Created VMBroker Instance:" + port);
         }
         catch (Exception e)
         {
