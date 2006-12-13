@@ -117,6 +117,11 @@ namespace qpid {
              * place or null for 'local' transactions
              */
             virtual void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const std::string * const xid) = 0;
+
+            /**
+             * Treat all enqueue/dequeues where this xid was specified as being prepared.
+             */
+            virtual void prepared(const std::string * const xid) = 0;
             /**
              * Treat all enqueue/dequeues where this xid was specified as being committed.
              */

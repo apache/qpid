@@ -45,8 +45,9 @@ namespace qpid {
             void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length);
             void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
             void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            void committed(const string * const xid);
-            void aborted(const string * const xid);
+            void prepared(const std::string * const xid);
+            void committed(const std::string * const xid);
+            void aborted(const std::string * const xid);
             std::auto_ptr<TransactionContext> begin();
             void commit(TransactionContext* ctxt);
             void abort(TransactionContext* ctxt);
