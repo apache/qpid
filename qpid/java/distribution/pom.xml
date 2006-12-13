@@ -130,6 +130,7 @@
                                 <descriptor>src/main/assembly/client-bin.xml</descriptor>
                                 <descriptor>src/main/assembly/src.xml</descriptor>
                                 <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
+                                <descriptor>src/main/assembly/management-eclipse-plugin-unix.xml</descriptor>
                             </descriptors>
                             <finalName>qpid-${pom.version}</finalName>
                         </configuration>
