@@ -22,12 +22,15 @@ using System;
 using log4net;
 using NUnit.Framework;
 using Qpid.Messaging;
+using Qpid.Client.qms;
 
 namespace Qpid.Client.Tests
 {
     public class BaseMessagingTestFixture
     {
         private static ILog _logger = LogManager.GetLogger(typeof(BaseMessagingTestFixture));
+
+        const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
 
         protected IConnection _connection;
 
@@ -38,9 +41,7 @@ namespace Qpid.Client.Tests
         {
             try
             {
-                QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
-                
-                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));                                    
+                ConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
                 _connection = new AMQConnection(connectionInfo);
                 _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 1);
             }
