@@ -79,3 +79,7 @@ libqpidbroker_la_SOURCES =				\
   TxOp.h					\
   TxPublish.cpp					\
   TxPublish.h
+
+
+# Force build during dist phase so help2man will work.
+dist-hook: $(lib_LTLIBRARIES)
