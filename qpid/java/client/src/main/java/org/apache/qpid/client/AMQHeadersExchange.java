@@ -38,11 +38,6 @@ public class AMQHeadersExchange extends AMQDestination
         super(queueName, ExchangeDefaults.HEADERS_EXCHANGE_CLASS, queueName, true, true, null);
     }
 
-    public String getEncodedName()
-    {
-        return getDestinationName();
-    }
-
     public String getRoutingKey()
     {
         return getDestinationName();

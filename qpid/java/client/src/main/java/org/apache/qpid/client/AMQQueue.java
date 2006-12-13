@@ -75,11 +75,7 @@ public class AMQQueue extends AMQDestination implements Queue
               autoDelete, queueName);
     }
 
-    public String getEncodedName()
-    {
-        return 'Q' + getQueueName();
-    }
-
+  
     public String getRoutingKey()
     {
         return getQueueName();
