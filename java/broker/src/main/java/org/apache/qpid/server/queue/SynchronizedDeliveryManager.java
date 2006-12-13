@@ -206,7 +206,12 @@ class SynchronizedDeliveryManager implements DeliveryManager
             //are we already running? if so, don't re-run
             if (_processing.compareAndSet(false, true))
             {
-                executor.execute(new Runner());
+                // Do we need this?
+                // This executor is created via Executors in AsyncDeliveryConfig which only returns a TPE so cast is ok.
+                //if (executor != null && !((ThreadPoolExecutor) executor).isShutdown())
+                {
+                    executor.execute(new Runner());
+                }
             }
         }
     }
