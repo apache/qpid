@@ -32,28 +32,10 @@ namespace Qpid.Client.Message
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(AbstractQmsMessage));
 
-//        protected long _messageNbr;
-
         protected bool _redelivered;
 
         protected ByteBuffer _data;
         protected bool _readableMessage = false;
-
-        //protected AbstractQmsMessage() : base(new BasicContentHeaderProperties())
-        //{           
-        //}
-
-        //protected AbstractQmsMessage(ulong messageNbr, BasicContentHeaderProperties contentHeader)
-        //    : this(contentHeader)
-        //{            
-        //    _messageNbr = messageNbr;
-        //}
-
-        //protected AbstractQmsMessage(BasicContentHeaderProperties contentHeader) 
-        //    : base(contentHeader)
-        //{            
-        //}
-
 
 #region new_java_ctrs
 
@@ -374,11 +356,18 @@ namespace Qpid.Client.Message
         {
             get
             {
-                // make sure we rewind the data just in case any method has moved the
-                // position beyond the start
                 if (_data != null)
                 {
-                    _data.rewind();
+                    if (!_readableMessage)
+                    {
+                        _data.flip();
+                    }
+                    else
+                    {
+                        // Make sure we rewind the data just in case any method has moved the
+                        // position beyond the start.
+                        _data.rewind();
+                    }
                 }
                 return _data;
             }
@@ -464,22 +453,6 @@ namespace Qpid.Client.Message
                 return table;
             }
         }
-
-        /// <summary>
-        /// Get the AMQ message number assigned to this message
-        /// </summary>
-        /// <returns>the message number</returns>
-        //public ulong MessageNbr
-        //{
-        //    get
-        //    {
-        //        return _messageNbr;
-        //    }
-        //    set
-        //    {
-        //        _messageNbr = value;
-        //    }
-        //}        
 
         public BasicContentHeaderProperties ContentHeaderProperties
         {
