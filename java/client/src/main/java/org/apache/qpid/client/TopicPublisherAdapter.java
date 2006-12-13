@@ -1,138 +1,173 @@
 package org.apache.qpid.client;
 
-import javax.jms.Destination;
+import javax.jms.*;
 import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
 
-public class TopicPublisherAdapter implements TopicPublisher {
+public class TopicPublisherAdapter implements TopicPublisher
+{
 
-	private MessageProducer delegate;
-	private Topic topic;
-	private boolean closed = false;
-	
-	public TopicPublisherAdapter(MessageProducer msgProducer, Topic topic){
-		delegate = msgProducer;
-		this.topic = topic;
-	}
-	
-	public Topic getTopic() throws JMSException {
-		checkPreConditions();
-		return topic;
-	}
+    private BasicMessageProducer _delegate;
+    private Topic _topic;
 
-	public void publish(Message msg) throws JMSException {
-		checkPreConditions();
-		delegate.send(msg);
-	}
+    public TopicPublisherAdapter(BasicMessageProducer msgProducer, Topic topic)
+    {
+        _delegate = msgProducer;
+        _topic = topic;
+    }
 
-	public void publish(Topic topic, Message msg) throws JMSException {
-		checkPreConditions();
-		delegate.send(topic,msg);
-	}
+    public Topic getTopic() throws JMSException
+    {
+        checkPreConditions();
+        return _topic;
+    }
 
-	public void publish(Message msg, int deliveryMode, int priority, long timeToLive)
-			throws JMSException {
-		checkPreConditions();
-		delegate.send(msg, deliveryMode,priority,timeToLive);
-	}
+    public void publish(Message msg) throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(_topic);
+        _delegate.send(msg);
+    }
 
-	public void publish(Topic topic, Message msg, int deliveryMode, int priority, long timeToLive)
-			throws JMSException {
-		checkPreConditions();
-		delegate.send(topic,msg, deliveryMode,priority,timeToLive);
-	}
+    public void publish(Topic topic, Message msg) throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(topic);
+        _delegate.send(topic, msg);
+    }
 
-	public void close() throws JMSException {
-		delegate.close();
-		closed = true;
-	}
+    public void publish(Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(_topic);
+        _delegate.send(msg, deliveryMode, priority, timeToLive);
+    }
 
-	public int getDeliveryMode() throws JMSException {
-		return delegate.getDeliveryMode();
-	}
+    public void publish(Topic topic, Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(topic);
+        _delegate.send(topic, msg, deliveryMode, priority, timeToLive);
+    }
 
-	public Destination getDestination() throws JMSException {
-		return delegate.getDestination();
-	}
+    public void close() throws JMSException
+    {
+        _delegate.close();
+    }
 
-	public boolean getDisableMessageID() throws JMSException {
-		return delegate.getDisableMessageID();
-	}
+    public int getDeliveryMode() throws JMSException
+    {
+        return _delegate.getDeliveryMode();
+    }
 
-	public boolean getDisableMessageTimestamp() throws JMSException {
-		return delegate.getDisableMessageTimestamp();
-	}
+    public Destination getDestination() throws JMSException
+    {
+        return _delegate.getDestination();
+    }
 
-	public int getPriority() throws JMSException {
-		return delegate.getPriority();
-	}
+    public boolean getDisableMessageID() throws JMSException
+    {
+        return _delegate.getDisableMessageID();
+    }
 
-	public long getTimeToLive() throws JMSException {
-		return delegate.getTimeToLive();
-	}
+    public boolean getDisableMessageTimestamp() throws JMSException
+    {
+        return _delegate.getDisableMessageTimestamp();
+    }
 
-	public void send(Message msg) throws JMSException {
-		checkPreConditions();
-		delegate.send(msg);
-	}
+    public int getPriority() throws JMSException
+    {
+        return _delegate.getPriority();
+    }
 
-	public void send(Destination dest, Message msg) throws JMSException {
-		checkPreConditions();
-		delegate.send(dest,msg);
-	}
+    public long getTimeToLive() throws JMSException
+    {
+        return _delegate.getTimeToLive();
+    }
 
-	public void send(Message msg, int deliveryMode, int priority, long timeToLive)
-			throws JMSException {
-		checkPreConditions();
-		delegate.send(msg, deliveryMode,priority,timeToLive);
-	}
+    public void send(Message msg) throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(_topic);
+        _delegate.send(msg);
+    }
 
-	public void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException {
-		checkPreConditions();
-		delegate.send(dest,msg, deliveryMode,priority,timeToLive);
-	}
-	
-	public void setDeliveryMode(int deliveryMode) throws JMSException {
-		checkPreConditions();
-		delegate.setDeliveryMode(deliveryMode);
-	}
+    public void send(Destination dest, Message msg) throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(_topic);
+        _delegate.send(dest, msg);
+    }
 
-	public void setDisableMessageID(boolean disableMessageID) throws JMSException {
-		checkPreConditions();
-		delegate.setDisableMessageID(disableMessageID);
-	}
+    public void send(Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(_topic);
+        _delegate.send(msg, deliveryMode, priority, timeToLive);
+    }
 
-	public void setDisableMessageTimestamp(boolean disableMessageTimestamp) throws JMSException {
-		checkPreConditions();
-		delegate.setDisableMessageTimestamp(disableMessageTimestamp);
-	}
+    public void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
+    {
+        checkPreConditions();
+        checkTopic(dest);
+        _delegate.send(dest, msg, deliveryMode, priority, timeToLive);
+    }
 
-	public void setPriority(int priority) throws JMSException {
-		checkPreConditions();
-		delegate.setPriority(priority);
-	}
+    public void setDeliveryMode(int deliveryMode) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDeliveryMode(deliveryMode);
+    }
 
-	public void setTimeToLive(long timeToLive) throws JMSException {
-		checkPreConditions();
-		delegate.setTimeToLive(timeToLive);
-	}
+    public void setDisableMessageID(boolean disableMessageID) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDisableMessageID(disableMessageID);
+    }
 
-	private void checkPreConditions() throws IllegalStateException, IllegalStateException {
-		if (closed){
-			throw new javax.jms.IllegalStateException("Publisher is closed");
-		}
-		
-		if(topic == null){
-			throw new UnsupportedOperationException("Topic is null");
-		}
-		
-		AMQSession session = ((BasicMessageProducer)delegate).getSession();
-		if(session == null || session.isClosed()){
-			throw new javax.jms.IllegalStateException("Invalid Session");
-		}
-	}
+    public void setDisableMessageTimestamp(boolean disableMessageTimestamp) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDisableMessageTimestamp(disableMessageTimestamp);
+    }
+
+    public void setPriority(int priority) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setPriority(priority);
+    }
+
+    public void setTimeToLive(long timeToLive) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setTimeToLive(timeToLive);
+    }
+
+    private void checkPreConditions() throws IllegalStateException
+    {
+        if (_delegate.isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Publisher is _closed");
+        }
+
+        AMQSession session = _delegate.getSession();
+        if (session == null || session.isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+    }
+
+    private void checkTopic(Destination topic) throws InvalidDestinationException
+    {
+        if (topic == null)
+        {
+            throw new UnsupportedOperationException("Topic is null");
+        }
+        if (!(topic instanceof Topic))
+        {
+            throw new InvalidDestinationException("Destination " + topic + " is not a topic");
+        }
+    }
 }
