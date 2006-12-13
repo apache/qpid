@@ -75,6 +75,11 @@ void NullMessageStore::dequeue(TransactionContext*, Message* const, const Queue&
     if (warn) std::cout << "WARNING: Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
+void NullMessageStore::prepared(const string * const)
+{
+    if (warn) std::cout << "WARNING: Persistence not enabled." << std::endl;
+}
+
 void NullMessageStore::committed(const string * const)
 {
     if (warn) std::cout << "WARNING: Persistence not enabled." << std::endl;

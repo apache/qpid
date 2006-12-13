@@ -73,6 +73,11 @@ void MessageStoreModule::dequeue(TransactionContext* ctxt, Message* const msg, c
     store->dequeue(ctxt, msg, queue, xid);
 }
 
+void MessageStoreModule::prepared(const string * const xid)
+{
+    store->prepared(xid);
+}
+
 void MessageStoreModule::committed(const string * const xid)
 {
     store->committed(xid);
