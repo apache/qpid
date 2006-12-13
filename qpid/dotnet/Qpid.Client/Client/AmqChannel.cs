@@ -805,6 +805,7 @@ namespace Qpid.Client
 
             //
             // Very nasty temporary hack for GRM. Will be altered ASAP.
+            // FIXME: Remove this hack.
             //
             if (message is QpidBytesMessage)
             {

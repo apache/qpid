@@ -116,8 +116,6 @@ namespace Qpid.Buffer
 
             protected override void capacity0(int requestedCapacity)
             {
-                Console.WriteLine("XXX capacity0 called with requestedCapacity=" + requestedCapacity); // FIXME: remove this.
-
                 int newCapacity = MINIMUM_CAPACITY;
                 while( newCapacity < requestedCapacity )
                 {
