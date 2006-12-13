@@ -41,9 +41,11 @@ public class PropertyFieldTable implements FieldTable, Map
     public static final char AMQP_UNSIGNEDINT_PROPERTY_PREFIX = 'I';
     public static final char AMQP_TIMESTAMP_PROPERTY_PREFIX = 'T';
     public static final char AMQP_STRING_PROPERTY_PREFIX = 'S';
+    public static final char AMQP_ASCII_CHARACTER_PROPERTY_PREFIX = 'k';
     public static final char AMQP_ASCII_STRING_PROPERTY_PREFIX = 'c';
     public static final char AMQP_WIDE_STRING_PROPERTY_PREFIX = 'C';
     public static final char AMQP_BINARY_PROPERTY_PREFIX = 'x';
+    public static final char AMQP_NULL_STRING_PROPERTY_PREFIX = 'n';
 
     public static final char BOOLEAN_PROPERTY_PREFIX = 't';
     public static final char BYTE_PROPERTY_PREFIX = 'b';
@@ -52,10 +54,10 @@ public class PropertyFieldTable implements FieldTable, Map
     public static final char LONG_PROPERTY_PREFIX = 'l';
     public static final char FLOAT_PROPERTY_PREFIX = 'f';
     public static final char DOUBLE_PROPERTY_PREFIX = 'd';
-    public static final char NULL_STRING_PROPERTY_PREFIX = 'n';
 
+    public static final char NULL_STRING_PROPERTY_PREFIX = AMQP_NULL_STRING_PROPERTY_PREFIX;
     public static final char STRING_PROPERTY_PREFIX = AMQP_STRING_PROPERTY_PREFIX;
-    public static final char CHAR_PROPERTY_PREFIX = AMQP_ASCII_STRING_PROPERTY_PREFIX;
+    public static final char CHAR_PROPERTY_PREFIX = AMQP_ASCII_CHARACTER_PROPERTY_PREFIX;
     public static final char BYTES_PROPERTY_PREFIX = AMQP_BINARY_PROPERTY_PREFIX;
 
     //Our custom prefix for encoding across the wire
@@ -1180,26 +1182,26 @@ public class PropertyFieldTable implements FieldTable, Map
                     case NULL_STRING_PROPERTY_PREFIX:
                         buffer.put((byte) NULL_STRING_PROPERTY_PREFIX);
                         break;
+
                     case AMQP_WIDE_STRING_PROPERTY_PREFIX:
-                        //case AMQP_STRING_PROPERTY_PREFIX:
-                    case STRING_PROPERTY_PREFIX:
                         // TODO: look at using proper charset encoder
                         buffer.put((byte) STRING_PROPERTY_PREFIX);
                         EncodingUtils.writeLongStringBytes(buffer, (String) value);
                         break;
-
-                        //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
-                    case CHAR_PROPERTY_PREFIX:
-                        // TODO: look at using proper charset encoder
-                        buffer.put((byte) CHAR_PROPERTY_PREFIX);
-                        EncodingUtils.writeShortStringBytes(buffer, "" + (Character) value);
+                    case AMQP_ASCII_STRING_PROPERTY_PREFIX:
+                    case STRING_PROPERTY_PREFIX: // AMQP_STRING_PROPERTY_PREFIX:
+                        //This is a simple ASCII string
+                        buffer.put((byte) STRING_PROPERTY_PREFIX);
+                        EncodingUtils.writeLongStringBytes(buffer, (String) value);
                         break;
-
+                    case CHAR_PROPERTY_PREFIX:
+                        buffer.put((byte) CHAR_PROPERTY_PREFIX);
+                        EncodingUtils.writeChar(buffer, (Character) value);
+                        break;
                     case BYTES_PROPERTY_PREFIX:
                         buffer.put((byte) BYTES_PROPERTY_PREFIX);
                         EncodingUtils.writeBytes(buffer, (byte[]) value);
                         break;
-
                     case XML_PROPERTY_PREFIX:
                         // Encode as XML
                         buffer.put((byte) XML_PROPERTY_PREFIX);
@@ -1271,16 +1273,15 @@ public class PropertyFieldTable implements FieldTable, Map
 
                     // TODO: use proper charset decoder
                 case AMQP_WIDE_STRING_PROPERTY_PREFIX:
-                    //case AMQP_STRING_PROPERTY_PREFIX:
-                case STRING_PROPERTY_PREFIX:
+                case AMQP_ASCII_STRING_PROPERTY_PREFIX:
+                case STRING_PROPERTY_PREFIX:  // AMQP_STRING_PROPERTY_PREFIX:
                     value = EncodingUtils.readLongString(buffer);
                     break;
                 case NULL_STRING_PROPERTY_PREFIX:
                     value = null;
                     break;
-                    //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
                 case CHAR_PROPERTY_PREFIX:
-                    value = EncodingUtils.readShortString(buffer).charAt(0);
+                    value = EncodingUtils.readChar((buffer));
                     break;
                 case BYTES_PROPERTY_PREFIX:
                     value = EncodingUtils.readBytes(buffer);
@@ -1356,16 +1357,15 @@ public class PropertyFieldTable implements FieldTable, Map
                 encodingSize += EncodingUtils.encodedDoubleLength();
                 break;
             case AMQP_WIDE_STRING_PROPERTY_PREFIX:
-                //case AMQP_STRING_PROPERTY_PREFIX:
-            case STRING_PROPERTY_PREFIX:
+            case AMQP_ASCII_STRING_PROPERTY_PREFIX:
+            case STRING_PROPERTY_PREFIX: //AMQP_STRING_PROPERTY_PREFIX:
                 encodingSize += EncodingUtils.encodedLongStringLength((String) value);
                 break;
             case NULL_STRING_PROPERTY_PREFIX:
-                // There is no need for additiona size beyond the prefix 
+                // There is no need for additional size beyond the prefix
                 break;
-                //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
             case CHAR_PROPERTY_PREFIX:
-                encodingSize += EncodingUtils.encodedShortStringLength("" + (Character) value);
+                encodingSize += EncodingUtils.encodedCharLength();
                 break;
             case BYTES_PROPERTY_PREFIX:
                 encodingSize += 1 + ((byte[]) value).length;
@@ -1374,7 +1374,7 @@ public class PropertyFieldTable implements FieldTable, Map
                 encodingSize += EncodingUtils.encodedLongStringLength(valueAsXML(name, value));
                 break;
             default:
-                //encodingSize = 1 + EncodingUtils.encodedLongStringLength(String.valueOf(value));
+                //encodingSize = 1 + EncodingUtils.encodedLongstrLength(String.valueOf(value));
                 //  We are using XML String encoding
                 throw new IllegalArgumentException("Unsupported type in field table: " + value.getClass());
         }
