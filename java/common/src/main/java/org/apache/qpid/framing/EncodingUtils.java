@@ -609,8 +609,22 @@ public class EncodingUtils
         }
     }
 
-    public static long encodedCharacterLength()
+    //CHAR_PROPERTY
+    public static long encodedCharLength()
     {
-        return encodedShortStringLength("c");
+        return encodedByteLength();
     }
+
+    public static char readChar(ByteBuffer buffer)
+    {
+        //This is valid as we know that the Character is ASCII 0..127
+        return (char) buffer.get();
+    }
+
+    public static void writeChar(ByteBuffer buffer, char character)
+    {
+        //This is valid as we know that the Character is ASCII 0..127
+        writeByte(buffer, (byte) character);
+    }
+
 }
