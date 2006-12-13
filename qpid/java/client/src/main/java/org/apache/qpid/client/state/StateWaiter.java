@@ -46,7 +46,7 @@ public class StateWaiter implements StateListener
 
     public void waituntilStateHasChanged() throws AMQException
     {
-        synchronized (_monitor)
+        synchronized(_monitor)
         {
             //
             // The guard is required in case we are woken up by a spurious
@@ -71,22 +71,22 @@ public class StateWaiter implements StateListener
             _logger.debug("Throwable reached state waiter: " + _throwable);
             if (_throwable instanceof AMQException)
             {
-                throw (AMQException) _throwable;
+                throw(AMQException) _throwable;
             }
             else
             {
-                throw new AMQException("Error: "  + _throwable, _throwable); // FIXME: this will wrap FailoverException in throwable which will prevent it being caught.
+                throw new AMQException("Error: " + _throwable, _throwable); // FIXME: this will wrap FailoverException in throwable which will prevent it being caught.
             }
         }
     }
 
     public void stateChanged(AMQState oldState, AMQState newState)
     {
-        synchronized (_monitor)
+        synchronized(_monitor)
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("stateChanged called");
+                _logger.debug("stateChanged called changing from :" + oldState + " to :" + newState);
             }
             if (_state == newState)
             {
@@ -103,7 +103,7 @@ public class StateWaiter implements StateListener
 
     public void error(Throwable t)
     {
-        synchronized (_monitor)
+        synchronized(_monitor)
         {
             if (_logger.isDebugEnabled())
             {
