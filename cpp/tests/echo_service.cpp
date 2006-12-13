@@ -82,7 +82,7 @@ int main(int argc, char** argv){
             Queue response;
             channel.declareQueue(response);
             qpid::framing::FieldTable emptyArgs;
-            channel.bind(Exchange::DEFAULT_DIRECT_EXCHANGE, response, response.getName(), emptyArgs);
+            channel.bind(Exchange::STANDARD_DIRECT_EXCHANGE, response, response.getName(), emptyArgs);
 
             //Consume from the response queue, logging all echoed message to console:
             LoggingListener listener;
@@ -100,7 +100,7 @@ int main(int argc, char** argv){
                 Message msg;
                 msg.getHeaders().setString("RESPONSE_QUEUE", response.getName());
                 msg.setData(text);
-                channel.publish(msg, Exchange::DEFAULT_DIRECT_EXCHANGE, echo_service);
+                channel.publish(msg, Exchange::STANDARD_DIRECT_EXCHANGE, echo_service);
                 
                 std::cout << "Enter text to send:" << std::endl;
             }
@@ -121,7 +121,7 @@ int main(int argc, char** argv){
             Queue request("request");
             channel.declareQueue(request);
             qpid::framing::FieldTable emptyArgs;
-            channel.bind(Exchange::DEFAULT_DIRECT_EXCHANGE, request, echo_service, emptyArgs);
+            channel.bind(Exchange::STANDARD_DIRECT_EXCHANGE, request, echo_service, emptyArgs);
 
             //Consume from the request queue, echoing back all messages received to the client that sent them
             EchoServer server(&channel);
@@ -152,7 +152,7 @@ void EchoServer::received(Message& message)
         std::cout << "Echoing " << message.getData() << " back to " << name << std::endl;
         
         //'echo' the message back:
-        channel->publish(message, Exchange::DEFAULT_DIRECT_EXCHANGE, name);
+        channel->publish(message, Exchange::STANDARD_DIRECT_EXCHANGE, name);
     }
 }
 

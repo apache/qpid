@@ -28,11 +28,21 @@
 #define _FieldTable_
 
 namespace qpid {
+    /**
+     * The framing namespace contains classes that are used to create,
+     * send and receive the basic packets from which AMQP is built.
+     */
 namespace framing {
 
 class Value;
 class Buffer;
 
+/**
+ * A set of name-value pairs. (See the AMQP spec for more details on
+ * AMQP field tables).
+ *
+ * \ingroup clientapi
+ */
 class FieldTable
 {
   public:

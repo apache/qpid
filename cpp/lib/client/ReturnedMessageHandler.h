@@ -28,6 +28,14 @@
 namespace qpid {
 namespace client {
 
+    /**
+     * An interface through which returned messages can be received by
+     * an application.
+     * 
+     * @see Channel::setReturnedMessageHandler()
+     * 
+     * \ingroup clientapi
+     */
     class ReturnedMessageHandler{
     public:
         virtual ~ReturnedMessageHandler();

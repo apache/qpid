@@ -159,12 +159,12 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
-            channel->publish(msg, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
+            channel->publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         }
         //send report request
         Message reportRequest;
         reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
-        channel->publish(reportRequest, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
+        channel->publish(reportRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         if(transactional){
             channel->commit();
         }
@@ -188,7 +188,7 @@ void Publisher::terminate(){
     //send termination request
     Message terminationRequest;
     terminationRequest.getHeaders().setString("TYPE", "TERMINATION_REQUEST");
-    channel->publish(terminationRequest, Exchange::DEFAULT_TOPIC_EXCHANGE, controlTopic);
+    channel->publish(terminationRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
     if(transactional){
         channel->commit();
     }
