@@ -18,6 +18,20 @@
  * under the License.
  *
  */
+
+/**
+ * This file provides one half of a test and example of a pub-sub
+ * style of interaction. See topic_publisher.cpp for the other half,
+ * in which the logic for publishing is defined.
+ * 
+ * This file contains the listener logic. A listener will subscribe to
+ * a logical 'topic'. It will count the number of messages it receives
+ * and the time elapsed between the first one and the last one. It
+ * recognises two types of 'special' message that tell it to (a) send
+ * a report containing this information, (b) shutdown (i.e. stop
+ * listening).
+ */
+
 #include <QpidError.h>
 #include <ClientChannel.h>
 #include <Connection.h>
@@ -32,6 +46,10 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+/**
+ * A message listener implementation in which the runtime logic is
+ * defined.
+ */
 class Listener : public MessageListener{    
     Channel* const channel;
     const std::string responseQueue;
@@ -47,6 +65,9 @@ public:
     virtual void received(Message& msg);
 };
 
+/**
+ * A utility class for managing the options passed in.
+ */
 class Args{
     string host;
     int port;
@@ -69,6 +90,11 @@ public:
     inline bool getHelp() const { return help; }
 };
 
+/**
+ * The main routine creates a Listener instance and sets it up to
+ * consume from a private queue bound to the exchange with the
+ * appropriate topic name.
+ */
 int main(int argc, char** argv){
     Args args;
     args.parse(argc, argv);

@@ -18,6 +18,15 @@
  * under the License.
  *
  */
+
+/**
+ * This class provides an example of using AMQP for a request-response
+ * style system. 'Requests' are messages sent to a well known
+ * destination. A 'service' process consumes these message and
+ * responds by echoing the message back to the sender on a
+ * sender-specified private queue.
+ */
+
 #include <QpidError.h>
 #include <ClientChannel.h>
 #include <Connection.h>
@@ -32,6 +41,11 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+
+/**
+ * A message listener implementation representing the 'service', this
+ * will 'echo' any requests received.
+ */
 class EchoServer : public MessageListener{    
     Channel* const channel;
 public:
@@ -39,11 +53,19 @@ public:
     virtual void received(Message& msg);
 };
 
+/** 
+ * A message listener implementation that merely prints received
+ * messages to the console. Used to report on 'echo' responses.
+ */
 class LoggingListener : public MessageListener{    
 public:
     virtual void received(Message& msg);
 };
 
+/**
+ * A utility class that manages the command line options needed to run
+ * the example confirgurably.
+ */
 class Args{
     string host;
     int port;
@@ -62,6 +84,11 @@ public:
     inline bool getClient() const { return client; }
 };
 
+/**
+ * The main test path. There are two basic modes: 'client' and
+ * 'service'. First one or more services are started, then one or more
+ * clients are started and messages can be sent.
+ */
 int main(int argc, char** argv){
     const std::string echo_service("echo_service");
     Args args;
@@ -69,6 +96,8 @@ int main(int argc, char** argv){
     if (args.getHelp()) {
         args.usage();
     } else if (args.getClient()) {
+        //we have been started in 'client' mode, i.e. we will send an
+        //echo requests and print responses received.
         try {
             //Create connection & open a channel
             Connection connection(args.getTrace());
@@ -110,6 +139,9 @@ int main(int argc, char** argv){
             std::cout << error.what() << std::endl;
         }        
     } else {
+        // we are in 'service' mode, i.e. we will consume messages
+        // from the request queue and echo each request back to the
+        // senders own private response queue.
         try {
             //Create connection & open a channel
             Connection connection(args.getTrace());
