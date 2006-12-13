@@ -1,5 +1,8 @@
 = Developer guide to C++ codebase =
 
+== Extra stuff ==
+sudo cp /usr/share/aclocal/pkg.m4 `aclocal --print-ac-dir`
+
 == Prerequisites ==
 
 If you have taken the sources from SVN you will need the following
@@ -11,10 +14,11 @@ that you have the latest stable version.
  * autoconf   <http://www.gnu.org/software/autoconf/>
  * automake   <http://www.gnu.org/software/automake/>
  * cppunit    <http://cppunit.sourceforge.net> 
-   Note: Ensure cppunit-config is in your PATH.
  * help2man   <http://www.gnu.org/software/help2man/>
  * libtool    <http://www.gnu.org/software/libtool/>
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (aka pkg-config)
+
+Note: Ensure cppunit-config and apr-1-config are in your PATH.
 
 Optional: to re-generated generated code from the XML specification:
 
@@ -26,9 +30,18 @@ Optional: to generate documentation you need:
  * graphviz   <http://www.graphviz.org/>
  * help2man   <http://www.gnu.org/software/help2man/>
 
-If you use yum to install packages, do the command from the README-dist then:
+== Setting up on Fedora 6 ==
 
-# yum install apr-devel cppunit-devel pkgconfig boost-devel doxygen graphviz help2man pkgconfig
+# yum install apr apr-devel boost boost-devel cppunit cppunit-devel
+# yum install pkgconfig doxygen graphviz help2man
+
+Download the latest source distribution of autoconf, automake, libtool
+from URLs above and install each with something like:
+# ./configure && make && sudo make-install
+
+DO NOT install pkg-config from source! If installed in /usr/local, pkg-config
+cannot find packages installed in /usr. Installing in /usr will mess up
+RPM's notion of what's installed. 
 
 == Recent changes ==
 
