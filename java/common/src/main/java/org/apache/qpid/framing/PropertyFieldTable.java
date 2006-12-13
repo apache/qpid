@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,7 +33,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 //extends FieldTable
-public class PropertyFieldTable implements FieldTable, Map
+public class PropertyFieldTable implements FieldTable
 {
     private static final Logger _logger = Logger.getLogger(PropertyFieldTable.class);
 
@@ -597,7 +597,7 @@ public class PropertyFieldTable implements FieldTable, Map
 
             // FIXME: Should be able to short-cut this process if the old and new values are
             // the same object and/or type and size...
-            _encodedSize -= getEncodingSize(currentValue + propertyName, previous);
+            _encodedSize -= getEncodingSize(currentValue + propertyName, previous) + 1;
         }
 
         _propertyNamesTypeMap.put(propertyName, "" + propertyPrefix);
@@ -1028,8 +1028,8 @@ public class PropertyFieldTable implements FieldTable, Map
             // This is ambiguous in the JMS spec and needs thrashing out and potentially
             // testing against other implementations.
 
-            //Add the size of the content
-            _encodedSize += getEncodingSize(key, value);
+            //Add the size of the content plus one for the type identifier
+            _encodedSize += getEncodingSize(key, value) + 1;
         }
 
         if (_logger.isDebugEnabled())
@@ -1044,25 +1044,18 @@ public class PropertyFieldTable implements FieldTable, Map
 
     public Object remove(Object key)
     {
-        if (key instanceof String)
-        {
-            throw new IllegalArgumentException("Property key be a string");
-        }
-
-        char propertyPrefix = ((String) key).charAt(0);
-
         if (_properties.containsKey(key))
         {
             final Object value = _properties.remove(key);
+            String typePrefix = _propertyNamesTypeMap.remove(key);
             // plus one for the type
-            _encodedSize -= EncodingUtils.encodedShortStringLength(((String) key));
+            _encodedSize -= EncodingUtils.encodedShortStringLength(((String) key)) + 1;
 
             // This check is, for now, unnecessary (we don't store null values).
             if (value != null)
             {
-                _encodedSize -= getEncodingSize(propertyPrefix + (String) key, value);
+                _encodedSize -= getEncodingSize(typePrefix, value);
             }
-
             return value;
         }
         else
@@ -1329,7 +1322,7 @@ public class PropertyFieldTable implements FieldTable, Map
      */
     private static int getEncodingSize(String name, Object value)
     {
-        int encodingSize = 1; // Initialy 1 to cover the char prefix
+        int encodingSize = 0;
 
         char propertyPrefix = name.charAt(0);
 
