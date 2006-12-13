@@ -52,6 +52,7 @@ public class PropertyFieldTable implements FieldTable, Map
     public static final char LONG_PROPERTY_PREFIX = 'l';
     public static final char FLOAT_PROPERTY_PREFIX = 'f';
     public static final char DOUBLE_PROPERTY_PREFIX = 'd';
+    public static final char NULL_STRING_PROPERTY_PREFIX = 'n';
 
     public static final char STRING_PROPERTY_PREFIX = AMQP_STRING_PROPERTY_PREFIX;
     public static final char CHAR_PROPERTY_PREFIX = AMQP_ASCII_STRING_PROPERTY_PREFIX;
@@ -235,9 +236,11 @@ public class PropertyFieldTable implements FieldTable, Map
         }
         else
         {
+
+
             String type = _propertyNamesTypeMap.get(string);
 
-            if (type == null)
+            if (type == null || type.equals("" + NULL_STRING_PROPERTY_PREFIX))
             {
                 return null;
             }
@@ -345,7 +348,14 @@ public class PropertyFieldTable implements FieldTable, Map
 
     public Object setString(String string, String string1)
     {
-        return put(STRING_PROPERTY_PREFIX + string, string1);
+        if (string1 == null)
+        {
+            return put(NULL_STRING_PROPERTY_PREFIX + string, null);
+        }
+        else
+        {
+            return put(STRING_PROPERTY_PREFIX + string, string1);
+        }
     }
 
     public Object setChar(String string, char c)
@@ -1167,7 +1177,9 @@ public class PropertyFieldTable implements FieldTable, Map
                         buffer.put((byte) DOUBLE_PROPERTY_PREFIX);
                         EncodingUtils.writeDouble(buffer, (Double) value);
                         break;
-
+                    case NULL_STRING_PROPERTY_PREFIX:
+                        buffer.put((byte) NULL_STRING_PROPERTY_PREFIX);
+                        break;
                     case AMQP_WIDE_STRING_PROPERTY_PREFIX:
                         //case AMQP_STRING_PROPERTY_PREFIX:
                     case STRING_PROPERTY_PREFIX:
@@ -1263,6 +1275,9 @@ public class PropertyFieldTable implements FieldTable, Map
                 case STRING_PROPERTY_PREFIX:
                     value = EncodingUtils.readLongString(buffer);
                     break;
+                case NULL_STRING_PROPERTY_PREFIX:
+                    value = null;
+                    break;
                     //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
                 case CHAR_PROPERTY_PREFIX:
                     value = EncodingUtils.readShortString(buffer).charAt(0);
@@ -1344,6 +1359,9 @@ public class PropertyFieldTable implements FieldTable, Map
                 //case AMQP_STRING_PROPERTY_PREFIX:
             case STRING_PROPERTY_PREFIX:
                 encodingSize += EncodingUtils.encodedLongStringLength((String) value);
+                break;
+            case NULL_STRING_PROPERTY_PREFIX:
+                // There is no need for additiona size beyond the prefix 
                 break;
                 //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
             case CHAR_PROPERTY_PREFIX:
