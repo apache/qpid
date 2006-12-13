@@ -343,7 +343,7 @@ public class EncodingUtils
         long length = buffer.getUnsignedInt();
         if (length == 0)
         {
-            return null;
+            return "";
         }
         else
         {

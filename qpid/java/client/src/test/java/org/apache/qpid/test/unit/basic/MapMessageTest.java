@@ -1170,9 +1170,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
         //Check Special values
         assertTrue(m.getString("nullString") == null);
-        assertTrue(m.getString("emptyString") == null);
-        _logger.warn("An emptyString should not become a null string after transmission.");
-        //assertEqual("", m.getString("emptyString"));
+        assertEqual("", m.getString("emptyString"));
     }
 
     private void assertBytesEqual(byte[] expected, byte[] actual)
