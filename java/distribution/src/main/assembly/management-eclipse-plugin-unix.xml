@@ -19,9 +19,10 @@
 -->
 <assembly>
   <!-- id typically identifies the "type" (src vs bin etc) of the assembly -->
-  <id>eclipse-plugin</id>
+  <id>eclipse-plugin-unix</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
+    <format>tar.gz</format>
     <format>zip</format>
   </formats>
 <!--
@@ -60,7 +61,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>../management/eclipse-plugin/src/main/resources/win32/configuration</directory>
+      <directory>../management/eclipse-plugin/src/main/resources/unix/configuration</directory>
       <outputDirectory>qpidmc/configuration</outputDirectory>
       <includes>
         <include>**</include>
@@ -68,66 +69,22 @@
     </fileSet>
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources</directory>
-      <outputDirectory>qpidmc/eclipse</outputDirectory>
+      <outputDirectory>qpidmc</outputDirectory>
       <includes>
-        <include>*.*</include>
-      </includes>      
+        <include>license.eclipse.txt</include>
+      </includes>
     </fileSet>
     <fileSet>
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
       <includes>
-        <include>**</include>
+        <include>qpidmc.sh</include>
       </includes>
       <fileMode>777</fileMode>
     </fileSet>
   </fileSets>
 
   <dependencySets>
-    <dependencySet>
-      <outputDirectory>qpidmc/eclipse/plugins</outputDirectory>
-      <outputFileNameMapping>${artifactId}_${version}.${extension}</outputFileNameMapping>
-      <unpack>false</unpack>
-      <excludes>
-        <exclude>org.apache.qpid:qpid-distribution</exclude>
-        <exclude>org.apache.qpid:qpid-common</exclude>
-        <exclude>org.apache.qpid:qpid-broker</exclude>
-        <exclude>org.apache.qpid:qpid-client</exclude>
-        <exclude>commons-cli:commons-cli</exclude>        
-        <exclude>commons-configuration:commons-configuration</exclude>
-        <exclude>commons-lang:commons-lang</exclude>
-        <exclude>org.apache.mina:mina-filter-ssl</exclude>
-        <exclude>org.apache.mina:mina-java5</exclude>
-        <exclude>backport-util-concurrent:backport-util-concurrent</exclude>
-        <exclude>org.slf4j:slf4j-simple</exclude>
-        <exclude>junit:junit</exclude>
-        <exclude>org.easymock:easymockclassextension</exclude>
-        <exclude>commons-codec:commons-codec</exclude>
-        <exclude>org.apache.geronimo.specs:geronimo-jms_1.1_spec</exclude>
-        <exclude>commons-collections:commons-collections</exclude>
-        <exclude>commons-lang:commons-lang</exclude>
-        <exclude>org.apache.mina:mina-core</exclude>
-        <exclude>commons-beanutils:commons-beanutils</exclude>
-        <exclude>commons-beanutils:commons-beanutils-core</exclude>
-        <exclude>commons-digester:commons-digester</exclude>
-        <exclude>commons-logging:commons-logging</exclude>
-        <exclude>commons-logging:commons-logging-api</exclude>
-        <exclude>dom4j:dom4j</exclude>
-        <exclude>isorelax:isorelax</exclude>
-        <exclude>jaxen:jaxen</exclude>
-        <exclude>log4j:log4j</exclude>
-        <exclude>msv:msv</exclude>
-        <exclude>xalan:xalan</exclude>
-        <exclude>xml-apis:xml-apis</exclude>
-        <exclude>saxpath:saxpath</exclude>
-        <exclude>servletapi:servletapi</exclude>
-        <exclude>relaxngDatatype:relaxngDatatype</exclude>
-        <exclude>xerces:xercesImpl</exclude>
-        <exclude>javax.servlet:servlet-api</exclude>
-        <exclude>org.eclipse.core:org.eclipse.core.runtime.compatibility.registry</exclude>
-      </excludes>
-      <scope>runtime</scope>
-    </dependencySet>
     <dependencySet>
       <outputDirectory>qpidmc/eclipse/plugins/org.eclipse.core.runtime.compatibility.registry_3.2.0</outputDirectory>
       <outputFileNameMapping>${artifactId}_${version}/</outputFileNameMapping>
@@ -137,6 +94,19 @@
       </includes>
       <scope>runtime</scope>
     </dependencySet>
-  </dependencySets>
-
+  
+  <dependencySet>
+        <outputDirectory>qpidmc/eclipse/plugins</outputDirectory>
+        <outputFileNameMapping>${artifactId}_${version}.${extension}</outputFileNameMapping>
+        <unpack>false</unpack>
+        <excludes>
+            <exclude>org.apache.qpid:qpid-distribution</exclude>
+        </excludes>
+        <includes>
+          <include>org.eclipse.ui:org.eclipse.ui.forms</include>
+          <include>org.apache.qpid.management:org.apache.qpid.management.ui</include>
+        </includes>
+        <scope>runtime</scope>
+    </dependencySet>
+</dependencySets>
 </assembly>
