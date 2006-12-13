@@ -28,6 +28,12 @@
 namespace qpid {
 namespace client {
 
+    /**
+     * A representation of messages for sent or recived through the
+     * client api.
+     *
+     * \ingroup clientapi
+     */
     class Message{
 	qpid::framing::AMQHeaderBody::shared_ptr header;
         std::string data;
@@ -40,9 +46,25 @@ namespace client {
 	Message();
 	~Message();
 	
+        /**
+         * Allows the application to access the content of messages
+         * received.
+         * 
+         * @return a string representing the data of the message
+         */
 	inline std::string getData(){ return data; }
+        /**
+         * Allows the application to set the content of messages to be
+         * sent.
+         * 
+         * @param data a string representing the data of the message
+         */
 	inline void setData(const std::string& _data){ data = _data; }
 
+        /**
+         * @return true if this message was delivered previously (to
+         * any consumer) but was not acknowledged.
+         */
 	inline bool isRedelivered(){ return redelivered; }
 	inline void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
 
@@ -66,6 +88,9 @@ namespace client {
 	void setContentType(const std::string& type);
 	void setContentEncoding(const std::string& encoding);
 	void setHeaders(const qpid::framing::FieldTable& headers);
+        /**
+         * Sets the delivery mode. 1 = non-durable, 2 = durable.
+         */
 	void setDeliveryMode(u_int8_t mode);
 	void setPriority(u_int8_t priority);
 	void setCorrelationId(const std::string& correlationId);

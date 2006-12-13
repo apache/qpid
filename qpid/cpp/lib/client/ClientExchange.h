@@ -25,20 +25,73 @@
 
 namespace qpid {
 namespace client {
-
+    
+    /**
+     * A 'handle' used to represent an AMQP exchange in the Channel
+     * methods. Exchanges are the destinations to which messages are
+     * published. 
+     * 
+     * There are different types of exchange (the standard types are
+     * available as static constants, see DIRECT_EXCHANGE,
+     * TOPIC_EXCHANGE and HEADERS_EXCHANGE).  A Queue can be bound to
+     * an exchange using Channel::bind() and messages published to
+     * that exchange are then routed to the queue based on the details
+     * of the binding and the type of exchange.
+     *
+     * There are some standard exchange instances that are predeclared
+     * on all AMQP brokers. handles for these are defined as statisc
+     * members (see DEFAULT_DIRECT_EXCHANGE, DEFAULT_TOPIC_EXCHANGE
+     * and DEFAULT_HEADERS_EXCHANGE). There is also the 'default'
+     * exchange which is nameless and of type 'direct' and has every
+     * declared queue bound to it by their name.
+     * 
+     * \ingroup clientapi
+     */
     class Exchange{
 	const std::string name;
 	const std::string type;
 
     public:
-
+        /**
+         * A direct exchange routes messages published with routing
+         * key X to any queue bound with key X (i.e. an exact match is
+         * used).
+         */
 	static const std::string DIRECT_EXCHANGE;
+        /**
+         * A topic exchange treat the key with which a queue is bound
+         * as a pattern and routes all messages whose routing keys
+         * match that pattern to the bound queue. The routing key for
+         * a message must consist of zero or more alpha-numeric words
+         * delimited by dots. The pattern is of a similar form but *
+         * can be used to match excatly one word and # can be used to
+         * match zero or more words.
+         */
 	static const std::string TOPIC_EXCHANGE;
+        /**
+         * The headers exchange routes messages based on whether their
+         * headers match the binding arguments specified when
+         * binding. (see the AMQP spec for more details).
+         */
 	static const std::string HEADERS_EXCHANGE;
 
-	static const Exchange DEFAULT_DIRECT_EXCHANGE;
-	static const Exchange DEFAULT_TOPIC_EXCHANGE;
-	static const Exchange DEFAULT_HEADERS_EXCHANGE;
+        /**
+         * The 'default' exchange, nameless and of type 'direct'. Has
+         * every declared queue bound to it by name.
+         */
+	static const Exchange DEFAULT_EXCHANGE;
+        /**
+         * The standard direct exchange, named amq.direct.
+         */
+	static const Exchange STANDARD_DIRECT_EXCHANGE;
+        /**
+         * The standard topic exchange, named amq.topic.
+         */
+	static const Exchange STANDARD_TOPIC_EXCHANGE;
+        /**
+         * The standard headers exchange, named amq.header.
+         */
+	static const Exchange STANDARD_HEADERS_EXCHANGE;
 
 	Exchange(std::string name, std::string type = DIRECT_EXCHANGE);
 	const std::string& getName() const;

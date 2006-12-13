@@ -20,17 +20,16 @@
  */
 #include <framing/amqp_framing.h>
 
-/**
- * This file replaces the auto-generated instances in the former
- * amqp_methods.h file. Add additional instances as needed.
- */
-
 #ifndef _MethodBodyInstances_h_
 #define _MethodBodyInstances_h_
 
 namespace qpid {
 namespace client {
 
+/**
+ * A list of method body instances that can be used to compare against
+ * incoming bodies.
+ */
 class MethodBodyInstances
 {
 private:
