@@ -38,14 +38,26 @@
 #include <ResponseHandler.h>
 
 namespace qpid {
+    /**
+     * The client namespace contains all classes that make up a client
+     * implementation of the AMQP protocol. The key classes that form
+     * the basis of the client API to be used by applications are
+     * Connection and Channel.
+     */
 namespace client {
 
     class Channel;
 
     /**
+     * \defgroup clientapi Application API for an AMQP client
+     */
+
+    /**
      * Represents a connection to an AMQP broker. All communication is
      * initiated by establishing a connection, then opening one or
-     * more channels over that connection.
+     * more Channels over that connection.
+     * 
+     * \ingroup clientapi
      */
     class Connection : public virtual qpid::framing::InputHandler, 
         public virtual qpid::sys::TimeoutHandler, 
@@ -92,21 +104,52 @@ namespace client {
 	~Connection();
 
         /**
-         *
+         * Opens a connection to a broker.
+         * 
+         * @param host the host on which the broker is running
+         * 
+         * @param port the port on the which the broker is listening
+         * 
+         * @param uid the userid to connect with
+         * 
+         * @param pwd the password to connect with (currently SASL
+         * PLAIN is the only authentication method supported so this
+         * is sent in clear text)
+         * 
+         * @param virtualhost the AMQP virtual host to use (virtual
+         * hosts, where implemented(!), provide namespace partitioning
+         * within a single broker).
          */
         void open(const std::string& host, int port = 5672, 
                   const std::string& uid = "guest", const std::string& pwd = "guest", 
                   const std::string& virtualhost = "/");
+        /**
+         * Closes the connection. Any further use of this connection
+         * (without reopening it) will not succeed.
+         */
         void close();
+        /**
+         * Opens a Channel. In AMQP channels are like multi-plexed
+         * 'sessions' of work over a connection. Almost all the
+         * interaction with AMQP is done over a channel.
+         * 
+         * @param channel a pointer to a channel instance that will be
+         * used to represent the new channel.
+         */
 	void openChannel(Channel* channel);
 	/*
          * Requests that the server close this channel, then removes
          * the association to the channel from this connection
+         *
+         * @param channel a pointer to the channel instance to close
          */
 	void closeChannel(Channel* channel);
 	/*
          * Removes the channel from association with this connection,
 	 * without sending a close request to the server.
+         *
+         * @param channel a pointer to the channel instance to
+         * disassociate
          */
 	void removeChannel(Channel* channel);
 
@@ -117,6 +160,9 @@ namespace client {
 
 	virtual void shutdown();
 
+        /**
+         * @return the maximum frame size in use on this connection
+         */
 	inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
     };
 
