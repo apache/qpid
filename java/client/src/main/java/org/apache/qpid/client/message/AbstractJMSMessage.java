@@ -32,7 +32,6 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.JmsNotImplementedException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -40,7 +39,6 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Map;
 
 public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms.Message
@@ -257,13 +255,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-
-        if (getJmsContentHeaderProperties() == null)
-        {
-            System.out.println("HEADERS ARE NULL");
-        }
-
-
         return getJmsContentHeaderProperties().getHeaders().getBoolean(propertyName);
     }
 
@@ -383,6 +374,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         getJmsContentHeaderProperties().getHeaders().setObject(propertyName, object);
     }
 
+    protected void removeProperty(String propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        getJmsContentHeaderProperties().getHeaders().remove(propertyName);
+    }
+
     public void acknowledge() throws JMSException
     {
         // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
@@ -468,31 +465,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
 
         // Call to ensure that the it has been set.
         getJmsContentHeaderProperties().getHeaders();
-    }
-
-    public FieldTable populateHeadersFromMessageProperties()
-    {
-        //
-        // We need to convert every property into a String representation
-        // Note that type information is preserved in the property name
-        //
-        final FieldTable table = FieldTableFactory.newFieldTable();
-        final Iterator entries = getJmsContentHeaderProperties().getHeaders().entrySet().iterator();
-        while (entries.hasNext())
-        {
-            final Map.Entry entry = (Map.Entry) entries.next();
-            final String propertyName = (String) entry.getKey();
-            if (propertyName == null)
-            {
-                continue;
-            }
-            else
-            {
-                table.put(propertyName, entry.getValue().toString());
-            }
-        }
-        return table;
-
     }
 
     public BasicContentHeaderProperties getJmsContentHeaderProperties()
