@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
@@ -97,8 +98,39 @@ public class StreamMessageTest extends TestCase
         {
             assertTrue("Expected MessageEOFException: " + e, e instanceof MessageEOFException);
         }
+    }
 
+    public void testModifyReceivedMessageExpandsBuffer() throws Exception
+    {
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        AMQQueue queue = new AMQQueue("testQ");
+        MessageConsumer consumer = consumerSession.createConsumer(queue);
+        consumer.setMessageListener(new MessageListener()
+        {
 
-
+            public void onMessage(Message message)
+            {
+                StreamMessage sm = (StreamMessage) message;
+                try
+                {
+                    sm.clearBody();
+                    sm.writeString("dfgjshfslfjshflsjfdlsjfhdsljkfhdsljkfhsd");
+                }
+                catch (JMSException e)
+                {
+                    _logger.error("Error when writing large string to received msg: " + e, e);
+                    fail("Error when writing large string to received msg" + e);
+                }
+            }
+        });
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MessageProducer mandatoryProducer = producerSession.createProducer(queue);
+        con.start();
+        StreamMessage sm = producerSession.createStreamMessage();
+        sm.writeInt(42);
+        mandatoryProducer.send(sm);
+        Thread.sleep(2000);
     }
 }
