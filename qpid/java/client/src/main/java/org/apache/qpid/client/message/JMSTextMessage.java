@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,6 +34,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     private static final String MIME_TYPE = "text/plain";
 
     private String _decodedValue;
+
+    /**
+     * This constant represents the name of a property that is set when the message payload is null.
+     */
+    private static final String PAYLOAD_NULL_PROPERTY = "JMS_QPID_NULL";
 
     JMSTextMessage() throws JMSException
     {
@@ -91,31 +96,34 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         return MIME_TYPE;
     }
 
-    public void setText(String string) throws JMSException
+    public void setText(String text) throws JMSException
     {
         checkWritable();
-        
+
         clearBody();
         try
         {
-            _data = ByteBuffer.allocate(string.length());
-            _data.limit(string.length());
-            //_data.sweep();
-            _data.setAutoExpand(true);
-            if (getJmsContentHeaderProperties().getEncoding() == null)
-            {
-                _data.put(string.getBytes());
+            if (text != null)
+            {                
+                _data = ByteBuffer.allocate(text.length());
+                _data.limit(text.length()) ;
+                //_data.sweep();
+                _data.setAutoExpand(true);
+                if (getJmsContentHeaderProperties().getEncoding() == null)
+                {
+                    _data.put(text.getBytes());
+                }
+                else
+                {
+                    _data.put(text.getBytes(getJmsContentHeaderProperties().getEncoding()));
+                }
             }
-            else
-            {
-                _data.put(string.getBytes(getJmsContentHeaderProperties().getEncoding()));
-            }
-            _decodedValue = string;
+            _decodedValue = text;
         }
         catch (UnsupportedEncodingException e)
         {
             // should never occur
-            JMSException jmse = new JMSException("Unable to decode string data");
+            JMSException jmse = new JMSException("Unable to decode text data");
             jmse.setLinkedException(e);
         }
     }
@@ -133,6 +141,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         else
         {
             _data.rewind();
+
+            if (propertyExists(PAYLOAD_NULL_PROPERTY) && getBooleanProperty(PAYLOAD_NULL_PROPERTY))
+            {
+                return null;
+            }
             if (getJmsContentHeaderProperties().getEncoding() != null)
             {
                 try
@@ -160,6 +173,20 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 }
             }
             return _decodedValue;
+        }
+    }
+
+    @Override
+    public void prepareForSending() throws JMSException
+    {
+        super.prepareForSending();
+        if (_data == null)
+        {
+            setBooleanProperty(PAYLOAD_NULL_PROPERTY, true);
+        }
+        else
+        {
+            removeProperty(PAYLOAD_NULL_PROPERTY);
         }
     }
 }
