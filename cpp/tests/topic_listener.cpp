@@ -88,7 +88,7 @@ int main(int argc, char** argv){
             Queue control;
             channel.declareQueue(control);
             qpid::framing::FieldTable bindArgs;
-            channel.bind(Exchange::DEFAULT_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
+            channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
             //set up listener
             Listener listener(&channel, response.getName(), args.getTransactional());
             std::string tag;

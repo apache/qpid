@@ -28,6 +28,14 @@
 namespace qpid {
 namespace client {
 
+    /**
+     * An interface through which asynchronously delivered messages
+     * can be received by an application. 
+     * 
+     * @see Channel::consume()
+     * 
+     * \ingroup clientapi
+     */
     class MessageListener{
     public:
         virtual ~MessageListener();
