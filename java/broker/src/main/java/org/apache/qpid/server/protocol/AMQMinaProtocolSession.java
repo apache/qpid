@@ -305,7 +305,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return new ArrayList<AMQChannel>(_channelMap.values());
     }
 
-    public AMQChannel getChannel(int channelId)
+    public AMQChannel getChannel(int channelId) throws AMQException
     {
         return _channelMap.get(channelId);
     }
