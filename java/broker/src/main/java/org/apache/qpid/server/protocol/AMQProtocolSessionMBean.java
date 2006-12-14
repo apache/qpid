@@ -187,13 +187,14 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void closeChannel(int id) throws JMException
     {
-        AMQChannel channel = _session.getChannel(id);
-        if (channel == null)
-        {
-            throw new JMException("The channel (channel Id = " + id + ") does not exist");
-        }
         try
         {
+            AMQChannel channel = _session.getChannel(id);
+            if (channel == null)
+            {
+                throw new JMException("The channel (channel Id = " + id + ") does not exist");
+            }
+
             _session.closeChannel(id);
         }
         catch (AMQException ex)
