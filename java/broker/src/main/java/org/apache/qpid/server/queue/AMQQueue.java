@@ -21,15 +21,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -37,13 +30,7 @@ import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.Notification;
-import javax.management.monitor.MonitorNotification;
-import javax.management.openmbean.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -108,7 +95,7 @@ public class AMQQueue implements Managable, Comparable
      * max allowed number of messages on a queue.
      */
     private Integer _maxMessageCount = 10000;
-
+    
     /**
      * max queue depth(KB) for the queue
      */
@@ -123,322 +110,6 @@ public class AMQQueue implements Managable, Comparable
     {
         return _name.compareTo(((AMQQueue) o).getName());
     }
-
-    /**
-     * MBean class for AMQQueue. It implements all the management features exposed
-     * for an AMQQueue.
-     */
-    @MBeanDescription("Management Interface for AMQQueue")
-    private final class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
-    {
-        private String _queueName = null;
-        // OpenMBean data types for viewMessages method
-        private String[] _msgAttributeNames = {"Message Id", "Header", "Size(bytes)", "Redelivered"};
-        private String[] _msgAttributeIndex = {_msgAttributeNames[0]};
-        private OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
-        private CompositeType _messageDataType = null;           // Composite type for representing AMQ Message data.
-        private TabularType _messagelistDataType = null;         // Datatype for representing AMQ messages list.
-
-        // OpenMBean data types for viewMessageContent method
-        private CompositeType _msgContentType = null;
-        private String[]      _msgContentAttributes = {"Message Id", "MimeType", "Encoding", "Content"};
-        private OpenType[]    _msgContentAttributeTypes = new OpenType[4];
-
-        @MBeanConstructor("Creates an MBean exposing an AMQQueue")
-        public AMQQueueMBean() throws JMException
-        {
-            super(ManagedQueue.class, ManagedQueue.TYPE);
-            init();
-        }
-
-        /**
-         * initialises the openmbean data types
-         */
-        private void init() throws OpenDataException
-        {
-            _queueName = jmxEncode(new StringBuffer(_name), 0).toString();
-            _msgContentAttributeTypes[0] = SimpleType.LONG;                    // For message id
-            _msgContentAttributeTypes[1] = SimpleType.STRING;                  // For MimeType
-            _msgContentAttributeTypes[2] = SimpleType.STRING;                  // For Encoding
-            _msgContentAttributeTypes[3] = new ArrayType(1, SimpleType.BYTE);  // For message content
-            _msgContentType = new CompositeType("Message Content", "AMQ Message Content", _msgContentAttributes,
-                                                 _msgContentAttributes, _msgContentAttributeTypes);
-
-            _msgAttributeTypes[0] = SimpleType.LONG;                      // For message id
-            _msgAttributeTypes[1] = new ArrayType(1, SimpleType.STRING);  // For header attributes
-            _msgAttributeTypes[2] = SimpleType.LONG;                      // For size
-            _msgAttributeTypes[3] = SimpleType.BOOLEAN;                   // For redelivered
-
-            _messageDataType = new CompositeType("Message","AMQ Message", _msgAttributeNames, _msgAttributeNames, _msgAttributeTypes);
-            _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType, _msgAttributeIndex);
-        }
-
-        public String getObjectInstanceName()
-        {
-            return _queueName;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public boolean isDurable()
-        {
-            return _durable;
-        }
-
-        public String getOwner()
-        {
-            return _owner;
-        }
-
-        public boolean isAutoDelete()
-        {
-            return _autoDelete;
-        }
-
-        public Integer getMessageCount()
-        {
-            return _deliveryMgr.getQueueMessageCount();
-        }
-
-        public Long getMaximumMessageSize()
-        {
-            return _maxMessageSize;
-        }
-
-        public void setMaximumMessageSize(Long value)
-        {
-            _maxMessageSize = value;
-        }
-
-        public Integer getConsumerCount()
-        {
-            return _subscribers.size();
-        }
-
-        public Integer getActiveConsumerCount()
-        {
-            return _subscribers.getWeight();
-        }
-
-        public Long getReceivedMessageCount()
-        {
-            return _totalMessagesReceived;
-        }
-
-        public Integer getMaximumMessageCount()
-        {
-            return _maxMessageCount;
-        }
-
-        public void setMaximumMessageCount(Integer value)
-        {
-            _maxMessageCount = value;
-        }
-
-        public Long getMaximumQueueDepth()
-        {
-            return _maxQueueDepth;
-        }
-
-        // Sets the queue depth, the max queue size
-        public void setMaximumQueueDepth(Long value)
-        {
-            _maxQueueDepth = value;
-        }
-
-        /**
-         * returns the size of messages(KB) in the queue.
-         */
-        public Long getQueueDepth()
-        {
-            List<AMQMessage> list = _deliveryMgr.getMessages();
-            if (list.size() == 0)
-            {
-                return 0l;
-            }
-
-            long queueDepth = 0;
-            for (AMQMessage message : list)
-            {
-                queueDepth = queueDepth + getMessageSize(message);
-            }
-            return (long)Math.round(queueDepth / 1000);
-        }
-
-        /**
-         * returns size of message in bytes
-         */
-        private long getMessageSize(AMQMessage msg)
-        {
-            if (msg == null)
-            {
-                return 0l;
-            }
-
-            return msg.getContentHeaderBody().bodySize;
-        }
-
-        /**
-         * Checks if there is any notification to be send to the listeners
-         */
-        private void checkForNotification(AMQMessage msg)
-        {
-            // Check for threshold message count
-            Integer msgCount = getMessageCount();
-            if (msgCount >= getMaximumMessageCount())
-            {
-                notifyClients("Message count(" + msgCount + ") has reached or exceeded the threshold high value");
-            }
-
-            // Check for threshold message size
-            long messageSize = getMessageSize(msg);
-            if (messageSize >= _maxMessageSize)
-            {
-                notifyClients("Message size(ID=" + msg.getMessageId() + ", size=" + messageSize + " bytes) is higher than the threshold value");
-            }
-
-            // Check for threshold queue depth in bytes
-            long queueDepth = getQueueDepth();
-            if (queueDepth >= _maxQueueDepth)
-            {
-                notifyClients("Queue depth(" + queueDepth + "), Queue size has reached the threshold high value");
-            }
-        }
-
-        /**
-         * Sends the notification to the listeners
-         */
-        private void notifyClients(String notificationMsg)
-        {
-            Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
-                                 ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
-
-            _broadcaster.sendNotification(n);
-        }
-
-        public void deleteMessageFromTop() throws JMException
-        {
-            try
-            {
-                _deliveryMgr.removeAMessageFromTop();
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        public void clearQueue() throws JMException
-        {
-            try
-            {
-                _deliveryMgr.clearAllMessages();
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        /**
-         * returns message content as byte array and related attributes for the given message id.
-         */
-        public CompositeData viewMessageContent(long msgId) throws JMException
-        {
-            List<AMQMessage> list = _deliveryMgr.getMessages();
-            AMQMessage msg = null;
-            for (AMQMessage message : list)
-            {
-                if (message.getMessageId() == msgId)
-                {
-                    msg = message;
-                    break;
-                }
-            }
-
-            if (msg == null)
-            {
-                throw new JMException("AMQMessage with message id = " + msgId + " is not in the " + _queueName );
-            }
-            // get message content
-            List<ContentBody> cBodies = msg.getContentBodies();
-            List<Byte> msgContent = new ArrayList<Byte>();
-            for (ContentBody body : cBodies)
-            {
-                if (body.getSize() != 0)
-                {
-                    ByteBuffer slice = body.payload.slice();
-                    for (int j = 0; j < slice.limit(); j++)
-                    {
-                        msgContent.add(slice.get());
-                    }
-                }
-            }
-
-            // Create header attributes list
-            BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties)msg.getContentHeaderBody().properties;
-            String mimeType = headerProperties.getContentType();
-            String encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
-            Object[] itemValues = {msgId, mimeType, encoding, msgContent.toArray(new Byte[0])};
-
-            return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
-        }
-
-        /**
-         * Returns the header contents of the messages stored in this queue in tabular form.
-         */
-        public TabularData viewMessages(int beginIndex, int endIndex) throws JMException
-        {
-            if ((beginIndex > endIndex) || (beginIndex < 1))
-            {
-                throw new JMException("From Index = " + beginIndex + ", To Index = " + endIndex +
-                                      "\nFrom Index should be greater than 0 and less than To Index");
-            }
-
-            List<AMQMessage> list = _deliveryMgr.getMessages();
-            TabularDataSupport _messageList = new TabularDataSupport(_messagelistDataType);
-
-            // Create the tabular list of message header contents
-            for (int i = beginIndex; i <= endIndex && i <=  list.size(); i++)
-            {
-                AMQMessage msg = list.get(i - 1);
-                ContentHeaderBody headerBody =  msg.getContentHeaderBody();
-                // Create header attributes list
-                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties)headerBody.properties;
-                List<String> headerAttribsList = new ArrayList<String>();
-                headerAttribsList.add("App Id=" + headerProperties.getAppId());
-                headerAttribsList.add("MimeType=" + headerProperties.getContentType());
-                headerAttribsList.add("Correlation Id=" + headerProperties.getCorrelationId());
-                headerAttribsList.add("Encoding=" + headerProperties.getEncoding());
-                headerAttribsList.add(headerProperties.toString());
-
-                Object[] itemValues = {msg.getMessageId(), headerAttribsList.toArray(new String[0]),
-                                       headerBody.bodySize, msg.isRedelivered()};
-                CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
-                _messageList.put(messageData);
-            }
-
-            return _messageList;
-        }
-
-        /**
-         * returns Notifications sent by this MBean.
-         */
-        @Override
-        public MBeanNotificationInfo[] getNotificationInfo()
-        {
-            String[] notificationTypes = new String[] {MonitorNotification.THRESHOLD_VALUE_EXCEEDED};
-            String name = MonitorNotification.class.getName();
-            String description = "Either Message count or Queue depth or Message size has reached threshold high value";
-            MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
-
-            return new MBeanNotificationInfo[]{info1};
-        }
-
-    } // End of AMQMBean class
 
     public AMQQueue(String name, boolean durable, String owner,
                     boolean autoDelete, QueueRegistry queueRegistry)
@@ -533,7 +204,7 @@ public class AMQQueue implements Managable, Comparable
     {
         try
         {
-            return new AMQQueueMBean();
+            return new AMQQueueMBean(this);
         }
         catch (JMException ex)
         {
@@ -566,14 +237,110 @@ public class AMQQueue implements Managable, Comparable
         return _autoDelete;
     }
 
+    /**
+     * @return no of messages(undelivered) on the queue.
+     */
     public int getMessageCount()
     {
         return _deliveryMgr.getQueueMessageCount();
     }
 
+    /**
+     * @return List of messages(undelivered) on the queue.
+     */
+    public List<AMQMessage> getMessagesOnTheQueue()
+    {
+        return _deliveryMgr.getMessages();
+    }
+
+    /**
+     * @param messageId
+     * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
+     */
+    public AMQMessage getMessageOnTheQueue(long messageId)
+    {
+        List<AMQMessage> list = getMessagesOnTheQueue();
+        AMQMessage msg = null;
+        for (AMQMessage message : list)
+        {
+            if (message.getMessageId() == messageId)
+            {
+                msg = message;
+                break;
+            }
+        }
+
+        return msg;
+    }
+
+    /**
+     * @return MBean object associated with this Queue
+     */
     public ManagedObject getManagedObject()
     {
         return _managedObject;
+    }
+
+    public Long getMaximumMessageSize()
+    {
+        return _maxMessageSize;
+    }
+
+    public void setMaximumMessageSize(Long value)
+    {
+        _maxMessageSize = value;
+    }
+
+    public Integer getConsumerCount()
+    {
+        return _subscribers.size();
+    }
+
+    public Integer getActiveConsumerCount()
+    {
+        return _subscribers.getWeight();
+    }
+
+    public Long getReceivedMessageCount()
+    {
+        return _totalMessagesReceived;
+    }
+
+    public Integer getMaximumMessageCount()
+    {
+        return _maxMessageCount;
+    }
+
+    public void setMaximumMessageCount(Integer value)
+    {
+        _maxMessageCount = value;
+    }
+
+    public Long getMaximumQueueDepth()
+    {
+        return _maxQueueDepth;
+    }
+
+    // Sets the queue depth, the max queue size
+    public void setMaximumQueueDepth(Long value)
+    {
+        _maxQueueDepth = value;
+    }
+
+    /**
+     * Removes the AMQMessage from the top of the queue.
+     */
+    public void deleteMessageFromTop() throws AMQException
+    {
+        _deliveryMgr.removeAMessageFromTop();
+    }
+
+    /**
+     * removes all the messages from the queue.
+     */
+    public void clearQueue() throws AMQException
+    {
+        _deliveryMgr.clearAllMessages();
     }
 
     public void bind(String routingKey, Exchange exchange)
