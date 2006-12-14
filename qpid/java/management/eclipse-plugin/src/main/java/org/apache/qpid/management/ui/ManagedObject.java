@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.management.ui;
 
+/**
+ * Abstract class representing a managed object
+ * @author Bhupendra Bhardwaj
+ */
 public abstract class ManagedObject
 {
     private String _name;

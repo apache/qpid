@@ -28,6 +28,10 @@ import org.eclipse.ui.application.IActionBarConfigurer;
 import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 
+/**
+ * 
+ * @author Bhupendra Bhardwaj
+ */
 public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor
 {
     public ApplicationWorkbenchWindowAdvisor(IWorkbenchWindowConfigurer configurer)
@@ -49,7 +53,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor
         configurer.setShowCoolBar(true);
         configurer.setShowStatusLine(false);
         
-        configurer.setTitle("Qpid Management Console");
+        configurer.setTitle(Constants.APPLICATION_NAME);
     }  
     
     public void postWindowCreate()
