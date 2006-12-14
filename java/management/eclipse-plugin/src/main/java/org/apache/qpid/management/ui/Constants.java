@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.management.ui;
 
+/**
+ * Contains constants for the application
+ * @author Bhupendra Bhardwaj
+ *
+ */
 public class Constants
 {
     public final static String APPLICATION_NAME = "Qpid Management Console";

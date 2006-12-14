@@ -22,6 +22,11 @@ package org.apache.qpid.management.ui;
 
 import java.util.HashMap;
 
+/**
+ * Class representing a managed bean on the managed server
+ * @author Bhupendra Bhardwaj
+ *
+ */
 public abstract class ManagedBean extends ManagedObject
 {
     private String _uniqueName = "";

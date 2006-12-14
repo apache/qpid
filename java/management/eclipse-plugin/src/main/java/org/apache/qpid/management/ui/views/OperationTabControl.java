@@ -595,15 +595,6 @@ public class OperationTabControl extends TabControl
         else
         {
             ViewUtility.disposeChildren(_resultsComposite);
-            /*
-            if (_resultsComposite == null || _resultsComposite.isDisposed())
-            {
-                _resultsComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-                GridData layoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
-                layoutData.verticalIndent = 20;
-                _resultsComposite.setLayoutData(layoutData);
-                _resultsComposite.setLayout(new GridLayout());
-            }*/
             populateResults(result, _resultsComposite);
             _resultsComposite.layout();
             _form.layout();
