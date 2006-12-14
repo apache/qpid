@@ -34,8 +34,8 @@ public class Application implements IPlatformRunnable
     static Shell shell = null;
 
     /*
-     * (non-Javadoc)
-     * 
+     * The call to createAndRunWorkbench will not return until the workbench is closed.
+     * The SWT event loop and other low-level logistics are handled inside this method.
      * @see org.eclipse.core.runtime.IPlatformRunnable#run(java.lang.Object)
      */
     public Object run(Object args) throws Exception

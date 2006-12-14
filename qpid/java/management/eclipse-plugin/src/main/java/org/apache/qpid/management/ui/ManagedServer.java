@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.management.ui;
 
+/**
+ * Class representing a server being managed eg. MBeanServer
+ * @author Bhupendra Bhardwaj
+ */
 public class ManagedServer extends ManagedObject
 {
     private String host;
