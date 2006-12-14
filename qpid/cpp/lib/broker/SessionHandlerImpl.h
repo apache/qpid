@@ -76,7 +76,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     qpid::sys::SessionContext* context;
-    qpid::framing::AMQP_ClientProxy client;
+    qpid::framing::AMQP_ClientProxy* client;
     QueueRegistry* queues;
     ExchangeRegistry* const exchanges;
     AutoDelete* const cleaner;
