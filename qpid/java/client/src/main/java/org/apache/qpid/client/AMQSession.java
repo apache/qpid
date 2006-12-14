@@ -28,6 +28,7 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.framing.*;
@@ -1143,9 +1144,18 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void unsubscribe(String name) throws JMSException
     {
         checkNotClosed();
-
-        //send a queue.delete for the subscription
+   	      
         String queue = _connection.getClientID() + ":" + name;
+ 
+        AMQFrame queueDeclareFrame = QueueDeclareBody.createAMQFrame(_channelId,0,queue,true,false, false, false, true, null);        
+        
+        try {
+			AMQMethodEvent event = _connection.getProtocolHandler().syncWrite(queueDeclareFrame,QueueDeclareOkBody.class);
+			// if this method doen't throw an exception means we have received a queue declare ok.
+		} catch (AMQException e) {
+			throw new javax.jms.InvalidDestinationException("This destination doesn't exist");
+		}       
+        //send a queue.delete for the subscription
         AMQFrame frame = QueueDeleteBody.createAMQFrame(_channelId, 0, queue, false, false, true);
         _connection.getProtocolHandler().writeFrame(frame);
     }
