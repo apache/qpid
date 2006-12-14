@@ -43,7 +43,12 @@ public class TopicPublisherAdapter implements TopicPublisher
         _delegate.send(msg, deliveryMode, priority, timeToLive);
     }
 
-    public void publish(Topic topic, Message msg, int deliveryMode, int priority, long timeToLive)
+	public int getDeliveryMode() throws JMSException {
+		checkPreConditions();
+		return _delegate.getDeliveryMode();
+	}
+
+	public void publish(Topic topic, Message msg, int deliveryMode, int priority, long timeToLive)
             throws JMSException
     {
         checkPreConditions();
@@ -51,41 +56,37 @@ public class TopicPublisherAdapter implements TopicPublisher
         _delegate.send(topic, msg, deliveryMode, priority, timeToLive);
     }
 
-    public void close() throws JMSException
+	public void close() throws JMSException
     {
         _delegate.close();
     }
 
-    public int getDeliveryMode() throws JMSException
-    {
-        return _delegate.getDeliveryMode();
-    }
+	public boolean getDisableMessageID() throws JMSException {
+		checkPreConditions();
+		return _delegate.getDisableMessageID();
+	}
 
+	public boolean getDisableMessageTimestamp() throws JMSException {
+		checkPreConditions();
+		return _delegate.getDisableMessageTimestamp();
+	}
+	
     public Destination getDestination() throws JMSException
     {
+		checkPreConditions();
         return _delegate.getDestination();
     }
 
-    public boolean getDisableMessageID() throws JMSException
-    {
-        return _delegate.getDisableMessageID();
-    }
+    public int getPriority() throws JMSException {
+		checkPreConditions();
+		return _delegate.getPriority();
+	}
 
-    public boolean getDisableMessageTimestamp() throws JMSException
-    {
-        return _delegate.getDisableMessageTimestamp();
-    }
-
-    public int getPriority() throws JMSException
-    {
-        return _delegate.getPriority();
-    }
-
-    public long getTimeToLive() throws JMSException
-    {
-        return _delegate.getTimeToLive();
-    }
-
+    public long getTimeToLive() throws JMSException {
+		checkPreConditions();
+		return _delegate.getTimeToLive();
+	}
+    
     public void send(Message msg) throws JMSException
     {
         checkPreConditions();
