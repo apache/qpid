@@ -40,9 +40,6 @@ import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -50,24 +47,12 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.Notification;
-import javax.management.monitor.MonitorNotification;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
 import javax.security.sasl.SaslServer;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -93,7 +78,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private AMQCodecFactory _codecFactory;
 
-    private ManagedAMQProtocolSession _managedObject;
+    private AMQProtocolSessionMBean _managedObject;
 
     private SaslServer _saslServer;
 
@@ -102,11 +87,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private Object _lastSent;
 
     private boolean _closed;
-
+    // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
     
     /* AMQP Version for this session */
-    
     private byte _major;
     private byte _minor;
 
@@ -115,190 +99,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _managedObject;
     }
 
-    /**
-     * This class implements the management interface (is an MBean). In order to
-     * make more attributes, operations and notifications available over JMX simply
-     * augment the ManagedConnection interface and add the appropriate implementation here.
-     */
-    @MBeanDescription("Management Bean for an AMQ Broker Connection")
-    private final class ManagedAMQProtocolSession extends AMQManagedObject implements ManagedConnection
-    {
-        private String _name = null;
-        //openmbean data types for representing the channel attributes
-        private String[] _channelAtttibuteNames = { "Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
-        private String[] _indexNames = {_channelAtttibuteNames[0]};
-        private OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
-        private CompositeType _channelType = null;      // represents the data type for channel data
-        private TabularType _channelsType = null;       // Data type for list of channels type
-        private TabularDataSupport _channelsList = null;
-
-        @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
-        public ManagedAMQProtocolSession() throws JMException
-        {
-            super(ManagedConnection.class, ManagedConnection.TYPE);
-            init();
-        }
-
-        /**
-         * initialises the openmbean data types
-         */
-        private void init() throws OpenDataException
-        {
-            String remote = getRemoteAddress();
-            remote = "anonymous".equals(remote) ? remote + hashCode() : remote;
-            _name = jmxEncode(new StringBuffer(remote), 0).toString();
-            _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
-                                             _channelAtttibuteNames, _channelAttributeTypes);
-            _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
-        }
-
-        public Date getLastIoTime()
-        {
-            return new Date(_minaProtocolSession.getLastIoTime());
-        }
-
-        public String getRemoteAddress()
-        {
-            return _minaProtocolSession.getRemoteAddress().toString();
-        }
-
-        public Long getWrittenBytes()
-        {
-            return _minaProtocolSession.getWrittenBytes();
-        }
-
-        public Long getReadBytes()
-        {
-            return _minaProtocolSession.getReadBytes();
-        }
-
-        public Long getMaximumNumberOfChannels()
-        {
-            return _maxNoOfChannels;
-        }
-
-        public void setMaximumNumberOfChannels(Long value)
-        {
-            _maxNoOfChannels = value;
-        }
-
-        public String getObjectInstanceName()
-        {
-            return _name;
-        }
-
-        public void commitTransactions(int channelId) throws JMException
-        {
-            try
-            {
-                AMQChannel channel = _channelMap.get(channelId);
-                if (channel == null)
-                {
-                    throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
-                }
-                if (channel.isTransactional())
-                {
-                    channel.commit();
-                }
-            }
-            catch(AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        public void rollbackTransactions(int channelId) throws JMException
-        {
-            try
-            {
-                AMQChannel channel = _channelMap.get(channelId);
-                if (channel == null)
-                {
-                    throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
-                }
-                if (channel.isTransactional())
-                {
-                    channel.rollback();
-                }
-            }
-            catch(AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        /**
-         * Creates the list of channels in tabular form from the _channelMap.
-         * @return  list of channels in tabular form.
-         * @throws OpenDataException
-         */
-        public TabularData channels() throws OpenDataException
-        {
-            _channelsList = new TabularDataSupport(_channelsType);
-
-            for (Map.Entry<Integer, AMQChannel> entry : _channelMap.entrySet())
-            {
-                AMQChannel channel = entry.getValue();
-                Object[] itemValues = {channel.getChannelId(), channel.isTransactional(),
-                                       (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
-                                       channel.getUnacknowledgedMessageMap().size()};
-
-                CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
-                _channelsList.put(channelData);
-            }
-
-            return _channelsList;
-        }
-        
-        public void closeChannel(int id) throws Exception
-        {
-            try
-            {
-                AMQMinaProtocolSession.this.closeChannel(id);
-            }
-            catch (AMQException ex)
-            {
-                throw new Exception(ex.toString());
-            }
-        }
-
-        public void closeConnection() throws Exception
-        {
-            try
-            {
-                AMQMinaProtocolSession.this.closeSession();
-            }
-            catch (AMQException ex)
-            {
-                throw new Exception(ex.toString());
-            }
-        }
-
-        @Override
-        public MBeanNotificationInfo[] getNotificationInfo()
-        {
-            String[] notificationTypes = new String[] {MonitorNotification.THRESHOLD_VALUE_EXCEEDED};
-            String name = MonitorNotification.class.getName();
-            String description = "Channel count has reached threshold value";
-            MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
-
-            return new MBeanNotificationInfo[] {info1};
-        }
-
-        private void checkForNotification()
-        {
-            int channelsCount = _channelMap.size();
-            if (channelsCount >= getMaximumNumberOfChannels())
-            {
-                Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
-                                     ++_notificationSequenceNumber, System.currentTimeMillis(),
-                                     "Channel count (" + channelsCount + ") has reached the threshold value");
-
-                _broadcaster.sendNotification(n);
-            }
-        }
-
-    } // End of MBean class
 
     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
                                   AMQCodecFactory codecFactory)
@@ -322,17 +122,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _managedObject.register();
     }
 
-    private ManagedAMQProtocolSession createMBean() throws AMQException
+    private AMQProtocolSessionMBean createMBean() throws AMQException
     {
         try
         {
-            return new ManagedAMQProtocolSession();
+            return new AMQProtocolSessionMBean(this);
         }
         catch(JMException ex)
         {
             _logger.error("AMQProtocolSession MBean creation has failed ", ex);
             throw new AMQException("AMQProtocolSession MBean creation has failed ", ex);
         }
+    }
+
+    public IoSession getIOSession()
+    {
+        return _minaProtocolSession;
     }
 
     public static AMQProtocolSession getAMQProtocolSession(IoSession minaProtocolSession)
@@ -495,7 +300,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _contextKey = contextKey;
     }
 
-    public AMQChannel getChannel(int channelId) throws AMQException
+    public List<AMQChannel> getChannels()
+    {
+        return new ArrayList<AMQChannel>(_channelMap.values());
+    }
+
+    public AMQChannel getChannel(int channelId)
     {
         return _channelMap.get(channelId);
     }
@@ -503,7 +313,42 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public void addChannel(AMQChannel channel)
     {
         _channelMap.put(channel.getChannelId(), channel);
-        _managedObject.checkForNotification();
+        checkForNotification();
+    }
+
+    private void checkForNotification()
+    {
+        int channelsCount = _channelMap.size();
+        if (channelsCount >= _maxNoOfChannels)
+        {
+            _managedObject.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
+        }
+    }
+
+    public Long getMaximumNumberOfChannels()
+    {
+        return _maxNoOfChannels;
+    }
+
+    public void setMaximumNumberOfChannels(Long value)
+    {
+        _maxNoOfChannels = value;
+    }
+
+    public void commitTransactions(AMQChannel channel) throws AMQException
+    {
+        if (channel != null && channel.isTransactional())
+        {
+            channel.commit();
+        }
+    }
+
+    public void rollbackTransactions(AMQChannel channel) throws AMQException
+    {
+        if (channel != null && channel.isTransactional())
+        {
+            channel.rollback();
+        }
     }
 
     /**
