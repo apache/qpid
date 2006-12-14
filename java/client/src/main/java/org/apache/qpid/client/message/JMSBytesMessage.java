@@ -30,6 +30,9 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageEOFException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
+import java.nio.CharBuffer;
 
 public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
@@ -149,10 +152,27 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         checkReadable();
         // we check only for one byte since theoretically the string could be only a
         // single byte when using UTF-8 encoding
-        checkAvailable(1);
+
         try
         {
-            return _data.getString(Charset.forName("UTF-8").newDecoder());
+            short length = readShort();
+            if(length == 0)
+            {
+                return "";
+            }
+            else
+            {
+                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
+                ByteBuffer encodedString = _data.slice();
+                encodedString.limit(length);
+                _data.position(_data.position()+length);
+                CharBuffer string = decoder.decode(encodedString.buf());
+                
+                return string.toString();
+            }
+
+
+            
         }
         catch (CharacterCodingException e)
         {
@@ -257,9 +277,15 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         checkWritable();
         try
         {
-            _data.putString(string, Charset.forName("UTF-8").newEncoder());
+            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+            java.nio.ByteBuffer encodedString = encoder.encode(CharBuffer.wrap(string));
+            
+            _data.putShort((short)encodedString.limit());
+            _data.put(encodedString);
+
+            //_data.putString(string, Charset.forName("UTF-8").newEncoder());
             // we must add the null terminator manually
-            _data.put((byte)0);
+            //_data.put((byte)0);
         }
         catch (CharacterCodingException e)
         {
