@@ -33,6 +33,10 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 
+/**
+ * Main Application Registry, which contains shared resources and map to all connected servers.
+ * @author Bhupendra Bhardwaj
+ */
 public abstract class ApplicationRegistry
 {
     private static ImageRegistry imageRegistry = new ImageRegistry();
