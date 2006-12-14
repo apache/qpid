@@ -879,7 +879,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            je = new JMSException("Exception thrown against " + toString() + ": " + cause);
+            if (cause instanceof AMQException)
+            {
+                je = new JMSException(Integer.toString(((AMQException)cause).getErrorCode()) ,"Exception thrown against " + toString() + ": " + cause);
+            }
+            else
+            {
+                je = new JMSException("Exception thrown against " + toString() + ": " + cause);
+            }
             if (cause instanceof Exception)
             {
                 je.setLinkedException((Exception) cause);
