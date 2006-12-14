@@ -28,10 +28,6 @@ includes (binary only):
           licensed under identical terms to the MIT/X11 license and 
           available for download at http://www.slf4j.org/
 
-	- The JMS Compliance Test Suite from the Exolab project. 
-          Copyright 1999 (C) Exoffice Technologies Inc. All Rights Reserved.
-          JMS CTS is available from http://www.exolab.org/
-
 	- Software from the Eclipse project. The binaries from this project are
           distributed under the Eclipse Public License and can be donwloaded
           from http://www.eclipse.org/
