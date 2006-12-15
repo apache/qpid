@@ -106,40 +106,41 @@ public abstract class Generator implements LanguageConverter
 		if (modelTemplateFiles.length > 0)
 		{
 			System.out.println("Model template file(s):");
-			for (int t=0; t<modelTemplateFiles.length; t++)
+			for (File mtf : modelTemplateFiles)
 			{
-				System.out.println("  " + modelTemplateFiles[t].getAbsolutePath());
-				String template[] = {modelTemplateFiles[t].getName(), loadTemplate(modelTemplateFiles[t])};
+				System.out.println("  " + mtf.getAbsolutePath());
+				String template[] = {mtf.getName(), loadTemplate(mtf)};
 				modelTemplateList.add(template);
 			}
 		}
 		if (classTemplatesFiles.length > 0)
 		{
 			System.out.println("Class template file(s):");
-			for (int c=0; c<classTemplatesFiles.length; c++)
+			//for (int c=0; c<classTemplatesFiles.length; c++)
+			for (File ctf : classTemplatesFiles)
 			{
-				System.out.println("  " + classTemplatesFiles[c].getAbsolutePath());
-				String template[] = {classTemplatesFiles[c].getName(), loadTemplate(classTemplatesFiles[c])};
+				System.out.println("  " + ctf.getAbsolutePath());
+				String template[] = {ctf.getName(), loadTemplate(ctf)};
 				classTemplateList.add(template);
 			}
 		}
 		if (methodTemplatesFiles.length > 0)
 		{
 			System.out.println("Method template file(s):");
-			for (int m=0; m<methodTemplatesFiles.length; m++)
+			for (File mtf : methodTemplatesFiles)
 			{
-				System.out.println("  " + methodTemplatesFiles[m].getAbsolutePath());
-				String template[] = {methodTemplatesFiles[m].getName(), loadTemplate(methodTemplatesFiles[m])};
+				System.out.println("  " + mtf.getAbsolutePath());
+				String template[] = {mtf.getName(), loadTemplate(mtf)};
 				methodTemplateList.add(template);
 			}
 		}
 		if (fieldTemplatesFiles.length > 0)
 		{
 			System.out.println("Field template file(s):");
-			for (int f=0; f<fieldTemplatesFiles.length; f++)
+			for (File ftf : fieldTemplatesFiles)
 			{
-				System.out.println("  " + fieldTemplatesFiles[f].getAbsolutePath());
-				String template[] = {fieldTemplatesFiles[f].getName(), loadTemplate(fieldTemplatesFiles[f])};
+				System.out.println("  " + ftf.getAbsolutePath());
+				String template[] = {ftf.getName(), loadTemplate(ftf)};
 				fieldTemplateList.add(template);
 			}
 		}
@@ -178,9 +179,9 @@ public abstract class Generator implements LanguageConverter
 		this.genDir = genDir.getAbsolutePath();
 
 		// Use all model-level templates
-		for (int t = 0; t < modelTemplateList.size(); t++)
+		for (String[] mt : modelTemplateList)
 		{
-			processTemplateA(modelTemplateList.get(t));
+			processTemplateA(mt);
 		}
 		
 		// Cycle through classes
@@ -191,9 +192,9 @@ public abstract class Generator implements LanguageConverter
 			AmqpClass thisClass = model.classMap.get(className);
 			
 			// Use all class-level templates
-			for (int c = 0; c < classTemplateList.size(); c++)
+			for (String[] ct : classTemplateList)
 			{
-				processTemplateB(classTemplateList.get(c), thisClass);
+				processTemplateB(ct, thisClass);
 			}
 			
 			// Cycle through all methods
@@ -204,9 +205,9 @@ public abstract class Generator implements LanguageConverter
 				AmqpMethod method = thisClass.methodMap.get(methodName);
 				
 				// Use all method-level templates
-				for (int m = 0; m < methodTemplateList.size(); m++)
+				for (String[] mt : methodTemplateList)
 				{
-					processTemplateC(methodTemplateList.get(m), thisClass, method);
+					processTemplateC(mt, thisClass, method);
 				}
 				
 				// Cycle through all fields
@@ -217,9 +218,9 @@ public abstract class Generator implements LanguageConverter
 					AmqpField field = method.fieldMap.get(fieldName);
 					
 					// Use all field-level templates
-					for (int f = 0; f < fieldTemplateList.size(); f++)
+					for (String[] ft : fieldTemplateList)
 					{
-						processTemplateD(fieldTemplateList.get(f), thisClass, method, field);
+						processTemplateD(ft, thisClass, method, field);
 					}
 				}
 			}
@@ -232,14 +233,21 @@ public abstract class Generator implements LanguageConverter
 		int lend = sb.indexOf(Utils.lineSeparator, tokStart) + 1; // Include cr at end of line
 		String tline = sb.substring(tokEnd, lend); // Line excluding line marker, including cr
 		sb.delete(tokStart, lend);
-		AmqpVersion[] versionArray = new AmqpVersion[globalVersionSet.size()];
-		globalVersionSet.toArray(versionArray);
-		for (int i=0; i<versionArray.length; i++)
+		
+		for (AmqpVersion v : globalVersionSet)
 		{
 			// Insert copy of target line
 			StringBuffer isb = new StringBuffer(tline);
-			replaceToken(isb, "${major}", String.valueOf(versionArray[i].getMajor()));
-			replaceToken(isb, "${minor}", String.valueOf(versionArray[i].getMinor()));
+			if (isb.indexOf("${protocol-version-list-entry}") >= 0)
+			{
+				String versionListEntry = "       { ${major}, ${minor} }" +
+				  (v.equals(globalVersionSet.last()) ? "" : ",");
+				replaceToken(isb, "${protocol-version-list-entry}", String.valueOf(versionListEntry));
+			}
+			if (isb.indexOf("${major}") >= 0)
+				replaceToken(isb, "${major}", String.valueOf(v.getMajor()));
+			if (isb.indexOf("${minor}") >= 0)
+				replaceToken(isb, "${minor}", String.valueOf(v.getMinor()));
 			sb.insert(tokStart, isb.toString());
 			tokStart += isb.length();
 		}							
