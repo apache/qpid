@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -196,5 +196,35 @@ public class DestNameExchange extends AbstractExchange
                 q.deliver(payload);
             }
         }
+    }
+
+    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    {
+        final List<AMQQueue> queues = _index.get(routingKey);
+        return queues != null && queues.contains(queue);
+    }
+
+    public boolean isBound(String routingKey) throws AMQException
+    {
+        final List<AMQQueue> queues = _index.get(routingKey);
+        return queues != null && !queues.isEmpty();
+    }
+
+    public boolean isBound(AMQQueue queue) throws AMQException
+    {
+        Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
+        for (List<AMQQueue> queues : bindings.values())
+        {
+            if (queues.contains(queue))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasBindings() throws AMQException
+    {
+        return !_index.getBindingsMap().isEmpty();
     }
 }

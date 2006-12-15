@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -190,9 +190,9 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getByteProperty("random");
-            Assert.fail("MessageFormatException expected");
+            Assert.fail("NumberFormatException expected");
         }
-        catch (MessageFormatException e)
+        catch (NumberFormatException e)
         {
             //normal execution
         }
@@ -245,9 +245,9 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getIntProperty("random");
-            Assert.fail("MessageFormatException should be received.");
+            Assert.fail("NumberFormatException should be received.");
         }
-        catch (MessageFormatException e)
+        catch (NumberFormatException e)
         {
             //normal execution
         }
@@ -263,9 +263,9 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getLongProperty("random");
-            Assert.fail("MessageFormatException should be received.");
+            Assert.fail("NumberFormatException should be received.");
         }
-        catch (MessageFormatException e)
+        catch (NumberFormatException e)
         {
             //normal execution
         }
@@ -281,9 +281,9 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getShortProperty("random");
-            Assert.fail("MessageFormatException should be received.");
+            Assert.fail("NumberFormatException should be received.");
         }
-        catch (MessageFormatException e)
+        catch (NumberFormatException e)
         {
             //normal execution
         }
