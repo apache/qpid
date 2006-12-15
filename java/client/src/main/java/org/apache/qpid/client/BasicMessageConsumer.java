@@ -280,7 +280,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public Message receive(long l) throws JMSException
     {
     	checkPreConditions();
-
+        
         acquireReceiving();
 
         try
