@@ -28,7 +28,7 @@ public class ContentBody extends AMQBody
 
     public ByteBuffer payload;
 
-    protected byte getType()
+    protected byte getFrameType()
     {
         return TYPE;
     }
