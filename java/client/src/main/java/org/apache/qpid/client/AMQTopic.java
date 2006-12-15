@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,20 +40,25 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQTopic(String name)
     {
-        super(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, true, null);
-        _isDurable = false;
+        this(name, true, null, false);
     }
 
-    /**
-     * Constructor for use in creating a topic to represent a durable subscription
-     * @param topic
-     * @param clientId
-     * @param subscriptionName
-     */
-    public AMQTopic(AMQTopic topic, String clientId, String subscriptionName)
+    public AMQTopic(String name, boolean isAutoDelete, String queueName, boolean isDurable)
     {
-        super(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topic.getDestinationName(), true, false, clientId + ":" + subscriptionName);
-        _isDurable = true;
+        super(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete,
+              queueName, isDurable);
+    }
+
+    public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
+            throws JMSException
+    {
+        return new AMQTopic(topic.getDestinationName(), false, getDurableTopicQueueName(subscriptionName, connection),
+                            true);
+    }
+
+    public static String getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException
+    {
+        return connection.getClientID() + ":" + subscriptionName;
     }
 
     public String getTopicName() throws JMSException

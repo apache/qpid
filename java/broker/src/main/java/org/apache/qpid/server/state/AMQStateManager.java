@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -109,6 +109,7 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
         frame2handlerMap.put(ExchangeDeclareBody.class, ExchangeDeclareHandler.getInstance());
         frame2handlerMap.put(ExchangeDeleteBody.class, ExchangeDeleteHandler.getInstance());
+        frame2handlerMap.put(ExchangeBoundBody.class, ExchangeBoundHandler.getInstance());
         frame2handlerMap.put(BasicAckBody.class, BasicAckMethodHandler.getInstance());
         frame2handlerMap.put(BasicRecoverBody.class, BasicRecoverMethodHandler.getInstance());
         frame2handlerMap.put(BasicConsumeBody.class, BasicConsumeMethodHandler.getInstance());
