@@ -45,7 +45,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 
     public void writePayload(ByteBuffer buffer)
     {
-        buffer.put(bodyFrame.getType());
+        buffer.put(bodyFrame.getFrameType());
         // TODO: how does channel get populated
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, bodyFrame.getSize());

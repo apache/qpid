@@ -42,7 +42,7 @@ public abstract class AMQMethodBody extends AMQBody
 
     protected abstract void writeMethodPayload(ByteBuffer buffer);
 
-    protected byte getType()
+    protected byte getFrameType()
     {
         return TYPE;
     }
