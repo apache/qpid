@@ -73,7 +73,7 @@ public class StreamMessageTest extends TestCase
         MessageProducer mandatoryProducer = producerSession.createProducer(queue);
 
         // Third test - should be routed
-        _logger.info("Sending routable message");
+        _logger.info("Sending isBound message");
         StreamMessage msg =  producerSession.createStreamMessage();
 
         msg.setStringProperty("F1000","1");

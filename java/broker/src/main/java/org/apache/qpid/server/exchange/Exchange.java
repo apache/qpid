@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,4 +47,30 @@ public interface Exchange
     void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException;
 
     void route(AMQMessage message) throws AMQException;
+
+    /**
+     * Determines whether a message would be isBound to a particular queue using a specific routing key
+     * @param routingKey
+     * @param queue
+     * @return
+     * @throws AMQException
+     */
+    boolean isBound(String routingKey, AMQQueue queue) throws AMQException;
+
+    /**
+     * Determines whether a message is routing to any queue using a specific routing key
+     * @param routingKey
+     * @return
+     * @throws AMQException
+     */
+    boolean isBound(String routingKey) throws AMQException;
+
+    boolean isBound(AMQQueue queue) throws AMQException;
+
+    /**
+     * Returns true if this exchange has at least one binding associated with it.
+     * @return
+     * @throws AMQException
+     */
+    boolean hasBindings() throws AMQException;
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -79,13 +79,19 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
                              boolean isAutoDelete, String queueName)
     {
+        this(exchangeName, exchangeClass, destinationName, isExclusive, isAutoDelete, queueName, false);
+    }
+
+    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
+                             boolean isAutoDelete, String queueName, boolean isDurable)
+    {
         if (destinationName == null)
         {
-            throw new IllegalArgumentException("Destination name must not be null");
+            throw new IllegalArgumentException("Destination exchange must not be null");
         }
         if (exchangeName == null)
         {
-            throw new IllegalArgumentException("Exchange name must not be null");
+            throw new IllegalArgumentException("Exchange exchange must not be null");
         }
         if (exchangeClass == null)
         {
@@ -97,6 +103,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = isExclusive;
         _isAutoDelete = isAutoDelete;
         _queueName = queueName;
+        _isDurable = isDurable;
     }
 
     public String getEncodedName()

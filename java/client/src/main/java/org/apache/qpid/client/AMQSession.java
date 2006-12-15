@@ -23,13 +23,15 @@ package org.apache.qpid.client;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
+import org.apache.qpid.server.handler.ExchangeBoundHandler;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.Session;
@@ -64,6 +66,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private int _defaultPrefetchHighMark = DEFAULT_PREFETCH_HIGH_MARK;
     private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
+
+    /**
+     *  Used to reference durable subscribers so they requests for unsubscribe can be handled
+     *  correctly.  Note this only keeps a record of subscriptions which have been created
+     *  in the current instance.  It does not remember subscriptions between executions of the
+     *  client
+     */
+    private final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
+            new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
 
     /**
      * Used in the consume method. We generate the consume tag on the client so that we can use the nowait
@@ -1087,19 +1098,53 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
     }
 
-    /**
-     * Note, currently this does not handle reuse of the same name with different topics correctly.
-     * If a name is reused in creating a new subscriber with a different topic/selecto or no-local
-     * flag then the subcriber will receive messages matching the old subscription AND the new one.
-     * The spec states that the new one should replace the old one.
-     * TODO: fix it.
-     */
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
         checkNotClosed();
         checkValidTopic(topic);
-        AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
-        return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic)topic, name, _connection);
+        TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
+        if (subscriber != null)
+        {
+            if (subscriber.getTopic().equals(topic))
+            {
+                throw new IllegalStateException("Already subscribed to topic " + topic + " with subscription exchange " +
+                                                name);
+            }
+            else
+            {
+                unsubscribe(name);
+            }
+        }
+        else
+        {
+            // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
+            // says we must trash the subscription.
+            if (isQueueBound(dest.getQueueName()) &&
+                !isQueueBound(dest.getQueueName(), topic.getTopicName()))
+            {
+                deleteSubscriptionQueue(dest.getQueueName());
+            }
+        }
+
+        subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+        _subscriptions.put(name,subscriber);
+
+        return subscriber;
+    }
+
+    private void deleteSubscriptionQueue(String queueName) throws JMSException
+    {
+        try
+        {
+            AMQFrame queueDeleteFrame = QueueDeleteBody.createAMQFrame(_channelId, 0, queueName, false,
+                                                                       false, true);
+            _connection.getProtocolHandler().syncWrite(queueDeleteFrame, QueueDeleteOkBody.class);
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
     }
 
     /**
@@ -1110,9 +1155,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkNotClosed();
         checkValidTopic(topic);
-        AMQTopic dest = new AMQTopic((AMQTopic) topic, _connection.getClientID(), name);
+        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
-        return new TopicSubscriberAdaptor(dest, consumer);
+        TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
+        _subscriptions.put(name,subscriber);
+        return subscriber;
     }
 
     public TopicPublisher createPublisher(Topic topic) throws JMSException
@@ -1150,20 +1197,46 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void unsubscribe(String name) throws JMSException
     {
         checkNotClosed();
-   	      
-        String queue = _connection.getClientID() + ":" + name;
- 
-        AMQFrame queueDeclareFrame = QueueDeclareBody.createAMQFrame(_channelId,0,queue,true,false, false, false, true, null);        
-        
-        try {
-			AMQMethodEvent event = _connection.getProtocolHandler().syncWrite(queueDeclareFrame,QueueDeclareOkBody.class);
-			// if this method doen't throw an exception means we have received a queue declare ok.
-		} catch (AMQException e) {
-			throw new javax.jms.InvalidDestinationException("This destination doesn't exist");
-		}       
-        //send a queue.delete for the subscription
-        AMQFrame frame = QueueDeleteBody.createAMQFrame(_channelId, 0, queue, false, false, true);
-        _connection.getProtocolHandler().writeFrame(frame);
+        TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
+        if (subscriber != null)
+        {
+            // send a queue.delete for the subscription
+            deleteSubscriptionQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
+            _subscriptions.remove(name);
+        }
+        else
+        {
+            if (isQueueBound(AMQTopic.getDurableTopicQueueName(name, _connection)))
+            {
+                deleteSubscriptionQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
+            }
+            else
+            {
+                throw new InvalidDestinationException("Unknown subscription exchange:" + name);
+            }
+        }
+    }
+
+    private boolean isQueueBound(String queueName) throws JMSException
+    {
+        return isQueueBound(queueName, null);
+    }
+
+    private boolean isQueueBound(String queueName, String routingKey) throws JMSException
+    {
+        AMQFrame boundFrame = ExchangeBoundBody.createAMQFrame(_channelId, ExchangeDefaults.TOPIC_EXCHANGE_NAME,
+                                                               routingKey, queueName);
+        AMQMethodEvent response = null;
+        try
+        {
+            response = _connection.getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
+        ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
+        return (responseBody.replyCode == ExchangeBoundHandler.OK);
     }
 
     private void checkTransacted() throws JMSException
