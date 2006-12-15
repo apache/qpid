@@ -57,6 +57,8 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
     private FieldTable _headers;
 
+    private JMSPropertyFieldTable _jmsHeaders;
+
     private byte _deliveryMode;
 
     private byte _priority;
@@ -276,6 +278,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             if ((_propertyFlags & (1 << 13)) > 0)
             {
                 _headers = EncodingUtils.readFieldTable(buffer);
+                setJMSHeaders();
             }
             if ((_propertyFlags & (1 << 12)) > 0)
             {
@@ -358,6 +361,8 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
             if ((_propertyFlags & (1 << 13)) > 0)
             {
                 _headers = EncodingUtils.readFieldTable(buffer);
+                setJMSHeaders();
+
             }
             _decodedHeaders = true;
         }
@@ -446,6 +451,26 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         clearEncodedForm();
         _propertyFlags |= (1 << 13);
         _headers = headers;
+        setJMSHeaders();
+    }
+
+    private void setJMSHeaders()
+    {
+        if (_jmsHeaders == null)
+        {
+            _jmsHeaders = new JMSPropertyFieldTable(_headers);
+        }
+        else
+        {
+            _jmsHeaders.setFieldTable(_headers);
+        }
+    }
+
+    public JMSPropertyFieldTable getJMSHeaders()
+    {
+        //This will ensure we have a blank header
+        getHeaders();
+        return _jmsHeaders;
     }
 
     public byte getDeliveryMode()
