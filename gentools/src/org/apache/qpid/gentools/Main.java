@@ -21,6 +21,7 @@
 package org.apache.qpid.gentools;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -96,8 +97,17 @@ public class Main
         analyzeXML();
 		
 		// 2. Load up all templates
+        try
+        {
 		generator.initializeTemplates(modelTemplateFiles, classTemplateFiles,
 			methodTemplateFiles, fieldTemplateFiles);
+        }
+        catch (FileNotFoundException e)
+        {
+        	System.err.println("Error: Unable to load template file (check -t option on command-line):");
+        	System.err.println(e.getMessage());
+        	return;
+        }
 		
 		// 3. Generate output
 		generator.generate(new File(outDir));
@@ -159,7 +169,8 @@ public class Main
         modelTemplateFiles = new File[]
         {
             new File(tmplDir + Utils.fileSeparator + "MethodRegistryClass.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AmqpConstantsClass.tmpl")
+            new File(tmplDir + Utils.fileSeparator + "AmqpConstantsClass.tmpl"),
+            new File(tmplDir + Utils.fileSeparator + "ProtocolVersionListClass.tmpl")
         };
         classTemplateFiles = new File[]
         {
@@ -202,9 +213,8 @@ public class Main
         throws IOException, SAXException, AmqpParseException, AmqpTypeMappingException
     {
         System.out.println("XML files: " + xmlFiles);
-        for (int i=0; i<xmlFiles.size(); i++)
+        for (String filename : xmlFiles)
         {
-            String filename = xmlFiles.get(i);
             File f = new File(filename);
             if (f.exists())
             {
@@ -236,13 +246,13 @@ public class Main
 //      System.out.println();
 //      System.out.println("*** Debug output ***");
 //      System.out.println();
-//      versionSet.print(System.out, 0, 2);
+//      versionSet.print(System.out, 0, 2); // List of loaded versions
 //      System.out.println();
-//      constants.print(System.out, 0, 2);
+//      constants.print(System.out, 0, 2); // List of constants
 //      System.out.println();
-//      domainMap.print(System.out, 0, 2);
+//      domainMap.print(System.out, 0, 2); // List of domains
 //      System.out.println();
-//      model.print(System.out, 0, 2);
+//      model.print(System.out, 0, 2); // Internal version map model
 //      System.out.println();
 //      System.out.println("*** End debug output ***");
 //      System.out.println();        
@@ -250,6 +260,7 @@ public class Main
     
 	public static void main(String[] args)
 	{
+		// TODO: This is a simple and klunky way of hangling command-line args, and could be improved upon.
 		if (args.length < 2)
 			usage();
 		try { new Main().run(args); }
