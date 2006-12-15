@@ -1352,7 +1352,27 @@ localised reply text
   </doc>
       <chassis name="client" implement="MUST"/>
     </method>
+
+    <method name="bound" synchronous="1" index="22">
+        <field name="exchange" domain="exchange name"/>
+        <field name = "routing key" type = "shortstr">
+            Message routing key
+            <doc>
+              Specifies the routing key for the message.  The routing key is
+              used for routing messages depending on the exchange configuration.
+            </doc>
+        </field>
+        <field name = "queue" domain = "queue name"/>
+    </method>
+
+    <method name="bound-ok" synchronous="1" index="23">
+        <field name="reply code" domain="reply code"/>
+        <field name="reply text" domain="reply text"/>
+    </method>
+
   </class>
+
+ 
   <class name="queue" handler="channel" index="50">
     <!--
 ======================================================
