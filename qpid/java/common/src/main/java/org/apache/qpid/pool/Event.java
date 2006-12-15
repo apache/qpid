@@ -109,6 +109,6 @@ class Event
 
     public String toString()
     {
-        return "Event: type " + type +  ", data: " + data;
+        return "Event: type " + type + ", data: " + data;
     }
 }

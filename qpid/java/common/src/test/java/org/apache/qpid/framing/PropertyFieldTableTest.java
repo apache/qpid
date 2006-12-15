@@ -24,14 +24,22 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQPInvalidClassException;
 
 public class PropertyFieldTableTest extends TestCase
 {
 
-    //Test byte modification
+    private static final Logger _logger = Logger.getLogger(PropertyFieldTableTest.class);
 
+    /**
+     * Test that modifying a byte[] after setting property doesn't change property
+     */
     public void testByteModification()
     {
         PropertyFieldTable table = new PropertyFieldTable();
@@ -46,197 +54,518 @@ public class PropertyFieldTableTest extends TestCase
         assertBytesNotEqual(bytes, table.getBytes("bytes"));
     }
 
-    //Test replacement
-
+    /**
+     * Test that setting a similar named value replaces any previous value set on that name
+     */
     public void testReplacement()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
+        //Set a boolean value
         table1.setBoolean("value", true);
+        //Check size of table is correct (<Value length> + <type> + <Boolean length>)
+        int size = EncodingUtils.encodedShortStringLength("value") + 1 + EncodingUtils.encodedBooleanLength();
+        Assert.assertEquals(size, table1.getEncodedSize());
+
+        // reset value to an integer
         table1.setInteger("value", Integer.MAX_VALUE);
+
+        // Check the size has changed accordingly   (<Value length> + <type> + <Integer length>)
+        size = EncodingUtils.encodedShortStringLength("value") + 1 + EncodingUtils.encodedIntegerLength();
+        Assert.assertEquals(size, table1.getEncodedSize());
+
+        //Check boolean value is null
         Assert.assertEquals(null, table1.getBoolean("value"));
+        // ... and integer value is good
         Assert.assertEquals((Integer) Integer.MAX_VALUE, table1.getInteger("value"));
     }
 
-    //Test Lookups
 
-    public void testBooleanLookup()
+    /**
+     * Set a boolean and check that we can only get it back as a boolean and a string
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testBoolean()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setBoolean("value", true);
+        Assert.assertTrue(table1.propertyExists("value"));
+
         //Test Getting right value back
         Assert.assertEquals((Boolean) true, table1.getBoolean("value"));
 
-        //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getBoolean("Rubbish") == null);
+        //Check we don't get anything back for other gets
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
 
-        //Try reading value as a string
+        //except value as a string
         Assert.assertEquals("true", table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_BOOLEAN_PROPERTY_PREFIX, "value", null);
+
+        // Should be able to get the null back
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getBoolean("Rubbish"));
     }
 
-    public void testByteLookup()
+    /**
+     * Set a byte and check that we can only get it back as a byte and a string
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testByte()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
-        table1.setByte("value", (byte) 1);
-        Assert.assertEquals((Byte) (byte) 1, table1.getByte("value"));
+        table1.setByte("value", Byte.MAX_VALUE);
+        Assert.assertTrue(table1.propertyExists("value"));
+
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(Byte.MAX_VALUE, (byte) table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
+
+        //... and a the string value of it.
+        Assert.assertEquals("" + Byte.MAX_VALUE, table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_BYTE_PROPERTY_PREFIX, "value", null);
+
+        // Should be able to get the null back
+        Assert.assertEquals(null, table1.getByte("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
 
         //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getByte("Rubbish") == null);
-
-        //Try reading value as a string
-        Assert.assertEquals("1", table1.getString("value"));
+        Assert.assertEquals(null, table1.getByte("Rubbish"));
     }
 
-    public void testShortLookup()
+    /**
+     * Set a short and check that we can only get it back as a short and a string
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testShort()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setShort("value", Short.MAX_VALUE);
-        Assert.assertEquals((Short) Short.MAX_VALUE, table1.getShort("value"));
+        Assert.assertTrue(table1.propertyExists("value"));
+
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(Short.MAX_VALUE, (short) table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
+
+        //... and a the string value of it.
+        Assert.assertEquals("" + Short.MAX_VALUE, table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_SHORT_PROPERTY_PREFIX, "value", null);
+
+        // Should be able to get the null back
+        Assert.assertEquals(null, table1.getShort("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
 
         //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getShort("Rubbish") == null);
-
-        //Try reading value as a string
-        Assert.assertEquals("" + Short.MAX_VALUE, table1.getString("value"));
+        Assert.assertEquals(null, table1.getShort("Rubbish"));
     }
 
 
-    public void testCharLookup()
+    /**
+     * Set a char and check that we can only get it back as a char
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testChar()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
-        table1.setChar("value", 'b');
-        Assert.assertEquals((Character) 'b', table1.getCharacter("value"));
+        table1.setChar("value", 'c');
+        Assert.assertTrue(table1.propertyExists("value"));
+
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals('c', (char) table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
+
+        //... and a the string value of it.
+        Assert.assertEquals("c", table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_ASCII_CHARACTER_PROPERTY_PREFIX, "value", null);
+
+        try
+        {
+            table1.getString("value");
+            fail("Should throw NullPointerException");
+        }
+        catch (NullPointerException npe)
+        {
+            //Normal Path
+        }
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
 
         //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getCharacter("Rubbish") == null);
-
-        //Try reading value as a string
-        Assert.assertEquals("b", table1.getString("value"));
+        Assert.assertEquals(null, table1.getCharacter("Rubbish"));
     }
 
-    public void testDoubleLookup()
+
+    /**
+     * Set a double and check that we can only get it back as a double
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testDouble()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setDouble("value", Double.MAX_VALUE);
-        Assert.assertEquals(Double.MAX_VALUE, table1.getDouble("value"));
+        Assert.assertTrue(table1.propertyExists("value"));
 
-        //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getDouble("Rubbish") == null);
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(Double.MAX_VALUE, (double) table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
 
-        //Try reading value as a string
+        //... and a the string value of it.
         Assert.assertEquals("" + Double.MAX_VALUE, table1.getString("value"));
 
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_DOUBLE_PROPERTY_PREFIX, "value", null);
+
+        Assert.assertEquals(null, table1.getDouble("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getDouble("Rubbish"));
     }
 
-    public void testFloatLookup()
+
+    /**
+     * Set a float and check that we can only get it back as a float
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testFloat()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setFloat("value", Float.MAX_VALUE);
-        Assert.assertEquals(Float.MAX_VALUE, table1.getFloat("value"));
+        Assert.assertTrue(table1.propertyExists("value"));
 
-        //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getFloat("Rubbish") == null);
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(Float.MAX_VALUE, (float) table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
 
-        //Try reading value as a string
+        //... and a the string value of it.
         Assert.assertEquals("" + Float.MAX_VALUE, table1.getString("value"));
 
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_FLOAT_PROPERTY_PREFIX, "value", null);
+
+        Assert.assertEquals(null, table1.getFloat("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getFloat("Rubbish"));
     }
 
-    public void testIntLookup()
+
+    /**
+     * Set an int and check that we can only get it back as an int
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testInt()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setInteger("value", Integer.MAX_VALUE);
-        Assert.assertEquals((Integer) Integer.MAX_VALUE, table1.getInteger("value"));
+        Assert.assertTrue(table1.propertyExists("value"));
 
-        //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getInteger("Rubbish") == null);
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(Integer.MAX_VALUE, (int) table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
 
-        //Try reading value as a string
+        //... and a the string value of it.
         Assert.assertEquals("" + Integer.MAX_VALUE, table1.getString("value"));
 
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_INT_PROPERTY_PREFIX, "value", null);
+
+        Assert.assertEquals(null, table1.getInteger("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getInteger("Rubbish"));
     }
 
-    public void testLongLookup()
+
+    /**
+     * Set a long and check that we can only get it back as a long
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testLong()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setLong("value", Long.MAX_VALUE);
-        Assert.assertEquals((Long) Long.MAX_VALUE, table1.getLong("value"));
+        Assert.assertTrue(table1.propertyExists("value"));
 
-        //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getLong("Rubbish") == null);
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(Long.MAX_VALUE, (long) table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
 
-        //Try reading value as a string
+        //... and a the string value of it.
         Assert.assertEquals("" + Long.MAX_VALUE, table1.getString("value"));
 
-    }
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_LONG_PROPERTY_PREFIX, "value", null);
 
-    public void testBytesLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        byte[] bytes = {99, 98, 97, 96, 95};
-        table1.setBytes("bytes", bytes);
-        assertBytesEqual(bytes, table1.getBytes("bytes"));
+        Assert.assertEquals(null, table1.getLong("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
 
         //Looking up an invalid value returns null
-        Assert.assertTrue(table1.getBytes("Rubbish") == null);
+        Assert.assertEquals(null, table1.getLong("Rubbish"));
     }
 
-    // Failed Lookups
 
-    public void testFailedBooleanLookup()
+    /**
+     * Set a double and check that we can only get it back as a double
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testBytes()
+    {
+        byte[] bytes = {99, 98, 97, 96, 95};
+
+        PropertyFieldTable table1 = new PropertyFieldTable();
+        table1.setBytes("value", bytes);
+        Assert.assertTrue(table1.propertyExists("value"));
+
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        assertBytesEqual(bytes, table1.getBytes("value"));
+
+        //... and a the string value of it is null
+        Assert.assertEquals(null, table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.put(PropertyFieldTable.Prefix.AMQP_BINARY_PROPERTY_PREFIX, "value", null);
+
+        Assert.assertEquals(null, table1.getBytes("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        // Table should now have zero size for encoding
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getBytes("Rubbish"));
+    }
+
+    /**
+     * Calls all methods that can be used to check the table is empty
+     * - getEncodedSize
+     * - isEmpty
+     * - size
+     *
+     * @param table to check is empty
+     */
+    private void checkEmpty(PropertyFieldTable table)
+    {
+        Assert.assertEquals(0, table.getEncodedSize());
+        Assert.assertTrue(table.isEmpty());
+        Assert.assertEquals(0, table.size());
+
+        Assert.assertEquals(0, table.keySet().size());
+        Assert.assertEquals(0, table.values().size());
+        Assert.assertEquals(0, table.entrySet().size());
+    }
+
+
+    /**
+     * Set a String and check that we can only get it back as a String
+     * Check that attempting to lookup a non existent value returns null
+     */
+    public void testString()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getBoolean("int"));
+        table1.setString("value", "Hello");
+        Assert.assertTrue(table1.propertyExists("value"));
+
+        //Tets lookups we shouldn't get anything back for other gets
+        //we should get right value back for this type ....
+        Assert.assertEquals(null, table1.getBoolean("value"));
+        Assert.assertEquals(null, table1.getByte("value"));
+        Assert.assertEquals(null, table1.getShort("value"));
+        Assert.assertEquals(null, table1.getCharacter("value"));
+        Assert.assertEquals(null, table1.getDouble("value"));
+        Assert.assertEquals(null, table1.getFloat("value"));
+        Assert.assertEquals(null, table1.getInteger("value"));
+        Assert.assertEquals(null, table1.getLong("value"));
+        Assert.assertEquals(null, table1.getBytes("value"));
+        Assert.assertEquals("Hello", table1.getString("value"));
+
+        //Try setting a null value and read it back
+        table1.setString("value", null);
+
+        Assert.assertEquals(null, table1.getString("value"));
+
+        //but still contains the value
+        Assert.assertTrue(table1.containsKey("value"));
+
+        table1.remove("value");
+        //but after a remove it doesn't
+        Assert.assertFalse(table1.containsKey("value"));
+
+        checkEmpty(table1);
+
+        //Looking up an invalid value returns null
+        Assert.assertEquals(null, table1.getString("Rubbish"));
+
+        //Additional Test that haven't been covered for string
+        table1.setObject("value", "Hello");
+        //Check that it was set correctly
+        Assert.assertEquals("Hello", table1.getString("value"));
     }
 
-    public void testFailedByteLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getByte("int"));
-    }
 
-    public void testFailedBytesLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getBytes("int"));
-    }
-
-    public void testFailedCharLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getCharacter("int"));
-    }
-
-    public void testFailedDoubleLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getDouble("int"));
-    }
-
-    public void testFailedFloatLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getFloat("int"));
-    }
-
-    public void testFailedIntLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getInteger("int"));
-    }
-
-    public void testFailedLongLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getLong("int"));
-    }
-
-    public void testFailedShortLookup()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        Assert.assertEquals(null, table1.getShort("int"));
-    }
-
-    public void testXML()
+    /**
+     * Test that the generated XML can be used to create a field table with the same values.
+     */
+    public void testValidXML()
     {
         PropertyFieldTable table1 = new PropertyFieldTable();
         table1.setBoolean("bool", true);
@@ -249,6 +578,8 @@ public class PropertyFieldTableTest extends TestCase
         table1.setInteger("int", Integer.MAX_VALUE);
         table1.setLong("long", Long.MAX_VALUE);
         table1.setShort("short", Short.MAX_VALUE);
+        table1.setString("string", "Hello");
+        table1.setString("null-string", null);
 
         table1.setObject("object-bool", true);
         table1.setObject("object-byte", Byte.MAX_VALUE);
@@ -259,13 +590,47 @@ public class PropertyFieldTableTest extends TestCase
         table1.setObject("object-int", Integer.MAX_VALUE);
         table1.setObject("object-long", Long.MAX_VALUE);
         table1.setObject("object-short", Short.MAX_VALUE);
+        table1.setObject("object-string", "Hello");
+
+        Assert.assertEquals(21, table1.size());
 
         String table1XML = table1.toString();
 
         PropertyFieldTable table2 = new PropertyFieldTable(table1XML);
 
         Assert.assertEquals(table1XML, table2.toString());
+
+        //Check that when bytes is written out as a string with no new line between items that it is read in ok.
+
     }
+
+    /**
+     * Test that invalid input throws the correct Exception
+     */
+    public void testInvalidXML()
+    {
+        try
+        {
+            _logger.warn("Testing Invalid XML expecting IllegalArgumentException");
+            new PropertyFieldTable("Rubbish");
+            fail("IllegalArgumentException expected");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+        try
+        {
+            _logger.warn("Testing Invalid XML expecting IllegalArgumentException");
+            new PropertyFieldTable("");
+            fail("IllegalArgumentException expected");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+    }
+
 
     public void testKeyEnumeration()
     {
@@ -298,6 +663,8 @@ public class PropertyFieldTableTest extends TestCase
         table.setInteger("int", Integer.MAX_VALUE);
         table.setLong("long", Long.MAX_VALUE);
         table.setShort("short", Short.MAX_VALUE);
+        table.setString("string", "Hello");
+        table.setString("null-string", null);
 
         table.setObject("object-bool", true);
         table.setObject("object-byte", Byte.MAX_VALUE);
@@ -308,6 +675,7 @@ public class PropertyFieldTableTest extends TestCase
         table.setObject("object-int", Integer.MAX_VALUE);
         table.setObject("object-long", Long.MAX_VALUE);
         table.setObject("object-short", Short.MAX_VALUE);
+        table.setObject("object-string", "Hello");
 
 
         Assert.assertEquals((Boolean) true, table.getBoolean("bool"));
@@ -319,6 +687,8 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals((Integer) Integer.MAX_VALUE, table.getInteger("int"));
         Assert.assertEquals((Long) Long.MAX_VALUE, table.getLong("long"));
         Assert.assertEquals((Short) Short.MAX_VALUE, table.getShort("short"));
+        Assert.assertEquals("Hello", table.getString("string"));
+        Assert.assertEquals(null, table.getString("null-string"));
 
         Assert.assertEquals(true, table.getObject("object-bool"));
         Assert.assertEquals(Byte.MAX_VALUE, table.getObject("object-byte"));
@@ -329,6 +699,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(Integer.MAX_VALUE, table.getObject("object-int"));
         Assert.assertEquals(Long.MAX_VALUE, table.getObject("object-long"));
         Assert.assertEquals(Short.MAX_VALUE, table.getObject("object-short"));
+        Assert.assertEquals("Hello", table.getObject("object-string"));
     }
 
 
@@ -347,6 +718,8 @@ public class PropertyFieldTableTest extends TestCase
         table.setInteger("int", Integer.MAX_VALUE);
         table.setLong("long", Long.MAX_VALUE);
         table.setShort("short", Short.MAX_VALUE);
+        table.setString("string", "hello");
+        table.setString("null-string", null);
 
 
         final ByteBuffer buffer = ByteBuffer.allocate((int) table.getEncodedSize()); // FIXME XXX: Is cast a problem?
@@ -370,6 +743,9 @@ public class PropertyFieldTableTest extends TestCase
             Assert.assertEquals((Integer) Integer.MAX_VALUE, table2.getInteger("int"));
             Assert.assertEquals((Long) Long.MAX_VALUE, table2.getLong("long"));
             Assert.assertEquals((Short) Short.MAX_VALUE, table2.getShort("short"));
+            Assert.assertEquals("hello", table2.getString("string"));
+            Assert.assertEquals(null, table2.getString("null-string"));
+
         }
         catch (AMQFrameDecodingException e)
         {
@@ -380,7 +756,7 @@ public class PropertyFieldTableTest extends TestCase
 
     public void testEncodingSize()
     {
-        FieldTable result = FieldTableFactory.newFieldTable();
+        PropertyFieldTable result = new PropertyFieldTable();
         int size = 0;
 
         result.setBoolean("boolean", true);
@@ -468,62 +844,295 @@ public class PropertyFieldTableTest extends TestCase
 
     }
 
-    public void testEncodingSize1()
+//    public void testEncodingSize1()
+//    {
+//                PropertyFieldTable table = new PropertyFieldTable();
+//        int size = 0;
+//        result.put("one", 1L);
+//        size = EncodingUtils.encodedShortStringLength("one");
+//        size += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(size, result.getEncodedSize());
+//
+//        result.put("two", 2L);
+//        size += EncodingUtils.encodedShortStringLength("two");
+//        size += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(size, result.getEncodedSize());
+//
+//        result.put("three", 3L);
+//        size += EncodingUtils.encodedShortStringLength("three");
+//        size += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(size, result.getEncodedSize());
+//
+//        result.put("four", 4L);
+//        size += EncodingUtils.encodedShortStringLength("four");
+//        size += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(size, result.getEncodedSize());
+//
+//        result.put("five", 5L);
+//        size += EncodingUtils.encodedShortStringLength("five");
+//        size += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(size, result.getEncodedSize());
+//
+//        //fixme should perhaps be expanded to incorporate all types.
+//
+//        final ByteBuffer buffer = ByteBuffer.allocate((int) result.getEncodedSize()); // FIXME XXX: Is cast a problem?
+//
+//        result.writeToBuffer(buffer);
+//
+//        buffer.flip();
+//
+//        long length = buffer.getUnsignedInt();
+//
+//        try
+//        {
+//            PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
+//
+//            Assert.assertEquals((Long) 1L, table2.getLong("one"));
+//            Assert.assertEquals((Long) 2L, table2.getLong("two"));
+//            Assert.assertEquals((Long) 3L, table2.getLong("three"));
+//            Assert.assertEquals((Long) 4L, table2.getLong("four"));
+//            Assert.assertEquals((Long) 5L, table2.getLong("five"));
+//        }
+//        catch (AMQFrameDecodingException e)
+//        {
+//            e.printStackTrace();
+//            fail("PFT should be instantiated from bytes." + e.getCause());
+//        }
+//
+//    }
+
+
+    /**
+     * Additional test for setObject
+     */
+    public void testSetObject()
     {
-        FieldTable result = FieldTableFactory.newFieldTable();
-        int size = 0;
-        result.put("one", 1L);
-        size = EncodingUtils.encodedShortStringLength("one");
-        size += 1 + EncodingUtils.encodedLongLength();
-        assertEquals(size, result.getEncodedSize());
+        PropertyFieldTable table = new PropertyFieldTable();
 
-        result.put("two", 2L);
-        size += EncodingUtils.encodedShortStringLength("two");
-        size += 1 + EncodingUtils.encodedLongLength();
-        assertEquals(size, result.getEncodedSize());
-
-        result.put("three", 3L);
-        size += EncodingUtils.encodedShortStringLength("three");
-        size += 1 + EncodingUtils.encodedLongLength();
-        assertEquals(size, result.getEncodedSize());
-
-        result.put("four", 4L);
-        size += EncodingUtils.encodedShortStringLength("four");
-        size += 1 + EncodingUtils.encodedLongLength();
-        assertEquals(size, result.getEncodedSize());
-
-        result.put("five", 5L);
-        size += EncodingUtils.encodedShortStringLength("five");
-        size += 1 + EncodingUtils.encodedLongLength();
-        assertEquals(size, result.getEncodedSize());
-
-        //fixme should perhaps be expanded to incorporate all types.
-
-        final ByteBuffer buffer = ByteBuffer.allocate((int) result.getEncodedSize()); // FIXME XXX: Is cast a problem?
-
-        result.writeToBuffer(buffer);
-
-        buffer.flip();
-
-        long length = buffer.getUnsignedInt();
+        //Try setting a non primative object
 
         try
         {
-            PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
-
-            Assert.assertEquals((Long) 1L, table2.getLong("one"));
-            Assert.assertEquals((Long) 2L, table2.getLong("two"));
-            Assert.assertEquals((Long) 3L, table2.getLong("three"));
-            Assert.assertEquals((Long) 4L, table2.getLong("four"));
-            Assert.assertEquals((Long) 5L, table2.getLong("five"));
+            table.setObject("value", this);
+            fail("Only primative values allowed in setObject");
         }
-        catch (AMQFrameDecodingException e)
+        catch (AMQPInvalidClassException iae)
         {
-            e.printStackTrace();
-            fail("PFT should be instantiated from bytes." + e.getCause());
+            //normal path
         }
+        // so size should be zero
+        Assert.assertEquals(0, table.getEncodedSize());
+    }
+
+    /**
+     * Additional test checkPropertyName doesn't accept Null
+     */
+    public void testCheckPropertyNameasNull()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        try
+        {
+            table.setObject(null, "String");
+            fail("Null property name is not allowed");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+        // so size should be zero
+        Assert.assertEquals(0, table.getEncodedSize());
+    }
+
+
+    /**
+     * Additional test checkPropertyName doesn't accept an empty String
+     */
+    public void testCheckPropertyNameasEmptyString()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        try
+        {
+            table.setObject("", "String");
+            fail("empty property name is not allowed");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+        // so size should be zero
+        Assert.assertEquals(0, table.getEncodedSize());
+    }
+
+
+    /**
+     * Additional test checkPropertyName doesn't accept an empty String
+     */
+    public void testCheckPropertyNamehasMaxLength()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        StringBuffer longPropertyName = new StringBuffer(129);
+
+        for (int i = 0; i < 129; i++)
+        {
+            longPropertyName.append("x");
+        }
+
+        try
+        {
+            table.setObject(longPropertyName.toString(), "String");
+            fail("property name must be < 128 characters");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+        // so size should be zero
+        Assert.assertEquals(0, table.getEncodedSize());
+    }
+
+
+    /**
+     * Additional test checkPropertyName starts with a letter
+     */
+    public void testCheckPropertyNameStartCharacterIsLetter()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        //Try a name that starts with a number
+        try
+        {
+            table.setObject("1", "String");
+            fail("property name must start with a letter");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            //normal path
+        }
+        // so size should be zero
+        Assert.assertEquals(0, table.getEncodedSize());
+    }
+
+
+    /**
+     * Additional test checkPropertyName starts with a hash or a dollar
+     */
+    public void testCheckPropertyNameStartCharacterIsHashorDollar()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        //Try a name that starts with a number
+        try
+        {
+            table.setObject("#", "String");
+            table.setObject("$", "String");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            fail("property name are allowed to start with # and $s");
+        }
+    }
+
+
+    /**
+     * Additional test to test the contents of the table
+     */
+    public void testContents()
+    {
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        table.put("StringProperty", "String");
+
+        Assert.assertTrue(table.containsValue("String"));
+
+        Assert.assertEquals("String", table.get("StringProperty"));
+
+        //Test Clear
+
+        table.clear();
+
+        checkEmpty(table);
+    }
+
+    /**
+     * Test the contents of the sets
+     */
+    public void testSets()
+    {
+
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        table.put("n1", "1");
+        table.put("n2", "2");
+        table.put("n3", "3");
+
+        Iterator iterator = table.keySet().iterator();
+        Assert.assertEquals("n1", iterator.next());
+        Assert.assertEquals("n2", iterator.next());
+        Assert.assertEquals("n3", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+
+
+        iterator = table.values().iterator();
+        Assert.assertEquals("1", iterator.next());
+        Assert.assertEquals("2", iterator.next());
+        Assert.assertEquals("3", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+
+
+        iterator = table.entrySet().iterator();
+        Map.Entry entry = (Map.Entry) iterator.next();
+        Assert.assertEquals("n1", entry.getKey());
+        Assert.assertEquals("1", entry.getValue());
+        entry = (Map.Entry) iterator.next();
+        Assert.assertEquals("n2", entry.getKey());
+        Assert.assertEquals("2", entry.getValue());
+        entry = (Map.Entry) iterator.next();
+        Assert.assertEquals("n3", entry.getKey());
+        Assert.assertEquals("3", entry.getValue());
+        Assert.assertFalse(iterator.hasNext());
+
 
     }
+
+
+    /**
+     * Test that all the values are preserved after a putAll
+     */
+    public void testPutAll()
+    {
+        Map map = new HashMap();
+
+        map.put("char", 'c');
+        map.put("double", Double.MAX_VALUE);
+        map.put("float", Float.MAX_VALUE);
+        map.put("int", Integer.MAX_VALUE);
+        map.put("long", Long.MAX_VALUE);
+        map.put("short", Short.MAX_VALUE);
+
+        PropertyFieldTable table = new PropertyFieldTable();
+
+        table.putAll(map);
+
+        Assert.assertEquals(6, table.size());
+
+        Assert.assertTrue(table.containsKey("char"));
+        Assert.assertEquals('c', (char) table.getCharacter("char"));
+        Assert.assertTrue(table.containsKey("double"));
+        Assert.assertEquals(Double.MAX_VALUE, table.getDouble("double"));
+        Assert.assertTrue(table.containsKey("float"));
+        Assert.assertEquals(Float.MAX_VALUE, table.getFloat("float"));
+        Assert.assertTrue(table.containsKey("int"));
+        Assert.assertEquals(Integer.MAX_VALUE, (int) table.getInteger("int"));
+        Assert.assertTrue(table.containsKey("long"));
+        Assert.assertEquals(Long.MAX_VALUE, (long) table.getLong("long"));
+        Assert.assertTrue(table.containsKey("short"));
+        Assert.assertEquals(Short.MAX_VALUE, (short) table.getShort("short"));
+        Assert.assertEquals(Short.MAX_VALUE, (short) table.getShort("short"));
+    }
+
 
     private void assertBytesEqual(byte[] expected, byte[] actual)
     {
