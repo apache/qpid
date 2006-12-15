@@ -205,8 +205,6 @@ public class JMSPropertyFieldTable
 
     public byte getByte(String string) throws JMSException
     {
-        try
-        {
             Byte b = _fieldtable.getByte(string);
             if (b == null)
             {
@@ -230,17 +228,10 @@ public class JMSPropertyFieldTable
             }
 
             return b;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
     }
 
     public short getShort(String string) throws JMSException
     {
-        try
-        {
             Short s = _fieldtable.getShort(string);
 
             if (s == null)
@@ -249,17 +240,10 @@ public class JMSPropertyFieldTable
             }
 
             return s;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
     }
 
     public int getInteger(String string) throws JMSException
     {
-        try
-        {
             Integer i = _fieldtable.getInteger(string);
 
             if (i == null)
@@ -268,17 +252,10 @@ public class JMSPropertyFieldTable
             }
 
             return i;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
     }
 
     public long getLong(String string) throws JMSException
     {
-        try
-        {
             Long l = _fieldtable.getLong(string);
 
             if (l == null)
@@ -287,18 +264,10 @@ public class JMSPropertyFieldTable
             }
 
             return l;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
-
     }
 
     public float getFloat(String string) throws JMSException
     {
-        try
-        {
             Float f = _fieldtable.getFloat(string);
 
             if (f == null)
@@ -324,17 +293,10 @@ public class JMSPropertyFieldTable
             }
 
             return f;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
     }
 
     public double getDouble(String string) throws JMSException
     {
-        try
-        {
             Double d = _fieldtable.getDouble(string);
 
             if (d == null)
@@ -342,12 +304,7 @@ public class JMSPropertyFieldTable
                 d = Double.valueOf(getFloat(string));
             }
 
-            return d;
-        }
-        catch (NumberFormatException nfe)
-        {
-            throw new MessageFormatException(nfe.getMessage());
-        }
+            return d;        
     }
 
     public String getString(String string) throws JMSException

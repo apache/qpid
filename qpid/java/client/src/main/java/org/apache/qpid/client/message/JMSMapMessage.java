@@ -54,7 +54,7 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
         _properties = new JMSPropertyFieldTable();
     }
 
-	JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
@@ -129,17 +129,7 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
 
     public char getChar(String string) throws JMSException
     {
-
-        Character result = _properties.getCharacter(string);
-
-        if (result == null)
-        {
-            throw new NullPointerException("getChar couldn't find " + string + " item.");
-        }
-        else
-        {
-            return result;
-        }
+        return _properties.getCharacter(string);
     }
 
     public int getInt(String string) throws JMSException
