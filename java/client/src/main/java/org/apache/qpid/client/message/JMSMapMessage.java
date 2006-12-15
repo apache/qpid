@@ -53,7 +53,13 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
     }
 
 
-    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+    @Override
+	public void clearBodyImpl() throws JMSException {
+		super.clearBodyImpl();
+		_map = new PropertyFieldTable();
+	}
+
+	JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
@@ -160,7 +166,7 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
 
         if (result == null)
         {
-            throw new MessageFormatException("getChar couldn't find " + string + " item.");
+            throw new NullPointerException("getChar couldn't find " + string + " item.");
         }
         else
         {
