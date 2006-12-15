@@ -254,9 +254,9 @@ public class JMSPropertyFieldTableTest extends TestCase
         try
         {
             table1.getByte("Rubbish");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException mfs)
+        catch (NumberFormatException mfs)
         {
             //normal Execution
         }
@@ -334,9 +334,9 @@ public class JMSPropertyFieldTableTest extends TestCase
         try
         {
             table1.getShort("Rubbish");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException mfe)
+        catch (NumberFormatException mfe)
         {
             //normal path
         }
@@ -597,9 +597,9 @@ public class JMSPropertyFieldTableTest extends TestCase
         try
         {
             table1.getInteger("Rubbish");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException mfe)
+        catch (NumberFormatException mfe)
         {
             //normal path
         }
@@ -690,9 +690,9 @@ public class JMSPropertyFieldTableTest extends TestCase
         try
         {
             table1.getLong("Rubbish");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException mfs)
+        catch (NumberFormatException mfs)
         {
             //normal Execution
         }
@@ -731,54 +731,54 @@ public class JMSPropertyFieldTableTest extends TestCase
         try
         {
             table1.getByte("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
         try
         {
             table1.getShort("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
         try
         {
             table1.getDouble("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
         try
         {
             table1.getFloat("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
         try
         {
             table1.getInteger("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
         try
         {
             table1.getLong("value");
-            fail("Should throw MessageFormatException");
+            fail("Should throw NumberFormatException");
         }
-        catch (MessageFormatException nfs)
+        catch (NumberFormatException nfs)
         {
             //normal Execution
         }
