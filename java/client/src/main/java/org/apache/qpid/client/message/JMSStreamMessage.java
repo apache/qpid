@@ -226,6 +226,10 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         byte wireType = readWireType();
         try
         {
+        	if(wireType == NULL_STRING_TYPE){
+        		throw new NullPointerException();
+        	}
+        	
             if (wireType != CHAR_TYPE)
             {
                 _data.position(position);
@@ -428,7 +432,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
                     break;
                 case NULL_STRING_TYPE:
                     result = null;
-                    break;
+                    throw new NullPointerException("data is null");
                 case BOOLEAN_TYPE:
                     checkAvailable(1);
                     result = String.valueOf(readBooleanImpl());
