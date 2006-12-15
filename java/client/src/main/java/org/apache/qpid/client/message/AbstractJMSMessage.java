@@ -52,7 +52,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     protected ByteBuffer _data;
     private boolean _readableProperties = false;
     private boolean _readableMessage = false;
-
+    private Destination _destination;
+    
     protected AbstractJMSMessage(ByteBuffer data)
     {
         super(new BasicContentHeaderProperties());
@@ -176,12 +177,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
     public Destination getJMSDestination() throws JMSException
     {
         // TODO: implement this once we have sorted out how to figure out the exchange class
-        throw new JmsNotImplementedException();
+    	return _destination;
     }
 
     public void setJMSDestination(Destination destination) throws JMSException
     {
-        throw new JmsNotImplementedException();
+    	_destination = destination;
     }
 
     public int getJMSDeliveryMode() throws JMSException
