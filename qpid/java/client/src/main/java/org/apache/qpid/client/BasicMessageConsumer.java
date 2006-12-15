@@ -460,8 +460,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    private void postDeliver(AbstractJMSMessage msg)
+    private void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
+    	msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
             case Session.DUPS_OK_ACKNOWLEDGE:
