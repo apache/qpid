@@ -57,10 +57,6 @@ public class PropertyFieldTable implements FieldTable
     private static final String BYTES_CLOSE_XML = "</" + BYTES + ">";
     private static final String BYTES_OPEN_XML_START = "<" + BYTES;
 
-    private LinkedHashMap<String, Object> _properties;
-    private LinkedHashMap<String, Prefix> _propertyNamesTypeMap;
-    private long _encodedSize = 0;
-
     public static enum Prefix
     {
         //AMQP FieldTable Wire Types
@@ -93,7 +89,7 @@ public class PropertyFieldTable implements FieldTable
         Prefix(char identifier)
         {
             _identifier = identifier;
-            _reverseTypeMap.put(identifier, this);
+            //_reverseTypeMap.put(identifier, this);
         }
 
         public final char identifier()
@@ -104,6 +100,18 @@ public class PropertyFieldTable implements FieldTable
     }
 
     public static Map<Character, Prefix> _reverseTypeMap = new HashMap<Character, Prefix>();
+
+    static
+    {
+        for (Prefix p : Prefix.values())
+        {
+            _reverseTypeMap.put(p.identifier(), p);
+        }
+    }
+
+    private LinkedHashMap<String, Object> _properties;
+    private LinkedHashMap<String, Prefix> _propertyNamesTypeMap;
+    private long _encodedSize = 0;
 
     public PropertyFieldTable()
     {
@@ -1159,8 +1167,16 @@ public class PropertyFieldTable implements FieldTable
 
             byte iType = buffer.get();
 
-            Prefix type = _reverseTypeMap.get((char) iType);
+            Character mapKey = new Character((char) iType);
+            Prefix type = _reverseTypeMap.get(mapKey);
 
+            if (type == null)
+            {
+                String msg = "Field '" + key + "' - unsupported field table type: " + type + ".";
+                    //some extra trace information...
+                    msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
+                    throw new AMQFrameDecodingException(msg);
+            }
             Object value;
 
             switch (type)
@@ -1204,9 +1220,7 @@ public class PropertyFieldTable implements FieldTable
                     value = EncodingUtils.readBytes(buffer);
                     break;
                 default:
-                    String msg = "Field '" + key + "' - unsupported field table type: " + type + ".";
-                    //some extra trace information...
-                    msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
+                    String msg = "Internal error, the following type identifier is not handled: " + type;                                        
                     throw new AMQFrameDecodingException(msg);
             }
 
