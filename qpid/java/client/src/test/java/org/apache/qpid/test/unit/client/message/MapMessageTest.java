@@ -206,7 +206,7 @@ public class MapMessageTest extends TestCase
             mm.getByte("random");
             Assert.fail("MessageFormatException expected");
         }
-        catch (NumberFormatException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }
@@ -295,9 +295,9 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getInt("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("MessageFormatException should be received.");
         }
-        catch (NumberFormatException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }
@@ -313,9 +313,9 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getLong("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("MessageFormatException should be received.");
         }
-        catch (NumberFormatException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }
@@ -331,9 +331,9 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getShort("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("MessageFormatException should be received.");
         }
-        catch (NumberFormatException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }

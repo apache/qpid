@@ -461,7 +461,7 @@ public class EncodingUtils
 
     //**** new methods
 
-    // BOOLEAN_PROPERTY_PREFIX
+    // AMQP_BOOLEAN_PROPERTY_PREFIX
 
     public static void writeBoolean(ByteBuffer buffer, Boolean aBoolean)
     {
@@ -479,7 +479,7 @@ public class EncodingUtils
         return 1;
     }
 
-    // BYTE_PROPERTY_PREFIX
+    // AMQP_BYTE_PROPERTY_PREFIX
     public static void writeByte(ByteBuffer buffer, Byte aByte)
     {
         buffer.put(aByte);
@@ -496,7 +496,7 @@ public class EncodingUtils
     }
 
 
-    // SHORT_PROPERTY_PREFIX
+    // AMQP_SHORT_PROPERTY_PREFIX
     public static void writeShort(ByteBuffer buffer, Short aShort)
     {
         buffer.putShort(aShort);
@@ -528,7 +528,7 @@ public class EncodingUtils
         return 4;
     }
 
-    // LONG_PROPERTY_PREFIX
+    // AMQP_LONG_PROPERTY_PREFIX
     public static void writeLong(ByteBuffer buffer, Long aLong)
     {
         buffer.putLong(aLong);
@@ -610,7 +610,7 @@ public class EncodingUtils
     }
 
     //CHAR_PROPERTY
-    public static long encodedCharLength()
+    public static int encodedCharLength()
     {
         return encodedByteLength();
     }

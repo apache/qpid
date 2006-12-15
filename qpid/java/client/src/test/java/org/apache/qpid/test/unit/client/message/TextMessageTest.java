@@ -22,8 +22,13 @@ package org.apache.qpid.test.unit.client.message;
 
 import org.apache.qpid.client.message.TestMessageHelper;
 import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
 
 import junit.framework.TestCase;
+import junit.framework.Assert;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 public class TextMessageTest extends TestCase
 {
@@ -46,6 +51,248 @@ public class TextMessageTest extends TestCase
         val = tm.getText();
         assertEquals(val, "Banana");
     }
+
+
+    public void testBooleanPropertyLookup()
+    {
+        try
+        {
+            JMSTextMessage tm = TestMessageHelper.newJMSTextMessage();
+
+            tm.setBooleanProperty("value", true);
+            Assert.assertEquals(true, tm.getBooleanProperty("value"));
+            Assert.assertEquals("true", tm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testBytePropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setByteProperty("value", Byte.MAX_VALUE);
+
+            Assert.assertEquals(Byte.MAX_VALUE, mm.getByteProperty("value"));
+            Assert.assertEquals((short) Byte.MAX_VALUE, mm.getShortProperty("value"));
+            Assert.assertEquals(Byte.MAX_VALUE, mm.getIntProperty("value"));
+            Assert.assertEquals((long) Byte.MAX_VALUE, mm.getLongProperty("value"));
+            Assert.assertEquals("" + Byte.MAX_VALUE, mm.getStringProperty("value"));
+
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testShortPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setShortProperty("value", Short.MAX_VALUE);
+            Assert.assertEquals(Short.MAX_VALUE, mm.getShortProperty("value"));
+            Assert.assertEquals((int) Short.MAX_VALUE, mm.getIntProperty("value"));
+            Assert.assertEquals((long) Short.MAX_VALUE, mm.getLongProperty("value"));
+            Assert.assertEquals("" + Short.MAX_VALUE, mm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testDoublePropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setDoubleProperty("value", Double.MAX_VALUE);
+            Assert.assertEquals(Double.MAX_VALUE, mm.getDoubleProperty("value"));
+            Assert.assertEquals("" + Double.MAX_VALUE, mm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testFloatPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setFloatProperty("value", Float.MAX_VALUE);
+            Assert.assertEquals(Float.MAX_VALUE, mm.getFloatProperty("value"));
+            Assert.assertEquals((double) Float.MAX_VALUE, mm.getDoubleProperty("value"));
+            Assert.assertEquals("" + Float.MAX_VALUE, mm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testIntPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setIntProperty("value", Integer.MAX_VALUE);
+            Assert.assertEquals(Integer.MAX_VALUE, mm.getIntProperty("value"));
+            Assert.assertEquals((long) Integer.MAX_VALUE, mm.getLongProperty("value"));
+            Assert.assertEquals("" + Integer.MAX_VALUE, mm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testLongPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.setLongProperty("value", Long.MAX_VALUE);
+            Assert.assertEquals(Long.MAX_VALUE, mm.getLongProperty("value"));
+            Assert.assertEquals("" + Long.MAX_VALUE, mm.getStringProperty("value"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+
+    // Failed Lookups
+
+    public void testFailedBooleanPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            Assert.assertEquals(false, mm.getBooleanProperty("int"));
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+    }
+
+    public void testFailedBytePropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getByteProperty("random");
+            Assert.fail("MessageFormatException expected");
+        }
+        catch (MessageFormatException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+
+    }
+
+    public void testFailedDoublePropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getDoubleProperty("random");
+            Assert.fail("NullPointerException should be received.");
+        }
+        catch (NullPointerException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+    }
+
+    public void testFailedFloatPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getFloatProperty("random");
+            Assert.fail("NullPointerException should be received.");
+        }
+        catch (NullPointerException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+    }
+
+    public void testFailedIntPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getIntProperty("random");
+            Assert.fail("MessageFormatException should be received.");
+        }
+        catch (MessageFormatException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+    }
+
+    public void testFailedLongPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getLongProperty("random");
+            Assert.fail("MessageFormatException should be received.");
+        }
+        catch (MessageFormatException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+    }
+
+    public void testFailedShortPropertyLookup()
+    {
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+            mm.getShortProperty("random");
+            Assert.fail("MessageFormatException should be received.");
+        }
+        catch (MessageFormatException e)
+        {
+            //normal execution
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received:" + e);
+        }
+    }
+
 
     public static junit.framework.Test suite()
     {
