@@ -166,11 +166,11 @@ public class MapMessageTest extends TestCase implements MessageListener
 
             testMapValues(m, count);
 
-            testMessageWriteStatus(m);
-
             testPropertyWriteStatus(m);
 
             testCorrectExceptions(m);
+
+            testMessageWriteStatus(m);
 
             count++;
         }
@@ -207,9 +207,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
@@ -217,9 +217,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
@@ -228,7 +228,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -238,18 +238,18 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
         try
         {
             m.getLong("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
@@ -258,9 +258,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
@@ -268,9 +268,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (NumberFormatException nfe)
+        catch (MessageFormatException nfe)
         {
             //normal execution
         }
@@ -278,7 +278,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("message");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -295,7 +295,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -305,7 +305,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -318,7 +318,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -333,7 +333,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -343,7 +343,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -353,7 +353,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("short");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -370,7 +370,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -380,7 +380,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -390,7 +390,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -401,7 +401,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -411,7 +411,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -424,7 +424,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -434,7 +434,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -444,7 +444,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("long");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -461,7 +461,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -471,7 +471,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -481,7 +481,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -492,7 +492,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -502,7 +502,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -511,7 +511,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getLong("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -522,7 +522,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -536,7 +536,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("double");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -554,7 +554,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -564,7 +564,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -574,7 +574,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -585,7 +585,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -595,7 +595,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -604,7 +604,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getLong("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -620,7 +620,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("float");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -638,7 +638,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -648,7 +648,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -658,7 +658,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -669,7 +669,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -684,7 +684,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -694,7 +694,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -704,7 +704,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("int");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -722,7 +722,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -732,7 +732,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -742,7 +742,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -754,7 +754,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -763,7 +763,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getLong("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -774,7 +774,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -784,7 +784,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -794,7 +794,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("char");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -810,7 +810,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -820,7 +820,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -830,7 +830,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -841,7 +841,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -851,7 +851,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -861,7 +861,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getLong("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -872,7 +872,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -882,7 +882,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -895,7 +895,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getString("bytes");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -911,7 +911,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBoolean("byte");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -926,7 +926,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("byte");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -942,7 +942,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("byte");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -952,7 +952,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("byte");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -962,7 +962,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("byte");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -982,7 +982,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getByte("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -993,7 +993,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getShort("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1003,9 +1003,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getChar("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -1013,7 +1013,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getInt("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1023,7 +1023,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getLong("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1033,7 +1033,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getFloat("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1043,7 +1043,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getDouble("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1053,7 +1053,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             m.getBytes("odd");
-            fail("Exception Expected.");
+            fail("MessageFormatException expected as value doesn't exist.");
         }
         catch (MessageFormatException nfe)
         {
@@ -1224,7 +1224,6 @@ public class MapMessageTest extends TestCase implements MessageListener
     {
         synchronized(received)
         {
-            _logger.info("****************** Recevied Messgage:" + (JMSMapMessage) message);
             received.add((JMSMapMessage) message);
             received.notify();
         }
