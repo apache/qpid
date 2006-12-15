@@ -129,7 +129,16 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
 
     public char getChar(String string) throws JMSException
     {
-        return _properties.getCharacter(string);
+    	Character result = _properties.getCharacter(string);
+
+        if (result == null)
+        {
+            throw new NullPointerException("getChar couldn't find " + string + " item.");
+        }
+        else
+        {
+            return result;
+        }
     }
 
     public int getInt(String string) throws JMSException
