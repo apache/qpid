@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -303,6 +303,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
         catch (InterruptedException e)
         {
+            _logger.warn("Interrupted: " + e, e);
             return null;
         }
         finally
@@ -531,18 +532,18 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     public void setConsumerTag(String consumerTag)
-    {    	
+    {
         _consumerTag = consumerTag;
     }
 
 	public AMQSession getSession() {
 		return _session;
 	}
-	
+
 	private void checkPreConditions() throws JMSException{
-    	
+
 		this.checkNotClosed();
-		
+
 		if(_session == null || _session.isClosed()){
 			throw new javax.jms.IllegalStateException("Invalid Session");
 		}

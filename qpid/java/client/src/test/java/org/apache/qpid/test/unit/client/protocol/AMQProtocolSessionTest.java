@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -87,19 +87,19 @@ public class AMQProtocolSessionTest extends TestCase
         _testSession.getMinaProtocolSession().setLocalPort(_port);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue name from an address with special chars",_generatedAddress,testAddress);
+        assertEquals("Failure when generating a queue exchange from an address with special chars",_generatedAddress,testAddress);
 
         //test empty address
         _testSession.getMinaProtocolSession().setStringLocalAddress(_emptyAddress);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue name from an empty address",_generatedAddress_2,testAddress);
+        assertEquals("Failure when generating a queue exchange from an empty address",_generatedAddress_2,testAddress);
 
         //test address with no special chars
         _testSession.getMinaProtocolSession().setStringLocalAddress(_validAddress);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue name from an address with no special chars",_generatedAddress_3,testAddress);
+        assertEquals("Failure when generating a queue exchange from an address with no special chars",_generatedAddress_3,testAddress);
 
     }
 
