@@ -93,4 +93,6 @@ public interface FieldTable extends Map
 
     public Object setObject(String string, Object object);
 
+    public boolean isNullStringValue(String name);
+
 }

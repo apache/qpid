@@ -438,70 +438,53 @@ public class PropertyFieldTable implements FieldTable
         {
             return setBoolean(string, (Boolean) object);
         }
-        else
+        else if (object instanceof Byte)
         {
-            if (object instanceof Byte)
-            {
-                return setByte(string, (Byte) object);
-            }
-            else
-            {
-                if (object instanceof Short)
-                {
-                    return setShort(string, (Short) object);
-                }
-                else
-                {
-                    if (object instanceof Integer)
-                    {
-                        return setInteger(string, (Integer) object);
-                    }
-                    else
-                    {
-                        if (object instanceof Long)
-                        {
-                            return setLong(string, (Long) object);
-                        }
-                        else
-                        {
-                            if (object instanceof Float)
-                            {
-                                return setFloat(string, (Float) object);
-                            }
-                            else
-                            {
-                                if (object instanceof Double)
-                                {
-                                    return setDouble(string, (Double) object);
-                                }
-                                else
-                                {
-                                    if (object instanceof String)
-                                    {
-                                        return setString(string, (String) object);
-                                    }
-                                    else
-                                    {
-                                        if (object instanceof Character)
-                                        {
-                                            return setChar(string, (Character) object);
-                                        }
-                                        else
-                                        {
-                                            if (object instanceof byte[])
-                                            {
-                                                return setBytes(string, (byte[]) object);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            return setByte(string, (Byte) object);
         }
+        else if (object instanceof Short)
+        {
+            return setShort(string, (Short) object);
+        }
+        else if (object instanceof Integer)
+        {
+            return setInteger(string, (Integer) object);
+        }
+        else if (object instanceof Long)
+        {
+            return setLong(string, (Long) object);
+        }
+        else if (object instanceof Float)
+        {
+            return setFloat(string, (Float) object);
+        }
+        else if (object instanceof Double)
+        {
+            return setDouble(string, (Double) object);
+        }
+        else if (object instanceof String)
+        {
+            return setString(string, (String) object);
+        }
+        else if (object instanceof Character)
+        {
+            return setChar(string, (Character) object);
+        }
+        else if (object instanceof byte[])
+        {
+            return setBytes(string, (byte[]) object);
+        }
+
         throw new AMQPInvalidClassException("Only Primatives objects allowed Object is:" + object.getClass());
+    }
+
+
+    public boolean isNullStringValue(String name)
+    {
+        return _properties.containsKey(name) && (_properties.get(name) == null) &&
+               _propertyNamesTypeMap.get(name).equals(Prefix.AMQP_NULL_STRING_PROPERTY_PREFIX);
+                
+
     }
 
     // ***** Methods
