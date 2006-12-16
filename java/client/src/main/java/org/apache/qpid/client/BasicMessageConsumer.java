@@ -524,7 +524,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private void deregisterConsumer()
     {
-    	_session.deregisterConsumer(_consumerTag);
+    	_session.deregisterConsumer(this);
     }
 
     public String getConsumerTag()

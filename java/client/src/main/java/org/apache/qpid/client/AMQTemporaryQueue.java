@@ -29,22 +29,32 @@ import javax.jms.TemporaryQueue;
 final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue
 {
 
+    private final AMQSession _session;
 
     /**
      * Create a new instance of an AMQTemporaryQueue
      */
-    public AMQTemporaryQueue()
+    public AMQTemporaryQueue(AMQSession session)
     {
         super("TempQueue" + Long.toString(System.currentTimeMillis()), true);
+        _session = session;
     }
 
     /**
      * @see javax.jms.TemporaryQueue#delete()
      */
-    public void delete() throws JMSException
+    public synchronized void delete() throws JMSException
     {
-        throw new UnsupportedOperationException("Delete not supported, " +
-                                                "will auto-delete when connection closed");
+        if(_session.hasConsumer(this))
+        {
+            throw new JMSException("Temporary Queue has consumers so cannot be deleted");
+        }
+
+        if(_session.isQueueBound(getQueueName()))
+        {
+            _session.deleteQueue(getQueueName());
+        }
+
     }
 
 }
