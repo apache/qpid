@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -102,6 +103,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private Map _consumers = new ConcurrentHashMap();
 
     /**
+     * Maps from destination to count of JMSMessageConsumers
+     */
+    private ConcurrentHashMap<Destination, AtomicInteger> _destinationConsumerCount =
+            new ConcurrentHashMap<Destination, AtomicInteger>();
+    /**
      * Default value for immediate flag used by producers created by this session is false, i.e. a consumer does not
      * need to be attached to a queue
      */
@@ -126,6 +132,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * Track the 'stopped' state of the dispatcher, a session starts in the stopped state.
      */
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
+
+
 
     /**
      * Responsible for decoding a message fragment and passing it to the appropriate message consumer.
@@ -788,20 +796,38 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, null);
+        return createConsumerImpl(destination,
+                                  _defaultPrefetchHighMark,
+                                  _defaultPrefetchLowMark,
+                                  false,
+                                  false,
+                                  null,
+                                  null);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, false, messageSelector);
+        return createConsumerImpl(destination,
+                                  _defaultPrefetchHighMark,
+                                  _defaultPrefetchLowMark,
+                                  false,
+                                  false,
+                                  messageSelector,
+                                  null);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
             throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumer(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false, messageSelector);
+        return createConsumerImpl(destination,
+                                  _defaultPrefetchHighMark,
+                                  _defaultPrefetchLowMark,
+                                  noLocal,
+                                  false,
+                                  messageSelector,
+                                  null);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -811,7 +837,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumer(destination, prefetch, prefetch, noLocal, exclusive, selector, null);
+        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, null);
     }
 
 
@@ -823,7 +849,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumer(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null);
+        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -892,10 +918,25 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     throw ex;
                 }
 
+                synchronized(destination)
+                {
+                    _destinationConsumerCount.putIfAbsent(destination,new AtomicInteger());
+                    _destinationConsumerCount.get(destination).incrementAndGet();
+                }
+
                 return consumer;
             }
         }.execute(_connection);
     }
+
+
+    public boolean hasConsumer(TemporaryQueue destination)
+    {
+        AtomicInteger counter = _destinationConsumerCount.get(destination);
+
+        return (counter != null) && (counter.get() != 0);
+    }
+
 
     public void declareExchange(String name, String type)
     {
@@ -970,6 +1011,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         consumer.setConsumerTag(tag);
         // we must register the consumer in the map before we actually start listening
         _consumers.put(tag, consumer);
+
         try
         {
             AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId, 0,
@@ -1136,7 +1178,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             if (isQueueBound(dest.getQueueName()) &&
                 !isQueueBound(dest.getQueueName(), topic.getTopicName()))
             {
-                deleteSubscriptionQueue(dest.getQueueName());
+                deleteQueue(dest.getQueueName());
             }
         }
 
@@ -1146,7 +1188,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return subscriber;
     }
 
-    private void deleteSubscriptionQueue(String queueName) throws JMSException
+    void deleteQueue(String queueName) throws JMSException
     {
         try
         {
@@ -1198,7 +1240,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
         checkNotClosed();
-        return new AMQTemporaryQueue();
+        return new AMQTemporaryQueue(this);
     }
 
     public TemporaryTopic createTemporaryTopic() throws JMSException
@@ -1214,14 +1256,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         if (subscriber != null)
         {
             // send a queue.delete for the subscription
-            deleteSubscriptionQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
+            deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             _subscriptions.remove(name);
         }
         else
         {
             if (isQueueBound(AMQTopic.getDurableTopicQueueName(name, _connection)))
             {
-                deleteSubscriptionQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
+                deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             }
             else
             {
@@ -1230,12 +1272,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    private boolean isQueueBound(String queueName) throws JMSException
+    boolean isQueueBound(String queueName) throws JMSException
     {
         return isQueueBound(queueName, null);
     }
 
-    private boolean isQueueBound(String queueName, String routingKey) throws JMSException
+    boolean isQueueBound(String queueName, String routingKey) throws JMSException
     {
         AMQFrame boundFrame = ExchangeBoundBody.createAMQFrame(_channelId, ExchangeDefaults.TOPIC_EXCHANGE_NAME,
                                                                routingKey, queueName);
@@ -1374,11 +1416,19 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * Called by the MessageConsumer when closing, to deregister the consumer from the
      * map from consumerTag to consumer instance.
      *
-     * @param consumerTag the consumer tag, that was broker-generated
+     * @param consumer the consum
      */
-    void deregisterConsumer(String consumerTag)
+    void deregisterConsumer(BasicMessageConsumer consumer)
     {
-        _consumers.remove(consumerTag);
+        _consumers.remove(consumer.getConsumerTag());
+        Destination dest = consumer.getDestination();
+        synchronized(dest)
+        {
+            if(_destinationConsumerCount.get(dest).decrementAndGet() == 0)
+            {
+                _destinationConsumerCount.remove(dest);
+            }
+        }
     }
 
     private void registerProducer(long producerId, MessageProducer producer)
