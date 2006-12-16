@@ -76,6 +76,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
+    private final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
+                new ConcurrentHashMap<BasicMessageConsumer, String>();
 
     /**
      * Used in the consume method. We generate the consume tag on the client so that we can use the nowait
@@ -107,6 +109,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private ConcurrentHashMap<Destination, AtomicInteger> _destinationConsumerCount =
             new ConcurrentHashMap<Destination, AtomicInteger>();
+
     /**
      * Default value for immediate flag used by producers created by this session is false, i.e. a consumer does not
      * need to be attached to a queue
@@ -1205,7 +1208,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
 
         subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
+
         _subscriptions.put(name,subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(),name);
 
         return subscriber;
     }
@@ -1236,6 +1241,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
         TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
         _subscriptions.put(name,subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(),name);
         return subscriber;
     }
 
@@ -1280,6 +1286,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             // send a queue.delete for the subscription
             deleteQueue(AMQTopic.getDurableTopicQueueName(name, _connection));
             _subscriptions.remove(name);
+            _reverseSubscriptionMap.remove(subscriber);
         }
         else
         {
@@ -1443,6 +1450,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     void deregisterConsumer(BasicMessageConsumer consumer)
     {
         _consumers.remove(consumer.getConsumerTag());
+        String subscriptionName = _reverseSubscriptionMap.remove(consumer);
+        if(subscriptionName != null)
+        {
+            _subscriptions.remove(subscriptionName);    
+        }
+
         Destination dest = consumer.getDestination();
         synchronized(dest)
         {
