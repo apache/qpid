@@ -26,10 +26,11 @@ import javax.jms.TemporaryTopic;
 /**
  * AMQ implementation of TemporaryTopic.
  */
-class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic
+class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic, TemporaryDestination
 {
 
     private final AMQSession _session;
+    private boolean _deleted;
     /**
      * Create new temporary topic.
      */
@@ -49,9 +50,20 @@ class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic
             throw new JMSException("Temporary Topic has consumers so cannot be deleted");
         }
 
+        _deleted = true;
         // Currently TemporaryQueue is set to be auto-delete which means that the queue will be deleted
         // by the server when there are no more subscriptions to that queue.  This is probably not
         // quite right for JMSCompliance.
+    }
+
+    public AMQSession getSession()
+    {
+        return _session;
+    }
+
+    public boolean isDeleted()
+    {
+        return _deleted;
     }
 
 }
