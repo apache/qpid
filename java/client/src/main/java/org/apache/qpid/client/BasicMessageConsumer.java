@@ -214,10 +214,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //handle case where connection has already been started, and the dispatcher is blocked
                 //doing a put on the _synchronousQueue
-                Object msg = _synchronousQueue.poll();
-                if (msg != null)
+                AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
+                if (jmsMsg != null)
                 {
-                    AbstractJMSMessage jmsMsg = (AbstractJMSMessage) msg;
+                    _session.setLastDeliveredMessage(jmsMsg);
                     messageListener.onMessage(jmsMsg);
                     postDeliver(jmsMsg);
                 }
@@ -297,8 +297,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
+                _session.setLastDeliveredMessage(m);
                 postDeliver(m);
             }
+            
             return m;
         }
         catch (InterruptedException e)
@@ -324,8 +326,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
+                _session.setLastDeliveredMessage(m);
                 postDeliver(m);
             }
+
             return m;
         }
         finally
@@ -424,6 +428,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //we do not need a lock around the test above, and the dispatch below as it is invalid
                 //for an application to alter an installed listener while the session is started
+                _session.setLastDeliveredMessage(jmsMessage);
                 getMessageListener().onMessage(jmsMessage);
                 postDeliver(jmsMessage);
             }

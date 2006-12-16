@@ -39,6 +39,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
+
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.Serializable;
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -136,6 +138,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
 
+    private final AtomicLong _lastDeliveryTag = new AtomicLong();
 
 
     /**
@@ -181,7 +184,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 else
                 {
+
                     consumer.notifyMessage(message, _channelId);
+
                 }
             }
             else
@@ -696,6 +701,27 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
     }
+
+
+    public void acknowledge() throws JMSException
+    {
+        if (getAMQConnection().isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Connection is already closed");
+        }
+        if (isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Session is already closed");            
+        }
+        acknowledgeMessage(_lastDeliveryTag.get(), true);
+
+    }
+
+    void setLastDeliveredMessage(AbstractJMSMessage message)
+    {
+        _lastDeliveryTag.set(message.getDeliveryTag());    
+    }
+
 
     public MessageListener getMessageListener() throws JMSException
     {
