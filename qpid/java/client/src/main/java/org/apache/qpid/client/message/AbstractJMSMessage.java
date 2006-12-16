@@ -43,7 +43,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 
-public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms.Message
+public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
@@ -384,7 +384,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         getJmsContentHeaderProperties().getJMSHeaders().remove(propertyName);
     }
 
-    public void acknowledge() throws JMSException
+    public void acknowledgeThis() throws JMSException
     {
         // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
         // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
@@ -398,6 +398,14 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
             // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
             // received on the session
             _session.acknowledgeMessage(_deliveryTag, true);
+        }
+    }
+
+    public void acknowledge() throws JMSException
+    {
+        if(_session != null)
+        {
+            _session.acknowledge();
         }
     }
 
