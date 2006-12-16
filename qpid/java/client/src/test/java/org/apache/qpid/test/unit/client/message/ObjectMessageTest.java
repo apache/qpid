@@ -167,6 +167,12 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     }
 
 
+    public void testSetObjectForNull() throws Exception
+    {
+        ObjectMessage msg = session.createObjectMessage();
+        msg.setObject(null);
+        assertNull(msg.getObject());
+    }
 
 
     private void send() throws Exception
