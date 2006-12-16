@@ -885,6 +885,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                  final String selector,
                                                  final FieldTable rawSelector) throws JMSException
     {
+        checkTemporaryDestination(destination);
+
         return (org.apache.qpid.jms.MessageConsumer) new FailoverSupport()
         {
             public Object operation() throws JMSException
@@ -927,6 +929,26 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 return consumer;
             }
         }.execute(_connection);
+    }
+
+    private void checkTemporaryDestination(Destination destination)
+            throws JMSException
+    {
+        if((destination instanceof TemporaryDestination))
+        {
+            _logger.debug("destination is temporary");
+            final TemporaryDestination tempDest = (TemporaryDestination) destination;
+            if(tempDest.getSession() != this)
+            {
+                _logger.debug("destination is on different session");
+                throw new JMSException("Cannot consume from a temporary destination created onanother session");
+            }
+            if(tempDest.isDeleted())
+            {
+                _logger.debug("destination is deleted");
+                throw new JMSException("Cannot consume from a deleted destination");
+            }
+        }
     }
 
 
@@ -1497,11 +1519,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    private void checkValidTopic(Topic topic) throws InvalidDestinationException
+    private void checkValidTopic(Topic topic) throws JMSException
     {
         if (topic == null)
         {
             throw new javax.jms.InvalidDestinationException("Invalid Topic");
+        }
+        if((topic instanceof TemporaryDestination) && ((TemporaryDestination)topic).getSession() != this)
+        {
+            throw new JMSException("Cannot create a subscription on a temporary topic created in another session");
         }
     }
 

@@ -26,10 +26,12 @@ import javax.jms.TemporaryQueue;
 /**
  * AMQ implementation of a TemporaryQueue.
  */
-final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue
+final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, TemporaryDestination
 {
 
+
     private final AMQSession _session;
+    private boolean _deleted;
 
     /**
      * Create a new instance of an AMQTemporaryQueue
@@ -49,10 +51,20 @@ final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue
         {
             throw new JMSException("Temporary Queue has consumers so cannot be deleted");
         }
+        _deleted = true;
 
         // Currently TemporaryQueue is set to be auto-delete which means that the queue will be deleted
         // by the server when there are no more subscriptions to that queue.  This is probably not
         // quite right for JMSCompliance.
     }
 
+    public AMQSession getSession()
+    {
+        return _session;
+    }
+
+    public boolean isDeleted()
+    {
+        return _deleted;
+    }
 }

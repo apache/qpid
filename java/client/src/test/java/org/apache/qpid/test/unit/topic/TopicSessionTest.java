@@ -235,6 +235,19 @@ public class TopicSessionTest extends TestCase
             fail("Unexpected Exception: " + je.getMessage());
         }
 
+        TopicSession session2 = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        try
+        {
+            MessageConsumer consumer2 = session2.createConsumer(topic);
+            fail("Expected a JMSException when subscribing to a temporary topic created on adifferent session");
+        }
+        catch (JMSException je)
+        {
+            ; // pass
+        }
+
+
+
         conn.close();
     }
 
