@@ -102,6 +102,27 @@ public class MapMessageTest extends TestCase
         {
             Assert.fail("JMSException received." + e);
         }
+
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+
+            mm.setString("value", null);
+            char c = mm.getChar("value");
+            fail("Expected NullPointerException");
+
+        }
+        catch (NullPointerException e)
+        {
+            ; // pass
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+
+
+
     }
 
     public void testDoubleLookup()
