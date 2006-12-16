@@ -174,7 +174,7 @@ public class JMSPropertyFieldTable
 
         if (c == null)
         {
-            if (_fieldtable.get(string) instanceof Character)
+            if (_fieldtable.isNullStringValue(string))
             {
                 throw new NullPointerException("Cannot convert null char");
             }
@@ -415,7 +415,7 @@ public class JMSPropertyFieldTable
         }
         catch (AMQPInvalidClassException aice)
         {
-            throw new JMSException("Only primatives are allowed object is:" + object.getClass());
+            throw new MessageFormatException("Only primatives are allowed object is:" + object.getClass());
         }
     }
 
