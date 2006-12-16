@@ -50,11 +50,9 @@ final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue
             throw new JMSException("Temporary Queue has consumers so cannot be deleted");
         }
 
-        if(_session.isQueueBound(getQueueName()))
-        {
-            _session.deleteQueue(getQueueName());
-        }
-
+        // Currently TemporaryQueue is set to be auto-delete which means that the queue will be deleted
+        // by the server when there are no more subscriptions to that queue.  This is probably not
+        // quite right for JMSCompliance.
     }
 
 }

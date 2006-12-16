@@ -930,7 +930,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
 
-    public boolean hasConsumer(TemporaryQueue destination)
+    public boolean hasConsumer(Destination destination)
     {
         AtomicInteger counter = _destinationConsumerCount.get(destination);
 
@@ -1246,7 +1246,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
         checkNotClosed();
-        return new AMQTemporaryTopic();
+        return new AMQTemporaryTopic(this);
     }
 
     public void unsubscribe(String name) throws JMSException
