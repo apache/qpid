@@ -479,14 +479,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         // position beyond the start
         if (_data != null)
         {
-            if (!_readableMessage)
-            {
-                _data.flip();
-            }
-            else
-            {
-                _data.rewind();
-            }
+            reset();
         }
         return _data;
     }
@@ -525,7 +518,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements javax.jms
         return !_readableMessage;
     }
 
-    public void reset() throws JMSException
+    public void reset() 
     {
         if (_readableMessage)
         {

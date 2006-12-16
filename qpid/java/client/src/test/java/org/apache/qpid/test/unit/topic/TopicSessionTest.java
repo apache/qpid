@@ -200,7 +200,29 @@ public class TopicSessionTest extends TestCase
         con.close();
     }
 
-    public void testTempoaryTopic() throws Exception
+    public void testSendingSameMessage() throws Exception
+    {
+        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic topic = session.createTemporaryTopic();
+        assertNotNull(topic);
+        TopicPublisher producer = session.createPublisher(topic);
+        MessageConsumer consumer = session.createConsumer(topic);
+        conn.start();
+        TextMessage sentMessage = session.createTextMessage("Test Message");
+        producer.send(sentMessage);
+        TextMessage receivedMessage = (TextMessage) consumer.receive(2000);
+        assertNotNull(receivedMessage);
+        assertEquals(sentMessage.getText(),receivedMessage.getText());
+        producer.send(sentMessage);
+        receivedMessage = (TextMessage) consumer.receive(2000);
+        assertNotNull(receivedMessage);
+        assertEquals(sentMessage.getText(),receivedMessage.getText());
+
+
+    }
+
+    public void testTemporaryTopic() throws Exception
     {
         AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
         TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
