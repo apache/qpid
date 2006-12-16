@@ -71,8 +71,8 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             _data.release();
         }
-        _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
-        _data.setAutoExpand(true);
+        _data = null;
+
     }
 
     public String toBodyString() throws JMSException
@@ -98,6 +98,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             _data.rewind();
         }
+
         try
         {
             ObjectOutputStream out = new ObjectOutputStream(_data.asOutputStream());
@@ -109,6 +110,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             throw new MessageFormatException("Message not serializable: " + e);
         }
+
     }
 
     public Serializable getObject() throws JMSException
