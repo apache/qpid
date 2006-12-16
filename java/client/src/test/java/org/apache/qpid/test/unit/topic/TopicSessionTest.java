@@ -200,6 +200,45 @@ public class TopicSessionTest extends TestCase
         con.close();
     }
 
+    public void testTempoaryTopic() throws Exception
+    {
+        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic topic = session.createTemporaryTopic();
+        assertNotNull(topic);
+        TopicPublisher producer = session.createPublisher(topic);
+        MessageConsumer consumer = session.createConsumer(topic);
+        conn.start();
+        producer.send(session.createTextMessage("hello"));
+        TextMessage tm = (TextMessage) consumer.receive(2000);
+        assertNotNull(tm);
+        assertEquals("hello",tm.getText());
+
+        try
+        {
+            topic.delete();
+            fail("Expected JMSException : should not be able to delete while there are active consumers");
+        }
+        catch(JMSException je)
+        {
+            ; //pass
+        }
+
+        consumer.close();
+
+        try
+        {
+            topic.delete();
+        }
+        catch(JMSException je)
+        {
+            fail("Unexpected Exception: " + je.getMessage());
+        }
+
+        conn.close();
+    }
+
+
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(TopicSessionTest.class);
