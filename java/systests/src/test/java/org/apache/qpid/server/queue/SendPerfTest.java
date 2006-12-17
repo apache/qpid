@@ -90,7 +90,8 @@ public class SendPerfTest extends TimedRun
 
     /**
      * Delivers messages to a number of queues.
-     * @param count the number of messages to deliver
+     *
+     * @param count  the number of messages to deliver
      * @param queues the list of queues
      * @throws NoConsumersException
      */
@@ -121,7 +122,7 @@ public class SendPerfTest extends TimedRun
             q.bind("routingKey", exchange);
             try
             {
-                q.registerProtocolSession(createSession(), 1, "1", false);
+                q.registerProtocolSession(createSession(), 1, "1", false, null);
             }
             catch (Exception e)
             {
@@ -135,7 +136,7 @@ public class SendPerfTest extends TimedRun
     static AMQQueue createQueue(String name) throws AMQException
     {
         return new AMQQueue(name, false, null, false, ApplicationRegistry.getInstance().getQueueRegistry(),
-                new OnCurrentThreadExecutor());
+                            new OnCurrentThreadExecutor());
     }
 
     static AMQProtocolSession createSession() throws Exception

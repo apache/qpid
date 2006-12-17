@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 public class TestSubscription implements Subscription
 {
@@ -78,6 +79,16 @@ public class TestSubscription implements Subscription
     public boolean hasInterest(AMQMessage msg)
     {
         return true;
+    }
+
+    public Queue<AMQMessage> getPreDeliveryQueue()
+    {
+        return null;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg)
+    {
+        //no-op -- if selectors are implemented here then look at SubscriptionImpl
     }
 
     public int hashCode()

@@ -46,6 +46,7 @@ import javax.management.openmbean.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
@@ -518,16 +519,30 @@ public class AMQQueue implements Managable, Comparable
         _subscriptionFactory = subscriptionFactory;
 
         //fixme - Pick one.
-        if (Boolean.getBoolean("concurrentdeliverymanager"))
+        if (System.getProperties().getProperty("deliverymanager") != null)
         {
-            _logger.info("Using ConcurrentDeliveryManager");
-            _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
+            if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentSelectorDeliveryManager"))
+            {
+                _logger.warn("Using ConcurrentSelectorDeliveryManager");
+                _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
+            }
+            else if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentDeliveryManager"))
+            {
+                _logger.warn("Using ConcurrentDeliveryManager");
+                _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
+            }
+            else
+            {
+                _logger.warn("Using SynchronizedDeliveryManager");
+                _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
+            }
         }
         else
         {
-            _logger.info("Using SynchronizedDeliveryManager");
+            _logger.warn("Using SynchronizedDeliveryManager");
             _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
         }
+
     }
 
     private AMQQueueMBean createMBean() throws AMQException

@@ -942,7 +942,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         //need to generate a consumer tag on the client so we can exploit the nowait flag
         String tag = Integer.toString(_nextTag++);
 
-        FieldTable ft = new FieldTable();
+        FieldTable ft = FieldTableFactory.newFieldTable();
 
         if (messageSelector != null)
         {

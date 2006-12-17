@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicDeliverBody;
@@ -31,6 +32,8 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+
+import java.util.Queue;
 
 /**
  * Encapsulation of a supscription to a queue.
@@ -50,6 +53,9 @@ public class SubscriptionImpl implements Subscription
     public final String consumerTag;
 
     private final Object sessionKey;
+
+    private Queue<AMQMessage> _messages;
+
 
     /**
      * True if messages need to be acknowledged
@@ -100,6 +106,16 @@ public class SubscriptionImpl implements Subscription
         sessionKey = protocolSession.getKey();
         _acks = acks;
         _filters = FilterManagerFactory.createManager(filters);
+
+        if (_filters != null)
+        {
+            _messages = new ConcurrentLinkedQueueAtomicSize<AMQMessage>();
+        }
+        else
+        {
+            // Reference the DeliveryManager
+            _messages = null;
+        }
     }
 
 
@@ -198,6 +214,22 @@ public class SubscriptionImpl implements Subscription
     {
         return _filters.allAllow(msg);
     }
+
+    public Queue<AMQMessage> getPreDeliveryQueue()
+    {
+        return _messages;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg)
+    {
+        if (_messages != null)
+        {
+            _messages.offer(msg);
+        }
+    }
+
+
+
 
     private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
     {

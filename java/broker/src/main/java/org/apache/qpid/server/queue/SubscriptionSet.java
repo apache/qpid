@@ -139,30 +139,27 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
             if (!subscription.isSuspended())
             {
-
-                if ((!subscription.hasFilters()) || (subscription.hasFilters() && subscription.hasInterest(msg)))
+                if (!subscription.hasFilters())
                 {
                     return subscription;
                 }
-                // 2006-12-04 : It is fairer to simply skip the person who isn't interested.
-                // Although it does need to be looked at again.
-
-//                else
-//                {
-//                    //Don't take penalise a subscriber for not wanting this message.
-//                    // This would introduce unfairness sticking with the current subscriber
-//                    // will allow the next message to match.. although could lead to unfairness if:
-//                    // subscribers: a(bin) b(text) c(text)
-//                    // msgs : 1(text) 2(text) 3(bin)
-//                    // subscriber c won't get any messages. as the first two text msgs will go to b and then a will get
-//                    // the bin msg.
-//                    // Never said this was fair round-robin-ing.
-//                    //FIXME - Make a fair round robin.
-//
-//                    --_currentSubscriber;
-//                }
+                else
+                {
+                    if (subscription.hasInterest(msg))
+                    {
+                        // if the queue is not empty then this client is ready to receive a message.
+                        //FIXME the queue could be full of sent messages.
+                        // Either need to clean all PDQs after sending a message
+                        // OR have a clean up thread that runs the PDQs expunging the messages.
+                        if (subscription.getPreDeliveryQueue().isEmpty())
+                        {
+                            return subscription;
+                        }
+                    }
+                }
             }
         }
+
         return null;
     }
 
@@ -176,6 +173,11 @@ class SubscriptionSet implements WeightedSubscriptionManager
     public boolean isEmpty()
     {
         return _subscriptions.isEmpty();
+    }
+
+    public List<Subscription> getSubscriptions()
+    {
+        return _subscriptions;
     }
 
     public boolean hasActiveSubscribers()

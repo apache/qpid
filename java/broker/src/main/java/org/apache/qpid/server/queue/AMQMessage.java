@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -89,6 +90,7 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
     private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
+    private AtomicBoolean _taken;
 
 
     public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody)
@@ -104,6 +106,7 @@ public class AMQMessage
         _contentBodies = new LinkedList<ContentBody>();
         _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _storeWhenComplete = storeWhenComplete;
+        _taken = new AtomicBoolean(false);
     }
 
     public AMQMessage(MessageStore store, long messageId, BasicPublishBody publishBody,
@@ -371,10 +374,20 @@ public class AMQMessage
     /**
      * Called when this message is delivered to a consumer. (used to
      * implement the 'immediate' flag functionality).
+     * And by selectors to determin if the message has already been sent
      */
     public void setDeliveredToConsumer()
     {
         _deliveredToConsumer = true;
+    }
+
+    /**
+     * Called selectors to determin if the message has already been sent
+     * @return   _deliveredToConsumer
+     */
+    public boolean getDeliveredToConsumer()
+    {
+        return _deliveredToConsumer;
     }
 
 
@@ -410,5 +423,15 @@ public class AMQMessage
         }
 
         return msgdec;
+    }
+
+    public boolean taken()
+    {
+        return _taken.getAndSet(true);
+    }
+
+    public void release()
+    {
+        _taken.set(false);
     }
 }
