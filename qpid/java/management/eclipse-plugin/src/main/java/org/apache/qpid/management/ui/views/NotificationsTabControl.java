@@ -63,9 +63,8 @@ import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 /**
- * 
+ * Creates control composite for Notifications tab
  * @author Bhupendra Bhardwaj
- *
  */
 public class NotificationsTabControl extends TabControl
 {
@@ -124,11 +123,18 @@ public class NotificationsTabControl extends TabControl
         createTableViewer();
     }
     
+    /**
+     * @see TabControl#getControl()
+     */
     public Control getControl()
     {
         return _form;
     }
     
+    /**
+     * Creates composite and populates for displaying Notification Information (name, type, description)
+     * and creates buttons for subscribing or unsubscribing for notifications
+     */
     private void createNotificationInfoComposite()
     {
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
@@ -183,7 +189,7 @@ public class NotificationsTabControl extends TabControl
         formData.top = new FormAttachment(notificationNameCombo, 5);
         formData.left = new FormAttachment(0, 10);
         fixedLabel.setLayoutData(formData);
-        fixedLabel.setText(Constants.DESCRIPTION);
+        fixedLabel.setText(Constants.DESCRIPTION + " : ");
         fixedLabel.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
         
         descriptionLabel = _toolkit.createLabel(composite, "");
@@ -196,6 +202,9 @@ public class NotificationsTabControl extends TabControl
         descriptionLabel.setFont(ApplicationRegistry.getFont(Constants.FONT_ITALIC));
     }
     
+    /**
+     * Creates clear buttin and refresh button
+     */
     private void addButtons()
     {    
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
@@ -239,6 +248,9 @@ public class NotificationsTabControl extends TabControl
             });
     }
     
+    /**
+     * Creates table to display notifications
+     */
     private void createTable()
     {
         table = _toolkit.createTable(_form.getBody(),  SWT.FULL_SELECTION);
@@ -264,6 +276,9 @@ public class NotificationsTabControl extends TabControl
         table.setLinesVisible(true);
     }
     
+    /**
+     * Creates JFace viewer for the notifications table
+     */
     protected void createTableViewer()
     {
         createTable();
@@ -300,6 +315,9 @@ public class NotificationsTabControl extends TabControl
         //viewerComposite.layout();
     }
     
+    /**
+     * Adds listeners to the viewer for displaying notification details 
+     */
     private void addTableListeners()
     {
         _tableViewer.addDoubleClickListener(new IDoubleClickListener()
@@ -409,15 +427,6 @@ public class NotificationsTabControl extends TabControl
         }
         
         populateNotificationInfo();        
-        /*
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
-        _notifications = serverRegistry.getNotifications(_mbean);
-        if (_notifications != null)
-        {
-            _tableViewer.setInput(_notifications);
-            
-        }*/
-        //_tableViewer.setInput(null);
         workerRunning = true;
         _form.layout();       
     }
@@ -428,6 +437,9 @@ public class NotificationsTabControl extends TabControl
         _tableViewer.getTable().clearAll();
     }
     
+    /**
+     * Fills the notification information widgets for selected mbean
+     */
     private void populateNotificationInfo()
     {
         notificationNameCombo.removeAll();
@@ -448,6 +460,9 @@ public class NotificationsTabControl extends TabControl
         checkForEnablingButtons();
     }
     
+    /**
+     * Checks and the enabing/disabling of buttons
+     */
     private void checkForEnablingButtons()
     {
         int nameIndex = notificationNameCombo.getSelectionIndex();
@@ -492,6 +507,9 @@ public class NotificationsTabControl extends TabControl
             return true;
     }
     
+    /**
+     * Selection listener for subscribing or unsubscribing the notifications
+     */
     private class SelectionListenerImpl extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
@@ -528,7 +546,10 @@ public class NotificationsTabControl extends TabControl
         }
     }
     
-    
+    /**
+     * Selection listener class for the Notification Name. The notification type and description will be 
+     * displayed accordingly
+     */
     private class ComboSelectionListener extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
@@ -559,6 +580,9 @@ public class NotificationsTabControl extends TabControl
         }
     }
     
+    /**
+     * Content provider class for the table viewer
+     */
     private class ContentProviderImpl implements IStructuredContentProvider, INotificationViewer
     {
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -584,6 +608,9 @@ public class NotificationsTabControl extends TabControl
         }
     }
     
+    /**
+     * Label provider for the table viewer
+     */
     private class LabelProviderImpl implements ITableLabelProvider
     {
         List<ILabelProviderListener> listeners = new ArrayList<ILabelProviderListener>();       
@@ -643,6 +670,9 @@ public class NotificationsTabControl extends TabControl
         workerRunning = running;
     }
     
+    /**
+     * Worker class which keeps looking if there are new notifications coming from server for the selected mbean
+     */
     private class Worker implements Runnable
     {
         public void run()
@@ -684,22 +714,15 @@ public class NotificationsTabControl extends TabControl
         }
     }
     
+    /**
+     * Updates the table with new notifications received from mbean server for the selected mbean
+     */
     private void updateTableViewer()
     {
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
         List<NotificationObject> newList = serverRegistry.getNotifications(_mbean);
         if (newList == null)
             return;
-        
-        /*
-        int notificationCount = 0;
-        if (_notifications != null)
-            notificationCount = _notifications.size();
-        
-        for (int i = notificationCount; i < newList.size(); i++)
-        {
-            ((INotificationViewer)contentProvider).addNotification(newList.get(i));
-        }*/
         
         _notifications = newList;
         _tableViewer.setInput(_notifications);

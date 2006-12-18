@@ -78,74 +78,6 @@ public class MBeanView extends ViewPart
             IStructuredSelection ss = (IStructuredSelection) sel;
             TreeObject node = (TreeObject)ss.getFirstElement();
             showSelectedMBean(node);
-            /*
-            _mbean = null;
-            setInvisible();
-            
-            if (node == null)
-            {
-                _form.setText("Qpid Management Console");
-                return;
-            }
-            
-            if (Constants.NOTIFICATION.equals(node.getType()))
-            {
-                _mbean = (ManagedBean)node.getParent().getManagedObject();                
-            }
-            else if (Constants.MBEAN.equals(node.getType()))
-            {
-                _mbean = (ManagedBean)node.getManagedObject();                
-            }
-            else
-            {
-                _form.setText("Qpid Management Console");
-                return;
-            }
-            
-            setFocus();
-            try
-            {                
-                MBeanUtility.getMBeanInfo(_mbean);     
-            }
-            catch(Exception ex)
-            {
-                MBeanUtility.handleException(_mbean, ex);
-                return;
-            }
-
-            TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
-            if (tabFolder == null)
-            {
-                tabFolder = createTabFolder();
-            }
-            
-            String text = _mbean.getType();
-            if (_mbean.getName() != null && _mbean.getName().length() != 0)
-            {
-                text = text + ": " + _mbean.getName();
-            }
-            _form.setText(text);
-            int tabIndex = 0;
-            if (Constants.NOTIFICATION.equals(node.getType()))
-            {
-                tabIndex = tabFolder.getItemCount() -1;
-            }
-           
-            TabItem tab = tabFolder.getItem(tabIndex);
-            // refreshTab(tab);
-            // If folder is being set as visible after tab refresh, then the tab 
-            // doesn't have the focus.
-                       
-            tabFolder.setSelection(tabIndex);
-            refreshTab(tab);
-            setVisible(tabFolder); 
-            _form.layout();
-            
-            // Set the focus on the first attribute in attributes table
-            if (tab.getText().equals(Constants.ATTRIBUTES))
-            {
-                ((TabControl)tabFolder.getData(ATTRIBUTES_CONTROL)).setFocus();
-            }*/
         }
     }
 
@@ -156,7 +88,7 @@ public class MBeanView extends ViewPart
         
         if (node == null)
         {
-            _form.setText("Qpid Management Console");
+            _form.setText(Constants.APPLICATION_NAME);
             return;
         }
         
@@ -170,7 +102,7 @@ public class MBeanView extends ViewPart
         }
         else
         {
-            _form.setText("Qpid Management Console");
+            _form.setText(Constants.APPLICATION_NAME);
             return;
         }
         

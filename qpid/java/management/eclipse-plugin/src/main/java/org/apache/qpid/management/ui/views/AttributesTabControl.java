@@ -39,6 +39,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -80,6 +81,10 @@ import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 
+/**
+ * Creates controller composite for the attribute's tab. 
+ * @author Bhupendra Bhardwaj
+ */
 public class AttributesTabControl extends TabControl
 {    
     private FormToolkit  _toolkit;
@@ -87,9 +92,10 @@ public class AttributesTabControl extends TabControl
     private Table _table = null;
     private TableViewer _tableViewer = null;
     private static final int[] tableWidths = new int[] {300, 300};
-    private static final String DESCRIPTION = "Description";
-    private static final String UPDATE_BUTTON = "Update";
     private final String[] _tableTitles = {"Attribute Name", "Value"};
+    
+    private Composite _tableComposite = null;
+    private Composite _buttonsComposite = null;
     
     private DisposeListener tableDisposeListener = new DisposeListenerImpl();
     final Image image;
@@ -107,8 +113,6 @@ public class AttributesTabControl extends TabControl
     private int startX = 80;
     private int startY = 60;
     
-    static int number = 0;
-    
     public AttributesTabControl(TabFolder tabFolder)
     {
         super(tabFolder);
@@ -118,16 +122,28 @@ public class AttributesTabControl extends TabControl
         gridLayout.marginWidth = 0;
         gridLayout.marginHeight = 0;       
         _form.getBody().setLayout(gridLayout);
+        _tableComposite = _toolkit.createComposite(_form.getBody());
+        _tableComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        _tableComposite.setLayout(new GridLayout());
+        _buttonsComposite = _toolkit.createComposite(_form.getBody());
+        _tableComposite.setLayoutData(new GridData());
+        _buttonsComposite.setLayout(new GridLayout());
         
         image = Display.getCurrent().getSystemImage(SWT.ICON_INFORMATION);
         createWidgets();         
     }
     
+    /**
+     * @see TabControl#getControl()
+     */
     public Control getControl()
     {
         return _form;
     }
     
+    /**
+     * Creates required widgets for Attribute's tab
+     */
     protected void createWidgets()
     {
         createTable();
@@ -136,10 +152,13 @@ public class AttributesTabControl extends TabControl
         addTableListeners();        
     }
     
+    /**
+     * Creates table for listing the MBean attributes
+     */
     private void createTable()
-    {
-        _table = _toolkit.createTable(_form.getBody(),  SWT.FULL_SELECTION);        
-        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 6);
+    {  
+        _table = _toolkit.createTable(_tableComposite,  SWT.FULL_SELECTION); 
+        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(gridData);
         
         for (int i = 0; i < _tableTitles.length; ++i)
@@ -154,35 +173,18 @@ public class AttributesTabControl extends TabControl
         _table.setHeaderVisible (true);
     }
     
+    /**
+     * Creates tableviewer for the attribute's table
+     *
+     */
     private void createTableViewer()
     {
         _tableViewer = new TableViewer(_table);
         _tableViewer.setUseHashlookup(true);
-        //_tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 6));
-        
-        // Set the column properties that will be used in callbacks to recognize
-        // the column on which we will want to operate
         _tableViewer.setColumnProperties(_tableTitles);
-        /*
-        // Create the cell editors
-        CellEditor[] cellEditors = new CellEditor[_tableTitles.length];
-        
-        
-        TextCellEditor textEditor = new TextCellEditor(_table);
-        cellEditors[0] = textEditor;
-        textEditor = new TextCellEditor(_table);
-        cellEditors[1] = textEditor;
-        
-        // Assign the cell editors to the viewer 
-        _tableViewer.setCellEditors(cellEditors);
-        _tableViewer.setCellModifier(new TableCellModifier());
-        */
-        
-        
-        
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
-        
+        _tableViewer.setSorter(new ViewerSorterImpl());
     }
     
     private void createButtons()
@@ -192,17 +194,13 @@ public class AttributesTabControl extends TabControl
         addGraphButton();
         addRefreshButton();
     }
-    
-    
+      
     private void addDetailsButton()
     {
         // Create and configure the button for attribute details
-        _detailsButton = _toolkit.createButton(_form.getBody(), 
-                                               Constants.BUTTON_DETAILS,
-                                               SWT.PUSH | SWT.CENTER);
-        
+        _detailsButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_DETAILS, SWT.PUSH | SWT.CENTER);
         _detailsButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _detailsButton.setLayoutData(gridData);
         _detailsButton.addSelectionListener(new SelectionAdapter()
@@ -219,14 +217,15 @@ public class AttributesTabControl extends TabControl
             });
     }
     
+    /**
+     * Creates the button for editing attributes.
+     */
     private void addEditButton()
     {
         // Create and configure the button for editing attribute
-        _editButton = _toolkit.createButton(_form.getBody(), 
-                                               Constants.BUTTON_EDIT_ATTRIBUTE,
-                                               SWT.PUSH | SWT.CENTER);
+        _editButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_EDIT_ATTRIBUTE, SWT.PUSH | SWT.CENTER);
         _editButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _editButton.setLayoutData(gridData);
         _editButton.addSelectionListener(new SelectionAdapter()
@@ -241,13 +240,14 @@ public class AttributesTabControl extends TabControl
             });
     }
     
+    /**
+     * Creates the button for viewing Graphs
+     */ 
     private void addGraphButton()
     {
-        _graphButton = _toolkit.createButton(_form.getBody(), 
-                                               Constants.BUTTON_GRAPH,
-                                               SWT.PUSH | SWT.CENTER);
+        _graphButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_GRAPH, SWT.PUSH | SWT.CENTER);
         _graphButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _graphButton.setLayoutData(gridData);
         _graphButton.addSelectionListener(new SelectionAdapter()
@@ -262,15 +262,15 @@ public class AttributesTabControl extends TabControl
             });
     }
     
+    /**
+     * Creates the "Refresh" button
+     */
     private void addRefreshButton()
     {    
-        // Create and configure the "Refresh" button
-        _refreshButton = _toolkit.createButton(_form.getBody(),
-                                               Constants.BUTTON_REFRESH,
-                                               SWT.PUSH | SWT.CENTER);
+        _refreshButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
 
         _refreshButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.BEGINNING, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _refreshButton.setLayoutData(gridData);
         _refreshButton.addSelectionListener(new SelectionAdapter()
@@ -314,25 +314,14 @@ public class AttributesTabControl extends TabControl
             {    
                 event.height = event.gc.getFontMetrics().getHeight()  * 3/2;
             }  
-        });  
-        
-        // Below to be worked on to set an image in front of each row.
-        /*
-        _table.addListener(SWT.PaintItem, new Listener() {  
-            public void handleEvent(Event event)
-            {    
-                int x = event.x + event.width;
-                Rectangle rect = image.getBounds();
-                int offset = Math.max(0, (event.height - rect.height) / 2);
-                event.gc.drawImage(image, event.x, event.y + offset);
-            }  
-        });
-        */ 
+        }); 
     }
     
-    private class MouseListenerImpl implements MouseTrackListener, MouseMoveListener,
-                                               KeyListener, MouseListener
-                                               
+    /**
+     * Listeners implementation class for showing table tooltip
+     * @author Bhupendra Bhardwaj
+     */
+    private class MouseListenerImpl implements MouseTrackListener, MouseMoveListener, KeyListener, MouseListener                                              
     {
         Shell tooltipShell = null;
         Label tooltipLabel = null;
@@ -425,6 +414,10 @@ public class AttributesTabControl extends TabControl
         }
     } // end of MouseListenerImpl
     
+    /**
+     * Creates pop-up window for showing attribute details
+     * @param data - Selectes attribute
+     */
     public void createDetailsPopup(AttributeData data)
     {
         int width = 500;
@@ -448,6 +441,9 @@ public class AttributesTabControl extends TabControl
         shell.dispose();
     }
     
+    /**
+     * Listener class for table tooltip label
+     */
     final Listener tooltipLabelListener = new Listener ()
     {
         public void handleEvent (Event event)
@@ -471,6 +467,11 @@ public class AttributesTabControl extends TabControl
     };
     
     
+    /**
+     * Create the contents for the attribute details window pop-up
+     * @param shell - The shell that will be filled with details.
+     * @param attribute - Selected attribute
+     */
     private void createDetailsPopupContents(Composite shell, AttributeData attribute)
     {
         GridLayout layout = new GridLayout(2, false);
@@ -495,7 +496,7 @@ public class AttributesTabControl extends TabControl
         
         // Description
         label = new Label(parent, SWT.NONE);
-        label.setText(DESCRIPTION);
+        label.setText(Constants.DESCRIPTION);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
         value.setText(attribute.getDescription());
@@ -576,13 +577,16 @@ public class AttributesTabControl extends TabControl
         }
     }
     
+    /**
+     * Create the button for updating attributes.  This should be enabled for writable attribute
+     */
     private Button addUpdateButton(Composite parent)
     {
         final Button updateButton = new Button(parent, SWT.PUSH | SWT.CENTER);
         // set the data to access in the listener
-        parent.setData(UPDATE_BUTTON, updateButton);
+        parent.setData(Constants.BUTTON_UPDATE, updateButton);
         
-        updateButton.setText(UPDATE_BUTTON);
+        updateButton.setText(Constants.BUTTON_UPDATE);
         GridData gridData = new GridData (SWT.CENTER, SWT.BOTTOM, true, true, 2, 1);
         gridData.widthHint = 100;
         updateButton.setLayoutData(gridData);
@@ -617,7 +621,9 @@ public class AttributesTabControl extends TabControl
         _tableViewer.setInput(attributesList);
     }
     
-    // Refreshes the attribute tab by querying the mbean server for latest values
+    /**
+     * Refreshes the attribute tab by querying the mbean server for latest values
+     */ 
     @Override
     public void refresh(ManagedBean mbean) 
     {
@@ -637,18 +643,23 @@ public class AttributesTabControl extends TabControl
             MBeanUtility.handleException(_mbean, ex);
         }
         _tableViewer.setInput(attributesList);
-        _table.setItemCount(attributesList.getCount());
-       
-        // No attribtue selected when refreshing the tab
-        checkForEnablingButtons(null);
+        checkForEnablingButtons(getSelectionAttribute());
         _form.layout();
     }
     
+    /**
+     * @see TabControl#setFocus()
+     */
     public void setFocus()
     {
         _table.setFocus();
     }
     
+    /**
+     * Checks which buttons are to be enabled or disabled. The graph button will be enabled only
+     * for readable number attributes.  Editing is enabled for writeable attribtues.
+     * @param attribute
+     */
     private void checkForEnablingButtons(AttributeData attribute)
     {
         if (attribute == null)
@@ -681,6 +692,10 @@ public class AttributesTabControl extends TabControl
         }
     }
     
+    /**
+     * Creates graph in a pop-up window for given attribute.
+     * @param data
+     */
     private void createGraph(final AttributeData data)
     {       
         Display display = Display.getCurrent();        
@@ -769,8 +784,10 @@ public class AttributesTabControl extends TabControl
         // Launch the timer
         display.timerExec(Constants.TIMER_INTERVAL, runnable);
         
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
+        while (!shell.isDisposed())
+        {
+            if (!display.readAndDispatch())
+            {
                 display.sleep();
             }
         }
@@ -780,6 +797,9 @@ public class AttributesTabControl extends TabControl
         shell.dispose();
     }
     
+    /**
+     * @return selected attribute in the table
+     */
     public AttributeData getSelectionAttribute()
     {
         int index = _table.getSelectionIndex();
@@ -789,6 +809,12 @@ public class AttributesTabControl extends TabControl
         return (AttributeData)_table.getItem(index).getData();
     }
     
+    /**
+     * checks for newer values of selected attribute to update the graph
+     * @param canvas
+     * @param data
+     * @throws Exception
+     */
     private void animate(Canvas canvas, AttributeData data) throws Exception
     {
         String attribute = data.getName();
@@ -813,6 +839,10 @@ public class AttributesTabControl extends TabControl
         canvas.redraw();
     }
     
+    /**
+     * @param maxAttributeValue
+     * @return dynamically calculated value for y-axis on the graph
+     */
     private long getGraphMaxValue(long maxAttributeValue)
     {
         long maxGraphValue = 100;
@@ -826,6 +856,10 @@ public class AttributesTabControl extends TabControl
         return maxGraphValue;
     }
     
+    /**
+     * Content Provider class for the table viewer
+     * @author Bhupendra Bhardwaj
+     */
     private class ContentProviderImpl  implements IStructuredContentProvider
     {
         
@@ -845,11 +879,14 @@ public class AttributesTabControl extends TabControl
         }
     }
     
+    /**
+     * Label Provider class for the table viewer
+     * @author Bhupendra Bhardwaj
+     */
     private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider, 
                                                                      IFontProvider,
                                                                      IColorProvider
     {
-
         AttributeData attribute = null;
         public String getColumnText(Object element, int columnIndex)
         {
@@ -903,58 +940,20 @@ public class AttributesTabControl extends TabControl
             
         }
     }
-    
-    /*
-    class TableCellModifier implements ICellModifier 
-    {
-        
-        public boolean canModify(Object element, String property)
-        {
-            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
-            if (columnIndex == 0)
-                return false;
-            
-            return true;
-        }
-        
-        public Object getValue(Object element, String property) {
 
-            // Find the index of the column
-            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
-            Attribute attribute = (Attribute)element;
-     
-            
-            Object result = null;
-            
-            switch (columnIndex)
-            {
-                case 0 : // attribute name column 
-                    result = attribute.getName();
-                    break;
-                case 1 : // attribute value column 
-                    result = attribute.getValue();
-                    break;
-                default :
-                    result = "";
-            }
-            
-            return result;
-        }
-        
-        
-        public void modify(Object element, String property, Object value)
+    /**
+     * Sorter class for the table viewer. It sorts the table for according to attribute name.
+     * @author Bhupendra Bhardwaj
+     *
+     */
+    private class ViewerSorterImpl extends ViewerSorter
+    {
+        public int compare(Viewer viewer, Object o1, Object o2) 
         {
-            // Find the index of the column
-            int columnIndex = Arrays.asList(_tableTitles).indexOf(property);
+            AttributeData attribtue1 = (AttributeData)o1;
+            AttributeData attribtue2 = (AttributeData)o2;
             
-            if (columnIndex == 1)
-            {
-                //TODO
-                // update the attribute value and call the MBean setAttribute method
-                // then refresh the attribute tab with new values
-            }
+            return collator.compare(attribtue1.getName(), attribtue2.getName());
         }
     }
-    */
-    
 }

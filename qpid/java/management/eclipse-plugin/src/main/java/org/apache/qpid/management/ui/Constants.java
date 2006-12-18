@@ -36,11 +36,12 @@ public class Constants
     public final static String MBEAN      = "mbean";
     public final static String ATTRIBUTES = "Attributes";
     public final static String NOTIFICATION = "Notifications";
+    public final static String RESULT = "Result";
     
     public final static String ALL = "All";
     
     public final static String NAVIGATION_ROOT = "Qpid Connections";
-    public final static String DESCRIPTION = " Description : ";
+    public final static String DESCRIPTION = " Description";
     
     public final static String BROKER_MANAGER = "Broker_Manager";
     public final static String QUEUE  = "Queue";
@@ -76,6 +77,8 @@ public class Constants
     public final static String BUTTON_CLEAR = "Clear";
     public final static String BUTTON_CONNECT = "Connect";
     public final static String BUTTON_CANCEL = "Cancel";
+    public final static String BUTTON_UPDATE = "Update";
+    
     
     public final static int OPERATION_IMPACT_INFO    = 0;
     public final static int OPERATION_IMPACT_ACTION  = 1;
