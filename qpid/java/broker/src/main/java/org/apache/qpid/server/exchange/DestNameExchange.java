@@ -171,7 +171,7 @@ public class DestNameExchange extends AbstractExchange
         BasicPublishBody publishBody = payload.getPublishBody();
 
         final String routingKey = publishBody.routingKey;
-        final List<AMQQueue> queues = _index.get(routingKey);
+        final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {
             String msg = "Routing key " + routingKey + " is not known to " + this;
