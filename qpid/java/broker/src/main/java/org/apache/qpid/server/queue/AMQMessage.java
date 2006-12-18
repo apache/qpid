@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -102,7 +102,7 @@ public class AMQMessage
     public AMQMessage(MessageStore store, long messageId, BasicPublishBody publishBody,
                       ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
             throws AMQException
-    
+
     {
         _publishBody = publishBody;
         _contentHeaderBody = contentHeaderBody;
@@ -116,7 +116,7 @@ public class AMQMessage
                       ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
             throws AMQException
     {
-        this(store, store.getNewMessageId(), publishBody, contentHeaderBody, contentBodies);        
+        this(store, store.getNewMessageId(), publishBody, contentHeaderBody, contentBodies);
     }
 
     protected AMQMessage(AMQMessage msg) throws AMQException
@@ -211,6 +211,7 @@ public class AMQMessage
         return _bodyLengthReceived == _contentHeaderBody.bodySize;
     }
 
+
     public boolean isRedelivered()
     {
         return _redelivered;
@@ -236,7 +237,7 @@ public class AMQMessage
         return new NoConsumersException(queue, _publishBody, _contentHeaderBody, _contentBodies);
     }
 
-    void setRedelivered(boolean redelivered)
+    public void setRedelivered(boolean redelivered)
     {
         _redelivered = redelivered;
     }
@@ -346,7 +347,7 @@ public class AMQMessage
     }
 
     /**
-     * Called to enforce the 'immediate' flag. 
+     * Called to enforce the 'immediate' flag.
      * @throws NoConsumersException if the message is marked for
      * immediate delivery but has not been marked as delivered to a
      * consumer

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -397,7 +397,7 @@ public class AMQChannel
                 long deliveryTag = entry.getKey();
                 String consumerTag = entry.getValue().consumerTag;
                 AMQMessage msg = entry.getValue().message;
-
+                msg.setRedelivered(true);
                 session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
             }
         }
@@ -495,6 +495,11 @@ public class AMQChannel
 
     private void handleAcknowledgement(long deliveryTag, boolean multiple) throws AMQException
     {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Handling acknowledgement for channel " + _channelId + " with delivery tag " + deliveryTag +
+                      " and multiple " + multiple);
+        }
         if (multiple)
         {
             LinkedList<UnacknowledgedMessage> acked = new LinkedList<UnacknowledgedMessage>();
