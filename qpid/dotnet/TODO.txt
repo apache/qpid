@@ -1,0 +1,9 @@
+
+* Implement durable subscriptions.
+
+* SSL. SSLStream composed over NetworkStream.
+
+* support multiple versions of AMQP from the same client.
+
+* Implement a Async IO socket transport.
+  Compare against blocking socket transport and configure default appropriately.
