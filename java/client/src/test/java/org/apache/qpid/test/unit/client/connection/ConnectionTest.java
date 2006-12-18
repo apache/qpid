@@ -54,8 +54,7 @@ public class ConnectionTest extends TestCase
     {
         try
         {
-            Connection connection = new AMQConnection(_broker, "guest", "guest",
-                                                      "fred", "/test");
+            new AMQConnection(_broker, "guest", "guest", "fred", "/test");
         }
         catch (Exception e)
         {

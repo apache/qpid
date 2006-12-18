@@ -108,7 +108,7 @@ public class MapMessageTest extends TestCase
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
 
             mm.setString("value", null);
-            char c = mm.getChar("value");
+            mm.getChar("value");
             fail("Expected NullPointerException");
 
         }
