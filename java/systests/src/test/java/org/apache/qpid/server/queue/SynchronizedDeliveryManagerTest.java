@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.queue.SynchronizedDeliveryManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
+import org.apache.qpid.server.queue.ConcurrentDeliveryManager;
 import org.apache.qpid.server.queue.DeliveryManagerTest;
 import org.apache.qpid.AMQException;
 

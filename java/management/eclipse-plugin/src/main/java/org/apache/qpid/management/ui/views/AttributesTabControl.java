@@ -277,8 +277,16 @@ public class AttributesTabControl extends TabControl
             {
                 public void widgetSelected(SelectionEvent e)
                 {
-                    // refresh the attributes list                
-                    refresh(_mbean);
+                    try
+                    {
+                        // refresh the attributes list                
+                        refresh(_mbean);
+                    }
+                    catch (Exception ex)
+                    {
+                        MBeanUtility.handleException(_mbean, ex);
+                    }
+                    
                 }
             });
     }
@@ -582,12 +590,19 @@ public class AttributesTabControl extends TabControl
             {
                 public void widgetSelected(SelectionEvent event)
                 {
-                    Button button = (Button)event.widget;
-                    Text text = (Text)button.getData();
-                    AttributeData data = (AttributeData)button.getParent().getData();
-                    MBeanUtility.updateAttribute(_mbean, data, text.getText());
-                    button.getShell().close();
-                    refresh();
+                    try
+                    {
+                        Button button = (Button)event.widget;
+                        Text text = (Text)button.getData();
+                        AttributeData data = (AttributeData)button.getParent().getData();
+                        MBeanUtility.updateAttribute(_mbean, data, text.getText());
+                        button.getShell().close();
+                        refresh();
+                    }
+                    catch (Exception ex)
+                    {
+                        MBeanUtility.handleException(_mbean, ex);
+                    }
                 }
             });
         
@@ -612,7 +627,15 @@ public class AttributesTabControl extends TabControl
             _tableViewer.setInput(null);
             return;
         }
-        ManagedAttributeModel attributesList = MBeanUtility.getAttributes(mbean);
+        ManagedAttributeModel attributesList = null;
+        try
+        {
+            attributesList = MBeanUtility.getAttributes(mbean);
+        }
+        catch(Exception ex)
+        {
+            MBeanUtility.handleException(_mbean, ex);
+        }
         _tableViewer.setInput(attributesList);
         _table.setItemCount(attributesList.getCount());
        
