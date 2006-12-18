@@ -26,7 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.*;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 
@@ -48,7 +48,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     private boolean _readableProperties = false;
     private boolean _readableMessage = false;
     private Destination _destination;
-    
+    private BasicMessageConsumer _consumer;
+
     protected AbstractJMSMessage(ByteBuffer data)
     {
         super(new BasicContentHeaderProperties());
@@ -532,5 +533,10 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             _data.flip();
             _readableMessage = true;
         }
+    }
+
+    public void setConsumer(BasicMessageConsumer basicMessageConsumer)
+    {
+        _consumer = basicMessageConsumer;
     }
 }
