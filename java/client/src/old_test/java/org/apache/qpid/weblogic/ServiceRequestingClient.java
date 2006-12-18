@@ -29,6 +29,7 @@ import javax.naming.Context;
 import javax.jms.*;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+import javax.jms.Message;
 import java.util.Hashtable;
 import java.io.File;
 import java.io.FilenameFilter;
