@@ -275,22 +275,29 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         // get message content
         List<ContentBody> cBodies = msg.getContentBodies();
         List<Byte> msgContent = new ArrayList<Byte>();
-        for (ContentBody body : cBodies)
+        if (cBodies != null)
         {
-            if (body.getSize() != 0)
+            for (ContentBody body : cBodies)
             {
-                ByteBuffer slice = body.payload.slice();
-                for (int j = 0; j < slice.limit(); j++)
+                if (body.getSize() != 0)
                 {
-                    msgContent.add(slice.get());
+                    ByteBuffer slice = body.payload.slice();
+                    for (int j = 0; j < slice.limit(); j++)
+                    {
+                        msgContent.add(slice.get());
+                    }
                 }
             }
         }
 
         // Create header attributes list
         BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
-        String mimeType = headerProperties.getContentType();
-        String encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
+        String mimeType = null, encoding = null;
+        if (headerProperties != null)
+        {
+            mimeType = headerProperties.getContentType();
+            encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
+        }
         Object[] itemValues = {msgId, mimeType, encoding, msgContent.toArray(new Byte[0])};
 
         return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
