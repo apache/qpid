@@ -35,13 +35,36 @@ Optional: to generate documentation you need:
 # yum install apr apr-devel boost boost-devel cppunit cppunit-devel
 # yum install pkgconfig doxygen graphviz help2man
 
-Download the latest source distribution of autoconf, automake, libtool
-from URLs above and install each with something like:
-# ./configure && make && sudo make-install
+To get the latest versions of autoconf, automake, libtools and other
+dependencies, run the script qpid-autotools-install:
 
-DO NOT install pkg-config from source! If installed in /usr/local, pkg-config
-cannot find packages installed in /usr. Installing in /usr will mess up
-RPM's notion of what's installed. 
+1. Decide where you would like to install the tools. It should be in a
+   local directory so that you do not need root privileges. (Suggest
+   $HOME/qpid-tools.) Create an empty directory.
+2. Modify your environment variable PATH to ensure that the bin directory
+   within this directory comes first in the PATH string:
+   PATH=$HOME/qpid-tools/bin:$PATH
+3. Set PKG_CONFIG_PATH=$HOME/qpid-tools/lib/pkgconfig:/usr/lib/pkgconfig
+   (or if it already exists, make sure that the above path to your
+   qpid-tools directory is first).
+4. Run the install utility from the cpp directory:
+   ./qpid-autotools-install --prefix=$HOME/qpid-tools --skip-check
+   (Note that --prefix will only accept an absolute path, so don't use
+   ~/qpid-tools.) The utility will download, compile and install the
+   required tools into the qpid-tools directory (this may take a little
+   time). Watch for any notices about paths at the end of the install -
+   this means that your environment is not correct - see steps 2 and 3
+   above.
+   NOTE: If you omit the --skip-check option, the check of the build
+   can add up to an hour to what is normally a few minutes of install
+   time.
+5. Perform a check: from the command-line run "which automake" and
+   ensure that it finds the automake in your qpid-tools directory. If not,
+   check that the build completed normally and your environment.
+6. (Optional) If having the build artifacts lying around bothers you, delete
+   the (hidden) build directory cpp/.build-auto-tools.
+
+To see help, run ./qpid-autotools-install --help.
 
 == Recent changes ==
 
