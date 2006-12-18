@@ -23,22 +23,21 @@ package org.apache.qpid.client;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
-import org.apache.qpid.server.handler.ExchangeBoundHandler;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.handler.ExchangeBoundHandler;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -50,7 +49,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -184,7 +182,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 else
                 {
-        
+
                     consumer.notifyMessage(message, _channelId);
 
                 }
@@ -698,7 +696,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkNotClosed();
         checkNotTransacted(); // throws IllegalStateException if a transacted session
-
+        for (BasicMessageConsumer consumer : _consumers.values())
+        {
+            consumer.clearUnackedMessages();
+        }
         _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
     }
 
@@ -1474,7 +1475,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         String subscriptionName = _reverseSubscriptionMap.remove(consumer);
         if(subscriptionName != null)
         {
-            _subscriptions.remove(subscriptionName);    
+            _subscriptions.remove(subscriptionName);
         }
 
         Destination dest = consumer.getDestination();
