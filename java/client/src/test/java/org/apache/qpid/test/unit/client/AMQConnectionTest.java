@@ -28,7 +28,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 import java.lang.reflect.Method;
 import javax.jms.*;

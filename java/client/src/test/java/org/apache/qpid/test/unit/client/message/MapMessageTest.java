@@ -14,15 +14,14 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.TestCase;
 import junit.framework.Assert;
-import org.apache.qpid.framing.PropertyFieldTable;
+import junit.framework.TestCase;
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
@@ -103,6 +102,27 @@ public class MapMessageTest extends TestCase
         {
             Assert.fail("JMSException received." + e);
         }
+
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+
+            mm.setString("value", null);
+            char c = mm.getChar("value");
+            fail("Expected NullPointerException");
+
+        }
+        catch (NullPointerException e)
+        {
+            ; // pass
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+
+
+
     }
 
     public void testDoubleLookup()
@@ -203,7 +223,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getByte("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("NumberFormatException expected");
         }
         catch (NumberFormatException e)
         {
@@ -221,7 +241,12 @@ public class MapMessageTest extends TestCase
         try
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
-            Assert.assertEquals(null, mm.getBytes("random"));
+            mm.getBytes("random");
+            Assert.fail("MessageFormatException expected");
+        }
+        catch (MessageFormatException mfe)
+        {
+            //normal path
         }
         catch (JMSException e)
         {
@@ -235,9 +260,9 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getChar("random");
-            Assert.fail("NullPointerException should be received.");
+            Assert.fail("MessageFormatException expected");
         }
-        catch (NullPointerException e)
+        catch (MessageFormatException e)
         {
             //normal execution
         }
@@ -325,7 +350,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getShort("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("NumberFormatException  should be received.");
         }
         catch (NumberFormatException e)
         {

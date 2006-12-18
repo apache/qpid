@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -159,11 +159,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public String getMessageSelector() throws JMSException
     {
+    	checkPreConditions();
         return _messageSelector;
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
+    	checkPreConditions();
         return (MessageListener) _messageListener.get();
     }
 
@@ -179,7 +181,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
 
         //if the current listener is non-null and the session is not stopped, then
         //it is an error to call this method.
@@ -212,10 +214,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //handle case where connection has already been started, and the dispatcher is blocked
                 //doing a put on the _synchronousQueue
-                Object msg = _synchronousQueue.poll();
-                if (msg != null)
+                AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
+                if (jmsMsg != null)
                 {
-                    AbstractJMSMessage jmsMsg = (AbstractJMSMessage) msg;
+                    _session.setLastDeliveredMessage(jmsMsg);
                     messageListener.onMessage(jmsMsg);
                     postDeliver(jmsMsg);
                 }
@@ -277,8 +279,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
-        checkNotClosed();
-
+    	checkPreConditions();
+        
         acquireReceiving();
 
         try
@@ -295,12 +297,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
+                _session.setLastDeliveredMessage(m);
                 postDeliver(m);
             }
+            
             return m;
         }
         catch (InterruptedException e)
         {
+            _logger.warn("Interrupted: " + e, e);
             return null;
         }
         finally
@@ -311,7 +316,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
-        checkNotClosed();
+    	checkPreConditions();
 
         acquireReceiving();
 
@@ -321,8 +326,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
+                _session.setLastDeliveredMessage(m);
                 postDeliver(m);
             }
+
             return m;
         }
         finally
@@ -421,6 +428,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //we do not need a lock around the test above, and the dispatch below as it is invalid
                 //for an application to alter an installed listener while the session is started
+                _session.setLastDeliveredMessage(jmsMessage);
                 getMessageListener().onMessage(jmsMessage);
                 postDeliver(jmsMessage);
             }
@@ -457,8 +465,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    private void postDeliver(AbstractJMSMessage msg)
+    private void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
+    	msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
             case Session.DUPS_OK_ACKNOWLEDGE:
@@ -520,7 +529,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private void deregisterConsumer()
     {
-        _session.deregisterConsumer(_consumerTag);
+    	_session.deregisterConsumer(this);
     }
 
     public String getConsumerTag()
@@ -532,4 +541,17 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         _consumerTag = consumerTag;
     }
+
+	public AMQSession getSession() {
+		return _session;
+	}
+
+	private void checkPreConditions() throws JMSException{
+
+		this.checkNotClosed();
+
+		if(_session == null || _session.isClosed()){
+			throw new javax.jms.IllegalStateException("Invalid Session");
+		}
+	}
 }

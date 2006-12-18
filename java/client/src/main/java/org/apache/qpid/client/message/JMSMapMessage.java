@@ -21,65 +21,75 @@
 package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.PropertyFieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.EncodingUtils;
+import org.apache.qpid.framing.JMSPropertyFieldTable;
+import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.AMQException;
+import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 import java.util.Enumeration;
 
-public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessage
+public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessage
 {
+    private static final Logger _logger = Logger.getLogger(JMSMapMessage.class);
+
 
     public static final String MIME_TYPE = "jms/map-message";
 
-    private PropertyFieldTable _map;
+    private JMSPropertyFieldTable _properties;
 
     JMSMapMessage() throws JMSException
     {
-        this(null, null);
+        this(null);
     }
 
-    JMSMapMessage(ByteBuffer data, String encoding) throws JMSException
+    JMSMapMessage(ByteBuffer data) throws JMSException
     {
         super(data); // this instantiates a content header
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-        getJmsContentHeaderProperties().setEncoding(encoding);
-        _map = new PropertyFieldTable();
+        _properties = new JMSPropertyFieldTable();
     }
 
-
-    JMSMapMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
-        super(deliveryTag, contentHeader, data);
-        contentHeader.setContentType(MIME_TYPE);
+        super(messageNbr, contentHeader, data);
 
-        try
+        if (data != null)
         {
-            _map = FieldTableFactory.newFieldTable(getText());
+
+            long tableSize = EncodingUtils.readInteger(_data);
+            try
+            {
+                _properties = new JMSPropertyFieldTable(_data, tableSize);
+            }
+            catch (JMSException e)
+            {
+                Exception error = e.getLinkedException();
+                if (error instanceof AMQFrameDecodingException)
+                {
+                    throw(AMQFrameDecodingException) error;
+                }
+                else
+                {
+                    throw new AMQException(e.getMessage(), e);
+                }
+            }
         }
-        catch (JMSException e)
+        else
         {
-            throw new AMQException(e.getMessage(), e);
+            _properties = new JMSPropertyFieldTable();
         }
     }
 
-    // AbstractJMSMessage Interface
-
-    public void clearBodyImpl() throws JMSException
-    {
-        if (_data != null)
-        {
-            _data.release();
-        }
-        _data = null;
-    }
 
     public String toBodyString() throws JMSException
     {
-        return _map.toString();
+        return _properties.toString();
     }
 
     public String getMimeType()
@@ -87,175 +97,143 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
         return MIME_TYPE;
     }
 
-    // MapMessage  Interface
+
+    public ByteBuffer getData()
+    {
+        //What if _data is null?
+        _properties.writeToBuffer(_data);
+        return super.getData();
+    }
+
+    @Override
+    public void clearBodyImpl() throws JMSException
+    {
+        super.clearBodyImpl();
+        _properties.clear();
+    }
 
     public boolean getBoolean(String string) throws JMSException
     {
-        Boolean b = _map.getBoolean(string);
-
-        if (b == null)
-        {
-            b = Boolean.valueOf(_map.getString(string));
-        }
-
-        return b;
+        return _properties.getBoolean(string);
     }
 
     public byte getByte(String string) throws JMSException
     {
-        Byte b = _map.getByte(string);
-        if (b == null)
-        {
-            b = Byte.valueOf(_map.getString(string));
-        }
-        return b;
+        return _properties.getByte(string);
     }
 
     public short getShort(String string) throws JMSException
     {
-        Short s = _map.getShort(string);
-
-        if (s == null)
-        {
-            s = Short.valueOf(getByte(string));
-        }
-
-        return s;
+        return _properties.getShort(string);
     }
 
     public char getChar(String string) throws JMSException
     {
-        return _map.getCharacter(string);
+    	Character result = _properties.getCharacter(string);
+
+        if (result == null)
+        {
+            throw new NullPointerException("getChar couldn't find " + string + " item.");
+        }
+        else
+        {
+            return result;
+        }
     }
 
     public int getInt(String string) throws JMSException
     {
-        Integer i = _map.getInteger(string);
-
-        if (i == null)
-        {
-            i = Integer.valueOf(getShort(string));
-        }
-
-        return i;
+        return _properties.getInteger(string);
     }
 
     public long getLong(String string) throws JMSException
     {
-        Long l = _map.getLong(string);
-
-        if (l == null)
-        {
-            l = Long.valueOf(getInt(string));
-        }
-
-        return l;
+        return _properties.getLong(string);
     }
 
     public float getFloat(String string) throws JMSException
     {
-        Float f = _map.getFloat(string);
-
-        if (f == null)
-        {
-            f = Float.valueOf(_map.getString(string));
-        }
-
-        return f;
+        return _properties.getFloat(string);
     }
 
     public double getDouble(String string) throws JMSException
     {
-        Double d = _map.getDouble(string);
-
-        if (d == null)
-        {
-            d = Double.valueOf(getFloat(string));
-        }
-
-        return d;
+        return _properties.getDouble(string);
     }
 
     public String getString(String string) throws JMSException
     {
-        String s = _map.getString(string);
-
-        if (s == null)
-        {
-            Object o = _map.getObject(string);
-            s = o.toString();
-        }
-
-        return s;
+        return _properties.getString(string);
     }
 
     public byte[] getBytes(String string) throws JMSException
     {
-        return _map.getBytes(string);
+        return _properties.getBytes(string);
     }
 
     public Object getObject(String string) throws JMSException
     {
-        return _map.getObject(string);
+        return _properties.getObject(string);
     }
 
     public Enumeration getMapNames() throws JMSException
     {
-        return _map.getPropertyNames();
+        return _properties.getMapNames();
     }
+
 
     public void setBoolean(String string, boolean b) throws JMSException
     {
         checkWritable();
-        _map.setBoolean(string, b);
+        _properties.setBoolean(string, b);
     }
 
     public void setByte(String string, byte b) throws JMSException
     {
         checkWritable();
-        _map.setByte(string, b);
+        _properties.setByte(string, b);
     }
 
     public void setShort(String string, short i) throws JMSException
     {
         checkWritable();
-        _map.setShort(string, i);
+        _properties.setShort(string, i);
     }
 
     public void setChar(String string, char c) throws JMSException
     {
         checkWritable();
-        _map.setChar(string, c);
+        _properties.setChar(string, c);
     }
 
     public void setInt(String string, int i) throws JMSException
     {
         checkWritable();
-        _map.setInteger(string, i);
+        _properties.setInteger(string, i);
     }
 
     public void setLong(String string, long l) throws JMSException
     {
         checkWritable();
-        _map.setLong(string, l);
+        _properties.setLong(string, l);
     }
 
     public void setFloat(String string, float v) throws JMSException
     {
         checkWritable();
-        _map.setFloat(string, v);
+        _properties.setFloat(string, v);
     }
 
     public void setDouble(String string, double v) throws JMSException
     {
         checkWritable();
-        _map.setDouble(string, v);
+        _properties.setDouble(string, v);
     }
 
     public void setString(String string, String string1) throws JMSException
     {
         checkWritable();
-        _map.setString(string, string1);
+        _properties.setString(string, string1);
     }
 
     public void setBytes(String string, byte[] bytes) throws JMSException
@@ -266,35 +244,18 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
     public void setBytes(String string, byte[] bytes, int i, int i1) throws JMSException
     {
         checkWritable();
-        _map.setBytes(string, bytes, i, i1);
+        _properties.setBytes(string, bytes, i, i1);
     }
 
     public void setObject(String string, Object object) throws JMSException
     {
         checkWritable();
-        _map.setObject(string, object);
+        _properties.setObject(string, object);
     }
 
     public boolean itemExists(String string) throws JMSException
     {
-        return _map.itemExists(string);
-    }
-
-    public ByteBuffer getData()
-    {
-
-        try
-        {
-            setText(toString());
-            return super.getData();
-        }
-        catch (JMSException e)
-        {
-            // should never occur according to setText
-            //fixme -- what to do if it does occur.
-        }
-
-        return ByteBuffer.allocate(0);
+        return _properties.itemExists(string);
     }
 
 }

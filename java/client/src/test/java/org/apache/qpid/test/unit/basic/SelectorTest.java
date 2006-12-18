@@ -26,7 +26,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.test.VMBrokerSetup;
+
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
@@ -57,6 +57,7 @@ public class SelectorTest extends TestCase implements MessageListener
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -71,7 +72,7 @@ public class SelectorTest extends TestCase implements MessageListener
         connection.start();
 
 
-        String selector= null;
+        String selector = null;
 //        selector = "Cost = 2 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
 //        selector = "JMSType = Special AND Cost = 2 AND AMQMessageID > 0 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
 
@@ -135,6 +136,6 @@ public class SelectorTest extends TestCase implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(SelectorTest.class));
+        return new junit.framework.TestSuite(SelectorTest.class);
     }
 }

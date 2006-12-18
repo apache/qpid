@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
+import junit.framework.TestCase;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
+import javax.jms.MessageEOFException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
-import javax.jms.MessageEOFException;
-
-import junit.framework.TestCase;
+import javax.jms.MessageFormatException;
+import java.util.HashMap;
 
 public class BytesMessageTest extends TestCase
 {
@@ -82,6 +83,18 @@ public class BytesMessageTest extends TestCase
         bm.writeInt(10);
     }
 
+    public void testWriteBoolean() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        bm.writeBoolean(true);
+        bm.writeBoolean(false);
+        bm.reset();
+        boolean val = bm.readBoolean();
+        assertEquals(true, val);
+        val = bm.readBoolean();
+        assertEquals(false, val);
+    }
+
     public void testWriteInt() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
@@ -100,6 +113,61 @@ public class BytesMessageTest extends TestCase
         bm.reset();
         String res = bm.readUTF();
         assertEquals("Bananas", res);
+    }
+
+    public void testWriteBytes() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        byte[] bytes = {1,2,3,4};
+        bm.writeBytes(bytes, 1, 2);
+        bm.reset();
+        bytes = new byte[2];
+        bm.readBytes(bytes);
+        assertEquals(2, bytes[0]);
+        assertEquals(3, bytes[1]);
+    }
+
+    public void testWriteObject() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        bm.writeObject(new Boolean(true));
+        bm.writeObject(new Boolean(false));
+        bm.writeObject(new Byte((byte)2));
+        bm.writeObject(new byte[]{1,2,3,4});
+        bm.writeObject(new Character('g'));
+        bm.writeObject(new Short((short) 29));
+        bm.writeObject(new Integer(101));
+        bm.writeObject(new Long(50003222L));
+        bm.writeObject("Foobar");
+        bm.writeObject(new Float(1.7f));
+        bm.writeObject(new Double(8.7d));
+        bm.reset();
+        assertTrue(bm.readBoolean());
+        assertTrue(!bm.readBoolean());
+        assertEquals((byte)2, bm.readByte());
+        byte[] bytes = new byte[4];
+        bm.readBytes(bytes);
+        assertEquals('g', bm.readChar());
+        assertEquals((short) 29, bm.readShort());
+        assertEquals(101, bm.readInt());
+        assertEquals(50003222L, bm.readLong());
+        assertEquals("Foobar", bm.readUTF());
+        assertEquals(1.7f, bm.readFloat());
+        assertEquals(8.7d, bm.readDouble());
+    }
+
+    public void testWriteObjectRejectsNonPrimitives() throws Exception
+    {
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.writeObject(new HashMap());
+            fail("expected MessageFormatException was not thrown");
+        }
+        catch (MessageFormatException e)
+        {
+            // pass
+        }
     }
 
     public void testWriteObjectThrowsNPE() throws Exception
@@ -126,7 +194,83 @@ public class BytesMessageTest extends TestCase
         bm.writeBoolean(true);
         bm.reset();
         boolean result = bm.readBoolean();
-        assertTrue(result);        
+        assertTrue(result);
+    }
+
+    public void testReadUnsignedByte() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        bm.writeByte((byte) 9);
+        bm.reset();
+        int result = bm.readUnsignedByte();
+        assertEquals(9, result);
+    }
+
+    public void testReadUnsignedShort() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        bm.writeShort((byte) 9);
+        bm.reset();
+        int result = bm.readUnsignedShort();
+        assertEquals(9, result);
+    }
+
+    public void testReadBytesChecksNull() throws Exception
+    {
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.readBytes(null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            bm.readBytes(null, 1);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+    }
+
+    public void testReadBytesChecksMaxSize() throws Exception
+    {
+        try
+        {
+            JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+            byte[] bytes = new byte[100];
+            bm.readBytes(bytes, 120);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+    }
+
+    public void testReadBytesReturnsCorrectLengths() throws Exception
+    {
+        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
+        byte[] bytes = {2, 3};
+        bm.writeBytes(bytes);
+        bm.reset();
+        int len = bm.readBytes(bytes);
+        assertEquals(2, len);
+        len = bm.readBytes(bytes);
+        assertEquals(-1, len);
+        len = bm.readBytes(bytes, 2);
+        assertEquals(-1, len);
+        bm.reset();
+        len = bm.readBytes(bytes, 2);
+        assertEquals(2, len);
+        bm.reset();
+        len = bm.readBytes(bytes, 1);
+        assertEquals(1, len);
+
     }
 
     public void testEOFByte() throws Exception
@@ -406,16 +550,6 @@ public class BytesMessageTest extends TestCase
         assertEquals((byte)3, result[0]);
         assertEquals((byte)4, result[1]);
         assertEquals((byte)0, result[2]);
-    }
-
-    public void testToBodyString() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        final String testText = "This is a test";
-        bm.writeUTF(testText);
-        bm.reset();
-        String result = bm.toBodyString();
-        assertEquals(testText, result);
     }
 
     public void testToBodyStringWithNull() throws Exception

@@ -65,7 +65,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
                 // we only update the flag from inside the synchronized block
                 // so that the blockForFrame method cannot "miss" an update - it
                 // will only ever read the flag from within the synchronized block
-                synchronized (_lock)
+                synchronized(_lock)
                 {
                     _doneEvt = evt;
                     _ready = ready;
@@ -88,7 +88,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
      */
     public AMQMethodEvent blockForFrame() throws AMQException
     {
-        synchronized (_lock)
+        synchronized(_lock)
         {
             while (!_ready)
             {
@@ -106,11 +106,11 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         {
             if (_error instanceof AMQException)
             {
-                throw (AMQException)_error;
+                throw(AMQException) _error;
             }
             else
             {
-                throw new AMQException("Woken up due to exception", _error); // FIXME: This will wrap FailoverException and prevent it being caught.
+                throw new AMQException("Woken up due to " + _error.getClass(), _error); // FIXME: This will wrap FailoverException and prevent it being caught.
             }
         }
 
@@ -120,6 +120,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This is a callback, called by the MINA dispatcher thread only. It is also called from within this
      * class to avoid code repetition but again is only called by the MINA dispatcher thread.
+     *
      * @param e
      */
     public void error(Exception e)
@@ -127,7 +128,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         // set the error so that the thread that is blocking (against blockForFrame())
         // can pick up the exception and rethrow to the caller
         _error = e;
-        synchronized (_lock)
+        synchronized(_lock)
         {
             _ready = true;
             _lock.notify();

@@ -22,12 +22,10 @@ package org.apache.qpid.test.unit.client.connection;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQAuthenticationException;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.Connection;
 
@@ -39,6 +37,18 @@ public class ConnectionTest extends TestCase
     String _broker = "vm://:1";
     String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
+
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        TransportConnection.createVMBroker(1);
+    }
+
+    protected void tearDown() throws Exception
+    {
+        TransportConnection.killAllVMBrokers();
+    }
 
     public void testSimpleConnection()
     {
@@ -102,8 +112,30 @@ public class ConnectionTest extends TestCase
         }
     }
 
+    public void testClientIdCannotBeChanged() throws Exception
+    {
+        Connection connection = new AMQConnection(_broker, "guest", "guest",
+                                                  "fred", "/test");
+        try
+        {
+            connection.setClientID("someClientId");
+            fail("No IllegalStateException thrown when resetting clientid");
+        }
+        catch (javax.jms.IllegalStateException e)
+        {
+            // PASS
+        }
+    }
+
+    public void testClientIdIsPopulatedAutomatically() throws Exception
+    {
+        Connection connection = new AMQConnection(_broker, "guest", "guest",
+                                                  null, "/test");
+        assertNotNull(connection.getClientID());
+    }
+
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(ConnectionTest.class));
+        return new junit.framework.TestSuite(ConnectionTest.class);
     }
 }

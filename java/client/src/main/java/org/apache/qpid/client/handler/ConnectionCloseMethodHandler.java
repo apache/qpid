@@ -23,6 +23,7 @@ package org.apache.qpid.client.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionClosedException;
+import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.state.AMQState;

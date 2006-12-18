@@ -25,6 +25,7 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
@@ -40,11 +41,15 @@ import javax.naming.spi.InitialContextFactory;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
-    protected final Logger _logger = Logger.getLogger(getClass());
+    protected final Logger _logger = Logger.getLogger(PropertiesFileInitialContextFactory.class);
 
     private String CONNECTION_FACTORY_PREFIX = "connectionfactory.";
     private String DESTINATION_PREFIX = "destination.";
@@ -54,6 +59,41 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     public Context getInitialContext(Hashtable environment) throws NamingException
     {
         Map data = new ConcurrentHashMap();
+
+        try
+        {
+
+            String file = null;
+            if (environment.contains(Context.PROVIDER_URL))
+            {
+                file = (String) environment.get(Context.PROVIDER_URL);
+            }
+            else
+            {
+                file = System.getProperty(Context.PROVIDER_URL);
+            }
+
+            if (file != null)
+            {
+                _logger.info("Loading Properties from:" + file);
+                //Load the properties specified
+                Properties p = new Properties();
+
+                p.load(new BufferedInputStream(new FileInputStream(file)));
+
+                environment.putAll(p);
+                _logger.info("Loaded Context Properties:" + environment.toString());
+            }
+            else
+            {
+                _logger.warn("No Provider URL specified.");
+            }
+        }
+        catch (IOException ioe)
+        {
+            _logger.warn("Unable to load property file specified in Provider_URL:" +
+                         environment.get(Context.PROVIDER_URL));
+        }
 
         createConnectionFactories(data, environment);
 
@@ -177,21 +217,15 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             return null;
         }
 
-        if (binding.getExchangeClass().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        try
         {
-            return createTopic(binding);
+            return AMQDestination.createDestination(binding);
         }
-        else if (binding.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        catch (IllegalArgumentException iaw)
         {
-            return createQueue(binding);
+            _logger.warn("Binding: '" + binding + "' not supported");
+            return null;
         }
-        else if (binding.getExchangeClass().equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
-        {
-            return createHeaderExchange(binding);
-        }
-
-        _logger.warn("Binding: '" + binding + "' not supported");
-        return null;
     }
 
     /**

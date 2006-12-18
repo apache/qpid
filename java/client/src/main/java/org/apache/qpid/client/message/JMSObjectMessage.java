@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 
-import javax.jms.ObjectMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
+import javax.jms.ObjectMessage;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -73,6 +72,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data.release();
         }
         _data = null;
+
     }
 
     public String toBodyString() throws JMSException
@@ -94,18 +94,23 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
+        else
+        {
+            _data.rewind();
+        }
+
         try
         {
             ObjectOutputStream out = new ObjectOutputStream(_data.asOutputStream());
             out.writeObject(serializable);
             out.flush();
             out.close();
-            _data.rewind();
         }
         catch (IOException e)
         {
             throw new MessageFormatException("Message not serializable: " + e);
         }
+
     }
 
     public Serializable getObject() throws JMSException
@@ -118,15 +123,18 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
         try
         {
+        	_data.rewind();
             in = new ObjectInputStream(_data.asInputStream());
             return (Serializable) in.readObject();
         }
         catch (IOException e)
-        {
-            throw new MessageFormatException("Could not deserialize message: " + e);
+        {           
+           e.printStackTrace();
+           throw new MessageFormatException("Could not deserialize message: " + e);
         }
         catch (ClassNotFoundException e)
         {
+        	e.printStackTrace();
             throw new MessageFormatException("Could not deserialize message: " + e);
         }
         finally

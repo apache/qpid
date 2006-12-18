@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -79,13 +79,19 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
                              boolean isAutoDelete, String queueName)
     {
+        this(exchangeName, exchangeClass, destinationName, isExclusive, isAutoDelete, queueName, false);
+    }
+
+    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
+                             boolean isAutoDelete, String queueName, boolean isDurable)
+    {
         if (destinationName == null)
         {
-            throw new IllegalArgumentException("Destination name must not be null");
+            throw new IllegalArgumentException("Destination exchange must not be null");
         }
         if (exchangeName == null)
         {
-            throw new IllegalArgumentException("Exchange name must not be null");
+            throw new IllegalArgumentException("Exchange exchange must not be null");
         }
         if (exchangeClass == null)
         {
@@ -97,9 +103,13 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = isExclusive;
         _isAutoDelete = isAutoDelete;
         _queueName = queueName;
+        _isDurable = isDurable;
     }
 
-    public abstract String getEncodedName();
+    public String getEncodedName()
+    {
+        return toURL();
+    }
 
     public boolean isDurable()
     {
@@ -244,7 +254,7 @@ public abstract class AMQDestination implements Destination, Referenceable
             return false;
         }
         if ((_queueName == null && that._queueName != null) ||
-                (_queueName != null && !_queueName.equals(that._queueName)))
+            (_queueName != null && !_queueName.equals(that._queueName)))
         {
             return false;
         }
@@ -281,5 +291,27 @@ public abstract class AMQDestination implements Destination, Referenceable
                 new StringRefAddr(this.getClass().getName(), toURL()),
                 AMQConnectionFactory.class.getName(),
                 null);          // factory location
+    }
+
+    public static Destination createDestination(BindingURL binding)
+    {
+        String type = binding.getExchangeClass();
+
+        if (type.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        {
+            return new AMQQueue(binding);
+        }
+        else if (type.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        {
+            return new AMQTopic(binding);
+        }
+        else if (type.equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
+        {
+            return new AMQHeadersExchange(binding);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown Exchange Class:" + type + " in binding:" + binding);
+        }
     }
 }
