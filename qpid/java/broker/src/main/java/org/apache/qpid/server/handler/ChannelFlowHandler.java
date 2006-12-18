@@ -31,7 +31,6 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ChannelFlowBody;
 import org.apache.qpid.framing.ChannelFlowOkBody;
-import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.AMQException;
 
 public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowBody>
