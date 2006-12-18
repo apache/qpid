@@ -135,6 +135,8 @@ public class BytesMessageTest extends TestCase implements MessageListener
             buffer.get(data);
             actual.add(data);
 
+
+            //Check Body Write Status
             try
             {
                 m.writeBoolean(true);
@@ -144,6 +146,41 @@ public class BytesMessageTest extends TestCase implements MessageListener
             {
                 //normal execution
             }
+
+            m.clearBody();
+
+            try
+            {
+                m.writeBoolean(true);
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
+
+            //Check property write status
+            try
+            {
+                m.setStringProperty("test", "test");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearProperties();
+
+            try
+            {
+                m.setStringProperty("test", "test");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
         }
 
         assertEqual(messages.iterator(), actual.iterator());

@@ -21,10 +21,13 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
@@ -34,6 +37,8 @@ import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.log4j.Logger;
 
 import java.util.*;
 
@@ -112,7 +117,7 @@ public class AbstractHeadersExchangeTest extends TestCase
 
     static FieldTable getHeaders(String... entries)
     {
-        FieldTable headers = new FieldTable();
+        FieldTable headers = FieldTableFactory.newFieldTable();
         for (String s : entries)
         {
             String[] parts = s.split("=", 2);

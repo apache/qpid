@@ -18,10 +18,6 @@
  */
 package org.apache.qpid.example.subscriber;
 
-import org.apache.qpid.example.shared.Statics;
-
-import java.util.Properties;
-
 import org.apache.log4j.BasicConfigurator;
 
 /**
@@ -31,6 +27,10 @@ public class SubscriptionWrapper {
 
     private static Subscriber _subscriber;
 
+    /**
+     * Create a subscriber and start it
+     * @param args
+     */
     public static void main(String args[])
     {
         //switch on logging
@@ -38,15 +38,12 @@ public class SubscriptionWrapper {
         
          _subscriber = new Subscriber();
 
-        //using system props but can replace with app appropriate config here
-        Properties props = System.getProperties();
-
-        //note that for failover should set -Dhost=host1:port1;host2:port2
-        //Client will then failover in order i.e. connect to first host and failover to second and so on
         _subscriber.subscribe();
     }
 
-    //Stop subscribing now ...
+    /**
+     * Stop subscribing now ...
+     */
     public static void stop()
     {
         _subscriber.stop();

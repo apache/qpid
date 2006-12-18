@@ -23,10 +23,10 @@ package org.apache.qpid.client.message;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.PropertyFieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 import java.util.Enumeration;
 
 public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessage
@@ -58,7 +58,7 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
         try
         {
-            _map = new PropertyFieldTable(getText());
+            _map = FieldTableFactory.newFieldTable(getText());
         }
         catch (JMSException e)
         {
@@ -68,7 +68,7 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     // AbstractJMSMessage Interface
 
-    public void clearBody() throws JMSException
+    public void clearBodyImpl() throws JMSException
     {
         if (_data != null)
         {
@@ -206,48 +206,55 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     public void setBoolean(String string, boolean b) throws JMSException
     {
+        checkWritable();
         _map.setBoolean(string, b);
     }
 
     public void setByte(String string, byte b) throws JMSException
     {
+        checkWritable();
         _map.setByte(string, b);
     }
 
     public void setShort(String string, short i) throws JMSException
     {
+        checkWritable();
         _map.setShort(string, i);
     }
 
     public void setChar(String string, char c) throws JMSException
     {
+        checkWritable();
         _map.setChar(string, c);
     }
 
     public void setInt(String string, int i) throws JMSException
     {
+        checkWritable();
         _map.setInteger(string, i);
     }
 
     public void setLong(String string, long l) throws JMSException
     {
+        checkWritable();
         _map.setLong(string, l);
     }
 
     public void setFloat(String string, float v) throws JMSException
     {
-
+        checkWritable();
         _map.setFloat(string, v);
     }
 
     public void setDouble(String string, double v) throws JMSException
     {
-
+        checkWritable();
         _map.setDouble(string, v);
     }
 
     public void setString(String string, String string1) throws JMSException
     {
+        checkWritable();
         _map.setString(string, string1);
     }
 
@@ -258,11 +265,13 @@ public class JMSMapMessage extends JMSTextMessage implements javax.jms.MapMessag
 
     public void setBytes(String string, byte[] bytes, int i, int i1) throws JMSException
     {
+        checkWritable();
         _map.setBytes(string, bytes, i, i1);
     }
 
     public void setObject(String string, Object object) throws JMSException
     {
+        checkWritable();
         _map.setObject(string, object);
     }
 

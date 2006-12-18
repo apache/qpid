@@ -28,6 +28,7 @@ import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,6 +40,8 @@ import junit.framework.Assert;
 
 public class TextMessageTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(TextMessageTest.class);
+
     private AMQConnection _connection;
     private Destination _destination;
     private AMQSession _session;
@@ -100,7 +103,11 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             String text = "Message " + i;
             messages.add(text);
-            producer.send(_session.createTextMessage(text));
+            Message m = _session.createTextMessage(text);
+            m.setStringProperty("String", "hello");
+
+            _logger.info("Sending Msg:" + m);
+            producer.send(m);
         }
     }
 
@@ -122,15 +129,49 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             actual.add(m.getText());
 
-//            try
-//            {
-//                m.setText("Test text");
-//                Assert.fail("Message should not be writeable");
-//            }
-//            catch (MessageNotWriteableException mnwe)
-//            {
-//                //normal execution
-//            }
+            //Check body write status            
+            try
+            {
+                m.setText("Test text");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearBody();
+
+            try
+            {
+                m.setText("Test text");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
+
+            //Check property write status
+            try
+            {
+                m.setStringProperty("test", "test");
+                Assert.fail("Message should not be writeable");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                //normal execution
+            }
+
+            m.clearProperties();
+
+            try
+            {
+                m.setStringProperty("test", "test");
+            }
+            catch (MessageNotWriteableException mnwe)
+            {
+                Assert.fail("Message should be writeable");
+            }
 
         }
 

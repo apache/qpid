@@ -98,6 +98,12 @@ public class EncodingUtils
         }
     }
 
+    public static int encodedContentLength(Content table)
+    {
+    	// TODO: New Content class required for AMQP 0-9.
+        return 0;
+    }
+
     public static void writeShortStringBytes(ByteBuffer buffer, String s)
     {
         if (s != null)
@@ -108,9 +114,7 @@ public class EncodingUtils
             {
                 encodedString[i] = (byte) cha[i];
             }
-            // TODO: check length fits in an unsigned byte
-            writeUnsignedByte(buffer, (short) encodedString.length);
-            buffer.put(encodedString);
+            writeBytes(buffer,encodedString);
         }
         else
         {
@@ -227,6 +231,11 @@ public class EncodingUtils
         }
     }
 
+    public static void writeContentBytes(ByteBuffer buffer, Content content)
+    {
+    	// TODO: New Content class required for AMQP 0-9.
+    }
+
     public static void writeBooleans(ByteBuffer buffer, boolean[] values)
     {
         byte packedValue = 0;
@@ -243,6 +252,7 @@ public class EncodingUtils
 
     /**
      * This is used for writing longstrs.
+     *
      * @param buffer
      * @param data
      */
@@ -286,8 +296,14 @@ public class EncodingUtils
         }
         else
         {
-            return new FieldTable(buffer, length);
+            return FieldTableFactory.newFieldTable(buffer, length);
         }
+    }
+
+    public static Content readContent(ByteBuffer buffer) throws AMQFrameDecodingException
+    {
+    	// TODO: New Content class required for AMQP 0-9.
+    	return null;
     }
 
     public static String readShortString(ByteBuffer buffer)
@@ -330,9 +346,9 @@ public class EncodingUtils
             // than constructing one from a char array.
             // this approach here is valid since we know that all the chars are
             // ASCII (0-127)
-            byte[] stringBytes = new byte[(int)length];
-            buffer.get(stringBytes, 0, (int)length);
-            char[] stringChars = new char[(int)length];
+            byte[] stringBytes = new byte[(int) length];
+            buffer.get(stringBytes, 0, (int) length);
+            char[] stringChars = new char[(int) length];
             for (int i = 0; i < stringChars.length; i++)
             {
                 stringChars[i] = (char) stringBytes[i];
@@ -350,7 +366,7 @@ public class EncodingUtils
         }
         else
         {
-            byte[] result = new byte[(int)length];
+            byte[] result = new byte[(int) length];
             buffer.get(result);
             return result;
         }
@@ -363,97 +379,6 @@ public class EncodingUtils
         return buffer.getUnsignedInt();
     }
 
-    // Will barf with a NPE on a null input. Not sure whether it should return null or
-    // an empty field-table (which would be slower - perhaps unnecessarily).
-    //
-    // Some sample input and the result output:
-    //
-    // Input: "a=1" "a=2 c=3" "a=3 c=4 d" "a='four' b='five'" "a=bad"
-    //
-    //    Parsing <a=1>...
-    //    {a=1}
-    //    Parsing <a=2 c=3>...
-    //    {a=2, c=3}
-    //    Parsing <a=3 c=4 d>...
-    //    {a=3, c=4, d=null}
-    //    Parsing <a='four' b='five'>...
-    //    {a=four, b=five}
-    //    Parsing <a=bad>...
-    //    java.lang.IllegalArgumentException: a: Invalid integer in <bad> from <a=bad>.
-    //
-    public static FieldTable createFieldTableFromMessageSelector(String selector)
-    {
-        boolean debug = _logger.isDebugEnabled();
-
-        // TODO: Doesn't support embedded quotes properly.
-        String[] expressions = selector.split(" +");
-
-        FieldTable result = new FieldTable();
-
-        for (int i = 0; i < expressions.length; i++)
-        {
-            String expr = expressions[i];
-
-            if (debug)
-            {
-                _logger.debug("Expression = <" + expr + ">");
-            }
-
-            int equals = expr.indexOf('=');
-
-            if (equals < 0)
-            {
-                // Existence check
-                result.put("S" + expr.trim(), null);
-            }
-            else
-            {
-                String key = expr.substring(0, equals).trim();
-                String value = expr.substring(equals + 1).trim();
-
-                if (debug)
-                {
-                    _logger.debug("Key = <" + key + ">, Value = <" + value + ">");
-                }
-
-                if (value.charAt(0) == '\'')
-                {
-                    if (value.charAt(value.length() - 1) != '\'')
-                    {
-                        throw new IllegalArgumentException(key + ": Missing quote in <" + value + "> from <" + selector + ">.");
-                    }
-                    else
-                    {
-                        value = value.substring(1, value.length() - 1);
-
-                        result.put("S" + key, value);
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        int intValue = Integer.parseInt(value);
-
-                        result.put("i" + key, value);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        throw new IllegalArgumentException(key + ": Invalid integer in <" + value + "> from <" + selector + ">.");
-
-                    }
-                }
-            }
-        }
-
-        if (debug)
-        {
-            _logger.debug("Field-table created from <" + selector + "> is <" + result + ">");
-        }
-
-        return (result);
-
-    }
 
     static byte[] hexToByteArray(String id)
     {
@@ -481,7 +406,7 @@ public class EncodingUtils
     public static char[] convertToHexCharArray(byte[] from)
     {
         int length = from.length;
-        char[]    result_buff = new char[length * 2 + 2];
+        char[] result_buff = new char[length * 2 + 2];
 
         result_buff[0] = '0';
         result_buff[1] = 'x';
@@ -526,24 +451,155 @@ public class EncodingUtils
         return (new String(convertToHexCharArray(from)));
     }
 
-    public static void main(String[] args)
+    private static char hex_chars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    //**** new methods
+
+    // BOOLEAN_PROPERTY_PREFIX
+
+    public static void writeBoolean(ByteBuffer buffer, Boolean aBoolean)
     {
-        for (int i = 0; i < args.length; i++)
+        buffer.put((byte) (aBoolean ? 1 : 0));
+    }
+
+    public static Boolean readBoolean(ByteBuffer buffer)
+    {
+        byte packedValue = buffer.get();
+        return (packedValue == 1);
+    }
+
+    public static int encodedBooleanLength()
+    {
+        return 1;
+    }
+
+    // BYTE_PROPERTY_PREFIX
+    public static void writeByte(ByteBuffer buffer, Byte aByte)
+    {
+        buffer.put(aByte);
+    }
+
+    public static Byte readByte(ByteBuffer buffer)
+    {
+        return buffer.get();
+    }
+
+    public static int encodedByteLength()
+    {
+        return 1;
+    }
+
+
+    // SHORT_PROPERTY_PREFIX
+    public static void writeShort(ByteBuffer buffer, Short aShort)
+    {
+        buffer.putShort(aShort);
+    }
+
+    public static Short readShort(ByteBuffer buffer)
+    {
+        return buffer.getShort();
+    }
+
+    public static int encodedShortLength()
+    {
+        return 2;
+    }
+
+    // INTEGER_PROPERTY_PREFIX
+    public static void writeInteger(ByteBuffer buffer, Integer aInteger)
+    {
+        buffer.putInt(aInteger);
+    }
+
+    public static Integer readInteger(ByteBuffer buffer)
+    {
+        return buffer.getInt();
+    }
+
+    public static int encodedIntegerLength()
+    {
+        return 4;
+    }
+
+    // LONG_PROPERTY_PREFIX
+    public static void writeLong(ByteBuffer buffer, Long aLong)
+    {
+        buffer.putLong(aLong);
+    }
+
+    public static Long readLong(ByteBuffer buffer)
+    {
+        return buffer.getLong();
+    }
+
+    public static int encodedLongLength()
+    {
+        return 8;
+    }
+
+    // Float_PROPERTY_PREFIX
+    public static void writeFloat(ByteBuffer buffer, Float aFloat)
+    {
+        buffer.putFloat(aFloat);
+    }
+
+    public static Float readFloat(ByteBuffer buffer)
+    {
+        return buffer.getFloat();
+    }
+
+    public static int encodedFloatLength()
+    {
+        return 4;
+    }
+
+
+    // Double_PROPERTY_PREFIX
+    public static void writeDouble(ByteBuffer buffer, Double aDouble)
+    {
+        buffer.putDouble(aDouble);
+    }
+
+    public static Double readDouble(ByteBuffer buffer)
+    {
+        return buffer.getDouble();
+    }
+
+    public static int encodedDoubleLength()
+    {
+        return 8;
+    }
+
+
+    public static byte[] readBytes(ByteBuffer buffer)
+    {
+        short length = buffer.getUnsigned();
+        if (length == 0)
         {
-            String selector = args[i];
+            return null;
+        }
+        else
+        {
+            byte[] dataBytes = new byte[length];
+            buffer.get(dataBytes, 0, length);
 
-            System.err.println("Parsing <" + selector + ">...");
-
-            try
-            {
-                System.err.println(createFieldTableFromMessageSelector(selector));
-            }
-            catch (IllegalArgumentException e)
-            {
-                System.err.println(e);
-            }
+            return dataBytes;
         }
     }
 
-    private static char hex_chars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    public static void writeBytes(ByteBuffer buffer, byte[] data)
+    {
+        if (data != null)
+        {
+            // TODO: check length fits in an unsigned byte            
+            writeUnsignedByte(buffer, (short) data.length);
+            buffer.put(data);
+        }
+        else
+        {
+            // really writing out unsigned byte
+            buffer.put((byte) 0);
+        }
+    }
 }

@@ -38,7 +38,6 @@
         <amqj.logging.level>warn</amqj.logging.level>
     </properties>
 
-
     <dependencies>
         <dependency>
             <groupId>org.apache.qpid</groupId>
@@ -48,7 +47,6 @@
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>commons-codec</groupId>
@@ -72,11 +70,11 @@
             <artifactId>mina-filter-ssl</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>jmscts</groupId>
             <artifactId>jmscts</artifactId>
             <version>0.5-b2</version>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>jms</groupId>
@@ -86,9 +84,12 @@
         </dependency>
 
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymockclassextension</artifactId>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>
@@ -106,7 +107,7 @@
                         </property>
                         <property>
                             <name>amqj.logging.level</name>
-                            <value>WARN</value>
+                            <value>${amqj.logging.level}</value>
                         </property>
                         <property>
                             <name>log4j.configuration</name>

@@ -21,10 +21,13 @@
 package org.apache.qpid.test.unit.basic;
 
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import javax.jms.JMSException;
 
@@ -34,20 +37,28 @@ public class FieldTableKeyEnumeratorTest extends TestCase
 {
     public void testKeyEnumeration()
     {
-        FieldTable result = new FieldTable();
+        FieldTable result = FieldTableFactory.newFieldTable();
         result.put("one", 1L);
         result.put("two", 2L);
         result.put("three", 3L);
         result.put("four", 4L);
         result.put("five", 5L);
 
-        Enumeration e = result.keys();
+        Iterator iterator = result.keySet().iterator();
 
-        assertTrue("one".equals(e.nextElement()));
-        assertTrue("two".equals(e.nextElement()));
-        assertTrue("three".equals(e.nextElement()));
-        assertTrue("four".equals(e.nextElement()));
-        assertTrue("five".equals(e.nextElement()));
+        try
+        {
+            assertTrue("one".equals(iterator.next()));
+            assertTrue("two".equals(iterator.next()));
+            assertTrue("three".equals(iterator.next()));
+            assertTrue("four".equals(iterator.next()));
+            assertTrue("five".equals(iterator.next()));
+        }
+        catch (NoSuchElementException e)
+        {
+            fail("All elements should be found.");
+        }
+
     }
 
     public void testPropertEnu()

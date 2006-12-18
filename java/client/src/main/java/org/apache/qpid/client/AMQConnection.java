@@ -44,6 +44,7 @@ import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
+import javax.jms.IllegalStateException;
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
@@ -92,7 +93,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /**
      * Maps from session id (Integer) to AMQSession instance
      */
-    private final Map _sessions = new LinkedHashMap(); //fixme this is map is replicated in amqprotocolsession as _channelId2SessionMap
+    private final Map _sessions = new LinkedHashMap(); //fixme this is map is replicated in amqprotocolsession as _channelId2SessionMap    
 
     private String _clientName;
 
@@ -142,7 +143,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
-                                  username + ":" + password + "@" + clientName +
+                                  username + ":" + password + "@" +
+                                  (clientName==null?"":clientName) +
                                   virtualHost + "?brokerlist='" + broker + "'"));
     }
 
@@ -157,11 +159,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         this(new AMQConnectionURL(useSSL ?
                                   ConnectionURL.AMQ_PROTOCOL + "://" +
-                                  username + ":" + password + "@" + clientName +
+                                  username + ":" + password + "@" +
+                                  (clientName==null?"":clientName) +
                                   virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                   + "," + ConnectionURL.OPTIONS_SSL + "='true'" :
                                                                                 ConnectionURL.AMQ_PROTOCOL + "://" +
-                                                                                username + ":" + password + "@" + clientName +
+                                                                                username + ":" + password + "@" +
+                                                                                (clientName==null?"":clientName) +
                                                                                 virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                                                                 + "," + ConnectionURL.OPTIONS_SSL + "='false'"
         ));
@@ -537,7 +541,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void setClientID(String clientID) throws JMSException
     {
         checkNotClosed();
-        _clientName = clientID;
+        // in AMQP it is not possible to change the client ID. If one is not specified
+        // upon connection construction, an id is generated automatically. Therefore
+        // we can always throw an exception.
+        throw new IllegalStateException("Client name cannot be changed after being set");
     }
 
     public ConnectionMetaData getMetaData() throws JMSException
@@ -583,7 +590,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void stop() throws JMSException
     {
         checkNotClosed();
-
         if (_started)
         {
             for (Iterator i = _sessions.values().iterator(); i.hasNext();)
@@ -920,8 +926,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     void deregisterSession(int channelId)
     {
         _sessions.remove(channelId);
-    }
-
+    }    
+    
     /**
      * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
      * The caller must hold the failover mutex before calling this method.

@@ -21,6 +21,9 @@
 
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.server.exchange.ManagedExchange;
+import org.apache.qpid.server.queue.ManagedQueue;
+
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 import java.io.IOException;
@@ -45,10 +48,9 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    @MBeanOperation(name="createNewExchange", description="Creates a new Exchange",
-                         impact= MBeanOperationInfo.ACTION)
+    @MBeanOperation(name="createNewExchange", description="Creates a new Exchange", impact= MBeanOperationInfo.ACTION)
     void createNewExchange(@MBeanOperationParameter(name="name", description="Name of the new exchange")String name,
-                           @MBeanOperationParameter(name="excahnge type", description="Type of the exchange")String type,
+                           @MBeanOperationParameter(name="ExchangeType", description="Type of the exchange")String type,
                            @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable,
                            @MBeanOperationParameter(name="passive", description="true of the Exchange should be passive")boolean passive)
         throws IOException, JMException;
@@ -61,9 +63,9 @@ public interface ManagedBroker
      * @throws JMException
      */
     @MBeanOperation(name="unregisterExchange",
-                         description="Unregisters all the related channels and queuebindings of this exchange",
-                         impact= MBeanOperationInfo.ACTION)
-    void unregisterExchange(@MBeanOperationParameter(name="exchange name", description="Name of the exchange")String exchange)
+                    description="Unregisters all the related channels and queuebindings of this exchange",
+                    impact= MBeanOperationInfo.ACTION)
+    void unregisterExchange(@MBeanOperationParameter(name= ManagedExchange.TYPE, description="Exchange Name")String exchange)
         throws IOException, JMException;
 
     /**
@@ -75,12 +77,11 @@ public interface ManagedBroker
      * @throws IOException
      * @throws JMException
      */
-    @MBeanOperation(name="createQueue", description="Create a new Queue on the Broker server",
-                         impact= MBeanOperationInfo.ACTION)
-    void createQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
-                     @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable,
-                     @MBeanOperationParameter(name="owner", description="Owner name")String owner,
-                     @MBeanOperationParameter(name="autoDelete", description="true if the queue should be auto delete") boolean autoDelete)
+    @MBeanOperation(name="createNewQueue", description="Create a new Queue on the Broker server", impact= MBeanOperationInfo.ACTION)
+    void createNewQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
+                        @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable,
+                        @MBeanOperationParameter(name="owner", description="Owner name")String owner,
+                        @MBeanOperationParameter(name="autoDelete", description="true if the queue should be auto delete") boolean autoDelete)
         throws IOException, JMException;
 
     /**
@@ -93,6 +94,6 @@ public interface ManagedBroker
     @MBeanOperation(name="deleteQueue",
                          description="Unregisters the Queue bindings, removes the subscriptions and deletes the queue",
                          impact= MBeanOperationInfo.ACTION)
-    void deleteQueue(@MBeanOperationParameter(name="queue name", description="Name of the queue")String queueName)
+    void deleteQueue(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue Name")String queueName)
         throws IOException, JMException;
 }

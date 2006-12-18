@@ -39,7 +39,7 @@ public class TestMessageHelper
         return new JMSMapMessage();
     }
 
-    public static JMSStreamMessage newJMSStreamMessage() throws JMSException
+    public static JMSStreamMessage newJMSStreamMessage()
     {
         return new JMSStreamMessage();
     }

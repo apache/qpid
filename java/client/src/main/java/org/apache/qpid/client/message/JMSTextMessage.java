@@ -66,7 +66,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         setText(text);
     }
 
-    public void clearBody() throws JMSException
+    public void clearBodyImpl() throws JMSException
     {
         if (_data != null)
         {
@@ -93,6 +93,8 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
 
     public void setText(String string) throws JMSException
     {
+        checkWritable();
+        
         clearBody();
         try
         {

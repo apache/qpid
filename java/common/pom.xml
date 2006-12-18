@@ -39,7 +39,7 @@
         <spec.stylesheet>${basedir}/src/main/xsl/framing.xsl</spec.stylesheet>
         <registry.stylesheet>${basedir}/src/main/xsl/registry.xsl</registry.stylesheet>
         <registry.template>${basedir}/src/main/xsl/registry.template</registry.template>
-        <generated.path>${project.build.directory}/generated/xsl</generated.path>
+        <generated.path>${project.build.directory}/generated-sources/xsl</generated.path>
         <generated.package>org/apache/qpid/framing</generated.package>
         <generated.dir>${generated.path}/${generated.package}</generated.dir>
         <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
@@ -47,7 +47,6 @@
 
     <build>
         <plugins>          
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -90,10 +89,6 @@
          <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ant</groupId>
-            <artifactId>ant-junit</artifactId>
         </dependency>
     </dependencies>
 </project>
