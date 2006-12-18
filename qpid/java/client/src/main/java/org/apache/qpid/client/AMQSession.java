@@ -136,7 +136,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
 
-
+    /**
+     * Set when recover is called. This is to handle the case where recover() is called by application code
+     * during onMessage() processing. We need to make sure we do not send an auto ack if recover was called.
+     */
+    private boolean _inRecovery;
 
 
     /**
@@ -696,11 +700,23 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkNotClosed();
         checkNotTransacted(); // throws IllegalStateException if a transacted session
+        // this is set only here, and the before the consumer's onMessage is called it is set to false
+        _inRecovery = true;
         for (BasicMessageConsumer consumer : _consumers.values())
         {
             consumer.clearUnackedMessages();
         }
         _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
+    }
+
+    boolean isInRecovery()
+    {
+        return _inRecovery;
+    }
+
+    void setInRecovery(boolean inRecovery)
+    {
+        _inRecovery = inRecovery;
     }
 
     public void acknowledge() throws JMSException
