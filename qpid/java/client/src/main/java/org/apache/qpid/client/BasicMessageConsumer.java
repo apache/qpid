@@ -38,12 +38,17 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Iterator;
 
 public class BasicMessageConsumer extends Closeable implements MessageConsumer
 {
-    private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);
+    private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);  
 
     /**
      * The connection being used by this consumer
@@ -80,7 +85,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * Used in the blocking receive methods to receive a message from
      * the Session thread. Argument true indicates we want strict FIFO semantics
      */
-    private final SynchronousQueue _synchronousQueue = new SynchronousQueue(true);
+    private final ArrayBlockingQueue _synchronousQueue;
 
     private MessageFactoryRegistry _messageFactory;
 
@@ -132,6 +137,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private boolean _dups_ok_acknowledge_send;
 
+    private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
+
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
                          boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
                          AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
@@ -150,6 +157,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
         _acknowledgeMode = acknowledgeMode;
+        _synchronousQueue = new ArrayBlockingQueue(prefetchHigh, true);
     }
 
     public AMQDestination getDestination()
@@ -217,11 +225,19 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
                 if (jmsMsg != null)
                 {
-                    _session.setLastDeliveredMessage(jmsMsg);
+                    preApplicationProcessing(jmsMsg);
                     messageListener.onMessage(jmsMsg);
                     postDeliver(jmsMsg);
                 }
             }
+        }
+    }
+
+    private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    {
+        if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        {
+            _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
         }
     }
 
@@ -297,7 +313,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                _session.setLastDeliveredMessage(m);
+                preApplicationProcessing(m);
                 postDeliver(m);
             }
             
@@ -326,7 +342,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                _session.setLastDeliveredMessage(m);
+                preApplicationProcessing(m);
                 postDeliver(m);
             }
 
@@ -385,6 +401,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
 
                 deregisterConsumer();
+                _unacknowledgedDeliveryTags.clear();
             }
         }
     }
@@ -421,6 +438,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                                                                           messageFrame.bodies);
 
             _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
+            jmsMessage.setConsumer(this);
 
             preDeliver(jmsMessage);
 
@@ -428,7 +446,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //we do not need a lock around the test above, and the dispatch below as it is invalid
                 //for an application to alter an installed listener while the session is started
-                _session.setLastDeliveredMessage(jmsMessage);
+                preApplicationProcessing(jmsMessage);
                 getMessageListener().onMessage(jmsMessage);
                 postDeliver(jmsMessage);
             }
@@ -554,4 +572,22 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
+
+    public void acknowledge() throws JMSException
+    {
+        if(!isClosed())
+        {
+
+            Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
+            while(tags.hasNext())
+            {
+                _session.acknowledgeMessage(tags.next(), false);
+                tags.remove();
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("Consumer is closed");
+        }
+    }
 }

@@ -104,7 +104,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /**
      * Maps from consumer tag (String) to JMSMessageConsumer instance
      */
-    private Map _consumers = new ConcurrentHashMap();
+    private Map<String, BasicMessageConsumer> _consumers = new ConcurrentHashMap<String, BasicMessageConsumer>();
 
     /**
      * Maps from destination to count of JMSMessageConsumers
@@ -138,7 +138,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
 
-    private final AtomicLong _lastDeliveryTag = new AtomicLong();
+
 
 
     /**
@@ -174,7 +174,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             if (message.deliverBody != null)
             {
-                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.deliverBody.consumerTag);
+                final BasicMessageConsumer consumer = _consumers.get(message.deliverBody.consumerTag);
 
                 if (consumer == null)
                 {
@@ -184,7 +184,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 else
                 {
-
+        
                     consumer.notifyMessage(message, _channelId);
 
                 }
@@ -467,10 +467,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             // Acknowledge up to message last delivered (if any) for each consumer.
             //need to send ack for messages delivered to consumers so far
-            for (Iterator i = _consumers.values().iterator(); i.hasNext();)
+            for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
             {
                 //Sends acknowledgement to server
-                ((BasicMessageConsumer) i.next()).acknowledgeLastDelivered();
+                i.next().acknowledgeLastDelivered();
             }
 
             // Commits outstanding messages sent and outstanding acknowledgements.
@@ -652,12 +652,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
-        final ArrayList clonedConsumers = new ArrayList(_consumers.values());
+        final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList(_consumers.values());
 
-        final Iterator it = clonedConsumers.iterator();
+        final Iterator<BasicMessageConsumer> it = clonedConsumers.iterator();
         while (it.hasNext())
         {
-            final BasicMessageConsumer con = (BasicMessageConsumer) it.next();
+            final BasicMessageConsumer con = it.next();
             if (error != null)
             {
                 con.notifyError(error);
@@ -678,12 +678,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
-        final ArrayList clonedConsumers = new ArrayList(_consumers.values());
+        final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList<BasicMessageConsumer>(_consumers.values());
 
-        final Iterator it = clonedConsumers.iterator();
+        final Iterator<BasicMessageConsumer> it = clonedConsumers.iterator();
         while (it.hasNext())
         {
-            final BasicMessageConsumer con = (BasicMessageConsumer) it.next();
+            final BasicMessageConsumer con = it.next();
             con.markClosed();
         }
         // at this point the _consumers map will be empty
@@ -702,25 +702,20 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
     }
 
-
     public void acknowledge() throws JMSException
     {
-        if (getAMQConnection().isClosed())
+        if(isClosed())
         {
-            throw new javax.jms.IllegalStateException("Connection is already closed");
+            throw new IllegalStateException("Session is already closed");
         }
-        if (isClosed())
+        for(BasicMessageConsumer consumer : _consumers.values())
         {
-            throw new javax.jms.IllegalStateException("Session is already closed");            
+            consumer.acknowledge();
         }
-        acknowledgeMessage(_lastDeliveryTag.get(), true);
+
 
     }
 
-    void setLastDeliveredMessage(AbstractJMSMessage message)
-    {
-        _lastDeliveryTag.set(message.getDeliveryTag());    
-    }
 
 
     public MessageListener getMessageListener() throws JMSException
