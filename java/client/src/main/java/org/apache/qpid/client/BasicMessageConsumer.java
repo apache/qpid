@@ -136,6 +136,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
+    /**
+     * The thread that was used to call receive(). This is important for being able to interrupt that thread if
+     * a receive() is in progress.
+     */
+    private Thread _receivingThread;
+
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
                          boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
                          AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
@@ -236,6 +242,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
         }
+        _session.setInRecovery(false);
     }
 
     private void acquireReceiving() throws JMSException
@@ -248,11 +255,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
+        _receivingThread = Thread.currentThread();
     }
 
     private void releaseReceiving()
     {
         _receiving.set(false);
+        _receivingThread = null;
     }
 
     public FieldTable getRawSelectorFieldTable()
@@ -318,7 +327,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
         catch (InterruptedException e)
         {
-            _logger.warn("Interrupted: " + e, e);
+            _logger.warn("Interrupted: " + e);
             return null;
         }
         finally
@@ -399,6 +408,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 deregisterConsumer();
                 _unacknowledgedDeliveryTags.clear();
+                if (_messageListener != null && _receiving.get())
+                {
+                    _logger.info("Interrupting thread: " + _receivingThread);
+                    _receivingThread.interrupt();
+                }
             }
         }
     }
@@ -497,11 +511,18 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 if (_dups_ok_acknowledge_send)
                 {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    if (!_session.isInRecovery())
+                    {
+                        _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    }
                 }
                 break;
             case Session.AUTO_ACKNOWLEDGE:
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                // we do not auto ack a message if the application code called recover()
+                if (!_session.isInRecovery())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
                 break;
             case Session.SESSION_TRANSACTED:
                 _lastDeliveryTag = msg.getDeliveryTag();
