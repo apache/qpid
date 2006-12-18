@@ -1352,7 +1352,27 @@ localised reply text
   </doc>
       <chassis name="client" implement="MUST"/>
     </method>
+
+    <method name="bound" synchronous="1" index="22">
+        <field name="exchange" domain="exchange name"/>
+        <field name = "routing key" type = "shortstr">
+            Message routing key
+            <doc>
+              Specifies the routing key for the message.  The routing key is
+              used for routing messages depending on the exchange configuration.
+            </doc>
+        </field>
+        <field name = "queue" domain = "queue name"/>
+    </method>
+
+    <method name="bound-ok" synchronous="1" index="23">
+        <field name="reply code" domain="reply code"/>
+        <field name="reply text" domain="reply text"/>
+    </method>
+
   </class>
+
+ 
   <class name="queue" handler="channel" index="50">
     <!--
 ======================================================
@@ -2086,11 +2106,12 @@ localised reply text
     </doc>
   </field>
 
-    <field name="filter" type="table" label="arguments for consuming">
-        <doc>
-            A set of filters for the consume. The syntax and semantics
-            of these filters depends on the providers implementation.
-        </doc>
+    <field name="arguments" type="table" label="arguments for consuming">
+  <doc>
+    A set of arguments for the consume. The syntax and semantics
+    of these arguments depends on the server implementation.  This
+    field is ignored if passive is 1.
+  </doc>
     </field>
 </method>
 
@@ -2453,9 +2474,9 @@ localised reply text
     A client MUST NOT use this method as a means of selecting messages
     to process.  A rejected message MAY be discarded or dead-lettered,
     not necessarily passed to another client.
-  </doc>
+  </doc>      
   <chassis name = "server" implement = "MUST" />
-
+    
   <field name = "delivery tag" domain = "delivery tag" />
 
   <field name = "requeue" type = "bit">
@@ -2497,7 +2518,7 @@ localised reply text
     The server MUST set the redelivered flag on all messages that are resent.
   </doc>
   <doc name="rule">
-    The server MUST raise a channel exception if this is called on a
+    The server MUST raise a channel exception if this is called on a 
     transacted channel.
   </doc>
 </method>
@@ -2799,7 +2820,7 @@ localised reply text
   <response name = "open-ok" />
   <chassis name = "server" implement = "MUST" />
   <chassis name = "client" implement = "MUST" />
-
+  
   <field name = "identifier" type = "shortstr">
     staging identifier
     <doc>
@@ -2836,7 +2857,7 @@ localised reply text
   <response name = "stage" />
   <chassis name = "server" implement = "MUST" />
   <chassis name = "client" implement = "MUST" />
-
+  
   <field name = "staged size" type = "longlong">
     already staged amount
     <doc>
@@ -3052,7 +3073,7 @@ localised reply text
   </doc>
   <chassis name = "server" implement = "MUST" />
   <field name = "delivery tag" domain = "delivery tag" />
-
+      
   <field name = "multiple" type = "bit">
     acknowledge multiple messages
     <doc>
@@ -3091,7 +3112,7 @@ localised reply text
     not necessarily passed to another client.
   </doc>
   <chassis name = "server" implement = "MUST" />
-
+    
   <field name = "delivery tag" domain = "delivery tag" />
 
   <field name = "requeue" type = "bit">
@@ -3490,7 +3511,7 @@ localised reply text
     <doc>
       Specifies the routing key name specified when the message was
       published.
-    </doc>
+    </doc>     
   </field>
 </method>
 
