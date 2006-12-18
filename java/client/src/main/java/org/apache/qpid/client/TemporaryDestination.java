@@ -1,7 +1,6 @@
 package org.apache.qpid.client;
 
 import javax.jms.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides support for covenience interface implemented by both AMQTemporaryTopic and AMQTemporaryQueue

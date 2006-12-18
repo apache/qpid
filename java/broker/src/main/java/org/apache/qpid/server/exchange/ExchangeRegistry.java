@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 
 
 public interface ExchangeRegistry extends MessageRouter

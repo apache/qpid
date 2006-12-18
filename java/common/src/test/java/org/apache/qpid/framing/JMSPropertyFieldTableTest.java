@@ -24,11 +24,7 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;

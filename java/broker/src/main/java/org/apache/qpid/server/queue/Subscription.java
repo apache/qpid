@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-
 public interface Subscription
 {
     void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException;

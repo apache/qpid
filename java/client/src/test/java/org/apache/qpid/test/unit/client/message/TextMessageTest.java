@@ -28,7 +28,6 @@ import junit.framework.TestCase;
 import junit.framework.Assert;
 
 import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 
 public class TextMessageTest extends TestCase
 {

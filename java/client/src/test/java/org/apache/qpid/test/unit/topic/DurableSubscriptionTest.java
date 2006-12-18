@@ -21,12 +21,10 @@
 package org.apache.qpid.test.unit.topic;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.VMBrokerSetup;
 
 import javax.jms.JMSException;

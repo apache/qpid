@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.jms.ConnectionURL;

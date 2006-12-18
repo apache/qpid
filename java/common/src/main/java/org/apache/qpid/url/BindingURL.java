@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.url;
 
-import java.util.List;
-
 /*
     Binding URL format:
     <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
