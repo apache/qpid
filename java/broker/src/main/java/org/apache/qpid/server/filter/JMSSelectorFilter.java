@@ -23,6 +23,9 @@ package org.apache.qpid.server.filter;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.filter.jms.selector.SelectorParser;
 import org.apache.qpid.server.message.jms.JMSMessage;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
@@ -33,13 +36,13 @@ import javax.jms.JMSException;
 public class JMSSelectorFilter implements MessageFilter
 {
 
-    private final static Logger _logger =  org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
+    private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
 // LoggerFactory.getLogger(JMSSelectorFilter.class);
 
     private String _selector;
     private BooleanExpression _matcher;
 
-    public JMSSelectorFilter(String selector)
+    public JMSSelectorFilter(String selector) throws AMQException
     {
         _selector = selector;
         _logger.info("Created JMSSelectorFilter with selector:" + _selector);
@@ -53,8 +56,8 @@ public class JMSSelectorFilter implements MessageFilter
         catch (InvalidSelectorException e)
         {
             // fixme
-            // Will have to throw this back to the client... in the future
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            // Is this the correct way of throwing exception
+            throw new AMQInvalidSelectorException(e.getMessage());
         }
 
     }
@@ -64,7 +67,7 @@ public class JMSSelectorFilter implements MessageFilter
         try
         {
             boolean match = _matcher.matches(message);
-            _logger.info(message + " match(" + match + ") selector:" + _selector);
+            _logger.info(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
             return match;
         }
         catch (JMSException e)

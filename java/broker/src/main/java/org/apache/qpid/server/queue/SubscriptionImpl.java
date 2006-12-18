@@ -118,6 +118,12 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
+    public SubscriptionImpl(int channel, AMQProtocolSession protocolSession,
+                            String consumerTag)
+            throws AMQException
+    {
+        this(channel, protocolSession, consumerTag, false);
+    }
 
     public boolean equals(Object o)
     {

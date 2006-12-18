@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -206,8 +206,46 @@ public class HeadersExchange extends AbstractExchange
         }
         if (!delivered)
         {
-            _logger.warn("Exchange " + getName() + ": message not routable.");
+
+            String msg = "Exchange " + getName() + ": message not routable.";
+
+            if (payload.getPublishBody().mandatory)
+            {
+                throw new NoRouteException(msg, payload);
+            }
+            else
+            {
+                _logger.warn(msg);
+            }
+
         }
+    }
+
+    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    {
+        return isBound(queue);
+    }
+
+    public boolean isBound(String routingKey) throws AMQException
+    {
+        return hasBindings();
+    }
+
+    public boolean isBound(AMQQueue queue) throws AMQException
+    {
+        for (Registration r : _bindings)
+        {
+            if (r.queue.equals(queue))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasBindings() throws AMQException
+    {
+        return !_bindings.isEmpty();
     }
 
     protected Map getHeaders(ContentHeaderBody contentHeaderFrame)

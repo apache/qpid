@@ -21,6 +21,7 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.AMQException;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class FilterManagerFactory
     //fixme move to a common class so it can be refered to from client code.
     private static String JMS_SELECTOR_FILTER = "x-filter-jms-selector";
 
-    public static FilterManager createManager(FieldTable filters)
+    public static FilterManager createManager(FieldTable filters) throws AMQException
     {
         FilterManager manager = null;
 

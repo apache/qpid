@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,9 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Manages delivery of messages on behalf of a queue
  */
-public class ConcurrentDeliveryManager implements DeliveryManager
+public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 {
-    private static final Logger _log = Logger.getLogger(ConcurrentDeliveryManager.class);
+    private static final Logger _log = Logger.getLogger(ConcurrentSelectorDeliveryManager.class);
 
     @Configured(path = "advanced.compressBufferOnQueue",
                 defaultValue = "false")
@@ -78,7 +78,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
     private ReentrantLock _lock = new ReentrantLock();
 
 
-    ConcurrentDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
+    ConcurrentSelectorDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
     {
 
         //Set values from configuration
@@ -86,64 +86,17 @@ public class ConcurrentDeliveryManager implements DeliveryManager
 
         if (compressBufferOnQueue)
         {
-            _log.info("Compressing Buffers on queue.");
+            _log.warn("Compressing Buffers on queue.");
         }
 
         _subscriptions = subscriptions;
         _queue = queue;
     }
 
-    /**
-     * @return boolean if we are queueing
-     */
-    private boolean queueing()
-    {
-        return hasQueuedMessages();
-    }
-
-
-    /**
-     * @param msg to enqueue
-     * @return true if we are queue this message
-     */
-    private boolean enqueue(AMQMessage msg)
-    {
-        if (msg.isImmediate())
-        {
-            return false;
-        }
-        else
-        {
-            _lock.lock();
-            try
-            {
-                if (queueing())
-                {
-                    return addMessageToQueue(msg);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            finally
-            {
-                _lock.unlock();
-            }
-        }
-    }
-
-    private void startQueueing(AMQMessage msg)
-    {
-        if (!msg.isImmediate())
-        {
-            addMessageToQueue(msg);
-        }
-    }
 
     private boolean addMessageToQueue(AMQMessage msg)
     {
-        // Shrink the ContentBodies to their actual size to save memory.       
+        // Shrink the ContentBodies to their actual size to save memory.
         if (compressBufferOnQueue)
         {
             Iterator it = msg.getContentBodies().iterator();
@@ -162,7 +115,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
 
     public boolean hasQueuedMessages()
     {
-
         _lock.lock();
         try
         {
@@ -172,8 +124,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         {
             _lock.unlock();
         }
-
-
     }
 
     public int getQueueMessageCount()
@@ -217,30 +167,73 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
+
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages)
+    {
+        AMQMessage message = messages.peek();
+
+        while (message != null && message.taken())
+        {
+            //remove the already taken message
+            messages.poll();
+            // try the next message
+            message = messages.peek();
+        }
+        return message;
+    }
+
+    public void sendNextMessage(Subscription sub, Queue<AMQMessage> messageQueue, AMQQueue queue)
+    {
+        AMQMessage message = null;
+        try
+        {
+            message = getNextMessage(messageQueue);
+
+            // message will be null if we have no messages in the messageQueue.
+            if (message == null)
+            {
+                return;
+            }
+            _log.info("Async Delivery Message:" + message + " to :" + sub);
+
+            sub.send(message, queue);
+            message.setDeliveredToConsumer();
+
+            //remove sent message from our queue.
+            messageQueue.poll();
+        }
+        catch (FailedDequeueException e)
+        {
+            message.release();
+            _log.error("Unable to deliver message as dequeue failed: " + e, e);
+        }
+    }
+
     /**
      * Only one thread should ever execute this method concurrently, but
      * it can do so while other threads invoke deliver().
      */
     private void processQueue()
     {
-        try
+        // Continue to process delivery while we haveSubscribers and messages
+        boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
+
+        while (hasSubscribers && hasQueuedMessages())
         {
-            boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
-            AMQMessage message = peek();
-
-            //While we have messages to send and subscribers to send them to.
-            while (message != null && hasSubscribers)
+            for (Subscription sub : _subscriptions.getSubscriptions())
             {
-                // _log.debug("Have messages(" + _messages.size() + ") and subscribers");
-                Subscription next = _subscriptions.nextSubscriber(message);
-                //FIXME Is there still not the chance that this subscribe could be suspended between here and the send?
-
-                //We don't synchronize access to subscribers so need to re-check
-                if (next != null)
+                if (!sub.isSuspended())
                 {
-                    next.send(message, _queue);
-                    poll();
-                    message = peek();
+                    if (sub.hasFilters())
+                    {
+                        sendNextMessage(sub, sub.getPreDeliveryQueue(), _queue);
+                    }
+                    else
+                    {
+                        sendNextMessage(sub, _messages, _queue);
+                    }
+
+                    hasSubscribers = true;
                 }
                 else
                 {
@@ -248,19 +241,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
                 }
             }
         }
-        catch (FailedDequeueException e)
-        {
-            _log.error("Unable to deliver message as dequeue failed: " + e, e);
-        }
-        finally
-        {
-            _log.debug("End of processQueue: (" + getQueueMessageCount() + ")" + " subscribers:" + _subscriptions.hasActiveSubscribers());
-        }
-    }
-
-    private AMQMessage peek()
-    {
-        return _messages.peek();
     }
 
     private AMQMessage poll()
@@ -268,59 +248,68 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         return _messages.poll();
     }
 
-    Runner asyncDelivery = new Runner();
-
-    public void processAsync(Executor executor)
-    {
-        _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
-                   " Active:" + _subscriptions.hasActiveSubscribers() +
-                   " Processing:" + _processing.get());
-
-        if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
-        {
-            //are we already running? if so, don't re-run
-            if (_processing.compareAndSet(false, true))
-            {
-                // Do we need this?
-                // This executor is created via Executors in AsyncDeliveryConfig which only returns a TPE so cast is ok.
-                //if (executor != null && !((ThreadPoolExecutor) executor).isShutdown())
-                {
-                    executor.execute(asyncDelivery);
-                }
-            }
-        }
-    }
-
     public void deliver(String name, AMQMessage msg) throws FailedDequeueException
     {
-        // first check whether we are queueing, and enqueue if we are
-        if (!enqueue(msg))
+        _log.info("deliver :" + msg);
+
+        //Check if we have someone to deliver the message to.
+        _lock.lock();
+        try
         {
-            // not queueing so deliver message to 'next' subscriber
-            _lock.lock();
-            try
+            Subscription s = _subscriptions.nextSubscriber(msg);
+
+            if (s == null) //no-one can take the message right now.
             {
-                Subscription s = _subscriptions.nextSubscriber(msg);
-                if (s == null)
+                _log.info("Testing Message(" + msg + ") for Queued Delivery");
+                if (!msg.isImmediate())
                 {
-                    if (!msg.isImmediate())
+                    addMessageToQueue(msg);
+
+                    //release lock now message is on queue.
+                    _lock.unlock();
+
+                    //Pre Deliver to all subscriptions
+                    _log.info("We have " + _subscriptions.getSubscriptions().size() + " subscribers to give the message to.");
+                    for (Subscription sub : _subscriptions.getSubscriptions())
                     {
-                        // no subscribers yet so enter 'queueing' mode and queue this message
-                        startQueueing(msg);
+
+                        // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
+                        if (_queue.isShared() && msg.getDeliveredToConsumer())
+                        {
+                            _log.info("Stopping PreDelivery as message(" + msg + ") is already delivered.");
+                            continue;
+                        }
+
+                        // Only give the message to those that want them.
+                        if (sub.hasFilters() && sub.hasInterest(msg))
+                        {
+                            sub.enqueueForPreDelivery(msg);
+                        }
                     }
                 }
-                else
-                {
-                    s.send(msg, _queue);
-                    msg.setDeliveredToConsumer();
-                }
             }
-            finally
+            else
+            {
+                //release lock now
+                _lock.unlock();
+
+                _log.info("Delivering Message:" + msg + " to(" + System.identityHashCode(s) + ") :" + s);
+                //Deliver the message
+                s.send(msg, _queue);
+                msg.setDeliveredToConsumer();
+            }
+        }
+        finally
+        {
+            //ensure lock is released
+            if (_lock.isLocked())
             {
                 _lock.unlock();
             }
         }
     }
+
+    Runner asyncDelivery = new Runner();
 
     private class Runner implements Runnable
     {
@@ -334,20 +323,30 @@ public class ConcurrentDeliveryManager implements DeliveryManager
                 //Check that messages have not been added since we did our last peek();
                 // Synchronize with the thread that adds to the queue.
                 // If the queue is still empty then we can exit
-                _lock.lock();
-                try
+
+                if (!(hasQueuedMessages() && _subscriptions.hasActiveSubscribers()))
                 {
-                    if (!(hasQueuedMessages() && _subscriptions.hasActiveSubscribers()))
-                    {
-                        running = false;
-                        _processing.set(false);
-                    }
-                }
-                finally
-                {
-                    _lock.unlock();
+                    running = false;
+                    _processing.set(false);
                 }
             }
         }
     }
+
+    public void processAsync(Executor executor)
+    {
+        _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
+                   " Active:" + _subscriptions.hasActiveSubscribers() +
+                   " Processing:" + _processing.get());
+
+        if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
+        {
+            //are we already running? if so, don't re-run
+            if (_processing.compareAndSet(false, true))
+            {
+                executor.execute(asyncDelivery);
+            }
+        }
+    }
+
 }

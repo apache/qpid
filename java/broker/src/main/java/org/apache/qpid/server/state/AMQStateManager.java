@@ -109,6 +109,7 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
         frame2handlerMap.put(ExchangeDeclareBody.class, ExchangeDeclareHandler.getInstance());
         frame2handlerMap.put(ExchangeDeleteBody.class, ExchangeDeleteHandler.getInstance());
+        frame2handlerMap.put(ExchangeBoundBody.class, ExchangeBoundHandler.getInstance());
         frame2handlerMap.put(BasicAckBody.class, BasicAckMethodHandler.getInstance());
         frame2handlerMap.put(BasicRecoverBody.class, BasicRecoverMethodHandler.getInstance());
         frame2handlerMap.put(BasicConsumeBody.class, BasicConsumeMethodHandler.getInstance());
