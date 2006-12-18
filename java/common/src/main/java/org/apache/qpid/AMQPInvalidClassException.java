@@ -18,24 +18,13 @@
  *
  * 
  */
-package org.apache.qpid.framing;
+package org.apache.qpid;
 
-import org.apache.mina.common.ByteBuffer;
 
-public class FieldTableFactory
+public class AMQPInvalidClassException extends RuntimeException
 {
-    public static FieldTable newFieldTable()
+    public AMQPInvalidClassException(String s)
     {
-        return new PropertyFieldTable();
-    }
-
-    public static FieldTable newFieldTable(ByteBuffer byteBuffer, long length) throws AMQFrameDecodingException
-    {
-        return new PropertyFieldTable(byteBuffer, length);
-    }
-
-    public static FieldTable newFieldTable(String text)
-    {
-        return new PropertyFieldTable(text);
+        super(s);
     }
 }
