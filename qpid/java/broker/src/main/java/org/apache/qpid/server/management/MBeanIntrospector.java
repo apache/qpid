@@ -61,7 +61,6 @@ class MBeanIntrospector {
          */
         for (Method method : interfaceClass.getMethods())
         {
-            int    argCount = method.getParameterTypes().length;
             String name = method.getName();
             Class<?>  resultType = method.getReturnType();
             MBeanAttributeInfo attributeInfo = null;

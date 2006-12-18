@@ -31,7 +31,7 @@ import javax.jms.*;
 public class MultipleConnectionTest extends TestCase
 {
     public static final String _defaultBroker = "vm://:1";
-    public static String _connectionString = _defaultBroker;
+    public String _connectionString = _defaultBroker;
 
     private static class Receiver
     {
@@ -175,9 +175,6 @@ public class MultipleConnectionTest extends TestCase
     public static void main(String[] argv) throws Exception
     {
         String broker = argv.length > 0 ? argv[0] : _defaultBroker;
-
-        int connections = 7;
-        int sessions = 2;
 
         MultipleConnectionTest test = new MultipleConnectionTest();
         test._connectionString = broker;
