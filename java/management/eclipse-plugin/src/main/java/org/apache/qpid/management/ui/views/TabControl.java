@@ -25,6 +25,10 @@ import org.apache.qpid.management.ui.model.OperationData;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.TabFolder;
 
+/**
+ * Abstract class for all the control classes of tabs.
+ * @author Bhupendra Bhardwaj
+ */
 public abstract class TabControl
 {
     protected ManagedBean _mbean = null;
@@ -35,21 +39,24 @@ public abstract class TabControl
         _tabFolder = tabFolder;
     }
     
+    /**
+     * @return controller composite for the tab
+     */
     public Control getControl()
     {
         return null;
     }
     
-    public void refresh(ManagedBean mbean)
-    {
-        
-    }
+    public abstract void refresh(ManagedBean mbean);
     
     public void refresh(ManagedBean mbean, OperationData opData)
     {
         
     }
     
+    /**
+     * Sets focus on a widget
+     */
     public void setFocus()
     {
         

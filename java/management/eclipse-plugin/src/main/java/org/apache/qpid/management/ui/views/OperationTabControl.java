@@ -66,7 +66,6 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
  * Control class for the MBean operations tab. It creates the required widgets
  * for the selected MBean.
  * @author Bhupendra Bhardwaj
- *
  */
 public class OperationTabControl extends TabControl
 {
@@ -100,19 +99,28 @@ public class OperationTabControl extends TabControl
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
-        
-        // Form area is devided in four parts:
-        // Header composite - displays operaiton information
-        // Patameters composite - displays parameters if there
-        // Button - operation execution button
-        // Results composite - displays results for operations, which have 
-        //                     no parameters but have some return value
+    }
+    
+    /**
+     * Form area is devided in four parts:
+     * Header composite - displays operaiton information
+     * Patameters composite - displays parameters if there
+     * Button - operation execution button
+     * Results composite - displays results for operations, which have 
+     *                     no parameters but have some return value
+     */
+    private void createComposites()
+    {
+        // 
         _headerComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
         _headerComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
-        _paramsComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-        _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        
+        List<ParameterData> params = _opData.getParameters();
+        if (params != null && !params.isEmpty())
+        {
+            _paramsComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
+            _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        }
         _executionButton = _toolkit.createButton(_form.getBody(), Constants.BUTTON_EXECUTE, SWT.PUSH | SWT.CENTER);
         _executionButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
         GridData layoutData = new GridData(SWT.CENTER, SWT.TOP, true, false);
@@ -126,11 +134,15 @@ public class OperationTabControl extends TabControl
         _resultsComposite.setLayout(new GridLayout());
     }
     
+    /**
+     * @see TabControl#getControl()
+     */
     public Control getControl()
     {
         return _form;
     }
     
+    @Override
     public void refresh(ManagedBean mbean)
     {
         _mbean = mbean;
@@ -138,6 +150,7 @@ public class OperationTabControl extends TabControl
         _opData = serverRegistry.getOperationModel(mbean).getOperations().get(0);
         refresh(_mbean, _opData);
     }
+    
     public void refresh(ManagedBean mbean, OperationData opData)
     {
         _mbean = mbean;
@@ -148,13 +161,14 @@ public class OperationTabControl extends TabControl
         // instead of having half the widgets displayed.
         _form.setVisible(false);
         
-        ViewUtility.disposeChildren(_headerComposite);
-        ViewUtility.disposeChildren(_paramsComposite);
-        ViewUtility.disposeChildren(_resultsComposite);
-        
+        ViewUtility.disposeChildren(_form.getBody());        
+        createComposites();
         setHeader();
         createParameterWidgets();
         
+        // Set button text and add appropriate listener to button.
+        // If there are no parameters and it is info operation, then operation gets executed
+        // and result is displayed
         List<ParameterData> params = opData.getParameters();
         if (params != null && !params.isEmpty())
         {            
@@ -174,12 +188,15 @@ public class OperationTabControl extends TabControl
         _form.layout();
     }
     
+    /**
+     * populates the header composite, containing the operation name and description.
+     */
     private void setHeader()
     {
         _form.setText(ViewUtility.getDisplayText(_opData.getName()));
         _headerComposite.setLayout(new GridLayout(2, false));
         //operation description
-        Label label = _toolkit.createLabel(_headerComposite,  Constants.DESCRIPTION);
+        Label label = _toolkit.createLabel(_headerComposite,  Constants.DESCRIPTION + " : ");
         label.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
         label.setLayoutData(new GridData(SWT.LEAD, SWT.TOP, false, false));
         
@@ -190,6 +207,9 @@ public class OperationTabControl extends TabControl
         _headerComposite.layout();
     }
     
+    /**
+     * Creates the widgets for operation parameters if there are any
+     */
     private void createParameterWidgets()
     {
         List<ParameterData> params = _opData.getParameters();
@@ -299,11 +319,12 @@ public class OperationTabControl extends TabControl
             formData.left = new FormAttachment(valueNumerator, 5);
             label.setLayoutData(formData);
         }
-        
-        //_parametersHolder.setMinSize(_parametersComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-        //_parametersComposite.layout();
     }
     
+    /**
+     * Creates customized dispaly for a method "CreateNewBinding" for Headers exchange
+     *
+     */
     private void customCreateNewBinding()
     {
         headerBindingHashMap = new HashMap<Text, Text>();
@@ -381,6 +402,12 @@ public class OperationTabControl extends TabControl
         composite.layout();
     }
     
+    /**
+     * Adds a row for adding a binding for Headers Exchange. Used by the method, which creates the customized
+     * layout and widgest for Header's exchange method createNewBinding.
+     * @param parent composite
+     * @param rowCount - row number
+     */
     private void createARowForCreatingHeadersBinding(Composite parent, int rowCount)
     {  
         Label key = _toolkit.createLabel(parent, "Name");
@@ -415,6 +442,10 @@ public class OperationTabControl extends TabControl
         headerBindingHashMap.put(keyText, valueText);
     }
     
+    /**
+     * Sets text and listener for the operation execution button
+     * @param text
+     */
     private void setButton(String text)
     {
         _executionButton.setText(text);
@@ -431,12 +462,16 @@ public class OperationTabControl extends TabControl
         }
     }   
 
+    /**
+     * displays the operation result in a pop-up window
+     * @param result
+     */
     private void populateResults(Object result)
     {
         Display display = Display.getCurrent();
         int width = 600;
         int height = 400;
-        Shell shell = ViewUtility.createPopupShell("Result", width, height);
+        Shell shell = ViewUtility.createPopupShell(Constants.RESULT, width, height);
         populateResults(result, shell);
         
         shell.open();
@@ -448,6 +483,11 @@ public class OperationTabControl extends TabControl
         shell.dispose();
     }
     
+    /**
+     * Displays the operation result
+     * @param result
+     * @param parent
+     */
     private void populateResults(Object result, Composite parent)
     {
         if (result instanceof TabularDataSupport)
@@ -458,34 +498,11 @@ public class OperationTabControl extends TabControl
         {
             ViewUtility.populateCompositeDataHolder(parent, (CompositeDataSupport)result);
         }
-    }    
+    }  
     
     /**
-     * clears the parameter values entered.
-     * @param opName
-     
-    private void clearParameterValues()
-    {
-        List<ParameterData> params = _opData.getParameters();
-        if (params != null && !params.isEmpty())
-        {
-            for (ParameterData param : params)
-            {
-                param.setValue(null);
-            }
-            
-            Control[] controls = _paramsComposite.getChildren();
-            
-            for (int i = 0; i < controls.length; i++)
-            {
-                if (controls[i] instanceof Combo)
-                    ((Combo)controls[i]).select(0);
-                else if (controls[i] instanceof Text)
-                    ((Text)controls[i]).setText("");
-            }
-        }
-    }*/
-    
+     * Clears the parameter values of the operation
+     */
     private void clearParameters()
     {
         List<ParameterData> params = _opData.getParameters();
@@ -498,6 +515,10 @@ public class OperationTabControl extends TabControl
         }
     }
     
+    /**
+     * Clears the values entered by the user from parameter value widgets
+     * @param control
+     */
     private void clearParameterValues(Composite control)
     {
         Control[] controls = control.getChildren();
@@ -556,6 +577,7 @@ public class OperationTabControl extends TabControl
         }
     }
     
+    // Listener for the "Refresh" execution button
     private class RefreshListener extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
@@ -564,7 +586,9 @@ public class OperationTabControl extends TabControl
         }
     }
     
-    
+    /**
+     * Executres the operation, gets the result from server and displays to the user
+     */
     private void executeAndShowResults()
     {
         Object result = null;
@@ -578,6 +602,7 @@ public class OperationTabControl extends TabControl
             return;
         }
         
+        // Some mbeans have only "type" and no "name".
         String title = _mbean.getType();
         if (_mbean.getName() != null && _mbean.getName().length() != 0)
         {
@@ -623,6 +648,9 @@ public class OperationTabControl extends TabControl
         }
     }
     
+    /**
+     * Listener class for boolean parameter widgets
+     */
     private class BooleanSelectionListener extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
@@ -652,6 +680,10 @@ public class OperationTabControl extends TabControl
         }
     }
     
+    /**
+     * Listener class for HeaderExchange's new binding widgets. Used when the new bindings are 
+     * being created for Header's Exchange
+     */
     private class HeaderBindingKeyListener extends KeyAdapter
     {
         public void keyReleased(KeyEvent e) 
@@ -679,6 +711,9 @@ public class OperationTabControl extends TabControl
         }
     }
     
+    /**
+     * Listener class for verifying the user input with parameter type
+     */
     private class VerifyListenerImpl implements VerifyListener
     {
         public void verifyText(VerifyEvent event)
