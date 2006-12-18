@@ -348,6 +348,10 @@ public class CppGenerator extends Generator
             return generateServerOperationsInvoke(thisClass, method, version, 4, 4);
         if (token.compareTo("${mb_buffer_param}") == 0)
             return method.fieldMap.size() > 0 ? " buffer" : "";
+        if (token.compareTo("${hv_latest_major}") == 0)
+            return String.valueOf(globalVersionSet.last().getMajor());
+        if (token.compareTo("${hv_latest_minor}") == 0)
+            return String.valueOf(globalVersionSet.last().getMinor());
             
 		throw new AmqpTemplateException("Template token " + token + " unknown.");	
 	}

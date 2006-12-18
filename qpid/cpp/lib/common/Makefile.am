@@ -72,6 +72,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/ProtocolVersionException.cpp	\
   $(framing)/Value.cpp				\
   $(gen)/AMQP_ClientProxy.cpp			\
+  $(gen)/AMQP_HighestVersion.cpp		\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
   Exception.cpp					\
@@ -104,6 +105,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/Value.h				\
   $(framing)/amqp_framing.h			\
   $(framing)/amqp_types.h			\
+  $(framing)/AMQP_HighestVersion.h			\
   Exception.h					\
   ExceptionHolder.h				\
   QpidError.h					\
