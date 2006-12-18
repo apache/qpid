@@ -20,20 +20,14 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.ConnectionOpenOkBody;
 
 public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
 {
-
-    private static final Logger _logger = Logger.getLogger(ConnectionOpenOkMethodHandler.class);
-
     private static final ConnectionOpenOkMethodHandler _instance = new ConnectionOpenOkMethodHandler();
 
     public static ConnectionOpenOkMethodHandler getInstance()
@@ -47,8 +41,6 @@ public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
 
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
-        AMQProtocolSession session = evt.getProtocolSession();
-        ConnectionOpenOkBody method = (ConnectionOpenOkBody) evt.getMethod();        
         stateManager.changeState(AMQState.CONNECTION_OPEN);
     }
 
