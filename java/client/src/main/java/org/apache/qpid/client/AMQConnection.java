@@ -54,7 +54,6 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;

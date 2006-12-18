@@ -27,7 +27,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import javax.jms.MessageEOFException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;

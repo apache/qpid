@@ -22,7 +22,6 @@ package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;

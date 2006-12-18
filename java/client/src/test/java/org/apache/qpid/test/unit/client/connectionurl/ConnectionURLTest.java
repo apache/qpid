@@ -22,8 +22,6 @@ package org.apache.qpid.test.unit.client.connectionurl;
 
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQBrokerDetails;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
