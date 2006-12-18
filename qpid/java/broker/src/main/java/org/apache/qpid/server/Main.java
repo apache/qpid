@@ -522,10 +522,10 @@ public class Main implements ProtocolVersionList
          */
         public void unregisterExchange(String exchangeName) throws JMException
         {
-            boolean inUse = false;
             // TODO
             // Check if the exchange is in use.
-            // Check if there are queue-bindings with the exchnage and unregister
+        	// boolean inUse = false;
+            // Check if there are queue-bindings with the exchange and unregister
             // when there are no bindings.
             try
             {

@@ -5,7 +5,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.client.*;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
@@ -57,16 +56,12 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         _bouncedMessageList.clear();
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
 
-        TestableMemoryMessageStore store = (TestableMemoryMessageStore) ApplicationRegistry.getInstance().getMessageStore();
-
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-
 
         AMQHeadersExchange queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS+"://"+ExchangeDefaults.HEADERS_EXCHANGE_NAME+"/test/queue1?"+ BindingURL.OPTION_ROUTING_KEY+"='F0000=1'"));
         FieldTable ft = new PropertyFieldTable();
         ft.setString("F1000","1");
         MessageConsumer consumer = consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String)null, ft);
-
         
         //force synch to ensure the consumer has resulted in a bound queue
         ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);

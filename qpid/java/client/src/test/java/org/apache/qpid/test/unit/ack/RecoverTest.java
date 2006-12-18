@@ -127,7 +127,7 @@ public class RecoverTest extends TestCase
         _logger.info("Starting connection");
         con.start();
         TextMessage tm = (TextMessage) consumer.receive();
-        TextMessage tm2 = (TextMessage) consumer.receive();
+        consumer.receive();
         tm.acknowledge();
         _logger.info("Received 2 messages, acknowledge() first message, should acknowledge both");
 
