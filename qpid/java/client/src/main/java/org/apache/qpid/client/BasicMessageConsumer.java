@@ -36,19 +36,16 @@ import org.apache.qpid.jms.Session;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Iterator;
 
 public class BasicMessageConsumer extends Closeable implements MessageConsumer
 {
-    private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);  
+    private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);
 
     /**
      * The connection being used by this consumer
@@ -296,7 +293,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public Message receive(long l) throws JMSException
     {
     	checkPreConditions();
-        
+
         acquireReceiving();
 
         try
@@ -316,7 +313,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 preApplicationProcessing(m);
                 postDeliver(m);
             }
-            
+
             return m;
         }
         catch (InterruptedException e)
@@ -589,5 +586,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             throw new IllegalStateException("Consumer is closed");
         }
+    }
+
+    /**
+     * Called on recovery to reset the list of delivery tags
+     */
+    public void clearUnackedMessages()
+    {
+        _unacknowledgedDeliveryTags.clear();
     }
 }
