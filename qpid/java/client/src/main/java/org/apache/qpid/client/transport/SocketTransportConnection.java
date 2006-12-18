@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.transport;
 
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.jms.BrokerDetails;

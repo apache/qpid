@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.server.ack;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.txn.TxnOp;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 

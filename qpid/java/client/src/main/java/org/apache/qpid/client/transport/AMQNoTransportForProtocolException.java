@@ -21,7 +21,6 @@
 package org.apache.qpid.client.transport;
 
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.AMQException;
 
 public class AMQNoTransportForProtocolException extends AMQTransportConnectionException
 {
