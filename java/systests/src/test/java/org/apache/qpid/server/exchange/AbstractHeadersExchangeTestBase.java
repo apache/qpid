@@ -46,6 +46,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
     private int count;
 
+    public void testDoNothing()
+    {
+        // this is here only to make junit under Eclipse happy
+    }
+
     protected TestQueue bindDefault(String... bindings) throws AMQException
     {
         return bind("Queue" + (++count), bindings);
