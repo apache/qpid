@@ -36,7 +36,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQP_ClientProxy : virtual public AMQP_ClientOperations
+class AMQP_ClientProxy : public AMQP_ClientOperations
 {
 private:
     OutputHandler* out;
