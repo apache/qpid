@@ -22,6 +22,8 @@ package org.apache.qpid.client;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
@@ -39,6 +41,7 @@ import javax.jms.MessageListener;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -241,6 +244,17 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
+            String url = jmsMsg.getStringProperty(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString());
+            try
+            {
+                Destination dest = AMQDestination.createDestination(new AMQBindingURL(url));
+                jmsMsg.setJMSDestination(dest);
+            }
+            catch (URLSyntaxException e)
+            {
+                _logger.warn("Unable to parse the supplied destination header: " + url);
+            }
+                        
         }
         _session.setInRecovery(false);
     }

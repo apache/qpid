@@ -172,13 +172,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public Destination getJMSDestination() throws JMSException
     {
-        // TODO: implement this once we have sorted out how to figure out the exchange class
-    	return _destination;
+        return _destination;
     }
 
     public void setJMSDestination(Destination destination) throws JMSException
     {
-    	_destination = destination;
+        _destination = destination;
     }
 
     public int getJMSDeliveryMode() throws JMSException
