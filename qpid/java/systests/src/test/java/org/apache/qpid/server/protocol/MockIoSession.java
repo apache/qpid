@@ -25,6 +25,7 @@ import org.apache.mina.common.support.DefaultCloseFuture;
 import org.apache.mina.common.support.DefaultWriteFuture;
 
 import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.Set;
 
 public class MockIoSession implements IoSession
@@ -151,7 +152,7 @@ public class MockIoSession implements IoSession
 
     public SocketAddress getRemoteAddress()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new InetSocketAddress("127.0.0.1", 1234);  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public SocketAddress getLocalAddress()
