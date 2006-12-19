@@ -215,42 +215,33 @@ namespace Qpid.Client.Tests.failover
             _log.Info("failoverComplete() called");
         }
 
-        [Test]
+//        [Test]
         public void TestWithBasicInfo()
         {
             Console.WriteLine("TestWithBasicInfo");
             Console.WriteLine(".NET Framework version: " + RuntimeEnvironment.GetSystemVersion());
-//            try
-//            {
-                QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
-                
-                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
-                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
-                
-                DoFailoverTxTest(connectionInfo);
-//            }
-//            catch (Exception e)
-//            {
-//                _log.Error("Exception caught", e);
-//            }
+            QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
+
+            connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
+            connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
+
+            DoFailoverTxTest(connectionInfo);
         }
 
-        //[Test]
-        //public void runTestWithUrl()
-        //{
-        //    try {
-        //        String clientId = "failover" + DateTime.Now.Ticks;
-        //        string defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
-        //                    "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";
+        [Test]
+        public void runTestWithUrl()
+        {
+            String clientId = "failover" + DateTime.Now.Ticks;
+            string defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
+                    "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";
 
-        //        _log.Info("url = [" + defaultUrl + "]");
+            _log.Info("url = [" + defaultUrl + "]");
 
-        //        _log.Info("connection url = [" + new AMQConnectionInfo(defaultUrl) + "]");
+            ConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(defaultUrl);
 
-        //        DoFailoverTxTest(new AMQConnectionInfo(defaultUrl));
-        //    } catch (Exception e) {
-        //        _log.Error("test failed", e);
-        //    }
-        //}
+            _log.Info("connection url = [" + connectionInfo + "]");
+
+            DoFailoverTxTest(connectionInfo);
+        }
     }
 }
