@@ -110,7 +110,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             }
             else
             {
-                throw new AMQException("Woken up due to exception", _error); // FIXME: This will wrap FailoverException and prevent it being caught.
+                throw new AMQException("Woken up due to " + _error.getClass(), _error); // FIXME: This will wrap FailoverException and prevent it being caught.
             }
         }
 

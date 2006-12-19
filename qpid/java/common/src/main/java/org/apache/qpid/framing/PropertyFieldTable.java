@@ -483,7 +483,7 @@ public class PropertyFieldTable implements FieldTable
     {
         return _properties.containsKey(name) && (_properties.get(name) == null) &&
                _propertyNamesTypeMap.get(name).equals(Prefix.AMQP_NULL_STRING_PROPERTY_PREFIX);
-                
+
 
     }
 
@@ -606,7 +606,8 @@ public class PropertyFieldTable implements FieldTable
         // AMQ start character
         if (!(Character.isLetter(propertyName.charAt(0))
               || propertyName.charAt(0) == '$'
-              || propertyName.charAt(0) == '#'))
+              || propertyName.charAt(0) == '#'
+              || propertyName.charAt(0) == '_')) // Not official AMQP added for JMS.                
         {
             throw new IllegalArgumentException("Identifier '" + propertyName + "' does not start with a valid AMQP start character");
         }
@@ -1156,9 +1157,9 @@ public class PropertyFieldTable implements FieldTable
             if (type == null)
             {
                 String msg = "Field '" + key + "' - unsupported field table type: " + type + ".";
-                    //some extra trace information...
-                    msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
-                    throw new AMQFrameDecodingException(msg);
+                //some extra trace information...
+                msg += " (" + iType + "), length=" + length + ", sizeRead=" + sizeRead + ", sizeRemaining=" + sizeRemaining;
+                throw new AMQFrameDecodingException(msg);
             }
             Object value;
 
@@ -1203,7 +1204,7 @@ public class PropertyFieldTable implements FieldTable
                     value = EncodingUtils.readBytes(buffer);
                     break;
                 default:
-                    String msg = "Internal error, the following type identifier is not handled: " + type;                                        
+                    String msg = "Internal error, the following type identifier is not handled: " + type;
                     throw new AMQFrameDecodingException(msg);
             }
 

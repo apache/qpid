@@ -59,7 +59,7 @@ public class SocketTransportConnection implements ITransportConnection
         // once more testing of the performance of the simple allocator has been done
         if (!Boolean.getBoolean("amqj.enablePooledAllocator"))
         {
-            _logger.warn("Using SimpleByteBufferAllocator");
+            _logger.info("Using SimpleByteBufferAllocator");
             ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         }
 

@@ -2105,6 +2105,14 @@ localised reply text
     method it will raise a channel or connection exception.
     </doc>
   </field>
+
+    <field name="arguments" type="table" label="arguments for consuming">
+  <doc>
+    A set of arguments for the consume. The syntax and semantics
+    of these arguments depends on the server implementation.  This
+    field is ignored if passive is 1.
+  </doc>
+    </field>
 </method>
 
 <method name = "consume-ok" synchronous = "1" index = "21">

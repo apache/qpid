@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.AMQException;
+
+import java.util.Queue;
+
 public interface Subscription
 {
     void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException;
@@ -27,4 +31,13 @@ public interface Subscription
     boolean isSuspended();
 
     void queueDeleted(AMQQueue queue);
+
+    boolean hasFilters();
+
+    boolean hasInterest(AMQMessage msg);
+
+    Queue<AMQMessage> getPreDeliveryQueue();
+
+    void enqueueForPreDelivery(AMQMessage msg);
+
 }
