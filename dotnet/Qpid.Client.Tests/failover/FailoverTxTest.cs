@@ -220,19 +220,19 @@ namespace Qpid.Client.Tests.failover
         {
             Console.WriteLine("TestWithBasicInfo");
             Console.WriteLine(".NET Framework version: " + RuntimeEnvironment.GetSystemVersion());
-            try
-            {
+//            try
+//            {
                 QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
                 
                 connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
                 connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
                 
                 DoFailoverTxTest(connectionInfo);
-            }
-            catch (Exception e)
-            {
-                _log.Error("Exception caught", e);
-            }
+//            }
+//            catch (Exception e)
+//            {
+//                _log.Error("Exception caught", e);
+//            }
         }
 
         //[Test]

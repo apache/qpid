@@ -908,18 +908,6 @@ namespace Qpid.Client
             DoQueueDeclare(queueName, isDurable, isExclusive, isAutoDelete);
         }
 
-        private string DoDeclareQueue(AMQDestination amqd)
-        {
-            string queueName = amqd.QueueName;
-            bool isDurable = amqd.IsDurable;
-            bool isExclusive = amqd.IsExclusive;
-
-            DoQueueDeclare(queueName, isDurable, isExclusive, amqd.AutoDelete);
-
-            _logger.Debug("returning amqp.QueueName = " + amqd.QueueName);
-            return amqd.QueueName;
-        }
-
         private void DoQueueDeclare(string queueName, bool isDurable, bool isExclusive, bool isAutoDelete)
         {
             _logger.Debug(string.Format("DeclareQueue name={0} durable={1} exclusive={2}, auto-delete={3}",

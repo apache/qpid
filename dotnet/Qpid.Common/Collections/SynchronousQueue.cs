@@ -28,17 +28,17 @@ namespace Qpid.Collections
         /// <summary>
         /// Lock protecting both wait queues
         /// </summary> 
-        private readonly object _qlock = new object();
+//        private readonly object _qlock = new object();
         
         /// <summary>
         /// Queue holding waiting puts
         /// </summary> 
-        private readonly WaitQueue _waitingProducers;
+//        private readonly WaitQueue _waitingProducers;
         
         /// <summary>
         /// Queue holding waiting takes
         /// </summary> 
-        private readonly WaitQueue _waitingConsumers;
+//        private readonly WaitQueue _waitingConsumers;
         
         /**
          * Queue to hold waiting puts/takes; specialized to Fifo/Lifo below.

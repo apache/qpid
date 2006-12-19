@@ -32,7 +32,7 @@ namespace Qpid.Client.Handler
         public void MethodReceived(AMQStateManager stateManager, AMQMethodEvent evt)
         {
             _logger.Debug("ConnectionCloseOk frame received");
-            ConnectionCloseOkBody method = (ConnectionCloseOkBody)evt.Method;
+//            ConnectionCloseOkBody method = (ConnectionCloseOkBody)evt.Method;
             stateManager.ChangeState(AMQState.CONNECTION_CLOSED);
         }
     }
