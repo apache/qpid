@@ -122,7 +122,7 @@ namespace Qpid.Client
                                     found = true;
                                 }
                             }
-                            catch (Exception nfe) // XXX: should catch only "NumberFormatException" here
+                            catch (FormatException)
                             {
                                 looking = false;
                             }

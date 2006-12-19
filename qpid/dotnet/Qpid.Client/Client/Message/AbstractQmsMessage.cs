@@ -462,7 +462,7 @@ namespace Qpid.Client.Message
             }
         }
 
-        protected void Reset()
+        protected virtual void Reset()
         {
             _readableMessage = true;
         }

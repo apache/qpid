@@ -295,7 +295,7 @@ namespace Qpid.Client.Tests.url
                 QpidConnectionInfo.FromUrl(url);
                 Assert.Fail("URL has no virtual host should not parse");
             }
-            catch (UrlSyntaxException e)
+            catch (UrlSyntaxException)
             {
                 // This should occur.
             }

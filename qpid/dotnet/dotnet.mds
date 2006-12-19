@@ -8,6 +8,7 @@
       <Entry build="True" name="Qpid.Client" configuration="Debug" />
       <Entry build="True" name="Qpid.Client.Tests" configuration="Debug" />
       <Entry build="True" name="Qpid.Common.Tests" configuration="Debug" />
+      <Entry build="True" name="Qpid.Client.Transport.Socket.Blocking" configuration="Debug" />
     </Configuration>
     <Configuration name="Release" ctype="CombineConfiguration">
       <Entry build="True" name="Qpid.Messaging" configuration="Release" />
@@ -17,6 +18,7 @@
       <Entry build="True" name="Qpid.Client" configuration="Release" />
       <Entry build="True" name="Qpid.Client.Tests" configuration="Release" />
       <Entry build="True" name="Qpid.Common.Tests" configuration="Release" />
+      <Entry build="True" name="Qpid.Client.Transport.Socket.Blocking" configuration="Release" />
     </Configuration>
   </Configurations>
   <DeployTargets />
@@ -28,6 +30,7 @@
     <Execute type="None" entry="Qpid.Client" />
     <Execute type="None" entry="Qpid.Client.Tests" />
     <Execute type="None" entry="Qpid.Common.Tests" />
+    <Execute type="None" entry="Qpid.Client.Transport.Socket.Blocking" />
   </StartMode>
   <Entries>
     <Entry filename="./Qpid.Messaging/Qpid.Messaging.mdp" />
@@ -37,5 +40,6 @@
     <Entry filename="./Qpid.Client/Qpid.Client.mdp" />
     <Entry filename="./Qpid.Client.Tests/Qpid.Client.Tests.mdp" />
     <Entry filename="./Qpid.Common.Tests/Qpid.Common.Tests.mdp" />
+    <Entry filename="./Qpid.Client.Transport.Socket.Blocking/Qpid.Client.Transport.Socket.Blocking.mdp" />
   </Entries>
 </Combine>

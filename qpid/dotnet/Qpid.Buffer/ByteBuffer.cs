@@ -2375,14 +2375,6 @@ namespace Qpid.Buffer
             return this;
         }
 
-        private static void checkFieldSize( int fieldSize )
-        {
-            if( fieldSize < 0 )
-            {
-                throw new ArgumentOutOfRangeException("fieldSize");
-            }
-        }
-
         public abstract void put(ushort value);
         public abstract ushort GetUnsignedShort();
         public abstract uint GetUnsignedInt();

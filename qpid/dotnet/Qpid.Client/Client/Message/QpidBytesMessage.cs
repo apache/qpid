@@ -330,7 +330,7 @@ namespace Qpid.Client.Message
             _data.put(bytes, offset, length);
         }
 
-        public void Reset()
+        protected override void Reset()
         {
             base.Reset();
             _data.flip();

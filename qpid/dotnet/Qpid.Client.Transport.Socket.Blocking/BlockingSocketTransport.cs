@@ -29,7 +29,7 @@ namespace Qpid.Client.Transport.Socket.Blocking
 {
     public class BlockingSocketTransport : ITransport
     {
-        static readonly ILog _log = LogManager.GetLogger(typeof(BlockingSocketTransport));
+//        static readonly ILog _log = LogManager.GetLogger(typeof(BlockingSocketTransport));
 
         // Configuration variables.
         string _host;
