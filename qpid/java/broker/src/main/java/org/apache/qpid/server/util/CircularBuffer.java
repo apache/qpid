@@ -20,10 +20,15 @@
  */
 package org.apache.qpid.server.util;
 
+import org.apache.log4j.Logger;
+
 import java.util.Iterator;
 
 public class CircularBuffer implements Iterable
 {
+
+    private static final Logger _logger = Logger.getLogger(CircularBuffer.class);
+
     private final Object[] _log;
     private int _size;
     private int _index;
@@ -102,7 +107,7 @@ public class CircularBuffer implements Iterable
     {
         for(Object o : this)
         {
-         System.out.println(o);   
+         _logger.info(o);
         }
     }
 
@@ -120,7 +125,7 @@ public class CircularBuffer implements Iterable
         for(String s : items)
         {
             buffer.add(s);
-            System.out.println(buffer);
+            _logger.info(buffer);
         }
     }
 }
