@@ -106,7 +106,8 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string q = "queue";
         std::string t = "tag";
-        BasicConsumeBody in(v, 0, q, t, false, true, false, false);
+        BasicConsumeBody in(v, 0, q, t, false, true, false, false,
+                            FieldTable());
         in.encodeContent(buffer);
         buffer.flip(); 
         BasicConsumeBody out(v);

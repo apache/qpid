@@ -61,7 +61,7 @@ struct ConnectionException : public std::exception {
 };
 
 class Settings {
-public:
+  public:
     const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
     const u_int64_t stagingThreshold;
 
@@ -125,7 +125,6 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline ConnectionHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
 
-        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
         virtual void startOk(u_int16_t channel, const qpid::framing::FieldTable& clientProperties, const string& mechanism, 
                              const string& response, const string& locale); 
                 
@@ -172,7 +171,6 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline ExchangeHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
-        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
         virtual void declare(u_int16_t channel, u_int16_t ticket, const string& exchange, const string& type, 
                              bool passive, bool durable, bool autoDelete, bool internal, bool nowait, 
                              const qpid::framing::FieldTable& arguments); 
@@ -189,17 +187,14 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
       public:
         inline QueueHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
-        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
         virtual void declare(u_int16_t channel, u_int16_t ticket, const string& queue, 
                              bool passive, bool durable, bool exclusive, 
                              bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments); 
                 
-        // Change to match new code generator function signature (adding const to string& and FieldTable&) - kpvdr 2006-11-20
         virtual void bind(u_int16_t channel, u_int16_t ticket, const string& queue, 
                           const string& exchange, const string& routingKey, bool nowait, 
                           const qpid::framing::FieldTable& arguments); 
-                
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+
         virtual void purge(u_int16_t channel, u_int16_t ticket, const string& queue, 
                            bool nowait); 
                 
@@ -216,19 +211,18 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         inline BasicHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         
         virtual void qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool global); 
-                    
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
-        virtual void consume(u_int16_t channel, u_int16_t ticket, const string& queue, const string& consumerTag, 
-                             bool noLocal, bool noAck, bool exclusive, bool nowait); 
+
+        virtual void consume(
+            u_int16_t channel, u_int16_t ticket, const string& queue,
+            const string& consumerTag, bool noLocal, bool noAck,
+            bool exclusive, bool nowait,
+            const qpid::framing::FieldTable& fields); 
         
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void cancel(u_int16_t channel, const string& consumerTag, bool nowait); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void publish(u_int16_t channel, u_int16_t ticket, const string& exchange, const string& routingKey, 
                              bool mandatory, bool immediate); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void get(u_int16_t channel, u_int16_t ticket, const string& queue, bool noAck); 
                 
         virtual void ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple); 
@@ -242,7 +236,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
 
     class TxHandlerImpl : public virtual TxHandler{
         SessionHandlerImpl* parent;
-    public:
+      public:
         TxHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
         virtual ~TxHandlerImpl() {}
         virtual void select(u_int16_t channel);

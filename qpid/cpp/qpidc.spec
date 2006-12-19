@@ -77,7 +77,7 @@ make check
 %files %{name}
 %defattr(-,root,root,-)
 %doc LICENSE.txt NOTICE.txt
-%_docdir/html/* 
+%doc %_docdir/html/* 
 %_libdir/libqpidcommon.so.0
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
@@ -93,7 +93,7 @@ make check
 %_libdir/libqpidbroker.so.0
 %_libdir/libqpidbroker.so.0.1.0
 %_sbindir/%{daemon}
-%_mandir/man1/%{daemon}.*
+%doc %_mandir/man1/%{daemon}.*
 
 #FIXME: Fix Makefile.am to install etc/init.d/%{daemon} properly:
 %_sysconfdir/init.d/%{daemon}
