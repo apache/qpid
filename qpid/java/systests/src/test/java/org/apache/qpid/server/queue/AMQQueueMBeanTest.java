@@ -30,7 +30,7 @@ import javax.management.JMException;
 /**
  * Test class to test AMQQueueMBean attribtues and operations
  */
-public class AMQueueMBeanTest  extends TestCase
+public class AMQQueueMBeanTest  extends TestCase
 {
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
