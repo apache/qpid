@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.gentools;
 
-import java.util.Iterator;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
@@ -36,13 +35,11 @@ public class AmqpOrdinalVersionMap extends TreeMap<Integer, AmqpVersionSet> impl
     public int getOrdinal(AmqpVersion version)
     throws AmqpTypeMappingException
     {
-        Iterator<Integer> itr = keySet().iterator();
-        while (itr.hasNext())
+    	for (Integer thisOrdinal : keySet())
         {
-            int ordinal = itr.next();
-            AmqpVersionSet versionSet = get(ordinal);
+            AmqpVersionSet versionSet = get(thisOrdinal);
             if (versionSet.contains(version))
-                return ordinal;
+                return thisOrdinal;
         }
         throw new AmqpTypeMappingException("Unable to locate version " + version + " in ordianl version map.");
     }
