@@ -32,14 +32,15 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 	public AmqpFieldMap getFieldMapForOrdinal(int ordinal)
 	{
 		AmqpFieldMap newMap = new AmqpFieldMap();
-		Iterator<String> fItr = keySet().iterator();
-		while (fItr.hasNext())
+		for (String thisFieldName: keySet())
 		{
-			AmqpField field = get(fItr.next());
+			AmqpField field = get(thisFieldName);
 			TreeMap<Integer, AmqpVersionSet> ordinalMap = field.ordinalMap;
 			AmqpVersionSet ordinalVersions = ordinalMap.get(ordinal);
 			if (ordinalVersions != null)
+			{
 				newMap.put(field.name, field);
+			}
 		}
 		return newMap;
 	}
@@ -49,18 +50,16 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 		throws AmqpTypeMappingException
 	{
 		AmqpOrdinalFieldMap ordinalFieldMap = new AmqpOrdinalFieldMap();
-		Iterator<String> fItr = keySet().iterator();
-		while (fItr.hasNext())
+		for (String thisFieldName: keySet())
 		{
-			AmqpField field = get(fItr.next());
+			AmqpField field = get(thisFieldName);
 			if (version == null || field.versionSet.contains(version))
 			{
 				String domain = "";
 				boolean dFound = false;
-				Iterator<String> dItr = field.domainMap.keySet().iterator();
-				while (dItr.hasNext() && !dFound)
+				for (String thisDomainName : field.domainMap.keySet())
 				{
-					domain = dItr.next();
+					domain = thisDomainName;
 					AmqpVersionSet versionSet = field.domainMap.get(domain);
 					if (version == null || versionSet.contains(version))
 					{
@@ -72,10 +71,9 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 				
 				int ordinal = -1;
 				boolean oFound = false;
-				Iterator<Integer> oItr = field.ordinalMap.keySet().iterator();
-				while (oItr.hasNext() && !oFound)
+				for (Integer thisOrdinal : field.ordinalMap.keySet())
 				{
-					ordinal = oItr.next();
+					ordinal = thisOrdinal;
 					AmqpVersionSet versionSet = field.ordinalMap.get(ordinal);
 					if (version == null || versionSet.contains(version))
 						oFound = true;
@@ -102,10 +100,9 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 	public int getNumFields(AmqpVersion version)
 	{
 		int fCntr = 0;
-		Iterator<String> fItr = keySet().iterator();
-		while (fItr.hasNext())
+		for (String thisFieldName : keySet())
 		{
-			AmqpField field = get(fItr.next());
+			AmqpField field = get(thisFieldName);
 			if (field.versionSet.contains(version))
 				fCntr++;
 		}
@@ -156,7 +153,6 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 	
 	public String parseFieldMapOrdinally(Method generateMethod, Method bitGenerateMethod,
 		int indentSize, int tabSize, Generator codeGenerator)
-//	int indentSize, int tabSize, AmqpVersionSet versionSet, AmqpDomainMap globalDomainMap)
 	    throws AmqpTypeMappingException, IllegalAccessException, InvocationTargetException
 	{
 		String indent = Utils.createSpaces(indentSize);
@@ -320,10 +316,9 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 	
 	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
 	{
-		Iterator<String> fItr = keySet().iterator();
-		while (fItr.hasNext())
+		for (String thisFieldName : keySet())
 		{
-			AmqpField field = get(fItr.next());
+			AmqpField field = get(thisFieldName);
 			if (!field.isVersionConsistent(globalVersionSet))
 				return false;
 		}
