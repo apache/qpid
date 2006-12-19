@@ -24,9 +24,9 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.testutil.VMBrokerSetup;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
 

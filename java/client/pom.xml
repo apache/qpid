@@ -113,13 +113,7 @@
                             <name>log4j.configuration</name>
                             <value>file:///${basedir}/src/main/java/log4j.properties</value>
                         </property>
-                    </systemProperties>
-                    <includes>
-                        <include>**/test/unit/**/*Test.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/JNDIReferenceableTest.java</exclude>
-                    </excludes>
+                    </systemProperties>                    
                 </configuration>
             </plugin>
         </plugins>

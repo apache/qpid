@@ -29,7 +29,7 @@ import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTableTest;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.log4j.Logger;
 

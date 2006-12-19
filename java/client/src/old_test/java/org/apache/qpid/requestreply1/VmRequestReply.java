@@ -22,7 +22,7 @@ package org.apache.qpid.requestreply1;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.VMBrokerSetup;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 public class VmRequestReply extends TestCase
 {
