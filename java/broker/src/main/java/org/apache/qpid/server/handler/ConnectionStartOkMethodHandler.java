@@ -78,12 +78,19 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
 
+            //save clientProperties
+            if (protocolSession.getClientProperties() == null)
+            {
+                protocolSession.setClientProperties(body.clientProperties);
+            }
+
             switch (authResult.status)
             {
                 case ERROR:
                     throw new AMQException("Authentication failed");
                 case SUCCESS:
                     _logger.info("Connected as: " + ss.getAuthorizationID());
+
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                     AMQFrame tune = ConnectionTuneBody.createAMQFrame(0, Integer.MAX_VALUE, getConfiguredFrameSize(),
                                                                       HeartbeatConfig.getInstance().getDelay());
@@ -122,7 +129,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     static int getConfiguredFrameSize()
     {
         final Configuration config = ApplicationRegistry.getInstance().getConfiguration();
-        final int framesize =  config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
+        final int framesize = config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
         _logger.info("Framesize set to " + framesize);
         return framesize;
     }

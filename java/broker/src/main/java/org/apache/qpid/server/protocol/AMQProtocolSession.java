@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
@@ -122,4 +123,9 @@ public interface AMQProtocolSession
      * @param saslServer
      */
     void setSaslServer(SaslServer saslServer);
+
+
+    FieldTable getClientProperties();
+
+    void setClientProperties(FieldTable clientProperties);
 }

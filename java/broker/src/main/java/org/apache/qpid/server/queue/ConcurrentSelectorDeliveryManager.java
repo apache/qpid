@@ -281,7 +281,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         }
 
                         // Only give the message to those that want them.
-                        if (sub.hasFilters() && sub.hasInterest(msg))
+                        if (sub.hasInterest(msg))
                         {
                             sub.enqueueForPreDelivery(msg);
                         }
