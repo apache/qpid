@@ -129,7 +129,7 @@ public class PropertyFieldTable implements FieldTable
         }
         catch (Exception e)
         {
-            _logger.warn("Unable to decode PropertyFieldTable format:" + textFormat, e);
+            _logger.warn("Unable to decode PropertyFieldTable format:" + textFormat);
             throw new IllegalArgumentException("Unable to decode PropertyFieldTable format:" + textFormat);
         }
     }
@@ -607,7 +607,7 @@ public class PropertyFieldTable implements FieldTable
         if (!(Character.isLetter(propertyName.charAt(0))
               || propertyName.charAt(0) == '$'
               || propertyName.charAt(0) == '#'
-              || propertyName.charAt(0) == '_')) // Not official AMQP added for JMS.                
+              || propertyName.charAt(0) == '_')) // Not official AMQP added for JMS.
         {
             throw new IllegalArgumentException("Identifier '" + propertyName + "' does not start with a valid AMQP start character");
         }
