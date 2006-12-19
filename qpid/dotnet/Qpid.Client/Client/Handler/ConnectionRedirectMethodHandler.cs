@@ -26,7 +26,7 @@ namespace Qpid.Client.Handler
 {
     public class ConnectionRedirectMethodHandler : IStateAwareMethodListener
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(ConnectionRedirectMethodHandler));
+//        private static readonly ILog _logger = LogManager.GetLogger(typeof(ConnectionRedirectMethodHandler));
 
         private const int DEFAULT_REDIRECT_PORT = 5672;
 
