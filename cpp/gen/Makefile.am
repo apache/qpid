@@ -1,6 +1,6 @@
 include gen-src.mk
 
-BUILT_SOURCES = $(generated_sources)
+BUILT_SOURCES = $(generated_sources) $(generated_headers)
 pkginclude_HEADERS=$(generated_headers)
 
 # Distribute the generated sources, at least for now, since
@@ -19,14 +19,12 @@ spec_dir = $(srcdir)/../../specs
 spec = $(spec_dir)/amqp-8.0.xml
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
-timestamp: $(spec) $(java_sources) $(cxx_templates)
+$(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
 	rm -f $(generated_sources)
 	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
 	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
 	        -c -o . -t $(gentools_dir)/templ.cpp $(spec)
 	touch timestamp
-
-$(generated_sources): timestamp
 
 DISTCLEANFILES = gen-src.mk
 gen-src.mk: timestamp

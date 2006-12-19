@@ -53,7 +53,7 @@ bool Channel::exists(const string& consumerTag){
     return consumers.find(consumerTag) != consumers.end();
 }
 
-void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection){
+void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection, const FieldTable*){
 	if(tag.empty()) tag = tagGenerator.generate();
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{

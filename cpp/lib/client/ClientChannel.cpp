@@ -124,11 +124,17 @@ void Channel::bind(const Exchange& exchange, const Queue& queue, const std::stri
     }
 }
 
-void Channel::consume(Queue& queue, std::string& tag, MessageListener* listener, 
-                      int ackMode, bool noLocal, bool synch){
-
+void Channel::consume(
+    Queue& queue, std::string& tag, MessageListener* listener, 
+    int ackMode, bool noLocal, bool synch, const FieldTable* fields)
+{
     string q = queue.getName();
-    AMQFrame* frame = new AMQFrame(id, new BasicConsumeBody(version, 0, q, (string&) tag, noLocal, ackMode == NO_ACK, false, !synch));
+    AMQFrame* frame =
+        new AMQFrame(
+            id,
+            new BasicConsumeBody(
+                version, 0, q, tag, noLocal, ackMode == NO_ACK, false, !synch,
+                fields ? *fields : FieldTable()));
     if(synch){
         sendAndReceive(frame, method_bodies.basic_consume_ok);
         BasicConsumeOkBody::shared_ptr response = dynamic_pointer_cast<BasicConsumeOkBody, AMQMethodBody>(responses.getResponse());

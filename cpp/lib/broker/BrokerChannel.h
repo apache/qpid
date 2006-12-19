@@ -103,7 +103,8 @@ namespace qpid {
             inline u_int32_t setPrefetchSize(u_int32_t size){ return prefetchSize = size; }
             inline u_int16_t setPrefetchCount(u_int16_t count){ return prefetchCount = count; }
             bool exists(const string& consumerTag);
-            void consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection = 0);
+            void consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive,
+                         ConnectionToken* const connection = 0, const qpid::framing::FieldTable* = 0);
             void cancel(const string& tag);
             bool get(Queue::shared_ptr queue, bool ackExpected);
             void begin();
