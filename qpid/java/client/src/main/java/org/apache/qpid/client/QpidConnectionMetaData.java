@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.common.QpidProperties;
+
 import java.util.Enumeration;
 
 import javax.jms.ConnectionMetaData;
@@ -27,7 +29,6 @@ import javax.jms.JMSException;
 
 public class QpidConnectionMetaData implements ConnectionMetaData
 {
-
 
 
     QpidConnectionMetaData(AMQConnection conn)
@@ -46,7 +47,7 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public String getJMSProviderName() throws JMSException
     {
-        return "Apache Qpid";
+        return "Apache " + QpidProperties.getProductName();
     }
 
     public String getJMSVersion() throws JMSException
@@ -71,8 +72,8 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public String getProviderVersion() throws JMSException
     {
-        return "QPID (Client: [" + getClientVersion() + "] ; Broker [" + getBrokerVersion() + "] ; Protocol: [ "
-                + getProtocolVersion() + "] )";
+        return QpidProperties.getProductName() + " (Client: [" + getClientVersion() + "] ; Broker [" + getBrokerVersion() + "] ; Protocol: [ "
+               + getProtocolVersion() + "] )";
     }
 
     private String getProtocolVersion()
@@ -89,8 +90,7 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public String getClientVersion()
     {
-        // TODO - get client build version from properties file or similar
-        return "<unknown>";
+        return QpidProperties.getBuildVerision();
     }
 
 

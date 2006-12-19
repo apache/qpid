@@ -77,7 +77,8 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             }
             try
             {
-                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck, body.arguments);
+                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
+                                                              body.arguments, body.noLocal);
                 if (!body.nowait)
                 {
                     session.writeFrame(BasicConsumeOkBody.createAMQFrame(channelId, consumerTag));
@@ -90,8 +91,8 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             {
                 _log.info("Closing connection due to invalid selector");
                 session.writeFrame(ChannelCloseBody.createAMQFrame(channelId, AMQConstant.INVALID_SELECTOR.getCode(),
-                                                                      ise.getMessage(), BasicConsumeBody.CLASS_ID,
-                                                                      BasicConsumeBody.METHOD_ID));
+                                                                   ise.getMessage(), BasicConsumeBody.CLASS_ID,
+                                                                   BasicConsumeBody.METHOD_ID));
             }
             catch (ConsumerTagNotUniqueException e)
             {
