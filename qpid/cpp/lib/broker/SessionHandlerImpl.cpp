@@ -360,10 +360,12 @@ void SessionHandlerImpl::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t pref
     parent->client->getBasic().qosOk(channel);
 } 
         
-void SessionHandlerImpl::BasicHandlerImpl::consume(u_int16_t channelId, u_int16_t /*ticket*/, 
-                                                   const string& queueName, const string& consumerTag, 
-                                                   bool noLocal, bool noAck, bool exclusive, 
-                                                   bool nowait){
+void SessionHandlerImpl::BasicHandlerImpl::consume(
+    u_int16_t channelId, u_int16_t /*ticket*/, 
+    const string& queueName, const string& consumerTag, 
+    bool noLocal, bool noAck, bool exclusive, 
+    bool nowait, const FieldTable& fields)
+{
     
     Queue::shared_ptr queue = parent->getQueue(queueName, channelId);    
     Channel* channel = parent->channels[channelId];
@@ -373,7 +375,8 @@ void SessionHandlerImpl::BasicHandlerImpl::consume(u_int16_t channelId, u_int16_
 
     try{
         string newTag = consumerTag;
-        channel->consume(newTag, queue, !noAck, exclusive, noLocal ? parent : 0);
+        channel->consume(
+            newTag, queue, !noAck, exclusive, noLocal ? parent : 0, &fields);
 
         if(!nowait) parent->client->getBasic().consumeOk(channelId, newTag);
 
