@@ -103,7 +103,7 @@ public class QueueReceiverAdaptor implements QueueReceiver {
 		AMQSession session = msgConsumer.getSession();
 		
 		if(session == null || session.isClosed()){
-			throw new UnsupportedOperationException("Invalid Session");
+			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
 

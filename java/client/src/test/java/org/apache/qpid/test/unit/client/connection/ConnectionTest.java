@@ -96,7 +96,7 @@ public class ConnectionTest extends TestCase
         }
     }
 
-    public void testUnresolvedHostFailure() throws Exception
+/*    public void testUnresolvedHostFailure() throws Exception
     {
         try
         {
@@ -111,7 +111,7 @@ public class ConnectionTest extends TestCase
             }
         }
     }
-
+  */
     public void testClientIdCannotBeChanged() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
