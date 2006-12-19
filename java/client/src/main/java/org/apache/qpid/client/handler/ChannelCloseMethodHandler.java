@@ -23,6 +23,7 @@ package org.apache.qpid.client.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -46,7 +47,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
 
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
-         _logger.debug("ChannelClose method received");
+        _logger.debug("ChannelClose method received");
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
         int errorCode = method.replyCode;
@@ -65,17 +66,21 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             {
                 throw new AMQNoConsumersException("Error: " + reason, null);
             }
+            else if (errorCode == AMQConstant.NO_ROUTE.getCode())
+            {
+                throw new AMQNoRouteException("Error: " + reason, null);
+            }
+            else if (errorCode == AMQConstant.INVALID_SELECTOR.getCode())
+            {
+                _logger.info("Broker responded with Invalid Selector.");
+
+                throw new AMQInvalidSelectorException(reason);
+            }
             else
             {
-                if (errorCode == AMQConstant.NO_ROUTE.getCode())
-                {
-                   throw new AMQNoRouteException("Error: " + reason, null);
-                }
-                else
-                {
-                    throw new AMQChannelClosedException(errorCode, "Error: " + reason);
-                }
+                throw new AMQChannelClosedException(errorCode, "Error: " + reason);
             }
+
         }
         evt.getProtocolSession().channelClosed(evt.getChannelId(), errorCode, reason);
     }

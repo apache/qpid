@@ -25,6 +25,9 @@ import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.AMQException;
 
+import java.util.Queue;
+import java.util.List;
+
 class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManager
 {
     private final GroupManager _groupMgr;
@@ -76,6 +79,11 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
         return _count;
     }
 
+    public List<Subscription> getSubscriptions()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public boolean hasActiveSubscribers()
     {
         return getWeight() == 0;
@@ -88,9 +96,34 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
 
     public void queueDeleted(AMQQueue queue)
     {
-        if(queue instanceof ClusteredQueue)
+        if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).removeAllRemoteSubscriber(_peer);
         }
+    }
+
+    public boolean hasFilters()
+    {
+        return false;
+    }
+
+    public boolean hasInterest(AMQMessage msg)
+    {
+        return true;
+    }
+
+    public Queue<AMQMessage> getPreDeliveryQueue()
+    {
+        return null;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg)
+    {
+        //no-op -- if selectors are implemented on RemoteSubscriptions then look at SubscriptionImpl
+    }
+
+    public void sendNextMessage(AMQQueue queue)
+    {
+
     }
 }

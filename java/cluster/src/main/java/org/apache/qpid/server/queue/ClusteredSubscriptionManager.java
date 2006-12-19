@@ -23,6 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.cluster.util.LogMessage;
 
+import java.util.List;
+
 class ClusteredSubscriptionManager extends SubscriptionSet
 {
     private static final Logger _logger = Logger.getLogger(ClusteredSubscriptionManager.class);
@@ -80,6 +82,11 @@ class ClusteredSubscriptionManager extends SubscriptionSet
         public int getWeight()
         {
             return ClusteredSubscriptionManager.this.getWeight();
+        }
+
+        public List<Subscription> getSubscriptions()
+        {
+            return ClusteredSubscriptionManager.super.getSubscriptions();
         }
 
         public boolean hasActiveSubscribers()
