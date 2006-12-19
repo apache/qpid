@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -99,18 +98,15 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 			serverMethodFlagMap + (clientMethodFlagMap.isSet() ? ", " : "") : "") +
 			(clientMethodFlagMap.isSet() ? "C " + clientMethodFlagMap : "") + "}" + ": " + versionSet);
 		
-		Iterator<Integer> iItr = indexMap.keySet().iterator();
-		while (iItr.hasNext())
+		for (Integer thisIndex : indexMap.keySet())
 		{
-			int index = iItr.next();
-			AmqpVersionSet indexVersionSet = indexMap.get(index);
-			out.println(margin + tab + "[I] " + index + indexVersionSet);
+			AmqpVersionSet indexVersionSet = indexMap.get(thisIndex);
+			out.println(margin + tab + "[I] " + thisIndex + indexVersionSet);
 		}
 		
-		Iterator<String> sItr = fieldMap.keySet().iterator();
-		while (sItr.hasNext())
+		for (String thisFieldName : fieldMap.keySet())
 		{
-			AmqpField thisField = fieldMap.get(sItr.next());
+			AmqpField thisField = fieldMap.get(thisFieldName);
 			thisField.print(out, marginSize + tabSize, tabSize);
 		}
 	}
@@ -143,21 +139,19 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		throws AmqpTypeMappingException
 	{
 		AmqpOverloadedParameterMap parameterVersionMap = new AmqpOverloadedParameterMap();
-		Iterator<AmqpVersion> vItr = globalVersionSet.iterator();
-		while (vItr.hasNext())
+		for (AmqpVersion thisVersion : globalVersionSet)
 		{
-			AmqpVersion version = vItr.next();
-			AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, generator);
+			AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(thisVersion, true, generator);
 			AmqpVersionSet methodVersionSet = parameterVersionMap.get(ordinalFieldMap);
 			if (methodVersionSet == null)
 			{
 				methodVersionSet = new AmqpVersionSet();
-				methodVersionSet.add(version);
+				methodVersionSet.add(thisVersion);
 				parameterVersionMap.put(ordinalFieldMap, methodVersionSet);
 			}
 			else
 			{
-				methodVersionSet.add(version);
+				methodVersionSet.add(thisVersion);
 			}
 		}
 		return parameterVersionMap;

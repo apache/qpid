@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
@@ -48,13 +47,11 @@ public class AmqpDomain extends TreeMap<String, AmqpVersionSet> implements Print
 	public String getDomainType(AmqpVersion version)
 	    throws AmqpTypeMappingException
 	{
-		Iterator<String> i = keySet().iterator();
-		while (i.hasNext())
+		for (String thisDomainType : keySet())
 		{
-			String type = i.next();
-			AmqpVersionSet versionSet = get(type);
+			AmqpVersionSet versionSet = get(thisDomainType);
 			if (versionSet.contains(version))
-				return type;
+				return thisDomainType;
 		} throw new AmqpTypeMappingException("Unable to find version " + version + ".");
 	}
 	
@@ -72,12 +69,10 @@ public class AmqpDomain extends TreeMap<String, AmqpVersionSet> implements Print
 		String tab = Utils.createSpaces(tabSize);
 		out.println(margin + domainName + ":");
 		
-		Iterator<String> i = keySet().iterator();
-		while (i.hasNext())
+		for (String thisDomainType : keySet())
 		{
-			String type = i.next();
-			AmqpVersionSet vs = get(type);
-			out.println(margin + tab + type + " : " + vs.toString());
+			AmqpVersionSet vs = get(thisDomainType);
+			out.println(margin + tab + thisDomainType + " : " + vs.toString());
 		}
 	}
 }

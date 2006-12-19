@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 /**
@@ -113,13 +112,11 @@ public class AmqpConstant extends TreeMap<String, AmqpVersionSet>
     public String getStringValue(AmqpVersion version)
     throws AmqpTypeMappingException
     {
-        Iterator<String> sItr = keySet().iterator();
-        while (sItr.hasNext())
+    	for (String thisValue : keySet())
         {
-            String value = sItr.next();
-            AmqpVersionSet versionSet = get(value);
+            AmqpVersionSet versionSet = get(thisValue);
             if (versionSet.contains(version))
-                return value;
+                return thisValue;
         }
         throw new AmqpTypeMappingException("Unable to find value for constant \"" + name +
             "\" for version " + version.toString() + ".");
@@ -199,11 +196,9 @@ public class AmqpConstant extends TreeMap<String, AmqpVersionSet>
         else
         {
             out.println(margin + tab + "[C] " + name + ": " + versionSet);
-            Iterator<String> sItr = keySet().iterator();
-            while (sItr.hasNext())
+            for (String thisValue : keySet())
             {
-                String value = sItr.next();
-                out.println(margin + tab + tab + "= \"" + value + "\" " + get(value));
+                 out.println(margin + tab + tab + "= \"" + thisValue + "\" " + get(thisValue));
             }
         }
     }
