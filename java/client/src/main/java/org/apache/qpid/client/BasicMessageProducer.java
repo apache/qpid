@@ -507,8 +507,11 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                             long timeToLive, boolean mandatory, boolean immediate, boolean wait) throws JMSException
     {
         checkTemporaryDestination(destination);
+        origMessage.setJMSDestination(destination);
 
+        
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
+        message.getJmsContentHeaderProperties().getJMSHeaders().setString(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString(), destination.toURL());
         AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId, 0, destination.getExchangeName(),
                                                                 destination.getRoutingKey(), mandatory, immediate);
 
