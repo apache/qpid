@@ -174,7 +174,7 @@ public class Main
         };
         classTemplateFiles = new File[]
         {
-            new File(tmplDir + Utils.fileSeparator + "PropertyContentHeaderClass.tmpl")
+//            new File(tmplDir + Utils.fileSeparator + "PropertyContentHeaderClass.tmpl")
         };
         methodTemplateFiles = new File[]
         {

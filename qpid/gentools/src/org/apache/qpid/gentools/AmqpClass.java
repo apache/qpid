@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -97,25 +96,21 @@ public class AmqpClass implements Printable, NodeAware
 		String tab = Utils.createSpaces(tabSize);
 		out.println(margin + "[C] " + name + ": " + versionSet);
 		
-		Iterator<Integer> iItr = indexMap.keySet().iterator();
-		while (iItr.hasNext())
+		for (Integer thisIndex : indexMap.keySet())
 		{
-			int index = iItr.next();
-			AmqpVersionSet indexVersionSet = indexMap.get(index);
-			out.println(margin + tab + "[I] " + index + indexVersionSet);
+			AmqpVersionSet indexVersionSet = indexMap.get(thisIndex);
+			out.println(margin + tab + "[I] " + thisIndex + indexVersionSet);
 		}
 		
-		Iterator<String> sItr = fieldMap.keySet().iterator();
-		while (sItr.hasNext())
+		for (String thisFieldName : fieldMap.keySet())
 		{
-			AmqpField thisField = fieldMap.get(sItr.next());
+			AmqpField thisField = fieldMap.get(thisFieldName);
 			thisField.print(out, marginSize + tabSize, tabSize);
 		}
 		
-		sItr = methodMap.keySet().iterator();
-		while (sItr.hasNext())
+		for (String thisMethodName : methodMap.keySet())
 		{
-			AmqpMethod thisMethod = methodMap.get(sItr.next());
+			AmqpMethod thisMethod = methodMap.get(thisMethodName);
 			thisMethod.print(out, marginSize + tabSize, tabSize);
 		}
 	}

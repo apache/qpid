@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -66,11 +65,9 @@ public class AmqpModel implements Printable, NodeAware
 			"[C]=class; [M]=method; [F]=field; [D]=domain; [I]=index; [O]=ordinal" + Utils.lineSeparator);
 		out.println(Utils.createSpaces(marginSize) + "Model:");
 
-		Iterator<String> i = classMap.keySet().iterator();
-		while (i.hasNext())
+		for (String thisClassName : classMap.keySet())
 		{
-			String className = i.next();
-			AmqpClass thisClass = classMap.get(className);
+			AmqpClass thisClass = classMap.get(thisClassName);
 			thisClass.print(out, marginSize + tabSize, tabSize);
 		}
 	}
