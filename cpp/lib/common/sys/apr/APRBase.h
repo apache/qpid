@@ -24,6 +24,7 @@
 #include <string>
 #include <apr_thread_mutex.h>
 #include <apr_errno.h>
+#include <QpidError.h>
 
 namespace qpid {
 namespace sys {
@@ -58,6 +59,17 @@ namespace sys {
 #define CHECK_APR_SUCCESS(A) qpid::sys::check(A, __FILE__, __LINE__); 
 
 }
+}
+
+// Inlined as it is called *a lot*
+void inline qpid::sys::check(apr_status_t status, const char* file, const int line){
+    if (status != APR_SUCCESS){
+        const int size = 50;
+        char tmp[size];
+        std::string msg(apr_strerror(status, tmp, size));
+        throw qpid::QpidError(APR_ERROR + ((int) status), msg,
+                        qpid::SrcLine(file, line));
+    }
 }
 
 

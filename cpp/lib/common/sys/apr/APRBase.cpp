@@ -82,16 +82,6 @@ void APRBase::decrement(){
     getInstance()->_decrement();
 }
 
-void qpid::sys::check(apr_status_t status, const char* file, const int line){
-    if (status != APR_SUCCESS){
-        const int size = 50;
-        char tmp[size];
-        std::string msg(apr_strerror(status, tmp, size));
-        throw QpidError(APR_ERROR + ((int) status), msg,
-                        qpid::SrcLine(file, line));
-    }
-}
-
 std::string qpid::sys::get_desc(apr_status_t status){
     const int size = 50;
     char tmp[size];
