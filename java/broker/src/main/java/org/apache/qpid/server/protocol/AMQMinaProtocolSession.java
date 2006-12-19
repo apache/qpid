@@ -412,6 +412,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             channel.close(this);
         }
+        _channelMap.clear();
     }
 
     /**
