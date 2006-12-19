@@ -191,13 +191,13 @@ namespace Qpid.Collections
             }
         }
 
-        private LinkedDictionaryEntry Tail
-        {
-            get
-            {
-                return _tail;
-            }
-        }
+//        private LinkedDictionaryEntry Tail
+//        {
+//            get
+//            {
+//                return _tail;
+//            }
+//        }
 
         private class LHTEnumerator : IDictionaryEnumerator
         {

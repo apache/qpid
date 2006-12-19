@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 
+/*
 namespace Qpid.Collections
 {
     public class LinkedHashtable : DictionaryBase
@@ -212,3 +213,4 @@ namespace Qpid.Collections
         }
     }
 }
+*/
