@@ -139,22 +139,15 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
             if (!subscription.isSuspended())
             {
-                if (!subscription.hasFilters())
+                if (subscription.hasInterest(msg))
                 {
-                    return subscription;
-                }
-                else
-                {
-                    if (subscription.hasInterest(msg))
+                    // if the queue is not empty then this client is ready to receive a message.
+                    //FIXME the queue could be full of sent messages.
+                    // Either need to clean all PDQs after sending a message
+                    // OR have a clean up thread that runs the PDQs expunging the messages.
+                    if (!subscription.hasFilters() || subscription.getPreDeliveryQueue().isEmpty())
                     {
-                        // if the queue is not empty then this client is ready to receive a message.
-                        //FIXME the queue could be full of sent messages.
-                        // Either need to clean all PDQs after sending a message
-                        // OR have a clean up thread that runs the PDQs expunging the messages.
-                        if (subscription.getPreDeliveryQueue().isEmpty())
-                        {
-                            return subscription;
-                        }
+                        return subscription;
                     }
                 }
             }
@@ -208,6 +201,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
     /**
      * Notification that a queue has been deleted. This is called so that the subscription can inform the
      * channel, which in turn can update its list of unacknowledged messages.
+     *
      * @param queue
      */
     public void queueDeleted(AMQQueue queue)

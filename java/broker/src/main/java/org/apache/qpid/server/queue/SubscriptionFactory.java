@@ -33,12 +33,10 @@ import org.apache.qpid.framing.FieldTable;
  */
 public interface SubscriptionFactory
 {
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters)
-        throws AMQException;
+    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks,
+                                    FieldTable filters, boolean noLocal) throws AMQException;
 
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks)
-        throws AMQException;
 
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession,String consumerTag)
-        throws AMQException;
+    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
+            throws AMQException;
 }
