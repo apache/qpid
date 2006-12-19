@@ -213,8 +213,11 @@ namespace client {
          * @param synch if true this call will block until a response
          * is received from the broker
          */
-        void consume(Queue& queue, std::string& tag, MessageListener* listener, 
-                     int ackMode = NO_ACK, bool noLocal = false, bool synch = true);
+        void consume(
+            Queue& queue, std::string& tag, MessageListener* listener, 
+            int ackMode = NO_ACK, bool noLocal = false, bool synch = true,
+            const qpid::framing::FieldTable* fields = 0);
+        
         /**
          * Cancels a subscription previously set up through a call to consume().
          *
