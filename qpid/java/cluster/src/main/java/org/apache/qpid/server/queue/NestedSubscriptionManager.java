@@ -21,12 +21,12 @@
 package org.apache.qpid.server.queue;
 
 import java.util.List;
+import java.util.LinkedList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Distributes messages among a list of subsscription managers, using their
  * weighting.
- *
  */
 class NestedSubscriptionManager implements SubscriptionManager
 {
@@ -44,11 +44,24 @@ class NestedSubscriptionManager implements SubscriptionManager
         _subscribers.remove(s);
     }
 
+
+    public List<Subscription> getSubscriptions()
+    {
+        List<Subscription> allSubs = new LinkedList<Subscription>();
+
+        for (WeightedSubscriptionManager subMans : _subscribers)
+        {
+            allSubs.addAll(subMans.getSubscriptions());
+        }
+
+        return allSubs;
+    }
+
     public boolean hasActiveSubscribers()
     {
-        for(WeightedSubscriptionManager s : _subscribers)
+        for (WeightedSubscriptionManager s : _subscribers)
         {
-            if(s.hasActiveSubscribers())
+            if (s.hasActiveSubscribers())
             {
                 return true;
             }
@@ -59,9 +72,9 @@ class NestedSubscriptionManager implements SubscriptionManager
     public Subscription nextSubscriber(AMQMessage msg)
     {
         WeightedSubscriptionManager start = current();
-        for(WeightedSubscriptionManager s = start; s != null; s = next(start))
+        for (WeightedSubscriptionManager s = start; s != null; s = next(start))
         {
-            if(hasMore(s))
+            if (hasMore(s))
             {
                 return nextSubscriber(s);
             }
@@ -94,7 +107,7 @@ class NestedSubscriptionManager implements SubscriptionManager
     private WeightedSubscriptionManager next()
     {
         _iterations = 0;
-        if(++_index >= _subscribers.size())
+        if (++_index >= _subscribers.size())
         {
             _index = 0;
         }

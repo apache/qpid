@@ -21,10 +21,12 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.BasicConsumeOkBody;
 import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -32,6 +34,7 @@ import org.apache.qpid.server.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.log4j.Logger;
@@ -68,14 +71,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         {
             AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : queueRegistry.getQueue(body.queue);
 
-            if(queue == null)
+            if (queue == null)
             {
                 _log.info("No queue for '" + body.queue + "'");
             }
             try
             {
-                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue,  session, !body.noAck);
-                if(!body.nowait)
+                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck, body.arguments);
+                if (!body.nowait)
                 {
                     session.writeFrame(BasicConsumeOkBody.createAMQFrame(channelId, consumerTag));
                 }
@@ -83,10 +86,19 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 //now allow queue to start async processing of any backlog of messages
                 queue.deliverAsync();
             }
-            catch(ConsumerTagNotUniqueException e)
+            catch (AMQInvalidSelectorException ise)
+            {
+                _log.info("Closing connection due to invalid selector");
+                session.writeFrame(ChannelCloseBody.createAMQFrame(channelId, AMQConstant.INVALID_SELECTOR.getCode(),
+                                                                      ise.getMessage(), BasicConsumeBody.CLASS_ID,
+                                                                      BasicConsumeBody.METHOD_ID));
+            }
+            catch (ConsumerTagNotUniqueException e)
             {
                 String msg = "Non-unique consumer tag, '" + body.consumerTag + "'";
-                session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId, AMQConstant.NOT_ALLOWED.getCode(), msg, BasicConsumeBody.CLASS_ID, BasicConsumeBody.METHOD_ID));
+                session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId, AMQConstant.NOT_ALLOWED.getCode(), msg,
+                                                                      BasicConsumeBody.CLASS_ID,
+                                                                      BasicConsumeBody.METHOD_ID));
             }
         }
     }

@@ -40,11 +40,15 @@ import javax.naming.spi.InitialContextFactory;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
-    protected final Logger _logger = Logger.getLogger(getClass());
+    protected final Logger _logger = Logger.getLogger(PropertiesFileInitialContextFactory.class);
 
     private String CONNECTION_FACTORY_PREFIX = "connectionfactory.";
     private String DESTINATION_PREFIX = "destination.";
@@ -54,6 +58,41 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     public Context getInitialContext(Hashtable environment) throws NamingException
     {
         Map data = new ConcurrentHashMap();
+
+        try
+        {
+
+            String file = null;
+            if (environment.contains(Context.PROVIDER_URL))
+            {
+                file = (String) environment.get(Context.PROVIDER_URL);
+            }
+            else
+            {
+                file = System.getProperty(Context.PROVIDER_URL);
+            }
+
+            if (file != null)
+            {
+                _logger.info("Loading Properties from:" + file);
+                //Load the properties specified
+                Properties p = new Properties();
+
+                p.load(new BufferedInputStream(new FileInputStream(file)));
+
+                environment.putAll(p);
+                _logger.info("Loaded Context Properties:" + environment.toString());
+            }
+            else
+            {
+                _logger.warn("No Provider URL specified.");
+            }
+        }
+        catch (IOException ioe)
+        {
+            _logger.warn("Unable to load property file specified in Provider_URL:" +
+                         environment.get(Context.PROVIDER_URL));
+        }
 
         createConnectionFactories(data, environment);
 
