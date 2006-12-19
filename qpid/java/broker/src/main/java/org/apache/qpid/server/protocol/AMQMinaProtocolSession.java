@@ -26,17 +26,19 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ConnectionStartBody;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -89,10 +91,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
-    
+
     /* AMQP Version for this session */
     private byte _major;
     private byte _minor;
+    private FieldTable _clientProperties;
 
     public ManagedObject getManagedObject()
     {
@@ -128,7 +131,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             return new AMQProtocolSessionMBean(this);
         }
-        catch(JMException ex)
+        catch (JMException ex)
         {
             _logger.error("AMQProtocolSession MBean creation has failed ", ex);
             throw new AMQException("AMQProtocolSession MBean creation has failed ", ex);
@@ -153,18 +156,21 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             ProtocolInitiation pi = (ProtocolInitiation) message;
             // this ensures the codec never checks for a PI message again
-            ((AMQDecoder)_codecFactory.getDecoder()).setExpectProtocolInitiation(false);
-            try {
+            ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
+            try
+            {
                 pi.checkVersion(this); // Fails if not correct
                 // This sets the protocol version (and hence framing classes) for this session.
                 _major = pi.protocolMajor;
                 _minor = pi.protocolMinor;
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
-                AMQFrame response = ConnectionStartBody.createAMQFrame((short)0, pi.protocolMajor, pi.protocolMinor, null,
+                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0, pi.protocolMajor, pi.protocolMinor, null,
                                                                        mechanisms.getBytes(), locales.getBytes());
                 _minaProtocolSession.write(response);
-            } catch (AMQException e) {
+            }
+            catch (AMQException e)
+            {
                 _logger.error("Received incorrect protocol initiation", e);
                 /* Find last protocol version in protocol version list. Make sure last protocol version
                 listed in the build file (build-module.xml) is the latest version which will be used
@@ -211,7 +217,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             _logger.debug("Method frame received: " + frame);
         }
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel,
-                                                                                    (AMQMethodBody)frame.bodyFrame);
+                                                                                    (AMQMethodBody) frame.bodyFrame);
         try
         {
             boolean wasAnyoneInterested = false;
@@ -266,7 +272,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content header frame received: " + frame);
         }
-        getChannel(frame.channel).publishContentHeader((ContentHeaderBody)frame.bodyFrame);
+        getChannel(frame.channel).publishContentHeader((ContentHeaderBody) frame.bodyFrame);
     }
 
     private void contentBodyReceived(AMQFrame frame) throws AMQException
@@ -275,7 +281,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content body frame received: " + frame);
         }
-        getChannel(frame.channel).publishContentBody((ContentBody)frame.bodyFrame);
+        getChannel(frame.channel).publishContentBody((ContentBody) frame.bodyFrame);
     }
 
     /**
@@ -355,6 +361,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      * Close a specific channel. This will remove any resources used by the channel, including:
      * <ul><li>any queue subscriptions (this may in turn remove queues if they are auto delete</li>
      * </ul>
+     *
      * @param channelId id of the channel to close
      * @throws AMQException if an error occurs closing the channel
      * @throws IllegalArgumentException if the channel id is not valid
@@ -381,6 +388,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     /**
      * In our current implementation this is used by the clustering code.
+     *
      * @param channelId
      */
     public void removeChannel(int channelId)
@@ -390,11 +398,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     /**
      * Initialise heartbeats on the session.
+     *
      * @param delay delay in seconds (not ms)
      */
     public void initHeartbeats(int delay)
     {
-        if(delay > 0)
+        if (delay > 0)
         {
             _minaProtocolSession.setIdleTime(IdleStatus.WRITER_IDLE, delay);
             _minaProtocolSession.setIdleTime(IdleStatus.READER_IDLE, HeartbeatConfig.getInstance().getTimeout(delay));
@@ -404,6 +413,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     /**
      * Closes all channels that were opened by this protocol session. This frees up all resources
      * used by the channel.
+     *
      * @throws AMQException if an error occurs while closing any channel
      */
     private void closeAllChannels() throws AMQException
@@ -421,7 +431,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      */
     public void closeSession() throws AMQException
     {
-        if(!_closed)
+        if (!_closed)
         {
             _closed = true;
             closeAllChannels();
@@ -463,11 +473,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         // information is used by SASL primary.
         if (address instanceof InetSocketAddress)
         {
-            return ((InetSocketAddress)address).getHostName();
+            return ((InetSocketAddress) address).getHostName();
         }
         else if (address instanceof VmPipeAddress)
         {
-            return "vmpipe:" + ((VmPipeAddress)address).getPort();
+            return "vmpipe:" + ((VmPipeAddress) address).getPort();
         }
         else
         {
@@ -484,22 +494,32 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         _saslServer = saslServer;
     }
-    
+
+    public FieldTable getClientProperties()
+    {
+        return _clientProperties;
+    }
+
+    public void setClientProperties(FieldTable clientProperties)
+    {
+        _clientProperties = clientProperties;
+    }
+
     /**
      * Convenience methods for managing AMQP version.
      * NOTE: Both major and minor will be set to 0 prior to protocol initiation.
      */
-    
+
     public byte getAmqpMajor()
     {
         return _major;
     }
-    
+
     public byte getAmqpMinor()
     {
         return _minor;
     }
-    
+
     public boolean amqpVersionEquals(byte major, byte minor)
     {
         return _major == major && _minor == minor;

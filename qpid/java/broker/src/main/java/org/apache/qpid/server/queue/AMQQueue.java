@@ -96,7 +96,7 @@ public class AMQQueue implements Managable, Comparable
      * max allowed number of messages on a queue.
      */
     private Integer _maxMessageCount = 10000;
-    
+
     /**
      * max queue depth(KB) for the queue
      */
@@ -362,12 +362,17 @@ public class AMQQueue implements Managable, Comparable
         _bindings.addBinding(routingKey, exchange);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters)
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters) throws AMQException
+    {
+        registerProtocolSession(ps, channel, consumerTag, acks, filters, false);
+    }
+
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters);
+        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
         _subscribers.addSubscriber(subscription);
     }
 

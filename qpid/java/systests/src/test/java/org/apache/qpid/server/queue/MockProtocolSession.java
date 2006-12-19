@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
@@ -119,6 +120,15 @@ public class MockProtocolSession implements AMQProtocolSession
     }
 
     public void setSaslServer(SaslServer saslServer)
+    {
+    }
+
+    public FieldTable getClientProperties()
+    {
+        return null;
+    }
+
+    public void setClientProperties(FieldTable clientProperties)
     {
     }
 }

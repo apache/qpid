@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
@@ -56,6 +57,7 @@ public class SubscriptionImpl implements Subscription
 
     private Queue<AMQMessage> _messages;
 
+    private final boolean _noLocal;
 
     /**
      * True if messages need to be acknowledged
@@ -65,21 +67,15 @@ public class SubscriptionImpl implements Subscription
 
     public static class Factory implements SubscriptionFactory
     {
-        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters) throws AMQException
+        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters, boolean noLocal) throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters);
-        }
-
-        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks)
-                throws AMQException
-        {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, null);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters, noLocal);
         }
 
         public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
                 throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null, false);
         }
     }
 
@@ -87,11 +83,11 @@ public class SubscriptionImpl implements Subscription
                             String consumerTag, boolean acks)
             throws AMQException
     {
-        this(channelId, protocolSession, consumerTag, acks, null);
+        this(channelId, protocolSession, consumerTag, acks, null, false);
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks, FieldTable filters)
+                            String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
@@ -105,6 +101,8 @@ public class SubscriptionImpl implements Subscription
         this.consumerTag = consumerTag;
         sessionKey = protocolSession.getKey();
         _acks = acks;
+        _noLocal = noLocal;
+
         _filters = FilterManagerFactory.createManager(filters);
 
         if (_filters != null)
@@ -218,7 +216,22 @@ public class SubscriptionImpl implements Subscription
 
     public boolean hasInterest(AMQMessage msg)
     {
-        return _filters.allAllow(msg);
+        if (_noLocal)
+        {
+            return !(protocolSession.getClientProperties().get(ClientProperties.instance.toString()).equals(
+                    msg.getPublisher().getClientProperties().get(ClientProperties.instance.toString())));
+        }
+        else
+        {
+            if (_filters != null)
+            {
+                return _filters.allAllow(msg);
+            }
+            else
+            {
+                return true;
+            }
+        }
     }
 
     public Queue<AMQMessage> getPreDeliveryQueue()
@@ -233,8 +246,6 @@ public class SubscriptionImpl implements Subscription
             _messages.offer(msg);
         }
     }
-
-
 
 
     private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)

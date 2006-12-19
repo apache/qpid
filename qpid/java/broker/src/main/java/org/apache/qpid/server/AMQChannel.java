@@ -286,12 +286,14 @@ public class AMQChannel
      * @param tag     the tag chosen by the client (if null, server will generate one)
      * @param queue   the queue to subscribe to
      * @param session the protocol session of the subscriber
+     * @param noLocal
      * @return the consumer tag. This is returned to the subscriber and used in
      *         subsequent unsubscribe requests
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
-    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks, FieldTable filters) throws AMQException, ConsumerTagNotUniqueException
+    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
+                                   FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -302,7 +304,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks, filters);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters,noLocal);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }
@@ -499,7 +501,7 @@ public class AMQChannel
         if (_log.isDebugEnabled())
         {
             _log.debug("Handling acknowledgement for channel " + _channelId + " with delivery tag " + deliveryTag +
-                      " and multiple " + multiple);
+                       " and multiple " + multiple);
         }
         if (multiple)
         {
