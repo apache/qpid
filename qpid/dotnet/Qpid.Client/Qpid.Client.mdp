@@ -15,7 +15,6 @@
   </Configurations>
   <DeployTargets />
   <Contents>
-    <File name="./Client/Collections/LinkedHashtable.cs" subtype="Code" buildaction="Compile" />
     <File name="./Properties/AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
     <File name="./qms/failover/FailoverMethod.cs" subtype="Code" buildaction="Compile" />
     <File name="./qms/failover/FailoverRoundRobin.cs" subtype="Code" buildaction="Compile" />
