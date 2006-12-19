@@ -304,7 +304,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks, filters,noLocal);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }
@@ -382,6 +382,8 @@ public class AMQChannel
         {
             if (unacked.queue != null)
             {
+                unacked.message.setTxnBuffer(null);
+
                 unacked.queue.deliver(unacked.message);
             }
         }
