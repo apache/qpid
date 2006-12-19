@@ -358,8 +358,6 @@ namespace Qpid.Client
 
     public class QpidConnectionInfo : ConnectionInfo
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(QpidConnectionInfo));
-
         string _username = "guest";
         string _password = "guest";
         string _virtualHost = "/default";

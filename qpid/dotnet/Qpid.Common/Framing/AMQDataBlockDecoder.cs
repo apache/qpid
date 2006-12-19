@@ -130,7 +130,9 @@ namespace Qpid.Framing
             frame.PopulateFromBuffer(input, channel, bodySize, bodyFactory);
 
             byte marker = input.get();
-            //assert marker == 0xCE;
+            if (marker != 0xCE) {
+           		throw new FormatException("marker is not 0xCE"); 	
+            }
             return frame;
         }
 
