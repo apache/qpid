@@ -30,7 +30,7 @@ import javax.management.JMException;
 /**
  * Test class to test AMQQueueMBean attribtues and operations
  */
-public class AMQQueueMBeanTest  extends TestCase
+public class AMQQueueMBeanTest extends TestCase
 {
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
@@ -62,14 +62,14 @@ public class AMQQueueMBeanTest  extends TestCase
         assertFalse(mgr.hasActiveSubscribers());
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
-         _channel = new AMQChannel(1, _messageStore, null);
+        _channel = new AMQChannel(1, _messageStore, null);
         _protocolSession = new MockProtocolSession(_messageStore);
         _protocolSession.addChannel(_channel);
 
-        _queue.registerProtocolSession(_protocolSession, 1, "test", false);
+        _queue.registerProtocolSession(_protocolSession, 1, "test", false, null);
         assertTrue(_queueMBean.getActiveConsumerCount() == 1);
 
-        SubscriptionSet _subscribers = (SubscriptionSet)mgr;
+        SubscriptionSet _subscribers = (SubscriptionSet) mgr;
         SubscriptionTestHelper s1 = new SubscriptionTestHelper("S1");
         SubscriptionTestHelper s2 = new SubscriptionTestHelper("S2");
         _subscribers.addSubscriber(s1);
@@ -161,7 +161,7 @@ public class AMQQueueMBeanTest  extends TestCase
         super.setUp();
         _queueRegistry = new DefaultQueueRegistry();
         _queue = new AMQQueue("testQueue", false, "AMQueueMBeanTest", false, _queueRegistry);
-        _queueMBean = new AMQQueueMBean(_queue);   
+        _queueMBean = new AMQQueueMBean(_queue);
     }
 
     private void sendMessages(int messageCount) throws AMQException
@@ -169,7 +169,8 @@ public class AMQQueueMBeanTest  extends TestCase
         AMQMessage[] messages = new AMQMessage[messageCount];
         for (int i = 0; i < messages.length; i++)
         {
-            messages[i] = message(false);;
+            messages[i] = message(false);
+            ;
         }
         for (int i = 0; i < messageCount; i++)
         {
