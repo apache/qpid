@@ -4,7 +4,7 @@
 # 
 
 for p in pkg-config doxygen help2man autoconf automake libtool ; do
-    echo $p `$p --version | head -n1`
+    echo `which $p` `$p --version | head -n1`
 done
 
 for r in apr boost boost-devel cppunit cppunit-devel graphviz; do
