@@ -54,8 +54,8 @@ EventChannelConnection::EventChannelConnection(
     out(bufferSize),
     isTrace(isTrace_)
 {
-    BOOST_ASSERT(readFd > 0);
-    BOOST_ASSERT(writeFd > 0);
+    assert(readFd > 0);
+    assert(writeFd > 0);
     closeOnException(&EventChannelConnection::startRead);
 }
 
@@ -161,12 +161,18 @@ void EventChannelConnection::endWrite() {
     ScopedBusy(*this);
     {
         Monitor::ScopedLock lock(monitor);
+        assert(isWriting);
         isWriting = false;
-        if (isClosed)
+        if (isClosed) 
             return;
         writeEvent.throwIfException();
+        if (writeEvent.getBytesWritten() < writeEvent.getSize()) {
+            // Keep writing the current event till done.
+            isWriting = true;
+            threads->post(writeEvent);
+        }
     }
-    // Check if there's more in to write in the write queue.
+    // Continue writing from writeFrames queue.
     startWrite();
 }
     
@@ -179,7 +185,7 @@ void EventChannelConnection::endWrite() {
 void EventChannelConnection::startRead() {
     // Non blocking read, as much as we can swallow.
     readEvent = ReadEvent(
-        readFd, in.start(), in.available(), readCallback,true);
+        readFd, in.start(), in.available(), readCallback);
     threads->post(readEvent);
 }
 

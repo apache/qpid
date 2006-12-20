@@ -57,18 +57,13 @@ EventChannelThreads::~EventChannelThreads() {
     join();
 }
 
-// Termination marker event.
-static DispatchEvent terminate;
-
 void EventChannelThreads::shutdown() 
 {
     Monitor::ScopedLock lock(monitor);
     if (state != RUNNING)       // Already shutting down.
         return;
     state = TERMINATING;
-    for (size_t i = 0; i < workers.size(); ++i) {
-        channel->post(terminate);
-    }
+    channel->shutdown();
     monitor.notify();           // Wake up one join() thread.
 }
 
@@ -113,8 +108,6 @@ void EventChannelThreads::run()
         while (true) {
             Event* e = channel->wait(); 
             assert(e != 0);
-            if (e == &terminate) 
-                return;
             AtomicCount::ScopedDecrement dec(nWaiting);
             // Make sure there's at least one waiting thread.
             if (dec == 0 && state == RUNNING)
@@ -122,11 +115,11 @@ void EventChannelThreads::run()
             e->dispatch();
         }
     }
+    catch (const EventChannel::ShutdownException& e) {
+        return;
+    }
     catch (const std::exception& e) {
         Exception::log(e, "Exception in EventChannelThreads::run()");
-    }
-    catch (...) {
-        Exception::logUnknown("Exception in EventChannelThreads::run()");
     }
 }
 

@@ -108,7 +108,7 @@ class EventChannelTest : public CppUnit::TestCase
     }
 
     void testPartialRead() {
-        ReadEvent re(pipe[0], readBuf, size, 0, true);
+        ReadEvent re(pipe[0], readBuf, size, 0);
         ec->post(re);
         CPPUNIT_ASSERT_EQUAL(ssize_t(size/2), ::write(pipe[1], hello, size/2));
         CPPUNIT_ASSERT(isNextEventOk(re));

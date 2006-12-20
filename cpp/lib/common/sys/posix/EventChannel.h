@@ -40,6 +40,9 @@ class EventChannel : public qpid::SharedObject<EventChannel>
   public:
     static shared_ptr create();
 
+    /** Exception throw from wait() if channel is shut down. */
+    class ShutdownException : public qpid::Exception {};
+
     ~EventChannel();
     
     /** Post an event to the channel. */
@@ -51,9 +54,18 @@ class EventChannel : public qpid::SharedObject<EventChannel>
     /**
      * Wait for the next complete event, up to timeout.
      *@return Pointer to event or 0 if timeout elapses.
+     *@exception ShutdownException if the channel is shut down.
      */
     Event* wait(Time timeout = TIME_INFINITE);
 
+    /**
+     * Shut down the event channel.
+     * Blocks till all threads have exited wait()
+     */
+    void shutdown();
+
+
+    // Internal classes.
     class Impl;
     class Queue;
     class Descriptor;
@@ -68,6 +80,7 @@ class EventChannel : public qpid::SharedObject<EventChannel>
 
 /**
  * Base class for all Events.
+ * 
  * Derived classes define events representing various async IO operations.
  * When an event is complete, it is returned by the EventChannel to
  * a thread calling wait. The thread will call Event::dispatch() to
@@ -86,7 +99,7 @@ class Event
 
     /**
      *If there was an exception processing this Event, return it.
-     *@return 0 if there was no exception. Caller must not delete.
+     *@return 0 if there was no exception. 
      */
     qpid::Exception::shared_ptr_const getException() const;
 
@@ -103,7 +116,7 @@ class Event
     Event(Callback cb=0) : callback(cb) {}
 
     virtual void prepare(EventChannel::Impl&) = 0;
-    virtual Event* complete(EventChannel::Descriptor&) = 0;
+    virtual void complete(EventChannel::Descriptor&) = 0;
 
     Callback callback;
     Exception::shared_ptr_const exception;
@@ -122,7 +135,7 @@ class DispatchEvent : public Event {
 
   protected:
     void prepare(EventChannel::Impl&);
-    Event* complete(EventChannel::Descriptor&);
+    void complete(EventChannel::Descriptor&);
 };
 
 // Utility base class.
@@ -148,7 +161,7 @@ class IOEvent : public FDEvent {
     size_t size;
     bool noWait;
 };
-    
+
 /** Asynchronous read event */
 class ReadEvent : public IOEvent
 {
@@ -163,7 +176,7 @@ class ReadEvent : public IOEvent
     
   private:
     void prepare(EventChannel::Impl&);
-    Event* complete(EventChannel::Descriptor&);
+    void complete(EventChannel::Descriptor&);
     ssize_t doRead();
 
     void* buffer;
@@ -183,7 +196,7 @@ class WriteEvent : public IOEvent
 
   private:
     void prepare(EventChannel::Impl&);
-    Event* complete(EventChannel::Descriptor&);
+    void complete(EventChannel::Descriptor&);
     ssize_t doWrite();
 
     const void* buffer;
@@ -204,7 +217,7 @@ class AcceptEvent : public FDEvent
 
   private:
     void prepare(EventChannel::Impl&);
-    Event* complete(EventChannel::Descriptor&);
+    void complete(EventChannel::Descriptor&);
 
     int accepted;
 };
