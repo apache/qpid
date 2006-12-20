@@ -91,6 +91,21 @@ public class SubscriptionTestHelper implements Subscription
         //no-op
     }
 
+    public boolean isAutoClose()
+    {
+        return false;
+    }
+
+    public void close()
+    {
+        //no-op
+    }
+
+    public boolean isBrowser()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public int hashCode()
     {
         return key.hashCode();

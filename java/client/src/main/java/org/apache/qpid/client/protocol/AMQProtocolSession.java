@@ -406,4 +406,12 @@ public class AMQProtocolSession implements ProtocolVersionList
             HeartbeatDiagnostics.init(delay, HeartbeatConfig.CONFIG.getTimeout(delay));
         }
     }
+
+    public void confirmConsumerCancelled(int channelId, String consumerTag)
+    {
+        final Integer chId = channelId;
+        final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
+
+        session.confirmConsumerCancelled(consumerTag);
+    }
 }
