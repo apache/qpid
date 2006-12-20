@@ -88,6 +88,7 @@ namespace qpid {
             MessageStore* const store;
             MessageBuilder messageBuilder;//builder for in-progress message
             Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
+	    qpid::framing::ProtocolVersion version; // version used for this channel
 
             virtual void complete(Message::shared_ptr& msg);
             void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
@@ -95,7 +96,7 @@ namespace qpid {
             bool checkPrefetch(Message::shared_ptr& msg);
         
         public:
-            Channel(qpid::framing::OutputHandler* out, int id, u_int32_t framesize, 
+            Channel(qpid::framing::ProtocolVersion& _version, qpid::framing::OutputHandler* out, int id, u_int32_t framesize, 
                     MessageStore* const _store = 0, u_int64_t stagingThreshold = 0);
             ~Channel();
             inline void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }

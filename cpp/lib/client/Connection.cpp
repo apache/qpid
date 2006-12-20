@@ -32,10 +32,8 @@ using namespace qpid::sys;
 
 u_int16_t Connection::channelIdCounter;
 
-Connection::Connection(bool debug, u_int32_t _max_frame_size) : max_frame_size(_max_frame_size), closed(true),
-// AMQP version management change - kpvdr 2006-11-20
-// TODO: Make this class version-aware and link these hard-wired numbers to that version
-    version(8, 0)
+Connection::Connection(  bool debug, u_int32_t _max_frame_size, qpid::framing::ProtocolVersion* _version) : max_frame_size(_max_frame_size), closed(true),
+    version(_version->getMajor(),_version->getMinor())
 {
     connector = new Connector(debug, _max_frame_size);
 }
@@ -53,7 +51,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     out = connector->getOutputHandler();
     connector->connect(host, port);
     
-    ProtocolInitiation* header = new ProtocolInitiation(8, 0);
+    ProtocolInitiation* header = new ProtocolInitiation(version);
     responses.expect();
     connector->init(header);
     responses.receive(method_bodies.connection_start);
