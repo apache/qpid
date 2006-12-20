@@ -87,6 +87,7 @@
         <eclipse.plugin.version>2.2</eclipse.plugin.version>
         <jar.version>2.0</jar.version>
         <javadoc.version>2.0</javadoc.version>
+        <junit.version>3.8.1</junit.version>
         <jxr.version>2.0</jxr.version>
         <mprojectinfo.version>2.0</mprojectinfo.version>
         <resources.version>2.2</resources.version>
@@ -94,9 +95,10 @@
         <surefire-report.version>2.1-SNAPSHOT</surefire-report.version>
         <surefire.version>2.2</surefire.version>
 
-        <amqj.logging.level>debug</amqj.logging.level>
+        <amqj.logging.level>warn</amqj.logging.level>
 
         <eclipse.workspace.dir>${basedir}/${topDirectoryLocation}/../workspace</eclipse.workspace.dir>
+        <clover.license.pathname>/set/clover/license/path/here</clover.license.pathname>
     </properties>
 
     <modules>
@@ -241,9 +243,25 @@
                         <downloadJavadocs>true</downloadJavadocs>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clover-plugin</artifactId>
+                    <version>2.3</version>
+                    <configuration>
+                        <licenseLocation>${clover.license.pathname}</licenseLocation>
+                        <jdk>${java.source.version}</jdk>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>instrument</goal>
+                                <goal>aggregate</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
-
         </pluginManagement>
         <defaultGoal>install</defaultGoal>
     </build>
@@ -335,7 +353,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>3.8.1</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -398,6 +416,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${javadoc.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clover-plugin</artifactId>
             </plugin>
         </plugins>
     </reporting>
