@@ -373,6 +373,15 @@ public class AMQQueue implements Managable, Comparable
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
+
+        if(subscription.hasFilters())
+        {
+            if (_deliveryMgr.hasQueuedMessages())
+            {
+                _deliveryMgr.populatePreDeliveryQueue(subscription);   
+            }
+        }
+
         _subscribers.addSubscriber(subscription);
     }
 

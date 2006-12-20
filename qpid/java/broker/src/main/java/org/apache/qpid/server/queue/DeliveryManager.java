@@ -73,4 +73,6 @@ interface DeliveryManager
     void clearAllMessages() throws AMQException;
 
     List<AMQMessage> getMessages();
+
+    void populatePreDeliveryQueue(Subscription subscription);
 }
