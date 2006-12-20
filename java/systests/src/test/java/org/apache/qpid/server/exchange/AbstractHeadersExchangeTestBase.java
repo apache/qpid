@@ -42,9 +42,9 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-public class AbstractHeadersExchangeTest extends TestCase
+public class AbstractHeadersExchangeTestBase extends TestCase
 {
-    private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTest.class);
+    private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTestBase.class);
 
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
