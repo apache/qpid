@@ -35,7 +35,6 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-        <amqj.logging.level>warn</amqj.logging.level>
     </properties>
 
     <dependencies>
