@@ -24,8 +24,6 @@
 #include <InMemoryContent.h>
 #include <LazyLoadedContent.h>
 #include <MessageStore.h>
-// AMQP version change - kpvdr 2006-11-17
-#include <ProtocolVersion.h>
 #include <BasicDeliverBody.h>
 #include <BasicGetOkBody.h>
 
@@ -79,11 +77,10 @@ void Message::redeliver(){
 
 void Message::deliver(OutputHandler* out, int channel, 
                       const string& consumerTag, u_int64_t deliveryTag, 
-                      u_int32_t framesize){
-
-    // AMQP version change - kpvdr 2006-11-17
-    // TODO: Make this class version-aware and link these hard-wired numbers to that version
-    out->send(new AMQFrame(channel, new BasicDeliverBody(ProtocolVersion(8,0), consumerTag, deliveryTag, redelivered, exchange, routingKey)));
+                      u_int32_t framesize,
+		      ProtocolVersion* version){
+    // CCT -- TODO - Update code generator to take pointer/ not instance to avoid extra contruction
+    out->send(new AMQFrame(channel, new BasicDeliverBody(*version, consumerTag, deliveryTag, redelivered, exchange, routingKey)));
     sendContent(out, channel, framesize);
 }
 
@@ -91,11 +88,10 @@ void Message::sendGetOk(OutputHandler* out,
          int channel, 
          u_int32_t messageCount,
          u_int64_t deliveryTag, 
-         u_int32_t framesize){
-
-    // AMQP version change - kpvdr 2006-11-17
-    // TODO: Make this class version-aware and link these hard-wired numbers to that version
-    out->send(new AMQFrame(channel, new BasicGetOkBody(ProtocolVersion(8,0), deliveryTag, redelivered, exchange, routingKey, messageCount)));
+         u_int32_t framesize,
+	 ProtocolVersion* version){
+     // CCT -- TODO - Update code generator to take pointer/ not instance to avoid extra contruction
+     out->send(new AMQFrame(channel, new BasicGetOkBody(*version, deliveryTag, redelivered, exchange, routingKey, messageCount)));
     sendContent(out, channel, framesize);
 }
 

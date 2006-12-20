@@ -25,6 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <AMQContentBody.h>
 #include <AMQHeaderBody.h>
+#include <ProtocolVersion.h>
 #include <BasicHeaderProperties.h>
 #include <ConnectionToken.h>
 #include <Content.h>
@@ -37,6 +38,7 @@ namespace qpid {
 
         class MessageStore;
         using qpid::framing::string;
+	
         /**
          * Represents an AMQP message, i.e. a header body, a list of
          * content bodies and some details about the publication
@@ -76,12 +78,14 @@ namespace qpid {
                          int channel, 
                          const string& consumerTag, 
                          u_int64_t deliveryTag, 
-                         u_int32_t framesize);
+                         u_int32_t framesize,
+			 qpid::framing::ProtocolVersion* version);
             void sendGetOk(qpid::framing::OutputHandler* out, 
                            int channel, 
                            u_int32_t messageCount,
                            u_int64_t deliveryTag, 
-                           u_int32_t framesize);
+                           u_int32_t framesize,
+			   qpid::framing::ProtocolVersion* version);
             void redeliver();
 
             qpid::framing::BasicHeaderProperties* getHeaderProperties();

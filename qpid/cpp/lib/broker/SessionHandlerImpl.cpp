@@ -131,7 +131,10 @@ void SessionHandlerImpl::initiated(qpid::framing::ProtocolInitiation* header){
   if (client == NULL)
     {
     	client = new qpid::framing::AMQP_ClientProxy(context, header->getMajor(), header->getMinor());
-  
+
+
+	std::cout << "---------------" << this << std::endl;
+	  
     	//send connection start
     	FieldTable properties;
     	string mechanisms("PLAIN");
@@ -212,7 +215,9 @@ void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
 
 
 void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const string& /*outOfBand*/){
-    parent->channels[channel] = new Channel(parent->context, channel, parent->framemax, 
+
+    
+    parent->channels[channel] = new Channel(parent->client->getProtocolVersion() , parent->context, channel, parent->framemax, 
                                             parent->queues->getStore(), parent->settings.stagingThreshold);
     parent->client->getChannel().openOk(channel);
 } 

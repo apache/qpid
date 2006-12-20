@@ -65,7 +65,7 @@ int main(int argc, char**)
         //Use a named, temporary queue
 	Queue queue("MyQueue", true);
 
-        //Create and open a connection
+ 	
 	Connection con(argc > 1);
 	string host("localhost");	
 	con.open(host);

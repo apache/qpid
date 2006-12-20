@@ -54,9 +54,7 @@ class FramingTest : public CppUnit::TestCase
 
   public:
 
-// AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware and link these hard-wired numbers to that version
-    FramingTest() : buffer(100), v(8, 0) {}
+    FramingTest() : buffer(100), v(qpid::framing::highestVersion){}
 
     void testBasicQosBody() 
     {
