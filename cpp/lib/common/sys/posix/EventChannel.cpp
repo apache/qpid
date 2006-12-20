@@ -211,9 +211,11 @@ Event* EventChannel::Queue::wake(uint32_t epollFlags) {
         assert(!queue.empty());
         Event* e = queue.front();
         assert(e);
-        // TODO aconway 2006-12-20: Can/should we move event completion
-        // out into dispatch() so it doesn't happen in Descriptor locks?
-        e->complete(descriptor);
+        if (!e->getException()) {
+            // TODO aconway 2006-12-20: Can/should we move event completion
+            // out into dispatch() so it doesn't happen in Descriptor locks?
+            e->complete(descriptor);
+        }
         queue.pop_front();
         return e;
     }
@@ -236,9 +238,9 @@ void EventChannel::Queue::shutdown() {
 
 void EventChannel::Descriptor::activate(int epollFd_, int myFd_) {
     Mutex::ScopedLock l(lock);
-    assert(myFd < 0 || (myFd == myFd_)); // Can't change fd.
-    if (epollFd < 0) {          // Means we're not polling.
-        epollFd = epollFd_;
+    assert(isShutdown() || (myFd == myFd_)); // Can't change fd while running.
+    if (isShutdown()) {
+        epollFd = epollFd_;     // We're back in business.
         myFd = myFd_;
         epollCtl(EPOLL_CTL_ADD, 0);
     }
@@ -252,14 +254,15 @@ void EventChannel::Descriptor::shutdown() {
 void EventChannel::Descriptor::shutdownUnsafe() {
     // Caller holds lock.
     ::close(myFd);
-    epollFd = -1;               // Indicate we are not polling.
+    epollFd = -1;               // Mark myself as shutdown.
     inQueue.shutdown();
     outQueue.shutdown();
-    epollCtl(EPOLL_CTL_DEL, 0);
 }
 
 void EventChannel::Descriptor::update() {
     // Caller holds lock.
+    if (isShutdown())             // Nothing to do
+        return;
     uint32_t events =  EPOLLONESHOT | EPOLLERR | EPOLLHUP;
     inQueue.setBit(events);
     outQueue.setBit(events);
@@ -268,6 +271,7 @@ void EventChannel::Descriptor::update() {
     
 void EventChannel::Descriptor::epollCtl(int op, uint32_t events) {
     // Caller holds lock
+    assert(!isShutdown());
     CleanStruct<epoll_event> ee;
     ee.data.ptr = this;
     ee.events = events;
@@ -279,13 +283,16 @@ void EventChannel::Descriptor::epollCtl(int op, uint32_t events) {
 
 EventPair EventChannel::Descriptor::wake(uint32_t epollEvents) {
     Mutex::ScopedLock l(lock);
-    // If we have an error:
+    // On error, shut down the Descriptor and both queues.
     if (epollEvents & (EPOLLERR | EPOLLHUP)) {
         shutdownUnsafe();
-        // Complete both sides on error so the event can fail and
-        // mark itself with an exception.
-        epollEvents |= EPOLLIN | EPOLLOUT;
+        // TODO aconway 2006-12-20: This error handling models means
+        // that any error reported by epoll will result in a shutdown
+        // exception on the events. Can we get more accurate error
+        // reporting somehow?
     }
+    // Check the queues even if shutdown - we want to drain the
+    // events that have been marked with exceptions.
     EventPair ready(inQueue.wake(epollEvents), outQueue.wake(epollEvents));
     update();
     return ready;

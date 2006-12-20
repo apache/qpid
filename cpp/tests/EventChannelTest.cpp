@@ -30,7 +30,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <iostream>
-
+using namespace std;
 using namespace qpid::sys;
 
 
@@ -116,39 +116,19 @@ class EventChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(std::string(hello, size/2),
                              std::string(readBuf, size/2));
     }
-    
 
-    void testFailedRead() 
-    {
+    void testFailedRead() {
         ReadEvent re(pipe[0], readBuf, size);
         ec->post(re);
-
-        // EOF before all data read.
+        // Close the write end while reading, causes a HUP.
         ::close(pipe[1]);
         CPPUNIT_ASSERT(isNextEvent(re));
         CPPUNIT_ASSERT(re.getException());
-        try {
-            re.throwIfException();
-            CPPUNIT_FAIL("Expected QpidError.");
-        }
-        catch (const qpid::QpidError&) { }
 
-        
-        //  Try to read from closed file descriptor.
+        // Try to read from closed fd. Fails in post() and throws.
         try {
             ec->post(re);
-            CPPUNIT_ASSERT(isNextEvent(re));
-            re.throwIfException();
-            CPPUNIT_FAIL("Expected an exception.");
-        }
-        catch (const qpid::QpidError&) {}
-        
-        //  Bad file descriptor. Note in this case we fail
-        //  in post and throw immediately.
-        try {
-            ReadEvent bad(-1, readBuf, size);
-            ec->post(bad);
-            CPPUNIT_FAIL("Expected QpidError.");
+            CPPUNIT_FAIL("Expected exception");
         }
         catch (const qpid::QpidError&) {}
     }
@@ -164,8 +144,9 @@ class EventChannelTest : public CppUnit::TestCase
 
     void testFailedWrite() {
         WriteEvent wr(pipe[1], hello, size);
-        ::close(pipe[0]);
         ec->post(wr);
+        // Close the read end while writing.
+        ::close(pipe[0]);
         CPPUNIT_ASSERT(isNextEvent(wr));
         CPPUNIT_ASSERT(wr.getException());
     }
