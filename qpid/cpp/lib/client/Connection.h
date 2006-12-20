@@ -38,6 +38,7 @@
 #include <ResponseHandler.h>
 
 namespace qpid {
+
     /**
      * The client namespace contains all classes that make up a client
      * implementation of the AMQP protocol. The key classes that form
@@ -93,6 +94,8 @@ namespace client {
          * Creates a connection object, but does not open the
          * connection.  
          * 
+         * @param _version the version of the protocol to connect with
+	 *
          * @param debug turns on tracing for the connection
          * (i.e. prints details of the frames sent and received to std
          * out). Optional and defaults to false.
@@ -100,7 +103,8 @@ namespace client {
          * @param max_frame_size the maximum frame size that the
          * client will accept. Optional and defaults to 65536.
          */
-	Connection(bool debug = false, u_int32_t max_frame_size = 65536);
+	Connection( bool debug = false, u_int32_t max_frame_size = 65536, 
+			qpid::framing::ProtocolVersion* _version = &(qpid::framing::highestVersion));
 	~Connection();
 
         /**

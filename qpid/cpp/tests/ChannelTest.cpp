@@ -132,7 +132,7 @@ class ChannelTest : public CppUnit::TestCase
 
     void testConsumerMgmt(){
         Queue::shared_ptr queue(new Queue("my_queue"));
-        Channel channel(0, 0, 0);
+        Channel channel(qpid::framing::highestVersion, 0, 0, 0);
         CPPUNIT_ASSERT(!channel.exists("my_consumer"));
 
         ConnectionToken* owner = 0;
@@ -157,7 +157,7 @@ class ChannelTest : public CppUnit::TestCase
 
     void testDeliveryNoAck(){
         DummyHandler handler;
-        Channel channel(&handler, 7, 10000);
+        Channel channel(qpid::framing::highestVersion, &handler, 7, 10000);
 
         const string data("abcdefghijklmn");
 
@@ -184,7 +184,7 @@ class ChannelTest : public CppUnit::TestCase
 
     void testDeliveryAndRecovery(){
         DummyHandler handler;
-        Channel channel(&handler, 7, 10000);
+        Channel channel(qpid::framing::highestVersion, &handler, 7, 10000);
         const string data("abcdefghijklmn");
 
         Message::shared_ptr msg(createMessage("test", "my_routing_key", "my_message_id", 14));
@@ -212,7 +212,7 @@ class ChannelTest : public CppUnit::TestCase
     void testStaging(){
         MockMessageStore store;
         DummyHandler handler;
-        Channel channel(&handler, 1, 1000/*framesize*/, &store, 10/*staging threshold*/);
+        Channel channel(qpid::framing::highestVersion, &handler, 1, 1000/*framesize*/, &store, 10/*staging threshold*/);
         const string data[] = {"abcde", "fghij", "klmno"};
 
         Message* msg = new Message(0, "my_exchange", "my_routing_key", false, false);
