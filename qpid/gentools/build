@@ -10,6 +10,6 @@ done
 echo "Compiling..."
 javac org/apache/qpid/gentools/*.java
 echo "Done. Try it out..."
-java org/apache/qpid/gentools/Main
+java org.apache.qpid.gentools.Main
 echo "--------- Building gentools completed ----------"
 cd ..
