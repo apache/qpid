@@ -143,7 +143,8 @@ void Message::decodeContent(Buffer& buffer, u_int32_t chunkSize)
 {    
     u_int64_t expected = expectedContentSize();
     if (expected != buffer.available()) {
-        std::cout << "WARN: Expected " << expectedContentSize() << " bytes, got " << buffer.available() << std::endl;
+        std::cout << "WARN: Expected " << expectedContentSize()
+                  << " bytes, got " << buffer.available() << std::endl;
         throw Exception("Cannot decode content, buffer not large enough.");
     }
 

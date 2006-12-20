@@ -24,21 +24,23 @@ apr_hdr =			\
   $(apr)/LFSessionContext.h	
 
 posix = sys/posix
-posix_src =				\
-  $(posix)/PosixAcceptor.cpp		\
-  $(posix)/Socket.cpp			\
-  $(posix)/Thread.cpp			\
-  $(posix)/check.cpp			\
-  $(posix)/EventChannel.cpp		\
-  $(posix)/EventChannelThreads.cpp		
-posix_hdr = 				\
-  $(posix)/check.h			\
-  $(posix)/EventChannel.h		\
-  $(posix)/EventChannelThreads.h
+posix_src =					\
+  $(posix)/EventChannelAcceptor.cpp		\
+  $(posix)/Socket.cpp				\
+  $(posix)/Thread.cpp				\
+  $(posix)/check.cpp				\
+  $(posix)/EventChannel.cpp			\
+  $(posix)/EventChannelThreads.cpp		\
+  $(posix)/EventChannelConnection.cpp		
+posix_hdr = 					\
+  $(posix)/check.h				\
+  $(posix)/EventChannel.h			\
+  $(posix)/EventChannelThreads.h		\
+  $(posix)/EventChannelConnection.h
 
-EXTRA_DIST=$(posix_src) $(posix_hdr)
-platform_src = $(apr_src)
-platform_hdr = $(apr_hdr)
+EXTRA_DIST=$(apr_src) $(apr_hdr)
+platform_src = $(posix_src)
+platform_hdr = $(posix_hdr)
 
 framing = framing
 gen     = $(srcdir)/../../gen
@@ -76,7 +78,6 @@ libqpidcommon_la_SOURCES =			\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
   Exception.cpp					\
-  ExceptionHolder.cpp				\
   QpidError.cpp					\
   sys/Runnable.cpp				\
   sys/Time.cpp
@@ -107,7 +108,6 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/amqp_types.h			\
   $(framing)/AMQP_HighestVersion.h			\
   Exception.h					\
-  ExceptionHolder.h				\
   QpidError.h					\
   SharedObject.h				\
   sys/Acceptor.h				\

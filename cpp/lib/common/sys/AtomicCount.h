@@ -21,36 +21,52 @@
 
 #include <boost/detail/atomic_count.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace sys {
+
+/**
+ * Increment counter in constructor and decrement in destructor.
+ * Optionally call a function if the decremented counter value is 0.
+ * Note the function must not throw, it is called in the destructor.
+ */
+template <class Count>
+class ScopedIncrement : boost::noncopyable {
+  public:
+    ScopedIncrement(Count& c, boost::function0<void> f=0)
+        : count(c), callback(f) { ++count; }
+    ~ScopedIncrement() { if (--count == 0 && callback) callback(); }
+
+  private:
+    Count& count;
+    boost::function0<void> callback;
+};
+
+/** Decrement counter in constructor and increment in destructor. */
+template <class Count>
+class ScopedDecrement : boost::noncopyable {
+  public:
+    ScopedDecrement(Count& c) : count(c) { value = --count; }
+    ~ScopedDecrement() { ++count; }
+
+    /** Return the value after the decrement. */
+    operator long() { return value; }
+
+  private:
+    Count& count;
+    long value;
+};
+
 
 /**
  * Atomic counter.
  */
 class AtomicCount : boost::noncopyable {
   public:
-    class ScopedDecrement : boost::noncopyable {
-      public:
-        /** Decrement counter in constructor and increment in destructor. */
-        ScopedDecrement(AtomicCount& c) : count(c) { value = --count; }
-        ~ScopedDecrement() { ++count; }
-        /** Return the value returned by the decrement. */
-        operator long() { return value; }
-      private:
-        AtomicCount& count;
-        long value;
-    };
-
-    class ScopedIncrement : boost::noncopyable {
-      public:
-        /** Increment counter in constructor and increment in destructor. */
-        ScopedIncrement(AtomicCount& c) : count(c) { ++count; }
-        ~ScopedIncrement() { --count; }
-      private:
-        AtomicCount& count;
-    };
-
+    typedef ScopedIncrement<AtomicCount> ScopedIncrement;
+    typedef ScopedDecrement<AtomicCount> ScopedDecrement;
+    
     AtomicCount(long value = 0) : count(value) {}
     
     void operator++() { ++count ; }

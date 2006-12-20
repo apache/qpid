@@ -37,13 +37,15 @@ class PosixError : public qpid::QpidError
   public:
     static std::string getMessage(int errNo);
     
-    PosixError(int errNo, const qpid::SrcLine& location) throw();
+    PosixError(int errNo, const qpid::QpidError::Location& location) throw();
     
     ~PosixError() throw() {}
     
     int getErrNo() { return errNo; }
 
-    Exception* clone() const throw() { return new PosixError(*this); }
+    Exception::auto_ptr clone() const throw() {
+        return Exception::auto_ptr(new PosixError(*this));
+    }
         
     void throwSelf() { throw *this; }
 
@@ -54,9 +56,17 @@ class PosixError : public qpid::QpidError
 }}
 
 /** Create a PosixError for the current file/line and errno. */
-#define QPID_POSIX_ERROR(errNo) ::qpid::sys::PosixError(errNo, SRCLINE)
+#define QPID_POSIX_ERROR(ERRNO) \
+    ::qpid::sys::PosixError((ERRNO), QPID_ERROR_LOCATION)
 
-/** Throw a posix error if errNo is non-zero */
-#define QPID_POSIX_THROW_IF(ERRNO)              \
-    if ((ERRNO) != 0) throw QPID_POSIX_ERROR((ERRNO))
+/** Throw QPID_POSIX_ERROR(errno) if RESULT is less than zero */
+#define QPID_POSIX_CHECK(RESULT)                        \
+    if ((RESULT) < 0) throw QPID_POSIX_ERROR((errno))
+
+/** Throw QPID_POSIX_ERROR(ERRNO) if ERRNO is non zero */
+#define QPID_POSIX_THROW_IF(ERRNO)           \
+    do { int e = (ERRNO); if (e) throw QPID_POSIX_ERROR(e); } while(0)
+         
+        
+        
 #endif  /*!_posix_check_h*/

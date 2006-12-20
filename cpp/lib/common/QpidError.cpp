@@ -22,23 +22,41 @@
 #include <QpidError.h>
 #include <sstream>
 
-using namespace qpid;
+namespace qpid {
 
 QpidError::QpidError() : code(0) {}
 
-QpidError::QpidError(int _code, const std::string& _msg,
-                     const SrcLine& _loc) throw()
+QpidError::QpidError(
+    int _code, const std::string& _msg, Location _loc) throw()
     : code(_code), msg(_msg), location(_loc)
 {
-    std::ostringstream os;
-    os << "Error [" << code << "] " << msg << " ("
-       << location.file << ":" << location.line << ")";
-    whatStr = os.str();
+    setWhat();
+}
+
+QpidError::QpidError(
+    int _code, const char* _msg, Location _loc) throw()
+    : code(_code), msg(_msg), location(_loc)
+{
+    setWhat();
 }
 
 QpidError::~QpidError() throw() {}
 
-Exception* QpidError::clone() const throw() { return new QpidError(*this); }
+Exception::auto_ptr QpidError::clone() const throw() {
+    return Exception::auto_ptr(new QpidError(*this));
+}
 
 void QpidError::throwSelf() const  { throw *this; }
 
+void QpidError::setWhat() {
+    std::ostringstream os;
+    os << "Error [" << code << "] " << msg;
+    if (location.file) {
+        os << " (" ;
+        os << location.file << ":" << location.line;
+        os << ")";
+    }
+    whatStr = os.str();
+}
+
+} // namespace qpid

@@ -27,8 +27,6 @@
 using namespace qpid::sys;
 using qpid::QpidError;
 
-// TODO aconway 2006-10-12: stopped is read outside locks.
-//
 
 LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout) :
     size(_size),

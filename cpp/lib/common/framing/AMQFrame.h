@@ -40,9 +40,9 @@ namespace qpid {
             static AMQP_MethodVersionMap versionMap;
             
             u_int16_t channel;
-            u_int8_t type;//used if the body is decoded separately from the 'head'
+            u_int8_t type;//used if body decoded separately from 'head'
             AMQBody::shared_ptr body;
-			AMQBody::shared_ptr createMethodBody(Buffer& buffer);
+            AMQBody::shared_ptr createMethodBody(Buffer& buffer);
             
         public:
             AMQFrame();

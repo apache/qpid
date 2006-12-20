@@ -83,7 +83,8 @@ bool Queue::dispatch(Message::shared_ptr& msg){
         return false;
     }else if(exclusive){
         if(!exclusive->deliver(msg)){
-            std::cout << "WARNING: Dropping undeliverable message from queue with exclusive consumer." << std::endl;
+            std::cout << "WARNING: Dropping undeliverable message "
+                      << "from queue with exclusive consumer." << std::endl;
         }
         return true;
     }else{

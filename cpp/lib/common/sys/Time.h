@@ -22,6 +22,7 @@
  *
  */
 
+#include <limits>
 #include <stdint.h>
 
 #ifdef USE_APR
@@ -33,7 +34,7 @@
 namespace qpid {
 namespace sys {
 
-/** Time in nanoseconds */
+/** Time in nanoseconds. */
 typedef int64_t Time;
 
 Time now();
@@ -47,6 +48,9 @@ const Time TIME_USEC = 1000;
 /** Nanoseconds per nanosecond. */
 const Time TIME_NSEC = 1;
 
+/** Value to represent an infinite timeout */
+const Time TIME_INFINITE = std::numeric_limits<Time>::max();
+ 
 #ifndef USE_APR
 struct timespec toTimespec(const Time& t);
 struct timespec& toTimespec(struct timespec& ts, const Time& t);

@@ -42,7 +42,7 @@ const int totalEvents = nConnections+2*nConnections*nMessages;
  * We count the total number of events, and the
  * number of reads and writes for each message number.
  */
-class TestResults : public Monitor {
+class TestResults {
   public:
     TestResults() : isShutdown(false), nEventsRemaining(totalEvents) {}
 
@@ -62,20 +62,21 @@ class TestResults : public Monitor {
     }
 
     void shutdown(const std::string& exceptionMsg = std::string()) {
-        ScopedLock lock(*this);
+        Monitor::ScopedLock lock(monitor);
         exception = exceptionMsg;
         isShutdown = true;
-        notifyAll();
+        monitor.notifyAll();
     }
     
     void wait() {
-        ScopedLock lock(*this);
+        Monitor::ScopedLock lock(monitor);
         Time deadline = now() + 10*TIME_SEC; 
         while (!isShutdown) {
-            CPPUNIT_ASSERT(Monitor::wait(deadline));
+            CPPUNIT_ASSERT(monitor.wait(deadline));
         }
     }
 
+    Monitor monitor;
     bool isShutdown;
     std::string exception;
     AtomicCount reads[nMessages];
@@ -113,30 +114,34 @@ class SafeCallback {
 };
 
 /** Repost an event N times. */
-class Repost {
+template <class T>
+class Reposter {
   public:
-    Repost(int n) : count (n) {}
-    virtual ~Repost() {}
+    Reposter(T* event_, int n) : event(event_), original(*event_), count (n) {}
+    virtual ~Reposter() {}
     
-    void repost(Event* event) {
+    void repost() {
         if (--count==0) {
             delete event;
         } else {
-            threads->postEvent(event);
+            *event = original;
+            threads->post(event);
         }
     }
   private:
+    T* event;
+    T original;
     int count;
 };
     
             
 
 /** Repeating read event. */
-class TestReadEvent : public ReadEvent, public Runnable, private Repost {
+class TestReadEvent : public ReadEvent, public Runnable {
   public:
     explicit TestReadEvent(int fd=-1) :
         ReadEvent(fd, &value, sizeof(value), SafeCallback(*this)),
-        Repost(nMessages)
+        reposter(this, nMessages)
     {}
     
     void run() {
@@ -144,47 +149,50 @@ class TestReadEvent : public ReadEvent, public Runnable, private Repost {
         CPPUNIT_ASSERT(0 <= value);
         CPPUNIT_ASSERT(value < nMessages);
         results.countRead(value);
-        repost(this);
+        reposter.repost();
     }
     
   private:
     int value;
-    ReadEvent original;
+    Reposter<ReadEvent> reposter;
 };
 
 
 /** Fire and forget write event */
-class TestWriteEvent : public WriteEvent, public Runnable, private Repost {
+class TestWriteEvent : public WriteEvent, public Runnable {
   public:
     TestWriteEvent(int fd=-1) :
         WriteEvent(fd, &value, sizeof(value), SafeCallback(*this)),
-        Repost(nMessages),
+        reposter(this, nMessages),
         value(0)
     {}
     
     void run() {
         CPPUNIT_ASSERT_EQUAL(sizeof(int), getSize());
         results.countWrite(value++);
-        repost(this);
+        reposter.repost();
     }
 
   private:
+    Reposter<WriteEvent> reposter;
     int value;
 };
 
 /** Fire-and-forget Accept event, posts reads on the accepted connection. */
-class TestAcceptEvent : public AcceptEvent, public Runnable, private Repost {
+class TestAcceptEvent : public AcceptEvent, public Runnable {
   public:
     TestAcceptEvent(int fd=-1) :
         AcceptEvent(fd, SafeCallback(*this)),
-        Repost(nConnections)
+        reposter(this, nConnections)
     {}
     
     void run() {
-        threads->postEvent(new TestReadEvent(getAcceptedDesscriptor()));
+        threads->post(new TestReadEvent(getAcceptedDesscriptor()));
         results.countEvent();
-        repost(this);
+        reposter.repost();
     }
+  private:
+    Reposter<AcceptEvent> reposter;
 };
 
 class EventChannelThreadsTest : public CppUnit::TestCase
@@ -207,10 +215,10 @@ class EventChannelThreadsTest : public CppUnit::TestCase
     {
         Socket listener = Socket::createTcp();
         int port = listener.listen();
-
+        
         // Post looping accept events, will repost nConnections times.
         // The accept event will automatically post read events.
-        threads->postEvent(new TestAcceptEvent(listener.fd()));
+        threads->post(new TestAcceptEvent(listener.fd()));
 
         // Make connections.
         Socket connections[nConnections];
@@ -221,7 +229,7 @@ class EventChannelThreadsTest : public CppUnit::TestCase
 
         // Post looping write events.
         for (int i = 0; i < nConnections; ++i) {
-            threads->postEvent(new TestWriteEvent(connections[i].fd()));
+            threads->post(new TestWriteEvent(connections[i].fd()));
         }
 
         // Wait for all events to be dispatched.

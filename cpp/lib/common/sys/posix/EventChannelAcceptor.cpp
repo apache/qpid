@@ -139,11 +139,11 @@ void EventChannelAcceptor::accept()
         shutdown();
         return;
     }
-    // TODO aconway 2006-11-29: Need to reap closed connections also.
     int fd = acceptEvent.getAcceptedDesscriptor();
+    threads->post(acceptEvent); // Keep accepting.
+    // TODO aconway 2006-11-29: Need to reap closed connections also.
     connections.push_back(
         new EventChannelConnection(threads, *factory, fd, fd, isTrace));
-    threads->post(acceptEvent); // Keep accepting.
 }
 
 }} // namespace qpid::sys

@@ -116,7 +116,8 @@ Thread::Thread(Runnable& runnable) {
 }
 
 void Thread::join(){
-    QPID_POSIX_THROW_IF(pthread_join(thread, 0));
+    if (thread != 0)
+        QPID_POSIX_THROW_IF(pthread_join(thread, 0));
 }
 
 long Thread::id() {

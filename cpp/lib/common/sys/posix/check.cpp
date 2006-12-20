@@ -32,8 +32,8 @@ PosixError::getMessage(int errNo)
     return std::string(strerror_r(errNo, buf, sizeof(buf)));
 }
 
-PosixError::PosixError(int errNo, const qpid::SrcLine& loc) throw()
-    : qpid::QpidError(INTERNAL_ERROR + errNo, getMessage(errNo), loc)
+PosixError::PosixError(int errNo, const qpid::QpidError::Location& l) throw()
+    : qpid::QpidError(INTERNAL_ERROR + errNo, getMessage(errNo), l)
 { }
     
 }}

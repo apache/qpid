@@ -25,14 +25,6 @@ AC_USE_SYSTEM_EXTENSIONS
 
 AM_MISSING_PROG([HELP2MAN], [help2man])
 
-AC_ARG_ENABLE(warnings,
-[  --enable-warnings   turn on lots of compiler warnings (recommended)],
-[case "${enableval}" in
-   yes|no) ;;
-   *)      AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
- esac],
- [enableval=yes])
-
 # Turn on this automake conditional if we are in a qpid
 # hierarchy (i.e. with gentools/ and specs/ sibling directories),
 # and if we have working java + javac.
@@ -53,7 +45,12 @@ AM_CONDITIONAL([CAN_GENERATE_CODE], [test x$build = xyes])
 # -Wunreachable-code -Wpadded -Winline
 # -Wshadow - warns about boost headers.
 
-if test "${enableval}" = yes; then
+AC_ARG_ENABLE(warnings,
+  [AS_HELP_STRING([--disable-warnings],
+	          [Disable compiler warnings (default enabled)])],
+    [], [enable_warnings=yes])
+
+if test "${enable_warnings}" = yes; then
   gl_COMPILER_FLAGS(-Werror)
   gl_COMPILER_FLAGS(-pedantic)
   gl_COMPILER_FLAGS(-Wall)
@@ -106,7 +103,7 @@ AC_ARG_ENABLE(apr,
    yes|no) ;;
    *)      AC_MSG_ERROR([invalid APR enable/disable value: $enable_APR]) ;;
   esac],
-[enable_APR=yes])
+[enable_APR=no])
 
 APR_MINIMUM_VERSION=1.2.2
 AC_SUBST(APR_MINIMUM_VERSION)

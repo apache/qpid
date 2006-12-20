@@ -70,8 +70,11 @@ class Socket
      */
     int listen(int port = 0, int backlog = 10);
 
+    /** Accept a connection. This socket must be listening */
+    Socket accept();
+
     /** Get file descriptor */
-    int fd(); 
+    int fd() const; 
     
   private:
 #ifdef USE_APR    

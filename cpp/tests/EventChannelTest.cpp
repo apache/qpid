@@ -47,8 +47,9 @@ struct RunMe : public Runnable
 class EventChannelTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(EventChannelTest);
-    CPPUNIT_TEST(testEvent);
+    CPPUNIT_TEST(testDispatch);
     CPPUNIT_TEST(testRead);
+    CPPUNIT_TEST(testPartialRead);
     CPPUNIT_TEST(testFailedRead);
     CPPUNIT_TEST(testWrite);
     CPPUNIT_TEST(testFailedWrite);
@@ -72,26 +73,26 @@ class EventChannelTest : public CppUnit::TestCase
         signal(SIGPIPE, SIG_IGN);
     }
 
-    // Verify that calling getEvent returns event.
+    // Verify that calling wait returns event.
     template <class T> bool isNextEvent(T& event)
     {
-        return &event == dynamic_cast<T*>(ec->getEvent());
+        return &event == dynamic_cast<T*>(ec->wait(5*TIME_SEC));
     }
 
     template <class T> bool isNextEventOk(T& event)
     {
-        Event* next = ec->getEvent();
-        if (next) next->throwIfError();
+        Event* next = ec->wait(TIME_SEC);
+        if (next) next->throwIfException();
         return &event == next;
     }
         
-    void testEvent()
+    void testDispatch()
     {
         RunMe runMe;
         CPPUNIT_ASSERT(!runMe.ran);
         // Instances of Event just pass thru the channel immediately.
-        Event e(runMe.functor());
-        ec->postEvent(e);
+        DispatchEvent e(runMe.functor());
+        ec->post(e);
         CPPUNIT_ASSERT(isNextEventOk(e));
         e.dispatch();
         CPPUNIT_ASSERT(runMe.ran);
@@ -99,42 +100,64 @@ class EventChannelTest : public CppUnit::TestCase
 
     void testRead() {
         ReadEvent re(pipe[0], readBuf, size);
-        ec->postEvent(re);
+        ec->post(re);
         CPPUNIT_ASSERT_EQUAL(ssize_t(size), ::write(pipe[1], hello, size));
         CPPUNIT_ASSERT(isNextEventOk(re));
-        CPPUNIT_ASSERT_EQUAL(size, re.getSize());
+        CPPUNIT_ASSERT_EQUAL(size, re.getBytesRead());
         CPPUNIT_ASSERT_EQUAL(std::string(hello), std::string(readBuf));
     }
+
+    void testPartialRead() {
+        ReadEvent re(pipe[0], readBuf, size, 0, true);
+        ec->post(re);
+        CPPUNIT_ASSERT_EQUAL(ssize_t(size/2), ::write(pipe[1], hello, size/2));
+        CPPUNIT_ASSERT(isNextEventOk(re));
+        CPPUNIT_ASSERT_EQUAL(size/2, re.getBytesRead());
+        CPPUNIT_ASSERT_EQUAL(std::string(hello, size/2),
+                             std::string(readBuf, size/2));
+    }
+    
 
     void testFailedRead() 
     {
         ReadEvent re(pipe[0], readBuf, size);
-        ec->postEvent(re);
+        ec->post(re);
 
         // EOF before all data read.
         ::close(pipe[1]);
         CPPUNIT_ASSERT(isNextEvent(re));
-        CPPUNIT_ASSERT(re.hasError());
+        CPPUNIT_ASSERT(re.getException());
         try {
-            re.throwIfError();
+            re.throwIfException();
             CPPUNIT_FAIL("Expected QpidError.");
         }
         catch (const qpid::QpidError&) { }
 
-        //  Bad file descriptor. Note in this case we fail
-        //  in postEvent and throw immediately.
+        
+        //  Try to read from closed file descriptor.
         try {
-            ReadEvent bad;
-            ec->postEvent(bad);
+            ec->post(re);
+            CPPUNIT_ASSERT(isNextEvent(re));
+            re.throwIfException();
+            CPPUNIT_FAIL("Expected an exception.");
+        }
+        catch (const qpid::QpidError&) {}
+        
+        //  Bad file descriptor. Note in this case we fail
+        //  in post and throw immediately.
+        try {
+            ReadEvent bad(-1, readBuf, size);
+            ec->post(bad);
             CPPUNIT_FAIL("Expected QpidError.");
         }
-        catch (const qpid::QpidError&) { }
+        catch (const qpid::QpidError&) {}
     }
 
     void testWrite() {
         WriteEvent wr(pipe[1], hello, size);
-        ec->postEvent(wr);
+        ec->post(wr);
         CPPUNIT_ASSERT(isNextEventOk(wr));
+        CPPUNIT_ASSERT_EQUAL(size, wr.getBytesWritten());
         CPPUNIT_ASSERT_EQUAL(ssize_t(size), ::read(pipe[0], readBuf, size));;
         CPPUNIT_ASSERT_EQUAL(std::string(hello), std::string(readBuf));
     }
@@ -142,19 +165,37 @@ class EventChannelTest : public CppUnit::TestCase
     void testFailedWrite() {
         WriteEvent wr(pipe[1], hello, size);
         ::close(pipe[0]);
-        ec->postEvent(wr);
+        ec->post(wr);
         CPPUNIT_ASSERT(isNextEvent(wr));
-        CPPUNIT_ASSERT(wr.hasError());
+        CPPUNIT_ASSERT(wr.getException());
     }
 
     void testReadWrite()
     {
         ReadEvent re(pipe[0], readBuf, size);
         WriteEvent wr(pipe[1], hello, size);
-        ec->postEvent(re);
-        ec->postEvent(wr);
-        ec->getEvent();
-        ec->getEvent();
+        ec->post(re);
+        ec->post(wr);
+        ec->wait(TIME_SEC);
+        ec->wait(TIME_SEC);
+        CPPUNIT_ASSERT_EQUAL(std::string(hello), std::string(readBuf));
+    }
+
+    void connectSendRead(AcceptEvent& ae, int port, Socket client)
+    {
+        ec->post(ae);
+        // Connect a client, send some data, read the data.
+        client.connect("localhost", port);
+        CPPUNIT_ASSERT(isNextEvent(ae));
+        ae.throwIfException();
+
+        char readBuf[size];
+        ReadEvent re(ae.getAcceptedDesscriptor(), readBuf, size);
+        ec->post(re);
+        CPPUNIT_ASSERT_EQUAL(ssize_t(size),
+                             client.send(hello, sizeof(hello)));
+        CPPUNIT_ASSERT(isNextEvent(re));
+        re.throwIfException();
         CPPUNIT_ASSERT_EQUAL(std::string(hello), std::string(readBuf));
     }
 
@@ -164,20 +205,14 @@ class EventChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(port != 0);
 
         AcceptEvent ae(s.fd());
-        ec->postEvent(ae);
         Socket client = Socket::createTcp();
-        client.connect("localhost", port);
-        CPPUNIT_ASSERT(isNextEvent(ae));
-        ae.dispatch();
-
-        // Verify client writes are read by the accepted descriptor.
-        char readBuf[size];
-        ReadEvent re(ae.getAcceptedDesscriptor(), readBuf, size);
-        ec->postEvent(re);
-        CPPUNIT_ASSERT_EQUAL(ssize_t(size), client.send(hello, sizeof(hello)));
-        CPPUNIT_ASSERT(isNextEvent(re));
-        re.dispatch();
-        CPPUNIT_ASSERT_EQUAL(std::string(hello), std::string(readBuf));
+        connectSendRead(ae, port,  client);
+        Socket client2 = Socket::createTcp();
+        connectSendRead(ae, port,  client2);
+        client.close();
+        client2.close();
+        Socket client3 = Socket::createTcp();
+        connectSendRead(ae, port,  client3);
     }
 };
 

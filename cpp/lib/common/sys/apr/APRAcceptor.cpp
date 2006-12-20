@@ -32,12 +32,9 @@ class APRAcceptor : public Acceptor
 {
   public:
     APRAcceptor(int16_t port, int backlog, int threads, bool trace);
-    virtual int16_t getPort() const;
-    virtual void run(qpid::sys::SessionHandlerFactory* factory);
+    virtual int getPort() const;
+    virtual void run(qpid::sys::SessionHandlerFactory& factory);
     virtual void shutdown();
-
-  private:
-    void shutdownImpl();
 
   private:
     int16_t port;
@@ -45,7 +42,6 @@ class APRAcceptor : public Acceptor
     LFProcessor processor;
     apr_socket_t* socket;
     volatile bool running;
-    Mutex shutdownLock;
 };
 
 // Define generic Acceptor::create() to return APRAcceptor.
@@ -69,13 +65,13 @@ Acceptor::~Acceptor() {}
     CHECK_APR_SUCCESS(apr_socket_listen(socket, backlog));
 }
 
-int16_t APRAcceptor::getPort() const {
+int APRAcceptor::getPort() const {
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
     return address->port;
 }
 
-void APRAcceptor::run(SessionHandlerFactory* factory) {
+void APRAcceptor::run(SessionHandlerFactory& factory) {
     running = true;
     processor.start();
     std::cout << "Listening on port " << getPort() << "..." << std::endl;
@@ -90,31 +86,23 @@ void APRAcceptor::run(SessionHandlerFactory* factory) {
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_SNDBUF, 32768));
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_RCVBUF, 32768));
             LFSessionContext* session = new LFSessionContext(APRPool::get(), client, &processor, trace);
-            session->init(factory->create(session));
+            session->init(factory.create(session));
         }else{
-            Mutex::ScopedLock locker(shutdownLock);                
-            if(running) {
-                if(status != APR_EINTR){
-                    std::cout << "ERROR: " << get_desc(status) << std::endl;
-                }
-                shutdownImpl();
+            running = false;
+            if(status != APR_EINTR){
+                std::cout << "ERROR: " << get_desc(status) << std::endl;
             }
         }
     }
+    shutdown();
 }
 
 void APRAcceptor::shutdown() {
-    Mutex::ScopedLock locker(shutdownLock);                
     if (running) {
-        shutdownImpl();
+        running = false;
+        processor.stop();
+        CHECK_APR_SUCCESS(apr_socket_close(socket));
     }
-}
-
-void APRAcceptor::shutdownImpl() {
-    Mutex::ScopedLock locker(shutdownLock);                
-    running = false;
-    processor.stop();
-    CHECK_APR_SUCCESS(apr_socket_close(socket));
 }
 
 

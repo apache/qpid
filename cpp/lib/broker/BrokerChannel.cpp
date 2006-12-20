@@ -18,11 +18,15 @@
  * under the License.
  *
  */
-#include <BrokerChannel.h>
-#include <QpidError.h>
+#include <assert.h>
+
 #include <iostream>
 #include <sstream>
-#include <assert.h>
+
+#include <boost/bind.hpp>
+
+#include "BrokerChannel.h"
+#include "QpidError.h"
 
 using std::mem_fun_ref;
 using std::bind2nd;
@@ -50,11 +54,18 @@ Channel::~Channel(){
 }
 
 bool Channel::exists(const string& consumerTag){
+    Mutex::ScopedLock l(lock);
     return consumers.find(consumerTag) != consumers.end();
 }
 
-void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection, const FieldTable*){
-	if(tag.empty()) tag = tagGenerator.generate();
+void Channel::consume(
+    string& tag, Queue::shared_ptr queue, bool acks,
+    bool exclusive, ConnectionToken* const connection, const FieldTable*)
+{
+    Mutex::ScopedLock l(lock);
+    if(tag.empty()) tag = tagGenerator.generate();
+    // TODO aconway 2006-12-13: enforce ownership of consumer
+    // with auto_ptr.
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{
         queue->consume(c, exclusive);//may throw exception
@@ -65,7 +76,8 @@ void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool excl
     }
 }
 
-void Channel::cancel(consumer_iterator i){
+void Channel::cancel(consumer_iterator i) {
+    // Private, must be called with lock held.
     ConsumerImpl* c = i->second;
     consumers.erase(i);
     if(c){
@@ -75,6 +87,7 @@ void Channel::cancel(consumer_iterator i){
 }
 
 void Channel::cancel(const string& tag){
+    Mutex::ScopedLock l(lock);
     consumer_iterator i = consumers.find(tag);
     if(i != consumers.end()){
         cancel(i);
@@ -82,11 +95,14 @@ void Channel::cancel(const string& tag){
 }
 
 void Channel::close(){
-    //cancel all consumers
-    for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin() ){
-        cancel(i);
+    {
+        Mutex::ScopedLock l(lock);
+        while(!consumers.empty()) {
+            cancel(consumers.begin());
+        }
     }
-    //requeue:
+    // TODO aconway 2006-12-13: does recovery need to be atomic with
+    // cancelling all consumers?
     recover(true);
 }
 
@@ -109,20 +125,21 @@ void Channel::rollback(){
 }
 
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, Queue::shared_ptr& queue, bool ackExpected){
-    Mutex::ScopedLock locker(deliveryLock);
-
-    u_int64_t deliveryTag = currentDeliveryTag++;
-    if(ackExpected){
-        unacked.push_back(DeliveryRecord(msg, queue, consumerTag, deliveryTag));
-        outstanding.size += msg->contentSize();
-        outstanding.count++;
+    u_int64_t deliveryTag;
+    {
+        Mutex::ScopedLock l(lock);
+        deliveryTag = currentDeliveryTag++;
+        if(ackExpected){
+            unacked.push_back(
+                DeliveryRecord(msg, queue, consumerTag, deliveryTag));
+            outstanding.size += msg->contentSize();
+            outstanding.count++;
+        }
     }
-    //send deliver method, header and content(s)
     msg->deliver(out, id, consumerTag, deliveryTag, framesize);
 }
 
 bool Channel::checkPrefetch(Message::shared_ptr& msg){
-    Mutex::ScopedLock locker(deliveryLock);
     bool countOk = !prefetchCount || prefetchCount > unacked.size();
     bool sizeOk = !prefetchSize || prefetchSize > msg->contentSize() + outstanding.size || unacked.empty();
     return countOk && sizeOk;
@@ -187,71 +204,99 @@ void Channel::complete(Message::shared_ptr& msg){
         }
         exchange.reset();
     }else{
-        std::cout << "Exchange not known in Channel::complete(Message::shared_ptr&)" << std::endl;
+        std::cout << "Exchange not known in" << BOOST_CURRENT_FUNCTION
+                  << std::endl;
     }
 }
 
-void Channel::ack(u_int64_t deliveryTag, bool multiple){
+void Channel::ack(u_int64_t deliveryTag, bool multiple) {
     if(transactional){
+        Mutex::ScopedLock locker(lock);    
         accumulatedAck.update(deliveryTag, multiple);
-        //TODO: I think the outstanding prefetch size & count should be updated at this point...
+        //TODO: I think the outstanding prefetch size & count should
+        //be updated at this point...
         //TODO: ...this may then necessitate dispatching to consumers
-    }else{
-        Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
-    
-        ack_iterator i = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), deliveryTag));
-        if(i == unacked.end()){
-            throw InvalidAckException();
-        }else if(multiple){     
-            ack_iterator end = ++i;
-            for_each(unacked.begin(), end, mem_fun_ref(&DeliveryRecord::discard));
-            unacked.erase(unacked.begin(), end);
+    }
+    else {
+        {
+            Mutex::ScopedLock locker(lock);    
+            ack_iterator i = find_if(
+                unacked.begin(), unacked.end(),
+                boost::bind(&DeliveryRecord::matches, _1, deliveryTag));
+            if(i == unacked.end()) {
+                throw InvalidAckException();
+            }
+            else if(multiple) {     
+                ack_iterator end = ++i;
+                for_each(unacked.begin(), end,
+                         mem_fun_ref(&DeliveryRecord::discard));
+                unacked.erase(unacked.begin(), end);
 
-            //recalculate the prefetch:
-            outstanding.reset();
-            for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::addTo), &outstanding));
-        }else{
-            i->discard();
-            i->subtractFrom(&outstanding);
-            unacked.erase(i);        
+                //recalculate the prefetch:
+                outstanding.reset();
+                for_each(
+                    unacked.begin(), unacked.end(),
+                    boost::bind(&DeliveryRecord::addTo, _1, &outstanding));
+            }
+            else {
+                i->discard();
+                i->subtractFrom(&outstanding);
+                unacked.erase(i);        
+            }
         }
-
         //if the prefetch limit had previously been reached, there may
         //be messages that can be now be delivered
-        for(consumer_iterator j = consumers.begin(); j != consumers.end(); j++){
+
+        // TODO aconway 2006-12-13: Does this need to be atomic?
+        // If so we need a redesign, requestDispatch re-enters
+        // Channel::dispatch.
+        // 
+       for(consumer_iterator j = consumers.begin(); j != consumers.end(); j++){
             j->second->requestDispatch();
         }
     }
 }
 
-void Channel::recover(bool requeue){
-    Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
-
-    if(requeue){
-        outstanding.reset();
-        std::list<DeliveryRecord> copy = unacked;
-        unacked.clear();
-        for_each(copy.begin(), copy.end(), mem_fun_ref(&DeliveryRecord::requeue));
-    }else{
-        for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::redeliver), this));        
+void Channel::recover(bool requeue) {
+    std::list<DeliveryRecord> copyUnacked;
+    boost::function1<void, DeliveryRecord&> recoverFn;
+    {
+        Mutex::ScopedLock l(lock);
+        if(requeue) {
+            outstanding.reset();
+            copyUnacked.swap(unacked);
+            recoverFn = boost::bind(&DeliveryRecord::requeue, _1);
+        }
+        else {
+            copyUnacked = unacked;
+            recoverFn = boost::bind(&DeliveryRecord::redeliver, _1, this);
+        }
     }
+    // TODO aconway 2006-12-13: Does recovery of copyUnacked have to
+    // be atomic with extracting the list?
+    for_each(copyUnacked.begin(), copyUnacked.end(), recoverFn);
 }
 
 bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
+    Mutex::ScopedLock l(lock);
+    // TODO aconway 2006-12-13: Nasty to have all these external calls
+    // inside a critical.section but none appear to have blocking potential.
+    // sendGetOk does non-blocking IO
+    // 
     Message::shared_ptr msg = queue->dequeue();
-    if(msg){
-        Mutex::ScopedLock locker(deliveryLock);
+    if(msg) {
         u_int64_t myDeliveryTag = currentDeliveryTag++;
-        msg->sendGetOk(out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize);
+        u_int32_t count = queue->getMessageCount();
+        msg->sendGetOk(out, id, count + 1, myDeliveryTag, framesize);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
         return true;
-    }else{
-        return false;
     }
+    return false;
 }
 
-void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag){
+void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag,
+                      u_int64_t deliveryTag){
     msg->deliver(out, id, consumerTag, deliveryTag, framesize);
 }

@@ -44,7 +44,16 @@ class Runnable
     Functor functor();
 };
 
-}}
+/** Runnable wrapper for a functor */
+class FunctorRunnable : public Runnable {
+  public:
+    explicit FunctorRunnable(const Runnable::Functor& runMe) : f(runMe) {}
+    void run();
+  private:
+    Runnable::Functor f;
+};
+
+}} // namespace qpid::sys
 
 
 #endif

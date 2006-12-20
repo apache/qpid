@@ -24,37 +24,45 @@
 #include <memory>
 #include <ostream>
 #include <Exception.h>
+#include <boost/current_function.hpp>
 
 namespace qpid {
 
-struct SrcLine {
-  public:
-    SrcLine(const std::string& file_="", int line_=0) :
-        file(file_), line(line_) {}
-
-    std::string file;
-    int line;
-};
-    
 class QpidError : public Exception { 
   public:
+    // Use macro QPID_LOCATION to construct a location.
+    struct Location {
+        Location(const char* function_=0, const char* file_=0, int line_=0) :
+            function(function_), file(file_), line(line_) {}
+        const char* function;
+        const char* file;
+        int line;
+    };
+
     const int code;
     const std::string msg;
-    const SrcLine location;
+    const Location location;
 
     QpidError();
-    QpidError(int _code, const std::string& _msg, const SrcLine& _loc) throw();
+    QpidError(int _code, const char* _msg, const Location _loc) throw();
+    QpidError(int _code, const std::string& _msg, const Location _loc) throw();
+    
     ~QpidError() throw();
-    Exception* clone() const throw();
+    Exception::auto_ptr clone() const throw();
     void throwSelf() const;
+
+  private:
+    void setWhat();
 };
 
 
 } // namespace qpid
 
-#define SRCLINE ::qpid::SrcLine(__FILE__, __LINE__)
+#define QPID_ERROR_LOCATION \
+    ::qpid::QpidError::Location(BOOST_CURRENT_FUNCTION, __FILE__, __LINE__)
 
-#define QPID_ERROR(CODE, MESSAGE) ::qpid::QpidError((CODE), (MESSAGE), SRCLINE)
+#define QPID_ERROR(CODE, MESSAGE) \
+    ::qpid::QpidError((CODE), (MESSAGE), QPID_ERROR_LOCATION)
 
 #define THROW_QPID_ERROR(CODE, MESSAGE) throw QPID_ERROR(CODE,MESSAGE)
 

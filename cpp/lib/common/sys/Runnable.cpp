@@ -29,4 +29,8 @@ Runnable::Functor Runnable::functor()
     return boost::bind(&Runnable::run, this);
 }
 
+void FunctorRunnable::run() {
+    f();
+}
+
 }}

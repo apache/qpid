@@ -47,7 +47,7 @@ Broker::shared_ptr Broker::create(const Configuration& config) {
 }    
         
 void Broker::run() {
-    acceptor->run(&factory);
+    acceptor->run(factory);
 }
 
 void Broker::shutdown() {

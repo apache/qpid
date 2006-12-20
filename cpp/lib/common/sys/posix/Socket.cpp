@@ -96,6 +96,8 @@ Socket::recv(void* data, size_t size)
 int Socket::listen(int port, int backlog) 
 {
     struct sockaddr_in name;
+    static const int ON = 1;
+    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof(ON));
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
     name.sin_addr.s_addr = 0;
@@ -111,8 +113,15 @@ int Socket::listen(int port, int backlog)
     return ntohs(name.sin_port);
 }
 
+Socket Socket::accept() {
+    int accepted = ::accept(socket, 0, 0);
+    if (accepted < 0)
+        throw (QPID_POSIX_ERROR(errno));
+    return Socket(accepted);
+}
 
-int Socket::fd() 
+
+int Socket::fd()const
 {
     return socket;
 }

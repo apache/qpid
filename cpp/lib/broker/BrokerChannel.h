@@ -79,10 +79,10 @@ namespace qpid {
             u_int32_t prefetchSize;    
             u_int16_t prefetchCount;    
             Prefetch outstanding;
-            u_int32_t framesize;
+            const u_int32_t framesize;
             NameGenerator tagGenerator;
             std::list<DeliveryRecord> unacked;
-            qpid::sys::Mutex deliveryLock;
+            qpid::sys::Mutex lock;
             TxBuffer txBuffer;
             AccumulatedAck accumulatedAck;
             MessageStore* const store;

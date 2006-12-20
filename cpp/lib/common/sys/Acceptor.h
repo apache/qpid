@@ -33,10 +33,11 @@ class SessionHandlerFactory;
 class Acceptor : public qpid::SharedObject<Acceptor>
 {
   public:
-    static Acceptor::shared_ptr create(int16_t port, int backlog, int threads, bool trace = false);
-    virtual ~Acceptor() = 0;
-    virtual int16_t getPort() const = 0;
-    virtual void run(qpid::sys::SessionHandlerFactory* factory) = 0;
+    static Acceptor::shared_ptr create(
+        int16_t port, int backlog, int threads, bool trace = false);
+    virtual ~Acceptor();
+    virtual int  getPort() const = 0;
+    virtual void run(SessionHandlerFactory& factory) = 0;
     virtual void shutdown() = 0;
 };
 
