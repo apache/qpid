@@ -3,7 +3,7 @@ html: doxygen.tstamp
 
 dist-hook: html
 
-nobase_dist_doc_DATA=$(wildcard html/*)
+EXTRA_DIST=html
 
 SOURCES = \
   $(wildcard $(topsrcdir)/gen/*.h) \
