@@ -23,7 +23,8 @@ package org.apache.qpid.common;
 public enum AMQPFilterTypes
 {
     JMS_SELECTOR("x-filter-jms-selector"),
-    JMS_BROWSER("x-filter-jms-browser");
+    NO_CONSUME("x-filter-no-consume"),
+    AUTO_CLOSE("x-filter-auto-close");
 
     private final String _value;
 
