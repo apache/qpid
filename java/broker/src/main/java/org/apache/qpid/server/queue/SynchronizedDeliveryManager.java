@@ -122,6 +122,11 @@ class SynchronizedDeliveryManager implements DeliveryManager
         return new ArrayList<AMQMessage>(_messages);
     }
 
+    public void populatePreDeliveryQueue(Subscription subscription)
+    {
+        //no-op . This DM has no PreDeliveryQueues
+    }
+
     public synchronized void removeAMessageFromTop() throws AMQException
     {
         AMQMessage msg = poll();
@@ -243,7 +248,6 @@ class SynchronizedDeliveryManager implements DeliveryManager
                 else
                 {
                     s.send(msg, _queue);
-                    msg.setDeliveredToConsumer();
                 }
             }
         }
