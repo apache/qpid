@@ -712,6 +712,8 @@ public class CppGenerator extends Generator
 	protected String generateOpsInnerClasses(AmqpModel model, boolean serverFlag, int indentSize, int tabSize)
 		throws AmqpTypeMappingException
 	{
+		
+		String proxyClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		String indent = Utils.createSpaces(indentSize);
 		String tab = Utils.createSpaces(tabSize);
 		StringBuffer sb = new StringBuffer();
@@ -731,7 +733,7 @@ public class CppGenerator extends Generator
 				sb.append(cr);
 			sb.append(indent + "{" + cr);
 			sb.append(indent + "private:" + cr);
-			sb.append(indent + tab + "ProtocolVersion version;" + cr);
+			sb.append(indent + tab + proxyClassName+ "* parent;" + cr);
             sb.append(cr);
             sb.append(indent + tab + "// Constructors and destructors" + cr);
             sb.append(cr);
@@ -739,9 +741,7 @@ public class CppGenerator extends Generator
             sb.append(indent + tab + handlerClassName + "() {}" + cr);
 			sb.append(indent + "public:" + cr);
 			sb.append(indent + tab + handlerClassName +
-				"(u_int8_t major, u_int8_t minor) : version(major, minor) {}" + cr);
-			sb.append(indent + tab + handlerClassName +
-					"(ProtocolVersion version) : version(version) {}" + cr);
+				"(" + proxyClassName + "* _parent) {parent = _parent;}" + cr);
 			sb.append(indent + tab + "virtual ~" + handlerClassName + "() {}" + cr);
 			sb.append(cr);
 			sb.append(indent + tab + "// Protocol methods" + cr);
@@ -867,6 +867,7 @@ public class CppGenerator extends Generator
 		int indentSize, int tabSize)
 		throws AmqpTypeMappingException
 	{
+		String proxyClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		String indent = Utils.createSpaces(indentSize);
 		String tab = Utils.createSpaces(tabSize);
 		StringBuffer sb = new StringBuffer();
@@ -889,15 +890,13 @@ public class CppGenerator extends Generator
 			sb.append(indent + "{" + cr);
 			sb.append(indent + "private:" + cr);
             sb.append(indent + tab + "OutputHandler* out;" + cr);
-			sb.append(indent + tab + "ProtocolVersion version;" + cr);
+			sb.append(indent + tab + proxyClassName + "* parent;" + cr);
 			sb.append(cr);
 			sb.append(indent + "public:" + cr);
 			sb.append(indent + tab + "// Constructors and destructors" + cr);
 			sb.append(cr);
-			sb.append(indent + tab + className + "(OutputHandler* out, u_int8_t major, u_int8_t minor) : " + cr);
-			sb.append(indent + tab + tab + "out(out), version(major, minor) {}" + cr);
-			sb.append(indent + tab + className + "(OutputHandler* out, ProtocolVersion version) : " + cr);
-			sb.append(indent + tab + tab + "out(out), version(version) {}" + cr);
+			sb.append(indent + tab + className + "(OutputHandler* out, " + proxyClassName + "* _parent) : " + cr);
+			sb.append(indent + tab + tab + "out(out) {parent = _parent;}" + cr);
 			sb.append(indent + tab + "virtual ~" + className + "() {}" + cr);
 			sb.append(cr);
 			sb.append(indent + tab + "// Protocol methods" + cr);
@@ -916,6 +915,7 @@ public class CppGenerator extends Generator
         String superclassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Operations";
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer(indent + superclassName + "(major, minor)," + cr);
+		sb.append(indent + "version(major, minor)," + cr);
         sb.append(indent + "out(out)");
 		Iterator<String> cItr = model.classMap.keySet().iterator();
 		while (cItr.hasNext())
@@ -923,7 +923,7 @@ public class CppGenerator extends Generator
 			AmqpClass thisClass = model.classMap.get(cItr.next());
 			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			sb.append("," + cr);
-			sb.append(indent + instanceName + "(out, major, minor)");
+			sb.append(indent + instanceName + "(out, this)");
 			if (!cItr.hasNext())
 				sb.append(cr);
 		}
@@ -1072,7 +1072,7 @@ public class CppGenerator extends Generator
 		String tab = Utils.createSpaces(tabSize);
 		String namespace = version != null ? version.namespace() + "::" : "";
 		StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( channel," + cr);
-		sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( version");
+		sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
 		sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
 		sb.append(" )));" + cr);	
 		return sb.toString();		
@@ -1432,7 +1432,7 @@ public class CppGenerator extends Generator
         StringBuffer sb = new StringBuffer();
         if (method.fieldMap.size() > 0)
         {
-            sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion version," + cr);
+            sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion& version," + cr);
             sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
             sb.append(indent + tab + ") :" + cr);
             sb.append(indent + tab + "AMQMethodBody(version)," + cr);
