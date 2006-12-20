@@ -164,7 +164,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 subscription.enqueueForPreDelivery(message);
             }
-       }
+        }
     }
 
     public synchronized void removeAMessageFromTop() throws AMQException
@@ -187,11 +187,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
 
-    private AMQMessage getNextMessage(Queue<AMQMessage> messages)
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub)
     {
         AMQMessage message = messages.peek();
 
-        while (message != null && message.taken())
+        while (message != null && (sub.isBrowser() || message.taken()))
         {
             //remove the already taken message
             messages.poll();
@@ -201,12 +201,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return message;
     }
 
-    public void sendNextMessage(Subscription sub, Queue<AMQMessage> messageQueue, AMQQueue queue)
+    public void sendNextMessage(Subscription sub, Queue<AMQMessage> messageQueue)
     {
         AMQMessage message = null;
         try
         {
-            message = getNextMessage(messageQueue);
+            message = getNextMessage(messageQueue, sub);
 
             // message will be null if we have no messages in the messageQueue.
             if (message == null)
@@ -215,7 +215,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
             _log.info("Async Delivery Message:" + message + " to :" + sub);
 
-            sub.send(message, queue);
+            sub.send(message, _queue);
 
             //remove sent message from our queue.
             messageQueue.poll();
@@ -244,18 +244,30 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 if (!sub.isSuspended())
                 {
-                    if (sub.hasFilters())
-                    {
-                        sendNextMessage(sub, sub.getPreDeliveryQueue(), _queue);
-                    }
-                    else
-                    {
-                        sendNextMessage(sub, _messages, _queue);
-                    }
-                    
+                    sendNextMessage(sub);
+
                     hasSubscribers = true;
                 }
             }
+        }
+    }
+
+    private void sendNextMessage(Subscription sub)
+    {
+        if (sub.hasFilters())
+        {
+            sendNextMessage(sub, sub.getPreDeliveryQueue());
+            if (sub.isAutoClose())
+            {
+                if (sub.getPreDeliveryQueue().isEmpty())
+                {
+                    sub.close();
+                }
+            }
+        }
+        else
+        {
+            sendNextMessage(sub, _messages);
         }
     }
 
@@ -359,9 +371,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void processAsync(Executor executor)
     {
-        _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
-                   " Active:" + _subscriptions.hasActiveSubscribers() +
-                   " Processing:" + _processing.get());
+        _log.info("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
+                  " Active:" + _subscriptions.hasActiveSubscribers() +
+                  " Processing:" + _processing.get());
 
         if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
         {

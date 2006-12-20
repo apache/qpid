@@ -122,6 +122,21 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
         //no-op -- if selectors are implemented on RemoteSubscriptions then look at SubscriptionImpl
     }
 
+    public boolean isAutoClose()
+    {
+        return false;
+    }
+
+    public void close()
+    {
+        //no-op
+    }
+
+    public boolean isBrowser()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void sendNextMessage(AMQQueue queue)
     {
 
