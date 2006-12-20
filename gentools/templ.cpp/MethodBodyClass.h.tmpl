@@ -58,7 +58,7 @@ public:
 ${mb_constructor_with_initializers}
 
     inline ${CLASS}${METHOD}Body(u_int8_t major, u_int8_t minor): AMQMethodBody(major, minor) {}
-    inline ${CLASS}${METHOD}Body(ProtocolVersion version): AMQMethodBody(version) {}
+    inline ${CLASS}${METHOD}Body(ProtocolVersion& version): AMQMethodBody(version) {}
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods
