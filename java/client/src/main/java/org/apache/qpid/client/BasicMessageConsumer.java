@@ -554,6 +554,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     	msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
+            case Session.CLIENT_ACKNOWLEDGE:
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                break;
             case Session.DUPS_OK_ACKNOWLEDGE:
                 if (++_outstanding >= _prefetchHigh)
                 {
@@ -580,7 +586,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
                 break;
             case Session.SESSION_TRANSACTED:
-                _lastDeliveryTag = msg.getDeliveryTag();
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                else
+                {
+                    _lastDeliveryTag = msg.getDeliveryTag();
+                }
                 break;
         }
     }
