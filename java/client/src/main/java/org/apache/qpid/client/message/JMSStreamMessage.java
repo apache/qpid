@@ -86,6 +86,12 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
         super(messageNbr, contentHeader, data);
     }
 
+    public void reset()
+    {
+        super.reset();
+        _readableMessage = true;
+    }
+
     public String getMimeType()
     {
         return MIME_TYPE;
@@ -103,6 +109,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
     {
         checkWritable();
         _data.put(type);
+        _changedData = true;
     }
 
     public boolean readBoolean() throws JMSException
@@ -693,7 +700,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
             {
                 _data.putString(string, Charset.forName("UTF-8").newEncoder());
                 // we must write the null terminator ourselves
-                _data.put((byte)0);
+                _data.put((byte) 0);
             }
             catch (CharacterCodingException e)
             {
@@ -706,7 +713,7 @@ public class JMSStreamMessage extends AbstractBytesMessage implements StreamMess
 
     public void writeBytes(byte[] bytes) throws JMSException
     {
-        writeBytes(bytes, 0, bytes == null?0:bytes.length);
+        writeBytes(bytes, 0, bytes == null ? 0 : bytes.length);
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) throws JMSException
