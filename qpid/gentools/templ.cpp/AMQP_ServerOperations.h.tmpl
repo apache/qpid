@@ -38,6 +38,9 @@
 namespace qpid {
 namespace framing {
 
+class AMQP_ServerProxy;
+class AMQP_ClientProxy;
+
 class AMQP_ServerOperations
 {
 protected:
@@ -46,7 +49,7 @@ protected:
 
 public:
     AMQP_ServerOperations(u_int8_t major, u_int8_t minor) : version(major, minor) {}
-    AMQP_ServerOperations(ProtocolVersion version) : version(version) {}
+    AMQP_ServerOperations(ProtocolVersion& version) : version(version) {}
     virtual ~AMQP_ServerOperations() {}
 
     inline u_int8_t getMajor() const { return version.getMajor(); }
