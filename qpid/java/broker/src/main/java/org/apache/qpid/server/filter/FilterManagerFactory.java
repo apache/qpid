@@ -22,6 +22,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.AMQPFilterTypes;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,6 @@ public class FilterManagerFactory
     private final static org.apache.log4j.Logger _logger = org.apache.log4j.Logger.getLogger(FilterManagerFactory.class);
 
     //fixme move to a common class so it can be refered to from client code.
-    private static String JMS_SELECTOR_FILTER = "x-filter-jms-selector";
 
     public static FilterManager createManager(FieldTable filters) throws AMQException
     {
@@ -51,7 +51,7 @@ public class FilterManagerFactory
             {
                 String key = (String) it.next();
                 _logger.info("filter:" + key);
-                if (key.equals(JMS_SELECTOR_FILTER))
+                if (key.equals(AMQPFilterTypes.JMS_SELECTOR.getValue()))
                 {
                     String selector = (String) filters.get(key);
 
@@ -59,6 +59,11 @@ public class FilterManagerFactory
                     {
                         manager.add(new JMSSelectorFilter(selector));
                     }
+                }
+
+                if (key.equals(AMQPFilterTypes.NO_CONSUME.getValue()))
+                {
+                    manager.add(new NoConsumerFilter());
                 }
 
             }

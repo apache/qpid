@@ -46,6 +46,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -110,6 +112,7 @@ public class AMQChannel
     private TxAck ackOp;
 
     private final List<AMQDataBlock> _returns = new LinkedList<AMQDataBlock>();
+    private Set<Long> _browsedAcks = new HashSet<Long>();
 
     public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
@@ -555,7 +558,14 @@ public class AMQChannel
 
             for (UnacknowledgedMessage msg : acked)
             {
-                msg.discard();
+                if (!_browsedAcks.contains(deliveryTag))
+                {
+                    msg.discard();
+                }
+                else
+                {
+                    _browsedAcks.remove(deliveryTag);
+                }
             }
 
         }
@@ -572,7 +582,16 @@ public class AMQChannel
                 _log.trace("Single ack on delivery tag " + deliveryTag + " not known for channel:" + _channelId);
                 throw new AMQException("Single ack on delivery tag " + deliveryTag + " not known for channel:" + _channelId);
             }
-            msg.discard();
+
+            if (!_browsedAcks.contains(deliveryTag))
+            {
+                msg.discard();
+            }
+            else
+            {
+                _browsedAcks.remove(deliveryTag);
+            }
+
             if (_log.isTraceEnabled())
             {
                 _log.trace("Received non-multiple ack for messaging with delivery tag " + deliveryTag);
@@ -691,6 +710,12 @@ public class AMQChannel
             session.writeFrame(block);
         }
         _returns.clear();
+    }
+
+    public void addUnacknowledgedBrowsedMessage(AMQMessage msg, long deliveryTag, String consumerTag, AMQQueue queue)
+    {
+        _browsedAcks.add(deliveryTag);
+        addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
     }
 
     //we use this wrapper to ensure we are always using the correct
