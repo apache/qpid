@@ -258,7 +258,6 @@ void EventChannel::Descriptor::epollCtl(int op, uint32_t events) {
     int status = ::epoll_ctl(epollFd, op, myFd, &ee);
     if (status < 0)
         throw QPID_POSIX_ERROR(errno);
-    }
 }
     
 
