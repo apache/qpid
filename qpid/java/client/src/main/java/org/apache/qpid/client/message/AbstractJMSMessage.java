@@ -47,7 +47,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     protected ByteBuffer _data;
     private boolean _readableProperties = false;
-    private boolean _readableMessage = false;
+    protected boolean _readableMessage = false;
+    protected boolean _changedData;
     private Destination _destination;
     private BasicMessageConsumer _consumer;
 
@@ -61,6 +62,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         }
         _readableProperties = false;
         _readableMessage = (data != null);
+        _changedData = (data == null);
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data) throws AMQException
@@ -522,16 +524,16 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         return !_readableMessage;
     }
 
-    public void reset() 
+    public void reset()
     {
-        if (_readableMessage)
+        if (!_changedData)
         {
             _data.rewind();
         }
         else
         {
             _data.flip();
-            _readableMessage = true;
+            _changedData = false;
         }
     }
 

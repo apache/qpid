@@ -112,7 +112,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         }
 
     }
-
+  
     public Serializable getObject() throws JMSException
     {
         ObjectInputStream in = null;
@@ -123,18 +123,18 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
         try
         {
-        	_data.rewind();
+            _data.rewind();
             in = new ObjectInputStream(_data.asInputStream());
             return (Serializable) in.readObject();
         }
         catch (IOException e)
-        {           
-           e.printStackTrace();
-           throw new MessageFormatException("Could not deserialize message: " + e);
+        {
+            e.printStackTrace();
+            throw new MessageFormatException("Could not deserialize message: " + e);
         }
         catch (ClassNotFoundException e)
         {
-        	e.printStackTrace();
+            e.printStackTrace();
             throw new MessageFormatException("Could not deserialize message: " + e);
         }
         finally

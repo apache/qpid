@@ -59,6 +59,12 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         super(messageNbr, contentHeader, data);
     }
 
+    public void reset()
+    {
+        super.reset();
+        _readableMessage = true;
+    }
+
     public String getMimeType()
     {
         return MIME_TYPE;
@@ -226,48 +232,56 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
     public void writeBoolean(boolean b) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.put(b ? (byte) 1 : (byte) 0);
     }
 
     public void writeByte(byte b) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.put(b);
     }
 
     public void writeShort(short i) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putShort(i);
     }
 
     public void writeChar(char c) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putChar(c);
     }
 
     public void writeInt(int i) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putInt(i);
     }
 
     public void writeLong(long l) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putLong(l);
     }
 
     public void writeFloat(float v) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putFloat(v);
     }
 
     public void writeDouble(double v) throws JMSException
     {
         checkWritable();
+        _changedData = true;
         _data.putDouble(v);
     }
 
@@ -281,7 +295,7 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
             
             _data.putShort((short)encodedString.limit());
             _data.put(encodedString);
-
+            _changedData = true;
             //_data.putString(string, Charset.forName("UTF-8").newEncoder());
             // we must add the null terminator manually
             //_data.put((byte)0);
@@ -298,12 +312,14 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
     {
         checkWritable();
         _data.put(bytes);
+        _changedData = true;
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) throws JMSException
     {
         checkWritable();
         _data.put(bytes, offset, length);
+        _changedData = true;
     }
 
     public void writeObject(Object object) throws JMSException
