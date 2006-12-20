@@ -76,7 +76,7 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, msg->contentSize());
 
         DummyHandler handler;
-        msg->deliver(&handler, 0, "ignore", 0, 100); 
+        msg->deliver(&handler, 0, "ignore", 0, 100, &(qpid::framing::highestVersion)); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, handler.frames.size());
         AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
         CPPUNIT_ASSERT(contentBody);

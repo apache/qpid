@@ -31,7 +31,7 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize, MessageStore* const _store, u_int64_t _stagingThreshold) :
+Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, int _id, u_int32_t _framesize, MessageStore* const _store, u_int64_t _stagingThreshold) :
     id(_id), 
     out(_out), 
     currentDeliveryTag(1),
@@ -41,7 +41,8 @@ Channel::Channel(OutputHandler* _out, int _id, u_int32_t _framesize, MessageStor
     framesize(_framesize),
     tagGenerator("sgen"),
     store(_store),
-    messageBuilder(this, _store, _stagingThreshold){
+    messageBuilder(this, _store, _stagingThreshold),
+    version(_version){
 
     outstanding.reset();
 }
@@ -118,7 +119,7 @@ void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, Queue
         outstanding.count++;
     }
     //send deliver method, header and content(s)
-    msg->deliver(out, id, consumerTag, deliveryTag, framesize);
+    msg->deliver(out, id, consumerTag, deliveryTag, framesize, &version);
 }
 
 bool Channel::checkPrefetch(Message::shared_ptr& msg){
@@ -242,7 +243,7 @@ bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
     if(msg){
         Mutex::ScopedLock locker(deliveryLock);
         u_int64_t myDeliveryTag = currentDeliveryTag++;
-        msg->sendGetOk(out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize);
+        msg->sendGetOk(out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize, &version);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
@@ -253,5 +254,5 @@ bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
 }
 
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag){
-    msg->deliver(out, id, consumerTag, deliveryTag, framesize);
+    msg->deliver(out, id, consumerTag, deliveryTag, framesize, &version);
 }

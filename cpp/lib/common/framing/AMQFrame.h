@@ -35,6 +35,11 @@
 namespace qpid {
     namespace framing {
 
+	
+	// TODO - replace with generated file
+	// CCT
+	static ProtocolVersion highestVersion(8,0);
+
         class AMQFrame : virtual public AMQDataBlock
         {
             static AMQP_MethodVersionMap versionMap;
