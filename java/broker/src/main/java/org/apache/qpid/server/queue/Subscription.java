@@ -40,4 +40,9 @@ public interface Subscription
 
     void enqueueForPreDelivery(AMQMessage msg);
 
+    boolean isAutoClose();
+
+    void close();
+
+    boolean isBrowser();   
 }
