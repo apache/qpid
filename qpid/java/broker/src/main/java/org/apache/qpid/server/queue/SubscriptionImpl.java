@@ -160,32 +160,39 @@ public class SubscriptionImpl implements Subscription
     {
         if (msg != null)
         {
-            // if we do not need to wait for client acknowledgements
-            // we can decrement the reference count immediately. 
-
-            // By doing this _before_ the send we ensure that it
-            // doesn't get sent if it can't be dequeued, preventing
-            // duplicate delivery on recovery.
-
-            // The send may of course still fail, in which case, as
-            // the message is unacked, it will be lost.
-            if (!_acks)
+            try
             {
-                queue.dequeue(msg);
-            }
-            synchronized(channel)
-            {
-                long deliveryTag = channel.getNextDeliveryTag();
+                // if we do not need to wait for client acknowledgements
+                // we can decrement the reference count immediately.
 
-                if (_acks)
+                // By doing this _before_ the send we ensure that it
+                // doesn't get sent if it can't be dequeued, preventing
+                // duplicate delivery on recovery.
+
+                // The send may of course still fail, in which case, as
+                // the message is unacked, it will be lost.
+                if (!_acks)
                 {
-                    channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                    queue.dequeue(msg);
                 }
+                synchronized(channel)
+                {
+                    long deliveryTag = channel.getNextDeliveryTag();
 
-                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-                AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
+                    if (_acks)
+                    {
+                        channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                    }
 
-                protocolSession.writeFrame(frame);
+                    ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+                    AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
+
+                    protocolSession.writeFrame(frame);
+                }
+            }
+            finally
+            {
+                msg.setDeliveredToConsumer();
             }
         }
         else
@@ -218,19 +225,55 @@ public class SubscriptionImpl implements Subscription
     {
         if (_noLocal)
         {
-            return !(protocolSession.getClientProperties().get(ClientProperties.instance.toString()).equals(
-                    msg.getPublisher().getClientProperties().get(ClientProperties.instance.toString())));
+            // We don't want local messages so check to see if message is one we sent
+            if (protocolSession.getClientProperties().get(ClientProperties.instance.toString()).equals(
+                    msg.getPublisher().getClientProperties().get(ClientProperties.instance.toString())))
+            {
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
+                                  System.identityHashCode(msg) + ")");
+                }
+                return false;
+            }
+            else // if not then filter the message.
+            {
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("(" + System.identityHashCode(this) + ") local message(" + System.identityHashCode(msg) +
+                                  ") but not ours so filtering");
+                }
+                return checkFilters(msg);
+            }
         }
         else
         {
-            if (_filters != null)
+            if (_logger.isTraceEnabled())
             {
-                return _filters.allAllow(msg);
+                _logger.trace("(" + System.identityHashCode(this) + ") checking filters for message (" + System.identityHashCode(msg));
             }
-            else
+            return checkFilters(msg);
+        }
+    }
+
+    private boolean checkFilters(AMQMessage msg)
+    {
+        if (_filters != null)
+        {
+            if (_logger.isTraceEnabled())
             {
-                return true;
+                _logger.trace("(" + System.identityHashCode(this) + ") has filters.");
             }
+            return _filters.allAllow(msg);
+        }
+        else
+        {
+            if (_logger.isTraceEnabled())
+            {
+                _logger.trace("(" + System.identityHashCode(this) + ") has no filters");
+            }
+
+            return true;
         }
     }
 
