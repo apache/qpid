@@ -117,6 +117,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 {
                     _data.put(text.getBytes(getJmsContentHeaderProperties().getEncoding()));
                 }
+                _changedData=true;
             }
             _decodedValue = text;
         }
