@@ -25,6 +25,8 @@
 #include <qpid_test_plugin.h>
 #include <sstream>
 #include <typeinfo>
+#include <AMQP_HighestVersion.h>
+
 
 using namespace qpid::framing;
 
@@ -54,7 +56,7 @@ class FramingTest : public CppUnit::TestCase
 
   public:
 
-    FramingTest() : buffer(100), v(qpid::framing::highestVersion){}
+    FramingTest() : buffer(100), v(qpid::framing::highestProtocolVersion){}
 
     void testBasicQosBody() 
     {
