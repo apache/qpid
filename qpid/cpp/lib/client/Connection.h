@@ -36,6 +36,7 @@
 #include <MessageListener.h>
 #include <ClientQueue.h>
 #include <ResponseHandler.h>
+#include <AMQP_HighestVersion.h>
 
 namespace qpid {
 
@@ -104,7 +105,7 @@ namespace client {
          * client will accept. Optional and defaults to 65536.
          */
 	Connection( bool debug = false, u_int32_t max_frame_size = 65536, 
-			qpid::framing::ProtocolVersion* _version = &(qpid::framing::highestVersion));
+			qpid::framing::ProtocolVersion* _version = &(qpid::framing::highestProtocolVersion));
 	~Connection();
 
         /**
