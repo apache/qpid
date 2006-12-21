@@ -24,7 +24,7 @@ run_test() {
 }
 
 run_test ./client_test
-run_test ./topictest -l2 -m2 -b1
+run_test ./topictest -s2 -m2 -b1
 
 # Run the python tests.
 if test -d ../../python ;  then

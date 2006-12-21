@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run the c++ or topic test
+# Run the C++ topic test
 
 # Defaults
 SUBSCRIBERS=10
@@ -12,7 +12,7 @@ while getopts "s:m:b:" opt ; do
 	m) MESSAGES=$OPTARG ;;
 	b) BATCHES=$OPTARG ;;
 	?)
-	    echo "Usage: %0 [-l <subscribers>] [-m <messages.] [-b <batches>]"
+	    echo "Usage: %0 [-s <subscribers>] [-m <messages.] [-b <batches>]"
 	    exit 1
 	    ;;
     esac
