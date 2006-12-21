@@ -9,11 +9,7 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-# FIXME: have e.g., topicall, run as part of "make check"?
 EXTRA_DIST =		\
-  env			\
-  broker		\
-  topicall		\
   topictest		\
   qpid_test_plugin.h	\
   MockSessionHandler.h
