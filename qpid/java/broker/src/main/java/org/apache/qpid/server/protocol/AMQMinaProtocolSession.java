@@ -316,8 +316,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _channelMap.get(channelId);
     }
 
-    public void addChannel(AMQChannel channel)
+    public void addChannel(AMQChannel channel) throws AMQException
     {
+        if (_closed)
+        {
+            throw new AMQException("Session is closed");    
+        }
+
         _channelMap.put(channel.getChannelId(), channel);
         checkForNotification();
     }

@@ -28,11 +28,9 @@ import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.AMQException;
 
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
 import javax.management.JMException;
-import java.util.ArrayList;
 
 /**
  * Test class to test MBean operations for AMQMinaProtocolSession.
@@ -56,20 +54,11 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         channelCount = _mbean.channels().size();
         assertTrue(channelCount == 2);
 
-        // check the channel closing
-        _mbean.closeChannel(1);
-        TabularData channels = _mbean.channels();
-        ArrayList<CompositeData> list = new ArrayList<CompositeData>(channels.values());
-        channelCount = list.size();
-        assertTrue(channelCount == 1);
-        CompositeData channelData = list.get(0);
-        assertEquals(channelData.get("Channel Id"), new Integer(2));
-
         // general properties test
         _mbean.setMaximumNumberOfChannels(1000L);
         assertTrue(_mbean.getMaximumNumberOfChannels() == 1000L);
 
-        // check if the rollback and commit APIs
+        // check APIs
         AMQChannel channel3 = new AMQChannel(3, _messageStore, null);
         channel3.setTransactional(true);
         _protocolSession.addChannel(channel3);
@@ -94,10 +83,13 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         _mbean.closeConnection();
         try
         {
-            _mbean.closeChannel(5);
+            channelCount = _mbean.channels().size();
+            assertTrue(channelCount == 0);
+            // session is now closed so adding another channel should throw an exception
+            _protocolSession.addChannel(new AMQChannel(6, _messageStore, null));
             fail();
         }
-        catch(JMException ex)
+        catch(AMQException ex)
         {
             System.out.println("expected exception is thrown :" + ex.getMessage());
         }
