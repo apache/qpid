@@ -114,15 +114,6 @@ public interface ManagedConnection
     void rollbackTransactions(@MBeanOperationParameter(name="channel Id", description="channel Id")int channelId) throws JMException;
 
     /**
-     * Unsubscribes the consumers and unregisters the channel from managed objects.
-     */
-    @MBeanOperation(name="closeChannel",
-                    description="Closes the channel with given channel Id and connected consumers will be unsubscribed",
-                    impact= MBeanOperationInfo.ACTION)
-    void closeChannel(@MBeanOperationParameter(name="channel Id", description="channel Id")int channelId)
-        throws Exception;
-
-    /**
      * Closes all the related channels and unregisters this connection from managed objects.
      */
     @MBeanOperation(name="closeConnection",
