@@ -22,10 +22,9 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.common.QpidProperties;
 
-import java.util.Enumeration;
-
 import javax.jms.ConnectionMetaData;
 import javax.jms.JMSException;
+import java.util.Enumeration;
 
 public class QpidConnectionMetaData implements ConnectionMetaData
 {
@@ -90,7 +89,7 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public String getClientVersion()
     {
-        return QpidProperties.getBuildVerision();
+        return QpidProperties.getBuildVersion();
     }
 
 

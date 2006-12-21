@@ -20,27 +20,65 @@
  */
 package org.apache.qpid.common;
 
+import java.util.Properties;
+import java.io.IOException;
+
 public class QpidProperties
 {
+    public static final String VERSION_RESOURCE = "version.properties";
 
+    public static final String PRODUCT_NAME_PROPERTY = "qpid.name";
+    public static final String RELEASE_VERSION_PROPERTY = "qpid.version";
+    public static final String BUILD_VERSION_PROPERTY = "qpid.svnversion";
+
+    private static final String DEFAULT = "unknown";
+
+    private static String productName = DEFAULT;
+    private static String releaseVersion = DEFAULT;
+    private static String buildVersion = DEFAULT;
+
+    /** Loads the values from the version properties file. */
     static
     {
-        //load values from property file.
+        Properties props = new Properties();
+
+        try
+        {
+            props.load(QpidProperties.class.getClassLoader().getResourceAsStream(VERSION_RESOURCE));
+
+            productName = props.getProperty(PRODUCT_NAME_PROPERTY);
+            releaseVersion = props.getProperty(RELEASE_VERSION_PROPERTY);
+            buildVersion = props.getProperty(BUILD_VERSION_PROPERTY);
+        }
+        catch (IOException e)
+        {
+            // Log a warning about this and leave the values initialized to unknown.
+            System.err.println("Could not load version.properties resource.");
+        }
     }
 
     public static String getProductName()
     {
-        return "Qpid";
+        return productName;
     }
 
-    public static String getReleaseVerision()
+    public static String getReleaseVersion()
     {
-        return "1.0";
+        return releaseVersion;
     }
 
-
-    public static String getBuildVerision()
+    public static String getBuildVersion()
     {
-        return "1";
+        return buildVersion;
+    }
+
+    public static String getVersionString()
+    {
+        return getProductName() + " - " + getReleaseVersion() + " build: " + getBuildVersion();
+    }
+
+    public static void main(String[] args)
+    {
+        System.out.println(getVersionString());
     }
 }
