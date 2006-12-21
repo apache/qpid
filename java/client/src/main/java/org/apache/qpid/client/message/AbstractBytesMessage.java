@@ -21,23 +21,20 @@
 package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 
 import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
 import javax.jms.MessageEOFException;
-import javax.jms.MessageNotWriteableException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharacterCodingException;
 
 /**
  * @author Apache Software Foundation
  */
 public abstract class AbstractBytesMessage extends AbstractJMSMessage
-{    
+{
 
     /**
      * The default initial size of the buffer. The buffer expands automatically.
@@ -79,7 +76,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     {
         _data.clear();
     }
-    
+
     public String toBodyString() throws JMSException
     {
         checkReadable();
@@ -124,7 +121,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
             return data;
         }
     }
-    
+
     /**
      * Check that there is at least a certain number of bytes available to read
      *
@@ -138,10 +135,4 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
             throw new MessageEOFException("Unable to read " + len + " bytes");
         }
     }
-
-    public void reset() throws JMSException
-    {
-        super.reset();
-        _data.flip();
-    }    
 }

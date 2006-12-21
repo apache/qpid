@@ -20,24 +20,25 @@
  */
 package org.apache.qpid.IBMPerfTest;
 
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.jms.*;
-import java.util.Hashtable;
 import java.io.File;
-import java.net.MalformedURLException;
+import java.util.Hashtable;
 
 public class JNDIBindQueue
-{    
-    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + "/IBMPerfTestsJNDI";
+{
+    public static final String DEFAULT_PROVIDER_FILE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "IBMPerfTestsJNDI";
     public static final String PROVIDER_URL = "file://" + DEFAULT_PROVIDER_FILE_PATH;
     public static final String FSCONTEXT_FACTORY = "com.sun.jndi.fscontext.RefFSContextFactory";
 
@@ -98,7 +99,7 @@ public class JNDIBindQueue
             }
             catch (JMSException closeE)
             {
-
+                System.out.println("Connection closing failed: " + closeE);    
             }
         }
 
