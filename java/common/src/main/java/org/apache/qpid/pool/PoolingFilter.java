@@ -58,6 +58,9 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
             Job job = getJobForSession(session);
             job.acquire(); //prevents this job being removed from _jobs
             job.add(event);
+
+            //Additional checks on pool to check that it hasn't shutdown.
+            // The alternative is to catch the RejectedExecutionException that will result from executing on a shutdown pool
             if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
             {
                 _poolReference.getPool().execute(job);
@@ -100,7 +103,9 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
         }
         else
         {
-            if (job.activate())
+            // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
+            //                       Can the pool be shutdown at this point?
+            if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
             {
                 _poolReference.getPool().execute(job);
             }
@@ -184,3 +189,4 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
         _poolReference.releaseExecutorService();
     }
 }
+

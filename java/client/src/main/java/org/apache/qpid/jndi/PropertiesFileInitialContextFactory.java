@@ -25,6 +25,7 @@ import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
@@ -177,21 +178,15 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             return null;
         }
 
-        if (binding.getExchangeClass().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        try
         {
-            return createTopic(binding);
+            return AMQDestination.createDestination(binding);
         }
-        else if (binding.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        catch (IllegalArgumentException iaw)
         {
-            return createQueue(binding);
+            _logger.warn("Binding: '" + binding + "' not supported");
+            return null;
         }
-        else if (binding.getExchangeClass().equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
-        {
-            return createHeaderExchange(binding);
-        }
-
-        _logger.warn("Binding: '" + binding + "' not supported");
-        return null;
     }
 
     /**

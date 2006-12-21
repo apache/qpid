@@ -99,7 +99,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         _queueName = queueName;
     }
 
-    public abstract String getEncodedName();
+    public String getEncodedName()
+    {
+        return toURL();
+    }
 
     public boolean isDurable()
     {
@@ -244,7 +247,7 @@ public abstract class AMQDestination implements Destination, Referenceable
             return false;
         }
         if ((_queueName == null && that._queueName != null) ||
-                (_queueName != null && !_queueName.equals(that._queueName)))
+            (_queueName != null && !_queueName.equals(that._queueName)))
         {
             return false;
         }
@@ -281,5 +284,27 @@ public abstract class AMQDestination implements Destination, Referenceable
                 new StringRefAddr(this.getClass().getName(), toURL()),
                 AMQConnectionFactory.class.getName(),
                 null);          // factory location
+    }
+
+    public static Destination createDestination(BindingURL binding)
+    {
+        String type = binding.getExchangeClass();
+
+        if (type.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        {
+            return new AMQQueue(binding);
+        }
+        else if (type.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        {
+            return new AMQTopic(binding);
+        }
+        else if (type.equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
+        {
+            return new AMQHeadersExchange(binding);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown Exchange Class:" + type + " in binding:" + binding);
+        }
     }
 }

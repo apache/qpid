@@ -61,11 +61,6 @@ public class AMQTopic extends AMQDestination implements Topic
         return super.getDestinationName();
     }
 
-    public String getEncodedName()
-    {
-        return 'T' + getDestinationName();
-    }
-
      public String getRoutingKey()
     {
         return getDestinationName();
