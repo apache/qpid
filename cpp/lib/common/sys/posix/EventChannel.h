@@ -125,20 +125,7 @@ class Event
   friend class EventChannel::Queue;
 };
 
-/**
- * An event that does not wait for anything, it is processed
- * immediately by one of the channel threads.
- */
-class DispatchEvent : public Event {
-  public:
-    DispatchEvent(Callback cb=0) : Event(cb) {}
-
-  protected:
-    void prepare(EventChannel::Impl&);
-    void complete(EventChannel::Descriptor&);
-};
-
-// Utility base class.
+/** Base class for events related to a file descriptor */
 class FDEvent : public Event {
   public:
     int getDescriptor() const { return descriptor; }
@@ -149,7 +136,7 @@ class FDEvent : public Event {
     int descriptor;
 };
 
-// Utility base class
+/** Base class for read or write events. */
 class IOEvent : public FDEvent {
   public:
     size_t getSize() const { return size; }

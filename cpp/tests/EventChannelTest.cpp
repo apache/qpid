@@ -47,7 +47,6 @@ struct RunMe : public Runnable
 class EventChannelTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(EventChannelTest);
-    CPPUNIT_TEST(testDispatch);
     CPPUNIT_TEST(testRead);
     CPPUNIT_TEST(testPartialRead);
     CPPUNIT_TEST(testFailedRead);
@@ -86,18 +85,6 @@ class EventChannelTest : public CppUnit::TestCase
         return &event == next;
     }
         
-    void testDispatch()
-    {
-        RunMe runMe;
-        CPPUNIT_ASSERT(!runMe.ran);
-        // Instances of Event just pass thru the channel immediately.
-        DispatchEvent e(runMe.functor());
-        ec->post(e);
-        CPPUNIT_ASSERT(isNextEventOk(e));
-        e.dispatch();
-        CPPUNIT_ASSERT(runMe.ran);
-    }
-
     void testRead() {
         ReadEvent re(pipe[0], readBuf, size);
         ec->post(re);
