@@ -58,7 +58,7 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
             Job job = getJobForSession(session);
             job.acquire(); //prevents this job being removed from _jobs
             job.add(event);
-            if (job.activate())
+            if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
             {
                 _poolReference.getPool().execute(job);
             }

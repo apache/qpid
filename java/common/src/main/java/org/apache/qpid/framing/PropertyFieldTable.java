@@ -52,6 +52,7 @@ public class PropertyFieldTable implements FieldTable, Map
     public static final char LONG_PROPERTY_PREFIX = 'l';
     public static final char FLOAT_PROPERTY_PREFIX = 'f';
     public static final char DOUBLE_PROPERTY_PREFIX = 'd';
+    public static final char NULL_STRING_PROPERTY_PREFIX = 'n';
 
     public static final char STRING_PROPERTY_PREFIX = AMQP_STRING_PROPERTY_PREFIX;
     public static final char CHAR_PROPERTY_PREFIX = AMQP_ASCII_STRING_PROPERTY_PREFIX;
@@ -79,7 +80,7 @@ public class PropertyFieldTable implements FieldTable, Map
 
     private LinkedHashMap<String, Object> _properties;
     private LinkedHashMap<String, String> _propertyNamesTypeMap;
-    private long _encodedSize = 0;
+    private long _encodedSize = 0;//EncodingUtils.unsignedIntegerLength();
 
     public PropertyFieldTable()
     {
@@ -138,7 +139,7 @@ public class PropertyFieldTable implements FieldTable, Map
     public Boolean getBoolean(String string)
     {
         Object o = get(string, BOOLEAN_PROPERTY_PREFIX);
-        if (o != null)
+        if (o != null && o instanceof Boolean)
         {
             return (Boolean) o;
         }
@@ -209,7 +210,7 @@ public class PropertyFieldTable implements FieldTable, Map
         }
         else
         {
-            return null;
+            return null;     //Float.valueOf(null); ???
         }
     }
 
@@ -235,7 +236,45 @@ public class PropertyFieldTable implements FieldTable, Map
         }
         else
         {
-            return null;
+
+
+            String type = _propertyNamesTypeMap.get(string);
+
+            if (type == null || type.equals("" + NULL_STRING_PROPERTY_PREFIX))
+            {
+                return null;
+            }
+            else
+            {
+                char itype = type.charAt(0);
+
+                Object value = _properties.get(string);
+
+                switch (itype)
+                {
+                    case STRING_PROPERTY_PREFIX:
+                    case BYTES_PROPERTY_PREFIX:
+                        return null;
+                    default:
+                    case BYTE_PROPERTY_PREFIX:
+                    case BOOLEAN_PROPERTY_PREFIX:
+                    case SHORT_PROPERTY_PREFIX:
+                    case INT_PROPERTY_PREFIX:
+                    case LONG_PROPERTY_PREFIX:
+                    case FLOAT_PROPERTY_PREFIX:
+                    case DOUBLE_PROPERTY_PREFIX:
+                        return String.valueOf(value);
+                    case CHAR_PROPERTY_PREFIX:
+                        if (value == null)
+                        {
+                            throw new NullPointerException("null char cannot be converted to String");
+                        }
+                        else
+                        {
+                            return String.valueOf(value);
+                        }
+                }
+            }
         }
     }
 
@@ -309,7 +348,14 @@ public class PropertyFieldTable implements FieldTable, Map
 
     public Object setString(String string, String string1)
     {
-        return put(STRING_PROPERTY_PREFIX + string, string1);
+        if (string1 == null)
+        {
+            return put(NULL_STRING_PROPERTY_PREFIX + string, null);
+        }
+        else
+        {
+            return put(STRING_PROPERTY_PREFIX + string, string1);
+        }
     }
 
     public Object setChar(String string, char c)
@@ -902,6 +948,8 @@ public class PropertyFieldTable implements FieldTable, Map
         }
 
         EncodingUtils.writeUnsignedInteger(buffer, _encodedSize);
+        //EncodingUtils.writeLong(buffer, _encodedSize);
+
 
         putDataInBuffer(buffer);
     }
@@ -959,7 +1007,17 @@ public class PropertyFieldTable implements FieldTable, Map
         String propertyName = key.substring(1);
         char propertyPrefix = _propertyNamesTypeMap.get(propertyName).charAt(0);
 
-        if (value != null)
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Put:" + propertyName +
+                          " encoding Now:" + _encodedSize +
+                          " name size= " + EncodingUtils.encodedShortStringLength(propertyName) +
+                          " value size= " + getEncodingSize(key, value));
+        }
+
+        // This prevents the item from being sent.
+        // JMS needs these propertyNames for lookups.
+        //if (value != null)
         {
             //Add the size of the propertyName
             _encodedSize += EncodingUtils.encodedShortStringLength(propertyName);
@@ -970,6 +1028,11 @@ public class PropertyFieldTable implements FieldTable, Map
 
             //Add the size of the content
             _encodedSize += getEncodingSize(key, value);
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Put: new encodingSize " + _encodedSize);
         }
 
         _properties.put((String) propertyName, value);
@@ -1046,6 +1109,7 @@ public class PropertyFieldTable implements FieldTable, Map
 
     private void putDataInBuffer(ByteBuffer buffer)
     {
+
         final Iterator it = _properties.entrySet().iterator();
 
         //If there are values then write out the encoded Size... could check _encodedSize != 0
@@ -1054,84 +1118,115 @@ public class PropertyFieldTable implements FieldTable, Map
 
         while (it.hasNext())
         {
+
             Map.Entry me = (Map.Entry) it.next();
             String propertyName = (String) me.getKey();
 
             //The type value
             char propertyPrefix = _propertyNamesTypeMap.get(propertyName).charAt(0);
-            //The actual param name skipping type
 
-            EncodingUtils.writeShortStringBytes(buffer, propertyName);
             Object value = me.getValue();
-
-            switch (propertyPrefix)
+            try
             {
 
-                case BOOLEAN_PROPERTY_PREFIX:
-                    buffer.put((byte) BOOLEAN_PROPERTY_PREFIX);
-                    EncodingUtils.writeBoolean(buffer, (Boolean) value);
-                    break;
-                case BYTE_PROPERTY_PREFIX:
-                    buffer.put((byte) BYTE_PROPERTY_PREFIX);
-                    EncodingUtils.writeByte(buffer, (Byte) value);
-                    break;
-                case SHORT_PROPERTY_PREFIX:
-                    buffer.put((byte) SHORT_PROPERTY_PREFIX);
-                    EncodingUtils.writeShort(buffer, (Short) value);
-                    break;
-                case INT_PROPERTY_PREFIX:
-                    buffer.put((byte) INT_PROPERTY_PREFIX);
-                    EncodingUtils.writeInteger(buffer, (Integer) value);
-                    break;
-                case AMQP_UNSIGNEDINT_PROPERTY_PREFIX: // Currently we don't create these
-                    buffer.put((byte) AMQP_UNSIGNEDINT_PROPERTY_PREFIX);
-                    EncodingUtils.writeUnsignedInteger(buffer, (Long) value);
-                    break;
-                case LONG_PROPERTY_PREFIX:
-                    buffer.put((byte) LONG_PROPERTY_PREFIX);
-                    EncodingUtils.writeLong(buffer, (Long) value);
-                    break;
-                case FLOAT_PROPERTY_PREFIX:
-                    buffer.put((byte) FLOAT_PROPERTY_PREFIX);
-                    EncodingUtils.writeFloat(buffer, (Float) value);
-                    break;
-                case DOUBLE_PROPERTY_PREFIX:
-                    buffer.put((byte) DOUBLE_PROPERTY_PREFIX);
-                    EncodingUtils.writeDouble(buffer, (Double) value);
-                    break;
-
-                case AMQP_WIDE_STRING_PROPERTY_PREFIX:
-                    //case AMQP_STRING_PROPERTY_PREFIX:
-                case STRING_PROPERTY_PREFIX:
-                    // TODO: look at using proper charset encoder
-                    buffer.put((byte) STRING_PROPERTY_PREFIX);
-                    EncodingUtils.writeLongStringBytes(buffer, (String) value);
-                    break;
-
-                    //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
-                case CHAR_PROPERTY_PREFIX:
-                    // TODO: look at using proper charset encoder
-                    buffer.put((byte) CHAR_PROPERTY_PREFIX);
-                    EncodingUtils.writeShortStringBytes(buffer, "" + (Character) value);
-                    break;
-
-                case BYTES_PROPERTY_PREFIX:
-                    buffer.put((byte) BYTES_PROPERTY_PREFIX);
-                    EncodingUtils.writeBytes(buffer, (byte[]) value);
-                    break;
-
-                case XML_PROPERTY_PREFIX:
-                    // Encode as XML
-                    buffer.put((byte) XML_PROPERTY_PREFIX);
-                    EncodingUtils.writeLongStringBytes(buffer, valueAsXML(propertyPrefix + propertyName, value));
-                    break;
-                default:
+                if (_logger.isDebugEnabled())
                 {
-                    // Should never get here
-                    throw new IllegalArgumentException("Key '" + propertyName + "': Unsupported type in field table, type: " + ((value == null) ? "null-object" : value.getClass()));
+                    _logger.debug("Writing Property:" + propertyName +
+                                  " Type:" + propertyPrefix +
+                                  " Value:" + value);
+                    _logger.debug("Buffer Position:" + buffer.position() +
+                                  " Remaining:" + buffer.remaining());
+                }
+
+                //The actual param name skipping type
+                EncodingUtils.writeShortStringBytes(buffer, propertyName);
+
+
+                switch (propertyPrefix)
+                {
+
+                    case BOOLEAN_PROPERTY_PREFIX:
+                        buffer.put((byte) BOOLEAN_PROPERTY_PREFIX);
+                        EncodingUtils.writeBoolean(buffer, (Boolean) value);
+                        break;
+                    case BYTE_PROPERTY_PREFIX:
+                        buffer.put((byte) BYTE_PROPERTY_PREFIX);
+                        EncodingUtils.writeByte(buffer, (Byte) value);
+                        break;
+                    case SHORT_PROPERTY_PREFIX:
+                        buffer.put((byte) SHORT_PROPERTY_PREFIX);
+                        EncodingUtils.writeShort(buffer, (Short) value);
+                        break;
+                    case INT_PROPERTY_PREFIX:
+                        buffer.put((byte) INT_PROPERTY_PREFIX);
+                        EncodingUtils.writeInteger(buffer, (Integer) value);
+                        break;
+                    case AMQP_UNSIGNEDINT_PROPERTY_PREFIX: // Currently we don't create these
+                        buffer.put((byte) AMQP_UNSIGNEDINT_PROPERTY_PREFIX);
+                        EncodingUtils.writeUnsignedInteger(buffer, (Long) value);
+                        break;
+                    case LONG_PROPERTY_PREFIX:
+                        buffer.put((byte) LONG_PROPERTY_PREFIX);
+                        EncodingUtils.writeLong(buffer, (Long) value);
+                        break;
+                    case FLOAT_PROPERTY_PREFIX:
+                        buffer.put((byte) FLOAT_PROPERTY_PREFIX);
+                        EncodingUtils.writeFloat(buffer, (Float) value);
+                        break;
+                    case DOUBLE_PROPERTY_PREFIX:
+                        buffer.put((byte) DOUBLE_PROPERTY_PREFIX);
+                        EncodingUtils.writeDouble(buffer, (Double) value);
+                        break;
+                    case NULL_STRING_PROPERTY_PREFIX:
+                        buffer.put((byte) NULL_STRING_PROPERTY_PREFIX);
+                        break;
+                    case AMQP_WIDE_STRING_PROPERTY_PREFIX:
+                        //case AMQP_STRING_PROPERTY_PREFIX:
+                    case STRING_PROPERTY_PREFIX:
+                        // TODO: look at using proper charset encoder
+                        buffer.put((byte) STRING_PROPERTY_PREFIX);
+                        EncodingUtils.writeLongStringBytes(buffer, (String) value);
+                        break;
+
+                        //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
+                    case CHAR_PROPERTY_PREFIX:
+                        // TODO: look at using proper charset encoder
+                        buffer.put((byte) CHAR_PROPERTY_PREFIX);
+                        EncodingUtils.writeShortStringBytes(buffer, "" + (Character) value);
+                        break;
+
+                    case BYTES_PROPERTY_PREFIX:
+                        buffer.put((byte) BYTES_PROPERTY_PREFIX);
+                        EncodingUtils.writeBytes(buffer, (byte[]) value);
+                        break;
+
+                    case XML_PROPERTY_PREFIX:
+                        // Encode as XML
+                        buffer.put((byte) XML_PROPERTY_PREFIX);
+                        EncodingUtils.writeLongStringBytes(buffer, valueAsXML(propertyPrefix + propertyName, value));
+                        break;
+                    default:
+                    {
+                        // Should never get here
+                        throw new IllegalArgumentException("Key '" + propertyName + "': Unsupported type in field table, type: " + ((value == null) ? "null-object" : value.getClass()));
+                    }
                 }
             }
+            catch (Exception e)
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Exception thrown:" + e);
+                    _logger.debug("Writing Property:" + propertyName +
+                                  " Type:" + propertyPrefix +
+                                  " Value:" + value);
+                    _logger.debug("Buffer Position:" + buffer.position() +
+                                  " Remaining:" + buffer.remaining());
+                }
+                throw new RuntimeException(e);
+            }
         }
+
     }
 
 
@@ -1180,6 +1275,9 @@ public class PropertyFieldTable implements FieldTable, Map
                 case STRING_PROPERTY_PREFIX:
                     value = EncodingUtils.readLongString(buffer);
                     break;
+                case NULL_STRING_PROPERTY_PREFIX:
+                    value = null;
+                    break;
                     //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
                 case CHAR_PROPERTY_PREFIX:
                     value = EncodingUtils.readShortString(buffer).charAt(0);
@@ -1207,6 +1305,12 @@ public class PropertyFieldTable implements FieldTable, Map
             if (type != XML_PROPERTY_PREFIX)
             {
                 setObject(key, value);
+                if (value == null)
+                {
+                    _logger.debug("setFromBuffer: value is null for key:" + key);
+                    _propertyNamesTypeMap.put(key, "" + type);
+                    _properties.put(key, null);
+                }
             }
         }
 
@@ -1224,47 +1328,50 @@ public class PropertyFieldTable implements FieldTable, Map
      */
     private static int getEncodingSize(String name, Object value)
     {
-        int encodingSize;
+        int encodingSize = 1; // Initialy 1 to cover the char prefix
 
         char propertyPrefix = name.charAt(0);
 
         switch (propertyPrefix)
         {
             case BOOLEAN_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedBooleanLength();
+                encodingSize += EncodingUtils.encodedBooleanLength();
                 break;
             case BYTE_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedByteLength();
+                encodingSize += EncodingUtils.encodedByteLength();
                 break;
             case SHORT_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedShortLength();
+                encodingSize += EncodingUtils.encodedShortLength();
                 break;
             case INT_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedIntegerLength();
+                encodingSize += EncodingUtils.encodedIntegerLength();
                 break;
             case LONG_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedLongLength();
+                encodingSize += EncodingUtils.encodedLongLength();
                 break;
             case FLOAT_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedFloatLength();
+                encodingSize += EncodingUtils.encodedFloatLength();
                 break;
             case DOUBLE_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedDoubleLength();
+                encodingSize += EncodingUtils.encodedDoubleLength();
                 break;
             case AMQP_WIDE_STRING_PROPERTY_PREFIX:
                 //case AMQP_STRING_PROPERTY_PREFIX:
             case STRING_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedLongStringLength((String) value);
+                encodingSize += EncodingUtils.encodedLongStringLength((String) value);
+                break;
+            case NULL_STRING_PROPERTY_PREFIX:
+                // There is no need for additiona size beyond the prefix 
                 break;
                 //case AMQP_ASCII_STRING_PROPERTY_PREFIX:
             case CHAR_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedShortStringLength("" + (Character) value);
+                encodingSize += EncodingUtils.encodedShortStringLength("" + (Character) value);
                 break;
             case BYTES_PROPERTY_PREFIX:
-                encodingSize = 1 + ((byte[]) value).length;
+                encodingSize += 1 + ((byte[]) value).length;
                 break;
             case XML_PROPERTY_PREFIX:
-                encodingSize = 1 + EncodingUtils.encodedLongStringLength(valueAsXML(name, value));
+                encodingSize += EncodingUtils.encodedLongStringLength(valueAsXML(name, value));
                 break;
             default:
                 //encodingSize = 1 + EncodingUtils.encodedLongStringLength(String.valueOf(value));

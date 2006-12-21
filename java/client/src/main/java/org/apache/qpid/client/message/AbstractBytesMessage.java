@@ -59,9 +59,14 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
 
         if (_data == null)
         {
-            _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
-            _data.setAutoExpand(true);
+            allocateInitialBuffer();
         }
+    }
+
+    private void allocateInitialBuffer()
+    {
+        _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
+        _data.setAutoExpand(true);
     }
 
     AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
@@ -74,7 +79,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
 
     public void clearBodyImpl() throws JMSException
     {
-        _data.clear();
+        allocateInitialBuffer();
     }
 
     public String toBodyString() throws JMSException
