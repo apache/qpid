@@ -21,8 +21,6 @@
 package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.PropertyFieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.framing.JMSPropertyFieldTable;
@@ -31,7 +29,6 @@ import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 import java.util.Enumeration;
 
 public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessage

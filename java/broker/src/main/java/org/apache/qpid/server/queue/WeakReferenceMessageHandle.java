@@ -103,6 +103,11 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return _redelivered;
     }
 
+    public void setRedelivered(boolean redelivered)
+    {
+        _redelivered = redelivered;
+    }
+
     public boolean isPersistent(long messageId) throws AMQException
     {
         //todo remove literal values to a constant file such as AMQConstants in common

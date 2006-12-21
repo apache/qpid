@@ -54,7 +54,6 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -139,6 +138,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * The last error code that occured on the connection. Used to return the correct exception to the client
     */
     private AMQException _lastAMQException = null;
+
+
+    /*
+     * The connection meta data
+     */
+    private QpidConnectionMetaData _connectionMetaData;
 
     public AMQConnection(String broker, String username, String password,
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
@@ -282,6 +287,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             throw e;
         }
+        _connectionMetaData = new QpidConnectionMetaData(this);
     }
 
     protected boolean checkException(Throwable thrown)
@@ -551,7 +557,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public ConnectionMetaData getMetaData() throws JMSException
     {
         checkNotClosed();
-        return QpidConnectionMetaData.instance();
+        return _connectionMetaData;
         
     }
 

@@ -436,6 +436,11 @@ public class AMQMessage
         return _messageHandle.isRedelivered();
     }
 
+    public void setRedelivered(boolean redelivered)
+    {
+        _messageHandle.setRedelivered(redelivered);
+    }
+
     /**
      * Called when this message is delivered to a consumer. (used to
      * implement the 'immediate' flag functionality).

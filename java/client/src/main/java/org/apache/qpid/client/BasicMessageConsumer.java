@@ -22,6 +22,8 @@ package org.apache.qpid.client;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
@@ -36,7 +38,10 @@ import org.apache.qpid.jms.Session;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import java.util.concurrent.SynchronousQueue;
+import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,7 +85,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * Used in the blocking receive methods to receive a message from
      * the Session thread. Argument true indicates we want strict FIFO semantics
      */
-    private final SynchronousQueue _synchronousQueue = new SynchronousQueue(true);
+    private final ArrayBlockingQueue _synchronousQueue;
 
     private MessageFactoryRegistry _messageFactory;
 
@@ -132,6 +137,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private boolean _dups_ok_acknowledge_send;
 
+    private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
+
+    /**
+     * The thread that was used to call receive(). This is important for being able to interrupt that thread if
+     * a receive() is in progress.
+     */
+    private Thread _receivingThread;
+
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
                          boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
                          AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
@@ -150,6 +163,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
         _acknowledgeMode = acknowledgeMode;
+        _synchronousQueue = new ArrayBlockingQueue(prefetchHigh, true);
     }
 
     public AMQDestination getDestination()
@@ -217,12 +231,32 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
                 if (jmsMsg != null)
                 {
-                    _session.setLastDeliveredMessage(jmsMsg);
+                    preApplicationProcessing(jmsMsg);
                     messageListener.onMessage(jmsMsg);
                     postDeliver(jmsMsg);
                 }
             }
         }
+    }
+
+    private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    {
+        if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        {
+            _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
+            String url = jmsMsg.getStringProperty(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString());
+            try
+            {
+                Destination dest = AMQDestination.createDestination(new AMQBindingURL(url));
+                jmsMsg.setJMSDestination(dest);
+            }
+            catch (URLSyntaxException e)
+            {
+                _logger.warn("Unable to parse the supplied destination header: " + url);
+            }
+                        
+        }
+        _session.setInRecovery(false);
     }
 
     private void acquireReceiving() throws JMSException
@@ -235,11 +269,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
+        _receivingThread = Thread.currentThread();
     }
 
     private void releaseReceiving()
     {
         _receiving.set(false);
+        _receivingThread = null;
     }
 
     public FieldTable getRawSelectorFieldTable()
@@ -280,7 +316,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public Message receive(long l) throws JMSException
     {
     	checkPreConditions();
-        
+
         acquireReceiving();
 
         try
@@ -297,15 +333,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                _session.setLastDeliveredMessage(m);
+                preApplicationProcessing(m);
                 postDeliver(m);
             }
-            
+
             return m;
         }
         catch (InterruptedException e)
         {
-            _logger.warn("Interrupted: " + e, e);
+            _logger.warn("Interrupted: " + e);
             return null;
         }
         finally
@@ -326,7 +362,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                _session.setLastDeliveredMessage(m);
+                preApplicationProcessing(m);
                 postDeliver(m);
             }
 
@@ -385,6 +421,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
 
                 deregisterConsumer();
+                _unacknowledgedDeliveryTags.clear();
+                if (_messageListener != null && _receiving.get())
+                {
+                    _logger.info("Interrupting thread: " + _receivingThread);
+                    _receivingThread.interrupt();
+                }
             }
         }
     }
@@ -421,6 +463,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                                                                           messageFrame.bodies);
 
             _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
+            jmsMessage.setConsumer(this);
 
             preDeliver(jmsMessage);
 
@@ -428,7 +471,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 //we do not need a lock around the test above, and the dispatch below as it is invalid
                 //for an application to alter an installed listener while the session is started
-                _session.setLastDeliveredMessage(jmsMessage);
+                preApplicationProcessing(jmsMessage);
                 getMessageListener().onMessage(jmsMessage);
                 postDeliver(jmsMessage);
             }
@@ -482,11 +525,18 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 if (_dups_ok_acknowledge_send)
                 {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    if (!_session.isInRecovery())
+                    {
+                        _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    }
                 }
                 break;
             case Session.AUTO_ACKNOWLEDGE:
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                // we do not auto ack a message if the application code called recover()
+                if (!_session.isInRecovery())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
                 break;
             case Session.SESSION_TRANSACTED:
                 _lastDeliveryTag = msg.getDeliveryTag();
@@ -554,4 +604,30 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
+
+    public void acknowledge() throws JMSException
+    {
+        if(!isClosed())
+        {
+
+            Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
+            while(tags.hasNext())
+            {
+                _session.acknowledgeMessage(tags.next(), false);
+                tags.remove();
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("Consumer is closed");
+        }
+    }
+
+    /**
+     * Called on recovery to reset the list of delivery tags
+     */
+    public void clearUnackedMessages()
+    {
+        _unacknowledgedDeliveryTags.clear();
+    }
 }

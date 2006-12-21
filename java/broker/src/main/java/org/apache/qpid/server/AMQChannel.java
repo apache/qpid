@@ -417,7 +417,7 @@ public class AMQChannel
                 long deliveryTag = message.deliveryTag;
                 String consumerTag = message.consumerTag;
                 AMQMessage msg = message.message;
-
+                msg.setRedelivered(true);
                 msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
                 // false means continue processing
                 return false;

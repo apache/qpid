@@ -89,10 +89,10 @@ public class StreamMessageTest extends TestCase
 
         StreamMessage msg2 = (StreamMessage) consumer.receive();
 
-        byte b1 = msg2.readByte();
+        msg2.readByte();
         try
         {
-            byte b2 = msg2.readByte();
+            msg2.readByte();
         }
         catch (Exception e)
         {

@@ -21,8 +21,6 @@
 package org.apache.qpid.test.unit.topic;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -41,6 +39,19 @@ import junit.framework.TestCase;
 
 public class DurableSubscriptionTest extends TestCase
 {
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        TransportConnection.createVMBroker(1);
+    }
+
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        TransportConnection.killAllVMBrokers();
+    }
+
     public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
@@ -130,6 +141,6 @@ public class DurableSubscriptionTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(DurableSubscriptionTest.class));
+        return new junit.framework.TestSuite(DurableSubscriptionTest.class);
     }
 }

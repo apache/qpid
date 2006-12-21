@@ -48,6 +48,8 @@ public interface AMQMessageHandle
 
     boolean isRedelivered();
 
+    void setRedelivered(boolean redelivered);
+    
     boolean isPersistent(long messageId) throws AMQException;
 
     void setPublishAndContentHeaderBody(long messageId, BasicPublishBody publishBody,

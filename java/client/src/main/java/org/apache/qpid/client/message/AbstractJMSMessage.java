@@ -26,19 +26,14 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.JmsNotImplementedException;
+import org.apache.qpid.client.*;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.JMSPropertyFieldTable;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
-import javax.jms.MessageFormatException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
@@ -53,7 +48,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     private boolean _readableProperties = false;
     private boolean _readableMessage = false;
     private Destination _destination;
-    
+    private BasicMessageConsumer _consumer;
+
     protected AbstractJMSMessage(ByteBuffer data)
     {
         super(new BasicContentHeaderProperties());
@@ -176,13 +172,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public Destination getJMSDestination() throws JMSException
     {
-        // TODO: implement this once we have sorted out how to figure out the exchange class
-    	return _destination;
+        return _destination;
     }
 
     public void setJMSDestination(Destination destination) throws JMSException
     {
-    	_destination = destination;
+        _destination = destination;
     }
 
     public int getJMSDeliveryMode() throws JMSException
@@ -537,5 +532,10 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             _data.flip();
             _readableMessage = true;
         }
+    }
+
+    public void setConsumer(BasicMessageConsumer basicMessageConsumer)
+    {
+        _consumer = basicMessageConsumer;
     }
 }

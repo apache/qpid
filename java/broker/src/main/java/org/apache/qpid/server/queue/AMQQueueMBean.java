@@ -288,10 +288,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
             ContentBody body = cBodies.next();
             if (body.getSize() != 0)
             {
-                ByteBuffer slice = body.payload.slice();
-                for (int j = 0; j < slice.limit(); j++)
+                if (body.getSize() != 0)
                 {
-                    msgContent.add(slice.get());
+                    ByteBuffer slice = body.payload.slice();
+                    for (int j = 0; j < slice.limit(); j++)
+                    {
+                        msgContent.add(slice.get());
+                    }
                 }
             }
         }
@@ -300,15 +303,18 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         {
             // Create header attributes list
             BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
-            String mimeType = headerProperties.getContentType();
-            String encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
+            String mimeType = null, encoding = null;
+            if (headerProperties != null)
+            {
+                mimeType = headerProperties.getContentType();
+                encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
+            }
             Object[] itemValues = {msgId, mimeType, encoding, msgContent.toArray(new Byte[0])};
-
             return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
         }
         catch (AMQException e)
         {
-            throw new JMException("Error create header attributes list: " + e);
+            throw new JMException("Error creating header attributes list: " + e);
         }
     }
 

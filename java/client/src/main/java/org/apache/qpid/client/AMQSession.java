@@ -23,22 +23,21 @@ package org.apache.qpid.client;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
-import org.apache.qpid.server.handler.ExchangeBoundHandler;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.handler.ExchangeBoundHandler;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -50,7 +49,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -104,7 +102,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /**
      * Maps from consumer tag (String) to JMSMessageConsumer instance
      */
-    private Map _consumers = new ConcurrentHashMap();
+    private Map<String, BasicMessageConsumer> _consumers = new ConcurrentHashMap<String, BasicMessageConsumer>();
 
     /**
      * Maps from destination to count of JMSMessageConsumers
@@ -138,7 +136,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
 
-    private final AtomicLong _lastDeliveryTag = new AtomicLong();
+    /**
+     * Set when recover is called. This is to handle the case where recover() is called by application code
+     * during onMessage() processing. We need to make sure we do not send an auto ack if recover was called.
+     */
+    private boolean _inRecovery;
 
 
     /**
@@ -174,7 +176,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             if (message.deliverBody != null)
             {
-                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.deliverBody.consumerTag);
+                final BasicMessageConsumer consumer = _consumers.get(message.deliverBody.consumerTag);
 
                 if (consumer == null)
                 {
@@ -467,10 +469,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             // Acknowledge up to message last delivered (if any) for each consumer.
             //need to send ack for messages delivered to consumers so far
-            for (Iterator i = _consumers.values().iterator(); i.hasNext();)
+            for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
             {
                 //Sends acknowledgement to server
-                ((BasicMessageConsumer) i.next()).acknowledgeLastDelivered();
+                i.next().acknowledgeLastDelivered();
             }
 
             // Commits outstanding messages sent and outstanding acknowledgements.
@@ -652,12 +654,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
-        final ArrayList clonedConsumers = new ArrayList(_consumers.values());
+        final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList(_consumers.values());
 
-        final Iterator it = clonedConsumers.iterator();
+        final Iterator<BasicMessageConsumer> it = clonedConsumers.iterator();
         while (it.hasNext())
         {
-            final BasicMessageConsumer con = (BasicMessageConsumer) it.next();
+            final BasicMessageConsumer con = it.next();
             if (error != null)
             {
                 con.notifyError(error);
@@ -678,12 +680,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
-        final ArrayList clonedConsumers = new ArrayList(_consumers.values());
+        final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList<BasicMessageConsumer>(_consumers.values());
 
-        final Iterator it = clonedConsumers.iterator();
+        final Iterator<BasicMessageConsumer> it = clonedConsumers.iterator();
         while (it.hasNext())
         {
-            final BasicMessageConsumer con = (BasicMessageConsumer) it.next();
+            final BasicMessageConsumer con = it.next();
             con.markClosed();
         }
         // at this point the _consumers map will be empty
@@ -698,29 +700,39 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkNotClosed();
         checkNotTransacted(); // throws IllegalStateException if a transacted session
-
+        // this is set only here, and the before the consumer's onMessage is called it is set to false
+        _inRecovery = true;
+        for (BasicMessageConsumer consumer : _consumers.values())
+        {
+            consumer.clearUnackedMessages();
+        }
         _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
     }
 
+    boolean isInRecovery()
+    {
+        return _inRecovery;
+    }
+
+    void setInRecovery(boolean inRecovery)
+    {
+        _inRecovery = inRecovery;
+    }
 
     public void acknowledge() throws JMSException
     {
-        if (getAMQConnection().isClosed())
+        if(isClosed())
         {
-            throw new javax.jms.IllegalStateException("Connection is already closed");
+            throw new IllegalStateException("Session is already closed");
         }
-        if (isClosed())
+        for(BasicMessageConsumer consumer : _consumers.values())
         {
-            throw new javax.jms.IllegalStateException("Session is already closed");            
+            consumer.acknowledge();
         }
-        acknowledgeMessage(_lastDeliveryTag.get(), true);
+
 
     }
 
-    void setLastDeliveredMessage(AbstractJMSMessage message)
-    {
-        _lastDeliveryTag.set(message.getDeliveryTag());    
-    }
 
 
     public MessageListener getMessageListener() throws JMSException
@@ -1479,7 +1491,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         String subscriptionName = _reverseSubscriptionMap.remove(consumer);
         if(subscriptionName != null)
         {
-            _subscriptions.remove(subscriptionName);    
+            _subscriptions.remove(subscriptionName);
         }
 
         Destination dest = consumer.getDestination();
