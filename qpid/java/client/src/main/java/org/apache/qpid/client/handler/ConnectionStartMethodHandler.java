@@ -124,7 +124,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             
             clientProperties.put(ClientProperties.instance.toString(), ps.getClientID());
             clientProperties.put(ClientProperties.product.toString(), QpidProperties.getProductName());
-            clientProperties.put(ClientProperties.version.toString(), QpidProperties.getReleaseVerision());
+            clientProperties.put(ClientProperties.version.toString(), QpidProperties.getReleaseVersion());
             clientProperties.put(ClientProperties.platform.toString(), getFullSystemInfo());
             ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(), clientProperties, mechanism,
                                                                saslResponse, selectedLocale));
