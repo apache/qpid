@@ -33,7 +33,7 @@ import java.util.ArrayList;
 public class ExchangeMBeanTest  extends TestCase
 {
     private AMQQueue _queue;
-    private QueueRegistry _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
+    private QueueRegistry _queueRegistry;
 
     /**
      * Test for direct exchange mbean
@@ -117,6 +117,7 @@ public class ExchangeMBeanTest  extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
         _queue = new AMQQueue("testQueue", false, "ExchangeMBeanTest", false, _queueRegistry);
         _queueRegistry.registerQueue(_queue);
     }
