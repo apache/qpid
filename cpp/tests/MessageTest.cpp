@@ -21,6 +21,7 @@
 #include <BrokerMessage.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
+#include <AMQP_HighestVersion.h>
 
 using namespace boost;
 using namespace qpid::broker;
@@ -76,7 +77,7 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, msg->contentSize());
 
         DummyHandler handler;
-        msg->deliver(&handler, 0, "ignore", 0, 100, &(qpid::framing::highestVersion)); 
+        msg->deliver(&handler, 0, "ignore", 0, 100, &(qpid::framing::highestProtocolVersion)); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, handler.frames.size());
         AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
         CPPUNIT_ASSERT(contentBody);
