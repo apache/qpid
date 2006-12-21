@@ -25,6 +25,10 @@ import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 
+/**
+ * 
+ * @author Bhupendra Bhardwaj
+ */
 public class Perspective implements IPerspectiveFactory
 {
 	public void createInitialLayout(IPageLayout layout)
@@ -32,20 +36,9 @@ public class Perspective implements IPerspectiveFactory
 		String editorArea = layout.getEditorArea();
 		layout.setEditorAreaVisible(false);
         
-		// standalone view meaning it can't be docked or stacked with other views,
-        // and it doesn't have a title bar.
-        
-		layout.addStandaloneView(NavigationView.ID,
-                                 true,
-                                 IPageLayout.LEFT,
-                                 0.25f,
-                                 editorArea);
-        
-        layout.addStandaloneView(MBeanView.ID,
-                true,
-                IPageLayout.RIGHT,
-                0.75f,
-                editorArea);
+		// standalone view meaning it can't be docked or stacked with other views, and it doesn't have a title bar.        
+		layout.addStandaloneView(NavigationView.ID, true, IPageLayout.LEFT, 0.25f, editorArea);
+        layout.addStandaloneView(MBeanView.ID, true, IPageLayout.RIGHT, 0.75f, editorArea);
 		
 		layout.getViewLayout(NavigationView.ID).setCloseable(false);
         layout.getViewLayout(MBeanView.ID).setCloseable(false);       

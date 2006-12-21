@@ -20,20 +20,19 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.log4j.Logger;
+import org.apache.qpid.client.transport.TransportConnection;
 
+import javax.jms.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.jms.*;
-
-import junit.framework.TestCase;
-import junit.framework.Assert;
 
 public class MapMessageTest extends TestCase implements MessageListener
 {
@@ -56,7 +55,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
-            //TransportConnection.createVMBroker(1);
+            TransportConnection.createVMBroker(1);
             init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
         }
         catch (Exception e)
@@ -69,7 +68,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     {
         _logger.info("Tearing Down unit.basic.MapMessageTest");
         super.tearDown();
-        //TransportConnection.killAllVMBrokers();
+        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -166,11 +165,11 @@ public class MapMessageTest extends TestCase implements MessageListener
 
             testMapValues(m, count);
 
+            testCorrectExceptions(m);
+
             testMessageWriteStatus(m);
 
             testPropertyWriteStatus(m);
-
-            testCorrectExceptions(m);
 
             count++;
         }
@@ -230,7 +229,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("message");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -320,7 +319,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("short");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -403,7 +402,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("long");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -494,7 +493,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("double");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -587,7 +586,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("float");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -671,7 +670,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("int");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -843,7 +842,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("bytes");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -928,7 +927,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("byte");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -1005,7 +1004,7 @@ public class MapMessageTest extends TestCase implements MessageListener
             m.getChar("odd");
             fail("Exception Expected.");
         }
-        catch (MessageFormatException nfe)
+        catch (MessageFormatException npe)
         {
             //normal execution
         }
@@ -1249,6 +1248,6 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(MapMessageTest.class));
+        return new junit.framework.TestSuite(MapMessageTest.class);
     }
 }

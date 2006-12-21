@@ -14,18 +14,16 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.TestCase;
 import junit.framework.Assert;
-import org.apache.qpid.framing.PropertyFieldTable;
+import junit.framework.TestCase;
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
-import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -104,6 +102,27 @@ public class MapMessageTest extends TestCase
         {
             Assert.fail("JMSException received." + e);
         }
+
+        try
+        {
+            JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
+
+            mm.setString("value", null);
+            char c = mm.getChar("value");
+            fail("Expected NullPointerException");
+
+        }
+        catch (NullPointerException e)
+        {
+            ; // pass
+        }
+        catch (JMSException e)
+        {
+            Assert.fail("JMSException received." + e);
+        }
+
+
+
     }
 
     public void testDoubleLookup()
@@ -204,7 +223,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getByte("random");
-            Assert.fail("MessageFormatException expected");
+            Assert.fail("NumberFormatException expected");
         }
         catch (NumberFormatException e)
         {
@@ -331,7 +350,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.getShort("random");
-            Assert.fail("NumberFormatException should be received.");
+            Assert.fail("NumberFormatException  should be received.");
         }
         catch (NumberFormatException e)
         {

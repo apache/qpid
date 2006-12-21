@@ -221,6 +221,33 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
+    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    {
+        return isBound(queue);
+    }
+
+    public boolean isBound(String routingKey) throws AMQException
+    {
+        return hasBindings();
+    }
+
+    public boolean isBound(AMQQueue queue) throws AMQException
+    {
+        for (Registration r : _bindings)
+        {
+            if (r.queue.equals(queue))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasBindings() throws AMQException
+    {
+        return !_bindings.isEmpty();
+    }
+
     protected Map getHeaders(ContentHeaderBody contentHeaderFrame)
     {
         //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,

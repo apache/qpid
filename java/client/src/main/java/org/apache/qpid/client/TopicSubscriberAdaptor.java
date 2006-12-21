@@ -35,10 +35,10 @@ import javax.jms.TopicSubscriber;
 class TopicSubscriberAdaptor implements TopicSubscriber
 {
     private final Topic _topic;
-    private final MessageConsumer _consumer;
+    private final BasicMessageConsumer _consumer;
     private final boolean _noLocal;
 
-    TopicSubscriberAdaptor(Topic topic, MessageConsumer consumer, boolean noLocal)
+    TopicSubscriberAdaptor(Topic topic, BasicMessageConsumer consumer, boolean noLocal)
     {
         _topic = topic;
         _consumer = consumer;
@@ -119,4 +119,10 @@ class TopicSubscriberAdaptor implements TopicSubscriber
 			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
 	}
+
+    BasicMessageConsumer getMessageConsumer()
+    {
+        return _consumer;
+    }
+
 }

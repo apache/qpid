@@ -552,16 +552,6 @@ public class BytesMessageTest extends TestCase
         assertEquals((byte)0, result[2]);
     }
 
-    public void testToBodyString() throws Exception
-    {
-        JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();
-        final String testText = "This is a test";
-        bm.writeUTF(testText);
-        bm.reset();
-        String result = bm.toBodyString();
-        assertEquals(testText, result);
-    }
-
     public void testToBodyStringWithNull() throws Exception
     {
         JMSBytesMessage bm = TestMessageHelper.newJMSBytesMessage();

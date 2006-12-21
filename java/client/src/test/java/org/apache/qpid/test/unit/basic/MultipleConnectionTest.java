@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,17 +19,14 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.testutil.VMBrokerSetup;
 
 import javax.jms.*;
-
-import junit.framework.TestCase;
 
 public class MultipleConnectionTest extends TestCase
 {
@@ -138,6 +135,19 @@ public class MultipleConnectionTest extends TestCase
         }
     }
 
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        TransportConnection.createVMBroker(1);
+    }
+
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        TransportConnection.killAllVMBrokers();
+    }
+
     private static void waitForCompletion(int expected, long wait, Receiver[] receivers) throws InterruptedException
     {
         for (int i = 0; i < receivers.length; i++)
@@ -209,6 +219,6 @@ public class MultipleConnectionTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(MultipleConnectionTest.class));
+        return new junit.framework.TestSuite(MultipleConnectionTest.class);
     }
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -126,10 +126,11 @@ public class DestWildExchange extends AbstractExchange
     } // End of MBean class
 
 
-    public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public synchronized void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
+        _logger.debug("Registering queue " + queue.getName() + " with routing key " + routingKey);
         // we need to use putIfAbsent, which is an atomic operation, to avoid a race condition
         List<AMQQueue> queueList = _routingKey2queues.putIfAbsent(routingKey, new CopyOnWriteArrayList<AMQQueue>());
         // if we got null back, no previous value was associated with the specified routing key hence
@@ -159,6 +160,8 @@ public class DestWildExchange extends AbstractExchange
         // TODO: add support for the immediate flag
         if (queues == null)
         {
+            _logger.warn("No queues found for routing key " + routingKey);
+            _logger.warn("Routing map contains: " + _routingKey2queues);
             //todo Check for valid topic - mritchie
             return;
         }
@@ -172,7 +175,37 @@ public class DestWildExchange extends AbstractExchange
         }
     }
 
-    public void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    {
+        List<AMQQueue> queues = _routingKey2queues.get(routingKey);
+        return queues != null && queues.contains(queue);
+    }
+
+
+    public boolean isBound(String routingKey) throws AMQException
+    {
+        List<AMQQueue> queues = _routingKey2queues.get(routingKey);
+        return queues != null && !queues.isEmpty();
+    }
+
+    public boolean isBound(AMQQueue queue) throws AMQException
+    {
+        for (List<AMQQueue> queues : _routingKey2queues.values())
+        {
+            if (queues.contains(queue))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasBindings() throws AMQException
+    {
+        return !_routingKey2queues.isEmpty();
+    }
+
+    public synchronized void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -189,6 +222,10 @@ public class DestWildExchange extends AbstractExchange
         {
             throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
                                    " with routing key " + routingKey);
+        }
+        if (queues.isEmpty())
+        {
+            _routingKey2queues.remove(queues);
         }
     }
 

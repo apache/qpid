@@ -71,7 +71,7 @@ public interface ManagedQueue
      * @throws IOException
      */
     @MBeanAttribute(name="QueueDepth", description="Size of messages(KB) in the queue")
-    Long getQueueDepth() throws IOException;
+    Long getQueueDepth() throws IOException, JMException;
 
     /**
      *  Returns the total number of active subscribers to the queue.

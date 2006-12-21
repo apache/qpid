@@ -53,7 +53,7 @@ public class ContentHeaderBody extends AMQBody
         this.bodySize = bodySize;
     }
 
-    protected byte getType()
+    protected byte getFrameType()
     {
         return TYPE;
     }
