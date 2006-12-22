@@ -75,25 +75,43 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
                 _logger.info("Authentication failed");
                 stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                AMQFrame close = ConnectionCloseBody.createAMQFrame(0, AMQConstant.NOT_ALLOWED.getCode(),
-                        AMQConstant.NOT_ALLOWED.getName(),
-                        ConnectionCloseBody.CLASS_ID,
-                        ConnectionCloseBody.METHOD_ID);
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                AMQFrame close = ConnectionCloseBody.createAMQFrame(0,
+                    (byte)8, (byte)0,	// AMQP version (major, minor)
+                    ConnectionCloseBody.getClazz((byte)8, (byte)0),		// classId
+                    ConnectionCloseBody.getMethod((byte)8, (byte)0),	// methodId
+                    AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
+                    AMQConstant.NOT_ALLOWED.getName());	// replyText
                 protocolSession.writeFrame(close);
                 disposeSaslServer(protocolSession);
                 break;
             case SUCCESS:
                 _logger.info("Connected as: " + ss.getAuthorizationID());
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-                AMQFrame tune = ConnectionTuneBody.createAMQFrame(0, Integer.MAX_VALUE,
-                        ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
-                        HeartbeatConfig.getInstance().getDelay());
+                // TODO: Check the value of channelMax here: This should be the max
+                // value of a 2-byte unsigned integer (as channel is only 2 bytes on the wire),
+                // not Integer.MAX_VALUE (which is signed 4 bytes).
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
+                    (byte)8, (byte)0,	// AMQP version (major, minor)
+                    Integer.MAX_VALUE,	// channelMax
+                    ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
+                    HeartbeatConfig.getInstance().getDelay());	// heartbeat
                 protocolSession.writeFrame(tune);
                 disposeSaslServer(protocolSession);
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0, authResult.challenge);
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
+                    (byte)8, (byte)0,	// AMQP version (major, minor)
+                    authResult.challenge);	// challenge
                 protocolSession.writeFrame(challenge);
         }
     }

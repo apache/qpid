@@ -62,7 +62,10 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
         {
             _logger.error("Error closing protocol session: " + e, e);
         }
-        final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId());
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
         protocolSession.writeFrame(response);
     }
 }

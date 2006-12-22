@@ -20,102 +20,21 @@
  -->
 <project name="Qpid Common Protocol Versions" default="generate">
 
-  <property name="saxon.jar" value="lib/saxon/saxon8.jar"/>
-  <!-- temporarily hard-wired XML spec version for build avoidance -->
-  <property name="amqp.xml" value="${specs.dir}/amqp-8.0.xml"/>
-  
-  <macrodef name="saxon">
-    <attribute name="out"/>
-    <attribute name="src"/>
-    <attribute name="xsl"/>
-    <element name="args" implicit="true" optional="true"/>
-    <sequential>
-      <java jar="${saxon.jar}" fork="true">
-        <arg value="-o"/>
-        <arg value="@{out}"/>
-        <arg value="@{src}"/>
-        <arg value="@{xsl}"/>
-        <args/>
-      </java>
-    </sequential>
-  </macrodef>
+<!--
+  <property name="specs.dir" value="../../specs"/>
+  <property name="gentools.home" value="../../gentools"/>
+  <property name="generated.dir" value="target/generated-sources/xsl/org/apache/qpid/framing"/>
+  <property name="cluster.asl" value="src/main/xsl/cluster.asl"/>
+  <property name="xml.spec.list" value="${specs.dir}/amqp-8.0.xml ${cluster.asl}"/>
+-->
 
-  <macrodef name="amqp">
-    <attribute name="ver"/>
-    <sequential>
-      <!-- Check for the existence of the AMQP specification file -->
-      <property name="amqpspecfile-@{ver}" value="${specs.dir}/amqp-@{ver}.xml"/>
-      <available file="${specs.dir}/amqp-@{ver}.xml"
-              property="amqpspecfile.present-@{ver}"/>
-      <fail unless="amqpspecfile.present-@{ver}"
-              message="ERROR: AMQP specification file ${specs.dir}/amqp-@{ver}.xml not found."/>
-      
-      <!-- Read in the file as a set of properties; extract the amqp version -->
-      <xmlproperty prefix="@{ver}" file="${specs.dir}/amqp-@{ver}.xml"/>
-      <echo>Found AMQP specification file "${specs.dir}/amqp-@{ver}.xml"; major=${@{ver}.amqp(major)} minor=${@{ver}.amqp(minor)}</echo>
-
-      <!-- Add the version to the ProtocolVersionList.java file -->
-      <replaceregexp file="${proto_version}" match=" // !VER!"
-              replace=",${line.separator}        {${@{ver}.amqp(major)}, ${@{ver}.amqp(minor)}} // !VER!"
-              flags="s" byline="true"/>
-      <replaceregexp file="${proto_version}" match=" // !VER1!"
-              replace="{${@{ver}.amqp(major)}, ${@{ver}.amqp(minor)}} // !VER!"
-              flags="s" byline="true"/>
-
-      <!-- Create directory; generate from specification file -->
-      <saxon out="${generated.dir}/results.out"
-             src="${specs.dir}/amqp-@{ver}.xml" 
-             xsl="${spec.stylesheet}">
-        <arg value="major=${@{ver}.amqp(major)}"/>
-        <arg value="minor=${@{ver}.amqp(minor)}"/>
-        <arg value="registry_name=MainRegistry"/>
-      </saxon>
-      <!--  -->
-      <saxon out="${generated.dir}/cluster.out"
-             src="${cluster.asl}"
-             xsl="${spec.stylesheet}">
-        <arg value="major=${@{ver}.amqp(major)}"/>
-        <arg value="minor=${@{ver}.amqp(minor)}"/>
-        <arg value="registry_name=ClusterRegistry"/>
-      </saxon>
-      <saxon out="${generated.dir}/registry.out"
-             src="${registry.template}"
-             xsl="${registry.stylesheet}">
-        <arg value="major=${@{ver}.amqp(major)}"/>
-        <arg value="minor=${@{ver}.amqp(minor)}"/>
-      </saxon>
-    </sequential>
-  </macrodef>
-
-  <uptodate property="generated" targetfile="${generated.dir}/results.out"
-            srcfile="${amqp.xml}"/>
-
-  <target name="generate" unless="generated">
+  <target name="generate">
     <mkdir dir="${generated.dir}"/>
-    <copy file="src/main/versions/ProtocolVersionList.java.tmpl" tofile="${proto_version}"
-            overwrite="true"/>
-    <!--
-    NOTE: Set the AMQP version numbers to be supported in this build here.
-    The last version in this list will be the version returned when a protocol
-    ProtocolInitiation NAK frame is returned by the broker. Usually this is the
-    highest or most recent version.
-    -->
-    <!-- <amqp ver="0.8"/>
-    <amqp ver="0.9"/>
-    <amqp ver="0.10"/> -->
-    <amqp ver="8.0"/>
-    
-<!--     <saxon out="${generated.dir}/results.out" src="${amqp.xml}"
-           xsl="${stylesheet}">
-      <arg value="asl_base=${asl.base}"/>
-      <arg value="registry_name=MainRegistry"/>
-    </saxon>
-    <saxon out="${generated.dir}/cluster.out" src="${cluster.asl}"
-           xsl="${stylesheet}">
-      <arg value="registry_name=ClusterRegistry"/>
-    </saxon>
-    <saxon out="${generated.dir}/registry.out" src="${registry_template}"
-           xsl="${registry_stylesheet}"/> -->
+    <exec dir="${gentools.home}/src" executable="pwd" />
+    <echo>XML files to be processed: ${xml.spec.list}</echo>
+    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src">
+    	<arg line="-j -o ${generated.dir} -t ${gentools.home}/templ.java ${xml.spec.list}"/>
+    </java>
   </target>
 
   <target name="precompile" depends="generate"/>

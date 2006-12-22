@@ -165,8 +165,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 _minor = pi.protocolMinor;
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
-                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0, pi.protocolMajor, pi.protocolMinor, null,
-                                                                       mechanisms.getBytes(), locales.getBytes());
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
+            		(byte)8, (byte)0,	// AMQP version (major, minor)
+                    locales.getBytes(),	// locales
+                    mechanisms.getBytes(),	// mechanisms
+                    null,	// serverProperties
+                	(short)8,	// versionMajor
+                    (short)0	// versionMinor
+                    );
                 _minaProtocolSession.write(response);
             }
             catch (AMQException e)

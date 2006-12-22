@@ -477,7 +477,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
 
             // Commits outstanding messages sent and outstanding acknowledgements.
-            _connection.getProtocolHandler().syncWrite(TxCommitBody.createAMQFrame(_channelId), TxCommitOkBody.class);
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            _connection.getProtocolHandler().syncWrite(TxCommitBody.createAMQFrame(_channelId, (byte)8, (byte)0), TxCommitOkBody.class);
         }
         catch (AMQException e)
         {
@@ -492,8 +495,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         checkTransacted();
         try
         {
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
             _connection.getProtocolHandler().syncWrite(
-                    TxRollbackBody.createAMQFrame(_channelId), TxRollbackOkBody.class);
+                    TxRollbackBody.createAMQFrame(_channelId, (byte)8, (byte)0), TxRollbackOkBody.class);
         }
         catch (AMQException e)
         {
@@ -516,8 +522,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 try
                 {
                     _connection.getProtocolHandler().closeSession(this);
-                    final AMQFrame frame = ChannelCloseBody.createAMQFrame(
-                            getChannelId(), AMQConstant.REPLY_SUCCESS.getCode(), "JMS client closing channel", 0, 0);
+        	        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        	        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        	        // Be aware of possible changes to parameter order as versions change.
+                    final AMQFrame frame = ChannelCloseBody.createAMQFrame(getChannelId(),
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        0,	// classId
+                        0,	// methodId
+                        AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
+                        "JMS client closing channel");	// replyText
                     _connection.getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
@@ -707,7 +720,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             consumer.clearUnackedMessages();
         }
-        _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId, false));
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            false));	// requeue
     }
 
     boolean isInRecovery()
@@ -1039,7 +1057,20 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void declareExchangeSynch(String name, String type) throws AMQException
     {
-        AMQFrame frame = ExchangeDeclareBody.createAMQFrame(_channelId, 0, name, type, false, false, false, false, false, null);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame frame = ExchangeDeclareBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            null,	// arguments
+            false,	// autoDelete
+            false,	// durable
+            name,	// exchange
+            false,	// internal
+            false,	// nowait
+            false,	// passive
+            0,	// ticket
+            type);	// type
         _connection.getProtocolHandler().syncWrite(frame, ExchangeDeclareOkBody.class);
     }
 
@@ -1050,7 +1081,20 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private void declareExchange(String name, String type, AMQProtocolHandler protocolHandler)
     {
-        AMQFrame exchangeDeclare = ExchangeDeclareBody.createAMQFrame(_channelId, 0, name, type, false, false, false, false, true, null);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame exchangeDeclare = ExchangeDeclareBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            null,	// arguments
+            false,	// autoDelete
+            false,	// durable
+            name,	// exchange
+            false,	// internal
+            true,	// nowait
+            false,	// passive
+            0,	// ticket
+            type);	// type
         protocolHandler.writeFrame(exchangeDeclare);
     }
 
@@ -1072,9 +1116,19 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             amqd.setQueueName(protocolHandler.generateQueueName());
         }
 
-        AMQFrame queueDeclare = QueueDeclareBody.createAMQFrame(_channelId, 0, amqd.getQueueName(),
-                                                                false, amqd.isDurable(), amqd.isExclusive(),
-                                                                amqd.isAutoDelete(), true, null);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame queueDeclare = QueueDeclareBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            null,	// arguments
+            amqd.isAutoDelete(),	// autoDelete
+            amqd.isDurable(),	// durable
+            amqd.isExclusive(),	// exclusive
+            true,	// nowait
+            false,	// passive
+            amqd.getQueueName(),	// queue
+            0);	// ticket
 
         protocolHandler.writeFrame(queueDeclare);
         return amqd.getQueueName();
@@ -1082,9 +1136,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private void bindQueue(AMQDestination amqd, String queueName, AMQProtocolHandler protocolHandler, FieldTable ft) throws AMQException
     {
-        AMQFrame queueBind = QueueBindBody.createAMQFrame(_channelId, 0,
-                                                          queueName, amqd.getExchangeName(),
-                                                          amqd.getRoutingKey(), true, ft);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame queueBind = QueueBindBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            ft,	// arguments
+            amqd.getExchangeName(),	// exchange
+            true,	// nowait
+            queueName,	// queue
+            amqd.getRoutingKey(),	// routingKey
+            0);	// ticket
 
         protocolHandler.writeFrame(queueBind);
     }
@@ -1122,10 +1184,19 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         try
         {
-            AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId, 0,
-                                                                  queueName, tag, consumer.isNoLocal(),
-                                                                  consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
-                                                                  consumer.isExclusive(), nowait, arguments);
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId,
+                (byte)8, (byte)0,	// AMQP version (major, minor)
+                arguments,	// arguments
+                tag,	// consumerTag
+                consumer.isExclusive(),	// exclusive
+                consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,	// noAck
+                consumer.isNoLocal(),	// noLocal
+                nowait,	// nowait
+                queueName,	// queue
+                0);	// ticket
             if (nowait)
             {
                 protocolHandler.writeFrame(jmsConsume);
@@ -1302,8 +1373,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         try
         {
-            AMQFrame queueDeleteFrame = QueueDeleteBody.createAMQFrame(_channelId, 0, queueName, false,
-                                                                       false, true);
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            AMQFrame queueDeleteFrame = QueueDeleteBody.createAMQFrame(_channelId,
+                (byte)8, (byte)0,	// AMQP version (major, minor)
+                false,	// ifEmpty
+                false,	// ifUnused
+                true,	// nowait
+                queueName,	// queue
+                0);	// ticket
             _connection.getProtocolHandler().syncWrite(queueDeleteFrame, QueueDeleteOkBody.class);
         }
         catch (AMQException e)
@@ -1389,8 +1468,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     boolean isQueueBound(String queueName, String routingKey) throws JMSException
     {
-        AMQFrame boundFrame = ExchangeBoundBody.createAMQFrame(_channelId, ExchangeDefaults.TOPIC_EXCHANGE_NAME,
-                                                               routingKey, queueName);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame boundFrame = ExchangeBoundBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            ExchangeDefaults.TOPIC_EXCHANGE_NAME,	// exchange
+            queueName,	// queue
+            routingKey);	// routingKey
         AMQMethodEvent response = null;
         try
         {
@@ -1447,7 +1532,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple)
     {
-        final AMQFrame ackFrame = BasicAckBody.createAMQFrame(_channelId, deliveryTag, multiple);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        final AMQFrame ackFrame = BasicAckBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            deliveryTag,	// deliveryTag
+            multiple);	// multiple
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending ack for delivery tag " + deliveryTag + " on channel " + _channelId);
@@ -1606,14 +1697,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private void suspendChannel()
     {
         _logger.warn("Suspending channel");
-        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId, false);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            false);	// active
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
     }
 
     private void unsuspendChannel()
     {
         _logger.warn("Unsuspending channel");
-        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId, true);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            true);	// active
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
     }
 

@@ -55,7 +55,10 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         final AMQChannel channel = new AMQChannel(evt.getChannelId(), registry.getMessageStore(),
                                                   exchangeRegistry);
         protocolSession.addChannel(channel);
-        AMQFrame response = ChannelOpenOkBody.createAMQFrame(evt.getChannelId());
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame response = ChannelOpenOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
         protocolSession.writeFrame(response);
     }
 }

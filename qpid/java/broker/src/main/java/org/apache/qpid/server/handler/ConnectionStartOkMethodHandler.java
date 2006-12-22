@@ -92,13 +92,24 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     _logger.info("Connected as: " + ss.getAuthorizationID());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-                    AMQFrame tune = ConnectionTuneBody.createAMQFrame(0, Integer.MAX_VALUE, getConfiguredFrameSize(),
-                                                                      HeartbeatConfig.getInstance().getDelay());
+                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        Integer.MAX_VALUE,	// channelMax
+                        getConfiguredFrameSize(),	// frameMax
+                        HeartbeatConfig.getInstance().getDelay());	// heartbeat
                     protocolSession.writeFrame(tune);
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                    AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0, authResult.challenge);
+                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        authResult.challenge);	// challenge
                     protocolSession.writeFrame(challenge);
             }
         }

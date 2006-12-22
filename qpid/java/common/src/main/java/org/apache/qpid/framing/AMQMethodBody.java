@@ -26,6 +26,20 @@ import org.apache.qpid.AMQChannelException;
 public abstract class AMQMethodBody extends AMQBody
 {
     public static final byte TYPE = 1;    
+    
+    /**
+     * AMQP version
+     */
+    protected byte major;
+    protected byte minor;
+    public byte getMajor() { return major; }
+    public byte getMinor() { return minor; }
+    
+    public AMQMethodBody(byte major, byte minor)
+    {
+        this.major = major;
+        this.minor = minor;
+    }
 
     /** unsigned short */
     protected abstract int getBodySize();
@@ -80,11 +94,11 @@ public abstract class AMQMethodBody extends AMQBody
      */
     public AMQChannelException getChannelException(int code, String message)
     {
-        return new AMQChannelException(code, message, getClazz(), getMethod());
+        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor);
     }
 
     public AMQChannelException getChannelException(int code, String message, Throwable cause)
     {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), cause);
+        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, cause);
     }
 }

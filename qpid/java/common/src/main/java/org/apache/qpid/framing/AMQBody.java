@@ -34,5 +34,6 @@ public abstract class AMQBody
     
     protected abstract void writePayload(ByteBuffer buffer);
     
-    protected abstract void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException;        
+    protected abstract void populateFromBuffer(ByteBuffer buffer, long size)
+        throws AMQFrameDecodingException, AMQProtocolVersionException;        
 }

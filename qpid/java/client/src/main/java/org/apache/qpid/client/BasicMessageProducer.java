@@ -134,9 +134,20 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     {
         // Declare the exchange
         // Note that the durable and internal arguments are ignored since passive is set to false
-        AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId, 0, destination.getExchangeName(),
-                                                              destination.getExchangeClass(), false,
-                                                              false, false, false, true, null);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            null,	// arguments
+            false,	// autoDelete
+            false,	// durable
+            destination.getExchangeName(),	// exchange
+            false,	// internal
+            true,	// nowait
+            false,	// passive
+            0,	// ticket
+            destination.getExchangeClass());	// type
         _protocolHandler.writeFrame(declare);
     }
 
@@ -512,8 +523,16 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
         message.getJmsContentHeaderProperties().getJMSHeaders().setString(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString(), destination.toURL());
-        AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId, 0, destination.getExchangeName(),
-                                                                destination.getRoutingKey(), mandatory, immediate);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            destination.getExchangeName(),	// exchange
+            immediate,	// immediate
+            mandatory,	// mandatory
+            destination.getRoutingKey(),	// routingKey
+            0);	// ticket
 
         long currentTime = 0;
         if (!_disableTimestamps)
@@ -555,7 +574,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
 
         // weight argument of zero indicates no child content headers, just bodies
-        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.CLASS_ID, 0,
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte)8, (byte)0), 0,
                                                                        contentHeaderProperties,
                                                                        size);
         if (_logger.isDebugEnabled())
