@@ -452,10 +452,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         }
     }
 
-    public Map getUnderlyingMessagePropertiesMap()
-    {
-        return getJmsContentHeaderProperties().getHeaders();
-    }
 
     public void setUnderlyingMessagePropertiesMap(FieldTable messageProperties)
     {
