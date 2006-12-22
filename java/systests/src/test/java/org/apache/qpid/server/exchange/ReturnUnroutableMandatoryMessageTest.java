@@ -2,7 +2,6 @@ package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.VMBrokerSetup;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.client.*;
@@ -11,7 +10,6 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.PropertyFieldTable;
 
 import javax.jms.*;
 import java.util.List;
@@ -63,7 +61,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
         AMQHeadersExchange queue = new AMQHeadersExchange(new AMQBindingURL(ExchangeDefaults.HEADERS_EXCHANGE_CLASS + "://" + ExchangeDefaults.HEADERS_EXCHANGE_NAME + "/test/queue1?" + BindingURL.OPTION_ROUTING_KEY + "='F0000=1'"));
-        FieldTable ft = new PropertyFieldTable();
+        FieldTable ft = new FieldTable();
         ft.setString("F1000", "1");
         MessageConsumer consumer = consumerSession.createConsumer(queue, AMQSession.DEFAULT_PREFETCH_LOW_MARK, AMQSession.DEFAULT_PREFETCH_HIGH_MARK, false, false, (String) null, ft);
 

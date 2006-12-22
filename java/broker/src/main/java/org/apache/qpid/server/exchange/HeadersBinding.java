@@ -21,12 +21,11 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQTypedValue;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -35,10 +34,52 @@ class HeadersBinding
 {
     private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
 
-    private final Map _mappings = new HashMap();
-    private final Set<Object> required = new HashSet<Object>();
-    private final Set<Map.Entry> matches = new HashSet<Map.Entry>();
+    private final FieldTable _mappings = new FieldTable();
+    private final Set<String> required = new HashSet<String>();
+    private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
+
+    private final class MatchesOrProcessor implements FieldTable.FieldTableElementProcessor
+    {
+        private Boolean _result = Boolean.FALSE;
+
+        public boolean processElement(String propertyName, AMQTypedValue value)
+        {
+            if((value != null) && (value.getValue() != null) && value.getValue().equals(matches.get(propertyName)))
+            {
+                _result = Boolean.TRUE;
+                return false;
+            }
+            return true;
+        }
+
+        public Object getResult()
+        {
+            return _result;
+        }
+    }
+
+    private final class RequiredOrProcessor implements FieldTable.FieldTableElementProcessor
+    {
+        Boolean _result = Boolean.FALSE;
+
+        public boolean processElement(String propertyName, AMQTypedValue value)
+        {
+            if(required.contains(propertyName))
+            {
+                _result = Boolean.TRUE;
+                return false;
+            }
+            return true;
+        }
+
+        public Object getResult()
+        {
+            return _result;
+        }
+    }
+
+
 
     /**
      * Creates a binding for a set of mappings. Those mappings whose value is
@@ -47,33 +88,50 @@ class HeadersBinding
      * define a required match of value. 
      * @param mappings the defined mappings this binding should use
      */
-    HeadersBinding(Map mappings)
-    {
-        //noinspection unchecked
-        this(mappings == null ? new HashSet<Map.Entry>() : mappings.entrySet());
-        _mappings.putAll(mappings);
-    }
 
-    private HeadersBinding(Set<Map.Entry> entries)
+    HeadersBinding(FieldTable mappings)
     {
-        for (Map.Entry e : entries)
+        Enumeration propertyNames = mappings.getPropertyNames();
+        while(propertyNames.hasMoreElements())
         {
-            if (isSpecial(e.getKey()))
-            {
-                processSpecial((String) e.getKey(), e.getValue());
-            }
-            else if (e.getValue() == null || e.getValue().equals(""))
-            {
-                required.add(e.getKey());
-            }
-            else
-            {
-                matches.add(e);
-            }
+            String propName = (String) propertyNames.nextElement();
+            _mappings.put(propName, mappings.getObject(propName));
         }
+        initMappings();
     }
 
-    protected Map getMappings()
+    private void initMappings()
+    {
+
+        _mappings.processOverElements(new FieldTable.FieldTableElementProcessor()
+        {
+
+            public boolean processElement(String propertyName, AMQTypedValue value)
+            {
+                if (isSpecial(propertyName))
+                {
+                    processSpecial(propertyName, value.getValue());
+                }
+                else if (value.getValue() == null || value.getValue().equals(""))
+                {
+                    required.add(propertyName);
+                }
+                else
+                {
+                    matches.put(propertyName,value.getValue());
+                }
+
+                return true;
+            }
+
+            public Object getResult()
+            {
+                return null;
+            }
+        });
+    }
+
+    protected FieldTable getMappings()
     {
         return _mappings;
     }
@@ -84,7 +142,7 @@ class HeadersBinding
      * @return true if the headers define any required keys and match any required
      * values
      */
-    public boolean matches(Map headers)
+    public boolean matches(FieldTable headers)
     {
         if(headers == null)
         {
@@ -96,18 +154,37 @@ class HeadersBinding
         }
     }
 
-    private boolean and(Map headers)
+    private boolean and(FieldTable headers)
     {
-        //need to match all the defined mapping rules:
-        return headers.keySet().containsAll(required)
-                && headers.entrySet().containsAll(matches);
+        if(headers.keys().containsAll(required))
+        {
+            for(Map.Entry<String, Object> e : matches.entrySet())
+            {
+                if(!e.getValue().equals(headers.getObject(e.getKey())))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    private boolean or(Map headers)
+
+    private boolean or(final FieldTable headers)
     {
-        //only need to match one mapping rule:
-        return !Collections.disjoint(headers.keySet(), required)
-                || !Collections.disjoint(headers.entrySet(), matches);
+        if(required.isEmpty() || !(Boolean) headers.processOverElements(new RequiredOrProcessor()))
+        {
+            return ((!matches.isEmpty()) && (Boolean) headers.processOverElements(new MatchesOrProcessor()))
+                    || (required.isEmpty() && matches.isEmpty());
+        }
+        else
+        {
+            return true;
+        }
     }
 
     private void processSpecial(String key, Object value)
