@@ -37,39 +37,23 @@ public class PropertyFieldTableTest extends TestCase
 
     private static final Logger _logger = Logger.getLogger(PropertyFieldTableTest.class);
 
-    /**
-     * Test that modifying a byte[] after setting property doesn't change property
-     */
-    public void testByteModification()
-    {
-        PropertyFieldTable table = new PropertyFieldTable();
-        byte[] bytes = {99, 98, 97, 96, 95};
-        table.setBytes("bytes", bytes);
-        bytes[0] = 1;
-        bytes[1] = 2;
-        bytes[2] = 3;
-        bytes[3] = 4;
-        bytes[4] = 5;
-
-        assertBytesNotEqual(bytes, table.getBytes("bytes"));
-    }
 
     /**
      * Test that setting a similar named value replaces any previous value set on that name
      */
     public void testReplacement()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         //Set a boolean value
         table1.setBoolean("value", true);
-        //Check size of table is correct (<Value length> + <type> + <Boolean length>)
+        //Check length of table is correct (<Value length> + <type> + <Boolean length>)
         int size = EncodingUtils.encodedShortStringLength("value") + 1 + EncodingUtils.encodedBooleanLength();
         Assert.assertEquals(size, table1.getEncodedSize());
 
         // reset value to an integer
         table1.setInteger("value", Integer.MAX_VALUE);
 
-        // Check the size has changed accordingly   (<Value length> + <type> + <Integer length>)
+        // Check the length has changed accordingly   (<Value length> + <type> + <Integer length>)
         size = EncodingUtils.encodedShortStringLength("value") + 1 + EncodingUtils.encodedIntegerLength();
         Assert.assertEquals(size, table1.getEncodedSize());
 
@@ -86,7 +70,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testBoolean()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setBoolean("value", true);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -107,19 +91,9 @@ public class PropertyFieldTableTest extends TestCase
         //except value as a string
         Assert.assertEquals("true", table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_BOOLEAN_PROPERTY_PREFIX, "value", null);
-
-        // Should be able to get the null back
-        Assert.assertEquals(null, table1.getBoolean("value"));
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
-        //but after a remove it doesn't
-        Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -132,7 +106,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testByte()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setByte("value", Byte.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -151,20 +125,8 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Byte.MAX_VALUE, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_BYTE_PROPERTY_PREFIX, "value", null);
-
-        // Should be able to get the null back
-        Assert.assertEquals(null, table1.getByte("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
-        //but after a remove it doesn't
-        Assert.assertFalse(table1.containsKey("value"));
-
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -177,7 +139,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testShort()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setShort("value", Short.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -196,20 +158,8 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Short.MAX_VALUE, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_SHORT_PROPERTY_PREFIX, "value", null);
-
-        // Should be able to get the null back
-        Assert.assertEquals(null, table1.getShort("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
-        //but after a remove it doesn't
-        Assert.assertFalse(table1.containsKey("value"));
-
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -223,7 +173,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testChar()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setChar("value", 'c');
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -242,26 +192,9 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("c", table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_ASCII_CHARACTER_PROPERTY_PREFIX, "value", null);
-
-        try
-        {
-            table1.getString("value");
-            fail("Should throw NullPointerException");
-        }
-        catch (NullPointerException npe)
-        {
-            //Normal Path
-        }
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
-        //but after a remove it doesn't
-        Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -275,7 +208,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testDouble()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setDouble("value", Double.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -293,20 +226,11 @@ public class PropertyFieldTableTest extends TestCase
 
         //... and a the string value of it.
         Assert.assertEquals("" + Double.MAX_VALUE, table1.getString("value"));
-
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_DOUBLE_PROPERTY_PREFIX, "value", null);
-
-        Assert.assertEquals(null, table1.getDouble("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
         //but after a remove it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -320,7 +244,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testFloat()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setFloat("value", Float.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -339,19 +263,12 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Float.MAX_VALUE, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_FLOAT_PROPERTY_PREFIX, "value", null);
-
-        Assert.assertEquals(null, table1.getFloat("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
 
         table1.remove("value");
         //but after a remove it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -365,7 +282,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testInt()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setInteger("value", Integer.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -384,19 +301,12 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Integer.MAX_VALUE, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_INT_PROPERTY_PREFIX, "value", null);
-
-        Assert.assertEquals(null, table1.getInteger("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
 
         table1.remove("value");
         //but after a remove it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -410,7 +320,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testLong()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setLong("value", Long.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -429,19 +339,12 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Long.MAX_VALUE, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_LONG_PROPERTY_PREFIX, "value", null);
-
-        Assert.assertEquals(null, table1.getLong("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
 
         table1.remove("value");
         //but after a remove it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -457,7 +360,7 @@ public class PropertyFieldTableTest extends TestCase
     {
         byte[] bytes = {99, 98, 97, 96, 95};
 
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setBytes("value", bytes);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -476,19 +379,11 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it is null
         Assert.assertEquals(null, table1.getString("value"));
 
-        //Try setting a null value and read it back
-        table1.put(PropertyFieldTable.Prefix.AMQP_BINARY_PROPERTY_PREFIX, "value", null);
-
-        Assert.assertEquals(null, table1.getBytes("value"));
-
-        //but still contains the value
-        Assert.assertTrue(table1.containsKey("value"));
-
         table1.remove("value");
         //but after a remove it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -499,19 +394,17 @@ public class PropertyFieldTableTest extends TestCase
      * Calls all methods that can be used to check the table is empty
      * - getEncodedSize
      * - isEmpty
-     * - size
+     * - length
      *
      * @param table to check is empty
      */
-    private void checkEmpty(PropertyFieldTable table)
+    private void checkEmpty(FieldTable table)
     {
         Assert.assertEquals(0, table.getEncodedSize());
         Assert.assertTrue(table.isEmpty());
         Assert.assertEquals(0, table.size());
 
         Assert.assertEquals(0, table.keySet().size());
-        Assert.assertEquals(0, table.values().size());
-        Assert.assertEquals(0, table.entrySet().size());
     }
 
 
@@ -521,7 +414,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testString()
     {
-        PropertyFieldTable table1 = new PropertyFieldTable();
+        FieldTable table1 = new FieldTable();
         table1.setString("value", "Hello");
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -562,79 +455,11 @@ public class PropertyFieldTableTest extends TestCase
     }
 
 
-    /**
-     * Test that the generated XML can be used to create a field table with the same values.
-     */
-    public void testValidXML()
-    {
-        PropertyFieldTable table1 = new PropertyFieldTable();
-        table1.setBoolean("bool", true);
-        table1.setByte("byte", Byte.MAX_VALUE);
-        byte[] bytes = {99, 98, 97, 96, 95};
-        table1.setBytes("bytes", bytes);
-        table1.setChar("char", 'c');
-        table1.setDouble("double", Double.MAX_VALUE);
-        table1.setFloat("float", Float.MAX_VALUE);
-        table1.setInteger("int", Integer.MAX_VALUE);
-        table1.setLong("long", Long.MAX_VALUE);
-        table1.setShort("short", Short.MAX_VALUE);
-        table1.setString("string", "Hello");
-        table1.setString("null-string", null);
-
-        table1.setObject("object-bool", true);
-        table1.setObject("object-byte", Byte.MAX_VALUE);
-        table1.setObject("object-bytes", bytes);
-        table1.setObject("object-char", 'c');
-        table1.setObject("object-double", Double.MAX_VALUE);
-        table1.setObject("object-float", Float.MAX_VALUE);
-        table1.setObject("object-int", Integer.MAX_VALUE);
-        table1.setObject("object-long", Long.MAX_VALUE);
-        table1.setObject("object-short", Short.MAX_VALUE);
-        table1.setObject("object-string", "Hello");
-
-        Assert.assertEquals(21, table1.size());
-
-        String table1XML = table1.toString();
-
-        PropertyFieldTable table2 = new PropertyFieldTable(table1XML);
-
-        Assert.assertEquals(table1XML, table2.toString());
-
-        //Check that when bytes is written out as a string with no new line between items that it is read in ok.
-
-    }
-
-    /**
-     * Test that invalid input throws the correct Exception
-     */
-    public void testInvalidXML()
-    {
-        try
-        {
-            _logger.warn("Testing Invalid XML expecting IllegalArgumentException");
-            new PropertyFieldTable("Rubbish");
-            fail("IllegalArgumentException expected");
-        }
-        catch (IllegalArgumentException iae)
-        {
-            //normal path
-        }
-        try
-        {
-            _logger.warn("Testing Invalid XML expecting IllegalArgumentException");
-            new PropertyFieldTable("");
-            fail("IllegalArgumentException expected");
-        }
-        catch (IllegalArgumentException iae)
-        {
-            //normal path
-        }
-    }
-
+    
 
     public void testKeyEnumeration()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
         table.setLong("one", 1L);
         table.setLong("two", 2L);
         table.setLong("three", 3L);
@@ -652,7 +477,7 @@ public class PropertyFieldTableTest extends TestCase
 
     public void testValues()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
         table.setBoolean("bool", true);
         table.setByte("byte", Byte.MAX_VALUE);
         byte[] bytes = {99, 98, 97, 96, 95};
@@ -707,7 +532,7 @@ public class PropertyFieldTableTest extends TestCase
     {
         byte[] bytes = {99, 98, 97, 96, 95};
 
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
         table.setBoolean("bool", true);
         table.setByte("byte", Byte.MAX_VALUE);
 
@@ -732,7 +557,7 @@ public class PropertyFieldTableTest extends TestCase
 
         try
         {
-            PropertyFieldTable table2 = new PropertyFieldTable(buffer, length);
+            FieldTable table2 = new FieldTable(buffer, length);
 
             Assert.assertEquals((Boolean) true, table2.getBoolean("bool"));
             Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));
@@ -756,7 +581,7 @@ public class PropertyFieldTableTest extends TestCase
 
     public void testEncodingSize()
     {
-        PropertyFieldTable result = new PropertyFieldTable();
+        FieldTable result = new FieldTable();
         int size = 0;
 
         result.setBoolean("boolean", true);
@@ -847,31 +672,31 @@ public class PropertyFieldTableTest extends TestCase
 //    public void testEncodingSize1()
 //    {
 //                PropertyFieldTable table = new PropertyFieldTable();
-//        int size = 0;
+//        int length = 0;
 //        result.put("one", 1L);
-//        size = EncodingUtils.encodedShortStringLength("one");
-//        size += 1 + EncodingUtils.encodedLongLength();
-//        assertEquals(size, result.getEncodedSize());
+//        length = EncodingUtils.encodedShortStringLength("one");
+//        length += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(length, result.getEncodedSize());
 //
 //        result.put("two", 2L);
-//        size += EncodingUtils.encodedShortStringLength("two");
-//        size += 1 + EncodingUtils.encodedLongLength();
-//        assertEquals(size, result.getEncodedSize());
+//        length += EncodingUtils.encodedShortStringLength("two");
+//        length += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(length, result.getEncodedSize());
 //
 //        result.put("three", 3L);
-//        size += EncodingUtils.encodedShortStringLength("three");
-//        size += 1 + EncodingUtils.encodedLongLength();
-//        assertEquals(size, result.getEncodedSize());
+//        length += EncodingUtils.encodedShortStringLength("three");
+//        length += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(length, result.getEncodedSize());
 //
 //        result.put("four", 4L);
-//        size += EncodingUtils.encodedShortStringLength("four");
-//        size += 1 + EncodingUtils.encodedLongLength();
-//        assertEquals(size, result.getEncodedSize());
+//        length += EncodingUtils.encodedShortStringLength("four");
+//        length += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(length, result.getEncodedSize());
 //
 //        result.put("five", 5L);
-//        size += EncodingUtils.encodedShortStringLength("five");
-//        size += 1 + EncodingUtils.encodedLongLength();
-//        assertEquals(size, result.getEncodedSize());
+//        length += EncodingUtils.encodedShortStringLength("five");
+//        length += 1 + EncodingUtils.encodedLongLength();
+//        assertEquals(length, result.getEncodedSize());
 //
 //        //fixme should perhaps be expanded to incorporate all types.
 //
@@ -907,7 +732,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testSetObject()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         //Try setting a non primative object
 
@@ -920,7 +745,7 @@ public class PropertyFieldTableTest extends TestCase
         {
             //normal path
         }
-        // so size should be zero
+        // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
     }
 
@@ -929,7 +754,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameasNull()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         try
         {
@@ -940,7 +765,7 @@ public class PropertyFieldTableTest extends TestCase
         {
             //normal path
         }
-        // so size should be zero
+        // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
     }
 
@@ -950,7 +775,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameasEmptyString()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         try
         {
@@ -961,7 +786,7 @@ public class PropertyFieldTableTest extends TestCase
         {
             //normal path
         }
-        // so size should be zero
+        // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
     }
 
@@ -971,7 +796,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNamehasMaxLength()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         StringBuffer longPropertyName = new StringBuffer(129);
 
@@ -989,7 +814,7 @@ public class PropertyFieldTableTest extends TestCase
         {
             //normal path
         }
-        // so size should be zero
+        // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
     }
 
@@ -999,7 +824,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameStartCharacterIsLetter()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         //Try a name that starts with a number
         try
@@ -1011,7 +836,7 @@ public class PropertyFieldTableTest extends TestCase
         {
             //normal path
         }
-        // so size should be zero
+        // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
     }
 
@@ -1021,7 +846,7 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameStartCharacterIsHashorDollar()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         //Try a name that starts with a number
         try
@@ -1041,11 +866,9 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testContents()
     {
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         table.put("StringProperty", "String");
-
-        Assert.assertTrue(table.containsValue("String"));
 
         Assert.assertEquals("String", table.get("StringProperty"));
 
@@ -1062,7 +885,7 @@ public class PropertyFieldTableTest extends TestCase
     public void testSets()
     {
 
-        PropertyFieldTable table = new PropertyFieldTable();
+        FieldTable table = new FieldTable();
 
         table.put("n1", "1");
         table.put("n2", "2");
@@ -1075,63 +898,9 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertFalse(iterator.hasNext());
 
 
-        iterator = table.values().iterator();
-        Assert.assertEquals("1", iterator.next());
-        Assert.assertEquals("2", iterator.next());
-        Assert.assertEquals("3", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
-
-
-        iterator = table.entrySet().iterator();
-        Map.Entry entry = (Map.Entry) iterator.next();
-        Assert.assertEquals("n1", entry.getKey());
-        Assert.assertEquals("1", entry.getValue());
-        entry = (Map.Entry) iterator.next();
-        Assert.assertEquals("n2", entry.getKey());
-        Assert.assertEquals("2", entry.getValue());
-        entry = (Map.Entry) iterator.next();
-        Assert.assertEquals("n3", entry.getKey());
-        Assert.assertEquals("3", entry.getValue());
-        Assert.assertFalse(iterator.hasNext());
-
 
     }
 
-
-    /**
-     * Test that all the values are preserved after a putAll
-     */
-    public void testPutAll()
-    {
-        Map map = new HashMap();
-
-        map.put("char", 'c');
-        map.put("double", Double.MAX_VALUE);
-        map.put("float", Float.MAX_VALUE);
-        map.put("int", Integer.MAX_VALUE);
-        map.put("long", Long.MAX_VALUE);
-        map.put("short", Short.MAX_VALUE);
-
-        PropertyFieldTable table = new PropertyFieldTable();
-
-        table.putAll(map);
-
-        Assert.assertEquals(6, table.size());
-
-        Assert.assertTrue(table.containsKey("char"));
-        Assert.assertEquals('c', (char) table.getCharacter("char"));
-        Assert.assertTrue(table.containsKey("double"));
-        Assert.assertEquals(Double.MAX_VALUE, table.getDouble("double"));
-        Assert.assertTrue(table.containsKey("float"));
-        Assert.assertEquals(Float.MAX_VALUE, table.getFloat("float"));
-        Assert.assertTrue(table.containsKey("int"));
-        Assert.assertEquals(Integer.MAX_VALUE, (int) table.getInteger("int"));
-        Assert.assertTrue(table.containsKey("long"));
-        Assert.assertEquals(Long.MAX_VALUE, (long) table.getLong("long"));
-        Assert.assertTrue(table.containsKey("short"));
-        Assert.assertEquals(Short.MAX_VALUE, (short) table.getShort("short"));
-        Assert.assertEquals(Short.MAX_VALUE, (short) table.getShort("short"));
-    }
 
 
     private void assertBytesEqual(byte[] expected, byte[] actual)
