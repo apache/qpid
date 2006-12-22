@@ -54,6 +54,8 @@ ${METHOD_ID_INIT}
 
     public int getClazz() { return classIdMap.get(major + "-" + minor); }
     public int getMethod() { return methodIdMap.get(major + "-" + minor); }
+    public static int getClazz(byte major, byte minor) { return classIdMap.get(major + "-" + minor); }
+    public static int getMethod(byte major, byte minor) { return methodIdMap.get(major + "-" + minor); }
     
     // Field methods		
 %{FLIST}    ${mb_field_get_method}

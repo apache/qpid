@@ -31,8 +31,10 @@ public class CppGenerator extends Generator
 {
 	protected static final String versionNamespaceStartToken = "${version_namespace_start}";
 	protected static final String versionNamespaceEndToken = "${version_namespace_end}";
+	
+	// TODO: Move this to parent class
 	protected static final int FIELD_NAME = 0;
-	protected static final int FIELD_DOMAIN = 1;
+	protected static final int FIELD_CODE_TYPE = 1;
     
     /**
      * A complete list of C++ reserved words. The names of varous XML elements within the AMQP
@@ -1135,7 +1137,7 @@ public class CppGenerator extends Generator
         for (Integer thisOrdinal : ordinalFieldMap.keySet())
         {
             String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
-            sb.append(indent + fieldDomainPair[FIELD_DOMAIN] + " " + fieldDomainPair[FIELD_NAME] + ";" + cr);        	
+            sb.append(indent + fieldDomainPair[FIELD_CODE_TYPE] + " " + fieldDomainPair[FIELD_NAME] + ";" + cr);        	
         }
 		return sb.toString();
 	}
@@ -1152,7 +1154,7 @@ public class CppGenerator extends Generator
         for (Integer thisOrdinal : ordinalFieldMap.keySet())
         {
             String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
-			sb.append(indent + "inline " + setRef(fieldDomainPair[FIELD_DOMAIN]) + " get" +
+			sb.append(indent + "inline " + setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " get" +
 				Utils.firstUpper(fieldDomainPair[FIELD_NAME]) + "() { return " +
 				fieldDomainPair[FIELD_NAME] + "; }" + cr);
         }
@@ -1172,7 +1174,7 @@ public class CppGenerator extends Generator
         for (Integer thisOrdinal : ordinalFieldMap.keySet())
         {
             String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
-            String cast = fieldDomainPair[FIELD_DOMAIN].compareTo("u_int8_t") == 0 ? "(int)" : "";
+            String cast = fieldDomainPair[FIELD_CODE_TYPE].compareTo("u_int8_t") == 0 ? "(int)" : "";
             sb.append(indent + "out << \"");
             if (!firstFlag)
                 sb.append("; ");
@@ -1197,7 +1199,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1256,7 +1258,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1324,7 +1326,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1388,7 +1390,7 @@ public class CppGenerator extends Generator
 		{
 			int ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
-			sb.append(indent + (defineFlag ? setRef(fieldDomainPair[FIELD_DOMAIN]) + " " : "") +
+			sb.append(indent + (defineFlag ? setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " " : "") +
 				fieldDomainPair[FIELD_NAME] + (initializerFlag ? "(" + fieldDomainPair[FIELD_NAME] + ")" : "") +
 				(oItr.hasNext() ? "," : "") + cr);
 		}
@@ -1415,7 +1417,7 @@ public class CppGenerator extends Generator
 				sb.append(indent);
 			}
 			sb.append(
-                (fieldTypeFlag ? setRef(field[FIELD_DOMAIN]) : "") +
+                (fieldTypeFlag ? setRef(field[FIELD_CODE_TYPE]) : "") +
 				(fieldNameFlag ? " " + field[FIELD_NAME] : "") +
 				(pItr.hasNext() ? "," + (fieldNameFlag ? cr : " ") : ""));
 			first = false;
