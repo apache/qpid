@@ -90,7 +90,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         if (!body.nowait)
         {
-            final AMQFrame response = QueueBindOkBody.createAMQFrame(evt.getChannelId());
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            final AMQFrame response = QueueBindOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
             protocolSession.writeFrame(response);
         }
     }
