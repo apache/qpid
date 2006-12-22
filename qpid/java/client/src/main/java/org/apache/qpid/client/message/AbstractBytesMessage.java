@@ -63,7 +63,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         }
     }
 
-    private void allocateInitialBuffer()
+    protected void allocateInitialBuffer()
     {
         _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
         _data.setAutoExpand(true);
