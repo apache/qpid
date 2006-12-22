@@ -22,23 +22,23 @@ package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.EncodingUtils;
-import org.apache.qpid.framing.JMSPropertyFieldTable;
-import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
-import java.util.Enumeration;
+import javax.jms.MessageFormatException;
+import java.util.*;
+import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 
-public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessage
+public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
 {
     private static final Logger _logger = Logger.getLogger(JMSMapMessage.class);
 
 
     public static final String MIME_TYPE = "jms/map-message";
 
-    private JMSPropertyFieldTable _properties;
+    private Map<String,Object> _map = new HashMap<String, Object>();
 
     JMSMapMessage() throws JMSException
     {
@@ -48,45 +48,30 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
     JMSMapMessage(ByteBuffer data) throws JMSException
     {
         super(data); // this instantiates a content header
-        _properties = new JMSPropertyFieldTable();
+        populateMapFromData();
     }
+
 
     JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
-
-        if (data != null)
+        try
         {
-
-            long tableSize = EncodingUtils.readInteger(_data);
-            try
-            {
-                _properties = new JMSPropertyFieldTable(_data, tableSize);
-            }
-            catch (JMSException e)
-            {
-                Exception error = e.getLinkedException();
-                if (error instanceof AMQFrameDecodingException)
-                {
-                    throw(AMQFrameDecodingException) error;
-                }
-                else
-                {
-                    throw new AMQException(e.getMessage(), e);
-                }
-            }
-        }
-        else
+            populateMapFromData();
+        }                                                        
+        catch (JMSException je)
         {
-            _properties = new JMSPropertyFieldTable();
+            throw new AMQException("Error populating MapMessage from ByteBuffer", je);
+            
         }
+
     }
 
 
     public String toBodyString() throws JMSException
     {
-        return _properties.toString();
+        return _map.toString();
     }
 
     public String getMimeType()
@@ -98,161 +83,437 @@ public class JMSMapMessage extends JMSBytesMessage implements javax.jms.MapMessa
     public ByteBuffer getData()
     {
         //What if _data is null?
-        _properties.writeToBuffer(_data);
+        writeMapToData();
         return super.getData();
     }
+
+
 
     @Override
     public void clearBodyImpl() throws JMSException
     {
         super.clearBodyImpl();
-        _properties.clear();
+        _map.clear();
     }
 
-    public boolean getBoolean(String string) throws JMSException
+    public boolean getBoolean(String propName) throws JMSException
     {
-        return _properties.getBoolean(string);
-    }
+        Object value = _map.get(propName);
 
-    public byte getByte(String string) throws JMSException
-    {
-        return _properties.getByte(string);
-    }
-
-    public short getShort(String string) throws JMSException
-    {
-        return _properties.getShort(string);
-    }
-
-    public char getChar(String string) throws JMSException
-    {
-    	Character result = _properties.getCharacter(string);
-
-        if (result == null)
+        if(value instanceof Boolean)
         {
-            throw new NullPointerException("getChar couldn't find " + string + " item.");
+            return ((Boolean)value).booleanValue();
+        }
+        else if((value instanceof String) || (value == null))
+        {
+            return Boolean.valueOf((String)value);
         }
         else
         {
-            return result;
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to boolean.");
+        }
+
+    }
+
+    public byte getByte(String propName) throws JMSException
+    {
+        Object value = _map.get(propName);
+
+        if(value instanceof Byte)
+        {
+            return ((Byte)value).byteValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Byte.valueOf((String)value).byteValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to byte.");
         }
     }
 
-    public int getInt(String string) throws JMSException
+    public short getShort(String propName) throws JMSException
     {
-        return _properties.getInteger(string);
+        Object value = _map.get(propName);
+
+        if(value instanceof Short)
+        {
+            return ((Short)value).shortValue();
+        }
+        else if(value instanceof Byte)
+        {
+            return ((Byte)value).shortValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Short.valueOf((String)value).shortValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to short.");
+        }
+
     }
 
-    public long getLong(String string) throws JMSException
+
+    public int getInt(String propName) throws JMSException
     {
-        return _properties.getLong(string);
+        Object value = _map.get(propName);
+
+        if(value instanceof Integer)
+        {
+            return ((Integer)value).intValue();
+        }
+        else if(value instanceof Short)
+        {
+            return ((Short)value).intValue();
+        }
+        else if(value instanceof Byte)
+        {
+            return ((Byte)value).intValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Integer.valueOf((String)value).intValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to int.");
+        }
+
     }
 
-    public float getFloat(String string) throws JMSException
+    public long getLong(String propName) throws JMSException
     {
-        return _properties.getFloat(string);
+        Object value = _map.get(propName);
+
+        if(value instanceof Long)
+        {
+            return ((Long)value).longValue();
+        }
+        else if(value instanceof Integer)
+        {
+            return ((Integer)value).longValue();
+        }
+        if(value instanceof Short)
+        {
+            return ((Short)value).longValue();
+        }
+        if(value instanceof Byte)
+        {
+            return ((Byte)value).longValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Long.valueOf((String)value).longValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to long.");
+        }
+
     }
 
-    public double getDouble(String string) throws JMSException
+    public char getChar(String propName) throws JMSException
     {
-        return _properties.getDouble(string);
+        Object value = _map.get(propName);
+
+        if(!_map.containsKey(propName))
+        {
+            throw new MessageFormatException("Property " + propName + " not present");
+        }
+        else if(value instanceof Character)
+        {
+            return ((Character)value).charValue();
+        }
+        else if (value == null)
+        {
+            throw new NullPointerException("Property " + propName + " has null value and therefore cannot " +
+                                           "be converted to char.");
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to boolan.");
+        }
+
     }
 
-    public String getString(String string) throws JMSException
+
+
+    public float getFloat(String propName) throws JMSException
     {
-        return _properties.getString(string);
+        Object value = _map.get(propName);
+
+        if(value instanceof Float)
+        {
+            return ((Float)value).floatValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Float.valueOf((String)value).floatValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to float.");
+        }
     }
 
-    public byte[] getBytes(String string) throws JMSException
+    public double getDouble(String propName) throws JMSException
     {
-        return _properties.getBytes(string);
+        Object value = _map.get(propName);
+
+        if(value instanceof Double)
+        {
+            return ((Double)value).doubleValue();
+        }
+        else if(value instanceof Float)
+        {
+            return ((Float)value).doubleValue();
+        }
+        else if((value instanceof String) || (value==null))
+        {
+            return Double.valueOf((String)value).doubleValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to double.");
+        }
     }
 
-    public Object getObject(String string) throws JMSException
+    public String getString(String propName) throws JMSException
     {
-        return _properties.getObject(string);
+        Object value = _map.get(propName);
+
+        if((value instanceof String) || (value == null))
+        {
+            return (String) value;
+        }
+        else if(value instanceof byte[])
+        {
+            throw new MessageFormatException("Property " + propName + " of type byte[] " +
+                                             "cannot be converted to String.");
+        }
+        else
+        {
+            return value.toString();
+        }
+
+    }
+
+    public byte[] getBytes(String propName) throws JMSException
+    {
+        Object value = _map.get(propName);
+
+        if(!_map.containsKey(propName))
+        {
+            throw new MessageFormatException("Property " + propName + " not present");                        
+        }
+        else if((value instanceof byte[]) || (value == null))
+        {
+            return (byte[])value;
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + propName + " of type " +
+                                             value.getClass().getName() + " cannot be converted to byte[].");
+        }
+    }
+
+    public Object getObject(String propName) throws JMSException
+    {
+        return _map.get(propName);
     }
 
     public Enumeration getMapNames() throws JMSException
     {
-        return _properties.getMapNames();
+        return Collections.enumeration(_map.keySet());
     }
 
 
-    public void setBoolean(String string, boolean b) throws JMSException
+    public void setBoolean(String propName, boolean b) throws JMSException
     {
         checkWritable();
-        _properties.setBoolean(string, b);
+        checkPropertyName(propName);
+        _map.put(propName, b);
     }
 
-    public void setByte(String string, byte b) throws JMSException
+    public void setByte(String propName, byte b) throws JMSException
     {
         checkWritable();
-        _properties.setByte(string, b);
+        checkPropertyName(propName);
+        _map.put(propName, b);
     }
 
-    public void setShort(String string, short i) throws JMSException
+    public void setShort(String propName, short i) throws JMSException
     {
         checkWritable();
-        _properties.setShort(string, i);
+        checkPropertyName(propName);
+        _map.put(propName, i);
     }
 
-    public void setChar(String string, char c) throws JMSException
+    public void setChar(String propName, char c) throws JMSException
     {
         checkWritable();
-        _properties.setChar(string, c);
+        checkPropertyName(propName);
+        _map.put(propName, c);
     }
 
-    public void setInt(String string, int i) throws JMSException
+    public void setInt(String propName, int i) throws JMSException
     {
         checkWritable();
-        _properties.setInteger(string, i);
+        checkPropertyName(propName);
+        _map.put(propName, i);
     }
 
-    public void setLong(String string, long l) throws JMSException
+    public void setLong(String propName, long l) throws JMSException
     {
         checkWritable();
-        _properties.setLong(string, l);
+        checkPropertyName(propName);
+        _map.put(propName, l);
     }
 
-    public void setFloat(String string, float v) throws JMSException
+    public void setFloat(String propName, float v) throws JMSException
     {
         checkWritable();
-        _properties.setFloat(string, v);
+        checkPropertyName(propName);
+        _map.put(propName, v);
     }
 
-    public void setDouble(String string, double v) throws JMSException
+    public void setDouble(String propName, double v) throws JMSException
     {
         checkWritable();
-        _properties.setDouble(string, v);
+        checkPropertyName(propName);
+        _map.put(propName, v);
     }
 
-    public void setString(String string, String string1) throws JMSException
+    public void setString(String propName, String string1) throws JMSException
     {
         checkWritable();
-        _properties.setString(string, string1);
+        checkPropertyName(propName);
+        _map.put(propName, string1);
     }
 
-    public void setBytes(String string, byte[] bytes) throws JMSException
-    {
-        this.setBytes(string, bytes, 0, bytes.length);
-    }
-
-    public void setBytes(String string, byte[] bytes, int i, int i1) throws JMSException
+    public void setBytes(String propName, byte[] bytes) throws JMSException
     {
         checkWritable();
-        _properties.setBytes(string, bytes, i, i1);
+        checkPropertyName(propName);
+        _map.put(propName, bytes);
     }
 
-    public void setObject(String string, Object object) throws JMSException
+    public void setBytes(String propName, byte[] bytes, int offset, int length) throws JMSException
     {
+        if((offset == 0) && (length == bytes.length))
+        {
+            setBytes(propName,bytes);
+        }
+        else
+        {
+            byte[] newBytes = new byte[length];
+            System.arraycopy(bytes,offset,newBytes,0,length);
+            setBytes(propName,newBytes);
+        }
+    }
+
+    public void setObject(String propName, Object value) throws JMSException
+    {                                                                                       
         checkWritable();
-        _properties.setObject(string, object);
+        checkPropertyName(propName);
+        if(value instanceof Boolean
+                || value instanceof Byte
+                || value instanceof Short
+                || value instanceof Integer
+                || value instanceof Long
+                || value instanceof Character
+                || value instanceof Float
+                || value instanceof Double
+                || value instanceof String
+                || value instanceof byte[]                
+                || value == null)
+        {
+            _map.put(propName, value);
+        }
+        else
+        {
+            throw new MessageFormatException("Cannot set property " + propName + " to value " + value +
+                                             "of type " + value.getClass().getName() + ".");
+        }
     }
 
-    public boolean itemExists(String string) throws JMSException
+    private void checkPropertyName(String propName)
     {
-        return _properties.itemExists(string);
+        if(propName == null || propName.equals(""))
+        {
+            throw new IllegalArgumentException("Property name cannot be null, or the empty String.");
+        }
     }
+
+    public boolean itemExists(String propName) throws JMSException
+    {
+        return _map.containsKey(propName);
+    }
+
+
+    private void populateMapFromData() throws JMSException
+    {
+        if(_data != null)
+        {
+            _data.rewind();
+
+            final int entries = readIntImpl();
+            for(int i = 0; i < entries; i++)
+            {
+                String propName = readStringImpl();
+                Object value = readObject();
+                _map.put(propName,value);
+            }
+        }
+        else
+        {
+            _map.clear();
+        }
+    }
+
+    private void writeMapToData()
+    {
+        allocateInitialBuffer();
+        final int size = _map.size();
+        writeIntImpl(size);
+        for(Map.Entry<String, Object> entry : _map.entrySet())
+        {
+            try
+            {
+                writeStringImpl(entry.getKey());
+            }
+            catch (CharacterCodingException e)
+            {
+                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(),e);
+
+
+            }
+            try
+            {
+                writeObject(entry.getValue());
+            }
+            catch (JMSException e)
+            {
+                Object value = entry.getValue();
+                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey() +
+                        " value : " + value + " (type: " + value.getClass().getName() + ").",e);
+            }
+        }
+
+    }
+
+
+
 
 }
