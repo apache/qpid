@@ -51,7 +51,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testReplacement() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         //Set a boolean value
         table1.setBoolean("value", true);
 
@@ -73,7 +73,7 @@ public class JMSPropertyFieldTableTest extends TestCase
 
     public void testRemoval() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         //Set a boolean value
         table1.setBoolean("value", true);
 
@@ -99,7 +99,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testBoolean() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setBoolean("value", true);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -184,7 +184,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value will return false
@@ -197,7 +197,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testByte() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setByte("value", Byte.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -243,7 +243,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -266,7 +266,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testShort() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setShort("value", Short.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -323,7 +323,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -345,7 +345,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testDouble() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setDouble("value", Double.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -414,7 +414,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -437,7 +437,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testFloat() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setFloat("value", Float.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -500,7 +500,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -522,7 +522,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testInt() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setInteger("value", Integer.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -586,7 +586,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value returns null
@@ -608,7 +608,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testLong() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setLong("value", Long.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -679,7 +679,7 @@ public class JMSPropertyFieldTableTest extends TestCase
         //but after a remove it doesn't
         Assert.assertFalse(table1.propertyExists("value"));
 
-        // Table should now have zero size for encoding
+        // Table should now have zero length for encoding
         checkEmpty(table1);
 
         //Looking up an invalid value
@@ -700,7 +700,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      * Calls all methods that can be used to check the table is empty
      * - getEncodedSize
      * - isEmpty
-     * - size
+     * - length
      *
      * @param table to check is empty
      */
@@ -716,7 +716,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testString() throws JMSException
     {
-        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table1 = new JMSPropertyFieldTable(new FieldTable());
         table1.setString("value", "Hello");
         Assert.assertTrue(table1.propertyExists("value"));
 
@@ -799,7 +799,7 @@ public class JMSPropertyFieldTableTest extends TestCase
 
     public void testValues() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
         table.setBoolean("bool", true);
         table.setDouble("double", Double.MAX_VALUE);
         table.setFloat("float", Float.MAX_VALUE);
@@ -842,7 +842,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameasNull() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         try
         {
@@ -862,7 +862,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameasEmptyString() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         try
         {
@@ -882,7 +882,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNamehasMaxLength() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         StringBuffer longPropertyName = new StringBuffer(129);
 
@@ -910,7 +910,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameStartCharacterIsLetter() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         //Try a name that starts with a number
         try
@@ -931,7 +931,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameContainsInvalidCharacter() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         //Try a name that starts with a number
         try
@@ -953,7 +953,7 @@ public class JMSPropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameIsInvalid() throws JMSException
     {
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         //Try a name that starts with a number
         try
@@ -995,7 +995,7 @@ public class JMSPropertyFieldTableTest extends TestCase
     public void testSets()
     {
 
-        JMSPropertyFieldTable table = new JMSPropertyFieldTable();
+        JMSPropertyFieldTable table = new JMSPropertyFieldTable(new FieldTable());
 
         table.put("n1", "1");
         table.put("n2", "2");

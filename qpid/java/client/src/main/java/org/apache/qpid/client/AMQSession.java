@@ -986,7 +986,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 //    ft.put("headers", rawSelector.getDataAsBytes());
                 if (rawSelector != null)
                 {
-                    ft.putAll(rawSelector);
+                    ft.addAll(rawSelector);
                 }
                 BasicMessageConsumer consumer = new BasicMessageConsumer(_channelId, _connection, amqd, selector, noLocal,
                                                                          _messageFactoryRegistry, AMQSession.this,
