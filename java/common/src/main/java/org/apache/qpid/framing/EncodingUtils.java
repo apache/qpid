@@ -48,19 +48,6 @@ public class EncodingUtils
         }
     }
 
-    public static int encodedShortStringLength(AMQShortString s)
-    {
-        if (s == null)
-        {
-            return 1;
-        }
-        else
-        {
-            return (short) (1 + s.length());
-        }
-    }
-
-
     public static int encodedLongStringLength(String s)
     {
         if (s == null)
@@ -117,20 +104,7 @@ public class EncodingUtils
         return 0;
     }
 
-    public static void writeShortStringBytes(ByteBuffer buffer, AMQShortString s)
-    {
-
-        if (s != null)
-        {
-            writeBytes(buffer, s.getBytes());
-        }
-        else
-        {
-            // really writing out unsigned byte
-            buffer.put((byte) 0);
-        }
-    }
-
+ 
     public static void writeShortStringBytes(ByteBuffer buffer, String s)
     {
         if (s != null)
@@ -338,24 +312,6 @@ public class EncodingUtils
         // TODO: New Content class required for AMQP 0-9.
         return null;
     }
-
-    public static AMQShortString readShortStringAsAMQShortString(ByteBuffer buffer)
-    {
-        short length = buffer.getUnsigned();
-        if (length == 0)
-        {
-            return null;
-        }
-        else
-        {
-            byte[] stringBytes = new byte[length];
-            buffer.get(stringBytes, 0, length);
-
-            return new AMQShortString(stringBytes);
-        }
-    }
-
-
 
     public static String readShortString(ByteBuffer buffer)
     {
