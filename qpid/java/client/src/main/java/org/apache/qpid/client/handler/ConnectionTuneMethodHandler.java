@@ -72,11 +72,25 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 
     protected AMQFrame createConnectionOpenFrame(int channel, String path, String capabilities, boolean insist)
     {
-        return ConnectionOpenBody.createAMQFrame(channel, path, capabilities, insist);
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        return ConnectionOpenBody.createAMQFrame(channel,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            capabilities,	// capabilities
+            insist,	// insist
+            path);	// virtualHost
     }
 
     protected AMQFrame createTuneOkFrame(int channel, ConnectionTuneParameters params)
     {
-        return ConnectionTuneOkBody.createAMQFrame(channel, params.getChannelMax(), params.getFrameMax(), params.getHeartbeat());
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        return ConnectionTuneOkBody.createAMQFrame(channel,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            params.getChannelMax(),	// channelMax
+            params.getFrameMax(),	// frameMax
+            params.getHeartbeat());	// heartbeat
     }
 }

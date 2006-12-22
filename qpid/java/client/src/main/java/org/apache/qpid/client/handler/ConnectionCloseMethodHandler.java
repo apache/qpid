@@ -59,7 +59,10 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         String reason = method.replyText;
 
         // TODO: check whether channel id of zero is appropriate
-        evt.getProtocolSession().writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0));
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        evt.getProtocolSession().writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0, (byte)8, (byte)0));
 
         if (errorCode != 200)
         {

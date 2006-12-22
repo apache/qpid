@@ -44,15 +44,19 @@ import java.util.Arrays;
 
 public class RecordingMethodHandlerFactory extends WrappingMethodHandlerFactory
 {
+    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+    private final byte major = (byte)8;
+    private final byte minor = (byte)0;
     private final Iterable<FrameDescriptor> _frames = Arrays.asList(new FrameDescriptor[]
             {
-                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody()),
-                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody()),
-                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody()),
-                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody()),
-                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody()),
-                    new FrameDescriptor(BasicConsumeBody.class, new BasicConsumeBody()),
-                    new FrameDescriptor(BasicCancelBody.class, new BasicCancelBody())
+                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor)),
+                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody(major, minor)),
+                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor)),
+                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor)),
+                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor)),
+                    new FrameDescriptor(BasicConsumeBody.class, new BasicConsumeBody(major, minor)),
+                    new FrameDescriptor(BasicCancelBody.class, new BasicCancelBody(major, minor))
             });
 
 

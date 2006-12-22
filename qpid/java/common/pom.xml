@@ -35,14 +35,12 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-        <cluster.asl>${basedir}/src/main/xsl/cluster.asl</cluster.asl>
-        <spec.stylesheet>${basedir}/src/main/xsl/framing.xsl</spec.stylesheet>
-        <registry.stylesheet>${basedir}/src/main/xsl/registry.xsl</registry.stylesheet>
-        <registry.template>${basedir}/src/main/xsl/registry.template</registry.template>
+        <gentools.home>${topDirectoryLocation}/../gentools</gentools.home>
         <generated.path>${project.build.directory}/generated-sources/xsl</generated.path>
         <generated.package>org/apache/qpid/framing</generated.package>
         <generated.dir>${generated.path}/${generated.package}</generated.dir>
         <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
+        <cluster.asl>${basedir}/src/main/xsl/cluster.asl</cluster.asl>
     </properties>
 
     <build>
@@ -57,13 +55,10 @@
                         <configuration>
                             <tasks>
                                 <ant antfile="protocol-version.xml">
-                                    <property name="cluster.asl" value="${cluster.asl}"/>
-                                    <property name="spec.stylesheet" value="${spec.stylesheet}"/>
-                                    <property name="registry.stylesheet" value="${registry.stylesheet}"/>
-                                    <property name="registry.template" value="${registry.template}"/>
+									<property name="gentools.home" value="${gentools.home}"/>
                                     <property name="generated.dir" value="${generated.dir}"/>
-                                    <property name="proto_version" value="${generated.dir}/ProtocolVersionList.java"/>
-                                    <property name="specs.dir" value="${specs.dir}"/>
+                                    <property name="cluster.asl" value="${cluster.asl}"/>
+                                    <property name="xml.spec.list" value="${specs.dir}/amqp-8.0.xml ${cluster.asl}"/>
                                 </ant>
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>

@@ -27,23 +27,30 @@ public class AMQChannelException extends AMQException
 {
     private final int _classId;
     private final int _methodId;
+    /* AMQP version for which exception ocurred */
+    private final byte major;
+    private final byte minor;
 
-    public AMQChannelException(int errorCode, String msg, int classId, int methodId, Throwable t)
+    public AMQChannelException(int errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
     {
         super(errorCode, msg, t);
         _classId = classId;
         _methodId = methodId;
+        this.major = major;
+        this.minor = minor;
     }
 
-    public AMQChannelException(int errorCode, String msg, int classId, int methodId)
+    public AMQChannelException(int errorCode, String msg, int classId, int methodId, byte major, byte minor)
     {
         super(errorCode, msg);
         _classId = classId;
         _methodId = methodId;
+        this.major = major;
+        this.minor = minor;
     }
 
     public AMQFrame getCloseFrame(int channel)
     {
-        return ChannelCloseBody.createAMQFrame(channel, getErrorCode(), getMessage(), _classId, _methodId);
+        return ChannelCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode(), getMessage());
     }
 }

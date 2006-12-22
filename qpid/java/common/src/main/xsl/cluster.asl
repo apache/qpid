@@ -29,26 +29,26 @@
     provide a clustered service to clients.  
 </doc>
 
-<method name = "join">
+<method name = "join" index="10">
   <field name = "broker" type = "shortstr" />
 </method>
 
-<method name = "membership">
+<method name = "membership" index="20">
   <field name = "members" type = "longstr" />
 </method>
 
-<method name = "synch">
+<method name = "synch" index="30">
 </method>
 
-<method name = "leave">
+<method name = "leave" index="40">
   <field name = "broker" type = "shortstr" />
 </method>
 
-<method name = "suspect">
+<method name = "suspect" index="50">
   <field name = "broker" type = "shortstr" />
 </method>
 
-<method name = "ping">
+<method name = "ping" index="60">
   <field name = "broker" type = "shortstr" />
   <field name = "load" type = "long" />
   <field name = "response required" type = "bit" />
