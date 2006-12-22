@@ -20,14 +20,6 @@
  -->
 <project name="Qpid Common Protocol Versions" default="generate">
 
-<!--
-  <property name="specs.dir" value="../../specs"/>
-  <property name="gentools.home" value="../../gentools"/>
-  <property name="generated.dir" value="target/generated-sources/xsl/org/apache/qpid/framing"/>
-  <property name="cluster.asl" value="src/main/xsl/cluster.asl"/>
-  <property name="xml.spec.list" value="${specs.dir}/amqp-8.0.xml ${cluster.asl}"/>
--->
-
   <target name="generate">
     <mkdir dir="${generated.dir}"/>
     <exec dir="${gentools.home}/src" executable="pwd" />

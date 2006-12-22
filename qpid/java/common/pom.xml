@@ -57,8 +57,7 @@
                                 <ant antfile="protocol-version.xml">
 									<property name="gentools.home" value="${gentools.home}"/>
                                     <property name="generated.dir" value="${generated.dir}"/>
-                                    <property name="cluster.asl" value="${cluster.asl}"/>
-                                    <property name="xml.spec.list" value="${specs.dir}/amqp-8.0.xml ${cluster.asl}"/>
+                                    <property name="xml.spec.list" value="${specs.dir}/amqp.0-8.xml ${specs.dir}/cluster.0-8.xml"/>
                                 </ant>
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>

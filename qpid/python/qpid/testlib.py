@@ -80,7 +80,7 @@ Options:
     def __init__(self):
         # Defaults
         self.setBroker("localhost")
-        self.spec = "../specs/amqp-8.0.xml"
+        self.spec = "../specs/amqp.0-8.xml"
         self.verbose = 1
         self.ignore = []
 
