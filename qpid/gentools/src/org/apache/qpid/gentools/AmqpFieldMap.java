@@ -49,12 +49,21 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 		LanguageConverter converter)
 		throws AmqpTypeMappingException
 	{
+		// TODO: REVIEW THIS! There may be a bug here that affects C++ generation (only with >1 version)...
+		// If version == null (a common scenario) then the version map is built up on the
+		// basis of first found item, and ignores other version variations.
+		// This should probably be disallowed by throwing an NPE, as AmqpOrdinalFieldMap cannot
+		// represent these possibilities.
+		// *OR*
+		// Change the structure of AmqpOrdianlFieldMap to allow for the various combinations that
+		// will result from version variation - but that is what AmqpFieldMap is... :-$
 		AmqpOrdinalFieldMap ordinalFieldMap = new AmqpOrdinalFieldMap();
 		for (String thisFieldName: keySet())
 		{
 			AmqpField field = get(thisFieldName);
 			if (version == null || field.versionSet.contains(version))
 			{
+				// 1. Search for domain name in field domain map with version that matches
 				String domain = "";
 				boolean dFound = false;
 				for (String thisDomainName : field.domainMap.keySet())
@@ -69,6 +78,7 @@ public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionC
 					}
 				}
 				
+				// 2. Search for ordinal in field ordianl map with version that matches
 				int ordinal = -1;
 				boolean oFound = false;
 				for (Integer thisOrdinal : field.ordinalMap.keySet())

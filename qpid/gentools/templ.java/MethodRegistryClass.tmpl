@@ -28,12 +28,53 @@
  
 package org.apache.qpid.framing;
 
-import java.util.Map;
+import java.util.HashMap;
+import java.lang.reflect.Constructor;
+import org.apache.log4j.Logger;
 
 class MainRegistry
 {
-    static void register(Map map, byte major, byte minor)
+    private static final Logger _log = Logger.getLogger(MainRegistry.class);
+	private static HashMap<Long, Class> classIDMethodIDVersionBodyMap = new HashMap<Long, Class>();
+	
+    static
     {
 %{CLIST}	${reg_map_put_method}
+    }
+    
+    public static AMQMethodBody get(short classID, short methodID, byte major, byte minor)
+        throws AMQFrameDecodingException
+    {
+		Class bodyClass = classIDMethodIDVersionBodyMap.get(
+		    createMapKey(classID, methodID, major, minor));
+		if (bodyClass == null)
+		{
+	    	throw new AMQFrameDecodingException(_log,
+	    	    "Unable to find a suitable decoder for class " + classID + " and method " +
+	    	    methodID + " in AMQP version " + major + "-" + minor + ".");
+	    }
+	    try
+	    {
+	    	Constructor initFn = bodyClass.getConstructor(byte.class, byte.class);
+	        return (AMQMethodBody) initFn.newInstance(major, minor);
+	    }
+	    catch (Exception e)
+	    {
+	    	throw new AMQFrameDecodingException(_log,
+	    	    "Unable to instantiate body class for class " + classID + " and method " +
+	    	    methodID + " in AMQP version " + major + "-" + minor + " : " + e, e);
+	    }
+    }
+    
+    private static Long createMapKey(short classID, short methodID, byte major, byte minor)
+    {
+    	/**
+         *	Mapping of 4 components into a guaranteed unique key:
+         *  MSB                                     LSB
+         *  +----+----+----+----+----+----+-----+-----+
+         *  |    0    | classID |methodID |major|minor|
+         *  +----+----+----+----+----+----+-----+-----+
+         */
+    	return new Long(((long)classID << 32) + ((long)methodID << 16) + ((long)major << 8) + minor);
     }
 }
