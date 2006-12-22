@@ -46,7 +46,9 @@ class MessageTestHelper extends TestCase
 
     AMQMessage message(boolean immediate) throws AMQException
     {
-        BasicPublishBody publish = new BasicPublishBody();
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Establish some way to determine the version for the test.
+        BasicPublishBody publish = new BasicPublishBody((byte)8, (byte)0);
         publish.immediate = immediate;
         return new AMQMessage(_messageStore, publish, new ContentHeaderBody(), null);
     }

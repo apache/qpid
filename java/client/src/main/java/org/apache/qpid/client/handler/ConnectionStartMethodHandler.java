@@ -126,8 +126,15 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             clientProperties.put(ClientProperties.product.toString(), QpidProperties.getProductName());
             clientProperties.put(ClientProperties.version.toString(), QpidProperties.getReleaseVersion());
             clientProperties.put(ClientProperties.platform.toString(), getFullSystemInfo());
-            ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(), clientProperties, mechanism,
-                                                               saslResponse, selectedLocale));
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
+                (byte)8, (byte)0,	// AMQP version (major, minor)
+                clientProperties,	// clientProperties
+                selectedLocale,	// locale
+                mechanism,	// mechanism
+                saslResponse));	// response
         }
         catch (UnsupportedEncodingException e)
         {
