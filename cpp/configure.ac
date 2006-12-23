@@ -130,6 +130,7 @@ AC_CONFIG_FILES([
   tests/Makefile
   docs/man/Makefile
   docs/api/Makefile
+  rpm/Makefile
   ])
 
 AC_OUTPUT
