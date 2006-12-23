@@ -6,11 +6,11 @@ dist-hook: html
 EXTRA_DIST=html
 
 SOURCES = \
-  $(wildcard $(topsrcdir)/gen/*.h) \
-  $(wildcard $(topsrcdir)/lib/common/*.h) \
-  $(wildcard $(topsrcdir)/lib/common/sys/*.h) \
-  $(wildcard $(topsrcdir)/lib/common/framing/*.h) \
-  $(wildcard $(topsrcdir)/lib/client/*.h) 
+  $(wildcard $(top_srcdir)/gen/*.h) \
+  $(wildcard $(top_srcdir)/lib/common/*.h) \
+  $(wildcard $(top_srcdir)/lib/common/sys/*.h) \
+  $(wildcard $(top_srcdir)/lib/common/framing/*.h) \
+  $(wildcard $(top_srcdir)/lib/client/*.h) 
 
 doxygen.tstamp: user.doxygen $(SOURCES)
 	doxygen user.doxygen
