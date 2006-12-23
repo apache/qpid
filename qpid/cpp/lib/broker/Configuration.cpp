@@ -26,7 +26,8 @@ using namespace qpid::broker;
 using namespace std;
 
 Configuration::Configuration() :
-    trace('t', "trace", "Print incoming & outgoing frames to the console (default=false)", false),
+    daemon('d', "daemon", "Run as system daemon, detached from terminal.", false),
+    trace('t', "trace", "Print incoming & outgoing frames to the console", false),
     port('p', "port", "Set the port to listen on (default=5672)", 5672),
     workerThreads("worker-threads", "Set the number of worker threads to use (default=5).", 5),
     maxConnections("max-connections", "Set the maximum number of connections the broker can accept (default=500).", 500),
@@ -36,6 +37,7 @@ Configuration::Configuration() :
     help("help", "Print usage information", false),
     version("version", "Print version information", false)
 {
+    options.push_back(&daemon);
     options.push_back(&trace);
     options.push_back(&port);
     options.push_back(&workerThreads);
@@ -57,16 +59,16 @@ void Configuration::parse(char const *progName, int argc, char** argv){
         for(op_iterator i = options.begin(); i < options.end() && !matched; i++){
             matched = (*i)->parse(position, argv, argc);
         }
-        if(!matched){
-            std::cerr<< "Warning: skipping unrecognised option " << argv[position] << std::endl;
-            position++;
+        if(!matched) {
+            throw BadOptionException(
+                std::string("Unrecognised option: ")+argv[position]);
         }
     }
 }
 
 void Configuration::usage(){
     std::cout << "Usage: " << programName << " [OPTION]..." << std::endl
-	      << "Start the Qpid broker daemon." << std::endl << std::endl
+	      << "Start the Qpid AMQP broker daemon." << std::endl << std::endl
 	      << "Options:" << std::endl;
     for(op_iterator i = options.begin(); i < options.end(); i++){
         (*i)->print(std::cout);
@@ -82,6 +84,10 @@ bool Configuration::isHelp() const {
 
 bool Configuration::isVersion() const {
     return version.getValue();
+}
+
+bool Configuration::isDaemon() const {
+    return daemon.getValue();
 }
 
 bool Configuration::isTrace() const {

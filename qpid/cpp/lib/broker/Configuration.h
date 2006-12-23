@@ -27,132 +27,143 @@
 #include <Exception.h>
 
 namespace qpid {
-    namespace broker {
-        class Configuration{
-            class Option {
-                const std::string flag;
-                const std::string name;
-                const std::string desc;
+namespace broker {
+class Configuration{
 
-                bool match(const std::string& arg);
+    class Option {
+        const std::string flag;
+        const std::string name;
+        const std::string desc;
 
-            protected:
-                virtual bool needsValue() const = 0;
-                virtual void setValue(const std::string& value) = 0;
+        bool match(const std::string& arg);
 
-            public:
-                Option(const char flag, const std::string& name, const std::string& desc);
-                Option(const std::string& name, const std::string& desc);
-                virtual ~Option();
+      protected:
+        virtual bool needsValue() const = 0;
+        virtual void setValue(const std::string& value) = 0;
 
-                bool parse(int& i, char** argv, int argc);
-                void print(std::ostream& out) const;
-            };
+      public:
+        Option(const char flag, const std::string& name, const std::string& desc);
+        Option(const std::string& name, const std::string& desc);
+        virtual ~Option();
 
-            class IntOption : public Option{
-                const int defaultValue;
-                int value;
-            public:
-                IntOption(char flag, const std::string& name, const std::string& desc, const int value = 0);
-                IntOption(const std::string& name, const std::string& desc, const int value = 0);
-                virtual ~IntOption();
+        bool parse(int& i, char** argv, int argc);
+        void print(std::ostream& out) const;
+    };
 
-                int getValue() const;
-                virtual bool needsValue() const;
-                virtual void setValue(const std::string& value);
-                virtual void setValue(int _value) { value = _value; }
-            };
+    class IntOption : public Option{
+        const int defaultValue;
+        int value;
+      public:
+        IntOption(char flag, const std::string& name, const std::string& desc, const int value = 0);
+        IntOption(const std::string& name, const std::string& desc, const int value = 0);
+        virtual ~IntOption();
 
-            class LongOption : public Option{
-                const long defaultValue;
-                int value;
-            public:
-                LongOption(char flag, const std::string& name, const std::string& desc, const long value = 0);
-                LongOption(const std::string& name, const std::string& desc, const long value = 0);
-                virtual ~LongOption();
+        int getValue() const;
+        virtual bool needsValue() const;
+        virtual void setValue(const std::string& value);
+        virtual void setValue(int _value) { value = _value; }
+    };
 
-                long getValue() const;
-                virtual bool needsValue() const;
-                virtual void setValue(const std::string& value);
-                virtual void setValue(int _value) { value = _value; }
-            };
+    class LongOption : public Option{
+        const long defaultValue;
+        int value;
+      public:
+        LongOption(char flag, const std::string& name, const std::string& desc, const long value = 0);
+        LongOption(const std::string& name, const std::string& desc, const long value = 0);
+        virtual ~LongOption();
 
-            class StringOption : public Option{
-                const std::string defaultValue;
-                std::string value;
-            public:
-                StringOption(char flag, const std::string& name, const std::string& desc, const std::string value = "");
-                StringOption(const std::string& name, const std::string& desc, const std::string value = "");
-                virtual ~StringOption();
+        long getValue() const;
+        virtual bool needsValue() const;
+        virtual void setValue(const std::string& value);
+        virtual void setValue(int _value) { value = _value; }
+    };
 
-                const std::string& getValue() const;
-                virtual bool needsValue() const;
-                virtual void setValue(const std::string& value);
-            };
+    class StringOption : public Option{
+        const std::string defaultValue;
+        std::string value;
+      public:
+        StringOption(char flag, const std::string& name, const std::string& desc, const std::string value = "");
+        StringOption(const std::string& name, const std::string& desc, const std::string value = "");
+        virtual ~StringOption();
 
-            class BoolOption : public Option{
-                const bool defaultValue;
-                bool value;
-            public:
-                BoolOption(char flag, const std::string& name, const std::string& desc, const bool value = 0);
-                BoolOption(const std::string& name, const std::string& desc, const bool value = 0);
-                virtual ~BoolOption();
+        const std::string& getValue() const;
+        virtual bool needsValue() const;
+        virtual void setValue(const std::string& value);
+    };
 
-                bool getValue() const;
-                virtual bool needsValue() const;
-                virtual void setValue(const std::string& value);
-                virtual void setValue(bool _value) { value = _value; }
-            };
+    class BoolOption : public Option{
+        const bool defaultValue;
+        bool value;
+      public:
+        BoolOption(char flag, const std::string& name, const std::string& desc, const bool value = 0);
+        BoolOption(const std::string& name, const std::string& desc, const bool value = 0);
+        virtual ~BoolOption();
 
-            BoolOption trace;
-            IntOption port;
-            IntOption workerThreads;
-            IntOption maxConnections;
-            IntOption connectionBacklog;
-            StringOption store;
-            LongOption stagingThreshold;
-            BoolOption help;
-            BoolOption version;
-            char const *programName;
+        bool getValue() const;
+        virtual bool needsValue() const;
+        virtual void setValue(const std::string& value);
+        virtual void setValue(bool _value) { value = _value; }
+    };
 
-            typedef std::vector<Option*>::iterator op_iterator;
-            std::vector<Option*> options;
+    BoolOption daemon;
+    BoolOption trace;
+    IntOption port;
+    IntOption workerThreads;
+    IntOption maxConnections;
+    IntOption connectionBacklog;
+    StringOption store;
+    LongOption stagingThreshold;
+    BoolOption help;
+    BoolOption version;
+    char const *programName;
 
-        public:
-            class ParseException : public Exception {
-              public:
-                ParseException(const std::string& msg) : Exception(msg) {}
-            };
+    typedef std::vector<Option*>::iterator op_iterator;
+    std::vector<Option*> options;
+
+  public:
+
+    struct BadOptionException : public qpid::Exception {
+        BadOptionException(const std::string& msg)
+            : qpid::Exception(msg) {}
+    };
+            
+
+    class ParseException : public Exception {
+      public:
+        ParseException(const std::string& msg) : Exception(msg) {}
+    };
 
 
-            Configuration();
-            ~Configuration();
+    Configuration();
+    ~Configuration();
 
-            void parse(char const*, int argc, char** argv);
+    void parse(char const*, int argc, char** argv);
 
-            bool isHelp() const;
-            bool isVersion() const;
-            bool isTrace() const;
-            int getPort() const;
-            int getWorkerThreads() const;
-            int getMaxConnections() const;
-            int getConnectionBacklog() const;
-            const std::string& getStore() const;
-            long getStagingThreshold() const;
+    bool isHelp() const;
+    bool isVersion() const;
+    bool isDaemon() const;
+    bool isTrace() const;
+    int getPort() const;
+    int getWorkerThreads() const;
+    int getMaxConnections() const;
+    int getConnectionBacklog() const;
+    const std::string& getStore() const;
+    long getStagingThreshold() const;
 
-            void setHelp(bool b) { help.setValue(b); }
-            void setVersion(bool b) { version.setValue(b); }
-            void setTrace(bool b) { trace.setValue(b); }
-            void setPort(int i) { port.setValue(i); }
-            void setWorkerThreads(int i) { workerThreads.setValue(i); }
-            void setMaxConnections(int i) { maxConnections.setValue(i); }
-            void setConnectionBacklog(int i) { connectionBacklog.setValue(i); }
-            void setStore(const std::string& s) { store.setValue(s); }
-            void setStagingThreshold(long l) { stagingThreshold.setValue(l); }
+    void setHelp(bool b) { help.setValue(b); }
+    void setVersion(bool b) { version.setValue(b); }
+    void setDaemon(bool b) { daemon.setValue(b); }
+    void setTrace(bool b) { trace.setValue(b); }
+    void setPort(int i) { port.setValue(i); }
+    void setWorkerThreads(int i) { workerThreads.setValue(i); }
+    void setMaxConnections(int i) { maxConnections.setValue(i); }
+    void setConnectionBacklog(int i) { connectionBacklog.setValue(i); }
+    void setStore(const std::string& s) { store.setValue(s); }
+    void setStagingThreshold(long l) { stagingThreshold.setValue(l); }
 
-            void usage();
-        };
-    }
+    void usage();
+};
+}
 }
 
 
