@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class SynchronizedDeliveryManager implements DeliveryManager
 {
-    private static final Logger _log = Logger.getLogger(ConcurrentDeliveryManager.class);
+    private static final Logger _log = Logger.getLogger(SynchronizedDeliveryManager.class);
 
     /**
      * Holds any queued messages
@@ -122,6 +122,11 @@ class SynchronizedDeliveryManager implements DeliveryManager
     public synchronized List<AMQMessage> getMessages()
     {
         return new ArrayList<AMQMessage>(_messages);
+    }
+
+    public void populatePreDeliveryQueue(Subscription subscription)
+    {
+        //no-op . This DM has no PreDeliveryQueues
     }
 
     public synchronized void removeAMessageFromTop() throws AMQException
@@ -245,7 +250,6 @@ class SynchronizedDeliveryManager implements DeliveryManager
                 else
                 {
                     s.send(msg, _queue);
-                    msg.setDeliveredToConsumer();
                 }
             }
         }

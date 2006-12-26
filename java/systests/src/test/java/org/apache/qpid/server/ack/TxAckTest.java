@@ -95,7 +95,8 @@ public class TxAckTest extends TestCase
         Scenario(int messageCount, List<Long> acked, List<Long> unacked)
         {
             TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(), null,
-                                                                          new LinkedList<RequiredDeliveryException>());
+                                                                          new LinkedList<RequiredDeliveryException>(),
+                                                                          new HashSet<Long>());
             for(int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;

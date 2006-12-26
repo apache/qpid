@@ -116,7 +116,9 @@ public class PropertyValueTest extends TestCase implements MessageListener
             m.setIntProperty("Int", (int) Integer.MAX_VALUE);
 
             m.setJMSCorrelationID("Correlation");
-            m.setJMSPriority(100);
+            //fixme the m.setJMSMessage has no effect
+            producer.setPriority(8);
+            m.setJMSPriority(3);
 
             //  Queue
             Queue q;
@@ -182,10 +184,8 @@ public class PropertyValueTest extends TestCase implements MessageListener
                                 (int) Integer.MAX_VALUE, m.getIntProperty("Int"));
             Assert.assertEquals("Check CorrelationID properties are correctly transported",
                                 "Correlation", m.getJMSCorrelationID());
-
-            _logger.warn("getJMSPriority not being verified.");
-//            Assert.assertEquals("Check Priority properties are correctly transported",
-//                                100, m.getJMSPriority());
+            Assert.assertEquals("Check Priority properties are correctly transported",
+                                8, m.getJMSPriority());
 
             // Queue
             Assert.assertEquals("Check ReplyTo properties are correctly transported",

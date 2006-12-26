@@ -55,7 +55,7 @@ public final class AMQConstant
     {
         return _name;
     }
-    
+
     public static final AMQConstant FRAME_MIN_SIZE = new AMQConstant(4096, "frame min size", true);
 
     public static final AMQConstant FRAME_END = new AMQConstant(206, "frame end", true);
@@ -73,6 +73,8 @@ public final class AMQConstant
     public static final AMQConstant CONTEXT_IN_USE = new AMQConstant(320, "context in use", true);
 
     public static final AMQConstant CONTEXT_UNKNOWN = new AMQConstant(321, "context unknown", true);
+
+    public static final AMQConstant INVALID_SELECTOR = new AMQConstant(322, "selector invalid", true);
 
     public static final AMQConstant INVALID_PATH = new AMQConstant(402, "invalid path", true);
 

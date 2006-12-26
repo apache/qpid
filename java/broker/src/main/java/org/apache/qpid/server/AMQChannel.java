@@ -25,6 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
@@ -41,6 +43,8 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.TxnBuffer;
 
 import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -102,6 +106,8 @@ public class AMQChannel
 
     private MessageHandleFactory _messageHandleFactory = new MessageHandleFactory();
 
+    private Set<Long> _browsedAcks = new HashSet<Long>();
+
     public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
     {
@@ -111,7 +117,7 @@ public class AMQChannel
         _messageStore = messageStore;
         _exchanges = exchanges;
         // by default the session is non-transactional
-        _txnContext = new NonTransactionalContext(_messageStore, this, _returnMessages);
+        _txnContext = new NonTransactionalContext(_messageStore, this, _returnMessages, _browsedAcks);
     }
 
     /**
@@ -311,13 +317,14 @@ public class AMQChannel
      * @param tag     the tag chosen by the client (if null, server will generate one)
      * @param queue   the queue to subscribe to
      * @param session the protocol session of the subscriber
+     * @param noLocal
      * @return the consumer tag. This is returned to the subscriber and used in
      *         subsequent unsubscribe requests
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
-    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks)
-            throws AMQException, ConsumerTagNotUniqueException
+    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
+                                   FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -328,7 +335,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }
@@ -524,6 +531,12 @@ public class AMQChannel
         return _unacknowledgedMessageMap;
     }
 
+    public void addUnacknowledgedBrowsedMessage(AMQMessage msg, long deliveryTag, String consumerTag, AMQQueue queue)
+    {
+        _browsedAcks.add(deliveryTag);
+        addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+    }
+    
     private void checkSuspension()
     {
         boolean suspend;

@@ -34,13 +34,15 @@ import org.apache.qpid.AMQException;
 import junit.framework.TestCase;
 
 import java.util.LinkedList;
+import java.util.HashSet;
 
 class MessageTestHelper extends TestCase
 {
     private final MessageStore _messageStore = new SkeletonMessageStore();
 
     private final TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, null,
-                                                                                 new LinkedList<RequiredDeliveryException>());
+                                                                                 new LinkedList<RequiredDeliveryException>(),
+                                                                                 new HashSet<Long>());
 
     MessageTestHelper() throws Exception
     {

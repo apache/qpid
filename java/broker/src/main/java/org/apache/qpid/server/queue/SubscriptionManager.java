@@ -20,12 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.List;
+
 /**
  * Abstraction of actor that will determine the subscriber to whom
  * a message will be sent.
  */
 public interface SubscriptionManager
 {
+    public List<Subscription> getSubscriptions();
     public boolean hasActiveSubscribers();
     public Subscription nextSubscriber(AMQMessage msg);
 }

@@ -60,6 +60,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     /**
      * Remove the subscription, returning it if it was found
+     *
      * @param subscription
      * @return null if no match was found
      */
@@ -92,7 +93,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     /**
      * Return the next unsuspended subscription or null if not found.
-     *
+     * <p/>
      * Performance note:
      * This method can scan all items twice when looking for a subscription that is not
      * suspended. The worst case occcurs when all subscriptions are suspended. However, it is does this
@@ -107,31 +108,51 @@ class SubscriptionSet implements WeightedSubscriptionManager
             return null;
         }
 
-        try {
-            final Subscription result = nextSubscriber();
-            if (result == null) {
+        try
+        {
+            final Subscription result = nextSubscriberImpl(msg);
+            if (result == null)
+            {
                 _currentSubscriber = 0;
-                return nextSubscriber();
-            } else {
+                return nextSubscriberImpl(msg);
+            }
+            else
+            {
                 return result;
             }
-        } catch (IndexOutOfBoundsException e) {
+        }
+        catch (IndexOutOfBoundsException e)
+        {
             _currentSubscriber = 0;
-            return nextSubscriber();
+            return nextSubscriber(msg);
         }
     }
 
-    private Subscription nextSubscriber()
+    private Subscription nextSubscriberImpl(AMQMessage msg)
     {
         final ListIterator<Subscription> iterator = _subscriptions.listIterator(_currentSubscriber);
-        while (iterator.hasNext()) {
+        while (iterator.hasNext())
+        {
             Subscription subscription = iterator.next();
             ++_currentSubscriber;
             subscriberScanned();
-            if (!subscription.isSuspended()) {
-                return subscription;
+
+            if (!subscription.isSuspended())
+            {
+                if (subscription.hasInterest(msg))
+                {
+                    // if the queue is not empty then this client is ready to receive a message.
+                    //FIXME the queue could be full of sent messages.
+                    // Either need to clean all PDQs after sending a message
+                    // OR have a clean up thread that runs the PDQs expunging the messages.
+                    if (!subscription.hasFilters() || subscription.getPreDeliveryQueue().isEmpty())
+                    {
+                        return subscription;
+                    }
+                }
             }
         }
+
         return null;
     }
 
@@ -147,11 +168,19 @@ class SubscriptionSet implements WeightedSubscriptionManager
         return _subscriptions.isEmpty();
     }
 
+    public List<Subscription> getSubscriptions()
+    {
+        return _subscriptions;
+    }
+
     public boolean hasActiveSubscribers()
     {
         for (Subscription s : _subscriptions)
         {
-            if (!s.isSuspended()) return true;
+            if (!s.isSuspended())
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -161,7 +190,10 @@ class SubscriptionSet implements WeightedSubscriptionManager
         int count = 0;
         for (Subscription s : _subscriptions)
         {
-            if (!s.isSuspended()) count++;
+            if (!s.isSuspended())
+            {
+                count++;
+            }
         }
         return count;
     }
@@ -169,6 +201,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
     /**
      * Notification that a queue has been deleted. This is called so that the subscription can inform the
      * channel, which in turn can update its list of unacknowledged messages.
+     *
      * @param queue
      */
     public void queueDeleted(AMQQueue queue) throws AMQException
@@ -179,7 +212,8 @@ class SubscriptionSet implements WeightedSubscriptionManager
         }
     }
 
-    int size() {
+    int size()
+    {
         return _subscriptions.size();
     }
 }

@@ -202,7 +202,8 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         private static MessageStore _messageStore = new SkeletonMessageStore();
 
         private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, null,
-                                                                         new LinkedList<RequiredDeliveryException>());
+                                                                         new LinkedList<RequiredDeliveryException>(),
+                                                                         new HashSet<Long>());
 
         Message(String id, String... headers) throws AMQException
         {

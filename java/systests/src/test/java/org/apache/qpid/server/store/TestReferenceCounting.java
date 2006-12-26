@@ -49,7 +49,7 @@ public class TestReferenceCounting extends TestCase
     {
         createPersistentContentHeader();
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody(),
-                                            new NonTransactionalContext(_store, null, null),
+                                            new NonTransactionalContext(_store, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
         // we call routing complete to set up the handle
@@ -71,7 +71,7 @@ public class TestReferenceCounting extends TestCase
     public void testMessageRemains() throws AMQException
     {
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody(),
-                                            new NonTransactionalContext(_store, null, null),
+                                            new NonTransactionalContext(_store, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
         // we call routing complete to set up the handle

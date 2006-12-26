@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
@@ -69,7 +70,7 @@ public interface AMQProtocolSession
      * @param channel the channel to associate with this session. It is an error to
      * associate the same channel with more than one session but this is not validated.
      */
-    void addChannel(AMQChannel channel);
+    void addChannel(AMQChannel channel) throws AMQException;
 
     /**
      * Close a specific channel. This will remove any resources used by the channel, including:
@@ -122,4 +123,9 @@ public interface AMQProtocolSession
      * @param saslServer
      */
     void setSaslServer(SaslServer saslServer);
+
+
+    FieldTable getClientProperties();
+
+    void setClientProperties(FieldTable clientProperties);
 }

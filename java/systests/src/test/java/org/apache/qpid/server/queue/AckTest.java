@@ -38,6 +38,7 @@ import org.apache.qpid.server.util.TestApplicationRegistry;
 
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -82,7 +83,8 @@ public class AckTest extends TestCase
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
         TransactionalContext txnContext = new NonTransactionalContext(_messageStore, null,
-                                                                      new LinkedList<RequiredDeliveryException>());
+                                                                      new LinkedList<RequiredDeliveryException>(),
+                                                                      new HashSet<Long>());
         MessageHandleFactory factory = new MessageHandleFactory();
         for (int i = 1; i <= count; i++)
         {

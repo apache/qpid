@@ -26,10 +26,14 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.message.MessageDecorator;
+import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
@@ -37,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
+
+    public static final String JMS_MESSAGE = "jms.message";
 
     /**
      * Used in clustering
@@ -64,6 +70,9 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
 
+    private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
+    private AtomicBoolean _taken;
+    
     private TransientMessageData _transientMessageData = new TransientMessageData();
 
     /**
@@ -141,6 +150,8 @@ public class AMQMessage
         _messageId = messageId;
         _txnContext = txnContext;
         _transientMessageData.setPublishBody(publishBody);
+        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
+        _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
         {
             _log.debug("Message created with id " + messageId);
@@ -358,6 +369,60 @@ public class AMQMessage
         return _publisher;
     }
 
+    /**
+     * Called selectors to determin if the message has already been sent
+     * @return   _deliveredToConsumer
+     */
+    public boolean getDeliveredToConsumer()
+    {
+        return _deliveredToConsumer;
+    }
+
+
+    public MessageDecorator getDecodedMessage(String type) throws AMQException
+    {
+        MessageDecorator msgtype = null;
+
+        if (_decodedMessages != null)
+        {
+            msgtype = _decodedMessages.get(type);
+
+            if (msgtype == null)
+            {
+                msgtype = decorateMessage(type);
+            }
+        }
+
+        return msgtype;
+    }
+
+    private MessageDecorator decorateMessage(String type) throws AMQException
+    {
+        MessageDecorator msgdec = null;
+
+        if (type.equals(JMS_MESSAGE))
+        {
+            msgdec = new JMSMessage(this);
+        }
+
+        if (msgdec != null)
+        {
+            _decodedMessages.put(type, msgdec);
+        }
+
+        return msgdec;
+    }
+
+    public boolean taken()
+    {
+        return _taken.getAndSet(true);
+    }
+
+    public void release()
+    {
+        _taken.set(false);
+    }
+    
     public boolean checkToken(Object token)
     {
         if (_tokens.contains(token))
@@ -507,8 +572,7 @@ public class AMQMessage
         }
 
         //
-        // Now start writing out the other content bodies
-        // TODO: MINA needs to be fixed so the the pending writes buffer is not unbounded
+        // Now start writing out the other content bodies        
         //
         while (bodyFrameIterator.hasNext())
         {

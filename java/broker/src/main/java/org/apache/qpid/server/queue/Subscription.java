@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 
+import java.util.Queue;
+
 public interface Subscription
 {
     void send(AMQMessage msg, AMQQueue queue) throws AMQException;
@@ -29,4 +31,18 @@ public interface Subscription
     boolean isSuspended();
 
     void queueDeleted(AMQQueue queue) throws AMQException;
+
+    boolean hasFilters();
+
+    boolean hasInterest(AMQMessage msg);
+
+    Queue<AMQMessage> getPreDeliveryQueue();
+
+    void enqueueForPreDelivery(AMQMessage msg);
+
+    boolean isAutoClose();
+
+    void close();
+
+    boolean isBrowser();   
 }

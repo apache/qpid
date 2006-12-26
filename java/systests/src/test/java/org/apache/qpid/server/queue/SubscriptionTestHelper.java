@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 public class SubscriptionTestHelper implements Subscription
 {
@@ -68,6 +69,41 @@ public class SubscriptionTestHelper implements Subscription
 
     public void queueDeleted(AMQQueue queue)
     {
+    }
+
+    public boolean hasFilters()
+    {
+        return false;
+    }
+
+    public boolean hasInterest(AMQMessage msg)
+    {
+        return true;
+    }
+
+    public Queue<AMQMessage> getPreDeliveryQueue()
+    {
+        return null;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg)
+    {
+        //no-op
+    }
+
+    public boolean isAutoClose()
+    {
+        return false;
+    }
+
+    public void close()
+    {
+        //no-op
+    }
+
+    public boolean isBrowser()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public int hashCode()
