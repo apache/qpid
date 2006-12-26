@@ -186,11 +186,11 @@
                               time, during the 'package' phase to capture the version of any resources added to jar files.
                               This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules 
                               at the time of the build.
-                              The properties are placed into a file 'version.properties' in the target/classes directory of any child module that runs 
+                              The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module that runs 
                               this plugin.
-                              The 'version.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
+                              The 'qpidversion.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
                               Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of 
-                              version.properties and then the client or broker being built against an older version of the common library ending up with
+                              qpidversion.properties and then the client or broker being built against an older version of the common library ending up with
                               the wrong version information. This is unlikely to happen because the client or broker should pick up its own properties
                               from the classpath first. If this happens it will be obvious because the productName property will be 
                               'Qpid Common Utilities'. If this is a problem then push this ant task down into the client and broker poms and remove it
@@ -208,7 +208,7 @@
                                </exec>
 
                                <!-- Write the version.properties out. -->
-                               <propertyfile file="target/classes/version.properties">
+                               <propertyfile file="target/classes/qpidversion.properties">
                                  <entry key="qpid.svnversion" value="${svnversion}"/>
                                  <entry key="qpid.name" value="${project.name}"/>
                                  <entry key="qpid.version" value="${project.version}"/>
