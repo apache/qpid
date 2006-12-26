@@ -20,12 +20,18 @@
  */
 package org.apache.qpid.common;
 
+import org.apache.log4j.Logger;
+
 import java.util.Properties;
+import java.util.Map;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class QpidProperties
 {
-    public static final String VERSION_RESOURCE = "version.properties";
+    private static final Logger _logger = Logger.getLogger(QpidProperties.class);
+    
+    public static final String VERSION_RESOURCE = "qpidversion.properties";
 
     public static final String PRODUCT_NAME_PROPERTY = "qpid.name";
     public static final String RELEASE_VERSION_PROPERTY = "qpid.version";
@@ -44,16 +50,34 @@ public class QpidProperties
 
         try
         {
-            props.load(QpidProperties.class.getClassLoader().getResourceAsStream(VERSION_RESOURCE));
+            InputStream propertyStream = QpidProperties.class.getClassLoader().getResourceAsStream(VERSION_RESOURCE);
+            if (propertyStream == null)
+            {
+                _logger.warn("Unable to find resource " + VERSION_RESOURCE + " from classloader");
+            }
+            else
+            {
+                props.load(propertyStream);
 
-            productName = props.getProperty(PRODUCT_NAME_PROPERTY);
-            releaseVersion = props.getProperty(RELEASE_VERSION_PROPERTY);
-            buildVersion = props.getProperty(BUILD_VERSION_PROPERTY);
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Dumping QpidProperties");
+                    for (Map.Entry<Object,Object> entry : props.entrySet())
+                    {
+                        _logger.debug("Property: " + entry.getKey() + " Value: "+ entry.getValue());
+                    }
+                    _logger.debug("End of property dump");
+                }
+
+                productName = readPropertyValue(props, PRODUCT_NAME_PROPERTY);
+                releaseVersion = readPropertyValue(props, RELEASE_VERSION_PROPERTY);
+                buildVersion = readPropertyValue(props, BUILD_VERSION_PROPERTY);                
+            }
         }
         catch (IOException e)
         {
             // Log a warning about this and leave the values initialized to unknown.
-            System.err.println("Could not load version.properties resource.");
+            _logger.error("Could not load version.properties resource: " + e, e);
         }
     }
 
@@ -75,6 +99,16 @@ public class QpidProperties
     public static String getVersionString()
     {
         return getProductName() + " - " + getReleaseVersion() + " build: " + getBuildVersion();
+    }
+
+    private static String readPropertyValue(Properties props, String propertyName)
+    {
+        String retVal = (String) props.get(propertyName);
+        if (retVal == null)
+        {
+            retVal = DEFAULT;
+        }
+        return retVal;
     }
 
     public static void main(String[] args)
