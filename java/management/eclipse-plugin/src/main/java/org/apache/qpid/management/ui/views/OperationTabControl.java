@@ -492,11 +492,11 @@ public class OperationTabControl extends TabControl
     {
         if (result instanceof TabularDataSupport)
         {
-            ViewUtility.createTabularDataHolder(parent, (TabularDataSupport)result);
+            ViewUtility.createTabularDataHolder(_toolkit, parent, (TabularDataSupport)result);
         }
         else if (result instanceof CompositeDataSupport)
         {
-            ViewUtility.populateCompositeDataHolder(parent, (CompositeDataSupport)result);
+            ViewUtility.populateCompositeDataHolder(_toolkit, parent, (CompositeDataSupport)result);
         }
     }  
     
@@ -521,6 +521,9 @@ public class OperationTabControl extends TabControl
      */
     private void clearParameterValues(Composite control)
     {
+        if (control == null)
+            return;
+        
         Control[] controls = control.getChildren();
         if (controls == null || controls.length == 0)
             return;

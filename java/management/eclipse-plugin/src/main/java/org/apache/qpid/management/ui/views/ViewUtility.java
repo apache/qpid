@@ -51,6 +51,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 
 public class ViewUtility
 {
@@ -75,13 +76,11 @@ public class ViewUtility
         SUPPORTED_ARRAY_DATATYPES.add("java.lang.Double");
         SUPPORTED_ARRAY_DATATYPES.add("java.util.Date");
     }
-
+    
     @SuppressWarnings("unchecked")
-    public static void createTabularDataHolder(Composite parent, TabularDataSupport tabularData)
+    public static void createTabularDataHolder(FormToolkit toolkit, Composite parent, TabularDataSupport tabularData)
     {
-        Composite composite = new Composite(parent, SWT.BORDER);
-        //composite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-        //composite.setBackground(parent.getBackground());
+        Composite composite = toolkit.createComposite(parent, SWT.BORDER);
         GridLayout layout = new GridLayout(4, true);
         layout.horizontalSpacing = 0;
         layout.marginWidth = 0;
@@ -94,28 +93,27 @@ public class ViewUtility
         ArrayList<Map.Entry> list = new ArrayList<Map.Entry>(entrySet);
         if (list.size() == 0)
         {
-            Text text = new Text(composite, SWT.CENTER | SWT.SINGLE | SWT.READ_ONLY);
-            text.setText(" No records ");
-            //text.setBackground(parent.getBackground());
+            Text text = toolkit.createText(composite, " No records ", SWT.CENTER | SWT.SINGLE | SWT.READ_ONLY);
             GridData layoutData = new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1);
             text.setLayoutData(layoutData);
             return;
         }  
-        // Attach the tabular record to be retrieve and shown
+        // Attach the tabular record to be retrieved and shown later when record is traversed
+        // using first/next/previous/last buttons
         composite.setData(list);
         
         // Create button and the composite for CompositeData
-        Composite compositeDataHolder = createCompositeDataHolder(composite,
+        Composite compositeDataHolder = createCompositeDataHolder(toolkit, composite,
                                         tabularData.getTabularType().getRowType());
 
         // display the first record
         CompositeData data = (CompositeData)(list.get(0)).getValue();
         composite.setData(INDEX, 0);
-        populateCompositeDataHolder(compositeDataHolder, data);
+        populateCompositeDataHolder(toolkit, compositeDataHolder, data);
         enableOrDisableTraversalButtons(composite);
     }
 
-    public static void enableOrDisableTraversalButtons(Composite composite)
+    private static void enableOrDisableTraversalButtons(Composite composite)
     {
         int index = (Integer)composite.getData(INDEX);
         int size = ((List)composite.getData()).size();
@@ -137,40 +135,36 @@ public class ViewUtility
         }
     }
 
-    public static Composite createCompositeDataHolder(final Composite dataHolder, CompositeType compositeType)
+    public static Composite createCompositeDataHolder(final FormToolkit toolkit, final Composite dataHolder, CompositeType compositeType)
     {        
-        Label description = new Label(dataHolder, SWT.CENTER);
-        description.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 4, 1));
         String desc = compositeType.getDescription();
+        Label description = toolkit.createLabel(dataHolder, desc, SWT.CENTER);
+        description.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 4, 1));       
         // TODO nameLabel.setFont(font);
         description.setText(desc);
 
         // Add traversal buttons
-        final Button firstRecordButton = new Button(dataHolder, SWT.PUSH);
-        firstRecordButton.setText(FIRST);
+        final Button firstRecordButton = toolkit.createButton(dataHolder, FIRST, SWT.PUSH);
         GridData layoutData = new GridData (GridData.HORIZONTAL_ALIGN_END);
         layoutData.widthHint = 80;
         firstRecordButton.setLayoutData(layoutData);
 
-        final Button nextRecordButton = new Button(dataHolder, SWT.PUSH);
-        nextRecordButton.setText(NEXT);
+        final Button nextRecordButton = toolkit.createButton(dataHolder, NEXT, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_END);
         layoutData.widthHint = 80;
         nextRecordButton.setLayoutData(layoutData);
 
-        final Button previousRecordButton = new Button(dataHolder, SWT.PUSH);
-        previousRecordButton.setText(PREV);
+        final Button previousRecordButton = toolkit.createButton(dataHolder, PREV, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
         layoutData.widthHint = 80;
         previousRecordButton.setLayoutData(layoutData);
 
-        final Button lastRecordButton = new Button(dataHolder, SWT.PUSH);
-        lastRecordButton.setText(LAST);
+        final Button lastRecordButton = toolkit.createButton(dataHolder, LAST, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
         layoutData.widthHint = 80;
         lastRecordButton.setLayoutData(layoutData);
         
-        final Composite composite = new Composite(dataHolder, SWT.NONE);
+        final Composite composite = toolkit.createComposite(dataHolder, SWT.NONE);
         GridLayout layout = new GridLayout();
         layout.horizontalSpacing = layout.verticalSpacing = 0;
         layout.marginHeight = layout.marginWidth = 0;
@@ -195,7 +189,7 @@ public class ViewUtility
 
                 Button traverseButton =(Button)e.widget; 
                 CompositeData data = getCompositeData(dataHolder, traverseButton.getText());
-                populateCompositeDataHolder(composite, data);
+                populateCompositeDataHolder(toolkit, composite, data);
                 enableOrDisableTraversalButtons(dataHolder);   
             }
         };
@@ -248,7 +242,7 @@ public class ViewUtility
     }
 
     @SuppressWarnings("unchecked")
-    public static void populateCompositeDataHolder(Composite parent, CompositeData data/*String dataIndex*/)
+    public static void populateCompositeDataHolder(FormToolkit toolkit, Composite parent, CompositeData data/*String dataIndex*/)
     {
         Control[] oldControls = parent.getChildren();       
         for (int i = 0; i < oldControls.length; i++)
@@ -256,7 +250,7 @@ public class ViewUtility
             oldControls[i].dispose();
         }
         
-        Composite compositeHolder = new Composite(parent, SWT.NONE);
+        Composite compositeHolder = toolkit.createComposite(parent, SWT.NONE);
         GridLayout layout = new GridLayout(4, false);
         layout.horizontalSpacing = 10;
         compositeHolder.setLayout(layout);
@@ -271,12 +265,10 @@ public class ViewUtility
             OpenType itemType = data.getCompositeType().getType(itemName);
             if (compositeHolder.getData(itemName) == null)
             {
-                Label keyLabel = new Label(compositeHolder, SWT.TRAIL);
-                keyLabel.setText(itemName);
+                Label keyLabel = toolkit.createLabel(compositeHolder, itemName, SWT.TRAIL);
                 GridData layoutData = new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1);
                 layoutData.minimumWidth = 70;
                 keyLabel.setLayoutData(layoutData);
-                System.out.println(itemType);
 
                 if (itemType.isArray())
                 {
@@ -298,12 +290,12 @@ public class ViewUtility
                             
                             if (mimeType.equals("text/plain"))
                             {
-                                displayByteArray(compositeHolder, data, itemName, encoding);
+                                displayByteArray(toolkit, compositeHolder, data, itemName, encoding);
                             }
                         }
                         else
                         {
-                            displayNotSupportedDataType(compositeHolder);
+                            displayNotSupportedDataType(toolkit, compositeHolder);
                         }                        
                     }
                     // If array of any other supported type, show as a list of String array
@@ -313,23 +305,22 @@ public class ViewUtility
                     }
                     else
                     {
-                        displayNotSupportedDataType(compositeHolder);
+                        displayNotSupportedDataType(toolkit, compositeHolder);
                     }
                 }
                 else if (itemType instanceof TabularType)
                 {
-                    Composite composite = new Composite(compositeHolder, SWT.NONE);
+                    Composite composite = toolkit.createComposite(compositeHolder, SWT.NONE);
                     composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
                     layout = new GridLayout();
                     layout.marginHeight = 0;
                     layout.marginWidth = 0;
                     composite.setLayout(layout);
-                    createTabularDataHolder(composite, (TabularDataSupport)data.get(itemName));
+                    createTabularDataHolder(toolkit, composite, (TabularDataSupport)data.get(itemName));
                 }
                 else
                 {
-                    Text valueText = new Text(compositeHolder, SWT.READ_ONLY | SWT.BORDER);
-                    valueText.setText(String.valueOf(data.get(itemName)));
+                    Text valueText = toolkit.createText(compositeHolder, String.valueOf(data.get(itemName)), SWT.READ_ONLY | SWT.BORDER);
                     valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
                 }
             }
@@ -340,7 +331,7 @@ public class ViewUtility
     } //end of method
   
     
-    private static void displayByteArray(Composite compositeHolder, CompositeData data, String itemName, String encoding)
+    private static void displayByteArray(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
     {
         Byte[] arrayItems = (Byte[])data.get(itemName);
         byte[] byteArray = new byte[arrayItems.length];
@@ -354,9 +345,8 @@ public class ViewUtility
             String textMessage = new String(byteArray, encoding);
             System.out.println("\nMessage : \n" + textMessage + "\n");
 
-            Text valueText = new Text(compositeHolder, SWT.READ_ONLY | SWT.BORDER |
+            Text valueText = toolkit.createText(compositeHolder, textMessage, SWT.READ_ONLY | SWT.BORDER |
                     SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
-            valueText.setText(textMessage);
             GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
             gridData.heightHint = 300;
             valueText.setLayoutData(gridData);
@@ -369,8 +359,7 @@ public class ViewUtility
     
     public static int popupInfoMessage(String title, String message)
     {
-        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), 
-                                    SWT.ICON_INFORMATION | SWT.OK);
+        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_INFORMATION | SWT.OK);
         messageBox.setMessage(message);
         messageBox.setText(title);
         int response = messageBox.open();
@@ -380,8 +369,7 @@ public class ViewUtility
     
     public static int popupErrorMessage(String title, String message)
     {
-        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), 
-                                    SWT.ICON_ERROR | SWT.OK);
+        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_ERROR | SWT.OK);
         messageBox.setMessage(message);
         messageBox.setText(title);
         int response = messageBox.open();
@@ -425,8 +413,10 @@ public class ViewUtility
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         shell.open();
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
+        while (!shell.isDisposed())
+        {
+            if (!display.readAndDispatch())
+            {
                 display.sleep();
             }
         }
@@ -446,6 +436,12 @@ public class ViewUtility
         return shell;
     }
     
+    /**
+     * Creates a List widget for displaying array of strings
+     * @param compositeHolder
+     * @param data - containing the array item value
+     * @param itemName - item name
+     */
     private static void displayArrayItem(Composite compositeHolder, CompositeData data, String itemName)
     {
         Object[] arrayItems = (Object[])data.get(itemName);
@@ -457,21 +453,20 @@ public class ViewUtility
         org.eclipse.swt.widgets.List list = new org.eclipse.swt.widgets.List(compositeHolder,
                 SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         list.setItems(items);
-        list.setBackground(compositeHolder.getBackground());
+        //list.setBackground(compositeHolder.getBackground());
         list.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
     }
     
-    private static void displayNotSupportedDataType(Composite compositeHolder)
+    private static void displayNotSupportedDataType(FormToolkit toolkit, Composite compositeHolder)
     {
-        Text valueText = new Text(compositeHolder, SWT.READ_ONLY);
-        valueText.setText("Format is not supported to be displayed");
+        Text valueText = toolkit.createText(compositeHolder, "Format is not supported to be displayed", SWT.READ_ONLY);
         valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
     }
     
     /**
      * Converts the input string to displayable format by converting some character case or inserting space
      * @param input
-     * @return
+     * @return formatted string
      */
     public static String getDisplayText(String input)
     {
@@ -498,6 +493,10 @@ public class ViewUtility
         return result.toString();
     }
     
+    /**
+     * Disposes the children of given Composite if not null and not already disposed
+     * @param parent composite
+     */
     public static void disposeChildren(Composite parent)
     {
         if (parent == null || parent.isDisposed())

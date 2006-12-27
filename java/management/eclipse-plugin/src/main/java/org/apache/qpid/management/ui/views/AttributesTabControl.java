@@ -520,7 +520,7 @@ public class AttributesTabControl extends TabControl
                 Composite composite = new Composite(parent, SWT.BORDER);
                 composite.setLayout(new GridLayout());
                 composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-                ViewUtility.createTabularDataHolder(composite,(TabularDataSupport)attribute.getValue());
+                ViewUtility.createTabularDataHolder(_toolkit, composite,(TabularDataSupport)attribute.getValue());
             }
             else
             {
