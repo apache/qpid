@@ -40,29 +40,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.management.ManagedBroker;
+import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -75,13 +62,15 @@ import java.util.StringTokenizer;
  * Main entry point for AMQPD.
  *
  */
-public class Main implements ProtocolVersionList
+public class Main implements ProtocolVersionList, Managable
 {
     private static final Logger _logger = Logger.getLogger(Main.class);
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+
+    private AMQBrokerManagerMBean _mbean = null;
 
     protected static class InitException extends Exception
     {
@@ -445,7 +434,8 @@ public class Main implements ProtocolVersionList
     {
         try
         {
-            new AMQBrokerManager().register();
+            _mbean = new AMQBrokerManagerMBean();
+            _mbean.register();
         }
         catch (JMException ex)
         {
@@ -453,156 +443,8 @@ public class Main implements ProtocolVersionList
         }
     }
 
-    /**
-     * AMQPBrokerMBean implements the broker management interface and exposes the
-     * Broker level management features like creating and deleting exchanges and queue.
-     */
-    @MBeanDescription("This MBean exposes the broker level management features")
-    private final class AMQBrokerManager extends AMQManagedObject implements ManagedBroker
+    public ManagedObject getManagedObject()
     {
-        private final QueueRegistry    _queueRegistry;
-        private final ExchangeRegistry _exchangeRegistry;
-        private final ExchangeFactory  _exchangeFactory;
-        private final MessageStore     _messageStore;
-
-        @MBeanConstructor("Creates the Broker Manager MBean")
-        protected AMQBrokerManager()  throws JMException
-        {
-            super(ManagedBroker.class, ManagedBroker.TYPE);
-            IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-            _queueRegistry    = appRegistry.getQueueRegistry();
-            _exchangeRegistry = appRegistry.getExchangeRegistry();
-            _exchangeFactory  = ApplicationRegistry.getInstance().getExchangeFactory();
-            _messageStore     = ApplicationRegistry.getInstance().getMessageStore();
-       }
-
-        public String getObjectInstanceName()
-        {
-            return this.getClass().getName();
-        }
-
-        /**
-         * Creates new exchange and registers it with the registry.
-         * @param exchangeName
-         * @param type
-         * @param durable
-         * @param autoDelete
-         * @throws JMException
-         */
-        public void createNewExchange(String exchangeName, String type, boolean durable, boolean autoDelete)
-            throws JMException
-        {
-            try
-            {
-                synchronized(_exchangeRegistry)
-                {
-                    Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
-                    if (exchange == null)
-                    {
-                        exchange = _exchangeFactory.createExchange(exchangeName, type, durable, autoDelete, 0);
-                        _exchangeRegistry.registerExchange(exchange);
-                    }
-                    else
-                    {
-                        throw new JMException("The exchange \"" + exchangeName + "\" already exists.");
-                    }
-                }
-            }
-            catch(AMQException ex)
-            {
-                _logger.error("Error in creating exchange " + exchangeName, ex);
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        /**
-         * Unregisters the exchange from registry.
-         * @param exchangeName
-         * @throws JMException
-         */
-        public void unregisterExchange(String exchangeName) throws JMException
-        {
-            // TODO
-            // Check if the exchange is in use.
-        	// boolean inUse = false;
-            // Check if there are queue-bindings with the exchange and unregister
-            // when there are no bindings.
-            try
-            {
-                _exchangeRegistry.unregisterExchange(exchangeName, false);
-            }
-            catch(AMQException ex)
-            {
-                _logger.error("Error in unregistering exchange " + exchangeName, ex);
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        /**
-         * Creates a new queue and registers it with the registry and puts it
-         * in persistance storage if durable queue.
-         * @param queueName
-         * @param durable
-         * @param owner
-         * @param autoDelete
-         * @throws JMException
-         */
-        public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
-            throws JMException
-        {
-            AMQQueue queue = _queueRegistry.getQueue(queueName);
-            if (queue != null)
-            {
-                throw new JMException("The queue \"" + queueName + "\" already exists.");
-            }
-            
-            try
-            {
-                queue = new AMQQueue(queueName, durable, owner, autoDelete, _queueRegistry);
-                if (queue.isDurable() && !queue.isAutoDelete())
-                {
-                    _messageStore.createQueue(queue);
-                }
-                _queueRegistry.registerQueue(queue);
-            }
-            catch (AMQException ex)
-            {
-                _logger.error("Error in creating queue " + queueName, ex);
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        /**
-         * Deletes the queue from queue registry and persistant storage.
-         * @param queueName
-         * @throws JMException
-         */
-        public void deleteQueue(String queueName) throws JMException
-        {
-            AMQQueue queue = _queueRegistry.getQueue(queueName);
-            if (queue == null)
-            {
-                throw new JMException("The Queue " + queueName + " is not a registerd queue.");
-            }
-
-            try
-            {
-                queue.delete();
-                _messageStore.removeQueue(queueName);
-
-            }
-            catch (AMQException ex)
-            {
-                throw new MBeanException(ex, ex.toString());
-            }
-        }
-
-        public ObjectName getObjectName() throws MalformedObjectNameException
-        {
-            StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
-            objectName.append(":type=").append(getType());
-
-            return new ObjectName(objectName.toString());
-        }
-    } // End of MBean class
+        return _mbean;
+    }    
 }
