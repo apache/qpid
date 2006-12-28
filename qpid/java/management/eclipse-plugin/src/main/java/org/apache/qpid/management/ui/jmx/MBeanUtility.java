@@ -22,8 +22,10 @@ package org.apache.qpid.management.ui.jmx;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -35,6 +37,7 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
@@ -354,5 +357,31 @@ public class MBeanUtility
         serverRegistry.setNotificationInfo(mbean, list);
         
         return list.toArray(new NotificationInfoModel[0]);
+    }
+    
+    public static List<ManagedBean> getManagedObjectsForDomain(ManagedServer server, String domain) throws Exception
+    {
+        List<ManagedBean> mbeans = new ArrayList<ManagedBean>();
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
+        ObjectName objName = new ObjectName(domain + ":*"); 
+        Set objectInstances = mbsc.queryMBeans(objName, null);
+
+        for (Iterator itr = objectInstances.iterator(); itr.hasNext();)
+        {
+            ObjectInstance instance = (ObjectInstance)itr.next();
+            ManagedBean obj = new JMXManagedObject(instance.getObjectName());
+            mbeans.add(obj);
+        }
+        
+        return mbeans;
+    }
+    
+    public static List<String> getAllDomains(ManagedServer server) throws Exception
+    {
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
+        String[] domains = mbsc.getDomains();
+        return Arrays.asList(domains);
     }
 }
