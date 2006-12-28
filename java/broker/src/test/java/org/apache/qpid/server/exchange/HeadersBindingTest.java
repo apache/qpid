@@ -24,17 +24,18 @@ import java.util.Map;
 import java.util.HashMap;
 
 import junit.framework.TestCase;
+import org.apache.qpid.framing.FieldTable;
 
 /**
  */
 public class HeadersBindingTest extends TestCase
 {
-    private Map<String, String> bindHeaders = new HashMap<String, String>();
-    private Map<String, String> matchHeaders = new HashMap<String, String>();
+    private FieldTable bindHeaders = new FieldTable();
+    private FieldTable matchHeaders = new FieldTable();
 
     public void testDefault_1()
     {
-        bindHeaders.put("A", "Value of A");
+        bindHeaders.setString("A", "Value of A");
 
         matchHeaders.put("A", "Value of A");
 

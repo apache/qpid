@@ -64,6 +64,11 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                                ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
                                AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
     {
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        byte major = (byte)8;
+        byte minor = (byte)0;
+        
         ExchangeBoundBody body = evt.getMethod();
 
         String exchangeName = body.exchange;
@@ -77,8 +82,11 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         AMQFrame response;
         if (exchange == null)
         {
-            response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), EXCHANGE_NOT_FOUND,
-                                                             "Exchange " + exchangeName + " not found");
+            // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+            response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                major, minor,	// AMQP version (major, minor)
+                EXCHANGE_NOT_FOUND,	// replyCode
+                "Exchange " + exchangeName + " not found");	// replyText
         }
         else if (routingKey == null)
         {
@@ -86,11 +94,19 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             {
                 if (exchange.hasBindings())
                 {
-                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), OK, null);
+                    // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                        major, minor,	// AMQP version (major, minor)
+                        OK,	// replyCode
+                        null);	// replyText
                 }
                 else
                 {
-                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), NO_BINDINGS, null);
+                    // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                        major, minor,	// AMQP version (major, minor)
+                        NO_BINDINGS,	// replyCode
+                        null);	// replyText
                 }
             }
             else
@@ -98,20 +114,29 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 AMQQueue queue = queueRegistry.getQueue(queueName);
                 if (queue == null)
                 {
-                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), QUEUE_NOT_FOUND,
-                                                                      "Queue " + queueName + " not found");
+                    // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                        major, minor,	// AMQP version (major, minor)
+                        QUEUE_NOT_FOUND,	// replyCode
+                        "Queue " + queueName + " not found");	// replyText
                 }
                 else
                 {
                     if (exchange.isBound(queue))
                     {
-                        response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), OK, null);
+                        // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                        response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                            major, minor,	// AMQP version (major, minor)
+                            OK,	// replyCode
+                            null);	// replyText
                     }
                     else
                     {
-                        response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), QUEUE_NOT_BOUND,
-                                                                      "Queue " + queueName + " not bound to exchange " +
-                                                                      exchangeName);
+                        // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                        response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                            major, minor,	// AMQP version (major, minor)
+                            QUEUE_NOT_BOUND,	// replyCode
+                            "Queue " + queueName + " not bound to exchange " + exchangeName);	// replyText
                     }
                 }
             }
@@ -121,24 +146,30 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             AMQQueue queue = queueRegistry.getQueue(queueName);
             if (queue == null)
             {
-                response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), QUEUE_NOT_FOUND,
-                                                                  "Queue " + queueName + " not found");
+                // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                    major, minor,	// AMQP version (major, minor)
+                    QUEUE_NOT_FOUND,	// replyCode
+                    "Queue " + queueName + " not found");	// replyText
             }
             else
             {
                 if (exchange.isBound(body.routingKey, queue))
                 {
-                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), OK,
-                                                                     null);
+                    // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                    response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                        major, minor,	// AMQP version (major, minor)
+                        OK,	// replyCode
+                        null);	// replyText
                 }
                 else
                 {
+                    // AMQP version change:  Be aware of possible changes to parameter order as versions change.
                     response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
-                                                                     SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,
-                                                                     "Queue " + queueName +
-                                                                     " not bound with routing key " +
-                                                                     body.routingKey + " to exchange " +
-                                                                     exchangeName);
+                        major, minor,	// AMQP version (major, minor)
+                        SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
+                        "Queue " + queueName + " not bound with routing key " +
+                        body.routingKey + " to exchange " + exchangeName);	// replyText
                 }
             }
         }
@@ -146,16 +177,20 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         {
             if (exchange.isBound(body.routingKey))
             {
-                response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(), OK,
-                                                                 null);
+                // AMQP version change:  Be aware of possible changes to parameter order as versions change.
+                response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
+                    major, minor,	// AMQP version (major, minor)
+                    OK,	// replyCode
+                    null);	// replyText
             }
             else
             {
+                // AMQP version change:  Be aware of possible changes to parameter order as versions change.
                 response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
-                                                                 NO_QUEUE_BOUND_WITH_RK,
-                                                                 "No queue bound with routing key " +
-                                                                 body.routingKey + " to exchange " +
-                                                                 exchangeName);
+                    major, minor,	// AMQP version (major, minor)
+                    NO_QUEUE_BOUND_WITH_RK,	// replyCode
+                    "No queue bound with routing key " + body.routingKey +
+                    " to exchange " + exchangeName);	// replyText
             }
         }
         protocolSession.writeFrame(response);

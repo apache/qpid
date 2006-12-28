@@ -64,7 +64,15 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             protocolSession.closeChannel(evt.getChannelId());
             // TODO: modify code gen to make getClazz and getMethod public methods rather than protected
             // then we can remove the hardcoded 0,0
-            AMQFrame cf = ChannelCloseBody.createAMQFrame(evt.getChannelId(), 500, "Unknown exchange name", 0, 0);
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            AMQFrame cf = ChannelCloseBody.createAMQFrame(evt.getChannelId(),
+                (byte)8, (byte)0,	// AMQP version (major, minor)
+                ChannelCloseBody.getClazz((byte)8, (byte)0),	// classId
+                ChannelCloseBody.getMethod((byte)8, (byte)0),	// methodId
+                500,	// replyCode
+                "Unknown exchange name");	// replyText
             protocolSession.writeFrame(cf);
         }
         else

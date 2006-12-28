@@ -22,10 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -34,10 +31,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 import javax.management.openmbean.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -119,16 +113,24 @@ public class HeadersExchange extends AbstractExchange
                 String queueName = registration.queue.getName();
 
                 HeadersBinding headers = registration.binding;
-                Map<Object, Object> headerMappings = headers.getMappings();
-                List<String> mappingList = new ArrayList<String>();
+                FieldTable headerMappings = headers.getMappings();
+                final List<String> mappingList = new ArrayList<String>();
 
-                for (Map.Entry<Object, Object> en : headerMappings.entrySet())
+                headerMappings.processOverElements(new FieldTable.FieldTableElementProcessor()
                 {
-                    String key = en.getKey().toString();
-                    String value = en.getValue().toString();
 
-                    mappingList.add(key + "=" + value);
-                }
+                    public boolean processElement(String propertyName, AMQTypedValue value)
+                    {
+                        mappingList.add(propertyName + "=" + value.getValue());
+                        return true;
+                    }
+
+                    public Object getResult()
+                    {
+                        return mappingList;
+                    }
+                });
+
 
                 Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
@@ -155,7 +157,7 @@ public class HeadersExchange extends AbstractExchange
             }
 
             String[] bindings  = binding.split(",");
-            FieldTable fieldTable = FieldTableFactory.newFieldTable();
+            FieldTable bindingMap = new FieldTable();
             for (int i = 0; i < bindings.length; i++)
             {
                 String[] keyAndValue = bindings[i].split("=");
@@ -163,10 +165,10 @@ public class HeadersExchange extends AbstractExchange
                 {
                     throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
                 }
-                fieldTable.put(keyAndValue[0], keyAndValue[1]);
+                bindingMap.setString(keyAndValue[0], keyAndValue[1]);
             }
 
-            _bindings.add(new Registration(new HeadersBinding(fieldTable), queue));
+            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue));
         }
 
     } // End of MBean class
@@ -185,7 +187,7 @@ public class HeadersExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        Map headers = getHeaders(payload.getContentHeaderBody());
+        FieldTable headers = getHeaders(payload.getContentHeaderBody());
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
@@ -248,7 +250,7 @@ public class HeadersExchange extends AbstractExchange
         return !_bindings.isEmpty();
     }
 
-    protected Map getHeaders(ContentHeaderBody contentHeaderFrame)
+    protected FieldTable getHeaders(ContentHeaderBody contentHeaderFrame)
     {
         //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,
         //but these are not yet implemented.

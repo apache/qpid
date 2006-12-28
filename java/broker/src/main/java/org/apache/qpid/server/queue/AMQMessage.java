@@ -585,8 +585,8 @@ public class AMQMessage
             throws AMQException
     {
         BasicPublishBody pb = getPublishBody();
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, consumerTag,
-                                                                deliveryTag, false, pb.exchange,
+        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, (byte) 8, (byte) 0, consumerTag,
+                                                                deliveryTag, pb.exchange, _messageHandle.isRedelivered(),
                                                                 pb.routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
         deliverFrame.writePayload(buf);
@@ -596,7 +596,8 @@ public class AMQMessage
 
     private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, String replyText) throws AMQException
     {
-        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId, replyCode, replyText, getPublishBody().exchange,
+        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId, (byte) 8, (byte) 0, getPublishBody().exchange,
+                                                              replyCode, replyText,                                                             
                                                               getPublishBody().routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
         returnFrame.writePayload(buf);

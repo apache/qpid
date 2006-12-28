@@ -81,7 +81,7 @@ public class AMQDataBlockDecoder
     }
 
     protected Object createAndPopulateFrame(ByteBuffer in)
-                    throws AMQFrameDecodingException
+                    throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         final byte type = in.get();
         if (!isSupportedFrameType(type))

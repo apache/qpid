@@ -26,16 +26,13 @@ public class FieldTableFactory
 {
     public static FieldTable newFieldTable()
     {
-        return new PropertyFieldTable();
+        return new FieldTable();
     }
 
     public static FieldTable newFieldTable(ByteBuffer byteBuffer, long length) throws AMQFrameDecodingException
     {
-        return new PropertyFieldTable(byteBuffer, length);
+        return new FieldTable(byteBuffer, length);
     }
 
-    public static FieldTable newFieldTable(String text)
-    {
-        return new PropertyFieldTable(text);
-    }
+
 }

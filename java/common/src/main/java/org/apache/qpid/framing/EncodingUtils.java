@@ -88,12 +88,12 @@ public class EncodingUtils
     {
         if (table == null)
         {
-            // size is encoded as 4 octets
+            // length is encoded as 4 octets
             return 4;
         }
         else
         {
-            // size of the table plus 4 octets for the size
+            // length of the table plus 4 octets for the length
             return (int) table.getEncodedSize() + 4;
         }
     }
@@ -104,6 +104,7 @@ public class EncodingUtils
         return 0;
     }
 
+ 
     public static void writeShortStringBytes(ByteBuffer buffer, String s)
     {
         if (s != null)
@@ -448,7 +449,7 @@ public class EncodingUtils
         byte[] from = new byte[size];
 
         // Is this not the same.
-        //bb.get(from, 0, size);
+        //bb.get(from, 0, length);
         for (int i = 0; i < size; i++)
         {
             from[i] = bb.get(i);

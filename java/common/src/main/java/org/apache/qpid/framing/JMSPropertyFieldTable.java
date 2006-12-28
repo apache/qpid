@@ -32,29 +32,11 @@ public class JMSPropertyFieldTable
 {
     private FieldTable _fieldtable;
 
-    public JMSPropertyFieldTable()
-    {
-        _fieldtable = new PropertyFieldTable();
-    }
-
     public JMSPropertyFieldTable(FieldTable table)
     {
         _fieldtable = table;
     }
 
-    public JMSPropertyFieldTable(ByteBuffer buffer, long length) throws JMSException
-    {
-        try
-        {
-            _fieldtable = new PropertyFieldTable(buffer, length);
-        }
-        catch (AMQFrameDecodingException e)
-        {
-            JMSException error = new JMSException(e.getMessage());
-            error.setLinkedException(e);
-            throw error;
-        }
-    }
 
     private void checkPropertyName(String propertyName)
     {

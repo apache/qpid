@@ -22,12 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
@@ -153,7 +148,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     static BasicPublishBody getPublishRequest(String id)
     {
-        BasicPublishBody request = new BasicPublishBody();
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Establish some way to determine the version for the test.
+        BasicPublishBody request = new BasicPublishBody((byte)8, (byte)0);
         request.routingKey = id;
         return request;
     }
