@@ -132,10 +132,6 @@ public class QueueSenderAdapter implements QueueSender {
 			throw new javax.jms.IllegalStateException("Publisher is closed");
 		}
 		
-		if(queue == null){
-			throw new UnsupportedOperationException("Queue is null");
-		}
-		
 		AMQSession session = ((BasicMessageProducer) _delegate).getSession();
 		
 		if(session == null || session.isClosed()){
