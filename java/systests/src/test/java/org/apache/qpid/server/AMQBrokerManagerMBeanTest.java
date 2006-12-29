@@ -31,31 +31,35 @@ public class AMQBrokerManagerMBeanTest extends TestCase
 
     public void testExchangeOperations() throws Exception
     {
-        assertTrue(_exchangeRegistry.getExchange("testExchange1") == null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange2") == null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange3") == null);
+        String exchange1 = "testExchange1_" +  System.currentTimeMillis();
+        String exchange2 = "testExchange2_" +  System.currentTimeMillis();
+        String exchange3 = "testExchange3_" +  System.currentTimeMillis();
+
+        assertTrue(_exchangeRegistry.getExchange(exchange1) == null);
+        assertTrue(_exchangeRegistry.getExchange(exchange2) == null);
+        assertTrue(_exchangeRegistry.getExchange(exchange3) == null);
 
         ManagedBroker mbean = new AMQBrokerManagerMBean();
-        mbean.createNewExchange("testExchange1","direct",false, false);
-        mbean.createNewExchange("testExchange2","topic",false, false);
-        mbean.createNewExchange("testExchange3","headers",false, false);
+        mbean.createNewExchange(exchange1,"direct",false, false);
+        mbean.createNewExchange(exchange2,"topic",false, false);
+        mbean.createNewExchange(exchange3,"headers",false, false);
 
-        assertTrue(_exchangeRegistry.getExchange("testExchange1") != null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange2") != null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange3") != null);
+        assertTrue(_exchangeRegistry.getExchange(exchange1) != null);
+        assertTrue(_exchangeRegistry.getExchange(exchange2) != null);
+        assertTrue(_exchangeRegistry.getExchange(exchange3) != null);
 
-        mbean.unregisterExchange("testExchange1");
-        mbean.unregisterExchange("testExchange2");
-        mbean.unregisterExchange("testExchange3");
+        mbean.unregisterExchange(exchange1);
+        mbean.unregisterExchange(exchange2);
+        mbean.unregisterExchange(exchange3);
 
-        assertTrue(_exchangeRegistry.getExchange("testExchange1") == null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange2") == null);
-        assertTrue(_exchangeRegistry.getExchange("testExchange3") == null);
+        assertTrue(_exchangeRegistry.getExchange(exchange1) == null);
+        assertTrue(_exchangeRegistry.getExchange(exchange2) == null);
+        assertTrue(_exchangeRegistry.getExchange(exchange3) == null);
     }
 
     public void testQueueOperations() throws Exception
     {
-        String queueName = "testQueue";
+        String queueName = "testQueue_" + System.currentTimeMillis();
         ManagedBroker mbean = new AMQBrokerManagerMBean();
 
         assertTrue(_queueRegistry.getQueue(queueName) == null);
