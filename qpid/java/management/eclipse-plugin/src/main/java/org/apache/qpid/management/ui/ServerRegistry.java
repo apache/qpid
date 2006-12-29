@@ -24,6 +24,7 @@ package org.apache.qpid.management.ui;
 import java.util.List;
 
 import org.apache.qpid.management.ui.jmx.ClientListener;
+import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 
@@ -51,6 +52,21 @@ public abstract class ServerRegistry
         _managedServer = server;
     }
     
+    public abstract void addManagedObject(ManagedBean key);
+    
+    public abstract void removeManagedObject(ManagedBean mbean);
+    
+    public List<ManagedBean> getObjectsToBeAdded()
+    {
+        return null;
+    }
+    public List<ManagedBean> getObjectsToBeRemoved()
+    {
+        return null;
+    }
+    
+    public abstract ManagedAttributeModel getAttributeModel(ManagedBean mbean);
+    
     public abstract Object getServerConnection();
     
     public abstract void closeServerConnection() throws Exception;
@@ -60,6 +76,8 @@ public abstract class ServerRegistry
     public abstract String[] getQueueNames();
     
     public abstract String[] getExchangeNames();
+    
+    public abstract String[] getConnectionNames();
     
     public abstract List<NotificationObject> getNotifications(ManagedBean mbean);
     
