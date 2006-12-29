@@ -34,6 +34,7 @@ public class Constants
     public final static String DOMAIN     = "domain";
     public final static String TYPE       = "mbeantype";
     public final static String MBEAN      = "mbean";
+    public final static String ATTRIBUTE = "Attribute";
     public final static String ATTRIBUTES = "Attributes";
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
