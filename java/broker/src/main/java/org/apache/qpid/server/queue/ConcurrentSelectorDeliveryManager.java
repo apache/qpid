@@ -213,7 +213,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 return;
             }
-            _log.info("Async Delivery Message:" + message + " to :" + sub);
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Async Delivery Message:" + message + " to :" + sub);
+            }
 
             sub.send(message, _queue);
 
@@ -278,7 +281,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void deliver(String name, AMQMessage msg) throws FailedDequeueException
     {
-        _log.info(id() + "deliver :" + System.identityHashCode(msg));
+        if (_log.isDebugEnabled())
+        {
+            _log.debug(id() + "deliver :" + System.identityHashCode(msg));
+        }
 
         //Check if we have someone to deliver the message to.
         _lock.lock();
@@ -288,7 +294,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (s == null) //no-one can take the message right now.
             {
-                _log.info(id() + "Testing Message(" + System.identityHashCode(msg) + ") for Queued Delivery");
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug(id() + "Testing Message(" + System.identityHashCode(msg) + ") for Queued Delivery");
+                }
                 if (!msg.isImmediate())
                 {
                     addMessageToQueue(msg);
@@ -297,21 +306,33 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     _lock.unlock();
 
                     //Pre Deliver to all subscriptions
-                    _log.info(id() + "We have " + _subscriptions.getSubscriptions().size() + " subscribers to give the message to.");
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() + 
+                                   " subscribers to give the message to.");
+                    }
                     for (Subscription sub : _subscriptions.getSubscriptions())
                     {
 
                         // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
                         if (_queue.isShared() && msg.getDeliveredToConsumer())
                         {
-                            _log.info(id() + "Stopping PreDelivery as message(" + System.identityHashCode(msg) + ") is already delivered.");
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug(id() + "Stopping PreDelivery as message(" + System.identityHashCode(msg) +
+                                           ") is already delivered.");
+                            }
                             continue;
                         }
 
                         // Only give the message to those that want them.
                         if (sub.hasInterest(msg))
                         {
-                            _log.info(id() + "Queuing message(" + System.identityHashCode(msg) + ") for PreDelivery for subscriber(" + System.identityHashCode(sub) + ")");
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug(id() + "Queuing message(" + System.identityHashCode(msg) + 
+                                           ") for PreDelivery for subscriber(" + System.identityHashCode(sub) + ")");
+                            }
                             sub.enqueueForPreDelivery(msg);
                         }
                     }
@@ -322,7 +343,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 //release lock now
                 _lock.unlock();
 
-                _log.info(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" + System.identityHashCode(s) + ") :" + s);
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" + 
+                               System.identityHashCode(s) + ") :" + s);
+                }
                 //Deliver the message
                 s.send(msg, _queue);
             }
@@ -371,9 +396,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void processAsync(Executor executor)
     {
-        _log.info("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
-                  " Active:" + _subscriptions.hasActiveSubscribers() +
-                  " Processing:" + _processing.get());
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ")" +
+                       " Active:" + _subscriptions.hasActiveSubscribers() +
+                       " Processing:" + _processing.get());
+        }
 
         if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
         {
