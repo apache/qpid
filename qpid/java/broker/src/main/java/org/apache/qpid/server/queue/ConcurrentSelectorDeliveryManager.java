@@ -355,7 +355,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         finally
         {
             //ensure lock is released
-            if (_lock.isLocked())
+            if (_lock.isHeldByCurrentThread())
             {
                 _lock.unlock();
             }
