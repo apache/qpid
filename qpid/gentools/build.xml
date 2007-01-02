@@ -23,7 +23,6 @@
 
 	<target name="compile">
     	<javac srcdir="${src}" source="1.5" fork="true" />
-        <java classpath="${src}" classname="org.apache.qpid.gentools.Main" fork="true" />
     </target>
     
 	<target name="clean">
