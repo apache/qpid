@@ -39,6 +39,7 @@
         <generated.path>${project.build.directory}/generated-sources/xsl</generated.path>
         <generated.package>org/apache/qpid/framing</generated.package>
         <generated.dir>${generated.path}/${generated.package}</generated.dir>
+        <generated.timestamp>${generated.dir}/timestamp</generated.timestamp>
         <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
         <cluster.asl>${basedir}/src/main/xsl/cluster.asl</cluster.asl>
     </properties>
@@ -57,6 +58,9 @@
                                 <ant antfile="protocol-version.xml">
 									<property name="gentools.home" value="${gentools.home}"/>
                                     <property name="generated.dir" value="${generated.dir}"/>
+                                    <property name="generated.timestamp" value="${generated.timestamp}"/>
+                                    <property name="xml.spec.dir" value="${specs.dir}"/>
+                                    <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml"/>
                                     <property name="xml.spec.list" value="${specs.dir}/amqp.0-8.xml ${specs.dir}/cluster.0-8.xml"/>
                                 </ant>
                             </tasks>
