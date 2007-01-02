@@ -19,14 +19,23 @@
  -
  -->
 <project name="Qpid Common Protocol Versions" default="generate">
-
-  <target name="generate">
+  	
+  <target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">
     <mkdir dir="${generated.dir}"/>
-    <exec dir="${gentools.home}/src" executable="pwd" />
-    <echo>XML files to be processed: ${xml.spec.list}</echo>
     <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src">
-    	<arg line="-j -o ${generated.dir} -t ${gentools.home}/templ.java ${xml.spec.list}"/>
+    	<arg line="-j -o ${generated.dir} -t ${gentools.home}/templ.java ${xml.spec.list}" />
     </java>
+    <touch file="${generated.timestamp}" />
+  </target>
+
+  <target name="check_generate_deps">
+	<uptodate property="generation.notRequired" targetfile="${generated.timestamp}">
+  	  <srcfiles dir="${xml.spec.dir}" includes="${xml.spec.deps}" />
+	</uptodate>
+  </target>
+  
+  <target name="compile_generator">
+  	<ant dir="${gentools.home}" />
   </target>
 
   <target name="precompile" depends="generate"/>
