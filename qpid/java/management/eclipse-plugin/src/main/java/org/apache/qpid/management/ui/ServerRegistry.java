@@ -21,6 +21,7 @@
 package org.apache.qpid.management.ui;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.qpid.management.ui.jmx.ClientListener;
@@ -31,6 +32,12 @@ import org.apache.qpid.management.ui.model.OperationDataModel;
 public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
+    // list of all Connection mbeans
+    protected List<ManagedBean> _connections = new ArrayList<ManagedBean>();
+    // list of all exchange mbeans
+    protected List<ManagedBean> _exchanges = new ArrayList<ManagedBean>();
+    // list of all queue mbenas
+    protected List<ManagedBean> _queues = new ArrayList<ManagedBean>();
     
     public ServerRegistry()
     {
@@ -52,14 +59,57 @@ public abstract class ServerRegistry
         _managedServer = server;
     }
     
+    protected void addConnectionMBean(ManagedBean mbean)
+    {
+        _connections.add(mbean);
+    }
+    
+    protected void addExchangeMBean(ManagedBean mbean)
+    {
+        _exchanges.add(mbean);
+    }
+    
+    protected void addQueueMBean(ManagedBean mbean)
+    {
+        _queues.add(mbean);
+    }
+    
+    protected void removeConnectionMBean(ManagedBean mbean)
+    {
+        _connections.remove(mbean);
+    }
+    
+    protected void removeExchangeMBean(ManagedBean mbean)
+    {
+        _exchanges.remove(mbean);
+    }
+    
+    protected void removeQueueMBean(ManagedBean mbean)
+    {
+        _queues.remove(mbean);
+    }
+    
+    public List<ManagedBean> getConnections()
+    {
+        return _connections;
+    }
+    
+    public List<ManagedBean> getExchanges()
+    {
+        return _exchanges;
+    }
+    
+    public List<ManagedBean> getQueues()
+    {
+        return _queues;
+    }
+    
     public abstract void addManagedObject(ManagedBean key);
     
-    public abstract void removeManagedObject(ManagedBean mbean);
+    public abstract List<ManagedBean> getMBeans();
     
-    public List<ManagedBean> getObjectsToBeAdded()
-    {
-        return null;
-    }
+    public abstract void removeManagedObject(ManagedBean mbean);
+   
     public List<ManagedBean> getObjectsToBeRemoved()
     {
         return null;
