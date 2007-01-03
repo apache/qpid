@@ -733,14 +733,12 @@ public class JavaGenerator extends Generator
 		String tab = Utils.createSpaces(tabSize);
 		StringBuffer sb = new StringBuffer();
 		
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+		for (String className : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
-			Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-			while (mItr.hasNext())
+			AmqpClass thisClass = model.classMap.get(className);
+			for (String methodName : thisClass.methodMap.keySet())
 			{
-				AmqpMethod method = thisClass.methodMap.get(mItr.next());
+				AmqpMethod method = thisClass.methodMap.get(methodName);
 				for (AmqpVersion version : globalVersionSet)
 				{
 					// Find class and method index for this version (if it exists)
@@ -750,10 +748,10 @@ public class JavaGenerator extends Generator
 						int methodIndex = findIndex(method.indexMap, version);
 						sb.append(indent + "classIDMethodIDVersionBodyMap.put(" + cr);
 						sb.append(indent + tab + "createMapKey((short)" + classIndex +
-							", (short)" + methodIndex + ", (byte)" + version.getMajor() +
-							", (byte)" + version.getMinor() + "), " + cr);
+								", (short)" + methodIndex + ", (byte)" + version.getMajor() +
+								", (byte)" + version.getMinor() + "), " + cr);
 						sb.append(indent + tab + Utils.firstUpper(thisClass.name) +
-							Utils.firstUpper(method.name) + "Body.class);" + cr);
+								Utils.firstUpper(method.name) + "Body.class);" + cr);
 					}
 					catch (Exception e) {} // Ignore
 				}

@@ -29,6 +29,17 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpFieldMap extends TreeMap<String, AmqpField> implements VersionConsistencyCheck
 {
+	public void removeVersion(AmqpVersion version)
+	{
+		String[] fieldNameArray = new String[size()];
+		keySet().toArray(fieldNameArray);
+		for (String fieldName : fieldNameArray)
+		{
+			get(fieldName).removeVersion(version);
+			remove(fieldName);
+		}
+	}
+	
 	public AmqpFieldMap getFieldMapForOrdinal(int ordinal)
 	{
 		AmqpFieldMap newMap = new AmqpFieldMap();

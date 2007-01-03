@@ -46,21 +46,21 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		serverMethodFlagMap = new AmqpFlagMap();
 	}
 
-	public void addFromNode(Node methodNode, int ordinal, AmqpVersion version)
+	public boolean addFromNode(Node methodNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
+		versionSet.add(version);
 		boolean serverChassisFlag = false;
 		boolean clientChassisFlag = false;
-		versionSet.add(version);
 		int index = Utils.getNamedIntegerAttribute(methodNode, "index");
-		AmqpVersionSet versionSet = indexMap.get(index);
-		if (versionSet != null)
-			versionSet.add(version);
+		AmqpVersionSet indexVersionSet = indexMap.get(index);
+		if (indexVersionSet != null)
+			indexVersionSet.add(version);
 		else
 		{
-			versionSet = new AmqpVersionSet();
-			versionSet.add(version);
-			indexMap.put(index, versionSet);
+			indexVersionSet = new AmqpVersionSet();
+			indexVersionSet.add(version);
+			indexMap.put(index, indexVersionSet);
 		}
 		NodeList nList = methodNode.getChildNodes();
 		int fieldCntr = 0;
@@ -69,16 +69,27 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 			Node child = nList.item(i);
 			if (child.getNodeName().compareTo(Utils.ELEMENT_FIELD) == 0)
 			{
-				String fieldName = converter.prepareDomainName(Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME));
+				String fieldName = converter.prepareDomainName(Utils.getNamedAttribute(child,
+						Utils.ATTRIBUTE_NAME));
 				AmqpField thisField = fieldMap.get(fieldName);
 				if (thisField == null)
 				{
 					thisField = new AmqpField(fieldName, converter);
 					fieldMap.put(fieldName, thisField);
 				}
-				thisField.addFromNode(child, fieldCntr++, version);				
+				if (!thisField.addFromNode(child, fieldCntr++, version))
+				{
+					String className = converter.prepareClassName(Utils.getNamedAttribute(methodNode.getParentNode(),
+							Utils.ATTRIBUTE_NAME));
+					String methodName = converter.prepareMethodName(Utils.getNamedAttribute(methodNode,
+							Utils.ATTRIBUTE_NAME));
+					System.out.println("INFO: Generation supression tag found for field " +
+							className + "." + methodName + "." + fieldName + " - removing.");
+					thisField.removeVersion(version);
+					fieldMap.remove(fieldName);
+				}
 			}
-			if (child.getNodeName().compareTo(Utils.ELEMENT_CHASSIS) == 0)
+			else if (child.getNodeName().compareTo(Utils.ELEMENT_CHASSIS) == 0)
 			{
 				String chassisName = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME);
 				if (chassisName.compareTo("server") == 0)
@@ -86,8 +97,24 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 				else if (chassisName.compareTo("client") == 0)
 					clientChassisFlag = true;
 			}
+			else if (child.getNodeName().compareTo(Utils.ELEMENT_CODEGEN) == 0)
+			{
+				String value = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_VALUE);
+				if (value.compareTo("no-gen") == 0)
+					return false;
+			}
 		}
 		processChassisFlags(serverChassisFlag, clientChassisFlag, version);
+		return true;
+	}
+	
+	public void removeVersion(AmqpVersion version)
+	{
+		clientMethodFlagMap.removeVersion(version);
+		serverMethodFlagMap.removeVersion(version);
+		indexMap.removeVersion(version);
+		fieldMap.removeVersion(version);
+		versionSet.remove(version);
 	}
 	
 	public void print(PrintStream out, int marginSize, int tabSize)
@@ -96,7 +123,8 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		String tab = Utils.createSpaces(tabSize);
 		out.println(margin + "[M] " + name + " {" + (serverMethodFlagMap.isSet() ? "S " +
 			serverMethodFlagMap + (clientMethodFlagMap.isSet() ? ", " : "") : "") +
-			(clientMethodFlagMap.isSet() ? "C " + clientMethodFlagMap : "") + "}" + ": " + versionSet);
+			(clientMethodFlagMap.isSet() ? "C " + clientMethodFlagMap : "") + "}" + ": " +
+			versionSet);
 		
 		for (Integer thisIndex : indexMap.keySet())
 		{

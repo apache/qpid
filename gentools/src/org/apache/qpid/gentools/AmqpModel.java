@@ -37,7 +37,7 @@ public class AmqpModel implements Printable, NodeAware
 		classMap = new AmqpClassMap();
 	}
 
-	public void addFromNode(Node n, int o, AmqpVersion v)
+	public boolean addFromNode(Node n, int o, AmqpVersion v)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		NodeList nList = n.getChildNodes();
@@ -54,9 +54,15 @@ public class AmqpModel implements Printable, NodeAware
 					thisClass = new AmqpClass(className, converter);
 					classMap.put(className, thisClass);
 				}
-				thisClass.addFromNode(c, eCntr++, v);				
+				if (!thisClass.addFromNode(c, eCntr++, v))
+				{
+					System.out.println("INFO: Generation supression tag found for class " + className + " - removing.");
+					thisClass.removeVersion(v);
+					classMap.remove(className);
+				}
 			}
-		}	
+		}
+		return true;
 	}
 	
 	public void print(PrintStream out, int marginSize, int tabSize)

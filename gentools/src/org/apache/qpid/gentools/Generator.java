@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public abstract class Generator implements LanguageConverter
 {
@@ -185,38 +184,29 @@ public abstract class Generator implements LanguageConverter
 		}
 		
 		// Cycle through classes
-		Iterator<String> citr = model.classMap.keySet().iterator();
-		while (citr.hasNext())
+		for (String className : model.classMap.keySet())
 		{
-			String className = citr.next();
 			AmqpClass thisClass = model.classMap.get(className);
-			
 			// Use all class-level templates
 			for (String[] ct : classTemplateList)
 			{
 				processTemplateB(ct, thisClass);
 			}
-			
+
 			// Cycle through all methods
-			Iterator<String> mitr = thisClass.methodMap.keySet().iterator();
-			while (mitr.hasNext())
+			for (String methodName : thisClass.methodMap.keySet())
 			{
-				String methodName = mitr.next();
 				AmqpMethod method = thisClass.methodMap.get(methodName);
-				
 				// Use all method-level templates
 				for (String[] mt : methodTemplateList)
 				{
 					processTemplateC(mt, thisClass, method);
 				}
-				
+
 				// Cycle through all fields
-				Iterator<String> fitr = method.fieldMap.keySet().iterator();
-				while (fitr.hasNext())
+				for (String fieldName : method.fieldMap.keySet())
 				{
-					String fieldName = fitr.next();
 					AmqpField field = method.fieldMap.get(fieldName);
-					
 					// Use all field-level templates
 					for (String[] ft : fieldTemplateList)
 					{
