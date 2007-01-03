@@ -36,6 +36,7 @@ import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -71,8 +72,6 @@ public class NavigationView extends ViewPart
     private TreeViewer _treeViewer = null;
     private TreeObject _rootNode = null;
     private TreeObject _serversRootNode = null;
-    // List of all server nodes (connecged or removed)
-    //private List<TreeObject> _serverNodeList = new ArrayList<TreeObject>();
     // Map of connected servers
     private HashMap<ManagedServer, TreeObject> _managedServerMap = new HashMap<ManagedServer, TreeObject>();
     
@@ -143,7 +142,7 @@ public class NavigationView extends ViewPart
         try
         {
             // Currently Qpid Management Console only supports JMX MBeanServer
-            JMXServerRegistry serverRegistry = new JMXServerRegistry(server);  
+            ServerRegistry serverRegistry = new JMXServerRegistry(server);  
             ApplicationRegistry.addServer(server, serverRegistry);         
         }
         catch(Exception ex)
@@ -281,11 +280,32 @@ public class NavigationView extends ViewPart
     private void populateDomain(TreeObject domain) throws IOException, Exception
     {
         ManagedServer server = (ManagedServer)domain.getParent().getManagedObject();
+        
+        // Add these three types - Connection, Exchange, Queue
+        // By adding these, these will always be available, even if there are no mbeans under thse types
+        // This is required because, the mbeans will be added from mbeanview, by selecting from the list
+        TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.TYPE);
+        typeChild.setParent(domain);
+        typeChild = new TreeObject(Constants.EXCHANGE, Constants.TYPE);
+        typeChild.setParent(domain);
+        typeChild = new TreeObject(Constants.QUEUE, Constants.TYPE);
+        typeChild.setParent(domain);
+        
+        
+        // Now populate the mbenas under those types
         List<ManagedBean> mbeans = MBeanUtility.getManagedObjectsForDomain(server, domain.getName());
         for (ManagedBean mbean : mbeans)
         {
             mbean.setServer(server);
-            addManagedBean(domain, mbean);                   
+            ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(server);
+            serverRegistry.addManagedObject(mbean);     
+            
+            // Add all mbeans other than Connections, Exchanges and Queues. Because these will be added
+            // manually by selecting from MBeanView
+            if (!(mbean.getType().equals(Constants.CONNECTION) || mbean.getType().equals(Constants.EXCHANGE) || mbean.getType().equals(Constants.QUEUE)))
+            {
+                addManagedBean(domain, mbean);
+            }
         }
     }
     
@@ -293,59 +313,69 @@ public class NavigationView extends ViewPart
      * Checks if a particular mbeantype is already there in the navigation view for a domain.
      * This is used while populating domain with mbeans.
      * @param domain
-     * @param type
+     * @param typeName
      * @return Node if given mbeantype already exists, otherwise null
      */
-    private TreeObject getIfTypeAlreadyExists(TreeObject domain, String type)
+    private TreeObject getMBeanTypeNode(TreeObject domain, String typeName)
     {
-        List<TreeObject> types = domain.getChildren();
+        List<TreeObject> childNodes = domain.getChildren();
         
-        for (TreeObject child : types)
+        for (TreeObject child : childNodes)
         {
-            if (Constants.TYPE.equals(child.getType()) && type.equals(child.getName()))
+            if (Constants.TYPE.equals(child.getType()) && typeName.equals(child.getName()))
                 return child;
         }
         return null;
     }
     
+    private boolean doesMBeanNodeAlreadyExist(TreeObject typeNode, String mbeanName)
+    {
+        List<TreeObject> childNodes = typeNode.getChildren();
+        for (TreeObject child : childNodes)
+        {
+            if (Constants.MBEAN.equals(child.getType()) && mbeanName.equals(child.getName()))
+                return true;
+        }
+        return false;
+    }
+    
     /**
      * Adds the given MBean to the given domain node. Creates Notification node for the MBean.
      * @param domain
-     * @param obj mbean
+     * @param mbean mbean
      */
-    private void addManagedBean(TreeObject domain, ManagedBean obj)
+    private void addManagedBean(TreeObject domain, ManagedBean mbean) throws Exception
     {
-        ManagedServer server = (ManagedServer)domain.getParent().getManagedObject();
-        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
-        serverRegistry.addManagedObject(obj);
+        String type = mbean.getType();
+        String name = mbean.getName();
+
+        TreeObject typeNode = getMBeanTypeNode(domain, type);
+        if (typeNode != null && doesMBeanNodeAlreadyExist(typeNode, name))
+            return;
         
-        String type = obj.getType();
-        String name = obj.getName();
-        
-        TreeObject typeChild = getIfTypeAlreadyExists(domain, type);
         TreeObject mbeanNode = null;
-        if (typeChild != null) // if type is already added as a TreeItem
+        if (typeNode != null) // type node already exists
         {
             if (name == null)
             {
-                System.out.println("Two mbeans can't exist without a name and with same type");
-                return;
+                throw new ManagementConsoleException("Two mbeans can't exist without a name and with same type");
             }
-            mbeanNode = new TreeObject(obj);
-            mbeanNode.setParent(typeChild);
+            mbeanNode = new TreeObject(mbean);
+            mbeanNode.setParent(typeNode);
         }
         else
         {
-            if (name != null)  // An managedObject with type and name
+            // type node does not exist. Now check if node to be created as mbeantype or MBean
+            if (name != null)  // A managedObject with type and name
             {
-                typeChild = new TreeObject(type, Constants.TYPE);
-                typeChild.setParent(domain);
-                mbeanNode = new TreeObject(obj);
-                mbeanNode.setParent(typeChild);               
+                typeNode = new TreeObject(type, Constants.TYPE);
+                typeNode.setParent(domain);
+                mbeanNode = new TreeObject(mbean);
+                mbeanNode.setParent(typeNode);               
             }
-            else              // An managedObject with only type
+            else              // A managedObject with only type
             {
-                mbeanNode = new TreeObject(obj);
+                mbeanNode = new TreeObject(mbean);
                 mbeanNode.setParent(domain);
             }
         }
@@ -469,7 +499,6 @@ public class NavigationView extends ViewPart
             list.remove(objectToRemove);
         }
         
-        //_serverNodeList.remove(objectToRemove);
         _treeViewer.refresh();
         
         // Remove from the ini file
@@ -664,24 +693,6 @@ public class NavigationView extends ViewPart
             }
             return ApplicationRegistry.getFont(Constants.FONT_NORMAL);
         }
-        
-        /*
-        public Color getForeground(Object element)
-        {
-            TreeObject node = (TreeObject)element;
-            if (node.getType().equals(Constants.SERVER))
-            {
-                if (!node.getChildren().isEmpty())
-                    return Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN);
-                else
-                    return Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
-            }
-            return Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
-        }
-        public Color getBackground(Object element)
-        {
-            return _treeViewer.getControl().getBackground();
-        }*/
     } // End of LabelProviderImpl
     
     
@@ -717,60 +728,36 @@ public class NavigationView extends ViewPart
                 catch(Exception ex)
                 {
 
-                }               
-                refreshAddedObjects();                
+                }                          
                 refreshRemovedObjects();                               
                 refreshClosedServerConnections();                                
             }// end of while loop
         }// end of run method.        
     }// end of Worker class
     
-    
-    private void refreshAddedObjects()
+    public void addManagedBean(ManagedBean mbean) throws Exception
     {
-        for (ManagedServer server : _managedServerMap.keySet())
+        TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
+        List<TreeObject> domains = treeServerObject.getChildren();
+        TreeObject domain = null;
+        for (TreeObject child : domains)
         {
-            JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
-            if (serverRegistry == null) // server connection is closed
-                continue;
-            
-            final List<ManagedBean> list = serverRegistry.getObjectsToBeAdded();
-            if (list != null)
+            if (child.getName().equals(mbean.getDomain()))
             {
-                Display display = getSite().getShell().getDisplay();
-                display.syncExec(new Runnable()
-                    {
-                        public void run()
-                        {
-                            for (ManagedBean obj : list)
-                            {
-                                System.out.println("adding " + obj.getName() + " " + obj.getType());
-                                TreeObject treeServerObject = _managedServerMap.get(obj.getServer());
-                                List<TreeObject> domains = treeServerObject.getChildren();
-                                TreeObject domain = null;
-                                for (TreeObject child : domains)
-                                {
-                                    if (child.getName().equals(obj.getDomain()))
-                                    {
-                                        domain = child;
-                                        break;
-                                    }
-                                }
-                                
-                                addManagedBean(domain, obj);
-                            }
-                            _treeViewer.refresh();
-                        }
-                    });
+                domain = child;
+                break;
             }
         }
+        
+        addManagedBean(domain, mbean);
+        _treeViewer.refresh();
     }
     
     private void refreshRemovedObjects()
     {
         for (ManagedServer server : _managedServerMap.keySet())
         {
-            final JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+            final ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(server);
             if (serverRegistry == null)  // server connection is closed
                 continue;
             

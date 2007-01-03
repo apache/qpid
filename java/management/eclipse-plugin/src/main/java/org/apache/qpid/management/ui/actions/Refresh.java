@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.ui.actions;
 
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.jface.action.IAction;
@@ -27,6 +28,10 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
+/**
+ * This action refreshes both the views -Navigation and MBeanView
+ * @author Bhupendra Bhardwaj
+ */
 public class Refresh implements IWorkbenchWindowActionDelegate
 {
     private IWorkbenchWindow _window;
@@ -71,7 +76,14 @@ public class Refresh implements IWorkbenchWindowActionDelegate
             view.refresh();
             
             MBeanView mbeanview = (MBeanView)_window.getActivePage().findView(MBeanView.ID);
-            mbeanview.refreshMBeanView();
+            try
+            {
+                mbeanview.refreshMBeanView();
+            }
+            catch (Exception ex)
+            {
+                MBeanUtility.handleException(ex);
+            }
         }
     }
 }
