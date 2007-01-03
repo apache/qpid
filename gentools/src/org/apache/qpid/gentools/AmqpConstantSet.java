@@ -48,7 +48,7 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
    /* (non-Javadoc)
      * @see org.apache.qpid.gentools.NodeAware#addFromNode(org.w3c.dom.Node, int, org.apache.qpid.gentools.AmqpVersion)
      */
-    public void addFromNode(Node node, int ordinal, AmqpVersion version)
+    public boolean addFromNode(Node node, int ordinal, AmqpVersion version)
         throws AmqpParseException, AmqpTypeMappingException
     {
         NodeList nodeList = node.getChildNodes();
@@ -95,6 +95,7 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
                 }
            }
         }
+        return true;
     }
     
     /* (non-Javadoc)

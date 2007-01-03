@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.gentools;
 
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
@@ -43,4 +44,29 @@ public class AmqpOrdinalVersionMap extends TreeMap<Integer, AmqpVersionSet> impl
         }
         throw new AmqpTypeMappingException("Unable to locate version " + version + " in ordianl version map.");
     }
+	
+	public boolean removeVersion(AmqpVersion version)
+	{
+		Boolean res = false;
+		ArrayList<Integer> removeList = new ArrayList<Integer>();
+		for (Integer ordinal : keySet())
+		{
+			AmqpVersionSet versionSet = get(ordinal);
+			if (versionSet.contains(version))
+			{
+				versionSet.remove(version);
+				if (versionSet.isEmpty())
+				{
+					removeList.add(ordinal);
+				}
+				res = true;
+			}
+		}
+		// Get rid of ordinals no longer in use
+		for (Integer ordinal : removeList)
+		{
+			remove(ordinal);
+		}
+		return res;
+	}
 }

@@ -37,7 +37,7 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 		this.converter.setDomainMap(this);
 	}
 	
-	public void addFromNode(Node n, int o, AmqpVersion v)
+	public boolean addFromNode(Node n, int o, AmqpVersion v)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		NodeList nl = n.getChildNodes();
@@ -81,7 +81,8 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 			{
 				addFromNode(c, 0, v);
 			}
-		}	
+		}
+		return true;
 	}
 
 	public String getDomainType(String domainName, AmqpVersion version)
