@@ -143,30 +143,30 @@ public class MBeanUtility
     {
         if (mbean == null)
         {
-            ViewUtility.popupErrorMessage("Error", ex.getMessage());
+            ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
         }
         else if (ex instanceof IOException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "IO Error occured \n" + ex.toString());
         }
         else if (ex instanceof ReflectionException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Server has thrown error \n" + ex.toString());
         }
         else if (ex instanceof InstanceNotFoundException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Managed Object Not Found \n" + ex.toString());
         }
         else if (ex instanceof MBeanException)
         {
-            String cause = ((MBeanException)ex).getTargetException().getMessage();
+            String cause = ((MBeanException)ex).getTargetException().toString();
             if (cause == null)
-                cause = ex.getMessage();
+                cause = ex.toString();
             ViewUtility.popupInfoMessage(mbean.getName(), cause);
         }
         else if (ex instanceof JMException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Management Exception occured \n" + ex.toString());
         }
         else if (ex instanceof ManagementConsoleException)
         {
@@ -174,7 +174,7 @@ public class MBeanUtility
         }
         else 
         {
-            ViewUtility.popupError(mbean.getName(), "Error occured", ex);
+            ViewUtility.popupErrorMessage(mbean.getName(), ex.toString());
         }
         //ex.printStackTrace();
     }
