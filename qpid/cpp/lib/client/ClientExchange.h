@@ -39,11 +39,12 @@ namespace client {
      * of the binding and the type of exchange.
      *
      * There are some standard exchange instances that are predeclared
-     * on all AMQP brokers. handles for these are defined as statisc
-     * members (see DEFAULT_DIRECT_EXCHANGE, DEFAULT_TOPIC_EXCHANGE
-     * and DEFAULT_HEADERS_EXCHANGE). There is also the 'default'
-     * exchange which is nameless and of type 'direct' and has every
-     * declared queue bound to it by their name.
+     * on all AMQP brokers. These are defined as statisc members
+     * STANDARD_DIRECT_EXCHANGE, STANDARD_TOPIC_EXCHANGE and
+     * STANDARD_HEADERS_EXCHANGE. There is also the 'default' exchange
+     * (member DEFAULT_EXCHANGE) which is nameless and of type
+     * 'direct' and has every declared queue bound to it by queue
+     * name.
      * 
      * \ingroup clientapi
      */
