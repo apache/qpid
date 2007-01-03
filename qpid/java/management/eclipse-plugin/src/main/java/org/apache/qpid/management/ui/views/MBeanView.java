@@ -86,23 +86,29 @@ public class MBeanView extends ViewPart
 
             IStructuredSelection ss = (IStructuredSelection) sel;
             _selectedNode = (TreeObject)ss.getFirstElement();
-            if (_selectedNode == null)            
-                return;
+            
             
             // mbean should be set to null. A selection done on the navigation view can be either an mbean or
             // an mbeantype. For mbeantype selection(eg Connection, Queue, Exchange) _mbean will remain null.
             _mbean = null;
             setInvisible();
             _form.setText(Constants.APPLICATION_NAME);
+            
+            // If a selected node(mbean) gets unregistered from mbena server, mbenaview should should 
+            // make the tabfolber for that mbean invisible
+            if (_selectedNode == null)            
+                return;
+            
             setServer();
             try
             {
                 if (Constants.TYPE.equals(_selectedNode.getType()))
                 {
-                    if (typeTabFolder == null)
-                        createTypeTabFolder();
-                    
                     refreshTypeTabFolder(_selectedNode.getName());
+                }
+                else if (Constants.DOMAIN.equals(_selectedNode.getType()))
+                {
+                    refreshTypeTabFolder(typeTabFolder.getItem(0));
                 }
                 else
                 {
@@ -207,23 +213,38 @@ public class MBeanView extends ViewPart
         
         // Add selection listener for selection events in the Navigation view
         getSite().getPage().addSelectionListener(NavigationView.ID, selectionListener); 
+        
+        // Add mbeantype TabFolder. This will list all the mbeans under a mbeantype (eg Queue, Exchange).
+        // Using this list mbeans will be added in the navigation view
+        createTypeTabFolder();
     }
     
-    public void refreshMBeanView()
+    public void refreshMBeanView() throws Exception
     {
+        int tabIndex = 0;
+        TabItem tab = null;
         if (_mbean == null)
-            return;
-        
-        TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
-        if (tabFolder == null)
-            return;
-        
-        int index = tabFolder.getSelectionIndex();
-        TabItem tab = tabFolder.getItem(index);
-        if (tab == null)
-            return;
-                
-        refreshTab(tab);
+        {
+            tabIndex = typeTabFolder.getSelectionIndex();
+            if (tabIndex == -1)
+                return;
+
+            tab = typeTabFolder.getItem(tabIndex);
+            refreshTypeTabFolder(tab);
+        }
+        else
+        {
+            TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
+            if (tabFolder == null)
+                return;
+
+            tabIndex = tabFolder.getSelectionIndex();
+            tab = tabFolder.getItem(tabIndex);
+            if (tab == null)
+                return;
+
+            refreshTab(tab);
+        }
         _form.layout();
     }
     
@@ -443,11 +464,7 @@ public class MBeanView extends ViewPart
     {
         if (tab == null)
         {
-            int index = typeTabFolder.getSelectionIndex();
-            if (index == -1)
-                return;
-            
-            tab = typeTabFolder.getItem(index);
+            return;
         }
         typeTabFolder.setSelection(tab);
         MBeanTypeTabControl controller = (MBeanTypeTabControl)typeTabFolder.getData("CONTROLLER");
