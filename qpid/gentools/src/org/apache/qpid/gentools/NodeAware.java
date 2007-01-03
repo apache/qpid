@@ -39,7 +39,8 @@ public interface NodeAware
 	 * @param v Verion of the DOM from which the node comes.
 	 * @throws AmqpParseException
 	 * @throws AmqpTypeMappingException
+	 * @returns true if a node was added, false if not
 	 */
-	public void addFromNode(Node n, int o, AmqpVersion v)
+	public boolean addFromNode(Node n, int o, AmqpVersion v)
 		throws AmqpParseException, AmqpTypeMappingException;
 }

@@ -30,11 +30,23 @@ public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable, C
 {
     public AmqpVersionSet()
     {
+    	super();
     }
     
     public AmqpVersionSet(AmqpVersion version)
     {
+    	super();
         add(version);
+    }
+    
+    public AmqpVersion find(AmqpVersion version)
+    {
+    	for (AmqpVersion v : this)
+    	{
+    		if (v.compareTo(version) == 0)
+    			return v;
+    	}
+    	return null;
     }
     
 	public void print(PrintStream out, int marginSize, int tabSize)

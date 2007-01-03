@@ -25,7 +25,7 @@ import java.io.PrintStream;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class AmqpClass implements Printable, NodeAware
+public class AmqpClass implements Printable, NodeAware 
 {
 	public LanguageConverter converter;
 	public AmqpVersionSet versionSet;
@@ -44,50 +44,82 @@ public class AmqpClass implements Printable, NodeAware
 		indexMap = new AmqpOrdinalVersionMap();
 	}
 
-	public void addFromNode(Node classNode, int ordinal, AmqpVersion version)
+	public boolean addFromNode(Node classNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		versionSet.add(version);
 		int index = Utils.getNamedIntegerAttribute(classNode, "index");
-		AmqpVersionSet versionSet = indexMap.get(index);
-		if (versionSet != null)
-			versionSet.add(version);
+		AmqpVersionSet indexVersionSet = indexMap.get(index);
+		if (indexVersionSet != null)
+			indexVersionSet.add(version);
 		else
 		{
-			versionSet = new AmqpVersionSet();
-			versionSet.add(version);
-			indexMap.put(index, versionSet);
+			indexVersionSet = new AmqpVersionSet();
+			indexVersionSet.add(version);
+			indexMap.put(index, indexVersionSet);
 		}
 		NodeList nList = classNode.getChildNodes();
 		int fieldCntr = 0;
-		int methodCntr = 0;
 		for (int i=0; i<nList.getLength(); i++)
 		{
 			Node child = nList.item(i);
 			if (child.getNodeName().compareTo(Utils.ELEMENT_FIELD) == 0)
 			{
-				String fieldName = converter.prepareDomainName(Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME));
+				String fieldName = converter.prepareDomainName(Utils.getNamedAttribute(child,
+						Utils.ATTRIBUTE_NAME));
 				AmqpField thisField = fieldMap.get(fieldName);
 				if (thisField == null)
 				{
 					thisField = new AmqpField(fieldName, converter);
 					fieldMap.put(fieldName, thisField);
 				}
-				thisField.addFromNode(child, fieldCntr, version);
+				if (!thisField.addFromNode(child, fieldCntr++, version))
+				{
+					String className = converter.prepareClassName(Utils.getNamedAttribute(classNode,
+							Utils.ATTRIBUTE_NAME));
+					System.out.println("INFO: Generation supression tag found for field " +
+							className + "." + fieldName + " - removing.");
+					thisField.removeVersion(version);
+					fieldMap.remove(fieldName);
+				}
 				fieldCntr++;
 			}
 			else if (child.getNodeName().compareTo(Utils.ELEMENT_METHOD) == 0)
 			{
-				String methodName = converter.prepareMethodName(Utils.getNamedAttribute(child, Utils.ATTRIBUTE_NAME));
+				String methodName = converter.prepareMethodName(Utils.getNamedAttribute(child,
+						Utils.ATTRIBUTE_NAME));
 				AmqpMethod thisMethod = methodMap.get(methodName);
 				if (thisMethod == null)
 				{
 					thisMethod = new AmqpMethod(methodName, converter);
 					methodMap.put(methodName, thisMethod);
 				}			
-				thisMethod.addFromNode(child, methodCntr++, version);				
+				if (!thisMethod.addFromNode(child, fieldCntr++, version))
+				{
+					String className = converter.prepareClassName(Utils.getNamedAttribute(classNode,
+							Utils.ATTRIBUTE_NAME));
+					System.out.println("INFO: Generation supression tag found for method " +
+							className + "." + methodName + " - removing.");
+					thisMethod.removeVersion(version);
+					methodMap.remove(methodName);
+				}
+			}
+			else if (child.getNodeName().compareTo(Utils.ELEMENT_CODEGEN) == 0)
+			{
+				String value = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_VALUE);
+				if (value.compareTo("no-gen") == 0)
+					return false;
 			}
 		}
+		return true;
+	}
+	
+	public void removeVersion(AmqpVersion version)
+	{
+		indexMap.removeVersion(version);
+		fieldMap.removeVersion(version);
+		methodMap.removeVersion(version);
+		versionSet.remove(version);
 	}
 	
 	public void print(PrintStream out, int marginSize, int tabSize)
