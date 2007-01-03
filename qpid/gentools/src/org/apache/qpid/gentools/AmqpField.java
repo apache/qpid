@@ -24,6 +24,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 {
@@ -42,7 +43,7 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		ordinalMap = new AmqpOrdinalVersionMap();
 	}
 
-	public void addFromNode(Node fieldNode, int ordinal, AmqpVersion version)
+	public boolean addFromNode(Node fieldNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		versionSet.add(version);
@@ -70,6 +71,25 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 			ordinalMap.put(ordinal, thisVersionList);
 		}
 		thisVersionList.add(version);
+		NodeList nList = fieldNode.getChildNodes();
+		for (int i=0; i<nList.getLength(); i++)
+		{
+			Node child = nList.item(i);
+			if (child.getNodeName().compareTo(Utils.ELEMENT_CODEGEN) == 0)
+			{
+				String value = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_VALUE);
+				if (value.compareTo("no-gen") == 0)
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	public void removeVersion(AmqpVersion version)
+	{
+		domainMap.removeVersion(version);
+		ordinalMap.removeVersion(version);
+		versionSet.remove(version);
 	}
 	
 	public boolean isCodeTypeConsistent(LanguageConverter converter)

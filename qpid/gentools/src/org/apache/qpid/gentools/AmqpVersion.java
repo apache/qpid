@@ -30,6 +30,12 @@ public class AmqpVersion implements Comparable<AmqpVersion>
 		this.major = major;
 		this.minor = minor;
 	}
+
+	public AmqpVersion(AmqpVersion version)
+	{
+		this.major = version.major;
+		this.minor = version.minor;
+	}
 	
 	public int getMajor()
 	{

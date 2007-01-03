@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.gentools;
 
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 @SuppressWarnings("serial")
@@ -30,5 +31,28 @@ public class AmqpDomainVersionMap extends TreeMap<String, AmqpVersionSet> implem
 		if (size() != 1)
 			return false;
 		return get(firstKey()).equals(globalVersionSet);
+	}
+	
+	public boolean removeVersion(AmqpVersion version)
+	{
+		Boolean res = false;
+		ArrayList<String> removeList = new ArrayList<String>();
+		for (String domainName : keySet())
+		{
+			AmqpVersionSet versionSet = get(domainName);
+			if (versionSet.contains(version))
+			{
+				versionSet.remove(version);
+				if (versionSet.isEmpty())
+					removeList.add(domainName);
+				res = true;
+			}
+		}
+		// Get rid of domains no longer in use
+		for (String domainName : removeList)
+		{
+			remove(domainName);
+		}
+		return res;
 	}
 }
