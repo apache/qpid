@@ -33,4 +33,5 @@ autoconf
 if [ "$1" = "-build" ] ; then
     ./configure
     make
+    make check
 fi
