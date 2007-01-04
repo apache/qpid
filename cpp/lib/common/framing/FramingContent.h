@@ -22,10 +22,10 @@
 #ifndef _Content_
 #define _Content_
 
-namespace qpid
-{
-namespace framing
-{
+#include <ostream>
+
+namespace qpid {
+namespace framing {
 
 /*
  * TODO: New Content class required for AMQP 0-9. This is a stub only.
@@ -37,11 +37,14 @@ class Content
   
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
-          
+    size_t size() const;
 };    
-        
-} // namespace framing
-} // namespace qpid
+
+
+// TODO aconway 2007-01-04: operator << is undefined, just for compilation.
+std::ostream& operator<<(std::ostream&, const Content&);
+
+}} // namespace qpid::framing
 
 
 #endif
