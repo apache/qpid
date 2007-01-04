@@ -39,6 +39,8 @@ public class Constants
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
     
+    public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth"; 
+    
     public final static String ALL = "All";
     
     public final static String NAVIGATION_ROOT = "Qpid Connections";
