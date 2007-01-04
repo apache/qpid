@@ -336,6 +336,11 @@ namespace Qpid.Client.Message
             _data.flip();
         }
 
+        void IBytesMessage.Reset()
+        {
+            Reset();
+        }
+
         /**
          * Check that there is at least a certain number of bytes available to read
          *
