@@ -257,10 +257,11 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     inline virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
     inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
     inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
-    
+
+    // FIXME aconway 2007-01-04: what's this about?
     // Temporary add-in to resolve version conflicts: AMQP v8.0 still defines class Test;
     // however v0.9 will not - kpvdr 2006-11-17      
-    inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
+    // inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
 };
 
 }
