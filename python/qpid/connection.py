@@ -59,7 +59,7 @@ class Connection:
     self.host = host
     self.port = port
     self.spec = spec
-    self.FRAME_END = self.spec.constants.byname["frame end"].id
+    self.FRAME_END = self.spec.constants.bypyname["frame_end"].id
 
   def connect(self):
     sock = socket.socket()
@@ -78,14 +78,14 @@ class Connection:
 
   def write(self, frame):
     c = self.codec
-    c.encode_octet(self.spec.constants.byname[frame.payload.type].id)
+    c.encode_octet(self.spec.constants.bypyname[frame.payload.type].id)
     c.encode_short(frame.channel)
     frame.payload.encode(c)
     c.encode_octet(self.FRAME_END)
 
   def read(self):
     c = self.codec
-    type = self.spec.constants.byid[c.decode_octet()].name
+    type = pythonize(self.spec.constants.byid[c.decode_octet()].name)
     channel = c.decode_short()
     payload = Frame.DECODERS[type].decode(self.spec, c)
     end = c.decode_octet()
@@ -96,14 +96,14 @@ class Connection:
 
 class Frame:
 
-  METHOD = "frame method"
-  HEADER = "frame header"
-  BODY = "frame body"
-  OOB_METHOD = "frame oob method"
-  OOB_HEADER = "frame oob header"
-  OOB_BODY = "frame oob body"
-  TRACE = "frame trace"
-  HEARTBEAT = "frame heartbeat"
+  METHOD = "frame_method"
+  HEADER = "frame_header"
+  BODY = "frame_body"
+  OOB_METHOD = "frame_oob_method"
+  OOB_HEADER = "frame_oob_header"
+  OOB_BODY = "frame_oob_body"
+  TRACE = "frame_trace"
+  HEARTBEAT = "frame_heartbeat"
 
   DECODERS = {}
 
