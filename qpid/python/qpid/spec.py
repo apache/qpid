@@ -189,7 +189,8 @@ class Method(Metadata):
               "short": 0,
               "long": 0,
               "longlong": 0,
-              "timestamp": 0}
+              "timestamp": 0,
+              "content": None}
 
   def define_method(self, name):
     g = {Method.METHOD: self}
@@ -233,9 +234,11 @@ def get_docs(nd):
 def load_fields(nd, l, domains):
   for f_nd in nd["field"]:
     try:
-      type = f_nd["@type"]
+      type = f_nd["@domain"]
     except KeyError:
-      type = domains[f_nd["@domain"]]
+      type = f_nd["@type"]
+    while domains.has_key(type) and domains[type] != type:
+      type = domains[type]
     l.add(Field(f_nd["@name"], f_nd.index(), type, get_docs(f_nd)))
 
 def load(specfile):
