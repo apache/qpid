@@ -20,6 +20,7 @@ rpm: dist
 srpm: dist
 	rpmbuild $(RPMOPTS) -bs $(SPEC)
 
-# Build source distribution.
+# Build source distribution and create required subdirs.
 dist:
 	cd .. && $(MAKE) $(AM_MAKEFLAGS) dist
+	mkdir -p BUILD  RPMS  SOURCES  SPECS  SRPMS
