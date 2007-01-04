@@ -146,18 +146,6 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
             throw new AMQProtocolInstanceException("Protocol instance " + CURRENT_PROTOCOL_INSTANCE + " was expected; received " +
                     protocolInstance);
         }
-        /*
-        if (protocolMajor != CURRENT_PROTOCOL_VERSION_MAJOR)
-        {
-            throw new AMQProtocolVersionException("Protocol major version " + CURRENT_PROTOCOL_VERSION_MAJOR +
-                    " was expected; received " + protocolMajor);
-        }
-        if (protocolMinor != CURRENT_PROTOCOL_VERSION_MINOR)
-        {
-            throw new AMQProtocolVersionException("Protocol minor version " + CURRENT_PROTOCOL_VERSION_MINOR +
-                    " was expected; received " + protocolMinor);
-        }
-        */
         
         /* Look through list of available protocol versions */
         boolean found = false;
