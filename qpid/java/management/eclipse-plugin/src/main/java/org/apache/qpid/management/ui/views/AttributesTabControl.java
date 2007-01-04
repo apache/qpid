@@ -126,7 +126,7 @@ public class AttributesTabControl extends TabControl
         _tableComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         _tableComposite.setLayout(new GridLayout());
         _buttonsComposite = _toolkit.createComposite(_form.getBody());
-        _tableComposite.setLayoutData(new GridData());
+        _buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true));
         _buttonsComposite.setLayout(new GridLayout());
         
         image = Display.getCurrent().getSystemImage(SWT.ICON_INFORMATION);
@@ -175,7 +175,6 @@ public class AttributesTabControl extends TabControl
     
     /**
      * Creates tableviewer for the attribute's table
-     *
      */
     private void createTableViewer()
     {
@@ -200,7 +199,7 @@ public class AttributesTabControl extends TabControl
         // Create and configure the button for attribute details
         _detailsButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_DETAILS, SWT.PUSH | SWT.CENTER);
         _detailsButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _detailsButton.setLayoutData(gridData);
         _detailsButton.addSelectionListener(new SelectionAdapter()
@@ -225,7 +224,7 @@ public class AttributesTabControl extends TabControl
         // Create and configure the button for editing attribute
         _editButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_EDIT_ATTRIBUTE, SWT.PUSH | SWT.CENTER);
         _editButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _editButton.setLayoutData(gridData);
         _editButton.addSelectionListener(new SelectionAdapter()
@@ -247,7 +246,7 @@ public class AttributesTabControl extends TabControl
     {
         _graphButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_GRAPH, SWT.PUSH | SWT.CENTER);
         _graphButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _graphButton.setLayoutData(gridData);
         _graphButton.addSelectionListener(new SelectionAdapter()
@@ -270,7 +269,7 @@ public class AttributesTabControl extends TabControl
         _refreshButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
 
         _refreshButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
+        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _refreshButton.setLayoutData(gridData);
         _refreshButton.addSelectionListener(new SelectionAdapter()
@@ -429,12 +428,14 @@ public class AttributesTabControl extends TabControl
         }
         
         Display display = Display.getCurrent();
-        Shell shell = ViewUtility.createPopupShell("Attribute", width, height);
+        Shell shell = ViewUtility.createPopupShell(Constants.ATTRIBUTE, width, height);
         createDetailsPopupContents(shell, data);
 
         shell.open();
-        while (!shell.isDisposed()) {
-            if (!display.readAndDispatch()) {
+        while (!shell.isDisposed())
+        {
+            if (!display.readAndDispatch())
+            {
                 display.sleep();
             }
         }
@@ -818,7 +819,8 @@ public class AttributesTabControl extends TabControl
     private void animate(Canvas canvas, AttributeData data) throws Exception
     {
         String attribute = data.getName();
-        int value = MBeanUtility.refreshAttribute(_mbean, attribute);
+        Object valueObj = MBeanUtility.refreshAttribute(_mbean, attribute);
+        int value = Integer.parseInt(String.valueOf(valueObj));
         Object canvasData = canvas.getData(GRAPH_VALUES);
         long[] graphValues = (long[]) canvasData;
         
