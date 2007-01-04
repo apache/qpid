@@ -196,7 +196,7 @@ public class NotificationsTabControl extends TabControl
         formData = new FormData();
         formData.top = new FormAttachment(notificationNameCombo, 5);
         formData.left = new FormAttachment(fixedLabel, 10);
-        formData.right = new FormAttachment(80);
+        formData.right = new FormAttachment(100);
         descriptionLabel.setLayoutData(formData);
         descriptionLabel.setText("      ");
         descriptionLabel.setFont(ApplicationRegistry.getFont(Constants.FONT_ITALIC));

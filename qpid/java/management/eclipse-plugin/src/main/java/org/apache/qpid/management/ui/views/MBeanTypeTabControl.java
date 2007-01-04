@@ -1,13 +1,17 @@
 package org.apache.qpid.management.ui.views;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.model.AttributeData;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -24,6 +28,12 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+/**
+ * Class to create widgets and control display for mbeantype(eg Connection, Queue, Exchange) selection
+ * on the navigation view.
+ * @author Bhupendra Bhardwaj
+ *
+ */
 public class MBeanTypeTabControl
 {
     private FormToolkit  _toolkit = null;
@@ -31,18 +41,26 @@ public class MBeanTypeTabControl
     private TabFolder _tabFolder = null;
     private Composite _composite = null;
     private Composite _listComposite = null;
+    private Composite _buttonsComposite = null;
     private Label _labelName = null;
     private Label _labelDesc = null;
     private Label _labelList = null;
+    
     private org.eclipse.swt.widgets.List _list = null;
     private Button _refreshButton = null;
     private Button _addButton = null;
+    private Button _sortBySizeButton = null;
     
     private String _type = null;
     
-    // maps an mbena name with the mbean object. Required to get mbean object when an mbean
+    // maps an mbean name with the mbean object. Required to get mbean object when an mbean
     // is to be added to the navigation view. 
     private HashMap<String, ManagedBean> _objectsMap = new HashMap<String, ManagedBean>();
+    // Map required for sorting queues based on attribute values
+    private Map<AttributeData, ManagedBean> _queueMap = new LinkedHashMap<AttributeData, ManagedBean>();
+    
+    private Sorter _sorterByName = new Sorter();
+    private ComparatorImpl _sorterByQueueDepth = new ComparatorImpl();
     
     public MBeanTypeTabControl(TabFolder tabFolder)
     {
@@ -58,6 +76,9 @@ public class MBeanTypeTabControl
         return _form;
     }
     
+    /**
+     * Adds listeners to all the buttons
+     */
     private void addListeners()
     {
         _addButton.addSelectionListener(new SelectionAdapter(){
@@ -69,7 +90,13 @@ public class MBeanTypeTabControl
                 String[] selectedItems = _list.getSelection();
                 for (int i = 0; i < selectedItems.length; i++)
                 {
-                    String name = selectedItems[i];
+                    String name = selectedItems[i];;
+                    if (Constants.QUEUE.equals(_type))
+                    {
+                        int endIndex = name.lastIndexOf("(");
+                        name = name.substring(0, endIndex -1);
+                    }
+                    // pass the ManagedBean to the navigation view to be added
                     ManagedBean mbean = _objectsMap.get(name);
                     IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
                     NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
@@ -98,6 +125,20 @@ public class MBeanTypeTabControl
                 }
             }
         });
+        
+        _sortBySizeButton.addSelectionListener(new SelectionAdapter(){
+            public void widgetSelected(SelectionEvent e)
+            {
+                try
+                {
+                    sortQueueByQueueDepth();
+                }
+                catch (Exception ex)
+                {
+                    MBeanUtility.handleException(ex);
+                }
+            }
+        });
     }
     
     private void createWidgets()
@@ -119,20 +160,22 @@ public class MBeanTypeTabControl
         _labelDesc.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 2, 1));
         _labelDesc.setFont(ApplicationRegistry.getFont(Constants.FONT_ITALIC));
         
-        _refreshButton = _toolkit.createButton(_composite, Constants.BUTTON_REFRESH, SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false, 2, 1);
-        gridData.widthHint = 80;
-        _refreshButton.setLayoutData(gridData);
-        
         _addButton = _toolkit.createButton(_composite, "<- Add to Navigation", SWT.PUSH);
         gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
         _addButton.setLayoutData(gridData);
+        
+        _refreshButton = _toolkit.createButton(_composite, Constants.BUTTON_REFRESH, SWT.PUSH);
+        gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
+        gridData.widthHint = 80;
+        _refreshButton.setLayoutData(gridData);
         
         // Composite to contain the item list 
         _listComposite = _toolkit.createComposite(_composite);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _listComposite.setLayoutData(gridData);
-        _listComposite.setLayout(new GridLayout());
+        layout = new GridLayout();
+        layout.verticalSpacing = 0;
+        _listComposite.setLayout(layout);
         
         // Label for item name
         _labelList = _toolkit.createLabel(_listComposite, " ", SWT.NONE);
@@ -142,6 +185,18 @@ public class MBeanTypeTabControl
         _list = new List(_listComposite, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _list.setLayoutData(gridData);
+        
+        
+        // Composite to contain buttons like - Sort by size
+        _buttonsComposite = _toolkit.createComposite(_composite);
+        gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        _buttonsComposite.setLayoutData(gridData);
+        _buttonsComposite.setLayout(new GridLayout());
+        
+        _sortBySizeButton = _toolkit.createButton(_buttonsComposite, "Sort by Queue Depth", SWT.PUSH);
+        gridData = new GridData(SWT.CENTER, SWT.CENTER, true, false);
+        _sortBySizeButton.setLayoutData(gridData);
+        
     }
     
     public void refresh(String typeName) throws Exception
@@ -170,6 +225,7 @@ public class MBeanTypeTabControl
     {
         // map should be cleared before populating it with new values
         _objectsMap.clear();
+        _queueMap.clear();
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
         String[] items = null;
         java.util.List<ManagedBean> list = null;
@@ -178,27 +234,33 @@ public class MBeanTypeTabControl
         if (_type.equals(Constants.QUEUE))
         {
             list = serverRegistry.getQueues();
+            items = getQueueItems(list);
+            _sortBySizeButton.setVisible(true);
         }
         else if (_type.equals(Constants.EXCHANGE))
         {
-            list = serverRegistry.getExchanges();;
+            list = serverRegistry.getExchanges();
+            items = getItems(list);
+            _sortBySizeButton.setVisible(false);
         }
         else if (_type.equals(Constants.CONNECTION))
         {
             list = serverRegistry.getConnections();
+            items = getItems(list);
+            _sortBySizeButton.setVisible(false);
         }
         else
         {
             throw new Exception("Unknown mbean type " + _type);
         }
         
-        items = getItems(list);
         _list.setItems(items);
     }
     
     // sets the map with appropriate mbean and name
     private String[] getItems(java.util.List<ManagedBean> list)
     {
+        Collections.sort(list, _sorterByName);
         String[] items = new String[list.size()];
         int i = 0;
         for (ManagedBean mbean : list)
@@ -206,7 +268,60 @@ public class MBeanTypeTabControl
             items[i++] = mbean.getName();
             _objectsMap.put(mbean.getName(), mbean);
         }
-        Arrays.sort(items);
         return items;
+    }
+    
+    private String[] getQueueItems(java.util.List<ManagedBean> list) throws Exception
+    {
+        // Sort the list. It will keep the mbeans in sorted order in the _queueMap, which is required for
+        // sorting the queue according to size etc
+        Collections.sort(list, _sorterByName);
+        String[] items = new String[list.size()];
+        int i = 0;
+        for (ManagedBean mbean : list)
+        {
+            AttributeData data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_DEPTH);
+            String value = data.getValue().toString();
+            items[i] = mbean.getName() + " (" + value + " KB)";
+            _objectsMap.put(mbean.getName(), mbean);
+            _queueMap.put(data, mbean);
+            i++;
+        }
+        return items;
+    }
+    
+    private void sortQueueByQueueDepth() throws Exception
+    {
+        // Queues are already in the alphabetically sorted order in _queueMap, now sort for queueDepth
+        java.util.List<AttributeData> list = new ArrayList<AttributeData>(_queueMap.keySet());
+        Collections.sort(list, _sorterByQueueDepth);
+        
+        String[] items = new String[list.size()];
+        int i = 0;
+        for (AttributeData data : list)
+        {
+            ManagedBean mbean = _queueMap.get(data);
+            String value = data.getValue().toString();
+            items[i++] = mbean.getName() + " (" + value + " KB)";
+        }
+        _list.setItems(items);
+    }
+    
+    private class ComparatorImpl implements java.util.Comparator<AttributeData>
+    {
+        public int compare(AttributeData data1, AttributeData data2)
+        {
+            Integer int1 = Integer.parseInt(data1.getValue().toString());
+            Integer int2 = Integer.parseInt(data2.getValue().toString());
+            return int1.compareTo(int2) * -1;
+        }
+    }
+    
+    private class Sorter implements java.util.Comparator<ManagedBean>
+    {
+        public int compare(ManagedBean mbean1, ManagedBean mbean2)
+        {
+            return mbean1.getName().compareTo(mbean2.getName());
+        }
     }
 }
