@@ -106,6 +106,11 @@ public class ManagedAttributeModel
         return _attributeMap.values().toArray(new AttributeData[0]);
     }
     
+    public AttributeData getAttribute(String name)
+    {
+        return _attributeMap.get(name);
+    }
+    
     public int getCount()
     {
         return _attributeMap.size();
