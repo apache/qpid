@@ -10,10 +10,10 @@
 	License
 	=======
 	JPMorgan Chase Bank & Co., Cisco Systems, Inc., Envoy Technologies Inc., iMatix 
-	Corporation, IONA\ufffd Technologies, Red Hat, Inc., TWIST Process Innovations, and 
+	Corporation, IONA Technologies, Red Hat, Inc., TWIST Process Innovations, and 
 	29West Inc. (collectively, the "Authors") each hereby grants to you a worldwide,
 	perpetual, royalty-free, nontransferable, nonexclusive license to
-	(i) copy, display, and implement the Advanced Messaging Queue Protocol
+	(i) copy, display, distribute and implement the Advanced Messaging Queue Protocol
 	("AMQP") Specification and (ii) the Licensed Claims that are held by
 	the Authors, all for the purpose of implementing the Advanced Messaging
 	Queue Protocol Specification. Your license and any rights under this
@@ -1352,7 +1352,27 @@ localised reply text
   </doc>
       <chassis name="client" implement="MUST"/>
     </method>
+
+    <method name="bound" synchronous="1" index="22">
+        <field name="exchange" domain="exchange name"/>
+        <field name = "routing key" type = "shortstr">
+            Message routing key
+            <doc>
+              Specifies the routing key for the message.  The routing key is
+              used for routing messages depending on the exchange configuration.
+            </doc>
+        </field>
+        <field name = "queue" domain = "queue name"/>
+    </method>
+
+    <method name="bound-ok" synchronous="1" index="23">
+        <field name="reply code" domain="reply code"/>
+        <field name="reply text" domain="reply text"/>
+    </method>
+
   </class>
+
+ 
   <class name="queue" handler="channel" index="50">
     <!--
 ======================================================
@@ -2085,6 +2105,14 @@ localised reply text
     method it will raise a channel or connection exception.
     </doc>
   </field>
+
+    <field name="arguments" type="table" label="arguments for consuming">
+  <doc>
+    A set of arguments for the consume. The syntax and semantics
+    of these arguments depends on the server implementation.  This
+    field is ignored if passive is 1.
+  </doc>
+    </field>
 </method>
 
 <method name = "consume-ok" synchronous = "1" index = "21">
