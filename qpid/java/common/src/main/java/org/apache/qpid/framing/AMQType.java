@@ -28,6 +28,67 @@ public enum AMQType
 
     //AMQP FieldTable Wire Types
 
+    LONG_STRING('S')
+    {
+        public int getEncodingSize(Object value)
+        {
+            return EncodingUtils.encodedLongStringLength((String) value);
+        }
+
+
+        public String toNativeValue(Object value)
+        {
+            if (value != null)
+            {
+                return value.toString();
+            }
+            else
+            {
+                throw new NullPointerException("Cannot convert: null to String.");
+            }
+        }
+
+        public void writeValueImpl(Object value, ByteBuffer buffer)
+        {
+            EncodingUtils.writeLongStringBytes(buffer, (String) value);
+        }
+
+        public Object readValueFromBuffer(ByteBuffer buffer)
+        {
+            return EncodingUtils.readLongString(buffer);
+        }
+
+    },
+
+    INTEGER('I')
+    {
+
+        public int getEncodingSize(Object value)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+
+        public Object toNativeValue(Object value)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+        public void writeValueImpl(Object value, ByteBuffer buffer)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+        public Object readValueFromBuffer(ByteBuffer buffer)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+    },
+
     DECIMAL('D')
     {
 
@@ -36,122 +97,6 @@ public enum AMQType
             // TODO : fixme
             throw new UnsupportedOperationException();
         }
-
-        public Object toNativeValue(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-    },
-
-    UNSIGNED_SHORT('S')
-    {
-
-        public int getEncodingSize(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public Object toNativeValue(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-    },
-
-    UNSIGNED_INT('I')
-    {
-
-        public int getEncodingSize(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-
-        public Object toNativeValue(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-    },
-
-    UNSIGNED_LONG('L')
-    {
-
-        public int getEncodingSize(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-
-        public Long toNativeValue(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-    },
-
-    EXTTENDED('D')
-    {
-
-        public int getEncodingSize(Object value)
-        {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
-        }
-
 
         public Object toNativeValue(Object value)
         {
@@ -200,6 +145,67 @@ public enum AMQType
             throw new UnsupportedOperationException();
         }
     },
+
+    FIELD_TABLE('F')
+    {
+        public int getEncodingSize(Object value)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+
+        public Object toNativeValue(Object value)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+        public void writeValueImpl(Object value, ByteBuffer buffer)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+
+        public Object readValueFromBuffer(ByteBuffer buffer)
+        {
+            // TODO : fixme
+            throw new UnsupportedOperationException();
+        }
+    },
+
+    VOID('V')
+    {
+        public int getEncodingSize(Object value)
+        {
+            return 0;
+        }
+
+
+        public Object toNativeValue(Object value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+            else
+            {
+                throw new NumberFormatException("Cannot convert: " + value + "(" +
+                                                value.getClass().getName() + ") to null String.");
+            }
+        }
+
+        public void writeValueImpl(Object value, ByteBuffer buffer)
+        {
+        }
+
+        public Object readValueFromBuffer(ByteBuffer buffer)
+        {
+            return null;
+        }
+    },
+
+    // Extended types
 
     BINARY('x')
     {
@@ -299,38 +305,6 @@ public enum AMQType
         }
     },
 
-    NULL_STRING('n')
-    {
-
-        public int getEncodingSize(Object value)
-        {
-            return 0;
-        }
-
-
-        public String toNativeValue(Object value)
-        {
-            if (value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to null String.");
-            }
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            return null;
-        }
-    },
-
     BOOLEAN('t')
     {
         public int getEncodingSize(Object value)
@@ -365,42 +339,6 @@ public enum AMQType
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
             return EncodingUtils.readBoolean(buffer);
-        }
-    },
-
-    BYTE('b')
-    {
-        public int getEncodingSize(Object value)
-        {
-            return EncodingUtils.encodedByteLength();
-        }
-
-
-        public Byte toNativeValue(Object value)
-        {
-            if (value instanceof Byte)
-            {
-                return (Byte) value;
-            }
-            else if ((value instanceof String) || (value == null))
-            {
-                return Byte.valueOf((String)value);
-            }
-            else
-            {
-                throw new NumberFormatException("Cannot convert: " + value + "(" +
-                                                value.getClass().getName() + ") to byte.");
-            }
-        }
-
-        public void writeValueImpl(Object value, ByteBuffer buffer)
-        {
-            EncodingUtils.writeByte(buffer, (Byte) value);
-        }
-
-        public Object readValueFromBuffer(ByteBuffer buffer)
-        {
-            return EncodingUtils.readByte(buffer);
         }
     },
 
@@ -439,6 +377,42 @@ public enum AMQType
             return EncodingUtils.readChar(buffer);
         }
 
+    },
+
+    BYTE('b')
+    {
+        public int getEncodingSize(Object value)
+        {
+            return EncodingUtils.encodedByteLength();
+        }
+
+
+        public Byte toNativeValue(Object value)
+        {
+            if (value instanceof Byte)
+            {
+                return (Byte) value;
+            }
+            else if ((value instanceof String) || (value == null))
+            {
+                return Byte.valueOf((String)value);
+            }
+            else
+            {
+                throw new NumberFormatException("Cannot convert: " + value + "(" +
+                                                value.getClass().getName() + ") to byte.");
+            }
+        }
+
+        public void writeValueImpl(Object value, ByteBuffer buffer)
+        {
+            EncodingUtils.writeByte(buffer, (Byte) value);
+        }
+
+        public Object readValueFromBuffer(ByteBuffer buffer)
+        {
+            return EncodingUtils.readByte(buffer);
+        }
     },
 
     SHORT('s')
