@@ -257,7 +257,7 @@ public class FieldTable
         checkPropertyName(string);
         if (value == null)
         {
-            return _properties.put(string, AMQType.NULL_STRING.asTypedValue(null));
+            return _properties.put(string, AMQType.VOID.asTypedValue(null));
         }
         else
         {
@@ -344,7 +344,7 @@ public class FieldTable
     public boolean isNullStringValue(String name)
     {
         AMQTypedValue value = _properties.get(name);
-        return (value != null) && (value.getType() == AMQType.NULL_STRING);
+        return (value != null) && (value.getType() == AMQType.VOID);
     }
 
     // ***** Methods
