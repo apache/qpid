@@ -60,8 +60,8 @@
                                     <property name="generated.dir" value="${generated.dir}"/>
                                     <property name="generated.timestamp" value="${generated.timestamp}"/>
                                     <property name="xml.spec.dir" value="${specs.dir}"/>
-                                    <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml"/>
-                                    <property name="xml.spec.list" value="${specs.dir}/amqp.0-8.xml ${specs.dir}/cluster.0-8.xml"/>
+                                    <property name="xml.spec.deps" value="amqp.0-9.xml cluster.0-9.xml amqp-nogen.0-9.xml"/>
+                                    <property name="xml.spec.list" value="${specs.dir}/amqp.0-9.xml ${specs.dir}/cluster.0-9.xml ${specs.dir}/amqp-nogen.0-9.xml"/>
                                 </ant>
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>

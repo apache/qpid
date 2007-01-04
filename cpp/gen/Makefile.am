@@ -16,7 +16,7 @@ if CAN_GENERATE_CODE
 
 gentools_dir = $(srcdir)/../../gentools
 spec_dir = $(srcdir)/../../specs
-spec = $(spec_dir)/amqp.0-8.xml
+spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
 $(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
