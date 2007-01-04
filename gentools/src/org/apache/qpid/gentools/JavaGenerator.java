@@ -946,7 +946,7 @@ public class JavaGenerator extends Generator
 	protected String generateMbBodyInit(String codeType, AmqpField field,
 		AmqpVersionSet versionSet, int indentSize, int tabSize, boolean nextFlag)
 	{
-		return Utils.createSpaces(indentSize) + "body." + field.name + " = " + field.name +
+		return Utils.createSpaces(indentSize) + "bodyFrame." + field.name + " = " + field.name +
 			";" + cr;
 	}
 	
@@ -960,7 +960,7 @@ public class JavaGenerator extends Generator
 		while (dItr.hasNext())
 		{
 			dItr.next();
-			sb.append(Utils.createSpaces(indentSize) + "body." + field.name + "_" + domainCntr +
+			sb.append(Utils.createSpaces(indentSize) + "bodyFrame." + field.name + "_" + domainCntr +
 					" = " + field.name + "_" + (domainCntr++) +	";" + cr);
 		}
 		return sb.toString();		
