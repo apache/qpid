@@ -29,3 +29,8 @@ fi
 
 automake
 autoconf
+
+if [ "$1" = "-build" ] ; then
+    ./configure
+    make
+fi
