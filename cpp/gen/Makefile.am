@@ -16,10 +16,15 @@ if CAN_GENERATE_CODE
 
 gentools_dir = $(srcdir)/../../gentools
 spec_dir = $(srcdir)/../../specs
-spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
+
+# FIXME aconway 2007-01-04: Enabling Basic class until
+# new messaging class is ready to replace it.
+# spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
+spec = $(spec_dir)/amqp.0-9.xml 
+
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
-$(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
+$(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates) Makefile.am
 	rm -f $(generated_sources)
 	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
 	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
