@@ -1,3 +1,5 @@
+#ifndef AMQP_TYPES_H
+#define AMQP_TYPES_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -30,16 +32,11 @@ typedef unsigned __int64 u_int64_t;
 #include "stdint.h"
 #endif
 
-#ifndef AMQP_TYPES_H
-#define AMQP_TYPES_H
 
-namespace qpid 
-{
-namespace framing 
-{
+namespace qpid {
+namespace framing {
 
 using std::string;
 
-}
-}
+}} // namespace qpid::framing
 #endif
