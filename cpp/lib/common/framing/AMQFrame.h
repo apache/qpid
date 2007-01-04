@@ -33,37 +33,36 @@
 #define _AMQFrame_
 
 namespace qpid {
-    namespace framing {
+namespace framing {
 
 	
-        class AMQFrame : virtual public AMQDataBlock
-        {
-            static AMQP_MethodVersionMap versionMap;
+class AMQFrame : virtual public AMQDataBlock
+{
+    static AMQP_MethodVersionMap versionMap;
             
-            u_int16_t channel;
-            u_int8_t type;//used if the body is decoded separately from the 'head'
-            AMQBody::shared_ptr body;
-			AMQBody::shared_ptr createMethodBody(Buffer& buffer);
+    u_int16_t channel;
+    u_int8_t type;//used if the body is decoded separately from the 'head'
+    AMQBody::shared_ptr body;
+    AMQBody::shared_ptr createMethodBody(Buffer& buffer);
             
-        public:
-            AMQFrame();
-            AMQFrame(u_int16_t channel, AMQBody* body);
-            AMQFrame(u_int16_t channel, AMQBody::shared_ptr& body);
-            virtual ~AMQFrame();
-            virtual void encode(Buffer& buffer); 
-            virtual bool decode(Buffer& buffer); 
-            virtual u_int32_t size() const;
-            u_int16_t getChannel();
-            AMQBody::shared_ptr& getBody();
+  public:
+    AMQFrame();
+    AMQFrame(u_int16_t channel, AMQBody* body);
+    AMQFrame(u_int16_t channel, AMQBody::shared_ptr& body);
+    virtual ~AMQFrame();
+    virtual void encode(Buffer& buffer); 
+    virtual bool decode(Buffer& buffer); 
+    virtual u_int32_t size() const;
+    u_int16_t getChannel();
+    AMQBody::shared_ptr& getBody();
 
-            u_int32_t decodeHead(Buffer& buffer); 
-            void decodeBody(Buffer& buffer, uint32_t size); 
+    u_int32_t decodeHead(Buffer& buffer); 
+    void decodeBody(Buffer& buffer, uint32_t size); 
 
-            friend std::ostream& operator<<(std::ostream& out, const AMQFrame& body);
-        };
+  friend std::ostream& operator<<(std::ostream& out, const AMQFrame& body);
+};
 
-    }
-}
+}} // namespace qpid::framing
 
 
 #endif

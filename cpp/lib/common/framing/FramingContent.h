@@ -38,11 +38,9 @@ class Content
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
     size_t size() const;
+
+  friend std::ostream& operator<<(std::ostream&, const Content&);
 };    
-
-
-// TODO aconway 2007-01-04: operator << is undefined, just for compilation.
-std::ostream& operator<<(std::ostream&, const Content&);
 
 }} // namespace qpid::framing
 
