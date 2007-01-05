@@ -19,9 +19,11 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Codec
 {
+    [Serializable]
     public class ProtocolEncoderException : ProtocolCodecException
     {
         public ProtocolEncoderException() : base()
@@ -35,6 +37,12 @@ namespace Qpid.Codec
         public ProtocolEncoderException(Exception cause) : base(cause)
         {            
         }
+
+        protected ProtocolEncoderException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+        }
     }
 }
+
 

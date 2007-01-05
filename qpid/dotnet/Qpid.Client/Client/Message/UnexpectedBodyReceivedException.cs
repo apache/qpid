@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 using log4net;
 
 namespace Qpid.Client.Message
@@ -27,6 +28,7 @@ namespace Qpid.Client.Message
     /// Raised when a message body is received unexpectedly by the client. This typically occurs when the
     /// length of bodies received does not match with the declared length in the content header.
     /// </summary>
+    [Serializable]
     public class UnexpectedBodyReceivedException : AMQException
     {
         public UnexpectedBodyReceivedException(ILog logger, string msg, Exception t)
@@ -43,6 +45,12 @@ namespace Qpid.Client.Message
             : base(logger, errorCode, msg)
         {                        
         }
+
+        protected UnexpectedBodyReceivedException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+        }
     }
 }
+
 

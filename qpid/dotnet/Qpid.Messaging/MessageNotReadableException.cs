@@ -18,11 +18,21 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid.Messaging
 {
+    [Serializable]
     public class MessageNotReadableException : QpidException
     {
         public MessageNotReadableException(string reason) : base(reason)
+        {
+        }
+
+        protected MessageNotReadableException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

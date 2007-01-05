@@ -18,11 +18,20 @@
  * under the License.
  *
  */
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid.Messaging
 {
+    [Serializable]
     public class MessageNotWriteableException : QpidException
     {
         public MessageNotWriteableException(string reason) : base(reason)
+        {
+        }
+
+        protected MessageNotWriteableException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }
