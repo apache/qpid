@@ -6,8 +6,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Common.Tests", "Qpid.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Buffer", "Qpid.Buffer\Qpid.Buffer.csproj", "{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Client.Transport.Socket.Blocking", "Qpid.Client.Transport.Socket.Blocking\Qpid.Client.Transport.Socket.Blocking.csproj", "{52AC4940-2077-4104-A753-29A9C8C16957}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Codec", "Qpid.Codec\Qpid.Codec.csproj", "{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Client", "Qpid.Client\Qpid.Client.csproj", "{68987C05-3768-452C-A6FC-6BA1D372852F}"
@@ -34,10 +32,6 @@ Global
 		{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}.Release|Any CPU.Build.0 = Release|Any CPU
-		{52AC4940-2077-4104-A753-29A9C8C16957}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{52AC4940-2077-4104-A753-29A9C8C16957}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{52AC4940-2077-4104-A753-29A9C8C16957}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{52AC4940-2077-4104-A753-29A9C8C16957}.Release|Any CPU.Build.0 = Release|Any CPU
 		{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}.Release|Any CPU.ActiveCfg = Release|Any CPU

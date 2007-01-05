@@ -58,10 +58,6 @@
     <Compile Include="url\ConnectionUrlTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Qpid.Client.Transport.Socket.Blocking\Qpid.Client.Transport.Socket.Blocking.csproj">
-      <Project>{52AC4940-2077-4104-A753-29A9C8C16957}</Project>
-      <Name>Qpid.Client.Transport.Socket.Blocking</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Qpid.Messaging\Qpid.Messaging.csproj">
       <Project>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</Project>
       <Name>Qpid.Messaging</Name>
