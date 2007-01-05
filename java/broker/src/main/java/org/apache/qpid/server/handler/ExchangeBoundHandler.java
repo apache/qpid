@@ -64,10 +64,10 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                                ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
                                AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        byte major = (byte)8;
-        byte minor = (byte)0;
+        byte major = (byte)0;
+        byte minor = (byte)9;
         
         ExchangeBoundBody body = evt.getMethod();
 

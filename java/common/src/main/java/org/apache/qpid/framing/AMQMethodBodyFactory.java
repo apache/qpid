@@ -46,6 +46,6 @@ public class AMQMethodBodyFactory implements BodyFactory
         // if generated together with amqp.xml is a part of MainRegistry.
         // TODO: Connect with version acquired from ProtocolInitiation class.
         return MainRegistry.get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(),
-            (byte)8, (byte)0);        
+            (byte)0, (byte)9);        
     }
 }

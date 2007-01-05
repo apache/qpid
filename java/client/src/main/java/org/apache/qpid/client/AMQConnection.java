@@ -465,22 +465,22 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         _protocolHandler.syncWrite(
             ChannelOpenBody.createAMQFrame(channelId,
-                (byte)8, (byte)0,	// AMQP version (major, minor)
+                (byte)0, (byte)9,	// AMQP version (major, minor)
                 null),	// outOfBand
                 ChannelOpenOkBody.class);
 
         //todo send low water mark when protocol allows.
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         _protocolHandler.syncWrite(
             BasicQosBody.createAMQFrame(channelId,
-                (byte)8, (byte)0,	// AMQP version (major, minor)
+                (byte)0, (byte)9,	// AMQP version (major, minor)
                 false,	// global
                 prefetchHigh,	// prefetchCount
                 0),	// prefetchSize
@@ -492,10 +492,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            _protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId, (byte)8, (byte)0), TxSelectOkBody.class);
+            _protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId, (byte)0, (byte)9), TxSelectOkBody.class);
         }
     }
 

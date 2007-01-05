@@ -81,11 +81,11 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         {
             int purged = queue.delete(body.ifUnused, body.ifEmpty);
             _store.removeQueue(queue.getName());
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             session.writeFrame(QueueDeleteOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
+                (byte)0, (byte)9,	// AMQP version (major, minor)
                 purged));	// messageCount
         }
     }

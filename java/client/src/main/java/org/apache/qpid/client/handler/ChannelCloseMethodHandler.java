@@ -57,10 +57,10 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
+        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)0, (byte)9);
         evt.getProtocolSession().writeFrame(frame);
         if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
         {

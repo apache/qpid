@@ -82,10 +82,10 @@ public abstract class RequiredDeliveryException extends AMQException
     public CompositeAMQDataBlock getReturnMessage(int channel)
     {
 	    // AMQP version change: All generated *Body classes are now version-aware.
-        // Shortcut: hardwire version to 0-8 (major=8, minor=0) for now.
+        // Shortcut: hardwire version to 0-9 (major=0, minor=9) for now.
         // TODO: Connect the version to that returned by the ProtocolInitiation
         // for this session.
-        BasicReturnBody returnBody = new BasicReturnBody((byte)8, (byte)0);
+        BasicReturnBody returnBody = new BasicReturnBody((byte)0, (byte)9);
         returnBody.exchange = _publishBody.exchange;
         returnBody.replyCode = getReplyCode();
         returnBody.replyText = _message;

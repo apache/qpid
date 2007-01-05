@@ -92,11 +92,11 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     _logger.info("Connected as: " + ss.getAuthorizationID());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        (byte)0, (byte)9,	// AMQP version (major, minor)
                         Integer.MAX_VALUE,	// channelMax
                         getConfiguredFrameSize(),	// frameMax
                         HeartbeatConfig.getInstance().getDelay());	// heartbeat
@@ -104,11 +104,11 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        (byte)0, (byte)9,	// AMQP version (major, minor)
                         authResult.challenge);	// challenge
                     protocolSession.writeFrame(challenge);
             }
