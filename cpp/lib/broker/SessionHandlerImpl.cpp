@@ -217,9 +217,13 @@ void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
 void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const string& /*outOfBand*/){
 
     
-    parent->channels[channel] = new Channel(parent->client->getProtocolVersion() , parent->context, channel, parent->framemax, 
-                                            parent->queues->getStore(), parent->settings.stagingThreshold);
-    parent->client->getChannel().openOk(channel);
+    parent->channels[channel] = new Channel(
+        parent->client->getProtocolVersion() , parent->context, channel,
+        parent->framemax, parent->queues->getStore(),
+        parent->settings.stagingThreshold);
+
+    // FIXME aconway 2007-01-04: provide valid channel Id as per ampq 0-9
+    parent->client->getChannel().openOk(channel, std::string()/* ID */);
 } 
         
 void SessionHandlerImpl::ChannelHandlerImpl::flow(u_int16_t /*channel*/, bool /*active*/){}         
@@ -262,7 +266,21 @@ void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16
     if(!nowait){
         parent->client->getExchange().declareOk(channel);
     }
-} 
+}
+
+                
+void SessionHandlerImpl::ExchangeHandlerImpl::unbind(
+    u_int16_t /*channel*/,
+    u_int16_t /*ticket*/,
+    const string& /*queue*/,
+    const string& /*exchange*/,
+    const string& /*routingKey*/,
+    const qpid::framing::FieldTable& /*arguments*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+
                 
 void SessionHandlerImpl::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, 
                                                       const string& exchange, bool /*ifUnused*/, bool nowait){
@@ -453,3 +471,42 @@ void SessionHandlerImpl::TxHandlerImpl::rollback(u_int16_t channel){
     parent->getChannel(channel)->recover(false);    
 }
               
+void
+SessionHandlerImpl::QueueHandlerImpl::unbind(
+    u_int16_t /*channel*/,
+    u_int16_t /*ticket*/,
+    const string& /*queue*/,
+    const string& /*exchange*/,
+    const string& /*routingKey*/,
+    const qpid::framing::FieldTable& /*arguments*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+void
+SessionHandlerImpl::ChannelHandlerImpl::ok( u_int16_t /*channel*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+void
+SessionHandlerImpl::ChannelHandlerImpl::ping( u_int16_t /*channel*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+void
+SessionHandlerImpl::ChannelHandlerImpl::pong( u_int16_t /*channel*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+void
+SessionHandlerImpl::ChannelHandlerImpl::resume(
+    u_int16_t /*channel*/,
+    const string& /*channelId*/ )
+{
+        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+

@@ -18,24 +18,30 @@
  * under the License.
  *
  */
-#include <Buffer.h>
-#include <FramingContent.h> 
+#include <assert.h>
 
-namespace qpid
-{
-namespace framing
-{
+#include "Buffer.h"
+#include "FramingContent.h"
+
+namespace qpid {
+namespace framing {
 
 Content::~Content() {}
   
-void Content::encode(Buffer&) const
-{
+void Content::encode(Buffer&) const {
+    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
-void Content::decode(Buffer&)
-{
+void Content::decode(Buffer&) {
+    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
+size_t Content::size() const {
+    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
 
-} // namespace framing
-} // namespace qpid
+std::ostream& operator<<(std::ostream&, const Content&) {
+    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+}
+
+}} // namespace framing::qpid

@@ -128,6 +128,13 @@ optimization:
    ../configure CXXFLAGS=-g --prefix=/tmp/x \
      && make && make check)
 
+Since it's common to want to bootstrap & test a working copy with
+default configuration you can say:
+ ./bootstrap -build
+
+Which is equivalent to
+ ./bootstrap && ./configure && make && make check
+
 === Portability ===
 
 All system calls are abstracted by classes under lib/common/sys. This
