@@ -81,11 +81,11 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                               body.arguments, body.noLocal);
                 if (!body.nowait)
                 {
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     session.writeFrame(BasicConsumeOkBody.createAMQFrame(channelId,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        (byte)0, (byte)9,	// AMQP version (major, minor)
                         consumerTag));		// consumerTag
                 }
 
@@ -95,26 +95,26 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             catch (AMQInvalidSelectorException ise)
             {
                 _log.info("Closing connection due to invalid selector");
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 session.writeFrame(ChannelCloseBody.createAMQFrame(channelId,
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
-                    BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
+                    (byte)0, (byte)9,	// AMQP version (major, minor)
+                    BasicConsumeBody.getClazz((byte)0, (byte)9),	// classId
+                    BasicConsumeBody.getMethod((byte)0, (byte)9),	// methodId
                     AMQConstant.INVALID_SELECTOR.getCode(),	// replyCode
                     ise.getMessage()));		// replyText
             }
             catch (ConsumerTagNotUniqueException e)
             {
                 String msg = "Non-unique consumer tag, '" + body.consumerTag + "'";
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId,
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
-                    BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
+                    (byte)0, (byte)9,	// AMQP version (major, minor)
+                    BasicConsumeBody.getClazz((byte)0, (byte)9),	// classId
+                    BasicConsumeBody.getMethod((byte)0, (byte)9),	// methodId
                     AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
                     msg));	// replyText
             }

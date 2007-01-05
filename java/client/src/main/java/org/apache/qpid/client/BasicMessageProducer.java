@@ -134,11 +134,11 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     {
         // Declare the exchange
         // Note that the durable and internal arguments are ignored since passive is set to false
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            (byte)0, (byte)9,	// AMQP version (major, minor)
             null,	// arguments
             false,	// autoDelete
             false,	// durable
@@ -523,11 +523,11 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
         message.getJmsContentHeaderProperties().getJMSHeaders().setString(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString(), destination.toURL());
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            (byte)0, (byte)9,	// AMQP version (major, minor)
             destination.getExchangeName(),	// exchange
             immediate,	// immediate
             mandatory,	// mandatory
@@ -574,9 +574,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
 
         // weight argument of zero indicates no child content headers, just bodies
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte)8, (byte)0), 0,
+        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte)0, (byte)9), 0,
                                                                        contentHeaderProperties,
                                                                        size);
         if (_logger.isDebugEnabled())

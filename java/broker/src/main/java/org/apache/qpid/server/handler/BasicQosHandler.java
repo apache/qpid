@@ -44,9 +44,9 @@ public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
                                AMQProtocolSession session, AMQMethodEvent<BasicQosBody> evt) throws AMQException
     {
         session.getChannel(evt.getChannelId()).setPrefetchCount(evt.getMethod().prefetchCount);
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        session.writeFrame(new AMQFrame(evt.getChannelId(), new BasicQosOkBody((byte)8, (byte)0)));
+        session.writeFrame(new AMQFrame(evt.getChannelId(), new BasicQosOkBody((byte)0, (byte)9)));
     }
 }

@@ -40,10 +40,10 @@ public class ContentHeaderPropertiesFactory
              throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         ContentHeaderProperties properties;
-        // AMQP version change: "Hardwired" version to major=8, minor=0
+        // AMQP version change: "Hardwired" version to major=0, minor=9
         // TODO: Change so that the actual version is obtained from
         // the ProtocolInitiation object for this session.
-        if (classId == BasicConsumeBody.getClazz((byte)8, (byte)0))
+        if (classId == BasicConsumeBody.getClazz((byte)0, (byte)9))
         {
         	properties = new BasicContentHeaderProperties();
         }

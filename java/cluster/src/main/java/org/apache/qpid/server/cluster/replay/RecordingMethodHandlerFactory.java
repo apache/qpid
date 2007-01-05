@@ -44,10 +44,10 @@ import java.util.Arrays;
 
 public class RecordingMethodHandlerFactory extends WrappingMethodHandlerFactory
 {
-    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-    private final byte major = (byte)8;
-    private final byte minor = (byte)0;
+    private final byte major = (byte)0;
+    private final byte minor = (byte)9;
     private final Iterable<FrameDescriptor> _frames = Arrays.asList(new FrameDescriptor[]
             {
                     new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor)),

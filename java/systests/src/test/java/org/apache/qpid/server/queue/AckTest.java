@@ -80,9 +80,9 @@ public class AckTest extends TestCase
     {
         for (int i = 1; i <= count; i++)
         {
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Establish some way to determine the version for the test.
-            BasicPublishBody publishBody = new BasicPublishBody((byte)8, (byte)0);
+            BasicPublishBody publishBody = new BasicPublishBody((byte)0, (byte)9);
             publishBody.routingKey = "rk";
             publishBody.exchange = "someExchange";
             AMQMessage msg = new AMQMessage(_messageStore, publishBody);

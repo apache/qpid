@@ -72,11 +72,11 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 
     protected AMQFrame createConnectionOpenFrame(int channel, String path, String capabilities, boolean insist)
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         return ConnectionOpenBody.createAMQFrame(channel,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            (byte)0, (byte)9,	// AMQP version (major, minor)
             capabilities,	// capabilities
             insist,	// insist
             path);	// virtualHost
@@ -84,11 +84,11 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 
     protected AMQFrame createTuneOkFrame(int channel, ConnectionTuneParameters params)
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         return ConnectionTuneOkBody.createAMQFrame(channel,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            (byte)0, (byte)9,	// AMQP version (major, minor)
             params.getChannelMax(),	// channelMax
             params.getFrameMax(),	// frameMax
             params.getHeartbeat());	// heartbeat
