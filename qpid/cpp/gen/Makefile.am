@@ -11,7 +11,7 @@ MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 # Don't attempt to run the code generator unless configure has set
 # CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
 # to run the code generator are available.
-# 
+#
 if CAN_GENERATE_CODE
 
 gentools_dir = $(srcdir)/../../gentools
@@ -40,6 +40,11 @@ gen-src.mk: timestamp
 	  echo 'cxx_templates = '\\					\
 	    && find $(gentools_dir)/templ.cpp -name '*.tmpl'		\
 		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
+	  echo '# Empty rules, in case any of these files is removed,';	\
+	  echo '# renamed, or no longer generated.';			\
+	  echo '$$(spec):';						\
+	  echo '$$(java_sources):';					\
+	  echo '$$(cxx_templates):';					\
 	  echo endif							\
 	) >> $@-t
 	mv $@-t $@
