@@ -19,9 +19,11 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Messaging
 {   
+    [Serializable]
     public class QpidException : Exception
     {
         public QpidException(string reason) : base(reason)
@@ -30,6 +32,11 @@ namespace Qpid.Messaging
 
         public QpidException(string reason, Exception e)
             : base(reason, e)
+        {
+        }
+
+        protected QpidException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

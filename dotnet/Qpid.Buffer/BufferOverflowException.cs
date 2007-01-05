@@ -19,14 +19,22 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Buffer
 {
+    [Serializable]
     public class BufferOverflowException : Exception
     {
         public BufferOverflowException(string message) : base(message)
         {
         }
+
+         protected BufferOverflowException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+        }
     }
 }
+
 
