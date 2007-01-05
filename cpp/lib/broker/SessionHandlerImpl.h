@@ -157,7 +157,15 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
                 
         virtual void flowOk(u_int16_t channel, bool active); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
+        virtual void ok( u_int16_t channel );
+
+        virtual void ping( u_int16_t channel );
+
+        virtual void pong( u_int16_t channel );
+
+        virtual void resume( u_int16_t channel,
+                            const string& channelId );
+        
         virtual void close(u_int16_t channel, u_int16_t replyCode, const string& replyText, 
                            u_int16_t classId, u_int16_t methodId); 
                 
@@ -175,9 +183,15 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
                              bool passive, bool durable, bool autoDelete, bool internal, bool nowait, 
                              const qpid::framing::FieldTable& arguments); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void delete_(u_int16_t channel, u_int16_t ticket, const string& exchange, bool ifUnused, bool nowait); 
                 
+        virtual void unbind(u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& queue,
+                            const string& exchange,
+                            const string& routingKey,
+                            const qpid::framing::FieldTable& arguments );
+
         virtual ~ExchangeHandlerImpl(){}
     };
 
@@ -194,6 +208,13 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual void bind(u_int16_t channel, u_int16_t ticket, const string& queue, 
                           const string& exchange, const string& routingKey, bool nowait, 
                           const qpid::framing::FieldTable& arguments); 
+
+        virtual void unbind(u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& queue,
+                            const string& exchange,
+                            const string& routingKey,
+                            const qpid::framing::FieldTable& arguments );
 
         virtual void purge(u_int16_t channel, u_int16_t ticket, const string& queue, 
                            bool nowait); 
@@ -258,7 +279,9 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
     inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
 
-    // FIXME aconway 2007-01-04: what's this about?
+    virtual AMQP_ServerOperations::MessageHandler* getMessageHandler(){ throw ConnectionException(540, "Message class not implemented"); } 
+
+    // FIXME aconway 2007-01-04: Remove?
     // Temporary add-in to resolve version conflicts: AMQP v8.0 still defines class Test;
     // however v0.9 will not - kpvdr 2006-11-17      
     // inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
