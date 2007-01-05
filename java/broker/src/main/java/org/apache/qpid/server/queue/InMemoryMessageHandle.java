@@ -9,6 +9,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
@@ -39,7 +40,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _contentHeaderBody;
     }
 
-    public int getBodyCount()
+    public int getBodyCount(long messageId)
     {
         return _contentBodies.size();
     }
@@ -59,7 +60,8 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _contentBodies.get(index);
     }
 
-    public void addContentBodyFrame(long messageId, ContentBody contentBody) throws AMQException
+    public void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody)
+            throws AMQException
     {
         _contentBodies.add(contentBody);
     }
@@ -94,7 +96,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
@@ -102,15 +104,18 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _contentHeaderBody = contentHeaderBody;
     }
 
-    public void removeMessage(long messageId) throws AMQException
+    public void removeMessage(StoreContext storeContext, long messageId) throws AMQException
     {
+        // NO OP
     }
 
-    public void enqueue(long messageId, AMQQueue queue) throws AMQException
+    public void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
+        // NO OP
     }
 
-    public void dequeue(long messageId, AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
+        // NO OP
     }
 }

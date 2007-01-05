@@ -185,7 +185,7 @@ public class ServiceRequestingClient implements ExceptionListener
             AMQQueue destination = new AMQQueue(commandQueueName);
             _producer = (MessageProducer) _session.createProducer(destination);
             _producer.setDisableMessageTimestamp(true);
-            _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            _producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
             _tempDestination = new AMQQueue("TempResponse" +
                                             Long.toString(System.currentTimeMillis()), true);

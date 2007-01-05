@@ -28,6 +28,7 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,15 +55,18 @@ public class NonTransactionalContext implements TransactionalContext
 
     private final MessageStore _messageStore;
 
+    private StoreContext _storeContext;
+
     /**
      * Whether we are in a transaction
      */
     private boolean _inTran;
 
-    public NonTransactionalContext(MessageStore messageStore, AMQChannel channel,
+    public NonTransactionalContext(MessageStore messageStore, StoreContext storeContext, AMQChannel channel,
                                    List<RequiredDeliveryException> returnMessages, Set<Long> browsedAcks)
     {
         _channel = channel;
+        _storeContext = storeContext;
         _returnMessages = returnMessages;
         _messageStore = messageStore;
         _browsedAcks = browsedAcks;
@@ -72,7 +76,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (!_inTran)
         {
-            _messageStore.beginTran();
+            _messageStore.beginTran(_storeContext);
             _inTran = true;
         }
     }
@@ -92,7 +96,7 @@ public class NonTransactionalContext implements TransactionalContext
         try
         {
             message.incrementReference();
-            queue.process(message);
+            queue.process(_storeContext, message);
             //following check implements the functionality
             //required by the 'immediate' flag:
             message.checkDeliveredToConsumer();
@@ -122,7 +126,11 @@ public class NonTransactionalContext implements TransactionalContext
                     {
                         if (!_browsedAcks.contains(deliveryTag))
                         {
-                            message.discard();
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug("Discarding message: " + message.message.getMessageId());
+                            }
+                            message.discard(_storeContext);
                         }
                         else
                         {
@@ -150,7 +158,11 @@ public class NonTransactionalContext implements TransactionalContext
                 {
                     if (!_browsedAcks.contains(deliveryTag))
                     {
-                        msg.discard();
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Discarding message: " + msg.message.getMessageId());
+                        }
+                        msg.discard(_storeContext);
                     }
                     else
                     {
@@ -171,10 +183,11 @@ public class NonTransactionalContext implements TransactionalContext
                 throw new AMQException("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
                                        _channel.getChannelId());
             }
-            msg.discard();
+            msg.discard(_storeContext);
             if (_log.isDebugEnabled())
             {
-                _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag);
+                _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
+                           msg.message.getMessageId());
             }
         }
     }
@@ -183,7 +196,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (persistent)
         {
-            _messageStore.commitTran();
+            _messageStore.commitTran(_storeContext);
             _inTran = false;
         }
     }

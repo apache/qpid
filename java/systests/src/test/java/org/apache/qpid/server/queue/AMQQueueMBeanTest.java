@@ -27,6 +27,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
 import javax.management.JMException;
 import java.util.LinkedList;
@@ -41,9 +42,11 @@ public class AMQQueueMBeanTest extends TestCase
     private AMQQueueMBean _queueMBean;
     private QueueRegistry _queueRegistry;
     private MessageStore _messageStore = new SkeletonMessageStore();
-    private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, null,
+    private StoreContext _storeContext = new StoreContext();
+    private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
+                                                                                     null,
                                                                                      new LinkedList<RequiredDeliveryException>(),
-                                                                                     new HashSet<Long>()); 
+                                                                                     new HashSet<Long>());
     private MockProtocolSession _protocolSession;
     private AMQChannel _channel;
 
@@ -140,8 +143,8 @@ public class AMQQueueMBeanTest extends TestCase
 
         AMQMessage msg = message(false);
         long id = msg.getMessageId();
-        _queue.clearQueue();
-        _queue.process(msg);
+        _queue.clearQueue(_storeContext);
+        _queue.process(_storeContext, msg);
         _queueMBean.viewMessageContent(id);
         try
         {
@@ -161,7 +164,7 @@ public class AMQQueueMBeanTest extends TestCase
         BasicPublishBody publish = new BasicPublishBody((byte)8, (byte)0);
         publish.immediate = immediate;
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.bodySize = 1000;   // in bytes       
+        contentHeaderBody.bodySize = 1000;   // in bytes
         return new AMQMessage(_messageStore.getNewMessageId(), publish, _transactionalContext, contentHeaderBody);
     }
 
@@ -184,7 +187,7 @@ public class AMQQueueMBeanTest extends TestCase
         }
         for (int i = 0; i < messageCount; i++)
         {
-            _queue.process(messages[i]);
+            _queue.process(_storeContext, messages[i]);
         }
     }
 }

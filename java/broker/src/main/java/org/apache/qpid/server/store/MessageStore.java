@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -48,23 +48,23 @@ public interface MessageStore
      */
     void close() throws Exception;
 
-    void removeMessage(long messageId) throws AMQException;
+    void removeMessage(StoreContext storeContext, long messageId) throws AMQException;
 
     void createQueue(AMQQueue queue) throws AMQException;
 
     void removeQueue(String name) throws AMQException;
 
-    void enqueueMessage(String name, long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException;
 
-    void dequeueMessage(String name, long messageId) throws AMQException;
+    void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException;
 
-    void beginTran() throws AMQException;
+    void beginTran(StoreContext context) throws AMQException;
 
-    void commitTran() throws AMQException;
+    void commitTran(StoreContext context) throws AMQException;
 
-    void abortTran() throws AMQException;
+    void abortTran(StoreContext context) throws AMQException;
 
-    boolean inTran();
+    boolean inTran(StoreContext context);
 
     /**
      * Recreate all queues that were persisted, including re-enqueuing of existing messages
@@ -79,9 +79,9 @@ public interface MessageStore
      */
     long getNewMessageId();
 
-    void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException;
+    void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody) throws AMQException;
 
-    void storeMessageMetaData(long messageId, MessageMetaData messageMetaData) throws AMQException;
+    void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData) throws AMQException;
 
     MessageMetaData getMessageMetaData(long messageId) throws AMQException;
 

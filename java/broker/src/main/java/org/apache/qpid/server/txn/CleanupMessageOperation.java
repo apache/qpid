@@ -22,6 +22,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.NoConsumersException;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class CleanupMessageOperation implements TxnOp
         _returns = returns;
     }
 
-    public void prepare() throws AMQException
+    public void prepare(StoreContext context) throws AMQException
     {
     }
 
@@ -53,7 +54,7 @@ public class CleanupMessageOperation implements TxnOp
         //or enqueued on any queues and can be discarded
     }
 
-    public void commit()
+    public void commit(StoreContext context)
     {
         //The routers reference can now be released.  This is done
         //here to ensure that it happens after the queues that
@@ -61,7 +62,7 @@ public class CleanupMessageOperation implements TxnOp
         //memory only operation is done in the commit phase).
         try
         {
-            _msg.decrementReference();
+            _msg.decrementReference(context);
         }
         catch (AMQException e)
         {
@@ -83,7 +84,8 @@ public class CleanupMessageOperation implements TxnOp
         }
     }
 
-    public void rollback()
+    public void rollback(StoreContext context)
     {
+        // NO OP
     }
 }

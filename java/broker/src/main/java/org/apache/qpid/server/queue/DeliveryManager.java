@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.concurrent.Executor;
 import java.util.List;
@@ -66,11 +67,11 @@ interface DeliveryManager
      * @param msg  the message to deliver
      * @throws org.apache.qpid.server.queue.FailedDequeueException if the message could not be dequeued
      */
-    void deliver(String name, AMQMessage msg) throws FailedDequeueException, AMQException;
+    void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException;
 
-    void removeAMessageFromTop() throws AMQException;
+    void removeAMessageFromTop(StoreContext storeContext) throws AMQException;
 
-    void clearAllMessages() throws AMQException;
+    void clearAllMessages(StoreContext storeContext) throws AMQException;
 
     List<AMQMessage> getMessages();
 

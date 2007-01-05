@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -85,7 +85,7 @@ public class MemoryMessageStore implements MessageStore
         }
     }
 
-    public void removeMessage(long messageId)
+    public void removeMessage(StoreContext context, long messageId)
     {
         if (_log.isDebugEnabled())
         {
@@ -105,32 +105,32 @@ public class MemoryMessageStore implements MessageStore
         // Not required to do anything
     }
 
-    public void enqueueMessage(String name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void dequeueMessage(String name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void beginTran() throws AMQException
+    public void beginTran(StoreContext context) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void commitTran() throws AMQException
+    public void commitTran(StoreContext context) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void abortTran() throws AMQException
+    public void abortTran(StoreContext context) throws AMQException
     {
         // Not required to do anything
     }
 
-    public boolean inTran()
+    public boolean inTran(StoreContext context)
     {
         return false;
     }
@@ -145,7 +145,8 @@ public class MemoryMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(long messageId, int index, ContentBody contentBody) throws AMQException
+    public void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody)
+            throws AMQException
     {
         List<ContentBody> bodyList = _contentBodyMap.get(messageId);
         if (bodyList == null)
@@ -157,7 +158,8 @@ public class MemoryMessageStore implements MessageStore
         bodyList.add(index, contentBody);
     }
 
-    public void storeMessageMetaData(long messageId, MessageMetaData messageMetaData) throws AMQException
+    public void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData)
+            throws AMQException
     {
         _metaDataMap.put(messageId, messageMetaData);
     }
@@ -169,7 +171,7 @@ public class MemoryMessageStore implements MessageStore
 
     public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
     {
-        List<ContentBody> bodyList = _contentBodyMap.get(messageId);        
+        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
         return bodyList.get(index);
     }
 }

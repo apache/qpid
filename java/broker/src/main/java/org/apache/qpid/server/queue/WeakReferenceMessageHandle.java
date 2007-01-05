@@ -14,10 +14,12 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.lang.ref.WeakReference;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedList;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -28,7 +30,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     private WeakReference<BasicPublishBody> _publishBody;
 
-    private List<WeakReference<ContentBody>> _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+    private List<WeakReference<ContentBody>> _contentBodies;
 
     private boolean _redelivered;
 
@@ -52,8 +54,18 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return chb;
     }
 
-    public int getBodyCount()
+    public int getBodyCount(long messageId) throws AMQException
     {
+        if (_contentBodies == null)
+        {
+            MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
+            int chunkCount = mmd.getContentChunkCount();
+            _contentBodies = new ArrayList<WeakReference<ContentBody>>(chunkCount);
+            for (int i = 0; i < chunkCount; i++)
+            {
+                _contentBodies.add(new WeakReference<ContentBody>(null));
+            }
+        }
         return _contentBodies.size();
     }
 
@@ -79,10 +91,14 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return cb;
     }
 
-    public void addContentBodyFrame(long messageId, ContentBody contentBody) throws AMQException
+    public void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody) throws AMQException
     {
+        if (_contentBodies == null)
+        {
+            _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+        }
         _contentBodies.add(new WeakReference<ContentBody>(contentBody));
-        _messageStore.storeContentBodyChunk(messageId, _contentBodies.size() - 1, contentBody);
+        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody);
     }
 
     public BasicPublishBody getPublishBody(long messageId) throws AMQException
@@ -122,28 +138,28 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
-        _messageStore.storeMessageMetaData(messageId, new MessageMetaData(publishBody, contentHeaderBody,
-                                                                           _contentBodies.size()));
+        _messageStore.storeMessageMetaData(storeContext, messageId, new MessageMetaData(publishBody, contentHeaderBody,
+                                                                                        _contentBodies.size()));
         _publishBody = new WeakReference<BasicPublishBody>(publishBody);
         _contentHeaderBody = new WeakReference<ContentHeaderBody>(contentHeaderBody);
     }
 
-    public void removeMessage(long messageId) throws AMQException
+    public void removeMessage(StoreContext storeContext, long messageId) throws AMQException
     {
-        _messageStore.removeMessage(messageId);
+        _messageStore.removeMessage(storeContext, messageId);
     }
 
-    public void enqueue(long messageId, AMQQueue queue) throws AMQException
+    public void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.enqueueMessage(queue.getName(), messageId);
+        _messageStore.enqueueMessage(storeContext, queue.getName(), messageId);
     }
 
-    public void dequeue(long messageId, AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.dequeueMessage(queue.getName(), messageId);
+        _messageStore.dequeueMessage(storeContext, queue.getName(), messageId);
     }
 }

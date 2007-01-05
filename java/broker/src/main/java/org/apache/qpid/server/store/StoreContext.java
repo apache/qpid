@@ -18,31 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.AMQException;
-
-import java.util.Queue;
-
-public interface Subscription
+/**
+ * A context that the store can use to associate with a transactional context. For example, it could store
+ * some kind of txn id.
+ * 
+ * @author Apache Software Foundation
+ */
+public class StoreContext
 {
-    void send(AMQMessage msg, AMQQueue queue) throws AMQException;
+    private Object _payload;
 
-    boolean isSuspended();
+    public Object getPayload()
+    {
+        return _payload;
+    }
 
-    void queueDeleted(AMQQueue queue) throws AMQException;
-
-    boolean hasFilters();
-
-    boolean hasInterest(AMQMessage msg);
-
-    Queue<AMQMessage> getPreDeliveryQueue();
-
-    void enqueueForPreDelivery(AMQMessage msg);
-
-    boolean isAutoClose();
-
-    void close();
-
-    boolean isBrowser();
+    public void setPayload(Object payload)
+    {
+        _payload = payload;
+    }
 }

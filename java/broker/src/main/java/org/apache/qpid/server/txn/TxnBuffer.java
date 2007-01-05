@@ -22,6 +22,7 @@ package org.apache.qpid.server.txn;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,26 +40,26 @@ public class TxnBuffer
     {
     }
 
-    public void commit() throws AMQException
+    public void commit(StoreContext context) throws AMQException
     {
-        if (prepare())
+        if (prepare(context))
         {
             for (TxnOp op : _ops)
             {
-                op.commit();
+                op.commit(context);
             }
         }
         _ops.clear();
     }
 
-    private boolean prepare()
+    private boolean prepare(StoreContext context)
     {
         for (int i = 0; i < _ops.size(); i++)
         {
             TxnOp op = _ops.get(i);
             try
             {
-                op.prepare();
+                op.prepare(context);
             }
             catch (Exception e)
             {
@@ -73,11 +74,11 @@ public class TxnBuffer
         return true;
     }
 
-    public void rollback() throws AMQException
+    public void rollback(StoreContext context) throws AMQException
     {
         for (TxnOp op : _ops)
         {
-            op.rollback();
+            op.rollback(context);
         }
         _ops.clear();
     }

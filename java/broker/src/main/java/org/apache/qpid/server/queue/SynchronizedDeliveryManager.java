@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.log4j.Logger;
 
 import java.util.LinkedList;
@@ -129,21 +130,21 @@ class SynchronizedDeliveryManager implements DeliveryManager
         //no-op . This DM has no PreDeliveryQueues
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized void clearAllMessages(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
             msg = poll();
         }
     }
@@ -233,7 +234,7 @@ class SynchronizedDeliveryManager implements DeliveryManager
      * @throws NoConsumersException if there are no active subscribers to deliver
      *                              the message to
      */
-    public void deliver(String name, AMQMessage msg) throws FailedDequeueException, AMQException
+    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))

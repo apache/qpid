@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,20 +21,20 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
-import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 import java.util.Queue;
 
@@ -211,7 +211,7 @@ public class SubscriptionImpl implements Subscription
             }
             else
             {
-                sendToConsumer(msg, queue);
+                sendToConsumer(channel.getStoreContext(), msg, queue);
             }
         }
         else
@@ -239,7 +239,8 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    private void sendToConsumer(AMQMessage msg, AMQQueue queue) throws AMQException
+    private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
+            throws AMQException
     {
         try
         {
@@ -254,7 +255,11 @@ public class SubscriptionImpl implements Subscription
             // the message is unacked, it will be lost.
             if (!_acks)
             {
-                queue.dequeue(msg);
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                }
+                queue.dequeue(storeContext, msg);
             }
             synchronized(channel)
             {

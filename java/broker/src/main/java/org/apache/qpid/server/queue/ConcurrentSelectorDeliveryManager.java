@@ -26,6 +26,7 @@ import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -167,21 +168,21 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized void clearAllMessages(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
             msg = poll();
         }
     }
@@ -279,11 +280,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return _messages.poll();
     }
 
-    public void deliver(String name, AMQMessage msg) throws AMQException
+    public void deliver(StoreContext context, String name, AMQMessage msg) throws AMQException
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug(id() + "deliver :" + System.identityHashCode(msg));
+            _log.debug(id() + "deliver :" + msg);
         }
 
         //Check if we have someone to deliver the message to.
@@ -296,7 +297,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(id() + "Testing Message(" + System.identityHashCode(msg) + ") for Queued Delivery");
+                    _log.debug(id() + "Testing Message(" + msg + ") for Queued Delivery");
                 }
                 if (!msg.getPublishBody().immediate)
                 {
@@ -308,7 +309,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     //Pre Deliver to all subscriptions
                     if (_log.isDebugEnabled())
                     {
-                        _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() + 
+                        _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() +
                                    " subscribers to give the message to.");
                     }
                     for (Subscription sub : _subscriptions.getSubscriptions())
@@ -330,7 +331,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         {
                             if (_log.isDebugEnabled())
                             {
-                                _log.debug(id() + "Queuing message(" + System.identityHashCode(msg) + 
+                                _log.debug(id() + "Queuing message(" + System.identityHashCode(msg) +
                                            ") for PreDelivery for subscriber(" + System.identityHashCode(sub) + ")");
                             }
                             sub.enqueueForPreDelivery(msg);
@@ -345,7 +346,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" + 
+                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" +
                                System.identityHashCode(s) + ") :" + s);
                 }
                 //Deliver the message

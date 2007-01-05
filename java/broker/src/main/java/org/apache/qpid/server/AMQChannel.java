@@ -26,7 +26,6 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
@@ -37,14 +36,13 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.TxnBuffer;
 
 import java.util.*;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -93,7 +91,7 @@ public class AMQChannel
     private final Map<String, AMQQueue> _consumerTag2QueueMap = new TreeMap<String, AMQQueue>();
 
     private final MessageStore _messageStore;
-    
+
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
@@ -101,6 +99,12 @@ public class AMQChannel
     private final MessageRouter _exchanges;
 
     private TransactionalContext _txnContext;
+
+    /**
+     * A context used by the message store enabling it to track context for a given channel even across
+     * thread boundaries
+     */
+    private final StoreContext _storeContext = new StoreContext();
 
     private final List<RequiredDeliveryException> _returnMessages = new LinkedList<RequiredDeliveryException>();
 
@@ -117,7 +121,7 @@ public class AMQChannel
         _messageStore = messageStore;
         _exchanges = exchanges;
         // by default the session is non-transactional
-        _txnContext = new NonTransactionalContext(_messageStore, this, _returnMessages, _browsedAcks);
+        _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
     }
 
     /**
@@ -125,7 +129,7 @@ public class AMQChannel
      */
     public void setLocalTransactional()
     {
-        _txnContext = new LocalTransactionalContext(_messageStore, new TxnBuffer(), _returnMessages);
+        _txnContext = new LocalTransactionalContext(_messageStore, _storeContext, new TxnBuffer(), _returnMessages);
     }
 
     public boolean isTransactional()
@@ -191,7 +195,7 @@ public class AMQChannel
         {
             _currentMessage.setContentHeaderBody(contentHeaderBody);
             routeCurrentMessage();
-            _currentMessage.routingComplete(_messageStore, _messageHandleFactory);
+            _currentMessage.routingComplete(_messageStore, _storeContext, _messageHandleFactory);
 
             // check and deliver if header says body length is zero
             if (contentHeaderBody.bodySize == 0)
@@ -213,7 +217,7 @@ public class AMQChannel
         // received
         try
         {
-            if (_currentMessage.addContentBodyFrame(contentBody))
+            if (_currentMessage.addContentBodyFrame(_storeContext, contentBody))
             {
                 // callback to allow the context to do any post message processing
                 // primary use is to allow message return processing in the non-tx case
@@ -453,10 +457,10 @@ public class AMQChannel
             {
                 if (message.queue == queue)
                 {
-                    message.queue = null;
                     try
                     {
-                        message.message.decrementReference();
+                        message.discard(_storeContext);
+                        message.queue = null;
                     }
                     catch (AMQException e)
                     {
@@ -536,7 +540,7 @@ public class AMQChannel
         _browsedAcks.add(deliveryTag);
         addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
     }
-    
+
     private void checkSuspension()
     {
         boolean suspend;
@@ -606,6 +610,11 @@ public class AMQChannel
     public AMQQueue getDefaultQueue()
     {
         return _defaultQueue;
+    }
+
+    public StoreContext getStoreContext()
+    {
+        return _storeContext;
     }
 
     public void processReturns(AMQProtocolSession session) throws AMQException

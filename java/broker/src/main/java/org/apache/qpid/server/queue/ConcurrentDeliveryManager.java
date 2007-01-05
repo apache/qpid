@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 import java.util.ArrayList;
@@ -200,21 +201,21 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         //no-op . This DM has no PreDeliveryQueues
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized void clearAllMessages(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
             msg = poll();
         }
     }
@@ -293,7 +294,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
-    public void deliver(String name, AMQMessage msg) throws FailedDequeueException, AMQException
+    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))

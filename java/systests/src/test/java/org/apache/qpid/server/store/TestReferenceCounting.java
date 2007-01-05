@@ -22,9 +22,9 @@ package org.apache.qpid.server.store;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -35,6 +35,8 @@ import org.apache.qpid.server.txn.NonTransactionalContext;
 public class TestReferenceCounting extends TestCase
 {
     private TestableMemoryMessageStore _store;
+
+    private StoreContext _storeContext = new StoreContext();
 
     protected void setUp() throws Exception
     {
@@ -48,14 +50,16 @@ public class TestReferenceCounting extends TestCase
     public void testMessageGetsRemoved() throws AMQException
     {
         createPersistentContentHeader();
-        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody(),
-                                            new NonTransactionalContext(_store, null, null, null),
+        // TODO: fix hardcoded protocol version data
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
+                                                                                           (byte)0),
+                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
         // we call routing complete to set up the handle
-        message.routingComplete(_store, new MessageHandleFactory());
+        message.routingComplete(_store, _storeContext, new MessageHandleFactory());
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
-        message.decrementReference();
+        message.decrementReference(_storeContext);
         assertTrue(_store.getMessageMetaDataMap().size() == 0);
     }
 
@@ -70,15 +74,17 @@ public class TestReferenceCounting extends TestCase
 
     public void testMessageRemains() throws AMQException
     {
-        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody(),
-                                            new NonTransactionalContext(_store, null, null, null),
+        // TODO: fix hardcoded protocol version data
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
+                                                                                           (byte)0),
+                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
         // we call routing complete to set up the handle
-        message.routingComplete(_store, new MessageHandleFactory());
+        message.routingComplete(_store, _storeContext, new MessageHandleFactory());
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
         message.incrementReference();
-        message.decrementReference();
+        message.decrementReference(_storeContext);
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
     }
 

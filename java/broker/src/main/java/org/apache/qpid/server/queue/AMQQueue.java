@@ -27,11 +27,10 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.server.store.StoreContext;
 
 import javax.management.JMException;
 import java.text.MessageFormat;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -344,17 +343,17 @@ public class AMQQueue implements Managable, Comparable
     /**
      * Removes the AMQMessage from the top of the queue.
      */
-    public void deleteMessageFromTop() throws AMQException
+    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.removeAMessageFromTop();
+        _deliveryMgr.removeAMessageFromTop(storeContext);
     }
 
     /**
      * removes all the messages from the queue.
      */
-    public void clearQueue() throws AMQException
+    public void clearQueue(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.clearAllMessages();
+        _deliveryMgr.clearAllMessages(storeContext);
     }
 
     public void bind(String routingKey, Exchange exchange)
@@ -378,7 +377,7 @@ public class AMQQueue implements Managable, Comparable
         {
             if (_deliveryMgr.hasQueuedMessages())
             {
-                _deliveryMgr.populatePreDeliveryQueue(subscription);   
+                _deliveryMgr.populatePreDeliveryQueue(subscription);
             }
         }
 
@@ -464,9 +463,9 @@ public class AMQQueue implements Managable, Comparable
         msg.incrementReference();
     } */
 
-    public void process(AMQMessage msg) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        _deliveryMgr.deliver(getName(), msg);
+        _deliveryMgr.deliver(storeContext, getName(), msg);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -476,16 +475,16 @@ public class AMQQueue implements Managable, Comparable
         {
             // as this message will be returned, it should be removed
             // from the queue:
-            dequeue(msg);
+            dequeue(storeContext, msg);
         }
     }
 
-    void dequeue(AMQMessage msg) throws FailedDequeueException
+    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {
-            msg.dequeue(this);
-            msg.decrementReference();
+            msg.dequeue(storeContext, this);
+            msg.decrementReference(storeContext);
         }
         catch (MessageCleanupException e)
         {

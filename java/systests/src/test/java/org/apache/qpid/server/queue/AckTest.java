@@ -32,6 +32,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.TestApplicationRegistry;
@@ -52,6 +53,8 @@ public class AckTest extends TestCase
     private MockProtocolSession _protocolSession;
 
     private TestableMemoryMessageStore _messageStore;
+
+    private StoreContext _storeContext = new StoreContext();
 
     private AMQChannel _channel;
 
@@ -82,7 +85,7 @@ public class AckTest extends TestCase
 
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
-        TransactionalContext txnContext = new NonTransactionalContext(_messageStore, null,
+        TransactionalContext txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
                                                                       new LinkedList<RequiredDeliveryException>(),
                                                                       new HashSet<Long>());
         MessageHandleFactory factory = new MessageHandleFactory();
@@ -111,7 +114,7 @@ public class AckTest extends TestCase
             // the reference is normally incremented. The test is easier to construct if we have direct access to the
             // subscription
             msg.incrementReference();
-            msg.routingComplete(_messageStore, factory);
+            msg.routingComplete(_messageStore, _storeContext, factory);
             // we manually send the message to the subscription
             _subscription.send(msg, _queue);
         }

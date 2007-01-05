@@ -109,7 +109,7 @@ public class ServiceProvidingClient
                         _logger.info("About to create a producer");
                         _destinationProducer = session.createProducer(responseDest);
                         _destinationProducer.setDisableMessageTimestamp(true);
-                        _destinationProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                        _destinationProducer.setDeliveryMode(DeliveryMode.PERSISTENT);
                         _logger.info("After create a producer");
                     }
                 }

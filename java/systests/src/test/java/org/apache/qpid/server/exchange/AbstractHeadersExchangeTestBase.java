@@ -30,6 +30,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -48,6 +49,8 @@ public class AbstractHeadersExchangeTestBase extends TestCase
      * Not used in this test, just there to stub out the routing calls
      */
     private MessageStore _store = new MemoryMessageStore();
+
+    private StoreContext _storeContext = new StoreContext();
 
     private MessageHandleFactory _handleFactory = new MessageHandleFactory();
 
@@ -89,7 +92,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected void route(Message m) throws AMQException
     {
         m.route(exchange);
-        m.routingComplete(_store, _handleFactory);
+        m.routingComplete(_store, _storeContext, _handleFactory);
     }
 
     protected void routeAndTest(Message m, TestQueue... expected) throws AMQException
@@ -198,7 +201,10 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     {
         private static MessageStore _messageStore = new SkeletonMessageStore();
 
-        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, null,
+        private static StoreContext _storeContext = new StoreContext();
+
+        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext,
+                                                                                      null,
                                                                          new LinkedList<RequiredDeliveryException>(),
                                                                          new HashSet<Long>());
 

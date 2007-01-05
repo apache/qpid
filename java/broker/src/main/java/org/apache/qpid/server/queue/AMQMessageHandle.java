@@ -9,6 +9,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -18,7 +19,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
  * even no caching at all to minimise the broker memory footprint.
  *
  * The method all take a messageId to avoid having to store it in the instance - the AMQMessage container
- * must already keen the messageId so it is pointless storing it twice. 
+ * must already keen the messageId so it is pointless storing it twice.
  */
 public interface AMQMessageHandle
 {
@@ -27,7 +28,7 @@ public interface AMQMessageHandle
     /**
      * @return the number of body frames associated with this message
      */
-    int getBodyCount();
+    int getBodyCount(long messageId) throws AMQException;
 
     /**
      * @return the size of the body
@@ -42,23 +43,23 @@ public interface AMQMessageHandle
      */
     ContentBody getContentBody(long messageId, int index) throws IllegalArgumentException, AMQException;
 
-    void addContentBodyFrame(long messageId, ContentBody contentBody) throws AMQException;
+    void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody) throws AMQException;
 
     BasicPublishBody getPublishBody(long messageId) throws AMQException;
 
     boolean isRedelivered();
 
     void setRedelivered(boolean redelivered);
-    
+
     boolean isPersistent(long messageId) throws AMQException;
 
-    void setPublishAndContentHeaderBody(long messageId, BasicPublishBody publishBody,
+    void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
                                         ContentHeaderBody contentHeaderBody)
             throws AMQException;
 
-    void removeMessage(long messageId) throws AMQException;
+    void removeMessage(StoreContext storeContext, long messageId) throws AMQException;
 
-    void enqueue(long messageId, AMQQueue queue) throws AMQException;
+    void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException;
 
-    void dequeue(long messageId, AMQQueue queue) throws AMQException;
+    void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException;
 }

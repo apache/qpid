@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -31,22 +32,22 @@ public class DeliverMessageOperation implements TxnOp
         _msg.incrementReference();
     }
 
-    public void prepare() throws AMQException
-    {        
+    public void prepare(StoreContext context) throws AMQException
+    {
     }
 
     public void undoPrepare()
     {
     }
 
-    public void commit()
+    public void commit(StoreContext context)
     {
         //do the memeory part of the record()
         _msg.incrementReference();
         //then process the message
         try
         {
-            _queue.process(_msg);
+            _queue.process(context, _msg);
         }
         catch (AMQException e)
         {
@@ -55,7 +56,7 @@ public class DeliverMessageOperation implements TxnOp
         }
     }
 
-    public void rollback()
+    public void rollback(StoreContext storeContext)
     {
     }
 }

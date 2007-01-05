@@ -24,6 +24,7 @@ import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -58,10 +59,10 @@ public class ClusteredQueue extends AMQQueue
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public void process(AMQMessage msg) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
         _logger.info(new LogMessage("{0} delivered to clustered queue {1}", msg, this));
-        super.process(msg);
+        super.process(storeContext, msg);
     }
 
     protected void autodelete() throws AMQException

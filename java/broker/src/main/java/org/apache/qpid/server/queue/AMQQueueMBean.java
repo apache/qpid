@@ -20,6 +20,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -44,6 +45,12 @@ import java.util.Iterator;
 @MBeanDescription("Management Interface for AMQQueue")
 public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
 {
+    /**
+     * Since the MBean is not associated with a real channel we can safely create our own store context
+     * for use in the few methods that require one.
+     */
+    private StoreContext _storeContext = new StoreContext();
+
     private AMQQueue _queue = null;
     private String _queueName = null;
     // OpenMBean data types for viewMessages method
@@ -241,13 +248,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop()
+     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop
      */
     public void deleteMessageFromTop() throws JMException
     {
         try
         {
-            _queue.deleteMessageFromTop();
+            _queue.deleteMessageFromTop(_storeContext);
         }
         catch (AMQException ex)
         {
@@ -256,13 +263,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue()
+     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue
      */
     public void clearQueue() throws JMException
     {
         try
         {
-            _queue.clearQueue();
+            _queue.clearQueue(_storeContext);
         }
         catch (AMQException ex)
         {

@@ -26,6 +26,7 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
@@ -91,16 +92,20 @@ public class TxAckTest extends TestCase
         private final TxAck _op = new TxAck(_map);
         private final List<Long> _acked;
         private final List<Long> _unacked;
+        private StoreContext _storeContext = new StoreContext();
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked)
         {
-            TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(), null,
+            TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(),
+                                                                          _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>(),
                                                                           new HashSet<Long>());
             for(int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;
-                TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody(), txnContext);
+                // TODO: fix hardcoded protocol version data
+                TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody((byte)8,
+                                                                                           (byte)0), txnContext);
                 _map.add(deliveryTag, new UnacknowledgedMessage(null, message, null, deliveryTag));
             }
             _acked = acked;
@@ -125,7 +130,7 @@ public class TxAckTest extends TestCase
         void prepare() throws AMQException
         {
             _op.consolidate();
-            _op.prepare();
+            _op.prepare(_storeContext);
 
             assertCount(_acked, -1);
             assertCount(_unacked, 0);
@@ -143,7 +148,7 @@ public class TxAckTest extends TestCase
         void commit()
         {
             _op.consolidate();
-            _op.commit();
+            _op.commit(_storeContext);
 
 
             //check acked messages are removed from map

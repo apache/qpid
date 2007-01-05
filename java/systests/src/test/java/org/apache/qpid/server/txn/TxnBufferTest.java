@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.LinkedList;
 
@@ -43,7 +44,7 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(op);
         buffer.enlist(new MockOp().expectPrepare().expectCommit());
 
-        buffer.commit();
+        buffer.commit(null);
 
         validateOps();
         store.validate();
@@ -58,7 +59,7 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(new MockOp().expectRollback());
         buffer.enlist(new MockOp().expectRollback());
 
-        buffer.rollback();
+        buffer.rollback(null);
 
         validateOps();
         store.validate();
@@ -77,7 +78,7 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(new FailedPrepare());
         buffer.enlist(new MockOp());
 
-        buffer.commit();
+        buffer.commit(null);
         validateOps();
         store.validate();
     }
@@ -95,7 +96,7 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(new StoreMessageOperation(store));
         buffer.enlist(new TxnTester(store));
 
-        buffer.commit();
+        buffer.commit(null);
         validateOps();
         store.validate();
     }
@@ -127,12 +128,12 @@ public class TxnBufferTest extends TestCase
             ops.add(this);
         }
 
-        public void prepare()
+        public void prepare(StoreContext context)
         {
             assertEquals(expected.removeLast(), PREPARE);
         }
 
-        public void commit()
+        public void commit(StoreContext context)
         {
             assertEquals(expected.removeLast(), COMMIT);
         }
@@ -142,7 +143,7 @@ public class TxnBufferTest extends TestCase
             assertEquals(expected.removeLast(), UNDO_PREPARE);
         }
 
-        public void rollback()
+        public void rollback(StoreContext context)
         {
             assertEquals(expected.removeLast(), ROLLBACK);
         }
@@ -249,16 +250,16 @@ public class TxnBufferTest extends TestCase
 
     class NullOp implements TxnOp
     {
-        public void prepare() throws AMQException
+        public void prepare(StoreContext context) throws AMQException
         {
         }
-        public void commit()
+        public void commit(StoreContext context)
         {
         }
         public void undoPrepare()
         {
         }
-        public void rollback()
+        public void rollback(StoreContext context)
         {
         }
     }
@@ -275,6 +276,8 @@ public class TxnBufferTest extends TestCase
     {
         private final MessageStore store;
 
+        private final StoreContext context = new StoreContext();
+
         TxnTester(MessageStore store)
         {
             this.store = store;
@@ -282,12 +285,12 @@ public class TxnBufferTest extends TestCase
 
         public void prepare() throws AMQException
         {
-            assertTrue("Expected prepare to be performed under txn", store.inTran());
+            assertTrue("Expected prepare to be performed under txn", store.inTran(context));
         }
 
         public void commit()
         {
-            assertTrue("Expected commit not to be performed under txn", !store.inTran());
+            assertTrue("Expected commit not to be performed under txn", !store.inTran(context));
         }
     }
 
