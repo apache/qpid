@@ -172,17 +172,40 @@ namespace Qpid.Client.Message
             }
         }
 
+        /// <summary>
+        /// Decodes the replyto field if one is set.
+        /// 
+        /// Splits a replyto field containing an exchange name followed by a ':', followed by a routing key into the exchange name and
+        /// routing key seperately. The exchange name may be empty in which case the empty string is returned. If the exchange name is
+        /// empty the replyto field is expected to being with ':'.
+        /// 
+        /// Anyhting other than a two part replyto field sperated with a ':' will result in an exception.
+        /// </summary>
+        /// 
+        /// <returns>A destination initialized to the replyto location if a replyto field was set, or an empty destination otherwise.</returns>
         private Dest ReadReplyToHeader()
         {
             string replyToEncoding = ContentHeaderProperties.ReplyTo;
+
             if (replyToEncoding == null)
             {
                 return new Dest();
             }
             else
             {
-                string routingKey;
-                string exchangeName = GetExchangeName(replyToEncoding, out routingKey);
+                // Split the replyto field on a ':'
+                string[] split = replyToEncoding.Split(':');
+
+                // Ensure that the replyto field argument only consisted of two parts.
+                if (split.Length != 2)
+                {
+                    throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
+                }
+
+                // Extract the exchange name and routing key from the split replyto field.
+                string exchangeName = split[0];
+                string routingKey = split[1];
+
                 return new Dest(exchangeName, routingKey);                
             }            
         }
@@ -191,36 +214,6 @@ namespace Qpid.Client.Message
         {
             string encodedDestination = string.Format("{0}:{1}", dest.ExchangeName, dest.RoutingKey);
             ContentHeaderProperties.ReplyTo = encodedDestination;            
-        }
-
-        /// <summary>
-        /// Splits a replyto field containing an exchange name followed by a ':', followed by a routing key into the exchange name and
-        /// routing key seperately. The exchange name may be empty in which case the empty string is returned. If the exchange name is
-        /// empty the replyto field is expected to being with ':'.
-        /// 
-        /// Anyhting other than a two part replyto field sperated with a ':' will result in an exception.
-        /// </summary>
-        /// 
-        /// <param name="replyToEncoding">The encoded replyto field to split.</param>
-        /// <param name="routingKey">A reference to update with the extracted routing key.</param>
-        /// 
-        /// <returns>The exchange name or the empty string when no exchange name is specified.</returns>
-        private static string GetExchangeName(string replyToEncoding, out string routingKey)
-        {
-            // Split the replyto field on a ':'
-            string[] split = replyToEncoding.Split(':');
-
-            // Ensure that the replyto field argument only consisted of two parts.
-            if (split.Length != 2)
-            {
-                throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
-            }
-
-            // Extract the exchange name and routing key from the split replyto field.
-            string exchangeName = split[0];
-            routingKey = split[1];
-
-            return exchangeName;
         }
 
         public DeliveryMode DeliveryMode
