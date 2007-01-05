@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Client.Failover
 {
@@ -26,9 +27,15 @@ namespace Qpid.Client.Failover
     /// This exception is thrown when failover is taking place and we need to let other
     /// parts of the client know about this.
     /// </summary>
+    [Serializable]
     class FailoverException : Exception
     {
         public FailoverException(String message) : base(message)
+        {
+        }
+
+        protected FailoverException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

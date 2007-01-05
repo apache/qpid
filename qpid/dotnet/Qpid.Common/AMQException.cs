@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 using log4net;
 
 namespace Qpid
@@ -26,6 +27,7 @@ namespace Qpid
     /// <summary>
     /// The generic AMQ exception.
     /// </summary>
+    [Serializable]
     public class AMQException : Exception
     {
         private int _errorCode;
@@ -103,6 +105,29 @@ namespace Qpid
         {
             logger.Error(message, innerException);
         }
+
+        /// <summary>
+        /// Serialization Constructor
+        /// </summary>
+        /// <param name="info">SerializationInfo object</param>
+        /// <param name="ctxt">StreamingContext object</param>
+        protected AMQException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+           _errorCode = info.GetInt32("ErrorCode");
+        }
+
+        /// <summary>
+        /// ISerializable implementation of GetObjectData()
+        /// </summary>
+        /// <param name="info">SerializationInfo object</param>
+        /// <param name="ctxt">StreamingContext object</param>
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("ErrorCode", _errorCode);
+        }
+
 
         /// <summary>
         /// Gets or sets the error code. See RFC 006 for details of error codes.
