@@ -29,6 +29,7 @@ using Qpid.Client.Protocol;
 using Qpid.Client.qms;
 using Qpid.Client.State;
 using Qpid.Client.Transport;
+using Qpid.Client.Transport.Socket.Blocking;
 using Qpid.Collections;
 using Qpid.Framing;
 using Qpid.Messaging;
@@ -177,7 +178,7 @@ namespace Qpid.Client
             }
         }
 
-        private ITransport LoadTransportFromAssembly(string host, int port, String assemblyName, String transportType)
+        /*private ITransport LoadTransportFromAssembly(string host, int port, String assemblyName, String transportType)
         {
             //Assembly assembly = Assembly.LoadFrom(assemblyName);
             Assembly assembly = Assembly.Load(assemblyName);
@@ -205,7 +206,7 @@ namespace Qpid.Client
             _log.Info("transport = " + result);
 
             return result;
-        }
+        }*/
 
         public void Disconnect()
         {
@@ -688,12 +689,16 @@ namespace Qpid.Client
                 _protocolListener = new AMQProtocolListener(this, _stateManager);
                 _protocolListener.AddFrameListener(_stateManager);
 
+                /*
                 // Currently there is only one transport option - BlockingSocket.
                 String assemblyName = "Qpid.Client.Transport.Socket.Blocking.dll";
                 String transportType = "Qpid.Client.Transport.Socket.Blocking.BlockingSocketTransport";
 
                 // Load the transport assembly dynamically.
                 _transport = LoadTransportFromAssembly(brokerDetail.getHost(), brokerDetail.getPort(), assemblyName, transportType);
+                */
+
+                _transport = new BlockingSocketTransport(brokerDetail.getHost(), brokerDetail.getPort(), this);
                 
                 // Connect.
                 _transport.Open();                
