@@ -138,12 +138,13 @@ public class MBeanView extends ViewPart
         else
         {
             TreeObject parent = _selectedNode.getParent();
-            while (!parent.getType().equals(Constants.SERVER))
+            while (parent != null && !parent.getType().equals(Constants.SERVER))
             {
                 parent = parent.getParent();
             }
             
-            _server = (ManagedServer)parent.getManagedObject();
+            if (parent != null && parent.getType().equals(Constants.SERVER))
+                _server = (ManagedServer)parent.getManagedObject();
         }
     }
     
