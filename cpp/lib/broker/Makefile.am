@@ -7,8 +7,9 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 lib_LTLIBRARIES = libqpidbroker.la
+libqpidbroker_la_LIBADD = ../common/libqpidcommon.la
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-libqpidbroker_la_SOURCES =				\
+libqpidbroker_la_SOURCES =			\
   AccumulatedAck.cpp				\
   AccumulatedAck.h				\
   AutoDelete.cpp				\
