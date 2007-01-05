@@ -179,24 +179,31 @@ namespace Qpid.Client
 
         private ITransport LoadTransportFromAssembly(string host, int port, String assemblyName, String transportType)
         {
-            Assembly assembly = Assembly.LoadFrom(assemblyName);
+            //Assembly assembly = Assembly.LoadFrom(assemblyName);
+            Assembly assembly = Assembly.Load(assemblyName);
+
             foreach (Type type in assembly.GetTypes())
             {
                 _log.Info(String.Format("type = {0}", type));
             }
+
             Type transport = assembly.GetType(transportType);
+
             if (transport == null)
             {
                 throw new ArgumentException(
                     String.Format("Type is not found in assembly. Type={0} Assembly={1}", transportType, assemblyName));
                 
             }
+
             _log.Info("transport = " + transport);
             _log.Info("ctors = " + transport.GetConstructors());
+
             ConstructorInfo info = transport.GetConstructors()[0];
             ITransport result = (ITransport)info.Invoke(new object[] { host, port, this });
 
             _log.Info("transport = " + result);
+
             return result;
         }
 
