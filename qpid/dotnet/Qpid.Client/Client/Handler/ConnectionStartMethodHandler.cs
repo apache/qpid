@@ -70,7 +70,7 @@ namespace Qpid.Client.Handler
                     throw new AMQException("Locales is not defined in Connection Start method");
                 }
                 string allLocales = Encoding.ASCII.GetString(body.Locales);
-                string[] locales = allLocales.Split(new char[] { ' ' });
+                string[] locales = allLocales.Split(' ');
                 string selectedLocale;
                 if (locales != null && locales.Length > 0)
                 {

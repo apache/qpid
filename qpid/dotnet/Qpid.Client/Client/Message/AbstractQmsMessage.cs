@@ -193,41 +193,33 @@ namespace Qpid.Client.Message
             ContentHeaderProperties.ReplyTo = encodedDestination;            
         }
 
+        /// <summary>
+        /// Splits a replyto field containing an exchange name followed by a ':', followed by a routing key into the exchange name and
+        /// routing key seperately. The exchange name may be empty in which case the empty string is returned. If the exchange name is
+        /// empty the replyto field is expected to being with ':'.
+        /// 
+        /// Anyhting other than a two part replyto field sperated with a ':' will result in an exception.
+        /// </summary>
+        /// 
+        /// <param name="replyToEncoding">The encoded replyto field to split.</param>
+        /// <param name="routingKey">A reference to update with the extracted routing key.</param>
+        /// 
+        /// <returns>The exchange name or the empty string when no exchange name is specified.</returns>
         private static string GetExchangeName(string replyToEncoding, out string routingKey)
         {
-            string[] split = replyToEncoding.Split(new char[':']);
-            if (_log.IsDebugEnabled)
-            {
-                _log.Debug(string.Format("replyToEncoding = '{0}'", replyToEncoding));
-                _log.Debug(string.Format("split = {0}", split));
-                _log.Debug(string.Format("split.Length = {0}", split.Length));                            
-            }
-            if (split.Length == 1)
-            {
-                // Using an alternative split implementation here since it appears that string.Split
-                // is broken in .NET. It doesn't split when the first character is the delimiter.
-                // Here we check for the first character being the delimiter. This handles the case
-                // where ExchangeName is empty (i.e. sends will be to the default exchange).
-                if (replyToEncoding[0] == ':')
-                {
-                    split = new string[2];
-                    split[0] = null;
-                    split[1] = replyToEncoding.Substring(1);
-                    if (_log.IsDebugEnabled)
-                    {
-                        _log.Debug("Alternative split method...");
-                        _log.Debug(string.Format("split = {0}", split));
-                        _log.Debug(string.Format("split.Length = {0}", split.Length));                                    
-                    }
-                }
-            }
+            // Split the replyto field on a ':'
+            string[] split = replyToEncoding.Split(':');
+
+            // Ensure that the replyto field argument only consisted of two parts.
             if (split.Length != 2)
             {
                 throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
             }
 
+            // Extract the exchange name and routing key from the split replyto field.
             string exchangeName = split[0];
             routingKey = split[1];
+
             return exchangeName;
         }
 
