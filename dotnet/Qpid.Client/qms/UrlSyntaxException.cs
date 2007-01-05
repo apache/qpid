@@ -19,10 +19,12 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace Qpid.Client.qms
 {
+    [Serializable]
     public class UrlSyntaxException : UriFormatException
     {
         private string _url;
@@ -51,6 +53,22 @@ namespace Qpid.Client.qms
             _url = url;
             _index = index;
             _length = length;
+        }
+
+        protected UrlSyntaxException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+            _url = info.GetString("Url");
+            _index = info.GetInt32("Index");
+            _length = info.GetInt32("Length");
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue("Url", _url);
+            info.AddValue("Index", _index);
+            info.AddValue("Length", _length);
         }
 
         private static String getPositionString(int index, int length)

@@ -19,9 +19,11 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Client.State
 {
+    [Serializable]
     public class IllegalStateTransitionException : AMQException
     {
         private AMQState _originalState;
@@ -34,6 +36,13 @@ namespace Qpid.Client.State
         {            
             _originalState = originalState;
             _frame = frame;
+        }
+
+        protected IllegalStateTransitionException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+           _originalState = (AMQState)info.GetValue("OriginalState", typeof(AMQState));
+           _frame = (Type)info.GetValue("FrameType", typeof(Type));
         }
 
         public AMQState OriginalState            
@@ -51,6 +60,14 @@ namespace Qpid.Client.State
                 return _frame;
             }
         }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+           base.GetObjectData(info, context);
+           info.AddValue("OriginalState", OriginalState);
+           info.AddValue("FrameType", FrameType);
+        }
     }
 }
+
 

@@ -19,12 +19,19 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Client
 {
+    [Serializable]
     public class AMQConnectionException : AMQException
     {
         public AMQConnectionException(String message, Exception e) : base(message, e)
+        {
+        }
+
+        protected AMQConnectionException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }
