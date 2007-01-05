@@ -18,12 +18,22 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid
 {
+    [Serializable]
     public class AMQConnectionClosedException : AMQException
     {
         public AMQConnectionClosedException(int errorCode, string message)
             : base(errorCode, message)
+        {
+        }
+
+        protected AMQConnectionClosedException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

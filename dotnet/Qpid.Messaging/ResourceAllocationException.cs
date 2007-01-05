@@ -18,11 +18,21 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid.Messaging
 {
+    [Serializable]
     public class ResourceAllocationException : QpidException
     {
         public ResourceAllocationException(string reason) : base(reason)
+        {
+        }
+
+        protected ResourceAllocationException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

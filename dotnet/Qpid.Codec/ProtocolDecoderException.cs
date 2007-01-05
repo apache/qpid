@@ -19,9 +19,11 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Codec
 {
+    [Serializable]
     public class ProtocolDecoderException : ProtocolCodecException
     {
         private string _hexdump;
@@ -37,7 +39,13 @@ namespace Qpid.Codec
         public ProtocolDecoderException(Exception cause) : base(cause)
         {            
         }
-        
+
+        protected ProtocolDecoderException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+           _hexdump = info.GetString("HexDump");
+        }
+
         public string HexDump
         {
             get
@@ -49,6 +57,13 @@ namespace Qpid.Codec
                 _hexdump = value;
             }
         }
+
+       public override void GetObjectData(SerializationInfo info, StreamingContext context)
+       {
+          base.GetObjectData(info, context);
+          info.AddValue("HexDump", _hexdump);
+       }
     }
 }
+
 

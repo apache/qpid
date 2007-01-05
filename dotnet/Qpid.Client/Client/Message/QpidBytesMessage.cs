@@ -20,6 +20,7 @@
  */
 using System;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Text;
 using Qpid.Framing;
 using Qpid.Messaging;
@@ -27,9 +28,15 @@ using Qpid.Buffer;
 
 namespace Qpid.Client.Message
 {
+    [Serializable]
     class MessageEOFException : QpidException
     {
         public MessageEOFException(string message) : base(message)
+        {
+        }
+
+        protected MessageEOFException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

@@ -18,11 +18,21 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid.Framing
 {
+    [Serializable]
     public class AMQProtocolHeaderException : AMQException
     {
         public AMQProtocolHeaderException(string message) : base(message)
+        {
+        }
+
+        protected AMQProtocolHeaderException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }

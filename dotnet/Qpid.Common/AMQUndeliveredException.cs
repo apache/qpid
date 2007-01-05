@@ -18,19 +18,37 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid
 {
     /// <summary>
     /// Thrown when a message has been bounced by the broker, indicating it could not be delivered.
     /// </summary>
+    [Serializable]
     public class AMQUndeliveredException : AMQException
     {
+        // TODO: Warning, no guarantee that the value stored here is serializable!
         private object _bounced;
         
         public AMQUndeliveredException(int errorCode, string message, object bounced)
             : base(errorCode, message)
         {
             _bounced = bounced;
+        }
+
+        protected AMQUndeliveredException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+           _bounced = info.GetValue("bounced", typeof(object));
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+           base.GetObjectData(info, context);
+           info.AddValue("bounced", _bounced);
         }
 
         public object GetUndeliveredMessage()
