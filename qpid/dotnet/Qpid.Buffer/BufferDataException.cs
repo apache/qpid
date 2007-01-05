@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 
 namespace Qpid.Buffer
 {
@@ -26,6 +27,7 @@ namespace Qpid.Buffer
      * A {@link RuntimeException} which is thrown when the data the {@link ByteBuffer}
      * contains is corrupt.
      */
+    [Serializable]
     public class BufferDataException : Exception
     {
         public BufferDataException()
@@ -41,6 +43,11 @@ namespace Qpid.Buffer
         }
 
         public BufferDataException( Exception cause ) : base("", cause)
+        {
+        }
+
+        protected BufferDataException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
         {
         }
     }    
