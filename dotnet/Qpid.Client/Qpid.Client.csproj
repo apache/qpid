@@ -97,6 +97,9 @@
     <Compile Include="Client\Transport\IProtocolWriter.cs" />
     <Compile Include="Client\Transport\ITransport.cs" />
     <Compile Include="Client\Transport\SingleProtocolEncoderOutput.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketProcessor.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketTransport.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\ByteChannel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="qms\BrokerInfo.cs" />
     <Compile Include="qms\ConnectionInfo.cs" />
