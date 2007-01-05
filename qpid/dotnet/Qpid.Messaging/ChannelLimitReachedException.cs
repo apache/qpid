@@ -18,8 +18,13 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid.Messaging
 {
+    [Serializable]
     public class ChannelLimitReachedException : ResourceAllocationException
     {
         private long _limit;
@@ -32,12 +37,24 @@ namespace Qpid.Messaging
             _limit = limit;
         }
 
+        protected ChannelLimitReachedException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+           _limit = info.GetInt64("Limit");
+        }
+
         public long Limit
         {
             get
             {
                 return _limit;
             }
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+           base.GetObjectData(info, context);
+           info.AddValue("Limit", _limit);
         }
     }
 }

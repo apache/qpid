@@ -18,8 +18,13 @@
  * under the License.
  *
  */
+
+using System;
+using System.Runtime.Serialization;
+
 namespace Qpid
 {
+    [Serializable]
     public class AMQDisconnectedException : AMQException
     {
         public AMQDisconnectedException(int errorCode, string message)
@@ -30,6 +35,11 @@ namespace Qpid
         public AMQDisconnectedException(string message)
             : base(message)
         {            
+        }
+
+        protected AMQDisconnectedException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
         }
     }
 }

@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.Serialization;
 using log4net;
 
 namespace Qpid.Framing
@@ -27,6 +28,7 @@ namespace Qpid.Framing
     /// Thrown when a frame cannot be decoded. This generally indicates a mismatch between the broker and the
     /// client.
     /// </summary>
+    [Serializable]
     public class AMQFrameDecodingException : AMQException
     {
         public AMQFrameDecodingException(string message)
@@ -47,6 +49,11 @@ namespace Qpid.Framing
         public AMQFrameDecodingException(ILog logger, string message, Exception innerException)
             : base(logger, message, innerException)
         {
-        }            
+        }
+
+        protected AMQFrameDecodingException(SerializationInfo info, StreamingContext ctxt)
+           : base(info, ctxt)
+        {
+        }
     }
 }
