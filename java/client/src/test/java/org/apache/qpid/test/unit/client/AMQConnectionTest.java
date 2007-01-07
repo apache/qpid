@@ -24,7 +24,7 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import javax.jms.*;
 
@@ -41,6 +41,7 @@ public class AMQConnectionTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        TransportConnection.createVMBroker(1);
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
@@ -48,6 +49,7 @@ public class AMQConnectionTest extends TestCase
 
     protected void tearDown() throws Exception
     {
+        super.tearDown();
         try
         {
             _connection.close();
@@ -55,8 +57,8 @@ public class AMQConnectionTest extends TestCase
         catch (JMSException e)
         {
             //ignore 
-        }
-        super.tearDown();
+        }        
+        TransportConnection.killAllVMBrokers();
     }
 
     /**
@@ -195,6 +197,6 @@ public class AMQConnectionTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(AMQConnectionTest.class));
+        return new junit.framework.TestSuite(AMQConnectionTest.class);
     }
 }

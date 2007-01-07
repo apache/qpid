@@ -20,15 +20,9 @@
  */
 package org.apache.qpid.server.filter;
 
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.filter.jms.selector.SelectorParser;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.log4j.Logger;
-
-
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.AMQMessage;
 
 public class NoConsumerFilter implements MessageFilter
 {
@@ -36,7 +30,7 @@ public class NoConsumerFilter implements MessageFilter
 
 
     public NoConsumerFilter() throws AMQException
-    {        
+    {
         _logger.info("Created NoConsumerFilter");
     }
 

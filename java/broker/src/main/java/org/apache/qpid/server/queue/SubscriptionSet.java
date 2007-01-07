@@ -204,7 +204,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
      *
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         for (Subscription s : _subscriptions)
         {

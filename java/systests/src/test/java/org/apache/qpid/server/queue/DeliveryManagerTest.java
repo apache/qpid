@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 
 import junit.framework.TestSuite;
@@ -29,6 +30,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 {
     protected final SubscriptionSet _subscriptions = new SubscriptionSet();
     protected DeliveryManager _mgr;
+    protected StoreContext _storeContext = new StoreContext();
 
     public DeliveryManagerTest() throws Exception
     {
@@ -45,7 +47,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver("Me", messages[i]);
+            _mgr.deliver(_storeContext, "Me", messages[i]);
         }
 
         SubscriptionTestHelper s1 = new SubscriptionTestHelper("1");
@@ -55,7 +57,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver("Me", messages[i]);
+            _mgr.deliver(_storeContext, "Me", messages[i]);
         }
 
         assertTrue(s1.getMessages().isEmpty());
@@ -93,7 +95,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver("Me", messages[i]);
+            _mgr.deliver(_storeContext, "Me", messages[i]);
         }
 
         assertEquals(batch, s1.getMessages().size());
@@ -107,7 +109,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         s1.setSuspended(true);
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver("Me", messages[i]);
+            _mgr.deliver(_storeContext, "Me", messages[i]);
         }
 
         _mgr.processAsync(new OnCurrentThreadExecutor());
@@ -129,7 +131,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         try
         {
             AMQMessage msg = message(true);
-            _mgr.deliver("Me", msg);
+            _mgr.deliver(_storeContext, "Me", msg);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }
@@ -151,7 +153,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
             _subscriptions.addSubscriber(s);
             s.setSuspended(true);
             AMQMessage msg = message(true);
-            _mgr.deliver("Me", msg);
+            _mgr.deliver(_storeContext, "Me", msg);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }

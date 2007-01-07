@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -84,8 +84,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         final String exchange = payload.getPublishBody().exchange;
         final Exchange exch = _exchangeMap.get(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
-        // the JmsPublish being received (where the exchange is validated) and the final
+        // the BasicPublish being received (where the exchange is validated) and the final
         // content body being received (which triggers this method)
+        // TODO: check where the exchange is validated
         if (exch == null)
         {
             throw new AMQException("Exchange '" + exchange + "' does not exist");

@@ -40,7 +40,6 @@ import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -201,17 +200,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             }
             else
             {
-                try
-                {
-                    contentFrameReceived(frame);
-                }
-                catch (RequiredDeliveryException e)
-                {
-                    //need to return the message:
-                    _logger.info("Returning message to " + this + " channel " + frame.channel
-                                 + ": " + e.getMessage());
-                    writeFrame(e.getReturnMessage(frame.channel));
-                }
+                contentFrameReceived(frame);
             }
         }
     }
@@ -287,7 +276,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content body frame received: " + frame);
         }
-        getChannel(frame.channel).publishContentBody((ContentBody) frame.bodyFrame);
+        getChannel(frame.channel).publishContentBody((ContentBody)frame.bodyFrame, this);
     }
 
     /**

@@ -18,6 +18,7 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
 //
@@ -35,7 +36,7 @@ public final class XQueryExpression implements BooleanExpression {
         this.xpath = xpath;
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException {
+    public Object evaluate(AMQMessage message) throws AMQException {
         return Boolean.FALSE;
     }
 
@@ -48,7 +49,8 @@ public final class XQueryExpression implements BooleanExpression {
      * @return true if the expression evaluates to Boolean.TRUE.
      * @throws JMSException
      */
-    public boolean matches(AMQMessage message) throws JMSException {
+    public boolean matches(AMQMessage message) throws AMQException
+    {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            
     }

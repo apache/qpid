@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,91 +22,63 @@ package org.apache.qpid.server.txn;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Holds a list of TxnOp instance representing transactional
- * operations. 
+ * operations.
  */
 public class TxnBuffer
 {
-    private boolean _containsPersistentChanges = false;
-    private final MessageStore _store;
     private final List<TxnOp> _ops = new ArrayList<TxnOp>();
     private static final Logger _log = Logger.getLogger(TxnBuffer.class);
 
-    public TxnBuffer(MessageStore store)
+    public TxnBuffer()
     {
-        _store = store;
     }
 
-    public void containsPersistentChanges()
+    public void commit(StoreContext context) throws AMQException
     {
-        _containsPersistentChanges = true;
-    }
-
-    public void commit() throws AMQException
-    {
-        if (_containsPersistentChanges)
+        if (prepare(context))
         {
-            _log.debug("Begin Transaction.");
-            _store.beginTran();
-            if(prepare())
+            for (TxnOp op : _ops)
             {
-                _log.debug("Transaction Succeeded");
-                _store.commitTran();
-                for (TxnOp op : _ops)
-                {
-                    op.commit();
-                }
+                op.commit(context);
             }
-            else
-            {
-                _log.debug("Transaction Failed");
-                _store.abortTran();
-            }
-        }else{
-            if(prepare())
-            {
-                for (TxnOp op : _ops)
-                {
-                    op.commit();
-                }
-            }            
         }
         _ops.clear();
     }
 
-    private boolean prepare() 
-    {        
+    private boolean prepare(StoreContext context)
+    {
         for (int i = 0; i < _ops.size(); i++)
         {
             TxnOp op = _ops.get(i);
             try
             {
-                op.prepare();
+                op.prepare(context);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //compensate previously prepared ops
                 for(int j = 0; j < i; j++)
                 {
                     _ops.get(j).undoPrepare();
-                }    
+                }
                 return false;
             }
         }
         return true;
-    }   
+    }
 
-    public void rollback() throws AMQException
+    public void rollback(StoreContext context) throws AMQException
     {
         for (TxnOp op : _ops)
         {
-            op.rollback();
+            op.rollback(context);
         }
         _ops.clear();
     }

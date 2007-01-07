@@ -23,13 +23,8 @@ package org.apache.qpid.server.cluster.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.cluster.BroadcastPolicy;
-import org.apache.qpid.server.cluster.ClusteredProtocolSession;
-import org.apache.qpid.server.cluster.GroupManager;
-import org.apache.qpid.server.cluster.GroupResponseHandler;
 import org.apache.qpid.server.cluster.util.LogMessage;
-import org.apache.qpid.server.cluster.Member;
-import org.apache.qpid.server.cluster.SimpleSendable;
+import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.policy.StandardPolicies;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
@@ -81,13 +76,13 @@ class ReplicatingHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A
         if (_policy == null)
         {
             //asynch delivery
-            _groupMgr.broadcast(new SimpleSendable(evt.getMethod()));
+            _groupMgr.broadcast(new SimpleBodySendable(evt.getMethod()));
             local(stateMgr, queues, exchanges, session, evt);
         }
         else
         {
             Callback callback = new Callback(stateMgr, queues, exchanges, session, evt);
-            _groupMgr.broadcast(new SimpleSendable(evt.getMethod()), _policy, callback);
+            _groupMgr.broadcast(new SimpleBodySendable(evt.getMethod()), _policy, callback);
         }
         _logger.debug(new LogMessage("Replicated {0} to peers", evt.getMethod()));
     }

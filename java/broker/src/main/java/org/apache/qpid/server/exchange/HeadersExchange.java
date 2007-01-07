@@ -145,7 +145,7 @@ public class HeadersExchange extends AbstractExchange
          * <attributename>=<value>,<attributename>=<value>,...
          * @param queueName
          * @param binding
-         * @throws JMException
+         * @throws javax.management.JMException
          */
         public void createNewBinding(String queueName, String binding) throws JMException
         {
@@ -192,7 +192,7 @@ public class HeadersExchange extends AbstractExchange
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
         }
-        boolean delivered = false;
+        boolean routed = false;
         for (Registration e : _bindings)
         {
             if (e.binding.matches(headers))
@@ -202,11 +202,11 @@ public class HeadersExchange extends AbstractExchange
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
                                   headers + " to " + e.queue.getName());
                 }
-                e.queue.deliver(payload);
-                delivered = true;
+                payload.enqueue(e.queue);
+                routed = true;
             }
         }
-        if (!delivered)
+        if (!routed)
         {
 
             String msg = "Exchange " + getName() + ": message not routable.";

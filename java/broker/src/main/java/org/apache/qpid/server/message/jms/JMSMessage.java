@@ -24,6 +24,7 @@ import org.apache.qpid.server.message.MessageDecorator;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.AMQException;
 
 import javax.jms.Message;
 import javax.jms.JMSException;
@@ -37,7 +38,7 @@ public class JMSMessage implements MessageDecorator
     private AMQMessage _message;
     private BasicContentHeaderProperties _properties;
 
-    public JMSMessage(AMQMessage message)
+    public JMSMessage(AMQMessage message) throws AMQException
     {
         _message = message;
         ContentHeaderBody contentHeader = message.getContentHeaderBody();

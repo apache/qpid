@@ -27,6 +27,7 @@ import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -61,10 +62,10 @@ public class ClusteredQueue extends AMQQueue
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public void deliver(AMQMessage message) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", message, this));
-        super.deliver(message);
+        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", msg, this));
+        super.process(storeContext, msg);
     }
 
     protected void autodelete() throws AMQException
@@ -79,7 +80,7 @@ public class ClusteredQueue extends AMQQueue
         	// TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0);
             request.queue = getName();
-            _groupMgr.broadcast(new SimpleSendable(request));
+            _groupMgr.broadcast(new SimpleBodySendable(request));
         }
     }
 
@@ -93,7 +94,7 @@ public class ClusteredQueue extends AMQQueue
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         BasicCancelBody request = new BasicCancelBody((byte)8, (byte)0);
         request.consumerTag = getName();
-        _groupMgr.broadcast(new SimpleSendable(request));
+        _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 
     public void addRemoteSubcriber(MemberHandle peer)

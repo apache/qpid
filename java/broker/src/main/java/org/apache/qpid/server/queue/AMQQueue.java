@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,8 +27,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.txn.TxnBuffer;
-import org.apache.qpid.server.txn.TxnOp;
+import org.apache.qpid.server.store.StoreContext;
 
 import javax.management.JMException;
 import java.text.MessageFormat;
@@ -344,17 +343,17 @@ public class AMQQueue implements Managable, Comparable
     /**
      * Removes the AMQMessage from the top of the queue.
      */
-    public void deleteMessageFromTop() throws AMQException
+    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.removeAMessageFromTop();
+        _deliveryMgr.removeAMessageFromTop(storeContext);
     }
 
     /**
      * removes all the messages from the queue.
      */
-    public void clearQueue() throws AMQException
+    public void clearQueue(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.clearAllMessages();
+        _deliveryMgr.clearAllMessages(storeContext);
     }
 
     public void bind(String routingKey, Exchange exchange)
@@ -378,7 +377,7 @@ public class AMQQueue implements Managable, Comparable
         {
             if (_deliveryMgr.hasQueuedMessages())
             {
-                _deliveryMgr.populatePreDeliveryQueue(subscription);   
+                _deliveryMgr.populatePreDeliveryQueue(subscription);
             }
         }
 
@@ -443,30 +442,9 @@ public class AMQQueue implements Managable, Comparable
         delete();
     }
 
-    public void deliver(AMQMessage msg) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        TxnBuffer buffer = msg.getTxnBuffer();
-        if (buffer == null)
-        {
-            //non-transactional
-            record(msg);
-            process(msg);
-        }
-        else
-        {
-            buffer.enlist(new Deliver(msg));
-        }
-    }
-
-    private void record(AMQMessage msg) throws AMQException
-    {
-        msg.enqueue(this);
-        msg.incrementReference();
-    }
-
-    private void process(AMQMessage msg) throws FailedDequeueException
-    {
-        _deliveryMgr.deliver(getName(), msg);
+        _deliveryMgr.deliver(storeContext, getName(), msg);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -476,16 +454,16 @@ public class AMQQueue implements Managable, Comparable
         {
             // as this message will be returned, it should be removed
             // from the queue:
-            dequeue(msg);
+            dequeue(storeContext, msg);
         }
     }
 
-    void dequeue(AMQMessage msg) throws FailedDequeueException
+    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {
-            msg.dequeue(this);
-            msg.decrementReference();
+            msg.dequeue(storeContext, this);
+            msg.decrementReference(storeContext);
         }
         catch (MessageCleanupException e)
         {
@@ -511,10 +489,17 @@ public class AMQQueue implements Managable, Comparable
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount(AMQMessage msg)
+    protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
         _totalMessagesReceived++;
-        _managedObject.checkForNotification(msg);
+        try
+        {
+            _managedObject.checkForNotification(msg);
+        }
+        catch (JMException e)
+        {
+            throw new AMQException("Unable to get notification from manage queue: " + e, e);
+        }
     }
 
     public boolean equals(Object o)
@@ -550,45 +535,4 @@ public class AMQQueue implements Managable, Comparable
             _logger.debug(MessageFormat.format(msg, args));
         }
     }
-
-    private class Deliver implements TxnOp
-    {
-        private final AMQMessage _msg;
-
-        Deliver(AMQMessage msg)
-        {
-            _msg = msg;
-        }
-
-        public void prepare() throws AMQException
-        {
-            //do the persistent part of the record()
-            _msg.enqueue(AMQQueue.this);
-        }
-
-        public void undoPrepare()
-        {
-        }
-
-        public void commit()
-        {
-            //do the memeory part of the record()
-            _msg.incrementReference();
-            //then process the message
-            try
-            {
-                process(_msg);
-            }
-            catch (FailedDequeueException e)
-            {
-                //TODO: is there anything else we can do here? I think not...
-                _logger.error("Error during commit of a queue delivery: " + e, e);
-            }
-        }
-
-        public void rollback()
-        {
-        }
-    }
-
 }

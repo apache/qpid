@@ -22,16 +22,10 @@ package org.apache.qpid.server.cluster;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ClusterJoinBody;
-import org.apache.qpid.framing.ClusterLeaveBody;
-import org.apache.qpid.framing.ClusterMembershipBody;
-import org.apache.qpid.framing.ClusterPingBody;
-import org.apache.qpid.framing.ClusterSuspectBody;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.cluster.policy.StandardPolicies;
 import org.apache.qpid.server.cluster.replay.ReplayManager;
 import org.apache.qpid.server.cluster.util.LogMessage;
-import org.apache.qpid.server.cluster.util.InvokeMultiple;
 
 import java.util.List;
 
@@ -96,7 +90,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         Broker destination = findBroker(broker);
         if(destination == null)
         {
-            _logger.warn(new LogMessage("Invalid destination sending {0}. {1} not known", message, broker));            
+            _logger.warn(new LogMessage("Invalid destination sending {0}. {1} not known", message, broker));
         }
         else
         {
@@ -119,7 +113,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         ping.responseRequired = true;
         ping.load = _loadTable.getLocalLoad();
         BlockingHandler handler = new BlockingHandler();
-        send(getLeader(), new SimpleSendable(ping), handler);
+        send(getLeader(), new SimpleBodySendable(ping), handler);
         handler.waitForCompletion();
         if (handler.failed())
         {
@@ -164,7 +158,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         ClusterJoinBody join = new ClusterJoinBody((byte)8, (byte)0);
         join.broker = _group.getLocal().getDetails();
-        send(leader, new SimpleSendable(join));
+        send(leader, new SimpleBodySendable(join));
     }
 
     private Broker connectToLeader(MemberHandle member) throws AMQException
@@ -185,7 +179,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         ClusterLeaveBody leave = new ClusterLeaveBody((byte)8, (byte)0);
         leave.broker = _group.getLocal().getDetails();
-        send(getLeader(), new SimpleSendable(leave));
+        send(getLeader(), new SimpleBodySendable(leave));
     }
 
     private void suspect(MemberHandle broker) throws AMQException
@@ -208,7 +202,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             ClusterSuspectBody suspect = new ClusterSuspectBody((byte)8, (byte)0);
             suspect.broker = broker.getDetails();
-            send(getLeader(), new SimpleSendable(suspect));
+            send(getLeader(), new SimpleBodySendable(suspect));
         }
     }
 
@@ -233,7 +227,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             ClusterJoinBody request = new ClusterJoinBody((byte)8, (byte)0);
             request.broker = member.getDetails();
             Broker leader = getLeader();
-            send(leader, new SimpleSendable(request));
+            send(leader, new SimpleBodySendable(request));
             _logger.info(new LogMessage("Passed join request for {0} to {1}", member, leader));
         }
     }
@@ -287,7 +281,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
     {
         String membership = SimpleMemberHandle.membersToString(_group.getMembers());
         ClusterMembershipBody announce = createAnnouncement(membership);
-        broadcast(new SimpleSendable(announce));
+        broadcast(new SimpleBodySendable(announce));
         _logger.info(new LogMessage("Membership announcement sent: {0}", membership));
     }
 
