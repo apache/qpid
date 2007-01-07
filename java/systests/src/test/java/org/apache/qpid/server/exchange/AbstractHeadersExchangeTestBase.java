@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,20 +25,35 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AbstractHeadersExchangeTestBase extends TestCase
 {
+    private static final Logger _log = Logger.getLogger(AbstractHeadersExchangeTestBase.class);
+
     private final HeadersExchange exchange = new HeadersExchange();
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
+
+    /**
+     * Not used in this test, just there to stub out the routing calls
+     */
+    private MessageStore _store = new MemoryMessageStore();
+
+    private StoreContext _storeContext = new StoreContext();
+
+    private MessageHandleFactory _handleFactory = new MessageHandleFactory();
+
     private int count;
 
     public void testDoNothing()
@@ -77,6 +92,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected void route(Message m) throws AMQException
     {
         m.route(exchange);
+        m.routingComplete(_store, _storeContext, _handleFactory);
     }
 
     protected void routeAndTest(Message m, TestQueue... expected) throws AMQException
@@ -165,7 +181,14 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             super(name, false, "test", true, ApplicationRegistry.getInstance().getQueueRegistry());
         }
 
-        public void deliver(AMQMessage msg) throws AMQException
+        /**
+         * We override this method so that the default behaviour, which attempts to use a delivery manager, is
+         * not invoked. It is unnecessary since for this test we only care to know whether the message was
+         * sent to the queue; the queue processing logic is not being tested.
+         * @param msg
+         * @throws AMQException
+         */
+        public void process(StoreContext context, AMQMessage msg) throws AMQException
         {
             messages.add(new HeadersExchangeTest.Message(msg));
         }
@@ -177,6 +200,13 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     static class Message extends AMQMessage
     {
         private static MessageStore _messageStore = new SkeletonMessageStore();
+
+        private static StoreContext _storeContext = new StoreContext();
+
+        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext,
+                                                                                      null,
+                                                                         new LinkedList<RequiredDeliveryException>(),
+                                                                         new HashSet<Long>());
 
         Message(String id, String... headers) throws AMQException
         {
@@ -190,7 +220,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private Message(BasicPublishBody publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
         {
-            super(_messageStore, publish, header, bodies);
+            super(_messageStore.getNewMessageId(), publish, _txnContext, header);
         }
 
         private Message(AMQMessage msg) throws AMQException
@@ -230,7 +260,15 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private Object getKey()
         {
-            return getPublishBody().routingKey;
+            try
+            {
+                return getPublishBody().routingKey;
+            }
+            catch (AMQException e)
+            {
+                _log.error("Error getting routing key: " + e, e);
+                return null;
+            }
         }
     }
 }

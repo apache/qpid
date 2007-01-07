@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.server.cluster.GroupManager;
+import org.apache.qpid.server.cluster.SimpleBodySendable;
 import org.apache.qpid.framing.QueueDeleteBody;
 
 import java.util.concurrent.Executor;
@@ -60,6 +61,6 @@ public class PrivateQueue extends AMQQueue
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0);
         request.queue = getName();
-        _groupMgr.broadcast(new SimpleSendable(request));
+        _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 }

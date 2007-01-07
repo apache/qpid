@@ -21,36 +21,29 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.server.queue.AMQMessage;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Iterator;
 
 public class SimpleSendable implements Sendable
 {
-    private final List<AMQBody> _bodies;
+    private final AMQMessage _message;
 
-    public SimpleSendable(AMQBody body)
+    public SimpleSendable(AMQMessage message)
     {
-        this(Arrays.asList(body));
-    }
-
-    public SimpleSendable(List<AMQBody> bodies)
-    {
-        _bodies = bodies;
+        _message = message;
     }
 
     public void send(int channel, Member member) throws AMQException
     {
-        for (AMQBody body : _bodies)
+        member.send(new AMQFrame(channel, _message.getPublishBody()));
+        member.send(new AMQFrame(channel, _message.getContentHeaderBody()));
+        Iterator<ContentBody> it = _message.getContentBodyIterator();
+        while (it.hasNext())
         {
-            member.send(new AMQFrame(channel, body));
+            member.send(new AMQFrame(channel, it.next()));
         }
-    }
-
-    public String toString()
-    {
-        return _bodies.toString();
     }
 }

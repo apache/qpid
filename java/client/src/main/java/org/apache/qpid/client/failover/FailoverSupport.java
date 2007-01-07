@@ -56,7 +56,7 @@ public abstract class FailoverSupport
                 }
                 catch (FailoverException e)
                 {
-                    _log.info("Failover exception caught during operation");
+                    _log.info("Failover exception caught during operation: " + e, e);
                 }
             }
         }

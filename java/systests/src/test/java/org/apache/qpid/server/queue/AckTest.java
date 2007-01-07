@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,21 +20,26 @@
  */
 package org.apache.qpid.server.queue;
 
+import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
+import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.TestApplicationRegistry;
 
-import java.util.Iterator;
-import java.util.Map;
-
-import junit.framework.TestCase;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -48,6 +53,8 @@ public class AckTest extends TestCase
     private MockProtocolSession _protocolSession;
 
     private TestableMemoryMessageStore _messageStore;
+
+    private StoreContext _storeContext = new StoreContext();
 
     private AMQChannel _channel;
 
@@ -78,6 +85,10 @@ public class AckTest extends TestCase
 
     private void publishMessages(int count, boolean persistent) throws AMQException
     {
+        TransactionalContext txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
+                                                                      new LinkedList<RequiredDeliveryException>(),
+                                                                      new HashSet<Long>());
+        MessageHandleFactory factory = new MessageHandleFactory();
         for (int i = 1; i <= count; i++)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -85,7 +96,7 @@ public class AckTest extends TestCase
             BasicPublishBody publishBody = new BasicPublishBody((byte)8, (byte)0);
             publishBody.routingKey = "rk";
             publishBody.exchange = "someExchange";
-            AMQMessage msg = new AMQMessage(_messageStore, publishBody);
+            AMQMessage msg = new AMQMessage(_messageStore.getNewMessageId(), publishBody, txnContext);
             if (persistent)
             {
                 BasicContentHeaderProperties b = new BasicContentHeaderProperties();
@@ -99,6 +110,12 @@ public class AckTest extends TestCase
             {
                 msg.setContentHeaderBody(new ContentHeaderBody());
             }
+            // we increment the reference here since we are not delivering the messaging to any queues, which is where
+            // the reference is normally incremented. The test is easier to construct if we have direct access to the
+            // subscription
+            msg.incrementReference();
+            msg.routingComplete(_messageStore, _storeContext, factory);
+            // we manually send the message to the subscription
             _subscription.send(msg, _queue);
         }
     }
@@ -113,21 +130,22 @@ public class AckTest extends TestCase
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount);
-        assertTrue(_messageStore.getMessageMap().size() == msgCount);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
 
-        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
-        for (int i = 1; i <= map.size(); i++)
+        Set<Long> deliveryTagSet = map.getDeliveryTags();
+        int i = 1;
+        for (long deliveryTag : deliveryTagSet)
         {
-            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
-            assertTrue(entry.getKey() == i);
-            UnacknowledgedMessage unackedMsg = entry.getValue();
+            assertTrue(deliveryTag == i);
+            i++;
+            UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
             assertTrue(unackedMsg.queue == _queue);
         }
 
         assertTrue(map.size() == msgCount);
-        assertTrue(_messageStore.getMessageMap().size() == msgCount);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
     }
 
     /**
@@ -140,9 +158,9 @@ public class AckTest extends TestCase
         final int msgCount = 10;
         publishMessages(msgCount);
 
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getMessageMap().size() == 0);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
     }
 
     /**
@@ -156,16 +174,15 @@ public class AckTest extends TestCase
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(5, false);
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount - 1);
 
-        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
-        while (i <= map.size())
+        for (long deliveryTag : deliveryTagSet)
         {
-            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
-            assertTrue(entry.getKey() == i);
-            UnacknowledgedMessage unackedMsg = entry.getValue();
+            assertTrue(deliveryTag == i);
+            UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
             assertTrue(unackedMsg.queue == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
@@ -186,16 +203,15 @@ public class AckTest extends TestCase
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(5, true);
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 5);
 
-        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
-        while (i <= map.size())
+        for (long deliveryTag : deliveryTagSet)
         {
-            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
-            assertTrue(entry.getKey() == i + 5);
-            UnacknowledgedMessage unackedMsg = entry.getValue();
+            assertTrue(deliveryTag == i + 5);
+            UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
             assertTrue(unackedMsg.queue == _queue);
             ++i;
         }
@@ -211,16 +227,15 @@ public class AckTest extends TestCase
         publishMessages(msgCount);
 
         _channel.acknowledgeMessage(0, true);
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
 
-        Iterator<Map.Entry<Long, UnacknowledgedMessage>> it = map.entrySet().iterator();
+        Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
-        while (i <= map.size())
+        for (long deliveryTag : deliveryTagSet)
         {
-            Map.Entry<Long, UnacknowledgedMessage> entry = it.next();
-            assertTrue(entry.getKey() == i + 5);
-            UnacknowledgedMessage unackedMsg = entry.getValue();
+            assertTrue(deliveryTag == i + 5);
+            UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
             assertTrue(unackedMsg.queue == _queue);
             ++i;
         }
@@ -244,7 +259,7 @@ public class AckTest extends TestCase
         // which have not bee received so will be queued up in the channel
         // which should be suspended
         assertTrue(_subscription.isSuspended());
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == highMark);
 
         //acknowledge messages so we are just above lowMark
@@ -293,7 +308,7 @@ public class AckTest extends TestCase
         // at this point we should have sent out only 5 messages with a further 5 queued
         // up in the channel which should now be suspended
         assertTrue(_subscription.isSuspended());
-        Map<Long, UnacknowledgedMessage> map = _channel.getUnacknowledgedMessageMap();
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 5);
         _channel.acknowledgeMessage(5, true);
         assertTrue(!_subscription.isSuspended());

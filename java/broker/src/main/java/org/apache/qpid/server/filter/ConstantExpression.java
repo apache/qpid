@@ -22,6 +22,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.message.jms.JMSMessage;
+import org.apache.qpid.AMQException;
 
 import java.math.BigDecimal;
 
@@ -29,19 +30,24 @@ import javax.jms.JMSException;
 
 /**
  * Represents a constant expression
- * 
+ *
  * @version $Revision$
  */
-public class ConstantExpression implements Expression {
+public class ConstantExpression implements Expression
+{
 
-    static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression {
-        public BooleanConstantExpression(Object value) {
+    static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression
+    {
+        public BooleanConstantExpression(Object value)
+        {
             super(value);
         }
-        public boolean matches(AMQMessage message) throws JMSException {
+
+        public boolean matches(AMQMessage message) throws AMQException
+        {
             Object object = evaluate(message);
-            return object!=null && object==Boolean.TRUE;            
-        }        
+            return object != null && object == Boolean.TRUE;
+        }
     }
 
     public static final BooleanConstantExpression NULL = new BooleanConstantExpression(null);
@@ -50,73 +56,92 @@ public class ConstantExpression implements Expression {
 
     private Object value;
 
-    public static ConstantExpression createFromDecimal(String text) {
-    	    	
-    	// Strip off the 'l' or 'L' if needed.
-    	if( text.endsWith("l") || text.endsWith("L") )
-    		text = text.substring(0, text.length()-1);
+    public static ConstantExpression createFromDecimal(String text)
+    {
 
-    	Number value;
-    	try {
-    		value = new Long(text);
-    	} catch ( NumberFormatException e) {
-    		// The number may be too big to fit in a long.
-        	value = new BigDecimal(text);    		
-    	}
-    	
+        // Strip off the 'l' or 'L' if needed.
+        if (text.endsWith("l") || text.endsWith("L"))
+        {
+            text = text.substring(0, text.length() - 1);
+        }
+
+        Number value;
+        try
+        {
+            value = new Long(text);
+        }
+        catch (NumberFormatException e)
+        {
+            // The number may be too big to fit in a long.
+            value = new BigDecimal(text);
+        }
+
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE) {
+        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        {
             value = new Integer(value.intValue());
         }
         return new ConstantExpression(value);
     }
 
-    public static ConstantExpression createFromHex(String text) {
+    public static ConstantExpression createFromHex(String text)
+    {
         Number value = new Long(Long.parseLong(text.substring(2), 16));
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE) {
+        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        {
             value = new Integer(value.intValue());
         }
         return new ConstantExpression(value);
     }
 
-    public static ConstantExpression createFromOctal(String text) {
+    public static ConstantExpression createFromOctal(String text)
+    {
         Number value = new Long(Long.parseLong(text, 8));
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE) {
+        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        {
             value = new Integer(value.intValue());
         }
         return new ConstantExpression(value);
     }
 
-    public static ConstantExpression createFloat(String text) {
+    public static ConstantExpression createFloat(String text)
+    {
         Number value = new Double(text);
         return new ConstantExpression(value);
     }
 
-    public ConstantExpression(Object value) {
+    public ConstantExpression(Object value)
+    {
         this.value = value;
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException {
+    public Object evaluate(AMQMessage message) throws AMQException
+    {
         return value;
     }
 
-    public Object getValue() {
+    public Object getValue()
+    {
         return value;
-    }    
+    }
 
     /**
      * @see java.lang.Object#toString()
      */
-    public String toString() {
-        if (value == null) {
+    public String toString()
+    {
+        if (value == null)
+        {
             return "NULL";
         }
-        if (value instanceof Boolean) {
+        if (value instanceof Boolean)
+        {
             return ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
         }
-        if (value instanceof String) {
+        if (value instanceof String)
+        {
             return encodeString((String) value);
         }
         return value.toString();
@@ -127,7 +152,8 @@ public class ConstantExpression implements Expression {
      *
      * @see java.lang.Object#hashCode()
      */
-    public int hashCode() {
+    public int hashCode()
+    {
         return toString().hashCode();
     }
 
@@ -136,9 +162,11 @@ public class ConstantExpression implements Expression {
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
 
-        if (o == null || !this.getClass().equals(o.getClass())) {
+        if (o == null || !this.getClass().equals(o.getClass()))
+        {
             return false;
         }
         return toString().equals(o.toString());
@@ -153,12 +181,15 @@ public class ConstantExpression implements Expression {
      * @param s
      * @return
      */
-    public static String encodeString(String s) {
+    public static String encodeString(String s)
+    {
         StringBuffer b = new StringBuffer();
         b.append('\'');
-        for (int i = 0; i < s.length(); i++) {
+        for (int i = 0; i < s.length(); i++)
+        {
             char c = s.charAt(i);
-            if (c == '\'') {
+            if (c == '\'')
+            {
                 b.append(c);
             }
             b.append(c);
@@ -166,5 +197,5 @@ public class ConstantExpression implements Expression {
         b.append('\'');
         return b.toString();
     }
-    
+
 }

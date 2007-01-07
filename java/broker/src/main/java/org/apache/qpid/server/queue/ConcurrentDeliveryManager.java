@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,18 +22,17 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -46,16 +45,19 @@ public class ConcurrentDeliveryManager implements DeliveryManager
     @Configured(path = "advanced.compressBufferOnQueue",
                 defaultValue = "false")
     public boolean compressBufferOnQueue;
+
     /**
      * Holds any queued messages
      */
     private final Queue<AMQMessage> _messages = new ConcurrentLinkedQueueAtomicSize<AMQMessage>();
+
     //private int _messageCount;
     /**
      * Ensures that only one asynchronous task is running for this manager at
      * any time.
      */
     private final AtomicBoolean _processing = new AtomicBoolean();
+
     /**
      * The subscriptions on the queue to whom messages are delivered
      */
@@ -67,7 +69,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
      */
     private final AMQQueue _queue;
 
-
     /**
      * Lock used to ensure that an channel that becomes unsuspended during the start of the queueing process is forced
      * to wait till the first message is added to the queue. This will ensure that the _queue has messages to be delivered
@@ -76,7 +77,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
      * Lock is used to control access to hasQueuedMessages() and over the addition of messages to the queue.
      */
     private ReentrantLock _lock = new ReentrantLock();
-
 
     ConcurrentDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
     {
@@ -101,14 +101,13 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         return hasQueuedMessages();
     }
 
-
     /**
      * @param msg to enqueue
      * @return true if we are queue this message
      */
-    private boolean enqueue(AMQMessage msg)
+    private boolean enqueue(AMQMessage msg) throws AMQException
     {
-        if (msg.isImmediate())
+        if (msg.getPublishBody().immediate)
         {
             return false;
         }
@@ -133,9 +132,9 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
-    private void startQueueing(AMQMessage msg)
+    private void startQueueing(AMQMessage msg) throws AMQException
     {
-        if (!msg.isImmediate())
+        if (!msg.getPublishBody().immediate)
         {
             addMessageToQueue(msg);
         }
@@ -143,7 +142,10 @@ public class ConcurrentDeliveryManager implements DeliveryManager
 
     private boolean addMessageToQueue(AMQMessage msg)
     {
-        // Shrink the ContentBodies to their actual size to save memory.       
+        // Shrink the ContentBodies to their actual size to save memory.
+        /* TODO need to reimplement this - probably not in this class though
+         * for obvious reasons
+
         if (compressBufferOnQueue)
         {
             Iterator it = msg.getContentBodies().iterator();
@@ -153,16 +155,14 @@ public class ConcurrentDeliveryManager implements DeliveryManager
                 cb.reduceBufferToFit();
             }
         }
-
+        */
         _messages.offer(msg);
 
         return true;
     }
 
-
     public boolean hasQueuedMessages()
     {
-
         _lock.lock();
         try
         {
@@ -172,8 +172,6 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         {
             _lock.unlock();
         }
-
-
     }
 
     public int getQueueMessageCount()
@@ -203,21 +201,21 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         //no-op . This DM has no PreDeliveryQueues
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized void clearAllMessages(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
             msg = poll();
         }
     }
@@ -226,7 +224,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
      * Only one thread should ever execute this method concurrently, but
      * it can do so while other threads invoke deliver().
      */
-    private void processQueue()
+    private void processQueue() throws AMQException
     {
         try
         {
@@ -296,7 +294,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
-    public void deliver(String name, AMQMessage msg) throws FailedDequeueException
+    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))
@@ -308,7 +306,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
                 Subscription s = _subscriptions.nextSubscriber(msg);
                 if (s == null)
                 {
-                    if (!msg.isImmediate())
+                    if (!msg.getPublishBody().immediate)
                     {
                         // no subscribers yet so enter 'queueing' mode and queue this message
                         startQueueing(msg);
@@ -333,7 +331,18 @@ public class ConcurrentDeliveryManager implements DeliveryManager
             boolean running = true;
             while (running)
             {
-                processQueue();
+                try
+                {
+                    processQueue();
+                }
+                catch (AMQException e)
+                {
+                    _log.error("Error processing queue: " + e, e);
+                    _log.error("Delivery manager terminating.");
+                    running = false;
+                    _processing.set(false);
+                    break;
+                }
 
                 //Check that messages have not been added since we did our last peek();
                 // Synchronize with the thread that adds to the queue.

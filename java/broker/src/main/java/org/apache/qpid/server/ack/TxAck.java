@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,13 +22,14 @@ package org.apache.qpid.server.ack;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.txn.TxnOp;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * A TxnOp implementation for handling accumulated acks
- */    
+ */
 public class TxAck implements TxnOp
 {
     private final UnacknowledgedMessageMap _map;
@@ -44,14 +45,14 @@ public class TxAck implements TxnOp
 
     public void update(long deliveryTag, boolean multiple)
     {
-        if(!multiple)
+        if (!multiple)
         {
             //have acked a single message that is not part of
             //the previously acked region so record
             //individually
             _individual.add(deliveryTag);//_multiple && !multiple
         }
-        else if(deliveryTag > _deliveryTag)
+        else if (deliveryTag > _deliveryTag)
         {
             //have simply moved the last acked message on a
             //bit
@@ -63,7 +64,7 @@ public class TxAck implements TxnOp
     public void consolidate()
     {
         //lookup all the unacked messages that have been acked in this transaction
-        if(_multiple)
+        if (_multiple)
         {
             //get all the unacked messages for the accumulated
             //multiple acks
@@ -71,22 +72,22 @@ public class TxAck implements TxnOp
         }
         //get any unacked messages for individual acks outside the
         //range covered by multiple acks
-        for(long tag : _individual)
+        for (long tag : _individual)
         {
             if(_deliveryTag < tag)
             {
-                _map.collect(tag, false, _unacked);                
+                _map.collect(tag, false, _unacked);
             }
         }
     }
 
     public boolean checkPersistent() throws AMQException
-    {     
+    {
         //if any of the messages in unacked are persistent the txn
         //buffer must be marked as persistent:
-        for(UnacknowledgedMessage msg : _unacked)
+        for (UnacknowledgedMessage msg : _unacked)
         {
-            if(msg.message.isPersistent())
+            if (msg.message.isPersistent())
             {
                 return true;
             }
@@ -94,34 +95,34 @@ public class TxAck implements TxnOp
         return false;
     }
 
-    public void prepare() throws AMQException
+    public void prepare(StoreContext storeContext) throws AMQException
     {
         //make persistent changes, i.e. dequeue and decrementReference
-        for(UnacknowledgedMessage msg : _unacked)
+        for (UnacknowledgedMessage msg : _unacked)
         {
-            msg.discard();
+            msg.discard(storeContext);
         }
     }
-    
+
     public void undoPrepare()
     {
         //decrementReference is annoyingly untransactional (due to
         //in memory counter) so if we failed in prepare for full
         //txn, this op will have to compensate by fixing the count
-        //in memory (persistent changes will be rolled back by store) 
-        for(UnacknowledgedMessage msg : _unacked)
+        //in memory (persistent changes will be rolled back by store)
+        for (UnacknowledgedMessage msg : _unacked)
         {
             msg.message.incrementReference();
-        }            
+        }
     }
 
-    public void commit()
+    public void commit(StoreContext storeContext)
     {
         //remove the unacked messages from the channels map
         _map.remove(_unacked);
     }
 
-    public void rollback()
+    public void rollback(StoreContext storeContext)
     {
     }
 }

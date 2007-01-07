@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
  * This provides the abstraction of an individual operation within a
@@ -29,14 +30,14 @@ import org.apache.qpid.AMQException;
 public interface TxnOp
 {
     /**
-     * Do the part of the operation that updates persistent state 
+     * Do the part of the operation that updates persistent state
      */
-    public void prepare() throws AMQException;
+    public void prepare(StoreContext context) throws AMQException;
     /**
      * Complete the operation started by prepare. Can now update in
      * memory state or make netork transfers.
      */
-    public void commit();
+    public void commit(StoreContext context) throws AMQException;
     /**
      * This is not the same as rollback. Unfortunately the use of an
      * in memory reference count as a locking mechanism and a test for
@@ -50,5 +51,5 @@ public interface TxnOp
     /**
      * Rolls back the operation.
      */
-    public void rollback();
+    public void rollback(StoreContext context) throws AMQException;
 }
