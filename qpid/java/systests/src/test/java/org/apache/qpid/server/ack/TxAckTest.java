@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.server.ack;
 
+import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionalContext;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import junit.framework.TestCase;
+import java.util.*;
 
 public class TxAckTest extends TestCase
 {
@@ -87,18 +88,25 @@ public class TxAckTest extends TestCase
 
     private class Scenario
     {
-        private final LinkedHashMap<Long, UnacknowledgedMessage> _messages = new LinkedHashMap<Long, UnacknowledgedMessage>();
-        private final UnacknowledgedMessageMap _map = new UnacknowledgedMessageMapImpl(_messages, _messages);
+        private final UnacknowledgedMessageMap _map = new UnacknowledgedMessageMapImpl(5000);
         private final TxAck _op = new TxAck(_map);
         private final List<Long> _acked;
         private final List<Long> _unacked;
+        private StoreContext _storeContext = new StoreContext();
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked)
         {
+            TransactionalContext txnContext = new NonTransactionalContext(new TestableMemoryMessageStore(),
+                                                                          _storeContext, null,
+                                                                          new LinkedList<RequiredDeliveryException>(),
+                                                                          new HashSet<Long>());
             for(int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;
-                _messages.put(deliveryTag, new UnacknowledgedMessage(null, new TestMessage(deliveryTag), null, deliveryTag));
+                // TODO: fix hardcoded protocol version data
+                TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody((byte)8,
+                                                                                           (byte)0), txnContext);
+                _map.add(deliveryTag, new UnacknowledgedMessage(null, message, null, deliveryTag));
             }
             _acked = acked;
             _unacked = unacked;
@@ -113,7 +121,7 @@ public class TxAckTest extends TestCase
         {
             for(long tag : tags)
             {
-                UnacknowledgedMessage u = _messages.get(tag);
+                UnacknowledgedMessage u = _map.get(tag);
                 assertTrue("Message not found for tag " + tag, u != null);
                 ((TestMessage) u.message).assertCountEquals(expected);
             }
@@ -122,11 +130,11 @@ public class TxAckTest extends TestCase
         void prepare() throws AMQException
         {
             _op.consolidate();
-            _op.prepare();
+            _op.prepare(_storeContext);
 
             assertCount(_acked, -1);
             assertCount(_unacked, 0);
-            
+
         }
         void undoPrepare()
         {
@@ -140,16 +148,16 @@ public class TxAckTest extends TestCase
         void commit()
         {
             _op.consolidate();
-            _op.commit();
-            
+            _op.commit(_storeContext);
+
 
             //check acked messages are removed from map
-            HashSet<Long> keys = new HashSet<Long>(_messages.keySet());
+            Set<Long> keys = new HashSet<Long>(_map.getDeliveryTags());
             keys.retainAll(_acked);
             assertTrue("Expected messages with following tags to have been removed from map: " + keys, keys.isEmpty());
             //check unacked messages are still in map
             keys = new HashSet<Long>(_unacked);
-            keys.removeAll(_messages.keySet());
+            keys.removeAll(_map.getDeliveryTags());
             assertTrue("Expected messages with following tags to still be in map: " + keys, keys.isEmpty());
         }
     }
@@ -159,9 +167,9 @@ public class TxAckTest extends TestCase
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag)
+        TestMessage(long tag, long messageId, BasicPublishBody publishBody, TransactionalContext txnContext)
         {
-            super(new TestableMemoryMessageStore(), null);
+            super(messageId, publishBody, txnContext);
             _tag = tag;
         }
 
@@ -170,7 +178,7 @@ public class TxAckTest extends TestCase
             _count++;
         }
 
-        public void decrementReference()
+        public void decrementReference(StoreContext context)
         {
             _count--;
         }

@@ -168,8 +168,7 @@ public class DestNameExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        BasicPublishBody publishBody = payload.getPublishBody();
-
+        final BasicPublishBody publishBody = payload.getPublishBody();
         final String routingKey = publishBody.routingKey;
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
@@ -193,7 +192,7 @@ public class DestNameExchange extends AbstractExchange
 
             for (AMQQueue q : queues)
             {
-                q.deliver(payload);
+                payload.enqueue(q);
             }
         }
     }

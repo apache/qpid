@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,8 +22,9 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
 import java.util.List;
@@ -37,34 +38,33 @@ public interface MessageStore
      * @param base the base element identifier from which all configuration items are relative. For example, if the base
      * element is "store", the all elements used by concrete classes will be "store.foo" etc.
      * @param config the apache commons configuration object
+     * @throws Exception if an error occurs that means the store is unable to configure itself
      */
     void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
-     * @throws Exception
+     * @throws Exception if close fails
      */
     void close() throws Exception;
 
-    void put(AMQMessage msg) throws AMQException;
-
-    void removeMessage(long messageId) throws AMQException;
+    void removeMessage(StoreContext storeContext, long messageId) throws AMQException;
 
     void createQueue(AMQQueue queue) throws AMQException;
 
     void removeQueue(String name) throws AMQException;
 
-    void enqueueMessage(String name, long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException;
 
-    void dequeueMessage(String name, long messageId) throws AMQException;
+    void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException;
 
-    void beginTran() throws AMQException;
+    void beginTran(StoreContext context) throws AMQException;
 
-    void commitTran() throws AMQException;
+    void commitTran(StoreContext context) throws AMQException;
 
-    void abortTran() throws AMQException;
+    void abortTran(StoreContext context) throws AMQException;
 
-    boolean inTran();
+    boolean inTran(StoreContext context);
 
     /**
      * Recreate all queues that were persisted, including re-enqueuing of existing messages
@@ -78,6 +78,13 @@ public interface MessageStore
      * @return a message id
      */
     long getNewMessageId();
+
+    void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody) throws AMQException;
+
+    void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData) throws AMQException;
+
+    MessageMetaData getMessageMetaData(long messageId) throws AMQException;
+
+    ContentBody getContentBodyChunk(long messageId, int index) throws AMQException;
+
 }
-
-

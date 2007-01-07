@@ -34,6 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 //import org.apache.activemq.util.ByteArrayInputStream;
 import org.apache.xpath.CachedXPathAPI;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.AMQException;
 import org.w3c.dom.Document;
 import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.InputSource;
@@ -46,17 +47,26 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
         this.xpath = xpath;
     }
     
-    public boolean evaluate(AMQMessage m) throws JMSException {
-        if( m instanceof TextMessage ) {
-            String text = ((TextMessage)m).getText();
-            return evaluate(text);                
-        } else if ( m instanceof BytesMessage ) {
-            BytesMessage bm = (BytesMessage) m;
-            byte data[] = new byte[(int) bm.getBodyLength()];
-            bm.readBytes(data);
-            return evaluate(data);
-        }            
-        return false;
+    public boolean evaluate(AMQMessage m) throws AMQException
+    {
+        try
+        {
+
+            if( m instanceof TextMessage ) {
+                String text = ((TextMessage)m).getText();
+                return evaluate(text);
+            } else if ( m instanceof BytesMessage ) {
+                BytesMessage bm = (BytesMessage) m;
+                byte data[] = new byte[(int) bm.getBodyLength()];
+                bm.readBytes(data);
+                return evaluate(data);
+            }
+            return false;
+        }
+        catch (JMSException e)
+        {
+            throw new AMQException("Error evaluting message: " + e, e);
+        }
     }
 
     private boolean evaluate(byte[] data) {

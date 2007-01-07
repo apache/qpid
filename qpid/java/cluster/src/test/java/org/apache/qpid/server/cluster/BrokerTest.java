@@ -45,7 +45,7 @@ public class BrokerTest extends TestCase
                 new RecordingBroker("C", 3)
         };
         GroupResponseValidator handler = new GroupResponseValidator(new TestMethod("response"), new ArrayList<Member>(Arrays.asList(brokers)));
-        GroupRequest grpRequest = new GroupRequest(new SimpleSendable(new TestMethod("request")), StandardPolicies.SYNCH_POLICY, handler);
+        GroupRequest grpRequest = new GroupRequest(new SimpleBodySendable(new TestMethod("request")), StandardPolicies.SYNCH_POLICY, handler);
         for (Broker b : brokers)
         {
             b.invoke(grpRequest);
@@ -70,7 +70,7 @@ public class BrokerTest extends TestCase
         RecordingBroker[] succeeded = new RecordingBroker[]{a, c};
 
         GroupResponseValidator handler = new GroupResponseValidator(new TestMethod("response"), new ArrayList<Member>(Arrays.asList(succeeded)));
-        GroupRequest grpRequest = new GroupRequest(new SimpleSendable(new TestMethod("request")), StandardPolicies.SYNCH_POLICY, handler);
+        GroupRequest grpRequest = new GroupRequest(new SimpleBodySendable(new TestMethod("request")), StandardPolicies.SYNCH_POLICY, handler);
 
         for (Broker broker : all)
         {
@@ -99,7 +99,7 @@ public class BrokerTest extends TestCase
         RecordingBroker broker = new RecordingBroker("myhost", 1);
         for (AMQBody msg : msgs)
         {
-            broker.send(new SimpleSendable(msg), null);
+            broker.send(new SimpleBodySendable(msg), null);
         }
         List<AMQDataBlock> sent = broker.getMessages();
         assertEquals(msgs.length, sent.size());
@@ -115,7 +115,7 @@ public class BrokerTest extends TestCase
     {
         RecordingBroker broker = new RecordingBroker("myhost", 1);
         BlockingHandler handler = new BlockingHandler();
-        broker.send(new SimpleSendable(new TestMethod("A")), handler);
+        broker.send(new SimpleBodySendable(new TestMethod("A")), handler);
         List<AMQDataBlock> sent = broker.getMessages();
         assertEquals(1, sent.size());
         assertTrue(sent.get(0) instanceof AMQFrame);
@@ -131,7 +131,7 @@ public class BrokerTest extends TestCase
     {
         RecordingBroker broker = new RecordingBroker("myhost", 1);
         BlockingHandler handler = new BlockingHandler();
-        broker.send(new SimpleSendable(new TestMethod("A")), handler);
+        broker.send(new SimpleBodySendable(new TestMethod("A")), handler);
         List<AMQDataBlock> sent = broker.getMessages();
         assertEquals(1, sent.size());
         assertTrue(sent.get(0) instanceof AMQFrame);

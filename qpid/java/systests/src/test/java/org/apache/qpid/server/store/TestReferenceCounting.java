@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.AMQException;
-
 import junit.framework.TestCase;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
@@ -31,6 +35,8 @@ import junit.framework.TestCase;
 public class TestReferenceCounting extends TestCase
 {
     private TestableMemoryMessageStore _store;
+
+    private StoreContext _storeContext = new StoreContext();
 
     protected void setUp() throws Exception
     {
@@ -43,21 +49,43 @@ public class TestReferenceCounting extends TestCase
      */
     public void testMessageGetsRemoved() throws AMQException
     {
-        AMQMessage message = new AMQMessage(_store, null);
-        _store.put(message);
-        assertTrue(_store.getMessageMap().size() == 1);
-        message.decrementReference();
-        assertTrue(_store.getMessageMap().size() == 0);
+        createPersistentContentHeader();
+        // TODO: fix hardcoded protocol version data
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
+                                                                                           (byte)0),
+                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
+                                            createPersistentContentHeader());
+        message.incrementReference();
+        // we call routing complete to set up the handle
+        message.routingComplete(_store, _storeContext, new MessageHandleFactory());
+        assertTrue(_store.getMessageMetaDataMap().size() == 1);
+        message.decrementReference(_storeContext);
+        assertTrue(_store.getMessageMetaDataMap().size() == 0);
+    }
+
+    private ContentHeaderBody createPersistentContentHeader()
+    {
+        ContentHeaderBody chb = new ContentHeaderBody();
+        BasicContentHeaderProperties bchp = new BasicContentHeaderProperties();
+        bchp.setDeliveryMode((byte)2);
+        chb.properties = bchp;
+        return chb;
     }
 
     public void testMessageRemains() throws AMQException
     {
-        AMQMessage message = new AMQMessage(_store, null);
-        _store.put(message);
-        assertTrue(_store.getMessageMap().size() == 1);
+        // TODO: fix hardcoded protocol version data
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
+                                                                                           (byte)0),
+                                            new NonTransactionalContext(_store, _storeContext, null, null, null),
+                                            createPersistentContentHeader());
         message.incrementReference();
-        message.decrementReference();
-        assertTrue(_store.getMessageMap().size() == 1);
+        // we call routing complete to set up the handle
+        message.routingComplete(_store, _storeContext, new MessageHandleFactory());
+        assertTrue(_store.getMessageMetaDataMap().size() == 1);
+        message.incrementReference();
+        message.decrementReference(_storeContext);
+        assertTrue(_store.getMessageMetaDataMap().size() == 1);
     }
 
     public static junit.framework.Test suite()

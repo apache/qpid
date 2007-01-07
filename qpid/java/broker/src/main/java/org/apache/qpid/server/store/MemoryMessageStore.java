@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,10 +23,12 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,21 +45,25 @@ public class MemoryMessageStore implements MessageStore
 
     private static final String HASHTABLE_CAPACITY_CONFIG = "hashtable-capacity";
 
-    protected ConcurrentMap<Long, AMQMessage> _messageMap;
+    protected ConcurrentMap<Long, MessageMetaData> _metaDataMap;
+
+    protected ConcurrentMap<Long, List<ContentBody>> _contentBodyMap;
 
     private final AtomicLong _messageId = new AtomicLong(1);
 
     public void configure()
     {
-        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash table");
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(DEFAULT_HASHTABLE_CAPACITY);
+        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash tables");
+        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(DEFAULT_HASHTABLE_CAPACITY);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
     public void configure(String base, Configuration config)
     {
         int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
-        _log.info("Using capacity " + hashtableCapacity + " for hash table");
-        _messageMap = new ConcurrentHashMap<Long, AMQMessage>(hashtableCapacity);
+        _log.info("Using capacity " + hashtableCapacity + " for hash tables");
+        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(hashtableCapacity);
     }
 
     public void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception
@@ -67,70 +73,71 @@ public class MemoryMessageStore implements MessageStore
 
     public void close() throws Exception
     {
-        if (_messageMap != null)
+        if (_metaDataMap != null)
         {
-            _messageMap.clear();
-            _messageMap = null;
+            _metaDataMap.clear();
+            _metaDataMap = null;
+        }
+        if (_contentBodyMap != null)
+        {
+            _contentBodyMap.clear();
+            _contentBodyMap = null;
         }
     }
 
-    public void put(AMQMessage msg)
-    {
-        _messageMap.put(msg.getMessageId(), msg);
-    }
-
-    public void removeMessage(long messageId)
+    public void removeMessage(StoreContext context, long messageId)
     {
         if (_log.isDebugEnabled())
         {
             _log.debug("Removing message with id " + messageId);
         }
-        _messageMap.remove(messageId);
+        _metaDataMap.remove(messageId);
+        _contentBodyMap.remove(messageId);
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
     public void removeQueue(String name) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public void enqueueMessage(String name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public void dequeueMessage(String name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public void beginTran() throws AMQException
+    public void beginTran(StoreContext context) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public void commitTran() throws AMQException
+    public void commitTran(StoreContext context) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public void abortTran() throws AMQException
+    public void abortTran(StoreContext context) throws AMQException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // Not required to do anything
     }
 
-    public boolean inTran()
+    public boolean inTran(StoreContext context)
     {
         return false;
     }
 
     public List<AMQQueue> createQueues() throws AMQException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public long getNewMessageId()
@@ -138,8 +145,33 @@ public class MemoryMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public AMQMessage getMessage(long messageId)
+    public void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody)
+            throws AMQException
     {
-        return _messageMap.get(messageId);
+        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
+        if (bodyList == null)
+        {
+            bodyList = new ArrayList<ContentBody>();
+            _contentBodyMap.put(messageId, bodyList);
+        }
+
+        bodyList.add(index, contentBody);
+    }
+
+    public void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData)
+            throws AMQException
+    {
+        _metaDataMap.put(messageId, messageMetaData);
+    }
+
+    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    {
+        return _metaDataMap.get(messageId);
+    }
+
+    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    {
+        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
+        return bodyList.get(index);
     }
 }
