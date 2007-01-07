@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import javax.management.ListenerNotFoundException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.Notification;
@@ -50,21 +51,31 @@ public class JMXServerRegistry extends ServerRegistry
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
     
-    private List<ManagedBean> _mbeansToBeAdded   = new ArrayList<ManagedBean>();
+    // When an mbean gets removed from mbean server, then the notification listener
+    // will add that mbean in this list.
     private List<ManagedBean> _mbeansToBeRemoved = new ArrayList<ManagedBean>();
     
-    private List<String> _queues    = new ArrayList<String>();
-    private List<String> _exchanges = new ArrayList<String>();
-    
-    private HashMap<String, ManagedBean>   _mbeansMap    = new HashMap<String, ManagedBean>(); 
+    // Map containing all managed beans and ampped with unique mbean name
+    private HashMap<String, ManagedBean>   _mbeansMap    = new HashMap<String, ManagedBean>();
+    // Map containing MBeanInfo for all mbeans and mapped with unique mbean name 
     private HashMap<String, MBeanInfo>     _mbeanInfoMap = new HashMap<String, MBeanInfo>();
+    // Map containing attribute model for all mbeans and mapped with unique mbean name
     private HashMap<String, ManagedAttributeModel>    _attributeModelMap = new HashMap<String, ManagedAttributeModel>();
+    // Map containing operation model for all mbeans and mapped with unique mbean name
     private HashMap<String, OperationDataModel>       _operationModelMap = new HashMap<String, OperationDataModel>();
+    // Map containing NotificationInfo for all mbeans and mapped with unique mbean name
     private HashMap<String, List<NotificationInfoModel>> _notificationInfoMap = new HashMap<String, List<NotificationInfoModel>>();
+    // Map containing all notifications sent for all mbeans, which are registered for notification
     private HashMap<String, List<NotificationObject>> _notificationsMap  = new HashMap<String, List<NotificationObject>>();
+    // For mbeans which have subscribed for a notification type
+    // mbean unique name mapped with notification map. Notification map contains list of notification type
+    // mapped with notification name. Notification type list contains those notification types,
+    // which are subscribed for notification.
     private HashMap<String, HashMap<String, List<String>>> _subscribedNotificationMap = new HashMap<String, HashMap<String, List<String>>>();
     
+    // listener for registration or unregistratioj of mbeans on mbean server
     private ClientNotificationListener _notificationListener = null;
+    // listener for server connection. Receives notification if server connection goes down
     private ClientListener _clientListener = null;
     
     public JMXServerRegistry(ManagedServer server) throws Exception
@@ -93,16 +104,23 @@ public class JMXServerRegistry extends ServerRegistry
      */
     public void closeServerConnection() throws Exception
     {
-        if (_jmxc != null)
-            _jmxc.removeConnectionNotificationListener(_clientListener);
-        
-        if (_mbsc != null)
-            _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
-        
-        // remove mbean notification listeners
-        for (String mbeanName : _subscribedNotificationMap.keySet())
+        try
         {
-            _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+            if (_jmxc != null)
+                _jmxc.removeConnectionNotificationListener(_clientListener);
+
+            if (_mbsc != null)
+                _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
+
+            // remove mbean notification listeners
+            for (String mbeanName : _subscribedNotificationMap.keySet())
+            {
+                _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+            }
+        }
+        catch (ListenerNotFoundException ex)
+        {
+            System.out.println(ex.toString());
         }
     }
     
@@ -111,22 +129,32 @@ public class JMXServerRegistry extends ServerRegistry
         return _mbeansMap.get(uniqueName);
     }
     
-    public void addManagedObject(ManagedBean key)
+    public void addManagedObject(ManagedBean mbean)
     {
-        if (Constants.QUEUE.equals(key.getType()))
-            _queues.add(key.getName());
-        else if (Constants.EXCHANGE.equals(key.getType()))
-            _exchanges.add(key.getName());
+        if (Constants.QUEUE.equals(mbean.getType()) && !mbean.getName().startsWith("tmp_"))
+        {
+            addQueueMBean(mbean);
+        }
+        else if (Constants.EXCHANGE.equals(mbean.getType()))
+        {
+            addExchangeMBean(mbean);
+        }
+        else if (Constants.CONNECTION.equals(mbean.getType()))
+        {
+            addConnectionMBean(mbean);
+        }
         
-        _mbeansMap.put(key.getUniqueName(), key);
+        _mbeansMap.put(mbean.getUniqueName(), mbean);
     }
 
     public void removeManagedObject(ManagedBean mbean)
     {
         if (Constants.QUEUE.equals(mbean.getType()))
-            _queues.remove(mbean.getName());
+            removeQueueMBean(mbean);
         else if (Constants.EXCHANGE.equals(mbean.getType()))
-            _exchanges.remove(mbean.getName());
+            removeExchangeMBean(mbean);
+        else if (Constants.CONNECTION.equals(mbean.getType()))
+            removeConnectionMBean(mbean);
         
         _mbeansMap.remove(mbean.getUniqueName());
     }
@@ -138,6 +166,11 @@ public class JMXServerRegistry extends ServerRegistry
     public MBeanInfo getMBeanInfo(ManagedBean mbean)
     {
         return _mbeanInfoMap.get(mbean.getUniqueName());
+    }
+    
+    public List<ManagedBean> getMBeans()
+    {
+        return new ArrayList<ManagedBean>(_mbeansMap.values());
     }
     
     public void setNotificationInfo(ManagedBean mbean, List<NotificationInfoModel>value)
@@ -259,27 +292,15 @@ public class JMXServerRegistry extends ServerRegistry
     public void registerManagedObject(ObjectName objName)
     {
         JMXManagedObject managedObject = new JMXManagedObject(objName);
+        
         managedObject.setServer(getManagedServer());
-        _mbeansToBeAdded.add(managedObject);
+        addManagedObject(managedObject);
     }
     
     public void unregisterManagedObject(ObjectName objName)
     {
-        JMXManagedObject managedObject = new JMXManagedObject(objName);
-        managedObject.setServer(getManagedServer());
-        _mbeansToBeRemoved.add(managedObject);
-    }
-    
-    public List<ManagedBean> getObjectsToBeAdded()
-    {
-        if (_mbeansToBeAdded.isEmpty())
-            return null;
-        else
-        {
-            List<ManagedBean> list = _mbeansToBeAdded;
-            _mbeansToBeAdded = new ArrayList<ManagedBean>();
-            return list;
-        }
+        ManagedBean mbean = _mbeansMap.get(objName.toString());
+        _mbeansToBeRemoved.add(mbean);
     }
 
     public List<ManagedBean> getObjectsToBeRemoved()
@@ -316,12 +337,35 @@ public class JMXServerRegistry extends ServerRegistry
     
     public String[] getQueueNames()
     {
-        return _queues.toArray(new String[0]);
+        String[] queues = new String[_queues.size()];
+        int i = 0;
+        for (ManagedBean mbean : _queues)
+        {
+            queues[i++] = mbean.getName();
+        }
+        return queues;
     }
     
     public String[] getExchangeNames()
     {
-        return _exchanges.toArray(new String[0]);
+        String[] exchanges = new String[_exchanges.size()];
+        int i = 0;
+        for (ManagedBean mbean : _exchanges)
+        {
+            exchanges[i++] = mbean.getName();
+        }
+        return exchanges;
+    }
+    
+    public String[] getConnectionNames()
+    {
+        String[] connections = new String[_connections.size()];
+        int i = 0;
+        for (ManagedBean mbean : _connections)
+        {
+            connections[i++] = mbean.getName();
+        }
+        return connections;
     }
 
     public ClientNotificationListener getNotificationListener()

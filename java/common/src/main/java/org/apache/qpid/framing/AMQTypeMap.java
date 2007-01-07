@@ -37,7 +37,12 @@ public class AMQTypeMap
 
     public static AMQType getType(Byte identifier)
     {
-        return _reverseTypeMap.get(identifier);
+        AMQType result = _reverseTypeMap.get(identifier);
+        if (result == null) {
+            throw new IllegalArgumentException
+                ("no such type code: " + Integer.toHexString(identifier.intValue()));
+        }
+        return result;
     }
 
 }

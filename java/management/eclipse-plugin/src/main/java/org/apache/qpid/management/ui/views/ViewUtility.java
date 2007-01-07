@@ -388,10 +388,10 @@ public class ViewUtility
         return response;
     }
     
-    public static void popupError(String title, String message, Exception ex)
+    public static void popupError(String title, String message, Throwable ex)
     {
         IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                    IStatus.ERROR, ex.getMessage(), ex); 
+                                    IStatus.ERROR, ex.toString(), ex); 
         ErrorDialog.openError(Display.getCurrent().getActiveShell(), title, message, status);
 
     }

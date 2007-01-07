@@ -64,7 +64,7 @@
                         <class>org.apache.qpid.server.security.auth.amqplain.AmqPlainInitialiser</class>
                         <principal-database>passwordfile</principal-database>
                     </initialiser>
-                </mechanism>-->
+                </mechanism>
                 <mechanism>
                     <initialiser>
                         <class>org.apache.qpid.server.security.auth.plain.PlainInitialiser</class>
