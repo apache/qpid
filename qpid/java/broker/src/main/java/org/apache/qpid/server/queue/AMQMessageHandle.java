@@ -1,0 +1,77 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.server.queue;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+
+/**
+ * A pluggable way of getting message data. Implementations can provide intelligent caching for example or
+ * even no caching at all to minimise the broker memory footprint.
+ *
+ * The method all take a messageId to avoid having to store it in the instance - the AMQMessage container
+ * must already keen the messageId so it is pointless storing it twice.
+ */
+public interface AMQMessageHandle
+{
+    ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException;
+
+    /**
+     * @return the number of body frames associated with this message
+     */
+    int getBodyCount(long messageId) throws AMQException;
+
+    /**
+     * @return the size of the body
+     */
+    long getBodySize(long messageId) throws AMQException;
+
+    /**
+     * Get a particular content body
+     * @param index the index of the body to retrieve, must be between 0 and getBodyCount() - 1
+     * @return a content body
+     * @throws IllegalArgumentException if the index is invalid
+     */
+    ContentBody getContentBody(long messageId, int index) throws IllegalArgumentException, AMQException;
+
+    void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody) throws AMQException;
+
+    BasicPublishBody getPublishBody(long messageId) throws AMQException;
+
+    boolean isRedelivered();
+
+    void setRedelivered(boolean redelivered);
+
+    boolean isPersistent(long messageId) throws AMQException;
+
+    void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
+                                        ContentHeaderBody contentHeaderBody)
+            throws AMQException;
+
+    void removeMessage(StoreContext storeContext, long messageId) throws AMQException;
+
+    void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException;
+
+    void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException;
+}

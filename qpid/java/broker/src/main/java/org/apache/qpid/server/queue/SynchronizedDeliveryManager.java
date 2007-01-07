@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.log4j.Logger;
 
 import java.util.LinkedList;
@@ -41,11 +42,13 @@ class SynchronizedDeliveryManager implements DeliveryManager
      * Holds any queued messages
      */
     private final Queue<AMQMessage> _messages = new LinkedList<AMQMessage>();
+
     /**
      * Ensures that only one asynchronous task is running for this manager at
      * any time.
      */
     private final AtomicBoolean _processing = new AtomicBoolean();
+
     /**
      * The subscriptions on the queue to whom messages are delivered
      */
@@ -70,9 +73,9 @@ class SynchronizedDeliveryManager implements DeliveryManager
         _queue = queue;
     }
 
-    private synchronized boolean enqueue(AMQMessage msg)
+    private synchronized boolean enqueue(AMQMessage msg) throws AMQException
     {
-        if (msg.isImmediate())
+        if (msg.getPublishBody().immediate)
         {
             return false;
         }
@@ -90,7 +93,7 @@ class SynchronizedDeliveryManager implements DeliveryManager
         }
     }
 
-    private synchronized void startQueueing(AMQMessage msg)
+    private synchronized void startQueueing(AMQMessage msg) throws AMQException
     {
         _queueing = true;
         enqueue(msg);
@@ -127,21 +130,21 @@ class SynchronizedDeliveryManager implements DeliveryManager
         //no-op . This DM has no PreDeliveryQueues
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized void clearAllMessages(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
             msg = poll();
         }
     }
@@ -231,7 +234,7 @@ class SynchronizedDeliveryManager implements DeliveryManager
      * @throws NoConsumersException if there are no active subscribers to deliver
      *                              the message to
      */
-    public void deliver(String name, AMQMessage msg) throws FailedDequeueException
+    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))

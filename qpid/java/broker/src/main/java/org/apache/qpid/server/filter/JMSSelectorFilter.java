@@ -64,7 +64,7 @@ public class JMSSelectorFilter implements MessageFilter
             _logger.info(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
             return match;
         }
-        catch (JMSException e)
+        catch (AMQException e)
         {
             //fixme this needs to be sorted.. it shouldn't happen
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.

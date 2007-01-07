@@ -60,7 +60,7 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
 
         // check APIs
         AMQChannel channel3 = new AMQChannel(3, _messageStore, null);
-        channel3.setTransactional(true);
+        channel3.setLocalTransactional();
         _protocolSession.addChannel(channel3);
         _mbean.rollbackTransactions(2);
         _mbean.rollbackTransactions(3);

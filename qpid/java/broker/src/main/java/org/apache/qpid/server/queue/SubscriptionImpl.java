@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,18 +23,18 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
-import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 import java.util.Queue;
 
@@ -201,7 +201,7 @@ public class SubscriptionImpl implements Subscription
      * @param queue
      * @throws AMQException
      */
-    public void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    public void send(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         if (msg != null)
         {
@@ -211,7 +211,7 @@ public class SubscriptionImpl implements Subscription
             }
             else
             {
-                sendToConsumer(msg, queue);
+                sendToConsumer(channel.getStoreContext(), msg, queue);
             }
         }
         else
@@ -220,7 +220,7 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         // We don't decrement the reference here as we don't want to consume the message
         // but we do want to send it to the client.
@@ -235,14 +235,12 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
-            ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-            AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
-
-            protocolSession.writeFrame(frame);
+            msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
         }
     }
 
-    private void sendToConsumer(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
+            throws AMQException
     {
         try
         {
@@ -257,7 +255,11 @@ public class SubscriptionImpl implements Subscription
             // the message is unacked, it will be lost.
             if (!_acks)
             {
-                queue.dequeue(msg);
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                }
+                queue.dequeue(storeContext, msg);
             }
             synchronized(channel)
             {
@@ -268,10 +270,7 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-                AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
-
-                protocolSession.writeFrame(frame);
+                msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
             }
         }
         finally
@@ -290,7 +289,7 @@ public class SubscriptionImpl implements Subscription
      *
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         channel.queueDeleted(queue);
     }

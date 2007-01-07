@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
+import junit.framework.TestCase;
+import junit.textui.TestRunner;
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.log4j.Logger;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import javax.jms.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
 
 /**
  * Due to bizarre exception handling all sessions are closed if you get
@@ -64,6 +64,7 @@ public class ChannelCloseOkTest extends TestCase
     {
         super.setUp();
 
+        TransportConnection.createVMBroker(1);
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
 
         _destination1 = new AMQQueue("q1", true);
@@ -192,7 +193,15 @@ public class ChannelCloseOkTest extends TestCase
         {
             while (received.size() < count)
             {
-                received.wait();
+                try
+                {
+                    received.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    _log.info("Interrupted: " + e);
+                    throw e;
+                }
             }
         }
     }
@@ -209,6 +218,6 @@ public class ChannelCloseOkTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(ChannelCloseOkTest.class));
+        return new junit.framework.TestSuite(ChannelCloseOkTest.class);
     }
 }

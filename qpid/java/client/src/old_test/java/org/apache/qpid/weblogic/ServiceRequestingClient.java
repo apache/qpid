@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,20 +20,13 @@
  */
 package org.apache.qpid.weblogic;
 
-import org.apache.qpid.jms.*;
 import org.apache.log4j.Logger;
 
-import javax.naming.NamingException;
-import javax.naming.InitialContext;
-import javax.naming.Context;
 import javax.jms.*;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.util.Hashtable;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.Reader;
-import java.io.FileReader;
 
 /**
  * Created by IntelliJ IDEA.

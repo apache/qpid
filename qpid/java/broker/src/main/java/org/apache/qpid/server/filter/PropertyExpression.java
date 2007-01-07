@@ -47,7 +47,7 @@ public class PropertyExpression implements Expression
 
     interface SubExpression
     {
-        public Object evaluate(AMQMessage message);
+        public Object evaluate(AMQMessage message) throws AMQException;
     }
 
     interface JMSExpression
@@ -65,7 +65,7 @@ public class PropertyExpression implements Expression
         }
 
 
-        public Object evaluate(AMQMessage message)
+        public Object evaluate(AMQMessage message) throws AMQException
         {
             JMSMessage msg = (JMSMessage) message.getDecodedMessage(AMQMessage.JMS_MESSAGE);
             if (msg != null)
@@ -226,7 +226,7 @@ public class PropertyExpression implements Expression
         jmsPropertyExpression = (SubExpression) JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException
+    public Object evaluate(AMQMessage message) throws AMQException
     {
 //        try
 //        {

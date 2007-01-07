@@ -23,6 +23,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.message.jms.JMSMessage;
+import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
 
@@ -32,11 +33,12 @@ import javax.jms.JMSException;
  * 
  * @version $Revision$
  */
-public interface Expression {
+public interface Expression
+{
 
     /**
      * @return the value of this expression
      */
-    public Object evaluate(AMQMessage message) throws JMSException;
+    public Object evaluate(AMQMessage message) throws AMQException;
     
 }

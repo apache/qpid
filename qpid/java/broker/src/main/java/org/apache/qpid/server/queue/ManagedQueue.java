@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,11 +23,12 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.management.MBeanAttribute;
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.AMQException;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
-import javax.management.openmbean.TabularData;
 import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
 import java.io.IOException;
 
 /**
@@ -70,7 +71,7 @@ public interface ManagedQueue
      * @throws IOException
      */
     @MBeanAttribute(name="QueueDepth", description="Size of messages(KB) in the queue")
-    Long getQueueDepth() throws IOException;
+    Long getQueueDepth() throws IOException, JMException;
 
     /**
      *  Returns the total number of active subscribers to the queue.
@@ -184,7 +185,7 @@ public interface ManagedQueue
                     description="Message headers for messages in this queue within given index range. eg. from index 1 - 100")
     TabularData viewMessages(@MBeanOperationParameter(name="from index", description="from index")int fromIndex,
                              @MBeanOperationParameter(name="to index", description="to index")int toIndex)
-        throws IOException, JMException;
+            throws IOException, JMException, AMQException;
 
     @MBeanOperation(name="viewMessageContent", description="The message content for given Message Id")
     CompositeData viewMessageContent(@MBeanOperationParameter(name="Message Id", description="Message Id")long messageId)

@@ -22,6 +22,7 @@ package org.apache.qpid.server.filter;
 
 
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
 
@@ -58,7 +59,8 @@ public abstract class ArithmeticExpression extends BinaryExpression {
                 throw new RuntimeException("Cannot call plus operation on: " + lvalue + " and: " + rvalue);
             }
 
-            public String getExpressionSymbol() {
+            public String getExpressionSymbol()
+            {
                 return "+";
             }
         };
@@ -193,7 +195,8 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         }
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException {
+    public Object evaluate(AMQMessage message) throws AMQException
+    {
         Object lvalue = left.evaluate(message);
         if (lvalue == null) {
             return null;

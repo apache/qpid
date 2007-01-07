@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,21 +20,18 @@
  */
 package org.apache.qpid.test.unit.ack;
 
+import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.test.VMBrokerSetup;
 
 import javax.jms.*;
-
-import junit.framework.TestCase;
 
 public class DisconnectAndRedeliverTest extends TestCase
 {
@@ -55,12 +52,14 @@ public class DisconnectAndRedeliverTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        TransportConnection.createVMBroker(1);
         ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killAllVMBrokers();
     }
 
     /**
@@ -82,7 +81,7 @@ public class DisconnectAndRedeliverTest extends TestCase
         ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
-                 
+
 
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
@@ -149,7 +148,7 @@ public class DisconnectAndRedeliverTest extends TestCase
         _logger.info("No messages redelivered as is expected");
         con.close();
 
-        _logger.info("Actually:" + store.getMessageMap().size());
+        _logger.info("Actually:" + store.getMessageMetaDataMap().size());
         //  assertTrue(store.getMessageMap().size() == 0);
     }
 
@@ -204,13 +203,13 @@ public class DisconnectAndRedeliverTest extends TestCase
         assertNull(tm);
         _logger.info("No messages redelivered as is expected");
 
-        _logger.info("Actually:" + store.getMessageMap().size());
-        assertTrue(store.getMessageMap().size() == 0);
+        _logger.info("Actually:" + store.getMessageMetaDataMap().size());
+        assertTrue(store.getMessageMetaDataMap().size() == 0);
         con.close();
     }
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(DisconnectAndRedeliverTest.class));
+        return new junit.framework.TestSuite(DisconnectAndRedeliverTest.class);
     }
 }
