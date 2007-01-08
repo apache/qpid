@@ -23,6 +23,7 @@ package org.apache.qpid.test.unit.client.protocol;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.mina.common.IoSession;
 
 import junit.framework.TestCase;
@@ -45,7 +46,7 @@ public class AMQProtocolSessionTest extends TestCase
             return (TestIoSession) _minaProtocolSession;
         }
 
-        public String genQueueName()
+        public AMQShortString genQueueName()
         {
             return generateQueueName();
         }
@@ -80,26 +81,26 @@ public class AMQProtocolSessionTest extends TestCase
 
     public void testGenerateQueueName()
     {
-        String testAddress;
+        AMQShortString testAddress;
 
-        //test address with / and ; chars which generateQueueName should remove
+        //test address with / and ; chars which generateQueueName should removeKey
         _testSession.getMinaProtocolSession().setStringLocalAddress(_brokenAddress);
         _testSession.getMinaProtocolSession().setLocalPort(_port);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an address with special chars",_generatedAddress,testAddress);
+        assertEquals("Failure when generating a queue exchange from an address with special chars",_generatedAddress,testAddress.toString());
 
         //test empty address
         _testSession.getMinaProtocolSession().setStringLocalAddress(_emptyAddress);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an empty address",_generatedAddress_2,testAddress);
+        assertEquals("Failure when generating a queue exchange from an empty address",_generatedAddress_2,testAddress.toString());
 
         //test address with no special chars
         _testSession.getMinaProtocolSession().setStringLocalAddress(_validAddress);
 
         testAddress = _testSession.genQueueName();
-        assertEquals("Failure when generating a queue exchange from an address with no special chars",_generatedAddress_3,testAddress);
+        assertEquals("Failure when generating a queue exchange from an address with no special chars",_generatedAddress_3,testAddress.toString());
 
     }
 

@@ -22,6 +22,8 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,16 +32,16 @@ public class DefaultExchangeFactory implements ExchangeFactory
 {
     private static final Logger _logger = Logger.getLogger(DefaultExchangeFactory.class);
 
-    private Map<String, Class<? extends Exchange>> _exchangeClassMap = new HashMap<String, Class<? extends Exchange>>();
+    private Map<AMQShortString, Class<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, Class<? extends Exchange>>();
 
     public DefaultExchangeFactory()
     {
-        _exchangeClassMap.put("direct", org.apache.qpid.server.exchange.DestNameExchange.class);
-        _exchangeClassMap.put("topic", org.apache.qpid.server.exchange.DestWildExchange.class);
-        _exchangeClassMap.put("headers", org.apache.qpid.server.exchange.HeadersExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestNameExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestWildExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, org.apache.qpid.server.exchange.HeadersExchange.class);
     }
 
-    public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete,
+    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
     {

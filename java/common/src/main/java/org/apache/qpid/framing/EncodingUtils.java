@@ -35,6 +35,7 @@ public class EncodingUtils
 
     public static final int SIZEOF_UNSIGNED_SHORT = 2;
     public static final int SIZEOF_UNSIGNED_INT = 4;
+    private static final boolean[] ALL_FALSE_ARRAY = new boolean[8];
 
     public static int encodedShortStringLength(String s)
     {
@@ -47,6 +48,120 @@ public class EncodingUtils
             return (short) (1 + s.length());
         }
     }
+
+
+    public static int encodedShortStringLength(short s)
+    {
+        if( s == 0 )
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(s < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Integer.MIN_VALUE
+            s=(short)-s;
+        }
+
+        if(s>9999)
+        {
+            return 1+5;
+        }
+        else if(s>999)
+        {
+            return 1+4;
+        }
+        else if(s>99)
+        {
+            return 1+3;
+        }
+        else if(s>9)
+        {
+            return 1+2;
+        }
+        else
+        {
+            return 1+1;
+        }
+
+    }
+
+
+    public static int encodedShortStringLength(int i)
+    {
+        if( i == 0 )
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(i < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Integer.MIN_VALUE
+            i=-i;
+        }
+
+        // range is now 1 - 2147483647
+        if(i < Short.MAX_VALUE)
+        {
+            return len + encodedShortStringLength((short)i);
+        }
+        else if (i > 999999)
+        {
+            return len + 6 + encodedShortStringLength((short)(i/1000000));
+        }
+        else // if (i > 99999)
+        {
+            return len + 5 + encodedShortStringLength((short)(i/100000));
+        }
+
+    }
+
+    public static int encodedShortStringLength(long l)
+    {
+        if(l == 0)
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(l < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Long.MIN_VALUE
+            l=-l;
+        }
+        if(l < Integer.MAX_VALUE)
+        {
+            return len + encodedShortStringLength((int) l);
+        }
+        else if(l > 9999999999L)
+        {
+            return len + 10 + encodedShortStringLength((int) (l / 10000000000L));
+        }
+        else
+        {
+            return len + 1 + encodedShortStringLength((int) (l / 10L));
+        }
+
+    }
+
+
+    public static int encodedShortStringLength(AMQShortString s)
+    {
+        if (s == null)
+        {
+            return 1;
+        }
+        else
+        {
+            return (short) (1 + s.length());
+        }
+    }
+
 
     public static int encodedLongStringLength(String s)
     {
@@ -116,6 +231,21 @@ public class EncodingUtils
                 encodedString[i] = (byte) cha[i];
             }
             writeBytes(buffer, encodedString);
+        }
+        else
+        {
+            // really writing out unsigned byte
+            buffer.put((byte) 0);
+        }
+    }
+
+
+    public static void writeShortStringBytes(ByteBuffer buffer, AMQShortString s)
+    {
+        if (s != null)
+        {
+
+            s.writeToBuffer(buffer);
         }
         else
         {
@@ -284,13 +414,27 @@ public class EncodingUtils
 
     public static boolean[] readBooleans(ByteBuffer buffer)
     {
-        byte packedValue = buffer.get();
-        boolean[] result = new boolean[8];
-
-        for (int i = 0; i < 8; i++)
+        final byte packedValue = buffer.get();
+        if(packedValue == 0)
         {
-            result[i] = ((packedValue & (1 << i)) != 0);
+            return ALL_FALSE_ARRAY;
         }
+        final boolean[] result = new boolean[8];
+
+        result[0] = ((packedValue & 1) != 0);
+        result[1] = ((packedValue & (1 << 1)) != 0);
+        result[2] = ((packedValue & (1 << 2)) != 0);
+        result[3] = ((packedValue & (1 << 3)) != 0);
+        if((packedValue & 0xF0) == 0)
+        {
+            result[0] = ((packedValue & 1) != 0);
+        }
+        result[4] = ((packedValue & (1 << 4)) != 0);
+        result[5] = ((packedValue & (1 << 5)) != 0);
+        result[6] = ((packedValue & (1 << 6)) != 0);
+        result[7] = ((packedValue & (1 << 7)) != 0);
+
+
         return result;
     }
 
@@ -311,6 +455,12 @@ public class EncodingUtils
     {
         // TODO: New Content class required for AMQP 0-9.
         return null;
+    }
+
+    public static AMQShortString readAMQShortString(ByteBuffer buffer)
+    {
+        return AMQShortString.readFromBuffer(buffer);
+
     }
 
     public static String readShortString(ByteBuffer buffer)
@@ -628,4 +778,83 @@ public class EncodingUtils
         writeByte(buffer, (byte) character);
     }
 
+
+
+    public static void main(String[] args)
+    {
+        long[] nums = { 1000000000000000000L,
+                        100000000000000000L,
+                        10000000000000000L,
+                        1000000000000000L,
+                        100000000000000L,
+                        10000000000000L,
+                        1000000000000L,
+                        100000000000L,
+                        10000000000L,
+                        1000000000L,
+                        100000000L,
+                        10000000L,
+                        1000000L,
+                        100000L,
+                        10000L,
+                        1000L,
+                        100L,
+                        10L,
+                        1L,
+                        0L,
+                        787987932453564535L,
+                        543289830889480230L,
+                        3748104703875785L,
+                        463402485702857L,
+                        87402780489392L,
+                        1190489015032L,
+                        134303883744L
+                };
+
+
+
+
+        for(int i = 0; i < nums.length; i++)
+        {
+            ByteBuffer buffer = ByteBuffer.allocate(25);
+            writeShortStringBytes(buffer, String.valueOf(nums[i]));
+            buffer.flip();
+            System.out.println(nums[i] + " : " + readLongAsShortString(buffer));
+        }
+    }
+
+    public static long readLongAsShortString(ByteBuffer buffer)
+    {
+        short length = buffer.getUnsigned();
+        short pos = 0;
+        if(length == 0)
+        {
+            return 0L;
+        }
+        byte digit = buffer.get();
+        boolean isNegative;
+        long result = 0;
+        if(digit == (byte)'-')
+        {
+            isNegative = true;
+            pos++;
+            digit = buffer.get();
+        }
+        else
+        {
+            isNegative = false;
+        }
+        result = digit - (byte)'0';
+        pos++;
+
+        while(pos < length)
+        {
+            pos++;
+            digit = buffer.get();
+            result = (result << 3) + (result << 1);
+            result += digit - (byte)'0';
+        }
+
+        return result;
+    }
 }

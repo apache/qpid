@@ -24,6 +24,7 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.*;
 
@@ -180,7 +181,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             for (Map.Entry<Long, UnacknowledgedMessage> entry : _map.entrySet())
             {
                 long deliveryTag = entry.getKey();
-                String consumerTag = entry.getValue().consumerTag;
+                AMQShortString consumerTag = entry.getValue().consumerTag;
                 AMQMessage msg = entry.getValue().message;
 
                 msg.writeDeliver(protocolSession, channelId, deliveryTag, consumerTag);

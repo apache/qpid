@@ -22,6 +22,7 @@ package org.apache.qpid.server.cluster.replay;
 
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -29,19 +30,19 @@ import java.util.List;
 
 class ConsumerCounts
 {
-    private final Map<String, Integer> _counts = new HashMap<String, Integer>();
+    private final Map<AMQShortString, Integer> _counts = new HashMap<AMQShortString, Integer>();
 
-    synchronized void increment(String queue)
+    synchronized void increment(AMQShortString queue)
     {
         _counts.put(queue, get(queue) + 1);
     }
 
-   synchronized void decrement(String queue)
+   synchronized void decrement(AMQShortString queue)
     {
         _counts.put(queue,  get(queue) - 1);
     }
 
-    private int get(String queue)
+    private int get(AMQShortString queue)
     {
         Integer count = _counts.get(queue);
         return count == null ? 0 : count;
@@ -49,7 +50,7 @@ class ConsumerCounts
 
     synchronized void replay(List<AMQMethodBody> messages)
     {
-        for(String queue : _counts.keySet())
+        for(AMQShortString queue : _counts.keySet())
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

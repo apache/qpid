@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
@@ -48,14 +49,14 @@ public interface AMQProtocolSession
      * in the AMQ protocol specification (RFC 6).
      * @return the context key
      */
-    String getContextKey();
+    AMQShortString getContextKey();
 
     /**
      * Set the context key associated with this session. Context key is described
      * in the AMQ protocol specification (RFC 6).
      * @param contextKey the context key
      */
-    void setContextKey(String contextKey);
+    void setContextKey(AMQShortString contextKey);
 
     /**
      * Get the channel for this session associated with the specified id. A channel

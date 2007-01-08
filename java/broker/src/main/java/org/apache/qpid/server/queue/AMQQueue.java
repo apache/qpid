@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -42,12 +43,12 @@ public class AMQQueue implements Managable, Comparable
 {
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
-    private final String _name;
+    private final AMQShortString _name;
 
     /**
      * null means shared
      */
-    private final String _owner;
+    private final AMQShortString _owner;
 
     private final boolean _durable;
 
@@ -111,7 +112,7 @@ public class AMQQueue implements Managable, Comparable
         return _name.compareTo(((AMQQueue) o).getName());
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                     boolean autoDelete, QueueRegistry queueRegistry)
             throws AMQException
     {
@@ -119,7 +120,7 @@ public class AMQQueue implements Managable, Comparable
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionImpl.Factory());
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                     boolean autoDelete, QueueRegistry queueRegistry, SubscriptionFactory subscriptionFactory)
             throws AMQException
     {
@@ -127,7 +128,7 @@ public class AMQQueue implements Managable, Comparable
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscriptionFactory);
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                     boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery,
                     SubscriptionFactory subscriptionFactory)
             throws AMQException
@@ -136,7 +137,7 @@ public class AMQQueue implements Managable, Comparable
         this(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new SubscriptionSet(), subscriptionFactory);
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                     boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
             throws AMQException
     {
@@ -145,7 +146,7 @@ public class AMQQueue implements Managable, Comparable
              new SubscriptionImpl.Factory());
     }
 
-    protected AMQQueue(String name, boolean durable, String owner,
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                        boolean autoDelete, QueueRegistry queueRegistry,
                        SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
             throws AMQException
@@ -154,7 +155,7 @@ public class AMQQueue implements Managable, Comparable
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, subscriptionFactory);
     }
 
-    protected AMQQueue(String name, boolean durable, String owner,
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                        boolean autoDelete, QueueRegistry queueRegistry,
                        SubscriptionSet subscribers)
             throws AMQException
@@ -163,7 +164,7 @@ public class AMQQueue implements Managable, Comparable
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, new SubscriptionImpl.Factory());
     }
 
-    protected AMQQueue(String name, boolean durable, String owner,
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
                        boolean autoDelete, QueueRegistry queueRegistry,
                        Executor asyncDelivery, SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
             throws AMQException
@@ -225,7 +226,7 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    public String getName()
+    public AMQShortString getName()
     {
         return _name;
     }
@@ -240,7 +241,7 @@ public class AMQQueue implements Managable, Comparable
         return _durable;
     }
 
-    public String getOwner()
+    public AMQShortString getOwner()
     {
         return _owner;
     }
@@ -356,17 +357,17 @@ public class AMQQueue implements Managable, Comparable
         _deliveryMgr.clearAllMessages(storeContext);
     }
 
-    public void bind(String routingKey, Exchange exchange)
+    public void bind(AMQShortString routingKey, Exchange exchange)
     {
         _bindings.addBinding(routingKey, exchange);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters) throws AMQException
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks, FieldTable filters) throws AMQException
     {
         registerProtocolSession(ps, channel, consumerTag, acks, filters, false);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
@@ -384,7 +385,7 @@ public class AMQQueue implements Managable, Comparable
         _subscribers.addSubscriber(subscription);
     }
 
-    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, String consumerTag) throws AMQException
+    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         debug("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
               this);
@@ -475,7 +476,7 @@ public class AMQQueue implements Managable, Comparable
         }
         catch (AMQException e)
         {
-            throw new FailedDequeueException(_name, e);
+            throw new FailedDequeueException(_name.toString(), e);
         }
     }
 

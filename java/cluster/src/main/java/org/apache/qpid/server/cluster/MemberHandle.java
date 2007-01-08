@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.cluster;
 
+import org.apache.qpid.framing.AMQShortString;
+
 public interface MemberHandle
 {
     public String getHost();
@@ -30,5 +32,5 @@ public interface MemberHandle
 
     public boolean matches(String host, int port);
 
-    public String getDetails();
+    public AMQShortString getDetails();
 }

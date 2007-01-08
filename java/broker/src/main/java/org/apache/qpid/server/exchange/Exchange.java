@@ -22,14 +22,15 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQMessage;
 
 public interface Exchange
 {
-    String getName();
+    AMQShortString getName();
 
-    void initialise(String name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    void initialise(AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
 
     boolean isDurable();
 
@@ -42,9 +43,9 @@ public interface Exchange
 
     void close() throws AMQException;
 
-    void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+    void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-    void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException;
+    void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException;
 
     void route(AMQMessage message) throws AMQException;
 
@@ -55,7 +56,7 @@ public interface Exchange
      * @return
      * @throws AMQException
      */
-    boolean isBound(String routingKey, AMQQueue queue) throws AMQException;
+    boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException;
 
     /**
      * Determines whether a message is routing to any queue using a specific routing key
@@ -63,7 +64,7 @@ public interface Exchange
      * @return
      * @throws AMQException
      */
-    boolean isBound(String routingKey) throws AMQException;
+    boolean isBound(AMQShortString routingKey) throws AMQException;
 
     boolean isBound(AMQQueue queue) throws AMQException;
 

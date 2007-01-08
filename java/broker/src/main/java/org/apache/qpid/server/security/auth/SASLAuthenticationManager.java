@@ -24,6 +24,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;

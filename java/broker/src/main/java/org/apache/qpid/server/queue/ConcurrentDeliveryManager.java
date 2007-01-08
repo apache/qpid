@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.store.StoreContext;
@@ -294,7 +295,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
-    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
+    public void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))

@@ -75,7 +75,7 @@ public class TextMessageTest extends TestCase implements MessageListener
     {
         _connection = connection;
         _destination = destination;
-        _session = (AMQSession) connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
+        _session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         //set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);

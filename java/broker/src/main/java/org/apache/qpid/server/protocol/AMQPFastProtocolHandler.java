@@ -180,7 +180,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
             	0,	// classId
                 0,	// methodId
                 200,	// replyCode
-                throwable.getMessage()	// replyText
+                new AMQShortString(throwable.getMessage())	// replyText
                 ));
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
             protocolSession.close();

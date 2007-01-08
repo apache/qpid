@@ -21,6 +21,7 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -36,7 +37,7 @@ public class SimpleClusterTest extends TestCase
         AMQConnection con = new AMQConnection("localhost:9000", "guest", "guest", "test", "/test");
         AMQSession session = (AMQSession) con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         System.out.println("Session created");
-        session.declareExchange("my_exchange", "direct");
+        session.declareExchange(new AMQShortString("my_exchange"), new AMQShortString("direct"));
         System.out.println("Exchange declared");
         con.close();
         System.out.println("Connection closed");

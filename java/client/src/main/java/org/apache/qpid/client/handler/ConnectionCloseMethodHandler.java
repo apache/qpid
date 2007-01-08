@@ -31,6 +31,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
+import org.apache.qpid.framing.AMQShortString;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener
 {
@@ -56,7 +57,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         //stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
         int errorCode = method.replyCode;
-        String reason = method.replyText;
+        AMQShortString reason = method.replyText;
 
         // TODO: check whether channel id of zero is appropriate
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -75,7 +76,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
                  //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                  stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
 
-                throw new AMQAuthenticationException(errorCode, reason);
+                throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString());
             }
             else
             {

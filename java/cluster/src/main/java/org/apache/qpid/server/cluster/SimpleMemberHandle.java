@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.cluster;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -35,6 +37,11 @@ public class SimpleMemberHandle implements MemberHandle
     {
         _host = host;
         _port = port;
+    }
+
+    public SimpleMemberHandle(AMQShortString details)
+    {
+        this(details.toString());
     }
 
     public SimpleMemberHandle(String details)
@@ -84,14 +91,14 @@ public class SimpleMemberHandle implements MemberHandle
         return _host.equals(host) && _port == port;
     }
 
-    public String getDetails()
+    public AMQShortString getDetails()
     {
-        return _host + ":" + _port;
+        return new AMQShortString(_host + ":" + _port);
     }
 
     public String toString()
     {
-        return getDetails();
+        return getDetails().toString();
     }
 
     static List<MemberHandle> stringToMembers(String membership)

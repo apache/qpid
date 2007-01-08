@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
@@ -53,12 +54,12 @@ public class MockProtocolSession implements AMQProtocolSession
     {
     }
 
-    public String getContextKey()
+    public AMQShortString getContextKey()
     {
         return null;
     }
 
-    public void setContextKey(String contextKey)
+    public void setContextKey(AMQShortString contextKey)
     {
     }
 

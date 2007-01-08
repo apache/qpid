@@ -73,7 +73,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     protected TestQueue bind(String queue, FieldTable bindings) throws AMQException
     {
-        return bind(new TestQueue(queue), bindings);
+        return bind(new TestQueue(new AMQShortString(queue)), bindings);
     }
 
     protected TestQueue bind(TestQueue queue, String... bindings) throws AMQException
@@ -144,7 +144,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         for (String s : entries)
         {
             String[] parts = s.split("=", 2);
-            headers.put(parts[0], parts.length > 1 ? parts[1] : "");
+            headers.setObject(parts[0], parts.length > 1 ? parts[1] : "");
         }
         return headers;
     }
@@ -154,7 +154,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Establish some way to determine the version for the test.
         BasicPublishBody request = new BasicPublishBody((byte)8, (byte)0);
-        request.routingKey = id;
+        request.routingKey = new AMQShortString(id);
         return request;
     }
 
@@ -176,9 +176,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     {
         final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
 
-        public TestQueue(String name) throws AMQException
+        public TestQueue(AMQShortString name) throws AMQException
         {
-            super(name, false, "test", true, ApplicationRegistry.getInstance().getQueueRegistry());
+            super(name, false, new AMQShortString("test"), true, ApplicationRegistry.getInstance().getQueueRegistry());
         }
 
         /**

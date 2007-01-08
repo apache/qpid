@@ -180,11 +180,11 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.enqueueMessage(storeContext, queue.getName(), messageId);
+        _messageStore.enqueueMessage(storeContext, queue.getName().toString(), messageId);
     }
 
     public void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
     {
-        _messageStore.dequeueMessage(storeContext, queue.getName(), messageId);
+        _messageStore.dequeueMessage(storeContext, queue.getName().toString(), messageId);
     }
 }

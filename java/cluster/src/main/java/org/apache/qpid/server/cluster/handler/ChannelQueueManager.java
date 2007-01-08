@@ -28,11 +28,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueBindBody;
-import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -46,7 +42,7 @@ import java.util.HashMap;
 class ChannelQueueManager
 {
     private static final Logger _logger = Logger.getLogger(ChannelQueueManager.class);
-    private final Map<Integer, String> _channelQueues = new HashMap<Integer, String>();
+    private final Map<Integer, AMQShortString> _channelQueues = new HashMap<Integer, AMQShortString>();
 
     ClusterMethodHandler<QueueDeclareBody> createQueueDeclareHandler()
     {
@@ -68,15 +64,15 @@ class ChannelQueueManager
         return new BasicConsumeHandler();
     }
 
-    private void set(int channel, String queue)
+    private void set(int channel, AMQShortString queue)
     {
         _channelQueues.put(channel, queue);
         _logger.info(new LogMessage("Set default queue for {0} to {1}", channel, queue));
     }
 
-    private String get(int channel)
+    private AMQShortString get(int channel)
     {
-        String queue = _channelQueues.get(channel);
+        AMQShortString queue = _channelQueues.get(channel);
         _logger.info(new LogMessage("Default queue for {0} is {1}", channel, queue));
         return queue;
     }

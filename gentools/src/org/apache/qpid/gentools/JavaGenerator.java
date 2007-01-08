@@ -320,10 +320,10 @@ public class JavaGenerator extends Generator
 			"EncodingUtils.writeUnsignedShort(buffer, #)",	// encode expression
 			"# = buffer.getUnsignedShort()")); 				// decode expression
 		typeMap.put("shortstr", new DomainInfo(
-			"String",										// Java code type
+			"AMQShortString",										// Java code type
 			"EncodingUtils.encodedShortStringLength(#)",	// size
 			"EncodingUtils.writeShortStringBytes(buffer, #)", // encode expression
-			"# = EncodingUtils.readShortString(buffer)"));	// decode expression
+			"# = EncodingUtils.readAMQShortString(buffer)"));	// decode expression
 		typeMap.put("table", new DomainInfo(
 			"FieldTable",									// Java code type
 			"EncodingUtils.encodedFieldTableLength(#)", 	// size

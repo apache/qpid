@@ -21,11 +21,12 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 
 public interface ExchangeFactory
 {
-    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete,
+    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                             int ticket)
             throws AMQException;
 }

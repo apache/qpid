@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.log4j.Logger;
 
@@ -234,7 +235,7 @@ class SynchronizedDeliveryManager implements DeliveryManager
      * @throws NoConsumersException if there are no active subscribers to deliver
      *                              the message to
      */
-    public void deliver(StoreContext storeContext, String name, AMQMessage msg) throws FailedDequeueException, AMQException
+    public void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg) throws FailedDequeueException, AMQException
     {
         // first check whether we are queueing, and enqueue if we are
         if (!enqueue(msg))

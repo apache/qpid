@@ -21,6 +21,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ExchangeBoundBody;
 import org.apache.qpid.framing.ExchangeBoundOkBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
@@ -71,9 +72,9 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         
         ExchangeBoundBody body = evt.getMethod();
 
-        String exchangeName = body.exchange;
-        String queueName = body.queue;
-        String routingKey = body.routingKey;
+        AMQShortString exchangeName = body.exchange;
+        AMQShortString queueName = body.queue;
+        AMQShortString routingKey = body.routingKey;
         if (exchangeName == null)
         {
             throw new AMQException("Exchange exchange must not be null");
@@ -86,7 +87,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                 major, minor,	// AMQP version (major, minor)
                 EXCHANGE_NOT_FOUND,	// replyCode
-                "Exchange " + exchangeName + " not found");	// replyText
+                new AMQShortString("Exchange " + exchangeName + " not found"));	// replyText
         }
         else if (routingKey == null)
         {
@@ -118,7 +119,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                     response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                         major, minor,	// AMQP version (major, minor)
                         QUEUE_NOT_FOUND,	// replyCode
-                        "Queue " + queueName + " not found");	// replyText
+                        new AMQShortString("Queue " + queueName + " not found"));	// replyText
                 }
                 else
                 {
@@ -136,7 +137,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                         response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                             major, minor,	// AMQP version (major, minor)
                             QUEUE_NOT_BOUND,	// replyCode
-                            "Queue " + queueName + " not bound to exchange " + exchangeName);	// replyText
+                            new AMQShortString("Queue " + queueName + " not bound to exchange " + exchangeName));	// replyText
                     }
                 }
             }
@@ -150,7 +151,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                     major, minor,	// AMQP version (major, minor)
                     QUEUE_NOT_FOUND,	// replyCode
-                    "Queue " + queueName + " not found");	// replyText
+                    new AMQShortString("Queue " + queueName + " not found"));	// replyText
             }
             else
             {
@@ -168,8 +169,8 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                     response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                         major, minor,	// AMQP version (major, minor)
                         SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
-                        "Queue " + queueName + " not bound with routing key " +
-                        body.routingKey + " to exchange " + exchangeName);	// replyText
+                        new AMQShortString("Queue " + queueName + " not bound with routing key " +
+                        body.routingKey + " to exchange " + exchangeName));	// replyText
                 }
             }
         }
@@ -189,8 +190,8 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 response = ExchangeBoundOkBody.createAMQFrame(evt.getChannelId(),
                     major, minor,	// AMQP version (major, minor)
                     NO_QUEUE_BOUND_WITH_RK,	// replyCode
-                    "No queue bound with routing key " + body.routingKey +
-                    " to exchange " + exchangeName);	// replyText
+                    new AMQShortString("No queue bound with routing key " + body.routingKey +
+                    " to exchange " + exchangeName));	// replyText
             }
         }
         protocolSession.writeFrame(response);

@@ -49,19 +49,20 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
         _logger.info("ConnectionRedirect frame received");
         ConnectionRedirectBody method = (ConnectionRedirectBody) evt.getMethod();
 
+        String host = method.host.toString();
         // the host is in the form hostname:port with the port being optional
-        int portIndex = method.host.indexOf(':');
-        String host;
+        int portIndex = host.indexOf(':');
+
         int port;
         if (portIndex == -1)
         {
-            host = method.host;
             port = DEFAULT_REDIRECT_PORT;
         }
         else
         {
-            host = method.host.substring(0, portIndex);
-            port = Integer.parseInt(method.host.substring(portIndex + 1));
+            port = Integer.parseInt(host.substring(portIndex + 1));
+            host = host.substring(0, portIndex);
+
         }
         evt.getProtocolSession().failover(host, port);
     }

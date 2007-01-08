@@ -37,14 +37,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionCloseOkBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.ssl.BogusSSLContextFactory;
 
@@ -99,7 +92,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
         // We add a proxy for the state manager so that we can substitute the state manager easily in this class.
         // We substitute the state manager when performing failover
-        _frameListeners.add(new AMQMethodListener()
+/*        _frameListeners.add(new AMQMethodListener()
         {
             public boolean methodReceived(AMQMethodEvent evt) throws AMQException
             {
@@ -110,7 +103,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             {
                 _stateManager.error(e);
             }
-        });
+        });*/
     }
 
     public boolean isUseSSL()
@@ -284,11 +277,14 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public void propagateExceptionToWaiters(Exception e)
     {
         _stateManager.error(e);
-        final Iterator it = _frameListeners.iterator();
-        while (it.hasNext())
+        if(!_frameListeners.isEmpty())
         {
-            final AMQMethodListener ml = (AMQMethodListener) it.next();
-            ml.error(e);
+            final Iterator it = _frameListeners.iterator();
+            while (it.hasNext())
+            {
+                final AMQMethodListener ml = (AMQMethodListener) it.next();
+                ml.error(e);
+            }
         }
     }
 
@@ -296,12 +292,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageReceived(IoSession session, Object message) throws Exception
     {
+        final long msgNumber = ++_messageReceivedCount;
 
-        if (_messageReceivedCount++ % 1000 == 0)
+        if (_logger.isDebugEnabled() && (msgNumber % 1000 == 0))
         {
             _logger.debug("Received " + _messageReceivedCount + " protocol messages");
         }
-        Iterator it = _frameListeners.iterator();
+
         AMQFrame frame = (AMQFrame) message;
 
         HeartbeatDiagnostics.received(frame.bodyFrame instanceof HeartbeatBody);
@@ -314,13 +311,19 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             }
 
             final AMQMethodEvent evt = new AMQMethodEvent(frame.channel, (AMQMethodBody) frame.bodyFrame, _protocolSession);
+
             try
             {
-                boolean wasAnyoneInterested = false;
-                while (it.hasNext())
+
+                boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
+                if(!_frameListeners.isEmpty())
                 {
-                    final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                    Iterator it = _frameListeners.iterator();
+                    while (it.hasNext())
+                    {
+                        final AMQMethodListener listener = (AMQMethodListener) it.next();
+                        wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                    }
                 }
                 if (!wasAnyoneInterested)
                 {
@@ -329,11 +332,15 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             }
             catch (AMQException e)
             {
-                it = _frameListeners.iterator();
-                while (it.hasNext())
+                _stateManager.error(e);
+                if(!_frameListeners.isEmpty())
                 {
-                    final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    listener.error(e);
+                    Iterator it = _frameListeners.iterator();
+                    while (it.hasNext())
+                    {
+                        final AMQMethodListener listener = (AMQMethodListener) it.next();
+                        listener.error(e);
+                    }
                 }
                 exceptionCaught(session, e);
             }
@@ -359,17 +366,21 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageSent(IoSession session, Object message) throws Exception
     {
-        if (_messagesOut++ % 1000 == 0)
+        final long sentMessages = _messagesOut++;
+
+        final boolean debug = _logger.isDebugEnabled();
+
+        if (debug && (sentMessages % 1000 == 0))
         {
             _logger.debug("Sent " + _messagesOut + " protocol messages");
         }
         _connection.bytesSent(session.getWrittenBytes());
-        if (_logger.isDebugEnabled())
+        if (debug)
         {
             _logger.debug("Sent frame " + message);
         }
     }
-
+/*
     public void addFrameListener(AMQMethodListener listener)
     {
         _frameListeners.add(listener);
@@ -379,7 +390,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         _frameListeners.remove(listener);
     }
-
+  */
     public void attainState(AMQState s) throws AMQException
     {
         _stateManager.attainState(s);
@@ -423,9 +434,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             // When control resumes before this line, a reply will have been received
             // that matches the criteria defined in the blocking listener
         }
+        catch (AMQException e)
+        {
+            throw e;
+        }
         finally
         {
-            // If we don't remove the listener then no-one will
+            // If we don't removeKey the listener then no-one will
             _frameListeners.remove(listener);
         }
 
@@ -480,7 +495,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             0,	// classId
             0,	// methodId
             AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            "JMS client is closing the connection.");	// replyText
+            new AMQShortString("JMS client is closing the connection."));	// replyText
         syncWrite(frame, ConnectionCloseOkBody.class);
 
         _protocolSession.closeProtocolSession();
@@ -518,7 +533,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
     }
 
-    public String generateQueueName()
+    public AMQShortString generateQueueName()
     {
         return _protocolSession.generateQueueName();
     }

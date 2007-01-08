@@ -11,6 +11,7 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.*;
 
@@ -41,7 +42,7 @@ public class JMSDestinationTest extends TestCase
     {
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = new AMQQueue("someQ", "someQ", false, true);
+        Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");

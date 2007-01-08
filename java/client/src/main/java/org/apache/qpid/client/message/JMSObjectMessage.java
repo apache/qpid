@@ -24,6 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -34,14 +35,15 @@ import java.nio.charset.Charset;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
-    static final String MIME_TYPE = "application/java-object-stream";
+    public static final String MIME_TYPE = "application/java-object-stream";
+    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     /**
      * Creates empty, writable message for use by producers
      */
-    JMSObjectMessage()
+    public JMSObjectMessage()
     {
         this(null);
     }
@@ -54,7 +56,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
+        getJmsContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
     }
 
     /**
@@ -80,9 +82,9 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         return toString(_data);
     }
 
-    public String getMimeType()
+    public AMQShortString getMimeTypeAsShortString()
     {
-        return MIME_TYPE;
+        return MIME_TYPE_SHORT_STRING;
     }
 
     public void setObject(Serializable serializable) throws JMSException
