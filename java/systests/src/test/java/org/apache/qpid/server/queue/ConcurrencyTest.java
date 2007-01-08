@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 
 import java.util.*;
@@ -52,7 +53,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     public ConcurrencyTest() throws Exception
     {
-        _deliveryMgr = new ConcurrentDeliveryManager(_subscriptionMgr, new AMQQueue("myQ", false, "guest", false,
+        _deliveryMgr = new ConcurrentDeliveryManager(_subscriptionMgr, new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), false,
                                                                           new DefaultQueueRegistry()));
     }
 
@@ -186,7 +187,7 @@ public class ConcurrencyTest extends MessageTestHelper
             AMQMessage msg = nextMessage();
             if (msg != null)
             {
-                _deliveryMgr.deliver(null, toString(), msg);
+                _deliveryMgr.deliver(null, new AMQShortString(toString()), msg);
             }
         }
     }

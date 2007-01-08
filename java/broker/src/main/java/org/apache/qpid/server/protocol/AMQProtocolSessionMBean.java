@@ -21,6 +21,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -58,6 +59,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
     private CompositeType _channelType = null;      // represents the data type for channel data
     private TabularType _channelsType = null;       // Data type for list of channels type
+    private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSING_THE_CONNECTION =
+            new AMQShortString("Broker Management Console has closing the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
@@ -201,7 +204,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             0,	// classId
             0,	// methodId
         	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            "Broker Management Console has closing the connection."	// replyText
+            BROKER_MANAGEMENT_CONSOLE_HAS_CLOSING_THE_CONNECTION    // replyText
             );
         _session.writeFrame(response);
 

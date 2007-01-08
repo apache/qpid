@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 
 public interface ExchangeRegistry extends MessageRouter
@@ -34,7 +35,7 @@ public interface ExchangeRegistry extends MessageRouter
      * @throws ExchangeInUseException when the exchange cannot be deleted because it is in use
      * @throws AMQException
      */
-    void unregisterExchange(String name, boolean inUse) throws ExchangeInUseException, AMQException;
+    void unregisterExchange(AMQShortString name, boolean inUse) throws ExchangeInUseException, AMQException;
 
-    Exchange getExchange(String name);
+    Exchange getExchange(AMQShortString name);
 }

@@ -33,6 +33,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.AMQShortString;
 
 public class ChannelCloseMethodHandler implements StateAwareMethodListener
 {
@@ -51,7 +52,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
         int errorCode = method.replyCode;
-        String reason = method.replyText;
+        AMQShortString reason = method.replyText;
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
@@ -77,7 +78,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             {
                 _logger.info("Broker responded with Invalid Selector.");
 
-                throw new AMQInvalidSelectorException(reason);
+                throw new AMQInvalidSelectorException(String.valueOf(reason));
             }
             else
             {
@@ -85,6 +86,6 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             }
 
         }
-        evt.getProtocolSession().channelClosed(evt.getChannelId(), errorCode, reason);
+        evt.getProtocolSession().channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
     }
 }

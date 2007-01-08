@@ -23,6 +23,7 @@ package org.apache.qpid.server.cluster.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueueDeclareBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.util.LogMessage;
@@ -45,9 +46,9 @@ public class LocalQueueDeclareHandler extends QueueDeclareHandler
         _groupMgr = groupMgr;
     }
 
-    protected String createName()
+    protected AMQShortString createName()
     {
-        return super.createName() + "@" + _groupMgr.getLocal().getDetails();
+        return new AMQShortString(super.createName().toString() + "@" + _groupMgr.getLocal().getDetails());
     }
 
     protected AMQQueue createQueue(QueueDeclareBody body, QueueRegistry registry, AMQProtocolSession session) throws AMQException
@@ -60,7 +61,7 @@ public class LocalQueueDeclareHandler extends QueueDeclareHandler
                 //need to get peer from the session...
                 MemberHandle peer = ClusteredProtocolSession.getSessionPeer(session);
                 _logger.debug(new LogMessage("Creating proxied queue {0} on behalf of {1}", body.queue, peer));
-                return new RemoteQueueProxy(peer, _groupMgr, body.queue, body.durable, peer.getDetails(), body.autoDelete, registry);
+                return new RemoteQueueProxy(peer, _groupMgr, body.queue, body.durable, new AMQShortString(peer.getDetails()), body.autoDelete, registry);
             }
             else
             {

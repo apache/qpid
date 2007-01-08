@@ -522,7 +522,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
-        message.getJmsContentHeaderProperties().getJMSHeaders().setString(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString(), destination.toURL());
+        message.getJmsContentHeaderProperties().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName(), destination.toByteEncoding());
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
@@ -534,26 +534,22 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             destination.getRoutingKey(),	// routingKey
             0);	// ticket
 
-        long currentTime = 0;
-        if (!_disableTimestamps)
-        {
-            currentTime = System.currentTimeMillis();
-            message.setJMSTimestamp(currentTime);
-        }
+
+
         message.prepareForSending();
         ByteBuffer payload = message.getData();
         BasicContentHeaderProperties contentHeaderProperties = message.getJmsContentHeaderProperties();
 
-        if (timeToLive > 0)
+        if (!_disableTimestamps)
         {
-            if (!_disableTimestamps)
+            final long currentTime = System.currentTimeMillis();
+            contentHeaderProperties.setTimestamp(currentTime);
+
+            if (timeToLive > 0)
             {
                 contentHeaderProperties.setExpiration(currentTime + timeToLive);
             }
-        }
-        else
-        {
-            if (!_disableTimestamps)
+            else
             {
                 contentHeaderProperties.setExpiration(0);
             }
@@ -561,14 +557,16 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         contentHeaderProperties.setDeliveryMode((byte) deliveryMode);
         contentHeaderProperties.setPriority((byte) priority);
 
-        int size = (payload != null) ? payload.limit() : 0;
-        ContentBody[] contentBodies = createContentBodies(payload);
-        AMQFrame[] frames = new AMQFrame[2 + contentBodies.length];
-        for (int i = 0; i < contentBodies.length; i++)
+        final int size = (payload != null) ? payload.limit() : 0;
+        final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
+        final AMQFrame[] frames = new AMQFrame[2 + contentBodyFrameCount];
+
+        if(payload != null)
         {
-            frames[2 + i] = ContentBody.createAMQFrame(_channelId, contentBodies[i]);
+            createContentBodies(payload, frames, 2, _channelId);
         }
-        if (contentBodies.length > 0 && _logger.isDebugEnabled())
+
+        if (contentBodyFrameCount != 0 && _logger.isDebugEnabled())
         {
             _logger.debug("Sending content body frames to " + destination);
         }
@@ -592,10 +590,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         if (message != origMessage)
         {
-            _logger.warn("Updating original message");
+            _logger.debug("Updating original message");
             origMessage.setJMSPriority(message.getJMSPriority());
             origMessage.setJMSTimestamp(message.getJMSTimestamp());
-            _logger.warn("Setting JMSExpiration:" + message.getJMSExpiration());
+            _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
             origMessage.setJMSExpiration(message.getJMSExpiration());
             origMessage.setJMSMessageID(message.getJMSMessageID());
         }
@@ -625,42 +623,52 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
      * maximum frame size.
      *
      * @param payload
-     * @return the array of content bodies
+     * @param frames
+     * @param offset
+     * @param channelId @return the array of content bodies
      */
-    private ContentBody[] createContentBodies(ByteBuffer payload)
+    private void createContentBodies(ByteBuffer payload, AMQFrame[] frames, int offset, int channelId)
     {
-        if (payload == null || payload.remaining() == 0)
-        {
-            return NO_CONTENT_BODIES;
-        }
 
-        // we substract one from the total frame maximum size to account for the end of frame marker in a body frame
-        // (0xCE byte).
-        int dataLength = payload.remaining();
-        final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
-        int lastFrame = (dataLength % framePayloadMax) > 0 ? 1 : 0;
-        int frameCount = (int) (dataLength / framePayloadMax) + lastFrame;
-        final ContentBody[] bodies = new ContentBody[frameCount];
-
-        if (frameCount == 1)
+        if (frames.length == offset + 1)
         {
-            bodies[0] = new ContentBody();
-            bodies[0].payload = payload;
+            frames[offset] = ContentBody.createAMQFrame(channelId,new ContentBody(payload));
         }
         else
         {
-            long remaining = dataLength;
-            for (int i = 0; i < bodies.length; i++)
+
+            final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
+            long remaining = payload.remaining();
+            for (int i = offset; i < frames.length; i++)
             {
-                bodies[i] = new ContentBody();
-                payload.position((int) framePayloadMax * i);
+                payload.position((int) framePayloadMax * (i-offset));
                 int length = (remaining >= framePayloadMax) ? (int) framePayloadMax : (int) remaining;
                 payload.limit(payload.position() + length);
-                bodies[i].payload = payload.slice();
+                frames[i] = ContentBody.createAMQFrame(channelId,new ContentBody(payload.slice()));
+                                            
                 remaining -= length;
             }
         }
-        return bodies;
+
+    }
+
+    private int calculateContentBodyFrameCount(ByteBuffer payload)
+    {
+        // we substract one from the total frame maximum size to account for the end of frame marker in a body frame
+        // (0xCE byte).
+        int frameCount;
+        if(payload == null || payload.remaining() == 0)
+        {
+            frameCount = 0;
+        }
+        else
+        {
+            int dataLength = payload.remaining();
+            final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
+            int lastFrame = (dataLength % framePayloadMax) > 0 ? 1 : 0;
+            frameCount = (int) (dataLength / framePayloadMax) + lastFrame;
+        }
+        return frameCount;
     }
 
     public void setMimeType(String mimeType) throws JMSException

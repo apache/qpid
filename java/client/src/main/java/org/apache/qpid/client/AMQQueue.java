@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.Queue;
 
@@ -42,10 +43,20 @@ public class AMQQueue extends AMQDestination implements Queue
      * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
      * @param name the name of the queue
      */
-    public AMQQueue(String name)
+    public AMQQueue(AMQShortString name)
     {
         this(name, false);
     }
+
+    /**
+     * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
+     * @param name the name of the queue
+     */
+    public AMQQueue(String name)
+    {
+        this(new AMQShortString(name), false);
+    }
+
 
     /**
      * Create a queue with a specified name.
@@ -56,10 +67,23 @@ public class AMQQueue extends AMQDestination implements Queue
      */
     public AMQQueue(String name, boolean temporary)
     {
+        this(new AMQShortString(name),temporary);
+    }
+
+
+    /**
+     * Create a queue with a specified name.
+     *
+     * @param name the destination name (used in the routing key)
+     * @param temporary if true the broker will generate a queue name, also if true then the queue is autodeleted
+     * and exclusive
+     */
+    public AMQQueue(AMQShortString name, boolean temporary)
+    {
         // queue name is set to null indicating that the broker assigns a name in the case of temporary queues
         // temporary queues are typically used as response queues
-        this(name, temporary?null:name, temporary, temporary);
-        _isDurable = !temporary;
+        this(name, temporary?null:name, temporary, temporary, !temporary);
+        
     }
 
     /**
@@ -69,16 +93,22 @@ public class AMQQueue extends AMQDestination implements Queue
      * @param exclusive true if the queue should only permit a single consumer
      * @param autoDelete true if the queue should be deleted automatically when the last consumers detaches
      */
-    public AMQQueue(String destinationName, String queueName, boolean exclusive, boolean autoDelete)
+    public AMQQueue(AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete)
+    {
+        this(destinationName, queueName, exclusive, autoDelete, false);
+    }
+
+
+    public AMQQueue(AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable)
     {
         super(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, destinationName, exclusive,
-              autoDelete, queueName);
+              autoDelete, queueName, durable);
     }
 
   
-    public String getRoutingKey()
+    public AMQShortString getRoutingKey()
     {
-        return getQueueName();
+        return getAMQQueueName();
     }
 
     public boolean isNameRequired()

@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import junit.framework.TestSuite;
 
@@ -31,6 +32,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
     protected final SubscriptionSet _subscriptions = new SubscriptionSet();
     protected DeliveryManager _mgr;
     protected StoreContext _storeContext = new StoreContext();
+    private static final AMQShortString DEFAULT_QUEUE_NAME = new AMQShortString("Me");
 
     public DeliveryManagerTest() throws Exception
     {
@@ -47,7 +49,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver(_storeContext, "Me", messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
         }
 
         SubscriptionTestHelper s1 = new SubscriptionTestHelper("1");
@@ -57,7 +59,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver(_storeContext, "Me", messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
         }
 
         assertTrue(s1.getMessages().isEmpty());
@@ -95,7 +97,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver(_storeContext, "Me", messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
         }
 
         assertEquals(batch, s1.getMessages().size());
@@ -109,7 +111,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         s1.setSuspended(true);
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver(_storeContext, "Me", messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
         }
 
         _mgr.processAsync(new OnCurrentThreadExecutor());
@@ -131,7 +133,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         try
         {
             AMQMessage msg = message(true);
-            _mgr.deliver(_storeContext, "Me", msg);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }
@@ -153,7 +155,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
             _subscriptions.addSubscriber(s);
             s.setSuspended(true);
             AMQMessage msg = message(true);
-            _mgr.deliver(_storeContext, "Me", msg);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }

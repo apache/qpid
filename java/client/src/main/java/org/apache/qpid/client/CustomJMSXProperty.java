@@ -20,13 +20,28 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.*;
 
-public enum CustomJMXProperty
+public enum CustomJMSXProperty
 {
     JMSX_QPID_JMSDESTINATIONURL,
     JMSXGroupID,
     JMSXGroupSeq;
+
+
+    private final AMQShortString _nameAsShortString;
+
+    CustomJMSXProperty()
+    {
+        _nameAsShortString = new AMQShortString(toString());
+    }
+
+    public AMQShortString getShortStringName()
+    {
+        return _nameAsShortString;
+    }
 
     private static Enumeration _names;
     
@@ -34,9 +49,9 @@ public enum CustomJMXProperty
     {
         if(_names == null)
         {
-            CustomJMXProperty[] properties = values();
+            CustomJMSXProperty[] properties = values();
             ArrayList<String> nameList = new ArrayList<String>(properties.length);
-            for(CustomJMXProperty property :  properties)
+            for(CustomJMSXProperty property :  properties)
             {
                 nameList.add(property.toString());
             }

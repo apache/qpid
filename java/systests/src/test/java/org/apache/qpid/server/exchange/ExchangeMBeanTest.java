@@ -22,6 +22,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
@@ -43,12 +45,12 @@ public class ExchangeMBeanTest  extends TestCase
     public void testDirectExchangeMBean() throws Exception
     {
         DestNameExchange exchange = new DestNameExchange();
-        exchange.initialise("amq.direct", false, 0, true);
+        exchange.initialise(ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName(), "binding1");
-        mbean.createNewBinding(_queue.getName(), "binding2");
+        mbean.createNewBinding(_queue.getName().toString(), "binding1");
+        mbean.createNewBinding(_queue.getName().toString(), "binding2");
 
         TabularData data = mbean.bindings();
         ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
@@ -70,12 +72,12 @@ public class ExchangeMBeanTest  extends TestCase
     public void testTopicExchangeMBean() throws Exception
     {
         DestWildExchange exchange = new DestWildExchange();
-        exchange.initialise("amq.topic", false, 0, true);
+        exchange.initialise(ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName(), "binding1");
-        mbean.createNewBinding(_queue.getName(), "binding2");
+        mbean.createNewBinding(_queue.getName().toString(), "binding1");
+        mbean.createNewBinding(_queue.getName().toString(), "binding2");
 
         TabularData data = mbean.bindings();
         ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
@@ -97,19 +99,19 @@ public class ExchangeMBeanTest  extends TestCase
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise("amq.headers", false, 0, true);
+        exchange.initialise(ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
-        mbean.createNewBinding(_queue.getName(), "key1=binding1,key2=binding2");
-        mbean.createNewBinding(_queue.getName(), "key3=binding3");
+        mbean.createNewBinding(_queue.getName().toString(), "key1=binding1,key2=binding2");
+        mbean.createNewBinding(_queue.getName().toString(), "key3=binding3");
 
         TabularData data = mbean.bindings();
         ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
         assertTrue(list.size() == 2);
 
         // test general exchange properties
-        assertEquals(mbean.getName(), "amq.headers");
+        assertEquals(mbean.getName(), "amq.match");
         assertEquals(mbean.getExchangeType(), "headers");
         assertTrue(mbean.getTicketNo() == 0);
         assertTrue(!mbean.isDurable());
@@ -121,7 +123,7 @@ public class ExchangeMBeanTest  extends TestCase
     {
         super.setUp();
         _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
-        _queue = new AMQQueue("testQueue", false, "ExchangeMBeanTest", false, _queueRegistry);
+        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _queueRegistry);
         _queueRegistry.registerQueue(_queue);
     }
 }

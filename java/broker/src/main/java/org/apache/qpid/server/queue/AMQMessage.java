@@ -562,7 +562,7 @@ public class AMQMessage
         }
     }
 
-    public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, String consumerTag)
+    public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
         ByteBuffer deliver = createEncodedDeliverFrame(channelId, deliveryTag, consumerTag);
@@ -598,7 +598,7 @@ public class AMQMessage
 
     }
 
-    private ByteBuffer createEncodedDeliverFrame(int channelId, long deliveryTag, String consumerTag)
+    private ByteBuffer createEncodedDeliverFrame(int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
         BasicPublishBody pb = getPublishBody();
@@ -611,7 +611,7 @@ public class AMQMessage
         return buf;
     }
 
-    private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, String replyText) throws AMQException
+    private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
         AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId, (byte) 8, (byte) 0, getPublishBody().exchange,
                                                               replyCode, replyText,
@@ -622,7 +622,7 @@ public class AMQMessage
         return buf;
     }
 
-    public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, String replyText)
+    public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText)
             throws AMQException
     {
         ByteBuffer returnFrame = createEncodedReturnFrame(channelId, replyCode, replyText);

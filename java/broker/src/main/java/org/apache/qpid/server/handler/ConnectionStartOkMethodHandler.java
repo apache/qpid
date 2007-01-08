@@ -73,7 +73,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         SaslServer ss = null;
         try
         {
-            ss = authMgr.createSaslServer(body.mechanism, protocolSession.getLocalFQDN());
+            ss = authMgr.createSaslServer(String.valueOf(body.mechanism), protocolSession.getLocalFQDN());
             protocolSession.setSaslServer(ss);
 
             AuthenticationResult authResult = authMgr.authenticate(ss, body.response);

@@ -28,6 +28,15 @@ public class ContentBody extends AMQBody
 
     public ByteBuffer payload;
 
+    public ContentBody()
+    {
+    }
+
+    public ContentBody(ByteBuffer payload)
+    {
+        this.payload = payload;
+    }
+
     protected byte getFrameType()
     {
         return TYPE;

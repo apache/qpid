@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.txn.TransactionalContext;
@@ -77,7 +78,7 @@ public class AMQQueueMBeanTest extends TestCase
         _protocolSession = new MockProtocolSession(_messageStore);
         _protocolSession.addChannel(_channel);
 
-        _queue.registerProtocolSession(_protocolSession, 1, "test", false, null);
+        _queue.registerProtocolSession(_protocolSession, 1, new AMQShortString("test"), false, null);
         assertTrue(_queueMBean.getActiveConsumerCount() == 1);
 
         SubscriptionSet _subscribers = (SubscriptionSet) mgr;
@@ -174,7 +175,7 @@ public class AMQQueueMBeanTest extends TestCase
     {
         super.setUp();
         _queueRegistry = new DefaultQueueRegistry();
-        _queue = new AMQQueue("testQueue", false, "AMQueueMBeanTest", false, _queueRegistry);
+        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _queueRegistry);
         _queueMBean = new AMQQueueMBean(_queue);
     }
 

@@ -29,6 +29,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.log4j.Logger;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -157,7 +158,7 @@ public class VirtualHostConfiguration
     private void bind(AMQBindingURL binding) throws AMQException, ConfigurationException
     {
 
-        String queueName = binding.getQueueName();
+        AMQShortString queueName = binding.getQueueName();
 
         // This will occur if the URL is a Topic
         if (queueName == null)

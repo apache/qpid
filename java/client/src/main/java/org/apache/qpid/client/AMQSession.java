@@ -26,10 +26,7 @@ import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.client.failover.FailoverSupport;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
@@ -104,7 +101,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /**
      * Maps from consumer tag (String) to JMSMessageConsumer instance
      */
-    private Map<String, BasicMessageConsumer> _consumers = new ConcurrentHashMap<String, BasicMessageConsumer>();
+    private Map<AMQShortString, BasicMessageConsumer> _consumers = new ConcurrentHashMap<AMQShortString, BasicMessageConsumer>();
 
     /**
      * Maps from destination to count of JMSMessageConsumers
@@ -205,7 +202,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                                               message.bodies);
 
                     int errorCode = message.bounceBody.replyCode;
-                    String reason = message.bounceBody.replyText;
+                    AMQShortString reason = message.bounceBody.replyText;
                     _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
 
                     //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
@@ -322,14 +319,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
-            try
-            {
-                return (BytesMessage) _messageFactoryRegistry.createMessage("application/octet-stream");
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create message: " + e);
-            }
+            return new JMSBytesMessage();
         }
     }
 
@@ -338,31 +328,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
-            try
-            {
-                return (MapMessage) _messageFactoryRegistry.createMessage("jms/map-message");
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create message: " + e);
-            }
+            return new JMSMapMessage();
         }
     }
 
     public javax.jms.Message createMessage() throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-            try
-            {
-                return (BytesMessage) _messageFactoryRegistry.createMessage("application/octet-stream");
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create message: " + e);
-            }
-        }
+        return createBytesMessage();
     }
 
     public ObjectMessage createObjectMessage() throws JMSException
@@ -370,33 +342,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
-            try
-            {
-                return (ObjectMessage) _messageFactoryRegistry.createMessage("application/java-object-stream");
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create message: " + e);
-            }
+            return (ObjectMessage) new JMSObjectMessage();
         }
     }
 
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-            try
-            {
-                ObjectMessage msg = (ObjectMessage) _messageFactoryRegistry.createMessage("application/java-object-stream");
-                msg.setObject(object);
-                return msg;
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create message: " + e);
-            }
-        }
+        ObjectMessage msg = createObjectMessage();
+        msg.setObject(object);
+        return msg;
     }
 
     public StreamMessage createStreamMessage() throws JMSException
@@ -405,14 +359,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             checkNotClosed();
 
-            try
-            {
-                return (StreamMessage) _messageFactoryRegistry.createMessage(JMSStreamMessage.MIME_TYPE);
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create text message: " + e);
-            }
+            return new JMSStreamMessage();
         }
     }
 
@@ -422,33 +369,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             checkNotClosed();
 
-            try
-            {
-                return (TextMessage) _messageFactoryRegistry.createMessage("text/plain");
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create text message: " + e);
-            }
+            return new JMSTextMessage();
         }
     }
 
     public TextMessage createTextMessage(String text) throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-            try
-            {
-                TextMessage msg = (TextMessage) _messageFactoryRegistry.createMessage("text/plain");
-                msg.setText(text);
-                return msg;
-            }
-            catch (AMQException e)
-            {
-                throw new JMSException("Unable to create text message: " + e);
-            }
-        }
+
+        TextMessage msg = createTextMessage();
+        msg.setText(text);
+        return msg;
     }
 
     public boolean getTransacted() throws JMSException
@@ -530,7 +460,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                         0,	// classId
                         0,	// methodId
                         AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-                        "JMS client closing channel");	// replyText
+                        new AMQShortString("JMS client closing channel"));	// replyText
                     _connection.getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
@@ -1050,12 +980,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
 
-    public void declareExchange(String name, String type)
+    public void declareExchange(AMQShortString name, AMQShortString type)
     {
         declareExchange(name, type, _connection.getProtocolHandler());
     }
 
-    public void declareExchangeSynch(String name, String type) throws AMQException
+    public void declareExchangeSynch(AMQShortString name, AMQShortString type) throws AMQException
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -1079,7 +1009,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), protocolHandler);
     }
 
-    private void declareExchange(String name, String type, AMQProtocolHandler protocolHandler)
+    private void declareExchange(AMQShortString name, AMQShortString type, AMQProtocolHandler protocolHandler)
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -1106,7 +1036,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @return the queue name. This is useful where the broker is generating a queue name on behalf of the client.
      * @throws AMQException
      */
-    private String declareQueue(AMQDestination amqd, AMQProtocolHandler protocolHandler) throws AMQException
+    private AMQShortString declareQueue(AMQDestination amqd, AMQProtocolHandler protocolHandler) throws AMQException
     {
         // For queues (but not topics) we generate the name in the client rather than the
         // server. This allows the name to be reused on failover if required. In general,
@@ -1127,14 +1057,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             amqd.isExclusive(),	// exclusive
             true,	// nowait
             false,	// passive
-            amqd.getQueueName(),	// queue
+            amqd.getAMQQueueName(),	// queue
             0);	// ticket
 
         protocolHandler.writeFrame(queueDeclare);
-        return amqd.getQueueName();
+        return amqd.getAMQQueueName();
     }
 
-    private void bindQueue(AMQDestination amqd, String queueName, AMQProtocolHandler protocolHandler, FieldTable ft) throws AMQException
+    private void bindQueue(AMQDestination amqd, AMQShortString queueName, AMQProtocolHandler protocolHandler, FieldTable ft) throws AMQException
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -1157,12 +1087,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param queueName
      * @return the consumer tag generated by the broker
      */
-    private void consumeFromQueue(BasicMessageConsumer consumer, String queueName, AMQProtocolHandler protocolHandler,
+    private void consumeFromQueue(BasicMessageConsumer consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
                                   boolean nowait, String messageSelector) throws AMQException
     {
         //fixme prefetch values are not used here. Do we need to have them as parametsrs?
         //need to generate a consumer tag on the client so we can exploit the nowait flag
-        String tag = Integer.toString(_nextTag++);
+        AMQShortString tag = new AMQShortString(Integer.toString(_nextTag++));
 
         FieldTable arguments = FieldTableFactory.newFieldTable();
         if (messageSelector != null && !messageSelector.equals(""))
@@ -1282,7 +1212,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         if (topicName.indexOf('/') == -1)
         {
-            return new AMQTopic(topicName);
+            return new AMQTopic(new AMQShortString(topicName));
         }
         else
         {
@@ -1352,12 +1282,21 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         else
         {
+            AMQShortString topicName;
+            if(topic instanceof AMQTopic)
+            {
+                topicName = ((AMQTopic)topic).getDestinationName();
+            }
+            else
+            {
+                topicName = new AMQShortString(topic.getTopicName());
+            }
             // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
             // says we must trash the subscription.
-            if (isQueueBound(dest.getQueueName()) &&
-                !isQueueBound(dest.getQueueName(), topic.getTopicName()))
+            if (isQueueBound(dest.getAMQQueueName()) &&
+                !isQueueBound(dest.getAMQQueueName(), topicName))
             {
-                deleteQueue(dest.getQueueName());
+                deleteQueue(dest.getAMQQueueName());
             }
         }
 
@@ -1369,7 +1308,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return subscriber;
     }
 
-    void deleteQueue(String queueName) throws JMSException
+    void deleteQueue(AMQShortString queueName) throws JMSException
     {
         try
         {
@@ -1461,12 +1400,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    boolean isQueueBound(String queueName) throws JMSException
+    boolean isQueueBound(AMQShortString queueName) throws JMSException
     {
         return isQueueBound(queueName, null);
     }
 
-    boolean isQueueBound(String queueName, String routingKey) throws JMSException
+    boolean isQueueBound(AMQShortString queueName, AMQShortString routingKey) throws JMSException
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -1606,7 +1545,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         declareExchange(amqd, protocolHandler);
 
-        String queueName = declareQueue(amqd, protocolHandler);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler);
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
 
@@ -1674,7 +1613,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private void resubscribeProducers() throws AMQException
     {
         ArrayList producers = new ArrayList(_producers.values());
-        _logger.info(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: remove
+        _logger.info(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
         for (Iterator it = producers.iterator(); it.hasNext();)
         {
             BasicMessageProducer producer = (BasicMessageProducer) it.next();
@@ -1718,7 +1657,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
     }
 
-    public void confirmConsumerCancelled(String consumerTag)
+    public void confirmConsumerCancelled(AMQShortString consumerTag)
     {
         BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
         if((consumer != null) && (consumer.isAutoClose()))

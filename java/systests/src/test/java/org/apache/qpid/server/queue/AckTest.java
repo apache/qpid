@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
@@ -62,6 +63,8 @@ public class AckTest extends TestCase
 
     private AMQQueue _queue;
 
+    private static final AMQShortString DEFAULT_CONSUMER_TAG = new AMQShortString("conTag");
+
     public AckTest() throws Exception
     {
         ApplicationRegistry.initialise(new TestApplicationRegistry());
@@ -75,7 +78,7 @@ public class AckTest extends TestCase
         _protocolSession = new MockProtocolSession(_messageStore);
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
-        _queue = new AMQQueue("myQ", false, "guest", true, new DefaultQueueRegistry(), _subscriptionManager);
+        _queue = new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, new DefaultQueueRegistry(), _subscriptionManager);
     }
 
     private void publishMessages(int count) throws AMQException
@@ -94,8 +97,8 @@ public class AckTest extends TestCase
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Establish some way to determine the version for the test.
             BasicPublishBody publishBody = new BasicPublishBody((byte)8, (byte)0);
-            publishBody.routingKey = "rk";
-            publishBody.exchange = "someExchange";
+            publishBody.routingKey = new AMQShortString("rk");
+            publishBody.exchange = new AMQShortString("someExchange");
             AMQMessage msg = new AMQMessage(_messageStore.getNewMessageId(), publishBody, txnContext);
             if (persistent)
             {
@@ -126,7 +129,7 @@ public class AckTest extends TestCase
      */
     public void testAckChannelAssociationTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
@@ -154,7 +157,7 @@ public class AckTest extends TestCase
     public void testNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", false);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, false);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -169,7 +172,7 @@ public class AckTest extends TestCase
      */
     public void testSingleAckReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -198,7 +201,7 @@ public class AckTest extends TestCase
      */
     public void testMultiAckReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -222,7 +225,7 @@ public class AckTest extends TestCase
      */
     public void testMultiAckAllReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -246,7 +249,7 @@ public class AckTest extends TestCase
         int lowMark = 5;
         int highMark = 10;
 
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         _channel.setPrefetchLowMarkCount(lowMark);
         _channel.setPrefetchHighMarkCount(highMark);
 
@@ -297,7 +300,7 @@ public class AckTest extends TestCase
 
     public void testPrefetch() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, true);
         _channel.setPrefetchCount(5);
 
         assertTrue(_channel.getPrefetchCount() == 5);

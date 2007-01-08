@@ -170,7 +170,7 @@ public class TopicSessionTest extends TestCase
         con.start();
         TextMessage tm = session1.createTextMessage("Hello");
         publisher.publish(tm);
-        tm = (TextMessage) consumer1.receive(2000);
+        tm = (TextMessage) consumer1.receive(200000L);
         assertNotNull(tm);
         String msgText = tm.getText();
         assertEquals("Hello", msgText);
@@ -178,7 +178,7 @@ public class TopicSessionTest extends TestCase
         msgText = tm.getText();
         assertNull(msgText);
         publisher.publish(tm);
-        tm = (TextMessage) consumer1.receive(2000);
+        tm = (TextMessage) consumer1.receive(20000000L);
         assertNotNull(tm);
         msgText = tm.getText();
         assertNull(msgText);

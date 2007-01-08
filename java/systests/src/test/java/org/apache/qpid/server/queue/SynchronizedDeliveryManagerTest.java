@@ -25,6 +25,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.DeliveryManagerTest;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import junit.framework.TestSuite;
 
@@ -35,7 +36,7 @@ public class SynchronizedDeliveryManagerTest extends DeliveryManagerTest
         try
         {
             System.setProperty("concurrentdeliverymanager","false");
-            _mgr = new SynchronizedDeliveryManager(_subscriptions, new AMQQueue("myQ", false, "guest", false,
+            _mgr = new SynchronizedDeliveryManager(_subscriptions, new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), false,
                                                                                 new DefaultQueueRegistry()));
         }
         catch (Throwable t)

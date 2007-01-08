@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.cluster;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,22 +30,22 @@ public class ClusterCapability
     public static final String PATTERN = ".*\\bcluster_peer=(\\S*:\\d*)\b*.*";
     public static final String PEER = "cluster_peer";
 
-    public static String add(String original, MemberHandle identity)
+    public static AMQShortString add(AMQShortString original, MemberHandle identity)
     {
-        return original == null ? peer(identity) : original + " " + peer(identity);
+        return original == null ? peer(identity) : new AMQShortString(original + " " + peer(identity));
     }
 
-    private static String peer(MemberHandle identity)
+    private static AMQShortString peer(MemberHandle identity)
     {
-        return PEER + "=" + identity.getDetails();
+        return new AMQShortString(PEER + "=" + identity.getDetails());
     }
 
-    public static boolean contains(String in)
+    public static boolean contains(AMQShortString in)
     {
-        return in != null && in.contains(in);
+        return in != null; // && in.contains(in);
     }
 
-    public static MemberHandle getPeer(String in)
+    public static MemberHandle getPeer(AMQShortString in)
     {
         Matcher matcher = Pattern.compile(PATTERN).matcher(in);
         if (matcher.matches())

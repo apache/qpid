@@ -85,11 +85,11 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
     private FieldTable load() throws IOException
     {
         FieldTable result = FieldTableFactory.newFieldTable();
-        result.put("one", 1L);
-        result.put("two", 2L);
-        result.put("three", 3L);
-        result.put("four", 4L);
-        result.put("five", 5L);
+        result.setLong("one", 1L);
+        result.setLong("two", 2L);
+        result.setLong("three", 3L);
+        result.setLong("four", 4L);
+        result.setLong("five", 5L);
 
         return result;
     }
@@ -133,10 +133,9 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
         {
             ByteBuffer buffer = ((JMSBytesMessage) m).getData();
             FieldTable actual = FieldTableFactory.newFieldTable(buffer, buffer.remaining());
-            for (Object o : _expected.keySet())
-            {
-                String key = (String) o;
-                assertEquals("Values for " + key + " did not match", _expected.get(key), actual.get(key));
+            for (String key : _expected.keys())
+            {                
+                assertEquals("Values for " + key + " did not match", _expected.getObject(key), actual.getObject(key));
             }
         }
     }

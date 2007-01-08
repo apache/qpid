@@ -178,116 +178,116 @@ public class JMSMessage implements MessageDecorator
     public void clearProperties() throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.getJMSHeaders().clear();
+        _properties.clear();
     }
 
     public boolean propertyExists(String string)
     {
-        return _properties.getJMSHeaders().propertyExists(string);
+        return _properties.propertyExists(string);
     }
 
     public boolean getBooleanProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getBoolean(string);
+        return _properties.getBoolean(string);
     }
 
     public byte getByteProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getByte(string);
+        return _properties.getByte(string);
     }
 
     public short getShortProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getShort(string);
+        return _properties.getShort(string);
     }
 
     public int getIntProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getInteger(string);
+        return _properties.getInteger(string);
     }
 
     public long getLongProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getLong(string);
+        return _properties.getLong(string);
     }
 
     public float getFloatProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getFloat(string);
+        return _properties.getFloat(string);
     }
 
     public double getDoubleProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getDouble(string);
+        return _properties.getDouble(string);
     }
 
     public String getStringProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getString(string);
+        return _properties.getString(string);
     }
 
     public Object getObjectProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getObject(string);
+        return _properties.getObject(string);
     }
 
     public Enumeration getPropertyNames()
     {
-        return _properties.getJMSHeaders().getPropertyNames();
+        return _properties.getPropertyNames();
     }
 
     public void setBooleanProperty(String string, boolean b) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setBoolean(string, b);
+        _properties.setBoolean(string, b);
     }
 
     public void setByteProperty(String string, byte b) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setByte(string, b);
+        _properties.setByte(string, b);
     }
 
     public void setShortProperty(String string, short i) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setShort(string, i);
+        _properties.setShort(string, i);
     }
 
     public void setIntProperty(String string, int i) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setInteger(string, i);
+        _properties.setInteger(string, i);
     }
 
     public void setLongProperty(String string, long l) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setLong(string, l);
+        _properties.setLong(string, l);
     }
 
     public void setFloatProperty(String string, float v) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setFloat(string, v);
+        _properties.setFloat(string, v);
     }
 
     public void setDoubleProperty(String string, double v) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setDouble(string, v);
+        _properties.setDouble(string, v);
     }
 
     public void setStringProperty(String string, String string1) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setString(string, string1);
+        _properties.setString(string, string1);
     }
 
     public void setObjectProperty(String string, Object object) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setObject(string, object);
+        _properties.setObject(string, object);
     }
 
     public void acknowledge() throws MessageNotWriteableException

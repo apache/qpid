@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ConnectionOpenOkBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -45,9 +46,9 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
     {
     }
 
-    private static String generateClientID()
+    private static AMQShortString generateClientID()
     {
-        return Long.toString(System.currentTimeMillis());
+        return new AMQShortString(Long.toString(System.currentTimeMillis()));
     }
 
     public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
@@ -55,7 +56,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
                                AMQMethodEvent<ConnectionOpenBody> evt) throws AMQException
     {
         ConnectionOpenBody body = evt.getMethod();
-        String contextKey = body.virtualHost;
+        AMQShortString contextKey = body.virtualHost;
 
         //todo //FIXME The virtual host must be validated by the server for the connection to open-ok
         // See Spec (0.8.2). Section  3.1.2 Virtual Hosts

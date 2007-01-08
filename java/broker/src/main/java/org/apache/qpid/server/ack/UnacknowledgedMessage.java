@@ -21,6 +21,7 @@
 package org.apache.qpid.server.ack;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoreContext;
@@ -28,11 +29,11 @@ import org.apache.qpid.server.store.StoreContext;
 public class UnacknowledgedMessage
 {
     public final AMQMessage message;
-    public final String consumerTag;
+    public final AMQShortString consumerTag;
     public final long deliveryTag;
     public AMQQueue queue;
 
-    public UnacknowledgedMessage(AMQQueue queue, AMQMessage message, String consumerTag, long deliveryTag)
+    public UnacknowledgedMessage(AMQQueue queue, AMQMessage message, AMQShortString consumerTag, long deliveryTag)
     {
         this.queue = queue;
         this.message = message;

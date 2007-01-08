@@ -30,6 +30,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.BasicMessageConsumer;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -168,7 +169,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         }
         final AMQDestination amqd = (AMQDestination) destination;
 
-        final String encodedDestination = amqd.getEncodedName();
+        final AMQShortString encodedDestination = amqd.getEncodedName();
         _destinationCache.put(encodedDestination, destination);
         getJmsContentHeaderProperties().setReplyTo(encodedDestination);
     }
@@ -235,7 +236,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void clearProperties() throws JMSException
     {
-        getJmsContentHeaderProperties().getJMSHeaders().clear();
+        getJmsContentHeaderProperties().clear();
 
         _readableProperties = false;
     }
@@ -247,139 +248,168 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     }
 
 
+    public boolean propertyExists(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        return getJmsContentHeaderProperties().propertyExists(propertyName);
+    }
+
+
     public boolean propertyExists(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().propertyExists(propertyName);
+        return getJmsContentHeaderProperties().propertyExists(propertyName);
     }
+
+    public boolean getBooleanProperty(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+
+        return getJmsContentHeaderProperties().getBoolean(propertyName);
+    }
+
 
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
 
-        return getJmsContentHeaderProperties().getJMSHeaders().getBoolean(propertyName);
+        return getJmsContentHeaderProperties().getBoolean(propertyName);
     }
 
     public byte getByteProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getByte(propertyName);
+        return getJmsContentHeaderProperties().getByte(propertyName);
     }
 
     public short getShortProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getShort(propertyName);
+        return getJmsContentHeaderProperties().getShort(propertyName);
     }
 
     public int getIntProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getInteger(propertyName);
+        return getJmsContentHeaderProperties().getInteger(propertyName);
     }
 
     public long getLongProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getLong(propertyName);
+        return getJmsContentHeaderProperties().getLong(propertyName);
     }
 
     public float getFloatProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getFloat(propertyName);
+        return getJmsContentHeaderProperties().getFloat(propertyName);
     }
 
     public double getDoubleProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getDouble(propertyName);
+        return getJmsContentHeaderProperties().getDouble(propertyName);
     }
 
     public String getStringProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getString(propertyName);
+        return getJmsContentHeaderProperties().getString(propertyName);
     }
 
     public Object getObjectProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getJmsContentHeaderProperties().getJMSHeaders().getObject(propertyName);
+        return getJmsContentHeaderProperties().getObject(propertyName);
     }
 
     public Enumeration getPropertyNames() throws JMSException
     {
-        return getJmsContentHeaderProperties().getJMSHeaders().getPropertyNames();
+        return getJmsContentHeaderProperties().getPropertyNames();
+    }
+
+    public void setBooleanProperty(AMQShortString propertyName, boolean b) throws JMSException
+    {
+        checkWritableProperties();
+        checkPropertyName(propertyName);
+        getJmsContentHeaderProperties().setBoolean(propertyName, b);
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setBoolean(propertyName, b);
+        getJmsContentHeaderProperties().setBoolean(propertyName, b);
     }
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setByte(propertyName, new Byte(b));
+        getJmsContentHeaderProperties().setByte(propertyName, new Byte(b));
     }
 
     public void setShortProperty(String propertyName, short i) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setShort(propertyName, new Short(i));
+        getJmsContentHeaderProperties().setShort(propertyName, new Short(i));
     }
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setInteger(propertyName, new Integer(i));
+        getJmsContentHeaderProperties().setInteger(propertyName, new Integer(i));
     }
 
     public void setLongProperty(String propertyName, long l) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setLong(propertyName, new Long(l));
+        getJmsContentHeaderProperties().setLong(propertyName, new Long(l));
     }
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setFloat(propertyName, new Float(f));
+        getJmsContentHeaderProperties().setFloat(propertyName, new Float(f));
     }
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setDouble(propertyName, new Double(v));
+        getJmsContentHeaderProperties().setDouble(propertyName, new Double(v));
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setString(propertyName, value);
+        getJmsContentHeaderProperties().setString(propertyName, value);
     }
 
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().setObject(propertyName, object);
+        getJmsContentHeaderProperties().setObject(propertyName, object);
     }
+
+    protected void removeProperty(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        getJmsContentHeaderProperties().remove(propertyName);
+    }
+
 
     protected void removeProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        getJmsContentHeaderProperties().getJMSHeaders().remove(propertyName);
+        getJmsContentHeaderProperties().remove(propertyName);
     }
 
     public void acknowledgeThis() throws JMSException
@@ -421,7 +451,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
      */
     public abstract String toBodyString() throws JMSException;
 
-    public abstract String getMimeType();
+    public String getMimeType()
+    {
+        return getMimeTypeAsShortString().toString();
+    }
+
+    public abstract AMQShortString getMimeTypeAsShortString();
 
     public String toString()
     {
@@ -436,13 +471,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
             buf.append("\nAMQ message number: ").append(_deliveryTag);
             buf.append("\nProperties:");
-            if (getJmsContentHeaderProperties().getJMSHeaders().isEmpty())
+            if (getJmsContentHeaderProperties().isEmpty())
             {
                 buf.append("<NONE>");
             }
             else
             {
-                buf.append('\n').append(getJmsContentHeaderProperties().getJMSHeaders());
+                buf.append('\n').append(getJmsContentHeaderProperties().getHeaders());
             }
             return buf.toString();
         }
@@ -458,13 +493,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         getJmsContentHeaderProperties().setHeaders(messageProperties);
     }
 
-    private void checkPropertyName(String propertyName)
+    private void checkPropertyName(CharSequence propertyName)
     {
         if (propertyName == null)
         {
             throw new IllegalArgumentException("Property name must not be null");
         }
-        else if ("".equals(propertyName))
+        else if (propertyName.length()==0)
         {
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
@@ -536,5 +571,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public void setConsumer(BasicMessageConsumer basicMessageConsumer)
     {
         _consumer = basicMessageConsumer;
+    }
+
+    public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        return getJmsContentHeaderProperties().getBytes(propertyName);
+
     }
 }

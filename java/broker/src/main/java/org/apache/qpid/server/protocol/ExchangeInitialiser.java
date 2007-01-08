@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -34,7 +35,7 @@ public class ExchangeInitialiser
     }
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
-                        String name, String type) throws AMQException
+                        AMQShortString name, AMQShortString type) throws AMQException
     {
         r.registerExchange(f.createExchange(name, type, true, false, 0));
     }

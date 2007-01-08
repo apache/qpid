@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This
@@ -33,10 +34,10 @@ import org.apache.qpid.framing.FieldTable;
  */
 public interface SubscriptionFactory
 {
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks,
+    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag, boolean acks,
                                     FieldTable filters, boolean noLocal) throws AMQException;
 
 
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
+    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag)
             throws AMQException;
 }

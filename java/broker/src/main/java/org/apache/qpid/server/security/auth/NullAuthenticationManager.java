@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth;
 
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;

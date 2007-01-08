@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.MemberHandle;
@@ -42,7 +43,7 @@ public class RemoteQueueProxy extends AMQQueue
     private final MemberHandle _target;
     private final GroupManager _groupMgr;
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry);
@@ -51,7 +52,7 @@ public class RemoteQueueProxy extends AMQQueue
         _groupMgr.addMemberhipChangeListener(new ProxiedQueueCleanup(target, this));
     }
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
+    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery);
