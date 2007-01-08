@@ -49,10 +49,10 @@ public class VmPipeTransportConnection implements ITransportConnection
         final VmPipeConnector ioConnector = new VmPipeConnector();
         final IoServiceConfig cfg = ioConnector.getDefaultConfig();
         ReferenceCountingExecutorService executorService = ReferenceCountingExecutorService.getInstance();
-        PoolingFilter asyncRead = new PoolingFilter(executorService, PoolingFilter.READ_EVENTS,
+        PoolingFilter asyncRead = PoolingFilter.createAynschReadPoolingFilter(executorService,
                                                     "AsynchronousReadFilter");
         cfg.getFilterChain().addFirst("AsynchronousReadFilter", asyncRead);
-        PoolingFilter asyncWrite = new PoolingFilter(executorService, PoolingFilter.WRITE_EVENTS,
+        PoolingFilter asyncWrite = PoolingFilter.createAynschWritePoolingFilter(executorService, 
                                                      "AsynchronousWriteFilter");
         cfg.getFilterChain().addLast("AsynchronousWriteFilter", asyncWrite);
         
