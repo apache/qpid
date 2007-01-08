@@ -110,6 +110,8 @@
     <Compile Include="generated\DtxSelectOkBody.cs" />
     <Compile Include="generated\DtxStartBody.cs" />
     <Compile Include="generated\DtxStartOkBody.cs" />
+    <Compile Include="generated\ExchangeBoundBody.cs" />
+    <Compile Include="generated\ExchangeBoundOkBody.cs" />
     <Compile Include="generated\ExchangeDeclareBody.cs" />
     <Compile Include="generated\ExchangeDeclareOkBody.cs" />
     <Compile Include="generated\ExchangeDeleteBody.cs" />
