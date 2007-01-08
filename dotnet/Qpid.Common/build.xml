@@ -21,8 +21,7 @@
     <pathconvert targetos="unix" property="amq.home.fixed" refid="amq.home.path"/>
 
 <!-- Some spec changes break the build, reverting to private copy in Qpid.Common temporarily till this is fixed. -->
-<!--    <property name="amq.asl" value="${amq.home.fixed}/specs/amqp.0-8.xml"/> -->
-    <property name="amq.asl" value="amqp.xml"/>
+    <property name="amq.asl" value="${amq.home.fixed}/specs/amqp.0-8.xml"/>
 
     <target name="clean" description="Deletes the generated sources.">
         <delete>
