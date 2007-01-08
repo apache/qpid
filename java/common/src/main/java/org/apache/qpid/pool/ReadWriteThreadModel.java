@@ -29,11 +29,8 @@ public class ReadWriteThreadModel implements ThreadModel
     public void buildFilterChain(IoFilterChain chain) throws Exception
     {
         ReferenceCountingExecutorService executor = ReferenceCountingExecutorService.getInstance();
-        PoolingFilter asyncRead = new PoolingFilter(executor, PoolingFilter.READ_EVENTS,
-                                                    "AsynchronousReadFilter");
-        PoolingFilter asyncWrite = new PoolingFilter(executor, PoolingFilter.WRITE_EVENTS,
-                                                     "AsynchronousWriteFilter");
-
+        PoolingFilter asyncRead = PoolingFilter.createAynschReadPoolingFilter(executor, "AsynchronousReadFilter");
+        PoolingFilter asyncWrite = PoolingFilter.createAynschWritePoolingFilter(executor, "AsynchronousWriteFilter");
         chain.addFirst("AsynchronousReadFilter", new ReferenceCountingIoFilter(asyncRead));
         chain.addLast("AsynchronousWriteFilter", new ReferenceCountingIoFilter(asyncWrite));
     }
