@@ -97,13 +97,11 @@ public class EncodingUtils
             return (int) table.getEncodedSize() + 4;
         }
     }
-
-    public static int encodedContentLength(Content table)
+    
+    public static int encodedContentLength(Content content)
     {
-        // TODO: New Content class required for AMQP 0-9.
-        return 0;
+       	return (int)content.getEncodedSize();
     }
-
  
     public static void writeShortStringBytes(ByteBuffer buffer, String s)
     {
@@ -240,7 +238,7 @@ public class EncodingUtils
 
     public static void writeContentBytes(ByteBuffer buffer, Content content)
     {
-        // TODO: New Content class required for AMQP 0-9.
+    	content.writePayload(buffer);
     }
 
     public static void writeBooleans(ByteBuffer buffer, boolean[] values)
@@ -309,8 +307,10 @@ public class EncodingUtils
 
     public static Content readContent(ByteBuffer buffer) throws AMQFrameDecodingException
     {
-        // TODO: New Content class required for AMQP 0-9.
-        return null;
+        long length = buffer.getUnsignedInt();
+    	Content content = new Content();
+        content.populateFromBuffer(buffer, length);
+        return content;
     }
 
     public static String readShortString(ByteBuffer buffer)
