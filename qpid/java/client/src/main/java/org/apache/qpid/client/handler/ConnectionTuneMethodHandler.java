@@ -28,10 +28,7 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.ConnectionOpenBody;
-import org.apache.qpid.framing.ConnectionTuneBody;
-import org.apache.qpid.framing.ConnectionTuneOkBody;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.*;
 
 public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 {
@@ -67,10 +64,10 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
         session.writeFrame(createTuneOkFrame(evt.getChannelId(), params));
-        session.writeFrame(createConnectionOpenFrame(evt.getChannelId(), session.getAMQConnection().getVirtualHost(), null, true));
+        session.writeFrame(createConnectionOpenFrame(evt.getChannelId(), new AMQShortString(session.getAMQConnection().getVirtualHost()), null, true));
     }
 
-    protected AMQFrame createConnectionOpenFrame(int channel, String path, String capabilities, boolean insist)
+    protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist)
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

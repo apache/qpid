@@ -26,16 +26,7 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ProtocolVersionList;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 
@@ -65,7 +56,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private final IoSession _minaProtocolSession;
 
-    private String _contextKey;
+    private AMQShortString _contextKey;
 
     private final Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
@@ -291,12 +282,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _minaProtocolSession.write(frame);
     }
 
-    public String getContextKey()
+    public AMQShortString getContextKey()
     {
         return _contextKey;
     }
 
-    public void setContextKey(String contextKey)
+    public void setContextKey(AMQShortString contextKey)
     {
         _contextKey = contextKey;
     }

@@ -25,6 +25,7 @@ import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.SimpleBodySendable;
 import org.apache.qpid.framing.QueueDeleteBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.concurrent.Executor;
 
@@ -36,7 +37,7 @@ public class PrivateQueue extends AMQQueue
 {
     private final GroupManager _groupMgr;
 
-    public PrivateQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public PrivateQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry);
@@ -44,7 +45,7 @@ public class PrivateQueue extends AMQQueue
 
     }
 
-    public PrivateQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
+    public PrivateQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery);

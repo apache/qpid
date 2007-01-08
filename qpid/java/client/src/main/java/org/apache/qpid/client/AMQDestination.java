@@ -25,6 +25,7 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.naming.Reference;
 import javax.naming.NamingException;
@@ -35,19 +36,27 @@ import javax.jms.Destination;
 
 public abstract class AMQDestination implements Destination, Referenceable
 {
-    protected final String _exchangeName;
+    protected final AMQShortString _exchangeName;
 
-    protected final String _exchangeClass;
+    protected final AMQShortString _exchangeClass;
 
-    protected final String _destinationName;
+    protected final AMQShortString _destinationName;
 
-    protected boolean _isDurable;
+    protected final boolean _isDurable;
 
     protected final boolean _isExclusive;
 
     protected final boolean _isAutoDelete;
 
-    protected String _queueName;
+    private AMQShortString _queueName;
+
+    private String _url;
+    private AMQShortString _urlAsShortString;
+
+    private byte[] _byteEncoding;
+    private static final int IS_DURABLE_MASK = 0x1;
+    private static final int IS_EXCLUSIVE_MASK = 0x2;
+    private static final int IS_AUTODELETE_MASK = 0x4;
 
     protected AMQDestination(String url) throws URLSyntaxException
     {
@@ -63,27 +72,27 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
-        _queueName = binding.getQueueName();
+        _queueName = new AMQShortString(binding.getQueueName());
     }
 
-    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, String queueName)
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName, AMQShortString queueName)
     {
         this(exchangeName, exchangeClass, destinationName, false, false, queueName);
     }
 
-    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName)
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName)
     {
         this(exchangeName, exchangeClass, destinationName, false, false, null);
     }
 
-    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
-                             boolean isAutoDelete, String queueName)
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName, boolean isExclusive,
+                             boolean isAutoDelete, AMQShortString queueName)
     {
         this(exchangeName, exchangeClass, destinationName, isExclusive, isAutoDelete, queueName, false);
     }
 
-    protected AMQDestination(String exchangeName, String exchangeClass, String destinationName, boolean isExclusive,
-                             boolean isAutoDelete, String queueName, boolean isDurable)
+    protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName, boolean isExclusive,
+                             boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
     {
         if (destinationName == null)
         {
@@ -106,9 +115,13 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isDurable = isDurable;
     }
 
-    public String getEncodedName()
+    public AMQShortString getEncodedName()
     {
-        return toURL();
+        if(_urlAsShortString == null)
+        {
+            toURL();
+        }
+        return _urlAsShortString;
     }
 
     public boolean isDurable()
@@ -116,12 +129,12 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _isDurable;
     }
 
-    public String getExchangeName()
+    public AMQShortString getExchangeName()
     {
         return _exchangeName;
     }
 
-    public String getExchangeClass()
+    public AMQShortString getExchangeClass()
     {
         return _exchangeClass;
     }
@@ -136,22 +149,34 @@ public abstract class AMQDestination implements Destination, Referenceable
         return ExchangeDefaults.DIRECT_EXCHANGE_NAME.equals(_exchangeName);
     }
 
-    public String getDestinationName()
+    public AMQShortString getDestinationName()
     {
         return _destinationName;
     }
 
     public String getQueueName()
     {
+        return _queueName == null ? null : _queueName.toString();
+    }
+
+    public AMQShortString getAMQQueueName()
+    {
         return _queueName;
     }
 
-    public void setQueueName(String queueName)
+
+
+    public void setQueueName(AMQShortString queueName)
     {
+
         _queueName = queueName;
+        // calculated URL now out of date
+        _url = null;
+        _urlAsShortString = null;
+        _byteEncoding = null;
     }
 
-    public abstract String getRoutingKey();
+    public abstract AMQShortString getRoutingKey();
 
     public boolean isExclusive()
     {
@@ -179,53 +204,114 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public String toURL()
     {
-        StringBuffer sb = new StringBuffer();
-
-        sb.append(_exchangeClass);
-        sb.append("://");
-        sb.append(_exchangeName);
-
-        sb.append("/");
-
-        if (_destinationName != null)
+        String url = _url;
+        if(url == null)
         {
-            sb.append(_destinationName);
+
+
+            StringBuffer sb = new StringBuffer();
+
+            sb.append(_exchangeClass);
+            sb.append("://");
+            sb.append(_exchangeName);
+
+            sb.append('/');
+
+            if (_destinationName != null)
+            {
+                sb.append(_destinationName);
+            }
+
+            sb.append('/');
+
+            if (_queueName != null)
+            {
+                sb.append(_queueName);
+            }
+
+            sb.append('?');
+
+            if (_isDurable)
+            {
+                sb.append(BindingURL.OPTION_DURABLE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_isExclusive)
+            {
+                sb.append(BindingURL.OPTION_EXCLUSIVE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_isAutoDelete)
+            {
+                sb.append(BindingURL.OPTION_AUTODELETE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            //removeKey the last char '?' if there is no options , ',' if there are.
+            sb.deleteCharAt(sb.length() - 1);
+            url = sb.toString();
+            _url = url;
+            _urlAsShortString = new AMQShortString(url);
         }
+        return url;
+    }
 
-        sb.append("/");
-
-        if (_queueName != null)
+    public byte[] toByteEncoding()
+    {
+        byte[] encoding = _byteEncoding;
+        if(encoding == null)
         {
-            sb.append(_queueName);
+            int size = _exchangeClass.length() + 1 +
+                       _exchangeName.length() + 1 +
+                       (_destinationName == null ? 0 : _destinationName.length()) + 1 +
+                       (_queueName == null ? 0 : _queueName.length()) + 1 +
+                       1;
+            encoding = new byte[size];
+            int pos = 0;
+
+            pos = _exchangeClass.writeToByteArray(encoding, pos);
+            pos = _exchangeName.writeToByteArray(encoding, pos);
+            if(_destinationName == null)
+            {
+                encoding[pos++] = (byte)0;
+            }
+            else
+            {
+                pos = _destinationName.writeToByteArray(encoding,pos);
+            }
+            if(_queueName == null)
+            {
+                encoding[pos++] = (byte)0;
+            }
+            else
+            {
+                pos = _queueName.writeToByteArray(encoding,pos);
+            }
+            byte options = 0;
+            if(_isDurable)
+            {
+                options |= IS_DURABLE_MASK;
+            }
+            if(_isExclusive)
+            {
+                options |= IS_EXCLUSIVE_MASK;
+            }
+            if(_isAutoDelete)
+            {
+                options |= IS_AUTODELETE_MASK;
+            }
+            encoding[pos] = options;
+
+
+            _byteEncoding = encoding;
+
         }
-
-        sb.append("?");
-
-        if (_isDurable)
-        {
-            sb.append(BindingURL.OPTION_DURABLE);
-            sb.append("='true'");
-            sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-        }
-
-        if (_isExclusive)
-        {
-            sb.append(BindingURL.OPTION_EXCLUSIVE);
-            sb.append("='true'");
-            sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-        }
-
-        if (_isAutoDelete)
-        {
-            sb.append(BindingURL.OPTION_AUTODELETE);
-            sb.append("='true'");
-            sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-        }
-
-        //remove the last char '?' if there is no options , ',' if there are.
-        sb.deleteCharAt(sb.length() - 1);
-
-        return sb.toString();
+        return encoding;
     }
 
     public boolean equals(Object o)
@@ -293,9 +379,55 @@ public abstract class AMQDestination implements Destination, Referenceable
                 null);          // factory location
     }
 
+
+    public static Destination createDestination(byte[] byteEncodedDestination)
+    {
+        AMQShortString exchangeClass;
+        AMQShortString exchangeName;
+        AMQShortString destinationName;
+        AMQShortString queueName;
+        boolean isDurable;
+        boolean isExclusive;
+        boolean isAutoDelete;
+
+        int pos = 0;
+        exchangeClass = AMQShortString.readFromByteArray(byteEncodedDestination, pos);
+        pos+= exchangeClass.length() + 1;
+        exchangeName =  AMQShortString.readFromByteArray(byteEncodedDestination, pos);
+        pos+= exchangeName.length() + 1;
+        destinationName =  AMQShortString.readFromByteArray(byteEncodedDestination, pos);
+        pos+= (destinationName == null ? 0 : destinationName.length()) + 1;
+        queueName =  AMQShortString.readFromByteArray(byteEncodedDestination, pos);
+        pos+= (queueName == null ? 0 : queueName.length()) + 1;
+        int options = byteEncodedDestination[pos];
+        isDurable = (options & IS_DURABLE_MASK) != 0;
+        isExclusive = (options & IS_EXCLUSIVE_MASK) != 0;
+        isAutoDelete = (options & IS_AUTODELETE_MASK) != 0;
+
+        if (exchangeClass.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+        {
+            return new AMQQueue(destinationName,queueName,isExclusive,isAutoDelete,isDurable);
+        }
+        else if (exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        {
+            return new AMQTopic(destinationName,isAutoDelete,queueName,isDurable);
+        }
+        else if (exchangeClass.equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
+        {
+            return new AMQHeadersExchange(destinationName);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown Exchange Class:" + exchangeClass);
+        }
+
+
+
+    }
+
     public static Destination createDestination(BindingURL binding)
     {
-        String type = binding.getExchangeClass();
+        AMQShortString type = binding.getExchangeClass();
 
         if (type.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
         {

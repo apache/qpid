@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 import javax.jms.Topic;
@@ -40,10 +41,15 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQTopic(String name)
     {
+        this(new AMQShortString(name));
+    }
+
+    public AMQTopic(AMQShortString name)
+    {
         this(name, true, null, false);
     }
 
-    public AMQTopic(String name, boolean isAutoDelete, String queueName, boolean isDurable)
+    public AMQTopic(AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
     {
         super(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete,
               queueName, isDurable);
@@ -56,17 +62,17 @@ public class AMQTopic extends AMQDestination implements Topic
                             true);
     }
 
-    public static String getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException
+    public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException
     {
-        return connection.getClientID() + ":" + subscriptionName;
+        return new AMQShortString(connection.getClientID() + ":" + subscriptionName);
     }
 
     public String getTopicName() throws JMSException
     {
-        return super.getDestinationName();
+        return super.getDestinationName().toString();
     }
 
-     public String getRoutingKey()
+     public AMQShortString getRoutingKey()
     {
         return getDestinationName();
     }

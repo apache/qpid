@@ -25,8 +25,6 @@ import junit.framework.TestCase;
 
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.log4j.Logger;
@@ -227,7 +225,7 @@ public class PropertyFieldTableTest extends TestCase
         //... and a the string value of it.
         Assert.assertEquals("" + Double.MAX_VALUE, table1.getString("value"));
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         // Table should now have zero length for encoding
@@ -265,7 +263,7 @@ public class PropertyFieldTableTest extends TestCase
 
 
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         // Table should now have zero length for encoding
@@ -303,7 +301,7 @@ public class PropertyFieldTableTest extends TestCase
 
 
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         // Table should now have zero length for encoding
@@ -341,7 +339,7 @@ public class PropertyFieldTableTest extends TestCase
 
 
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         // Table should now have zero length for encoding
@@ -380,7 +378,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getString("value"));
 
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         // Table should now have zero length for encoding
@@ -440,7 +438,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertTrue(table1.containsKey("value"));
 
         table1.remove("value");
-        //but after a remove it doesn't
+        //but after a removeKey it doesn't
         Assert.assertFalse(table1.containsKey("value"));
 
         checkEmpty(table1);
@@ -457,23 +455,7 @@ public class PropertyFieldTableTest extends TestCase
 
     
 
-    public void testKeyEnumeration()
-    {
-        FieldTable table = new FieldTable();
-        table.setLong("one", 1L);
-        table.setLong("two", 2L);
-        table.setLong("three", 3L);
-        table.setLong("four", 4L);
-        table.setLong("five", 5L);
-
-        Enumeration e = table.getPropertyNames();
-
-        Assert.assertTrue("one".equals(e.nextElement()));
-        Assert.assertTrue("two".equals(e.nextElement()));
-        Assert.assertTrue("three".equals(e.nextElement()));
-        Assert.assertTrue("four".equals(e.nextElement()));
-        Assert.assertTrue("five".equals(e.nextElement()));
-    }
+    
 
     public void testValues()
     {
@@ -758,7 +740,7 @@ public class PropertyFieldTableTest extends TestCase
 
         try
         {
-            table.setObject(null, "String");
+            table.setObject((String)null, "String");
             fail("Null property name is not allowed");
         }
         catch (IllegalArgumentException iae)
@@ -868,9 +850,9 @@ public class PropertyFieldTableTest extends TestCase
     {
         FieldTable table = new FieldTable();
 
-        table.put("StringProperty", "String");
+        table.setObject("StringProperty", "String");
 
-        Assert.assertEquals("String", table.get("StringProperty"));
+        Assert.assertEquals("String", table.getString("StringProperty"));
 
         //Test Clear
 
@@ -887,15 +869,15 @@ public class PropertyFieldTableTest extends TestCase
 
         FieldTable table = new FieldTable();
 
-        table.put("n1", "1");
-        table.put("n2", "2");
-        table.put("n3", "3");
+        table.setObject("n1", "1");
+        table.setObject("n2", "2");
+        table.setObject("n3", "3");
 
-        Iterator iterator = table.keySet().iterator();
-        Assert.assertEquals("n1", iterator.next());
-        Assert.assertEquals("n2", iterator.next());
-        Assert.assertEquals("n3", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+
+        Assert.assertEquals("1", table.getObject("n1"));
+        Assert.assertEquals("2", table.getObject("n2"));
+        Assert.assertEquals("3", table.getObject("n3"));
+
 
 
 

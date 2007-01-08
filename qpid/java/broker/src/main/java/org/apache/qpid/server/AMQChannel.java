@@ -22,10 +22,7 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
@@ -88,7 +85,7 @@ public class AMQChannel
     /**
      * Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue.
      */
-    private final Map<String, AMQQueue> _consumerTag2QueueMap = new TreeMap<String, AMQQueue>();
+    private final Map<AMQShortString, AMQQueue> _consumerTag2QueueMap = new HashMap<AMQShortString, AMQQueue>();
 
     private final MessageStore _messageStore;
 
@@ -270,12 +267,12 @@ public class AMQChannel
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
-    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
+    public AMQShortString subscribeToQueue(AMQShortString tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
                                    FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
-            tag = "sgen_" + getNextConsumerTag();
+            tag = new AMQShortString("sgen_" + getNextConsumerTag());
         }
         if (_consumerTag2QueueMap.containsKey(tag))
         {
@@ -288,7 +285,7 @@ public class AMQChannel
     }
 
 
-    public void unsubscribeConsumer(AMQProtocolSession session, String consumerTag) throws AMQException
+    public void unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
     {
         AMQQueue q = _consumerTag2QueueMap.remove(consumerTag);
         if (q != null)
@@ -312,7 +309,7 @@ public class AMQChannel
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
     {
         _log.info("Unsubscribing all consumers on channel " + toString());
-        for (Map.Entry<String, AMQQueue> me : _consumerTag2QueueMap.entrySet())
+        for (Map.Entry<AMQShortString, AMQQueue> me : _consumerTag2QueueMap.entrySet())
         {
             me.getValue().unregisterProtocolSession(session, _channelId, me.getKey());
         }
@@ -327,7 +324,7 @@ public class AMQChannel
      * the delivery tag)
      * @param queue the queue from which the message was delivered
      */
-    public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, String consumerTag, AMQQueue queue)
+    public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, AMQShortString consumerTag, AMQQueue queue)
     {
         _unacknowledgedMessageMap.add(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
         checkSuspension();
@@ -362,7 +359,7 @@ public class AMQChannel
             public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
                 long deliveryTag = message.deliveryTag;
-                String consumerTag = message.consumerTag;
+                AMQShortString consumerTag = message.consumerTag;
                 AMQMessage msg = message.message;
                 msg.setRedelivered(true);
                 msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
@@ -437,7 +434,7 @@ public class AMQChannel
         return _unacknowledgedMessageMap;
     }
 
-    public void addUnacknowledgedBrowsedMessage(AMQMessage msg, long deliveryTag, String consumerTag, AMQQueue queue)
+    public void addUnacknowledgedBrowsedMessage(AMQMessage msg, long deliveryTag, AMQShortString consumerTag, AMQQueue queue)
     {
         _browsedAcks.add(deliveryTag);
         addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
@@ -524,7 +521,7 @@ public class AMQChannel
         for (RequiredDeliveryException bouncedMessage : _returnMessages)
         {
             AMQMessage message = bouncedMessage.getAMQMessage();
-            message.writeReturn(session, _channelId, bouncedMessage.getReplyCode(), bouncedMessage.getMessage());
+            message.writeReturn(session, _channelId, bouncedMessage.getReplyCode(), new AMQShortString(bouncedMessage.getMessage()));
         }
         _returnMessages.clear();
     }

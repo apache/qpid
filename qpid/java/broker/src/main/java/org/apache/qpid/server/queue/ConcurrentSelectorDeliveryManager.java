@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.store.StoreContext;
 
@@ -280,7 +281,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return _messages.poll();
     }
 
-    public void deliver(StoreContext context, String name, AMQMessage msg) throws AMQException
+    public void deliver(StoreContext context, AMQShortString name, AMQMessage msg) throws AMQException
     {
         if (_log.isDebugEnabled())
         {

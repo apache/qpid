@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.*;
 import java.nio.charset.CharacterCodingException;
@@ -34,6 +35,7 @@ import java.nio.charset.Charset;
 public class JMSStreamMessage extends AbstractBytesTypedMessage implements StreamMessage
 {
     public static final String MIME_TYPE="jms/stream-message";
+    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
 
     /**
@@ -42,7 +44,7 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
      */
     private int _byteArrayRemaining = -1;
 
-    JMSStreamMessage()
+    public JMSStreamMessage()
     {
         this(null);
     }
@@ -71,9 +73,9 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
         _readableMessage = true;
     }
 
-    public String getMimeType()
+    public AMQShortString getMimeTypeAsShortString()
     {
-        return MIME_TYPE;
+        return MIME_TYPE_SHORT_STRING;
     }
 
 

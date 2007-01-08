@@ -29,6 +29,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -232,10 +233,14 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
      */
     protected Queue createQueue(Object value)
     {
-        if (value instanceof String)
+        if(value instanceof AMQShortString)
+        {
+            return new AMQQueue((AMQShortString) value);
+        }
+        else if (value instanceof String)
 
         {
-            return new AMQQueue((String) value);
+            return new AMQQueue(new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
 
@@ -251,9 +256,13 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
      */
     protected Topic createTopic(Object value)
     {
-        if (value instanceof String)
+        if(value instanceof AMQShortString)
         {
-            return new AMQTopic((String) value);
+            return new AMQTopic((AMQShortString)value);
+        }
+        else if (value instanceof String)
+        {
+            return new AMQTopic(new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
 

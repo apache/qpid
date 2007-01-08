@@ -21,6 +21,7 @@
 package org.apache.qpid.test.unit.client.forwardall;
 
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Queue that allows several private queues to be registered and bound
@@ -29,15 +30,19 @@ import org.apache.qpid.client.AMQQueue;
  */
 class SpecialQueue extends AMQQueue
 {
-    private final String name;
+    private final AMQShortString name;
 
     SpecialQueue(String name)
+    {
+        this(new AMQShortString(name));
+    }
+    SpecialQueue(AMQShortString name)
     {
         super(name, true);
         this.name = name;
     }
 
-    public String getRoutingKey()
+    public AMQShortString getRoutingKey()
     {
         return name;
     }

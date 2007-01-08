@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 
@@ -38,7 +40,7 @@ final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, Tempor
      */
     public AMQTemporaryQueue(AMQSession session)
     {
-        super("TempQueue" + Long.toString(System.currentTimeMillis()), true);
+        super(new AMQShortString("TempQueue" + Long.toString(System.currentTimeMillis())), true);
         _session = session;
     }
 

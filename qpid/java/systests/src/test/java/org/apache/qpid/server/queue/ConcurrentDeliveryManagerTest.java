@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.ConcurrentDeliveryManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -33,7 +34,7 @@ public class ConcurrentDeliveryManagerTest extends DeliveryManagerTest
         try
         {
             System.setProperty("concurrentdeliverymanager","true");
-            _mgr = new ConcurrentDeliveryManager(_subscriptions, new AMQQueue("myQ", false, "guest", false,
+            _mgr = new ConcurrentDeliveryManager(_subscriptions, new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), false,
                                                                               new DefaultQueueRegistry()));
         }
         catch (Throwable t)

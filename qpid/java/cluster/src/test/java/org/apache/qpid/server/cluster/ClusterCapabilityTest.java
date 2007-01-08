@@ -21,13 +21,14 @@
 package org.apache.qpid.server.cluster;
 
 import junit.framework.TestCase;
+import org.apache.qpid.framing.AMQShortString;
 
 public class ClusterCapabilityTest extends TestCase
 {
     public void testStartWithNull()
     {
         MemberHandle peer = new SimpleMemberHandle("myhost:9999");
-        String c = ClusterCapability.add(null, peer);
+        AMQShortString c = ClusterCapability.add(null, peer);
         assertTrue(ClusterCapability.contains(c));
         assertTrue(peer.matches(ClusterCapability.getPeer(c)));
     }
@@ -35,7 +36,7 @@ public class ClusterCapabilityTest extends TestCase
     public void testStartWithText()
     {
         MemberHandle peer = new SimpleMemberHandle("myhost:9999");
-        String c = ClusterCapability.add("existing text", peer);
+        AMQShortString c = ClusterCapability.add(new AMQShortString("existing text"), peer);
         assertTrue(ClusterCapability.contains(c));
         assertTrue(peer.matches(ClusterCapability.getPeer(c)));
     }

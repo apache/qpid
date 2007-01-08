@@ -110,7 +110,7 @@ public class HeadersExchange extends AbstractExchange
             for (Iterator<Registration> itr = _bindings.iterator(); itr.hasNext();)
             {
                 Registration registration = itr.next();
-                String queueName = registration.queue.getName();
+                String queueName = registration.queue.getName().toString();
 
                 HeadersBinding headers = registration.binding;
                 FieldTable headerMappings = headers.getMappings();
@@ -149,7 +149,7 @@ public class HeadersExchange extends AbstractExchange
          */
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(new AMQShortString(queueName));
 
             if (queue == null)
             {
@@ -173,13 +173,13 @@ public class HeadersExchange extends AbstractExchange
 
     } // End of MBean class
 
-    public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() + " with " + args);
         _bindings.add(new Registration(new HeadersBinding(args), queue));
     }
 
-    public void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
         _bindings.remove(new Registration(null, queue));
@@ -223,12 +223,12 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         return isBound(queue);
     }
 
-    public boolean isBound(String routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
         return hasBindings();
     }

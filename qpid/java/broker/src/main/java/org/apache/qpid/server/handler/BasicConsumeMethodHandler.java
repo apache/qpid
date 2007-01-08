@@ -23,10 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicConsumeOkBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -77,7 +74,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             }
             try
             {
-                String consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
+                AMQShortString consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
                                                               body.arguments, body.noLocal);
                 if (!body.nowait)
                 {
@@ -103,11 +100,11 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
                     BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
                     AMQConstant.INVALID_SELECTOR.getCode(),	// replyCode
-                    ise.getMessage()));		// replyText
+                    new AMQShortString(ise.getMessage())));		// replyText
             }
             catch (ConsumerTagNotUniqueException e)
             {
-                String msg = "Non-unique consumer tag, '" + body.consumerTag + "'";
+                AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.consumerTag + "'");
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.

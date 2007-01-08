@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -31,7 +32,7 @@ import javax.management.ObjectName;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
-    private String _name;
+    private AMQShortString _name;
 
     protected boolean _durable;
     protected String _exchangeType;
@@ -58,12 +59,12 @@ public abstract class AbstractExchange implements Exchange, Managable
 
         public String getObjectInstanceName()
         {
-            return _name;
+            return _name.toString();
         }
 
         public String getName()
         {
-            return _name;
+            return _name.toString();
         }
 
         public String getExchangeType()
@@ -95,7 +96,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     } // End of MBean class
 
-    public String getName()
+    public AMQShortString getName()
     {
         return _name;
     }
@@ -107,7 +108,7 @@ public abstract class AbstractExchange implements Exchange, Managable
      */
     protected abstract ExchangeMBean createMBean() throws AMQException;
 
-    public void initialise(String name, boolean durable, int ticket, boolean autoDelete) throws AMQException
+    public void initialise(AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException
     {
         _name = name;
         _durable = durable;

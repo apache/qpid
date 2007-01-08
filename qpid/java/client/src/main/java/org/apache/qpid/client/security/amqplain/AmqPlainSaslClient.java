@@ -73,8 +73,8 @@ public class AmqPlainSaslClient implements SaslClient
             throw new SaslException("Error handling SASL callbacks: " + e, e);
         }
         FieldTable table = FieldTableFactory.newFieldTable();
-        table.put("LOGIN", nameCallback.getName());
-        table.put("PASSWORD", pwdCallback.getPassword());
+        table.setString("LOGIN", nameCallback.getName());
+        table.setString("PASSWORD", new String(pwdCallback.getPassword()));
         return table.getDataAsBytes();
     }
 

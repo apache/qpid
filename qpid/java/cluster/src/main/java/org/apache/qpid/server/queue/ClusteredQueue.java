@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.QueueDeleteBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -45,7 +46,7 @@ public class ClusteredQueue extends AMQQueue
     private final GroupManager _groupMgr;
     private final NestedSubscriptionManager _subscriptions;
 
-    public ClusteredQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry, new ClusteredSubscriptionManager());
@@ -53,7 +54,7 @@ public class ClusteredQueue extends AMQQueue
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public ClusteredQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
+    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
             throws AMQException
     {
         super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new ClusteredSubscriptionManager(),
@@ -84,7 +85,7 @@ public class ClusteredQueue extends AMQQueue
         }
     }
 
-    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, String consumerTag) throws AMQException
+    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         //handle locally:
         super.unregisterProtocolSession(ps, channel, consumerTag);

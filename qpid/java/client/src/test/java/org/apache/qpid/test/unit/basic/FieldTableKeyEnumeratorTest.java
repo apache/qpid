@@ -35,16 +35,20 @@ import junit.framework.TestCase;
 
 public class FieldTableKeyEnumeratorTest extends TestCase
 {
+    public void testTrue()
+    {
+        
+    }
     public void testKeyEnumeration()
     {
         FieldTable result = FieldTableFactory.newFieldTable();
-        result.put("one", 1L);
-        result.put("two", 2L);
-        result.put("three", 3L);
-        result.put("four", 4L);
-        result.put("five", 5L);
+        result.setObject("one", 1L);
+        result.setObject("two", 2L);
+        result.setObject("three", 3L);
+        result.setObject("four", 4L);
+        result.setObject("five", 5L);
 
-        Iterator iterator = result.keySet().iterator();
+        Iterator iterator = result.keys().iterator();
 
         try
         {

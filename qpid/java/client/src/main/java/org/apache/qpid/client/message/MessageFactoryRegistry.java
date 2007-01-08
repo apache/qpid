@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 import java.util.HashMap;
@@ -31,7 +32,8 @@ import java.util.List;
 
 public class MessageFactoryRegistry
 {
-    private final Map _mimeToFactoryMap = new HashMap();
+    private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
+    private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap = new HashMap<AMQShortString, MessageFactory>();
 
     public void registerFactory(String mimeType, MessageFactory mf)
     {
@@ -39,12 +41,14 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Message factory must not be null");
         }
-        _mimeToFactoryMap.put(mimeType, mf);
+        _mimeStringToFactoryMap.put(mimeType, mf);
+        _mimeShortStringToFactoryMap.put(new AMQShortString(mimeType), mf);
     }
 
     public MessageFactory deregisterFactory(String mimeType)
     {
-        return (MessageFactory) _mimeToFactoryMap.remove(mimeType);
+        _mimeShortStringToFactoryMap.remove(new AMQShortString(mimeType));
+        return _mimeStringToFactoryMap.remove(mimeType);
     }
 
     /**
@@ -63,7 +67,7 @@ public class MessageFactoryRegistry
                                             List bodies) throws AMQException, JMSException
     {
         BasicContentHeaderProperties properties =  (BasicContentHeaderProperties) contentHeader.properties;
-        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(properties.getContentType());
+        MessageFactory mf =  _mimeShortStringToFactoryMap.get(properties.getContentTypeShortString());
         if (mf == null)
         {
             throw new AMQException("Unsupport MIME type of " + properties.getContentType());
@@ -80,7 +84,7 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Mime type must not be null");
         }
-        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(mimeType);
+        MessageFactory mf = _mimeStringToFactoryMap.get(mimeType);
         if (mf == null)
         {
             throw new AMQException("Unsupport MIME type of " + mimeType);
@@ -101,7 +105,7 @@ public class MessageFactoryRegistry
         mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
         mf.registerFactory("text/plain", new JMSTextMessageFactory());
         mf.registerFactory("text/xml", new JMSTextMessageFactory());
-        mf.registerFactory("application/octet-stream", new JMSBytesMessageFactory());
+        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
         mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
         mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
         mf.registerFactory(null, new JMSBytesMessageFactory());

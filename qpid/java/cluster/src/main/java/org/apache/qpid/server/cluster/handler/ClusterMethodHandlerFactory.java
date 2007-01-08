@@ -21,34 +21,7 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ChannelFlowBody;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ClusterJoinBody;
-import org.apache.qpid.framing.ClusterLeaveBody;
-import org.apache.qpid.framing.ClusterMembershipBody;
-import org.apache.qpid.framing.ClusterPingBody;
-import org.apache.qpid.framing.ClusterSuspectBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionOpenBody;
-import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.framing.ConnectionStartOkBody;
-import org.apache.qpid.framing.ConnectionTuneOkBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeleteBody;
-import org.apache.qpid.framing.QueueBindBody;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.ClusterSynchBody;
-import org.apache.qpid.framing.BasicQosBody;
-import org.apache.qpid.framing.TxSelectBody;
-import org.apache.qpid.framing.TxCommitBody;
-import org.apache.qpid.framing.TxRollbackBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.cluster.ClusterCapability;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.GroupManager;
@@ -236,7 +209,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
         void postHandle(AMQStateManager stateMgr, AMQProtocolSession session, AMQMethodEvent<ConnectionOpenBody> evt)
         {
-            String capabilities = evt.getMethod().capabilities;
+            AMQShortString capabilities = evt.getMethod().capabilities;
             if (ClusterCapability.contains(capabilities))
             {
                 ClusteredProtocolSession.setSessionPeer(session, ClusterCapability.getPeer(capabilities));
