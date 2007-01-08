@@ -756,7 +756,7 @@ namespace Qpid.Client
             AMQFrame basicConsume = BasicConsumeBody.CreateAMQFrame(_channelId, 0,
                                                                   queueName, tag, noLocal,
                                                                   acknowledgeMode == AcknowledgeMode.NoAcknowledge,
-                                                                  exclusive, true);
+                                                                  exclusive, true, new FieldTable());
 
             _replayFrames.Add(basicConsume);
 
