@@ -19,11 +19,24 @@
  -
  -->
 <project name="Qpid Common Protocol Versions" default="generate">
+  <property name="topDirectoryLocation" location=".." />
+  <property name="project.build.directory" location="target" />
+  <property name="gentools.home" location="${topDirectoryLocation}/../gentools" />
+  <property name="generated.path" location="${project.build.directory}/generated-sources/gentools" />
+  <property name="generated.package" value="org/apache/qpid/framing" />
+  <property name="generated.dir" location="${generated.path}/${generated.package}" />
+  <property name="generated.timestamp" location="${generated.dir}/timestamp" />
+  <property name="xml.spec.dir" location="${topDirectoryLocation}/../specs" />
+  <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml" />
+  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/cluster.0-8.xml" />
   	
   <target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">
     <mkdir dir="${generated.dir}"/>
-    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src">
+    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src" failonerror="true">
     	<arg line="-j -o ${generated.dir} -t ${gentools.home}/templ.java ${xml.spec.list}" />
+        <classpath>
+          <pathelement path="${gentools.home}/src" />
+        </classpath>
     </java>
     <touch file="${generated.timestamp}" />
   </target>
@@ -39,5 +52,9 @@
   </target>
 
   <target name="precompile" depends="generate"/>
+  
+  <target name="clean">
+  	<delete dir="${generated.path}" />
+  </target>
 
 </project>
