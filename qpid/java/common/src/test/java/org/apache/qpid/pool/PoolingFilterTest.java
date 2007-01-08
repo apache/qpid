@@ -39,7 +39,7 @@ public class PoolingFilterTest extends TestCase
         //Create Pool
         _executorService = ReferenceCountingExecutorService.getInstance();
         _executorService.acquireExecutorService();
-        _pool = new PoolingFilter(_executorService, PoolingFilter.WRITE_EVENTS,
+        _pool = PoolingFilter.createAynschWritePoolingFilter(_executorService, 
                                   "AsynchronousWriteFilter");
 
     }
