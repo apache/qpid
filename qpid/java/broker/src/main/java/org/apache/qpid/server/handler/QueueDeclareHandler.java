@@ -22,10 +22,12 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
@@ -91,7 +93,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 queueRegistry.registerQueue(queue);
                 if (autoRegister)
                 {
-                    Exchange defaultExchange = exchangeRegistry.getExchange("amq.direct");
+                    Exchange defaultExchange = exchangeRegistry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
                     defaultExchange.registerQueue(body.queue, queue, null);
                     queue.bind(body.queue, defaultExchange);
                     _log.info("Queue " + body.queue + " bound to default exchange");
@@ -115,9 +117,9 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
     }
 
-    protected String createName()
+    protected AMQShortString createName()
     {
-        return "tmp_" + pad(_counter.incrementAndGet());
+        return new AMQShortString("tmp_" + pad(_counter.incrementAndGet()));
     }
 
     protected static String pad(int value)
@@ -128,7 +130,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     protected AMQQueue createQueue(QueueDeclareBody body, QueueRegistry registry, AMQProtocolSession session)
             throws AMQException
     {
-        String owner = body.exclusive ? session.getContextKey() : null;
+        AMQShortString owner = body.exclusive ? session.getContextKey() : null;
         return new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
     }
 }

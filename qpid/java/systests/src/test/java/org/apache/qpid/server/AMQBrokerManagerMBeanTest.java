@@ -23,6 +23,7 @@ import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQBrokerManagerMBeanTest extends TestCase
 {
@@ -35,26 +36,26 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         String exchange2 = "testExchange2_" +  System.currentTimeMillis();
         String exchange3 = "testExchange3_" +  System.currentTimeMillis();
 
-        assertTrue(_exchangeRegistry.getExchange(exchange1) == null);
-        assertTrue(_exchangeRegistry.getExchange(exchange2) == null);
-        assertTrue(_exchangeRegistry.getExchange(exchange3) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange1)) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
 
         ManagedBroker mbean = new AMQBrokerManagerMBean();
         mbean.createNewExchange(exchange1,"direct",false, false);
         mbean.createNewExchange(exchange2,"topic",false, false);
         mbean.createNewExchange(exchange3,"headers",false, false);
 
-        assertTrue(_exchangeRegistry.getExchange(exchange1) != null);
-        assertTrue(_exchangeRegistry.getExchange(exchange2) != null);
-        assertTrue(_exchangeRegistry.getExchange(exchange3) != null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange1)) != null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) != null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) != null);
 
         mbean.unregisterExchange(exchange1);
         mbean.unregisterExchange(exchange2);
         mbean.unregisterExchange(exchange3);
 
-        assertTrue(_exchangeRegistry.getExchange(exchange1) == null);
-        assertTrue(_exchangeRegistry.getExchange(exchange2) == null);
-        assertTrue(_exchangeRegistry.getExchange(exchange3) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange1)) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) == null);
+        assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
     }
 
     public void testQueueOperations() throws Exception
@@ -62,13 +63,13 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         String queueName = "testQueue_" + System.currentTimeMillis();
         ManagedBroker mbean = new AMQBrokerManagerMBean();
 
-        assertTrue(_queueRegistry.getQueue(queueName) == null);
+        assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
                 
         mbean.createNewQueue(queueName, false, "test", true);
-        assertTrue(_queueRegistry.getQueue(queueName) != null);
+        assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) != null);
 
         mbean.deleteQueue(queueName);
-        assertTrue(_queueRegistry.getQueue(queueName) == null);
+        assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
     }
 
     @Override

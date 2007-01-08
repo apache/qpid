@@ -31,10 +31,7 @@ import org.apache.qpid.client.security.CallbackHandlerRegistry;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ConnectionStartOkBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.*;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
@@ -122,18 +119,18 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
             FieldTable clientProperties = FieldTableFactory.newFieldTable();
             
-            clientProperties.put(ClientProperties.instance.toString(), ps.getClientID());
-            clientProperties.put(ClientProperties.product.toString(), QpidProperties.getProductName());
-            clientProperties.put(ClientProperties.version.toString(), QpidProperties.getReleaseVersion());
-            clientProperties.put(ClientProperties.platform.toString(), getFullSystemInfo());
+            clientProperties.setString(ClientProperties.instance.toString(), ps.getClientID());
+            clientProperties.setString(ClientProperties.product.toString(), QpidProperties.getProductName());
+            clientProperties.setString(ClientProperties.version.toString(), QpidProperties.getReleaseVersion());
+            clientProperties.setString(ClientProperties.platform.toString(), getFullSystemInfo());
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
                 (byte)8, (byte)0,	// AMQP version (major, minor)
                 clientProperties,	// clientProperties
-                selectedLocale,	// locale
-                mechanism,	// mechanism
+                new AMQShortString(selectedLocale),	// locale
+                new AMQShortString(mechanism),	// mechanism
                 saslResponse));	// response
         }
         catch (UnsupportedEncodingException e)

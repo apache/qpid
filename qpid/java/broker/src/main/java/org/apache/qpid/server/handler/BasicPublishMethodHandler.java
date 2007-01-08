@@ -21,9 +21,11 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -36,6 +38,8 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 public class BasicPublishMethodHandler  implements StateAwareMethodListener<BasicPublishBody>
 {
     private static final BasicPublishMethodHandler _instance = new BasicPublishMethodHandler();
+    
+    private static final AMQShortString UNKNOWN_EXCHANGE_NAME = new AMQShortString("Unknown exchange name");
 
     public static BasicPublishMethodHandler getInstance()
     {
@@ -55,7 +59,8 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
         if (body.exchange == null)
         {
-            body.exchange = "amq.direct";
+            body.exchange = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+
         }
         Exchange e = exchangeRegistry.getExchange(body.exchange);
         // if the exchange does not exist we raise a channel exception
@@ -72,7 +77,7 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
                 ChannelCloseBody.getClazz((byte)8, (byte)0),	// classId
                 ChannelCloseBody.getMethod((byte)8, (byte)0),	// methodId
                 500,	// replyCode
-                "Unknown exchange name");	// replyText
+                UNKNOWN_EXCHANGE_NAME);	// replyText
             protocolSession.writeFrame(cf);
         }
         else

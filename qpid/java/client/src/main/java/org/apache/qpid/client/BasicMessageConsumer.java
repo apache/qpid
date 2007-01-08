@@ -22,16 +22,11 @@ package org.apache.qpid.client;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 
@@ -74,7 +69,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * The consumer tag allows us to close the consumer by sending a jmsCancel method to the
      * broker
      */
-    private String _consumerTag;
+    private AMQShortString _consumerTag;
 
     /**
      * We need to know the channel id when constructing frames
@@ -255,17 +250,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
-            String url = jmsMsg.getStringProperty(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString());
-            try
-            {
-                Destination dest = AMQDestination.createDestination(new AMQBindingURL(url));
-                jmsMsg.setJMSDestination(dest);
-            }
-            catch (URLSyntaxException e)
-            {
-                _logger.warn("Unable to parse the supplied destination header: " + url);
-            }
-                        
+            byte[] url = jmsMsg.getBytesProperty(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName());
+            Destination dest = AMQDestination.createDestination(url);
+            jmsMsg.setJMSDestination(dest);
+
         }
         _session.setInRecovery(false);
     }
@@ -498,7 +486,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
     {
-        if (_logger.isDebugEnabled())
+        final boolean debug = _logger.isDebugEnabled();
+
+        if (debug)
         {
             _logger.debug("notifyMessage called with message number " + messageFrame.deliverBody.deliveryTag);
         }
@@ -509,7 +499,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                                                                           messageFrame.contentHeader,
                                                                           messageFrame.bodies);
 
-            _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
+            if(debug)
+            {
+                _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
+            }
             jmsMessage.setConsumer(this);
 
             preDeliver(jmsMessage);
@@ -642,12 +635,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     	_session.deregisterConsumer(this);
     }
 
-    public String getConsumerTag()
+    public AMQShortString getConsumerTag()
     {
         return _consumerTag;
     }
 
-    public void setConsumerTag(String consumerTag)
+    public void setConsumerTag(AMQShortString consumerTag)
     {
         _consumerTag = consumerTag;
     }

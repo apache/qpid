@@ -25,10 +25,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -53,7 +50,7 @@ public class SubscriptionImpl implements Subscription
 
     public final AMQProtocolSession protocolSession;
 
-    public final String consumerTag;
+    public final AMQShortString consumerTag;
 
     private final Object sessionKey;
 
@@ -72,12 +69,12 @@ public class SubscriptionImpl implements Subscription
 
     public static class Factory implements SubscriptionFactory
     {
-        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters, boolean noLocal) throws AMQException
+        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal) throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters, noLocal);
         }
 
-        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
+        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag)
                 throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null, false);
@@ -85,14 +82,14 @@ public class SubscriptionImpl implements Subscription
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks)
+                            AMQShortString consumerTag, boolean acks)
             throws AMQException
     {
         this(channelId, protocolSession, consumerTag, acks, null, false);
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
+                            AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
@@ -162,7 +159,7 @@ public class SubscriptionImpl implements Subscription
 
 
     public SubscriptionImpl(int channel, AMQProtocolSession protocolSession,
-                            String consumerTag)
+                            AMQShortString consumerTag)
             throws AMQException
     {
         this(channel, protocolSession, consumerTag, false);
@@ -304,8 +301,8 @@ public class SubscriptionImpl implements Subscription
         if (_noLocal)
         {
             // We don't want local messages so check to see if message is one we sent
-            if (protocolSession.getClientProperties().get(ClientProperties.instance.toString()).equals(
-                    msg.getPublisher().getClientProperties().get(ClientProperties.instance.toString())))
+            if (protocolSession.getClientProperties().getObject(ClientProperties.instance.toString()).equals(
+                    msg.getPublisher().getClientProperties().getObject(ClientProperties.instance.toString())))
             {
                 if (_logger.isTraceEnabled())
                 {
@@ -395,7 +392,7 @@ public class SubscriptionImpl implements Subscription
     }
 
 
-    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
+    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, AMQShortString routingKey, AMQShortString exchange)
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

@@ -22,6 +22,7 @@ package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
@@ -37,10 +38,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
 
     public static final String MIME_TYPE = "jms/map-message";
+    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
     private Map<String,Object> _map = new HashMap<String, Object>();
 
-    JMSMapMessage() throws JMSException
+    public JMSMapMessage() throws JMSException
     {
         this(null);
     }
@@ -74,9 +76,9 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return _map.toString();
     }
 
-    public String getMimeType()
+    public AMQShortString getMimeTypeAsShortString()
     {
-        return MIME_TYPE;
+        return MIME_TYPE_SHORT_STRING;
     }
 
 

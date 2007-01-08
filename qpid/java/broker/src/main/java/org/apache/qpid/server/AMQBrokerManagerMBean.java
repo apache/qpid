@@ -31,6 +31,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -81,10 +82,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             synchronized (_exchangeRegistry)
             {
-                Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
+                Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange = _exchangeFactory.createExchange(exchangeName, type, durable, autoDelete, 0);
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable, autoDelete, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else
@@ -114,7 +115,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         // when there are no bindings.
         try
         {
-            _exchangeRegistry.unregisterExchange(exchangeName, false);
+            _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
         }
         catch (AMQException ex)
         {
@@ -135,7 +136,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
             throws JMException
     {
-        AMQQueue queue = _queueRegistry.getQueue(queueName);
+        AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue != null)
         {
             throw new JMException("The queue \"" + queueName + "\" already exists.");
@@ -143,7 +144,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         try
         {
-            queue = new AMQQueue(queueName, durable, owner, autoDelete, _queueRegistry);
+            queue = new AMQQueue(new AMQShortString(queueName), durable, new AMQShortString(owner), autoDelete, _queueRegistry);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);
@@ -164,7 +165,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void deleteQueue(String queueName) throws JMException
     {
-        AMQQueue queue = _queueRegistry.getQueue(queueName);
+        AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue == null)
         {
             throw new JMException("The Queue " + queueName + " is not a registerd queue.");

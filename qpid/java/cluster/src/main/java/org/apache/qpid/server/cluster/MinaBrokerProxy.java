@@ -180,7 +180,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         {
             //signal redirection to waiting thread
             ConnectionRedirectBody redirect = (ConnectionRedirectBody) method;
-            String[] parts = redirect.host.split(":");
+            String[] parts = redirect.host.toString().split(":");
             _connectionMonitor.redirect(parts[0], Integer.parseInt(parts[1]));
         }
         else

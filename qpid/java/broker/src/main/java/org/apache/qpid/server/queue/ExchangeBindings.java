@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.List;
 import java.util.HashSet;
@@ -37,9 +38,9 @@ class ExchangeBindings
     static class ExchangeBinding
     {
         private final Exchange exchange;
-        private final String routingKey;
+        private final AMQShortString routingKey;
 
-        ExchangeBinding(String routingKey, Exchange exchange)
+        ExchangeBinding(AMQShortString routingKey, Exchange exchange)
         {
             this.routingKey = routingKey;
             this.exchange = exchange;
@@ -55,7 +56,7 @@ class ExchangeBindings
             return exchange;
         }
 
-        public String getRoutingKey()
+        public AMQShortString getRoutingKey()
         {
             return routingKey;
         }
@@ -87,7 +88,7 @@ class ExchangeBindings
      * are being tracked by the instance has been bound to the exchange
      * @param exchange the exchange bound to
      */
-    void addBinding(String routingKey, Exchange exchange)
+    void addBinding(AMQShortString routingKey, Exchange exchange)
     {
         _bindings.add(new ExchangeBinding(routingKey, exchange));
     }

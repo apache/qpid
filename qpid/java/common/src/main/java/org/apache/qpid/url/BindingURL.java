@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.url;
 
+import org.apache.qpid.framing.AMQShortString;
+
 /*
     Binding URL format:
     <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
@@ -36,21 +38,21 @@ public interface BindingURL
 
     String getURL();
 
-    String getExchangeClass();
+    AMQShortString getExchangeClass();
 
-    void setExchangeClass(String exchangeClass);
+    void setExchangeClass(AMQShortString name);
 
-    String getExchangeName();
+    AMQShortString getExchangeName();
 
-    void setExchangeName(String name);
+    void setExchangeName(AMQShortString name);
 
-    String getDestinationName();
+    AMQShortString getDestinationName();
 
-    void setDestinationName(String name);
+    void setDestinationName(AMQShortString name);
 
-    String getQueueName();
+    AMQShortString getQueueName();
 
-    void setQueueName(String name);
+    void setQueueName(AMQShortString name);
 
     String getOption(String key);
 
@@ -58,9 +60,9 @@ public interface BindingURL
 
     boolean containsOption(String key);
 
-    String getRoutingKey();
+    AMQShortString getRoutingKey();
 
-    void setRoutingKey(String key);
+    void setRoutingKey(AMQShortString key);
 
     String toString();
 }

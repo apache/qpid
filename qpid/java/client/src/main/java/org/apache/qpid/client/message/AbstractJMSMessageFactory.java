@@ -43,16 +43,23 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                                                        List bodies) throws AMQException
     {
         ByteBuffer data;
+        final boolean debug = _logger.isDebugEnabled();
 
         // we optimise the non-fragmented case to avoid copying
         if (bodies != null && bodies.size() == 1)
         {
-            _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize +")");
+            if(debug)
+            {
+                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize +")");
+            }
             data = ((ContentBody)bodies.get(0)).payload;
         }
         else
         {
-            _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize + ")");
+            if(debug)
+            {
+                _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize + ")");
+            }
             data = ByteBuffer.allocate((int)contentHeader.bodySize); // XXX: Is cast a problem?
             final Iterator it = bodies.iterator();
             while (it.hasNext())
@@ -63,7 +70,10 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             }
             data.flip();
         }
-        _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
+        if(debug)
+        {
+            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
+        }
 
         return createMessage(messageNbr, data, contentHeader);
     }

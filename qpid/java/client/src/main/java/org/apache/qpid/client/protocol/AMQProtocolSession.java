@@ -31,11 +31,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.*;
 import org.apache.commons.lang.StringUtils;
 
 import javax.jms.JMSException;
@@ -381,7 +377,7 @@ public class AMQProtocolSession implements ProtocolVersionList
         _protocolHandler.failover(host, port);
     }
 
-    protected String generateQueueName()
+    protected AMQShortString generateQueueName()
     {
         int id;
         synchronized(_queueIdLock)
@@ -390,7 +386,7 @@ public class AMQProtocolSession implements ProtocolVersionList
         }
         //get rid of / and : and ; from address for spec conformance
         String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;:","");
-        return "tmp_" + localAddress + "_" + id;
+        return new AMQShortString("tmp_" + localAddress + "_" + id);
     }
 
     /**
@@ -407,7 +403,7 @@ public class AMQProtocolSession implements ProtocolVersionList
         }
     }
 
-    public void confirmConsumerCancelled(int channelId, String consumerTag)
+    public void confirmConsumerCancelled(int channelId, AMQShortString consumerTag)
     {
         final Integer chId = channelId;
         final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);

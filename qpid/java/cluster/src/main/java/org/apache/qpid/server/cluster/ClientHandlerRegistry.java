@@ -29,13 +29,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.IllegalStateTransitionException;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionOpenOkBody;
-import org.apache.qpid.framing.ConnectionSecureBody;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -127,9 +121,9 @@ public class ClientHandlerRegistry extends AMQStateManager
 
     class ConnectionTuneHandler extends ConnectionTuneMethodHandler
     {
-        protected AMQFrame createConnectionOpenFrame(int channel, String path, String capabilities, boolean insist)
+        protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist)
         {
-            return super.createConnectionOpenFrame(channel, path, ClusterCapability.add(capabilities, _identity), insist);
+            return super.createConnectionOpenFrame(channel, path, new AMQShortString(ClusterCapability.add(capabilities, _identity)), insist);
         }
     }
 }

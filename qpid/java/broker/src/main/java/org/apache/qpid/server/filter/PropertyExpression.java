@@ -248,7 +248,7 @@ public class PropertyExpression implements Expression
             _logger.info("Looking up property:" + name);
             _logger.info("Properties are:" + _properties.getHeaders().keySet());
 
-            return _properties.getHeaders().get(name);
+            return _properties.getHeaders().getObject(name);
         }
 //            catch (IOException ioe)
 //            {

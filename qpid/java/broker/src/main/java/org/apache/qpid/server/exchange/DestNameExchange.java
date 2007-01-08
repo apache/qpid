@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -83,21 +84,21 @@ public class DestNameExchange extends AbstractExchange
 
         public TabularData bindings() throws OpenDataException
         {
-            Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
+            Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
             _bindingList = new TabularDataSupport(_bindinglistDataType);
 
-            for (Map.Entry<String, List<AMQQueue>> entry : bindings.entrySet())
+            for (Map.Entry<AMQShortString, List<AMQQueue>> entry : bindings.entrySet())
             {
-                String key = entry.getKey();
+                AMQShortString key = entry.getKey();
                 List<String> queueList = new ArrayList<String>();
 
                 List<AMQQueue> queues = entry.getValue();
                 for (AMQQueue q : queues)
                 {
-                    queueList.add(q.getName());
+                    queueList.add(q.getName().toString());
                 }
 
-                Object[] bindingItemValues = {key, queueList.toArray(new String[0])};
+                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -107,7 +108,7 @@ public class DestNameExchange extends AbstractExchange
 
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
@@ -115,8 +116,8 @@ public class DestNameExchange extends AbstractExchange
 
             try
             {
-                registerQueue(binding, queue, null);
-                queue.bind(binding, DestNameExchange.this);
+                registerQueue(new AMQShortString(binding), queue, null);
+                queue.bind(new AMQShortString(binding), DestNameExchange.this);
             }
             catch (AMQException ex)
             {
@@ -140,7 +141,7 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -154,7 +155,7 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -169,7 +170,7 @@ public class DestNameExchange extends AbstractExchange
     public void route(AMQMessage payload) throws AMQException
     {
         final BasicPublishBody publishBody = payload.getPublishBody();
-        final String routingKey = publishBody.routingKey;
+        final AMQShortString routingKey = publishBody.routingKey;
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {
@@ -197,13 +198,13 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && queues.contains(queue);
     }
 
-    public boolean isBound(String routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && !queues.isEmpty();
@@ -211,7 +212,7 @@ public class DestNameExchange extends AbstractExchange
 
     public boolean isBound(AMQQueue queue) throws AMQException
     {
-        Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
+        Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
         for (List<AMQQueue> queues : bindings.values())
         {
             if (queues.contains(queue))

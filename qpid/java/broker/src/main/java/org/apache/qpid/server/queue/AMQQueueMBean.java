@@ -112,7 +112,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
 
     public String getOwner()
     {
-        return _queue.getOwner();
+        return String.valueOf(_queue.getOwner());
     }
 
     public boolean isAutoDelete()

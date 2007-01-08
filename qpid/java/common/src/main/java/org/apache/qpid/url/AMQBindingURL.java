@@ -23,6 +23,7 @@ package org.apache.qpid.url;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.HashMap;
 import java.net.URI;
@@ -31,10 +32,10 @@ import java.net.URISyntaxException;
 public class AMQBindingURL implements BindingURL
 {
     String _url;
-    String _exchangeClass;
-    String _exchangeName;
-    String _destinationName;
-    String _queueName;
+    AMQShortString _exchangeClass;
+    AMQShortString _exchangeName;
+    AMQShortString _destinationName;
+    AMQShortString _queueName;
     private HashMap<String, String> _options;
 
 
@@ -84,7 +85,7 @@ public class AMQBindingURL implements BindingURL
             if (connection.getPath() == null ||
                     connection.getPath().equals(""))
             {
-                URLHelper.parseError(_url.indexOf(_exchangeName) + _exchangeName.length(),
+                URLHelper.parseError(_url.indexOf(_exchangeName.toString()) + _exchangeName.length(),
                         "Destination or Queue requried", _url);
             }
             else
@@ -92,7 +93,7 @@ public class AMQBindingURL implements BindingURL
                 int slash = connection.getPath().indexOf("/", 1);
                 if (slash == -1)
                 {
-                    URLHelper.parseError(_url.indexOf(_exchangeName) + _exchangeName.length(),
+                    URLHelper.parseError(_url.indexOf(_exchangeName.toString()) + _exchangeName.length(),
                             "Destination requried", _url);
                 }
                 else
@@ -121,6 +122,26 @@ public class AMQBindingURL implements BindingURL
         }
     }
 
+    private void setExchangeClass(String exchangeClass)
+    {
+        setExchangeClass(new AMQShortString(exchangeClass));
+    }
+
+    private void setQueueName(String name)
+    {
+        setQueueName(new AMQShortString(name));
+    }
+
+    private void setDestinationName(String name)
+    {
+        setDestinationName(new AMQShortString(name));
+    }
+
+    private void setExchangeName(String exchangeName)
+    {
+        setExchangeName(new AMQShortString(exchangeName));
+    }
+
     private void processOptions()
     {
         //this is where we would parse any options that needed more than just storage.
@@ -131,22 +152,22 @@ public class AMQBindingURL implements BindingURL
         return _url;
     }
 
-    public String getExchangeClass()
+    public AMQShortString getExchangeClass()
     {
         return _exchangeClass;
     }
 
-    public void setExchangeClass(String exchangeClass)
+    public void setExchangeClass(AMQShortString exchangeClass)
     {
         _exchangeClass = exchangeClass;
     }
 
-    public String getExchangeName()
+    public AMQShortString getExchangeName()
     {
         return _exchangeName;
     }
 
-    public void setExchangeName(String name)
+    public void setExchangeName(AMQShortString name)
     {
         _exchangeName = name;
 
@@ -156,17 +177,17 @@ public class AMQBindingURL implements BindingURL
         }
     }
 
-    public String getDestinationName()
+    public AMQShortString getDestinationName()
     {
         return _destinationName;
     }
 
-    public void setDestinationName(String name)
+    public void setDestinationName(AMQShortString name)
     {
         _destinationName = name;
     }
 
-    public String getQueueName()
+    public AMQShortString getQueueName()
     {
         if (_exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
         {
@@ -174,7 +195,7 @@ public class AMQBindingURL implements BindingURL
             {
                 if (containsOption(BindingURL.OPTION_CLIENTID) && containsOption(BindingURL.OPTION_SUBSCRIPTION))
                 {
-                    return getOption(BindingURL.OPTION_CLIENTID + ":" + BindingURL.OPTION_SUBSCRIPTION);
+                    return new AMQShortString(getOption(BindingURL.OPTION_CLIENTID + ":" + BindingURL.OPTION_SUBSCRIPTION));
                 }
                 else
                 {
@@ -192,7 +213,7 @@ public class AMQBindingURL implements BindingURL
         }
     }
 
-    public void setQueueName(String name)
+    public void setQueueName(AMQShortString name)
     {
         _queueName = name;
     }
@@ -212,7 +233,7 @@ public class AMQBindingURL implements BindingURL
         return _options.containsKey(key);
     }
 
-    public String getRoutingKey()
+    public AMQShortString getRoutingKey()
     {
         if (_exchangeClass.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
         {
@@ -221,15 +242,15 @@ public class AMQBindingURL implements BindingURL
 
         if (containsOption(BindingURL.OPTION_ROUTING_KEY))
         {
-            return getOption(OPTION_ROUTING_KEY);
+            return new AMQShortString(getOption(OPTION_ROUTING_KEY));
         }
 
         return getDestinationName();
     }
 
-    public void setRoutingKey(String key)
+    public void setRoutingKey(AMQShortString key)
     {
-        setOption(OPTION_ROUTING_KEY, key);
+        setOption(OPTION_ROUTING_KEY, key.toString());
     }
 
 
