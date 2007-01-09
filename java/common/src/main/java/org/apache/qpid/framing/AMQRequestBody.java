@@ -36,7 +36,6 @@ public class AMQRequestBody extends AMQBody
     public AMQRequestBody() {}
 
     // Field methods
-    
     public long getRequestId() { return requestId; }
     public long getResponseMark() { return responseMark; }
     public AMQMethodBody getMethodPayload() { return methodPayload; }
