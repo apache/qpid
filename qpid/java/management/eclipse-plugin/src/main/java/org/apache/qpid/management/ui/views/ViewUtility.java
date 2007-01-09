@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.TabularDataSupport;
@@ -53,6 +54,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+/**
+ * Utility Class for displaying OpenMbean data types by creating required SWT widgets
+ * @author Bhupendra Bhardwaj
+ */
 public class ViewUtility
 {
     public static final String OP_NAME     = "operation_name";
@@ -77,8 +82,26 @@ public class ViewUtility
         SUPPORTED_ARRAY_DATATYPES.add("java.util.Date");
     }
     
+    /**
+     * Populates the composite with given openmbean data type (TabularType or CompositeType)
+     * @param toolkit
+     * @param parent composite
+     * @param data open mbean data type(either composite type or tabular data type)
+     */
+    public static void populateCompositeWithData(FormToolkit toolkit, Composite parent, Object data)
+    {
+        if (data instanceof TabularDataSupport)
+        {
+            ViewUtility.createTabularDataHolder(toolkit, parent, (TabularDataSupport)data);
+        }
+        else if (data instanceof CompositeDataSupport)
+        {
+            ViewUtility.populateCompositeWithCompositeData(toolkit, parent, (CompositeDataSupport)data);
+        }
+    }
+    
     @SuppressWarnings("unchecked")
-    public static void createTabularDataHolder(FormToolkit toolkit, Composite parent, TabularDataSupport tabularData)
+    private static void createTabularDataHolder(FormToolkit toolkit, Composite parent, TabularDataSupport tabularData)
     {
         Composite composite = toolkit.createComposite(parent, SWT.BORDER);
         GridLayout layout = new GridLayout(4, true);
@@ -109,7 +132,7 @@ public class ViewUtility
         // display the first record
         CompositeData data = (CompositeData)(list.get(0)).getValue();
         composite.setData(INDEX, 0);
-        populateCompositeDataHolder(toolkit, compositeDataHolder, data);
+        populateCompositeWithCompositeData(toolkit, compositeDataHolder, data);
         enableOrDisableTraversalButtons(composite);
     }
 
@@ -135,7 +158,15 @@ public class ViewUtility
         }
     }
 
-    public static Composite createCompositeDataHolder(final FormToolkit toolkit, final Composite dataHolder, CompositeType compositeType)
+    /**
+     * Sets up the given composite for holding a CompositeData. Create traversal buttons, label etc and
+     * creates a child Composite, which should be populated with the CompositeData
+     * @param toolkit
+     * @param dataHolder
+     * @param compositeType
+     * @return
+     */
+    private static Composite createCompositeDataHolder(final FormToolkit toolkit, final Composite dataHolder, CompositeType compositeType)
     {        
         String desc = compositeType.getDescription();
         Label description = toolkit.createLabel(dataHolder, desc, SWT.CENTER);
@@ -164,6 +195,7 @@ public class ViewUtility
         layoutData.widthHint = 80;
         lastRecordButton.setLayoutData(layoutData);
         
+        // Now create the composite, which will hold the CompositeData
         final Composite composite = toolkit.createComposite(dataHolder, SWT.NONE);
         GridLayout layout = new GridLayout();
         layout.horizontalSpacing = layout.verticalSpacing = 0;
@@ -179,7 +211,8 @@ public class ViewUtility
         dataHolder.setData(PREV, previousRecordButton);
         dataHolder.setData(LAST, lastRecordButton);
 
-        // Listener for the traversal buttons
+        // Listener for the traversal buttons. When a button is clicked the respective
+        // CompositeData will be populated in the composite
         SelectionListener listener = new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
@@ -188,8 +221,9 @@ public class ViewUtility
                     return;
 
                 Button traverseButton =(Button)e.widget; 
+                // Get the CompositeData respective to the button selected
                 CompositeData data = getCompositeData(dataHolder, traverseButton.getText());
-                populateCompositeDataHolder(toolkit, composite, data);
+                populateCompositeWithCompositeData(toolkit, composite, data);
                 enableOrDisableTraversalButtons(dataHolder);   
             }
         };
@@ -202,6 +236,13 @@ public class ViewUtility
         return composite;
     }
     
+    /**
+     * The CompositeData is set as data with the Composite and using the index, this method will
+     * return the corresponding CompositeData
+     * @param compositeHolder
+     * @param dataIndex
+     * @return the CompositeData respective to the index
+     */
     private static CompositeData getCompositeData(Composite compositeHolder, String dataIndex)
     {
         List objectData = (List)compositeHolder.getData();
@@ -241,8 +282,14 @@ public class ViewUtility
         return (CompositeData)((Map.Entry)objectData.get(index)).getValue();
     }
 
+    /**
+     * Populates the given composite with the CompositeData. Creates required widgets to hold the data types
+     * @param toolkit
+     * @param parent
+     * @param data CompositeData
+     */
     @SuppressWarnings("unchecked")
-    public static void populateCompositeDataHolder(FormToolkit toolkit, Composite parent, CompositeData data/*String dataIndex*/)
+    private static void populateCompositeWithCompositeData(FormToolkit toolkit, Composite parent, CompositeData data)
     {
         Control[] oldControls = parent.getChildren();       
         for (int i = 0; i < oldControls.length; i++)
