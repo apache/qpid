@@ -22,36 +22,20 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-public class AMQResponse extends AMQBody
+public class AMQResponseBody extends AMQRequestBody
 {
     public static final byte TYPE = (byte)AmqpConstants.frameResponseAsInt();
        
     // Fields declared in specification
-    public long requestId;
-    public long responseMark;
     public int batchOffset;
-    public AMQMethodBody methodPayload;
 
     // Constructor
-    public AMQResponse() {}
+    public AMQResponseBody() {}
 
     // Field methods
     
-    public long getRequestId() { return requestId; }
-    public long getResponseMark() { return responseMark; }
     public int  getBatchOffset() { return batchOffset; }
-    public AMQMethodBody getMethodPayload() { return methodPayload; }
-    
-    protected byte getFrameType()
-    {
-        return TYPE;
-    }
-    
-    protected int getSize()
-    {
-        return 8 + 8 + 4 + methodPayload.getBodySize();
-    }
-    
+        
     protected void writePayload(ByteBuffer buffer)
     {
         EncodingUtils.writeLong(buffer, requestId);
@@ -72,7 +56,7 @@ public class AMQResponse extends AMQBody
     public static AMQFrame createAMQFrame(int channelId, long requestId,
             long responseMark, int batchOffset, AMQMethodBody methodPayload)
     {
-        AMQResponse responseFrame = new AMQResponse();
+        AMQResponseBody responseFrame = new AMQResponseBody();
         responseFrame.requestId = requestId;
         responseFrame.responseMark = responseMark;
         responseFrame.batchOffset = batchOffset;
