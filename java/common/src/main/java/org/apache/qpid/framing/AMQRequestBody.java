@@ -71,15 +71,15 @@ public class AMQRequestBody extends AMQBody
     public static AMQFrame createAMQFrame(int channelId, long requestId,
             long responseMark, AMQMethodBody methodPayload)
     {
-        AMQResponseBody responseFrame = new AMQResponseBody();
-        responseFrame.requestId = requestId;
-        responseFrame.responseMark = responseMark;
-        responseFrame.methodPayload = methodPayload;
+        AMQRequestBody requestFrame = new AMQRequestBody();
+        requestFrame.requestId = requestId;
+        requestFrame.responseMark = responseMark;
+        requestFrame.methodPayload = methodPayload;
 
         
         AMQFrame frame = new AMQFrame();
         frame.channel = channelId;
-        frame.bodyFrame = responseFrame;
+        frame.bodyFrame = requestFrame;
         return frame;
     }
 }
