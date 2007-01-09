@@ -64,7 +64,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
 
             String file = null;
-            if (environment.contains(Context.PROVIDER_URL))
+            if (environment.containsKey(Context.PROVIDER_URL))
             {
                 file = (String) environment.get(Context.PROVIDER_URL);
             }
