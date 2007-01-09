@@ -28,10 +28,11 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using qpid::QpidError;
 
-Connector::Connector(bool _debug, u_int32_t buffer_size) :
-    debug(_debug), 
+Connector::Connector(const qpid::framing::ProtocolVersion& pVersion, bool _debug, u_int32_t buffer_size) :
+    debug(_debug),
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
+    version(pVersion), 
     closed(true),
     lastIn(0), lastOut(0),
     timeout(0),
@@ -162,7 +163,7 @@ void Connector::run(){
 		inbuf.move(received);
 		inbuf.flip();//position = 0, limit = total data read
 		
-		AMQFrame frame;
+		AMQFrame frame(version);
 		while(frame.decode(inbuf)){
                     if(debug) std::cout << "RECV: " << frame << std::endl; 
 		    input->received(&frame);

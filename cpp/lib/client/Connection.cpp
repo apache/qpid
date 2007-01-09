@@ -35,7 +35,7 @@ u_int16_t Connection::channelIdCounter;
 Connection::Connection(  bool debug, u_int32_t _max_frame_size, qpid::framing::ProtocolVersion* _version) : max_frame_size(_max_frame_size), closed(true),
     version(_version->getMajor(),_version->getMinor())
 {
-    connector = new Connector(debug, _max_frame_size);
+    connector = new Connector(version, debug, _max_frame_size);
 }
 
 Connection::~Connection(){
@@ -61,7 +61,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     string response = ((char)0) + uid + ((char)0) + pwd;
     string locale("en_US");
     responses.expect();
-    out->send(new AMQFrame(0, new ConnectionStartOkBody(version, props, mechanism, response, locale)));
+    out->send(new AMQFrame(version, 0, new ConnectionStartOkBody(version, props, mechanism, response, locale)));
 
     /**
      * Assume for now that further challenges will not be required
@@ -74,7 +74,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     responses.receive(method_bodies.connection_tune);
 
     ConnectionTuneBody::shared_ptr proposal = boost::dynamic_pointer_cast<ConnectionTuneBody, AMQMethodBody>(responses.getResponse());
-    out->send(new AMQFrame(0, new ConnectionTuneOkBody(version, proposal->getChannelMax(), max_frame_size, proposal->getHeartbeat())));
+    out->send(new AMQFrame(version, 0, new ConnectionTuneOkBody(version, proposal->getChannelMax(), max_frame_size, proposal->getHeartbeat())));
 
     u_int16_t heartbeat = proposal->getHeartbeat();
     connector->setReadTimeout(heartbeat * 2);
@@ -84,7 +84,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     string capabilities;
     string vhost = virtualhost;
     responses.expect();
-    out->send(new AMQFrame(0, new ConnectionOpenBody(version, vhost, capabilities, true)));
+    out->send(new AMQFrame(version, 0, new ConnectionOpenBody(version, vhost, capabilities, true)));
     //receive connection.open-ok (or redirect, but ignore that for now esp. as using force=true).
     responses.waitForResponse();
     if(responses.validate(method_bodies.connection_open_ok)){
@@ -106,7 +106,7 @@ void Connection::close(){
         u_int16_t classId(0);
         u_int16_t methodId(0);
         
-        sendAndReceive(new AMQFrame(0, new ConnectionCloseBody(version, code, text, classId, methodId)), method_bodies.connection_close_ok);
+        sendAndReceive(new AMQFrame(version, 0, new ConnectionCloseBody(version, code, text, classId, methodId)), method_bodies.connection_close_ok);
         connector->close();
     }
 }
@@ -118,7 +118,7 @@ void Connection::openChannel(Channel* channel){
     channels[channel->id] = channel;
     //now send frame to open channel and wait for response
     string oob;
-    channel->sendAndReceive(new AMQFrame(channel->id, new ChannelOpenBody(version, oob)), method_bodies.channel_open_ok);
+    channel->sendAndReceive(new AMQFrame(version, channel->id, new ChannelOpenBody(version, oob)), method_bodies.channel_open_ok);
     channel->setQos();
     channel->closed = false;
 }
@@ -136,7 +136,7 @@ void Connection::closeChannel(Channel* channel, u_int16_t code, string& text, u_
     //send frame to close channel
     channel->cancelAll();
     channel->closed = true;
-    channel->sendAndReceive(new AMQFrame(channel->id, new ChannelCloseBody(version, code, text, classId, methodId)), method_bodies.channel_close_ok);
+    channel->sendAndReceive(new AMQFrame(version, channel->id, new ChannelCloseBody(version, code, text, classId, methodId)), method_bodies.channel_close_ok);
     channel->con = 0;
     channel->out = 0;
     removeChannel(channel);
@@ -209,7 +209,7 @@ void Connection::error(int code, const string& msg, int classid, int methodid){
         std::cout << " [" << methodid << ":" << classid << "]";
     }
     std::cout << std::endl;
-    sendAndReceive(new AMQFrame(0, new ConnectionCloseBody(version, code, msg, classid, methodid)), method_bodies.connection_close_ok);
+    sendAndReceive(new AMQFrame(version, 0, new ConnectionCloseBody(version, code, msg, classid, methodid)), method_bodies.connection_close_ok);
     connector->close();
 }
 
@@ -230,7 +230,7 @@ void Connection::idleIn(){
 }
 
 void Connection::idleOut(){
-    out->send(new AMQFrame(0, new AMQHeartbeatBody()));
+    out->send(new AMQFrame(version, 0, new AMQHeartbeatBody()));
 }
 
 void Connection::shutdown(){
