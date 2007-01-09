@@ -24,9 +24,7 @@
 
 using namespace qpid::framing;
 
-// This only works as a static as the version is currently fixed to 8.0
-// TODO: When the class is version-aware this will need to change
-AMQP_MethodVersionMap AMQFrame::versionMap(0,9);
+AMQP_MethodVersionMap AMQFrame::versionMap;
 
 // AMQP version management change - kpvdr 2-11-17
 // TODO: Make this class version-aware
