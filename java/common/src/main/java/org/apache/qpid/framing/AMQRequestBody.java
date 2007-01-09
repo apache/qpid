@@ -22,7 +22,7 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-public class AMQRequest extends AMQBody
+public class AMQRequestBody extends AMQBody
 {
     public static final byte TYPE = (byte)AmqpConstants.frameRequestAsInt();
        
@@ -33,7 +33,7 @@ public class AMQRequest extends AMQBody
 
 
     // Constructor
-    public AMQRequest() {}
+    public AMQRequestBody() {}
 
     // Field methods
     
@@ -72,7 +72,7 @@ public class AMQRequest extends AMQBody
     public static AMQFrame createAMQFrame(int channelId, long requestId,
             long responseMark, AMQMethodBody methodPayload)
     {
-        AMQResponse responseFrame = new AMQResponse();
+        AMQResponseBody responseFrame = new AMQResponseBody();
         responseFrame.requestId = requestId;
         responseFrame.responseMark = responseMark;
         responseFrame.methodPayload = methodPayload;

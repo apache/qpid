@@ -195,7 +195,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             AMQFrame frame = (AMQFrame) message;
 
-            if (frame.bodyFrame instanceof AMQMethodBody)
+            if (frame.bodyFrame instanceof AMQRequest)
+            {
+            	requestFrameReceived(frame);
+            }
+            else if (frame.bodyFrame instanceof AMQResponse)
+            {
+            	responseFrameReceived(frame);
+            }
+            else if (frame.bodyFrame instanceof AMQMethodBody)
             {
                 methodFrameReceived(frame);
             }
@@ -213,6 +221,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                     writeFrame(e.getReturnMessage(frame.channel));
                 }
             }
+        }
+    }
+    
+    private void requestFrameReceived(AMQFrame frame)
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Request frame received: " + frame);
+        }
+    }
+    
+    private void responseFrameReceived(AMQFrame frame)
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Response frame received: " + frame);
         }
     }
 
