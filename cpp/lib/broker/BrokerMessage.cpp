@@ -80,8 +80,8 @@ void Message::deliver(OutputHandler* out, int channel,
                       u_int32_t framesize,
 		      ProtocolVersion* version){
     // CCT -- TODO - Update code generator to take pointer/ not instance to avoid extra contruction
-    out->send(new AMQFrame(channel, new BasicDeliverBody(*version, consumerTag, deliveryTag, redelivered, exchange, routingKey)));
-    sendContent(out, channel, framesize);
+    out->send(new AMQFrame(*version, channel, new BasicDeliverBody(*version, consumerTag, deliveryTag, redelivered, exchange, routingKey)));
+    sendContent(out, channel, framesize, version);
 }
 
 void Message::sendGetOk(OutputHandler* out, 
@@ -91,16 +91,16 @@ void Message::sendGetOk(OutputHandler* out,
          u_int32_t framesize,
 	 ProtocolVersion* version){
      // CCT -- TODO - Update code generator to take pointer/ not instance to avoid extra contruction
-     out->send(new AMQFrame(channel, new BasicGetOkBody(*version, deliveryTag, redelivered, exchange, routingKey, messageCount)));
-    sendContent(out, channel, framesize);
+     out->send(new AMQFrame(*version, channel, new BasicGetOkBody(*version, deliveryTag, redelivered, exchange, routingKey, messageCount)));
+    sendContent(out, channel, framesize, version);
 }
 
-void Message::sendContent(OutputHandler* out, int channel, u_int32_t framesize){
+void Message::sendContent(OutputHandler* out, int channel, u_int32_t framesize, ProtocolVersion* version){
     AMQBody::shared_ptr headerBody = static_pointer_cast<AMQBody, AMQHeaderBody>(header);
-    out->send(new AMQFrame(channel, headerBody));
+    out->send(new AMQFrame(*version, channel, headerBody));
 
     Mutex::ScopedLock locker(contentLock);
-    if (content.get()) content->send(out, channel, framesize);
+    if (content.get()) content->send(*version, out, channel, framesize);
 }
 
 BasicHeaderProperties* Message::getHeaderProperties(){

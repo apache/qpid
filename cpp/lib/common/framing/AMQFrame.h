@@ -27,6 +27,7 @@
 #include <AMQContentBody.h>
 #include <AMQHeartbeatBody.h>
 #include <AMQP_MethodVersionMap.h>
+#include <AMQP_HighestVersion.h>
 #include <Buffer.h>
 
 #ifndef _AMQFrame_
@@ -39,6 +40,7 @@ namespace framing {
 class AMQFrame : virtual public AMQDataBlock
 {
     static AMQP_MethodVersionMap versionMap;
+    qpid::framing::ProtocolVersion version;
             
     u_int16_t channel;
     u_int8_t type;//used if the body is decoded separately from the 'head'
@@ -46,9 +48,9 @@ class AMQFrame : virtual public AMQDataBlock
     AMQBody::shared_ptr createMethodBody(Buffer& buffer);
             
   public:
-    AMQFrame();
-    AMQFrame(u_int16_t channel, AMQBody* body);
-    AMQFrame(u_int16_t channel, AMQBody::shared_ptr& body);
+    AMQFrame(qpid::framing::ProtocolVersion& _version = highestProtocolVersion);
+    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody* body);
+    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody::shared_ptr& body);    
     virtual ~AMQFrame();
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
