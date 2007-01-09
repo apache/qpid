@@ -37,7 +37,7 @@ public class ContentHeaderPropertiesFactory
 
     public ContentHeaderProperties createContentHeaderProperties(int classId, int propertyFlags,
                                                                  ByteBuffer buffer, int size)
-             throws AMQFrameDecodingException, AMQProtocolVersionException
+             throws AMQFrameDecodingException
     {
         ContentHeaderProperties properties;
         // AMQP version change: "Hardwired" version to major=8, minor=0

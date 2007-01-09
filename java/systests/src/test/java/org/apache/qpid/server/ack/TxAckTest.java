@@ -105,7 +105,12 @@ public class TxAckTest extends TestCase
                 long deliveryTag = i + 1;
                 // TODO: fix hardcoded protocol version data
                 TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody((byte)8,
-                                                                                           (byte)0), txnContext);
+                                                                                           (byte)0,
+                                                                                           null,
+                                                                                           false,
+                                                                                           false,
+                                                                                           null,
+                                                                                           0), txnContext);
                 _map.add(deliveryTag, new UnacknowledgedMessage(null, message, null, deliveryTag));
             }
             _acked = acked;

@@ -39,11 +39,11 @@ public class ContentHeaderBodyFactory implements BodyFactory
         _log.debug("Creating content header body factory");
     }
 
-    public AMQBody createBody(ByteBuffer in) throws AMQFrameDecodingException
+    public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
         // all content headers are the same - it is only the properties that differ.
         // the content header body further delegates construction of properties
-        return new ContentHeaderBody();
+        return new ContentHeaderBody(in,bodySize);
     }
 
 
