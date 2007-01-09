@@ -108,10 +108,11 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        ClusterPingBody ping = new ClusterPingBody((byte)8, (byte)0);
-        ping.broker = new AMQShortString(_group.getLocal().getDetails());
-        ping.responseRequired = true;
-        ping.load = _loadTable.getLocalLoad();
+        ClusterPingBody ping = new ClusterPingBody((byte)8,
+                                                   (byte)0,
+                                                   _group.getLocal().getDetails(),
+                                                   _loadTable.getLocalLoad(),
+                                                   true);
         BlockingHandler handler = new BlockingHandler();
         send(getLeader(), new SimpleBodySendable(ping), handler);
         handler.waitForCompletion();
@@ -156,8 +157,10 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         _logger.info(new LogMessage("Connected to {0}. joining", leader));
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        ClusterJoinBody join = new ClusterJoinBody((byte)8, (byte)0);
-        join.broker = new AMQShortString(_group.getLocal().getDetails());
+        ClusterJoinBody join = new ClusterJoinBody((byte)8,
+                                                   (byte)0,
+                                                   _group.getLocal().getDetails());
+
         send(leader, new SimpleBodySendable(join));
     }
 
@@ -177,8 +180,10 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        ClusterLeaveBody leave = new ClusterLeaveBody((byte)8, (byte)0);
-        leave.broker = new AMQShortString(_group.getLocal().getDetails());
+        ClusterLeaveBody leave = new ClusterLeaveBody((byte)8,
+                                                      (byte)0,
+                                                      _group.getLocal().getDetails());
+
         send(getLeader(), new SimpleBodySendable(leave));
     }
 
@@ -200,8 +205,10 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            ClusterSuspectBody suspect = new ClusterSuspectBody((byte)8, (byte)0);
-            suspect.broker = new AMQShortString(broker.getDetails());
+            ClusterSuspectBody suspect = new ClusterSuspectBody((byte)8,
+                                                                (byte)0,
+                                                                broker.getDetails());
+
             send(getLeader(), new SimpleBodySendable(suspect));
         }
     }
@@ -224,8 +231,8 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             //pass request on to leader:
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            ClusterJoinBody request = new ClusterJoinBody((byte)8, (byte)0);
-            request.broker = new AMQShortString(member.getDetails());
+            ClusterJoinBody request = new ClusterJoinBody((byte)8, (byte)0, member.getDetails());
+            
             Broker leader = getLeader();
             send(leader, new SimpleBodySendable(request));
             _logger.info(new LogMessage("Passed join request for {0} to {1}", member, leader));
@@ -271,9 +278,9 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        ClusterMembershipBody announce = new ClusterMembershipBody((byte)8, (byte)0);
-        //TODO: revise this way of converting String to bytes...
-        announce.members = membership.getBytes();
+        ClusterMembershipBody announce = new ClusterMembershipBody((byte)8, (byte)0, membership.getBytes());
+
+        
         return announce;
     }
 

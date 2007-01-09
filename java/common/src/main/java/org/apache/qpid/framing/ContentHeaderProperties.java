@@ -41,7 +41,7 @@ public interface ContentHeaderProperties
      * @throws AMQFrameDecodingException when the buffer does not contain valid data
      */
     void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException;
+        throws AMQFrameDecodingException;
 
     /**
      * @return the size of the encoded property list in bytes.

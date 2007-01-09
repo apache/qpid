@@ -65,27 +65,46 @@ public enum AMQType
 
         public int getEncodingSize(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            return EncodingUtils.unsignedIntegerLength();
         }
 
-
-        public Object toNativeValue(Object value)
+        public Long toNativeValue(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            if (value instanceof Long)
+            {
+                return (Long) value;
+            }
+            else if (value instanceof Integer)
+            {
+                return ((Integer) value).longValue();
+            }
+            else if (value instanceof Short)
+            {
+                return ((Short) value).longValue();
+            }
+            else if (value instanceof Byte)
+            {
+                return ((Byte) value).longValue();
+            }
+            else if ((value instanceof String) || (value == null))
+            {
+                return Long.valueOf((String)value);
+            }
+            else
+            {
+                throw new NumberFormatException("Cannot convert: " + value + "(" +
+                                                value.getClass().getName() + ") to int.");
+            }
         }
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            EncodingUtils.writeUnsignedInteger(buffer, (Long) value);
         }
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            return EncodingUtils.readUnsignedInteger(buffer);
         }
     },
 

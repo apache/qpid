@@ -31,40 +31,40 @@ package org.apache.qpid.framing;
 import java.util.HashMap;
 import java.lang.reflect.Constructor;
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
 class MainRegistry
 {
+	private static final HashMap<Long, AMQMethodBodyInstanceFactory> classIDMethodIDVersionBodyMap = new HashMap<Long, AMQMethodBodyInstanceFactory>();
+
+	
     private static final Logger _log = Logger.getLogger(MainRegistry.class);
-	private static HashMap<Long, Class> classIDMethodIDVersionBodyMap = new HashMap<Long, Class>();
 	
     static
     {
 %{CLIST}	${reg_map_put_method}
     }
     
-    public static AMQMethodBody get(short classID, short methodID, byte major, byte minor)
+    public static AMQMethodBody get(short classID, short methodID, byte major, byte minor, ByteBuffer in, long size)
         throws AMQFrameDecodingException
     {
-		Class bodyClass = classIDMethodIDVersionBodyMap.get(
-		    createMapKey(classID, methodID, major, minor));
-		if (bodyClass == null)
-		{
-	    	throw new AMQFrameDecodingException(_log,
-	    	    "Unable to find a suitable decoder for class " + classID + " and method " +
-	    	    methodID + " in AMQP version " + major + "-" + minor + ".");
-	    }
-	    try
-	    {
-	    	Constructor initFn = bodyClass.getConstructor(byte.class, byte.class);
-	        return (AMQMethodBody) initFn.newInstance(major, minor);
-	    }
-	    catch (Exception e)
-	    {
-	    	throw new AMQFrameDecodingException(_log,
-	    	    "Unable to instantiate body class for class " + classID + " and method " +
-	    	    methodID + " in AMQP version " + major + "-" + minor + " : " + e, e);
-	    }
+        AMQMethodBodyInstanceFactory bodyFactory = classIDMethodIDVersionBodyMap.get(createMapKey(classID,methodID,major,minor));
+        if (bodyFactory == null)
+        {
+            throw new AMQFrameDecodingException(_log,
+                "Unable to find a suitable decoder for class " + classID + " and method " +
+                methodID + " in AMQP version " + major + "-" + minor + ".");
+        }
+        return bodyFactory.newInstance(major, minor, in, size);
+
+	    
     }
+    
+	private static void registerMethod(short classID, short methodID, byte major, byte minor, AMQMethodBodyInstanceFactory instanceFactory )
+	{
+        classIDMethodIDVersionBodyMap.put(createMapKey(classID,methodID,major,minor), instanceFactory);
+    }
+
     
     private static Long createMapKey(short classID, short methodID, byte major, byte minor)
     {
@@ -77,4 +77,5 @@ class MainRegistry
          */
     	return new Long(((long)classID << 32) + ((long)methodID << 16) + ((long)major << 8) + minor);
     }
+
 }

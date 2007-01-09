@@ -50,13 +50,13 @@ public class RecordingMethodHandlerFactory extends WrappingMethodHandlerFactory
     private final byte minor = (byte)0;
     private final Iterable<FrameDescriptor> _frames = Arrays.asList(new FrameDescriptor[]
             {
-                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor)),
-                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody(major, minor)),
-                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor)),
-                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor)),
-                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor)),
-                    new FrameDescriptor(BasicConsumeBody.class, new BasicConsumeBody(major, minor)),
-                    new FrameDescriptor(BasicCancelBody.class, new BasicCancelBody(major, minor))
+                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor,null,false,false,false,false,false,null,0)),
+                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody(major, minor,false,false,false,null,0)),
+                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor,null,null,false,null,null,0)),
+                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor,null,false,false,null,false,false,false,0,null)),
+                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor,null,false,false,0)),
+                    new FrameDescriptor(BasicConsumeBody.class, new BasicConsumeBody(major, minor,null,null,false,false,false,false,null,0)),
+                    new FrameDescriptor(BasicCancelBody.class, new BasicCancelBody(major, minor,null,false))
             });
 
 

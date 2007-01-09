@@ -79,8 +79,14 @@ public class ClusteredQueue extends AMQQueue
             //send deletion request to all other members:
         	// AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         	// TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0);
-            request.queue = getName();
+            QueueDeleteBody request = new QueueDeleteBody((byte)8,
+                                                          (byte)0,
+                                                          false,
+                                                          false,
+                                                          false,
+                                                          getName(),
+                                                          0);
+
             _groupMgr.broadcast(new SimpleBodySendable(request));
         }
     }
@@ -93,8 +99,11 @@ public class ClusteredQueue extends AMQQueue
         //signal other members:
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        BasicCancelBody request = new BasicCancelBody((byte)8, (byte)0);
-        request.consumerTag = getName();
+        BasicCancelBody request = new BasicCancelBody((byte)8,
+                                                      (byte)0,
+                                                      getName(),
+                                                      false);
+        
         _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 
