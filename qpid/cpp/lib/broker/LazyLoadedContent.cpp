@@ -36,19 +36,19 @@ u_int32_t LazyLoadedContent::size()
     return 0;//all content is written as soon as it is added
 }
 
-void LazyLoadedContent::send(OutputHandler* out, int channel, u_int32_t framesize)
+void LazyLoadedContent::send(qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
 {
     if (expectedSize > framesize) {        
         for (u_int64_t offset = 0; offset < expectedSize; offset += framesize) {            
             u_int64_t remaining = expectedSize - offset;
             string data;
             store->loadContent(msg, data, offset, remaining > framesize ? framesize : remaining);              
-            out->send(new AMQFrame(channel, new AMQContentBody(data)));
+            out->send(new AMQFrame(version, channel, new AMQContentBody(data)));
         }
     } else {
         string data;
         store->loadContent(msg, data, 0, expectedSize);  
-        out->send(new AMQFrame(channel, new AMQContentBody(data)));
+        out->send(new AMQFrame(version, channel, new AMQContentBody(data)));
     }
 }
 

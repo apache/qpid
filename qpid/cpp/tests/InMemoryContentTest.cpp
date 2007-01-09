@@ -20,6 +20,7 @@
  */
 #include <InMemoryContent.h>
 #include <qpid_test_plugin.h>
+#include <AMQP_HighestVersion.h>
 #include <iostream>
 #include <list>
 
@@ -66,7 +67,7 @@ public:
         u_int16_t channel = 3;
 
         addframes(content, inCount, in);
-        content.send(&handler, channel, framesize);         
+        content.send(highestProtocolVersion, &handler, channel, framesize);         
         check(handler, channel, outCount, out);
     }
 
