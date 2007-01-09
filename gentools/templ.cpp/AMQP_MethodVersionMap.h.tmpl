@@ -45,10 +45,9 @@ typedef AMQMethodBody* (*fnPtr)(u_int8_t, u_int8_t);
 class AMQP_MethodVersionMap: public std::map<u_int64_t, fnPtr>
 {
 protected:
-    ProtocolVersion version;
 	u_int64_t createMapKey(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor);
 public:
-	AMQP_MethodVersionMap(u_int8_t major, u_int8_t minor);
+	AMQP_MethodVersionMap();
 	AMQMethodBody* createMethodBody(u_int16_t classId, u_int16_t methodId, u_int8_t major, u_int8_t minor);
 };
 
