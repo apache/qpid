@@ -40,6 +40,8 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+bool verbose = false;
+
 /**
  * A simple message listener implementation that prints out the
  * message content then notifies a montitor allowing the test to
@@ -52,13 +54,15 @@ public:
     inline SimpleListener(Monitor* _monitor) : monitor(_monitor){}
 
     inline virtual void received(Message& msg){
-	std::cout << "Received message " << msg.getData()  << std::endl;
+        if (verbose)
+            std::cout << "Received message " << msg.getData()  << std::endl;
 	monitor->notify();
     }
 };
 
 int main(int argc, char**)
 {
+    verbose = argc > 1;
     try{               
         //Use a custom exchange
 	Exchange exchange("MyExchange", Exchange::TOPIC_EXCHANGE);
@@ -69,25 +73,25 @@ int main(int argc, char**)
 	Connection con(argc > 1);
 	string host("localhost");	
 	con.open(host);
-	std::cout << "Opened connection." << std::endl;
+	if (verbose) std::cout << "Opened connection." << std::endl;
 
         //Create and open a channel on the connection through which
         //most functionality is exposed
 	Channel channel;      
 	con.openChannel(&channel);
-	std::cout << "Opened channel." << std::endl;	
+	if (verbose) std::cout << "Opened channel." << std::endl;	
 
         //'declare' the exchange and the queue, which will create them
         //as they don't exist
 	channel.declareExchange(exchange);
-	std::cout << "Declared exchange." << std::endl;
+	if (verbose) std::cout << "Declared exchange." << std::endl;
 	channel.declareQueue(queue);
-	std::cout << "Declared queue." << std::endl;
+	if (verbose) std::cout << "Declared queue." << std::endl;
 
         //now bind the queue to the exchange
 	qpid::framing::FieldTable args;
 	channel.bind(exchange, queue, "MyTopic", args);
-	std::cout << "Bound queue to exchange." << std::endl;
+	if (verbose) std::cout << "Bound queue to exchange." << std::endl;
 
 	//Set up a message listener to receive any messages that
 	//arrive in our queue on the broker. We only expect one, and
@@ -98,7 +102,7 @@ int main(int argc, char**)
 	SimpleListener listener(&monitor);
 	string tag("MyTag");
 	channel.consume(queue, tag, &listener);
-	std::cout << "Registered consumer." << std::endl;
+	if (verbose) std::cout << "Registered consumer." << std::endl;
 
         //we need to enable the message dispatching for this channel
         //and we want that to occur on another thread so we call
@@ -111,7 +115,7 @@ int main(int argc, char**)
 	string data("MyMessage");
 	msg.setData(data);
 	channel.publish(msg, exchange, "MyTopic");
-	std::cout << "Published message: " << data << std::endl;
+	if (verbose) std::cout << "Published message: " << data << std::endl;
 
 	{
             Monitor::ScopedLock l(monitor);
@@ -122,13 +126,15 @@ int main(int argc, char**)
         
         //close the channel & connection
 	con.closeChannel(&channel);
-	std::cout << "Closed channel." << std::endl;
+	if (verbose) std::cout << "Closed channel." << std::endl;
 	con.close();	
-	std::cout << "Closed connection." << std::endl;
+	if (verbose) std::cout << "Closed connection." << std::endl;
     }catch(qpid::QpidError error){
-	std::cout << "Error [" << error.code << "] " << error.msg << " ("
-                  << error.location.file << ":" << error.location.line
-                  << ")" << std::endl;
+	if (verbose) std::cout
+            << "Error [" << error.code << "] "
+            << error.msg << " ("
+            << error.location.file << ":" << error.location.line
+            << ")" << std::endl;
 	return 1;
     }
     return 0;

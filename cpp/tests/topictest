@@ -1,7 +1,10 @@
 #!/bin/bash
 # Run the C++ topic test
 
-# Defaults
+# Clean up old log files
+rm -f subscriber_*.log 
+
+# Defaults values 
 SUBSCRIBERS=10
 MESSAGES=2000
 BATCHES=10
@@ -19,13 +22,8 @@ while getopts "s:m:b:" opt ; do
 done
 
 subscribe() {
-    ID=$1
-    echo "subscriber $ID"
-    ./topic_listener > subscriber.$ID 2>&1 || {
-	echo "SUBSCRIBER %ID FAILED: " ;
-	cat subscriber.$ID
-    }
-    rm subscriber.$ID
+    LOG="subscriber_$1.log"
+    ./topic_listener > $LOG 2>&1 && rm -f $LOG 
 }
 
 publish() {
@@ -35,7 +33,5 @@ publish() {
 for ((i=$SUBSCRIBERS ; i--; )); do
     subscribe $i &
 done
-sleep 1
-STATS=~/bin/topictest.times
-echo "---- topictest `date`" >> $STATS
-publish | tee -a $STATS
+
+publish 2>&1 || exit 1

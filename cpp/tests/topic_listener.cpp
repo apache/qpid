@@ -121,10 +121,12 @@ int main(int argc, char** argv){
             channel.consume(control, tag, &listener, args.getAckMode());
             channel.run();
             connection.close();
+            return 0;
         }catch(qpid::QpidError error){
             std::cout << error.what() << std::endl;
         }
     }
+    return 1;
 }
 
 Listener::Listener(Channel* _channel, const std::string& _responseq, bool tx) : 
