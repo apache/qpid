@@ -27,5 +27,5 @@ import org.apache.mina.common.ByteBuffer;
  */
 public interface BodyFactory
 {
-    AMQBody createBody(ByteBuffer in) throws AMQFrameDecodingException;
+    AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException;
 }

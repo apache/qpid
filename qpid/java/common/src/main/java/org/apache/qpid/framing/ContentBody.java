@@ -32,6 +32,18 @@ public class ContentBody extends AMQBody
     {
     }
 
+    public ContentBody(ByteBuffer buffer, long size) throws AMQFrameDecodingException
+    {
+        if (size > 0)
+        {
+            payload = buffer.slice();
+            payload.limit((int) size);
+            buffer.skip((int) size);
+        }
+
+    }
+
+
     public ContentBody(ByteBuffer payload)
     {
         this.payload = payload;

@@ -264,7 +264,7 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
     }
 
     public void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException
+        throws AMQFrameDecodingException
     {
         _propertyFlags = propertyFlags;
 

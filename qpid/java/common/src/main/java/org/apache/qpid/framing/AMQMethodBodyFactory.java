@@ -39,13 +39,13 @@ public class AMQMethodBodyFactory implements BodyFactory
         _log.debug("Creating method body factory");
     }
 
-    public AMQBody createBody(ByteBuffer in) throws AMQFrameDecodingException
+    public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
         // AMQP version change: MethodBodyDecoderRegistry is obsolete, since all the XML
         // segments generated together are now handled by MainRegistry. The Cluster class,
         // if generated together with amqp.xml is a part of MainRegistry.
         // TODO: Connect with version acquired from ProtocolInitiation class.
         return MainRegistry.get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(),
-            (byte)8, (byte)0);        
+            (byte)8, (byte)0, in, bodySize);
     }
 }

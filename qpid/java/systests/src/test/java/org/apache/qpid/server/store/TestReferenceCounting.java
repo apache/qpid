@@ -52,7 +52,12 @@ public class TestReferenceCounting extends TestCase
         createPersistentContentHeader();
         // TODO: fix hardcoded protocol version data
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
-                                                                                           (byte)0),
+                                                                                           (byte)0,
+                                                                                           null,
+                                                                                           false,
+                                                                                           false,
+                                                                                           null,
+                                                                                           0),
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
@@ -76,7 +81,12 @@ public class TestReferenceCounting extends TestCase
     {
         // TODO: fix hardcoded protocol version data
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
-                                                                                           (byte)0),
+                                                                                           (byte)0,
+                                                                                           null,
+                                                                                           false,
+                                                                                           false,
+                                                                                           null,
+                                                                                           0),
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
