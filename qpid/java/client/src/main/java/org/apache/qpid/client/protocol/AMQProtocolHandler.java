@@ -254,15 +254,20 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             //if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
             if (cause instanceof AMQConnectionClosedException)
             {
-                _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
-                // this will attemp failover
+                _logger.info("Exception caught by ProtocolHandler therefore going to attempt failover: " + cause, cause);
 
+                // this will attempt failover
                 sessionClosed(session);
+            }
+            else
+            {
+                _logger.info("Exception caught by ProtocolHandler:" + cause, cause);
+                //sessionClosed(session);
             }
         }
         // we reach this point if failover was attempted and failed therefore we need to let the calling app
         // know since we cannot recover the situation
-        else if (_failoverState == FailoverState.FAILED)
+        else if ((_failoverState == FailoverState.FAILED)) //|| (_failoverState == FailoverState.IN_PROGRESS))
         {
             _logger.error("Exception caught by protocol handler: " + cause, cause);
             // we notify the state manager of the error in case we have any clients waiting on a state
@@ -270,6 +275,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
             propagateExceptionToWaiters(amqe);
             _connection.exceptionReceived(cause);
+
         }
     }
 
