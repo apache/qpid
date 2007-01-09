@@ -69,7 +69,7 @@ public class AMQResponseBody extends AMQBody
     }
     
     public static AMQFrame createAMQFrame(int channelId, long requestId,
-            long responseMark, int batchOffset, AMQMethodBody methodPayload)
+            long responseId, int batchOffset, AMQMethodBody methodPayload)
     {
         AMQResponseBody responseFrame = new AMQResponseBody();
         responseFrame.responseId = responseId;
