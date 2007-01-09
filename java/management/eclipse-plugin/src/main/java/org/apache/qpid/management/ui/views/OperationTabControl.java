@@ -24,9 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
@@ -472,7 +469,7 @@ public class OperationTabControl extends TabControl
         int width = 600;
         int height = 400;
         Shell shell = ViewUtility.createPopupShell(Constants.RESULT, width, height);
-        populateResults(result, shell);
+        ViewUtility.populateCompositeWithData(_toolkit, shell, result);
         
         shell.open();
         while (!shell.isDisposed()) {
@@ -482,23 +479,6 @@ public class OperationTabControl extends TabControl
         }
         shell.dispose();
     }
-    
-    /**
-     * Displays the operation result
-     * @param result
-     * @param parent
-     */
-    private void populateResults(Object result, Composite parent)
-    {
-        if (result instanceof TabularDataSupport)
-        {
-            ViewUtility.createTabularDataHolder(_toolkit, parent, (TabularDataSupport)result);
-        }
-        else if (result instanceof CompositeDataSupport)
-        {
-            ViewUtility.populateCompositeDataHolder(_toolkit, parent, (CompositeDataSupport)result);
-        }
-    }  
     
     /**
      * Clears the parameter values of the operation
@@ -623,7 +603,7 @@ public class OperationTabControl extends TabControl
         else
         {
             ViewUtility.disposeChildren(_resultsComposite);
-            populateResults(result, _resultsComposite);
+            ViewUtility.populateCompositeWithData(_toolkit, _resultsComposite, result);
             _resultsComposite.layout();
             _form.layout();
         }
