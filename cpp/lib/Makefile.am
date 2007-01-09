@@ -1,1 +1,1 @@
-SUBDIRS = client common broker
+SUBDIRS = common broker client
