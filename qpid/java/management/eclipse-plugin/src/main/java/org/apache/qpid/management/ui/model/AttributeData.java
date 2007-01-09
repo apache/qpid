@@ -25,7 +25,7 @@ public class AttributeData
     String name = "";
     String description = "";
     String dataType = "";
-    Object value = null;
+    Object value = "";
     boolean readable = true;
     boolean writable = false;
     
@@ -63,7 +63,8 @@ public class AttributeData
     }
     public void setValue(Object value)
     {
-        this.value = value;
+        if (value != null)
+            this.value = value;
     }
     public boolean isReadable()
     {
