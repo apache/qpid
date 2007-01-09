@@ -26,20 +26,16 @@ using namespace qpid::framing;
 
 AMQP_MethodVersionMap AMQFrame::versionMap;
 
-// AMQP version management change - kpvdr 2-11-17
-// TODO: Make this class version-aware
-AMQFrame::AMQFrame() {}
+AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version):
+version(_version)
+ {}
 
-// AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware
-AMQFrame::AMQFrame(u_int16_t _channel, AMQBody* _body) :
-channel(_channel), body(_body)
+AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody* _body) :
+version(_version), channel(_channel), body(_body)
 {}
 
-// AMQP version management change - kpvdr 2006-11-17
-// TODO: Make this class version-aware
-AMQFrame::AMQFrame(u_int16_t _channel, AMQBody::shared_ptr& _body) :
-channel(_channel), body(_body)
+AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody::shared_ptr& _body) :
+version(_version), channel(_channel), body(_body)
 {}
 
 AMQFrame::~AMQFrame() {}
@@ -64,11 +60,7 @@ void AMQFrame::encode(Buffer& buffer)
 AMQBody::shared_ptr AMQFrame::createMethodBody(Buffer& buffer){
     u_int16_t classId = buffer.getShort();
     u_int16_t methodId = buffer.getShort();
-    // AMQP version management change - kpvdr 2006-11-16
-    // TODO: Make this class version-aware and link these hard-wired numbers to that version
-    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, 0, 9));
-    // Origianl stmt:
-	// AMQBody::shared_ptr body(createAMQMethodBody(classId, methodId));
+    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, version.getMajor(), version.getMinor()));
     return body;
 }
 

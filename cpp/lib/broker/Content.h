@@ -24,6 +24,7 @@
 #include <AMQContentBody.h>
 #include <Buffer.h>
 #include <OutputHandler.h>
+#include <ProtocolVersion.h>
 
 namespace qpid {
     namespace broker {
@@ -31,7 +32,7 @@ namespace qpid {
         public:
             virtual void add(qpid::framing::AMQContentBody::shared_ptr data) = 0;
             virtual u_int32_t size() = 0;
-            virtual void send(qpid::framing::OutputHandler* out, int channel, u_int32_t framesize) = 0;
+            virtual void send(qpid::framing::ProtocolVersion& version, qpid::framing::OutputHandler* out, int channel, u_int32_t framesize) = 0;
             virtual void encode(qpid::framing::Buffer& buffer) = 0;
             virtual void destroy() = 0;
             virtual ~Content(){}

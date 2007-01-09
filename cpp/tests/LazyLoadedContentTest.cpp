@@ -19,6 +19,7 @@
  *
  */
 #include <LazyLoadedContent.h>
+#include <AMQP_HighestVersion.h>
 #include <NullMessageStore.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
@@ -99,7 +100,7 @@ public:
         LazyLoadedContent content(&store, 0, in.size());
         DummyHandler handler;
         u_int16_t channel = 3;
-        content.send(&handler, channel, framesize);         
+        content.send(highestProtocolVersion, &handler, channel, framesize);         
         check(handler, channel, outCount, out);
     }
 

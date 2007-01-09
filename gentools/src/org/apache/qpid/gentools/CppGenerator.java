@@ -1073,7 +1073,7 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         String namespace = version != null ? version.namespace() + "::" : "";
-        StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( channel," + cr);
+        StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( parent->getProtocolVersion(), channel," + cr);
         sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
         sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
         sb.append(" )));" + cr);        

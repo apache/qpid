@@ -24,6 +24,7 @@
 #include <Content.h>
 #include <vector>
 
+
 namespace qpid {
     namespace broker {
         class InMemoryContent : public Content{
@@ -34,7 +35,7 @@ namespace qpid {
         public:
             void add(qpid::framing::AMQContentBody::shared_ptr data);
             u_int32_t size();
-            void send(qpid::framing::OutputHandler* out, int channel, u_int32_t framesize);
+            void send(qpid::framing::ProtocolVersion& version, qpid::framing::OutputHandler* out, int channel, u_int32_t framesize);
             void encode(qpid::framing::Buffer& buffer);
             void destroy();
             ~InMemoryContent(){}
