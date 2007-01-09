@@ -61,8 +61,9 @@ unit_tests =		\
 
 noinst_PROGRAMS = $(client_exe_tests)
 
-TESTS = run-unit-tests run-system-tests
-EXTRA_DIST += $(TESTS)
+CLIENT_TESTS = client_test quick_topictest
+TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
+EXTRA_DIST += $(TESTS) topictest
 
 include gen.mk
 

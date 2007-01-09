@@ -110,12 +110,12 @@ public:
     inline bool getHelp() const { return help; }
 };
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
     Args args;
     args.parse(argc, argv);
     if(args.getHelp()){
         args.usage();
-    }else{
+    } else {
         try{
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
@@ -156,10 +156,12 @@ int main(int argc, char** argv){
             }
             channel.close();
             connection.close();
-        }catch(qpid::QpidError error){
+            return 0;
+        }catch(qpid::QpidError error) {
             std::cout << error.what() << std::endl;
         }
     }
+    return 1;
 }
 
 Publisher::Publisher(Channel* _channel, const std::string& _controlTopic, bool tx) : 
