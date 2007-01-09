@@ -29,6 +29,7 @@ import org.apache.qpid.server.queue.AMQMessage;
 public interface Exchange
 {
     AMQShortString getName();
+    AMQShortString getType();
 
     void initialise(AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
 

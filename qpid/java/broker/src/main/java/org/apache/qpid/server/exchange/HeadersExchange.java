@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -172,6 +173,11 @@ public class HeadersExchange extends AbstractExchange
         }
 
     } // End of MBean class
+
+    public AMQShortString getType()
+    {
+        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+    }
 
     public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
