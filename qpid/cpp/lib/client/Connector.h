@@ -26,6 +26,7 @@
 #include <framing/OutputHandler.h>
 #include <framing/InitiationHandler.h>
 #include <framing/ProtocolInitiation.h>
+#include <ProtocolVersion.h>
 #include <sys/ShutdownHandler.h>
 #include <sys/TimeoutHandler.h>
 #include <sys/Thread.h>
@@ -41,6 +42,7 @@ namespace client {
         const bool debug;
 	const int receive_buffer_size;
 	const int send_buffer_size;
+	qpid::framing::ProtocolVersion version;
 
 	bool closed;
 
@@ -73,7 +75,7 @@ namespace client {
 	void handleClosed();
 
     public:
-	Connector(bool debug = false, u_int32_t buffer_size = 1024);
+	Connector(const qpid::framing::ProtocolVersion& pVersion, bool debug = false, u_int32_t buffer_size = 1024);
 	virtual ~Connector();
 	virtual void connect(const std::string& host, int port);
 	virtual void init(qpid::framing::ProtocolInitiation* header);

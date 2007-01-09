@@ -19,6 +19,7 @@
  *
  */
 #include <iostream>
+#include <AMQP_HighestVersion.h>
 #include <amqp_framing.h>
 #include <qpid_test_plugin.h>
 using namespace qpid::framing;
@@ -72,7 +73,7 @@ public:
     void testMethod() 
     {
         AMQMethodBody* method = new QueueDeclareBody(v);
-        AMQFrame frame(0, method);
+        AMQFrame frame(highestProtocolVersion, 0, method);
         TestBodyHandler handler(method);
         handler.handleBody(frame.getBody());
     }
@@ -80,7 +81,7 @@ public:
     void testHeader() 
     {
         AMQHeaderBody* header = new AMQHeaderBody();
-        AMQFrame frame(0, header);
+        AMQFrame frame(highestProtocolVersion, 0, header);
         TestBodyHandler handler(header);
         handler.handleBody(frame.getBody());
     }
@@ -88,7 +89,7 @@ public:
     void testContent() 
     {
         AMQContentBody* content = new AMQContentBody();
-        AMQFrame frame(0, content);
+        AMQFrame frame(highestProtocolVersion, 0, content);
         TestBodyHandler handler(content);
         handler.handleBody(frame.getBody());
     }
@@ -96,7 +97,7 @@ public:
     void testHeartbeat() 
     {
         AMQHeartbeatBody* heartbeat = new AMQHeartbeatBody();
-        AMQFrame frame(0, heartbeat);
+        AMQFrame frame(highestProtocolVersion, 0, heartbeat);
         TestBodyHandler handler(heartbeat);
         handler.handleBody(frame.getBody());
     }

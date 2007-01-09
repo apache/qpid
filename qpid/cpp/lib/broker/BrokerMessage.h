@@ -58,7 +58,7 @@ namespace qpid {
             qpid::sys::Mutex contentLock;
 
             void sendContent(qpid::framing::OutputHandler* out, 
-                             int channel, u_int32_t framesize);
+                             int channel, u_int32_t framesize, qpid::framing::ProtocolVersion* version);
 
         public:
             typedef boost::shared_ptr<Message> shared_ptr;
