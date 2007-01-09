@@ -35,7 +35,7 @@ namespace qpid
 namespace framing
 {
 
-AMQP_MethodVersionMap::AMQP_MethodVersionMap(u_int8_t major, u_int8_t minor): version(major, minor)
+AMQP_MethodVersionMap::AMQP_MethodVersionMap()
 {
 %{CLIST} ${mc_create_method_body_map_entry}	
 }
