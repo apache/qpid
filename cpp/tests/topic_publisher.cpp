@@ -138,13 +138,15 @@ int main(int argc, char** argv){
             int64_t sum(0);
             for(int i = 0; i < batchSize; i++){
                 if(i > 0 && args.getDelay()) sleep(args.getDelay());
-                Time time = publisher.publish(
-                    args.getMessages(), args.getSubscribers(), args.getSize());
-                if(!max || time > max) max = time;
-                if(!min || time < min) min = time;
-                sum += time;
+                int64_t msecs =
+                    publisher.publish(args.getMessages(),
+                                      args.getSubscribers(),
+                                      args.getSize()) / TIME_MSEC;
+                if(!max || msecs > max) max = msecs;
+                if(!min || msecs < min) min = msecs;
+                sum += msecs;
                 std::cout << "Completed " << (i+1) << " of " << batchSize
-                          << " in " << time/TIME_MSEC << "ms" << std::endl;
+                          << " in " << msecs << "ms" << std::endl;
             }
             publisher.terminate();
             int64_t avg = sum / batchSize;
