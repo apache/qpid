@@ -1,42 +1,41 @@
 #!/bin/bash
-# Run the c++ or java topic test
+# Run the C++ topic test
 
-. `dirname $0`/env
-
-# Edit parameters here:
-
-# Big test:
-# LISTENERS=10
-# MESSAGES=10000
-# BATCHES=20
-
-LISTENERS=10
+# Defaults
+SUBSCRIBERS=10
 MESSAGES=2000
 BATCHES=10
 
-cppcmds() {
-    LISTEN_CMD=topic_listener
-    PUBLISH_CMD="topic_publisher -messages $MESSAGES -batches $BATCHES -subscribers $LISTENERS"
+while getopts "s:m:b:" opt ; do
+    case $opt in
+	s) SUBSCRIBERS=$OPTARG ;;
+	m) MESSAGES=$OPTARG ;;
+	b) BATCHES=$OPTARG ;;
+	?)
+	    echo "Usage: %0 [-s <subscribers>] [-m <messages.] [-b <batches>]"
+	    exit 1
+	    ;;
+    esac
+done
+
+subscribe() {
+    ID=$1
+    echo "subscriber $ID"
+    ./topic_listener > subscriber.$ID 2>&1 || {
+	echo "SUBSCRIBER %ID FAILED: " ;
+	cat subscriber.$ID
+    }
+    rm subscriber.$ID
 }
 
-javacmds() {
-    DEF=-Damqj.logging.level="error"
-    LISTEN_CMD="qpid-run $DEF org.apache.qpid.topic.Listener"
-    PUBLISH_CMD="qpid-run $DEF org.apache.qpid.topic.Publisher -messages $MESSAGES -batch $BATCHES -clients $LISTENERS"
+publish() {
+    ./topic_publisher -messages $MESSAGES -batches $BATCHES -subscribers $SUBSCRIBERS
 }
 
-case $1 in
-    c) cppcmds ;;
-    j) javacmds ;;
-    *) cppcmds ;;
-esac
-
-for ((i=$LISTENERS ; i--; )); do
-    $LISTEN_CMD  > /dev/null 2>&1 &
+for ((i=$SUBSCRIBERS ; i--; )); do
+    subscribe $i &
 done
 sleep 1
-echo $PUBLISH_CMD $OPTIONS
-
 STATS=~/bin/topictest.times
 echo "---- topictest `date`" >> $STATS
-$PUBLISH_CMD $OPTIONS | tee -a $STATS
+publish | tee -a $STATS

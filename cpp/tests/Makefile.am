@@ -9,16 +9,13 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-# FIXME: have e.g., topicall, run as part of "make check"?
 EXTRA_DIST =		\
-  env			\
-  broker		\
-  topicall		\
   topictest		\
   qpid_test_plugin.h	\
-  APRBaseTest.cpp
+  MockSessionHandler.h
 
-client_tests =		\
+
+client_exe_tests =	\
   client_test		\
   echo_service		\
   topic_listener	\
@@ -62,9 +59,9 @@ unit_tests =		\
   $(misc_tests)
 
 
-noinst_PROGRAMS = $(client_tests)
+noinst_PROGRAMS = $(client_exe_tests)
 
-TESTS = run-unit-tests run-python-tests
+TESTS = run-unit-tests run-system-tests
 EXTRA_DIST += $(TESTS)
 
 include gen.mk
@@ -77,7 +74,7 @@ lib_broker = $(abs_builddir)/../lib/broker/libqpidbroker.la
 
 gen.mk: Makefile.am
 	(					\
-	  for i in $(client_tests); do		\
+	  for i in $(client_exe_tests); do		\
 	    echo $${i}_SOURCES = $$i.cpp;	\
 	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)'; \
 	  done;					\
