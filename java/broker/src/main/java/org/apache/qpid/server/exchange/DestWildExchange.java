@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
@@ -126,6 +127,11 @@ public class DestWildExchange extends AbstractExchange
 
     } // End of MBean class
 
+
+    public AMQShortString getType()
+    {
+        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+    }
 
     public synchronized void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
