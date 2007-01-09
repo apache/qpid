@@ -26,7 +26,7 @@ using namespace qpid::framing;
 
 // This only works as a static as the version is currently fixed to 8.0
 // TODO: When the class is version-aware this will need to change
-AMQP_MethodVersionMap AMQFrame::versionMap(8,0);
+AMQP_MethodVersionMap AMQFrame::versionMap(0,9);
 
 // AMQP version management change - kpvdr 2-11-17
 // TODO: Make this class version-aware
@@ -68,7 +68,7 @@ AMQBody::shared_ptr AMQFrame::createMethodBody(Buffer& buffer){
     u_int16_t methodId = buffer.getShort();
     // AMQP version management change - kpvdr 2006-11-16
     // TODO: Make this class version-aware and link these hard-wired numbers to that version
-    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, 8, 0));
+    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, 0, 9));
     // Origianl stmt:
 	// AMQBody::shared_ptr body(createAMQMethodBody(classId, methodId));
     return body;
