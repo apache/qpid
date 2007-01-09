@@ -163,8 +163,14 @@ public class AMQQueueMBeanTest extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)8, (byte)0);
-        publish.immediate = immediate;
+        BasicPublishBody publish = new BasicPublishBody((byte)8,
+                                                        (byte)0,
+                                                        null,
+                                                        immediate,
+                                                        false,
+                                                        null,
+                                                        0);
+        
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = 1000;   // in bytes
         return new AMQMessage(_messageStore.getNewMessageId(), publish, _transactionalContext, contentHeaderBody);

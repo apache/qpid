@@ -38,6 +38,12 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         this.bodyFrame = bodyFrame;
     }
 
+    public AMQFrame(ByteBuffer in, int channel, long bodySize, BodyFactory bodyFactory) throws AMQFrameDecodingException
+    {
+        this.channel = channel;
+        this.bodyFrame = bodyFactory.createBody(in,bodySize);
+    }
+
     public long getSize()
     {
         return 1 + 2 + 4 + bodyFrame.getSize() + 1;
@@ -65,8 +71,8 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         this.channel = channel;
-        bodyFrame = bodyFactory.createBody(buffer);
-        bodyFrame.populateFromBuffer(buffer, bodySize);
+        bodyFrame = bodyFactory.createBody(buffer, bodySize);
+      
     }
 
     public String toString()

@@ -28,36 +28,97 @@
  
 package org.apache.qpid.framing;
 
-import java.util.TreeMap;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.mina.common.ByteBuffer;
 
 public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQDataBlock
 {
-    public static final TreeMap<String, Integer> classIdMap = new TreeMap<String, Integer>();
-    public static final TreeMap<String, Integer> methodIdMap = new TreeMap<String, Integer>();
+    private static final AMQMethodBodyInstanceFactory factory = new AMQMethodBodyInstanceFactory()
+    {
+        public AMQMethodBody newInstance(byte major, byte minor, ByteBuffer in, long size) throws AMQFrameDecodingException
+        {
+            return new ${CLASS}${METHOD}Body(major, minor, in);
+        }
+    };
+    
+    public static AMQMethodBodyInstanceFactory getFactory()
+    {
+        return factory;
+    }
+
+    public static HashMap<Integer, Integer> classIdMap = new HashMap<Integer, Integer>();
+    public static HashMap<Integer, Integer> methodIdMap = new HashMap<Integer, Integer>();
+    
+    private static void registerMethodId(byte major, byte minor, int methodId)
+    {
+        methodIdMap.put((0xff & (int) major) | ((0xff & (int) minor)<<8), methodId); 
+    }
+    
+    private static void registerClassId(byte major, byte minor, int classId)
+    {
+        classIdMap.put((0xff & (int) major) | ((0xff & (int) minor)<<8), classId); 
+    }
+    
     
     static
     {
-${CLASS_ID_INIT}
-${METHOD_ID_INIT}
+
+        ${CLASS_ID_INIT}
+        ${METHOD_ID_INIT}
+
     }
     
     // Fields declared in specification
 %{FLIST}    ${field_declaration}
 
+    private final int _clazz;
+    private final int _method;
+
+    
     // Constructor
-    public ${CLASS}${METHOD}Body(byte major, byte minor)
+
+    public ${CLASS}${METHOD}Body(byte major, byte minor, ByteBuffer buffer) throws AMQFrameDecodingException
     {
         super(major, minor);
+        _clazz = getClazz(major,minor); 
+        _method = getMethod(major,minor); 
+        %{FLIST}    ${mb_field_decode}
+    }
+    public ${CLASS}${METHOD}Body(byte major, byte minor
+    %{FLIST}    ${mb_field_parameter_list}
+                                         )
+    {
+        super(major, minor);
+        _clazz = getClazz(major,minor); 
+        _method = getMethod(major,minor); 
+        %{FLIST}    ${mb_field_body_initialize}
+    }
+    
+    public int getClazz() 
+    { 
+        return _clazz; 
+    }
+    
+    public int getMethod() 
+    { 
+        return _method; 
     }
 
-    public int getClazz() { return classIdMap.get(major + "-" + minor); }
-    public int getMethod() { return methodIdMap.get(major + "-" + minor); }
-    public static int getClazz(byte major, byte minor) { return classIdMap.get(major + "-" + minor); }
-    public static int getMethod(byte major, byte minor) { return methodIdMap.get(major + "-" + minor); }
+    public static int getClazz(byte major, byte minor) 
+    { 
+        return classIdMap.get((0xff & (int) major) | ((0xff & (int) minor)<<8)); 
+    }
     
-    // Field methods		
+    public static int getMethod(byte major, byte minor) 
+    { 
+        return methodIdMap.get((0xff & (int) major) | ((0xff & (int) minor)<<8)); 
+    }
+    
+    
+    // Field methods        
 %{FLIST}    ${mb_field_get_method}
 
     protected int getBodySize()
@@ -84,16 +145,16 @@ ${METHOD_ID_INIT}
         return buf.toString();
     }
 
-    public static AMQFrame createAMQFrame(int _channelId, byte major, byte minor
+    public static AMQFrame createAMQFrame(int channelId, byte major, byte minor
 %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
-        ${CLASS}${METHOD}Body body = new ${CLASS}${METHOD}Body(major, minor);
-%{FLIST}    ${mb_field_body_initialize}
-        		 
-        AMQFrame frame = new AMQFrame();
-        frame.channel = _channelId;
-        frame.bodyFrame = body;
+        ${CLASS}${METHOD}Body body = new ${CLASS}${METHOD}Body(major, minor
+%{FLIST}    ${mb_field_passed_parameter_list}
+        );
+
+                 
+        AMQFrame frame = new AMQFrame(channelId, body);
         return frame;
     }
 }

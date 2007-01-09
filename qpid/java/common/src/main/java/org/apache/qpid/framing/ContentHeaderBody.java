@@ -40,6 +40,18 @@ public class ContentHeaderBody extends AMQBody
     {
     }
 
+    public ContentHeaderBody(ByteBuffer buffer, long size) throws AMQFrameDecodingException
+    {
+        classId = buffer.getUnsignedShort();
+        weight = buffer.getUnsignedShort();
+        bodySize = buffer.getLong();
+        int propertyFlags = buffer.getUnsignedShort();
+        ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
+        properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
+
+    }
+
+
     public ContentHeaderBody(ContentHeaderProperties props, int classId)
     {
         properties = props;
@@ -79,8 +91,8 @@ public class ContentHeaderBody extends AMQBody
     public static ContentHeaderBody createFromBuffer(ByteBuffer buffer, long size)
         throws AMQFrameDecodingException, AMQProtocolVersionException
     {
-        ContentHeaderBody body = new ContentHeaderBody();
-        body.populateFromBuffer(buffer, size);
+        ContentHeaderBody body = new ContentHeaderBody(buffer, size);
+        
         return body;
     }
 
