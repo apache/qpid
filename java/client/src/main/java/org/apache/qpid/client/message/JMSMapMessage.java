@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.AMQException;
-import org.apache.log4j.Logger;
+import java.nio.charset.CharacterCodingException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import java.util.*;
-import java.nio.charset.Charset;
-import java.nio.charset.CharacterCodingException;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
 public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
 {
@@ -50,24 +51,6 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         super(data); // this instantiates a content header
         populateMapFromData();
     }
-
-
-    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
-    {
-        super(messageNbr, contentHeader, data);
-        try
-        {
-            populateMapFromData();
-        }                                                        
-        catch (JMSException je)
-        {
-            throw new AMQException("Error populating MapMessage from ByteBuffer", je);
-            
-        }
-
-    }
-
 
     public String toBodyString() throws JMSException
     {

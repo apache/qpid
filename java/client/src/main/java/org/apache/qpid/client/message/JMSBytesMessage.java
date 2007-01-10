@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CharsetDecoder;
-import java.nio.CharBuffer;
+
+import org.apache.mina.common.ByteBuffer;
 
 public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
@@ -53,11 +52,11 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         super(data); // this instanties a content header
     }
 
-    JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+ /*   JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
-    }
+    }*/
 
     public void reset()
     {

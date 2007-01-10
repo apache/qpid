@@ -20,13 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
+import javax.jms.JMSException;
+import javax.jms.StreamMessage;
 
-import javax.jms.*;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
+import org.apache.mina.common.ByteBuffer;
 
 /**
  * @author Apache Software Foundation
@@ -59,11 +56,11 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     }
 
 
-    JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+ /*   JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
-    }
+    }*/
 
     public void reset()
     {

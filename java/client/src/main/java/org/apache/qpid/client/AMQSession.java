@@ -20,29 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQUndeliveredException;
-import org.apache.qpid.AMQInvalidSelectorException;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.client.failover.FailoverSupport;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
-import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.handler.ExchangeBoundHandler;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -51,6 +28,72 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.jms.BytesMessage;
+import javax.jms.Destination;
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidSelectorException;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+import javax.jms.QueueReceiver;
+import javax.jms.QueueSender;
+import javax.jms.QueueSession;
+import javax.jms.StreamMessage;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.AMQUndeliveredException;
+import org.apache.qpid.client.failover.FailoverSupport;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ChannelFlowBody;
+import org.apache.qpid.framing.ExchangeBoundBody;
+import org.apache.qpid.framing.ExchangeBoundOkBody;
+import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.ExchangeDeclareOkBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.framing.MessageConsumeBody;
+import org.apache.qpid.framing.MessageOkBody;
+import org.apache.qpid.framing.MessageRecoverBody;
+import org.apache.qpid.framing.QueueBindBody;
+import org.apache.qpid.framing.QueueDeclareBody;
+import org.apache.qpid.framing.QueueDeleteBody;
+import org.apache.qpid.framing.QueueDeleteOkBody;
+import org.apache.qpid.framing.TxCommitBody;
+import org.apache.qpid.framing.TxCommitOkBody;
+import org.apache.qpid.framing.TxRollbackBody;
+import org.apache.qpid.framing.TxRollbackOkBody;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.handler.ExchangeBoundHandler;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
@@ -723,7 +766,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId,
+        _connection.getProtocolHandler().writeFrame(MessageRecoverBody.createAMQFrame(_channelId,
             (byte)0, (byte)9,	// AMQP version (major, minor)
             false));	// requeue
     }
@@ -1187,7 +1230,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId,
+            /*AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId,
                 (byte)0, (byte)9,	// AMQP version (major, minor)
                 arguments,	// arguments
                 tag,	// consumerTag
@@ -1196,15 +1239,28 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 consumer.isNoLocal(),	// noLocal
                 nowait,	// nowait
                 queueName,	// queue
-                0);	// ticket
+                0);	// ticket */
+        	
+        	AMQFrame jmsConsume = MessageConsumeBody.createAMQFrame(_channelId,
+        			                (byte)0, (byte)9,	// AMQP version (major, minor)
+        							tag,	// consumerTag
+				        			consumer.isExclusive(),	// exclusive
+				        			arguments, // arguments in the form of a field table
+				                    consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,	// noAck
+				                    consumer.isNoLocal(),	// noLocal
+				                    queueName, // queue
+				                    0); // ticket */
+        	/*
             if (nowait)
             {
                 protocolHandler.writeFrame(jmsConsume);
             }
             else
             {
-                protocolHandler.syncWrite(jmsConsume, BasicConsumeOkBody.class);
-            }
+            	protocolHandler.syncWrite(jmsConsume, BasicConsumeOkBody.class);
+            }*/
+            
+            protocolHandler.syncWrite(jmsConsume,MessageOkBody.class);
         }
         catch (AMQException e)
         {
@@ -1535,10 +1591,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame ackFrame = BasicAckBody.createAMQFrame(_channelId,
-            (byte)0, (byte)9,	// AMQP version (major, minor)
-            deliveryTag,	// deliveryTag
-            multiple);	// multiple
+        final AMQFrame ackFrame = MessageOkBody.createAMQFrame(_channelId,(byte)0, (byte)9);	// AMQP version (major, minor)
+            //deliveryTag,	// deliveryTag
+            //multiple);	// multiple
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending ack for delivery tag " + deliveryTag + " on channel " + _channelId);
