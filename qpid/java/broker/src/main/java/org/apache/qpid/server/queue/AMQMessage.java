@@ -48,7 +48,7 @@ public class AMQMessage
     /**
      * Used in clustering
      */
-    private final Set<Object> _tokens = new HashSet<Object>();
+    private Set<Object> _tokens;
 
     /**
      * Only use in clustering - should ideally be removed?
@@ -71,7 +71,6 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
 
-    private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
     private AtomicBoolean _taken = new AtomicBoolean(false);
 
     private TransientMessageData _transientMessageData = new TransientMessageData();
@@ -167,7 +166,7 @@ public class AMQMessage
         _messageId = messageId;
         _txnContext = txnContext;
         _transientMessageData.setPublishBody(publishBody);
-        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
+        
         _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
         {
@@ -396,39 +395,6 @@ public class AMQMessage
     }
 
 
-    public MessageDecorator getDecodedMessage(String type) throws AMQException
-    {
-        MessageDecorator msgtype = null;
-
-        if (_decodedMessages != null)
-        {
-            msgtype = _decodedMessages.get(type);
-
-            if (msgtype == null)
-            {
-                msgtype = decorateMessage(type);
-            }
-        }
-
-        return msgtype;
-    }
-
-    private MessageDecorator decorateMessage(String type) throws AMQException
-    {
-        MessageDecorator msgdec = null;
-
-        if (type.equals(JMS_MESSAGE))
-        {
-            msgdec = new JMSMessage(this);
-        }
-
-        if (msgdec != null)
-        {
-            _decodedMessages.put(type, msgdec);
-        }
-
-        return msgdec;
-    }
 
     public boolean taken()
     {
@@ -442,6 +408,12 @@ public class AMQMessage
 
     public boolean checkToken(Object token)
     {
+
+        if(_tokens==null)
+        {
+            _tokens  = new HashSet<Object>();
+        }
+
         if (_tokens.contains(token))
         {
             return true;
@@ -569,32 +541,40 @@ public class AMQMessage
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       getContentHeaderBody());
 
-        Iterator<AMQDataBlock> bodyFrameIterator = getBodyFrameIterator(channelId);
-        //
-        // Optimise the case where we have a single content body. In that case we create a composite block
-        // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
-        //
-        if (bodyFrameIterator.hasNext())
+        final int bodyCount = _messageHandle.getBodyCount(_messageId);
+        if(bodyCount == 0)
         {
-            AMQDataBlock firstContentBody = bodyFrameIterator.next();
-            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
+            SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
+                                                                             contentHeader);
             protocolSession.writeFrame(compositeBlock);
         }
         else
         {
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver,
-                                                                             new AMQDataBlock[]{contentHeader});
+
+
+            //
+            // Optimise the case where we have a single content body. In that case we create a composite block
+            // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
+            //            
+            ContentBody cb = _messageHandle.getContentBody(_messageId, 0);
+
+            AMQDataBlock firstContentBody = ContentBody.createAMQFrame(channelId, cb);
+            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
+            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
             protocolSession.writeFrame(compositeBlock);
+
+            //
+            // Now start writing out the other content bodies
+            //
+            for(int i = 1; i < bodyCount; i++)
+            {
+                cb = _messageHandle.getContentBody(_messageId, i);
+                protocolSession.writeFrame(ContentBody.createAMQFrame(channelId, cb));
+            }
+
+
         }
 
-        //
-        // Now start writing out the other content bodies
-        //
-        while (bodyFrameIterator.hasNext())
-        {
-            protocolSession.writeFrame(bodyFrameIterator.next());
-        }
 
     }
 
