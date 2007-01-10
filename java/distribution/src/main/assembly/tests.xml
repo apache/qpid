@@ -48,6 +48,7 @@
       <unpack>false</unpack>
       <includes>
         <include>org.apache.qpid:qpid-systests</include>
+        <include>org.apache.qpid:qpid-perftests</include>
       </includes>
       <scope>test</scope>
     </dependencySet>
