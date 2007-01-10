@@ -26,6 +26,7 @@ import java.util.HashMap;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
+import javax.jms.Message;
 
 //import org.apache.activemq.command.ActiveMQDestination;
 //import org.apache.activemq.command.Message;
@@ -45,225 +46,232 @@ import org.apache.log4j.Logger;
 public class PropertyExpression implements Expression
 {
 
-    interface SubExpression
-    {
-        public Object evaluate(AMQMessage message) throws AMQException;
-    }
 
-    interface JMSExpression
-    {
-        public abstract Object evaluate(JMSMessage message);
-    }
-
-    static class SubJMSExpression implements SubExpression
-    {
-        JMSExpression _expression;
-
-        SubJMSExpression(JMSExpression expression)
-        {
-            _expression = expression;
-        }
-
-
-        public Object evaluate(AMQMessage message) throws AMQException
-        {
-            JMSMessage msg = (JMSMessage) message.getDecodedMessage(AMQMessage.JMS_MESSAGE);
-            if (msg != null)
-            {
-                return _expression.evaluate(msg);
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
 
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
 
 
-    static final private HashMap JMS_PROPERTY_EXPRESSIONS = new HashMap();
+    static final private HashMap<String, Expression> JMS_PROPERTY_EXPRESSIONS = new HashMap<String, Expression>();
 
     static
     {
-        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSDestination();
+                        //TODO
+                        return null;
                     }
                 }
-        ));
-//
-//            public Object evaluate(AMQMessage message)
-//            {
-//                //fixme
-//
-//
-////                AMQDestination dest = message.getOriginalDestination();
-////                if (dest == null)
-////                {
-////                    dest = message.getDestination();
-////                }
-////                if (dest == null)
-////                {
-////                    return null;
-////                }
-////                return dest.toString();
-//                return "";
-//            }
-//        });
-        JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo", new SubJMSExpression(
-                new JMSExpression()
-                {
-                    public Object evaluate(JMSMessage message)
-                    {
-                        return message.getJMSReplyTo();
-                    }
-                })
         );
-
-        JMS_PROPERTY_EXPRESSIONS.put("JMSType", new SubJMSExpression(
-                new JMSExpression()
-                {
-                    public Object evaluate(JMSMessage message)
-                    {
-                        return message.getJMSType();
-                    }
-                }
-        ));
-
-        JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode", new SubJMSExpression(
-                new JMSExpression()
-                {
-                    public Object evaluate(JMSMessage message)
+        JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo", new Expression()
+        {
+                    public Object evaluate(AMQMessage message)
                     {
                         try
                         {
-                            Integer mode = new Integer(message.getAMQMessage().isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-                            _logger.info("JMSDeliveryMode is :" + mode);
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getReplyTo();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
+                    }
+
+        });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSType",
+                new Expression()
+                {
+                    public Object evaluate(AMQMessage message)
+                    {
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getType();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
+                    }
+                }
+        );
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode",
+                new Expression()
+                {
+                    public Object evaluate(AMQMessage message)
+                    {
+                        try
+                        {
+                            int mode = message.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+                            if(_logger.isDebugEnabled())
+                            {
+                                _logger.debug("JMSDeliveryMode is :" + mode);
+                            }
                             return mode;
                         }
                         catch (AMQException e)
                         {
-                            //shouldn't happen
+                            _logger.warn(e);
                         }
 
                         return DeliveryMode.NON_PERSISTENT;
                     }
-                }));
+                });
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSPriority", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSPriority",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSPriority();
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return (int) _properties.getPriority();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                        }
+                        return Message.DEFAULT_PRIORITY;
                     }
                 }
-        ));
+        );
 
 
-        JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID", 
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getAMQMessage().getMessageId();
+
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getMessageId();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSTimestamp();
+
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getTimestamp();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSCorrelationID();
+
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getCorrelationId();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSExpiration();
+
+                        try
+                        {
+                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            return _properties.getExpiration();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.warn(e);
+                            return null;
+                        }
+
+                    }
+                });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered",
+                new Expression()
+                {
+                    public Object evaluate(AMQMessage message)
+                    {
+                        return message.isRedelivered();
                     }
                 }
-        ));
-
-        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new SubJMSExpression(
-                new JMSExpression()
-                {
-                    public Object evaluate(JMSMessage message)
-                    {
-                        return message.getAMQMessage().isRedelivered();
-                    }
-                }
-        ));
+        );
 
     }
 
     private final String name;
-    private final SubExpression jmsPropertyExpression;
+    private final Expression jmsPropertyExpression;
 
     public PropertyExpression(String name)
     {
         this.name = name;
-        jmsPropertyExpression = (SubExpression) JMS_PROPERTY_EXPRESSIONS.get(name);
+        jmsPropertyExpression =  JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
     public Object evaluate(AMQMessage message) throws AMQException
     {
-//        try
-//        {
-//            if (message.isDropped())
-//            {
-//                return null;
-//            }
 
         if (jmsPropertyExpression != null)
         {
             return jmsPropertyExpression.evaluate(message);
         }
-//            try
+
         else
         {
 
             BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
 
-            _logger.info("Looking up property:" + name);
-            _logger.info("Properties are:" + _properties.getHeaders().keySet());
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Looking up property:" + name);
+                _logger.debug("Properties are:" + _properties.getHeaders().keySet());
+            }
 
             return _properties.getHeaders().getObject(name);
         }
-//            catch (IOException ioe)
-//            {
-//                JMSException exception = new JMSException("Could not get property: " + name + " reason: " + ioe.getMessage());
-//                exception.initCause(ioe);
-//                throw exception;
-//            }
-//        }
-//        catch (IOException e)
-//        {
-//            JMSException exception = new JMSException(e.getMessage());
-//            exception.initCause(e);
-//            throw exception;
-//        }
-
     }
 
     public String getName()
