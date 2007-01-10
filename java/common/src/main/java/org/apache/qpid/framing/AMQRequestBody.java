@@ -24,16 +24,22 @@ import org.apache.mina.common.ByteBuffer;
 
 public class AMQRequestBody extends AMQBody
 {
-    public static final byte TYPE = (byte)AmqpConstants.frameRequestAsInt();
-       
     // Fields declared in specification
-    public long requestId;
-    public long responseMark;
-    public AMQMethodBody methodPayload;
+    protected long requestId;
+    protected long responseMark;
+    protected AMQMethodBody methodPayload;
 
 
     // Constructor
     public AMQRequestBody() {}
+    public AMQRequestBody(long requestId, long responseMark,
+    		AMQMethodBody methodPayload)
+    {
+    	this.requestId = requestId;
+    	this.responseMark = responseMark;
+    	this.methodPayload = methodPayload;
+    }
+
 
     // Field methods
     public long getRequestId() { return requestId; }
@@ -43,7 +49,7 @@ public class AMQRequestBody extends AMQBody
     
     protected byte getFrameType()
     {
-    	return TYPE;
+    	return (byte)AmqpConstants.frameRequestAsInt();
     }
     
     protected int getSize()
@@ -68,15 +74,17 @@ public class AMQRequestBody extends AMQBody
     	methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     
+    public String toString()
+    {
+    	return "Req[" + requestId + " " + responseMark + "] C" +
+        	methodPayload.getClazz() + " M" + methodPayload.getMethod();
+    }
+    
     public static AMQFrame createAMQFrame(int channelId, long requestId,
             long responseMark, AMQMethodBody methodPayload)
     {
-        AMQRequestBody requestFrame = new AMQRequestBody();
-        requestFrame.requestId = requestId;
-        requestFrame.responseMark = responseMark;
-        requestFrame.methodPayload = methodPayload;
-
-        
+        AMQRequestBody requestFrame = new AMQRequestBody(requestId, responseMark,
+        	methodPayload);
         AMQFrame frame = new AMQFrame();
         frame.channel = channelId;
         frame.bodyFrame = requestFrame;

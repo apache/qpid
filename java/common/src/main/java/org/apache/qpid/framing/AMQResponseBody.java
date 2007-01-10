@@ -24,16 +24,22 @@ import org.apache.mina.common.ByteBuffer;
 
 public class AMQResponseBody extends AMQBody
 {
-    public static final byte TYPE = (byte)AmqpConstants.frameResponseAsInt();
-       
     // Fields declared in specification
-    public long responseId;
-    public long requestId;
-    public int batchOffset;
-    public AMQMethodBody methodPayload;
+    protected long responseId;
+    protected long requestId;
+    protected int batchOffset;
+    protected AMQMethodBody methodPayload;
 
     // Constructor
     public AMQResponseBody() {}
+    public AMQResponseBody(long getResponseId, long getRequestId,
+    		int batchOffset, AMQMethodBody methodPayload)
+    {
+    	this.responseId = responseId;
+        this.requestId = requestId;
+        this.batchOffset = batchOffset;
+        this.methodPayload = methodPayload;
+    }
 
     // Field methods
     public long getResponseId() { return responseId; }
@@ -43,7 +49,7 @@ public class AMQResponseBody extends AMQBody
     
     protected byte getFrameType()
     {
-    	return TYPE;
+    	return (byte)AmqpConstants.frameResponseAsInt();
     }
     
     protected int getSize()
@@ -68,15 +74,17 @@ public class AMQResponseBody extends AMQBody
         methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     
-    public static AMQFrame createAMQFrame(int channelId, long requestId,
-            long responseId, int batchOffset, AMQMethodBody methodPayload)
+    public String toString()
     {
-        AMQResponseBody responseFrame = new AMQResponseBody();
-        responseFrame.responseId = responseId;
-        responseFrame.requestId = requestId;
-        responseFrame.batchOffset = batchOffset;
-        responseFrame.methodPayload = methodPayload;
-        
+    	return "Res[" + responseId + " " + requestId + "-" + requestId + batchOffset + "] C" +
+        	methodPayload.getClazz() + " M" + methodPayload.getMethod();
+    }
+    
+    public static AMQFrame createAMQFrame(int channelId, long responseId,
+            long requestId, int batchOffset, AMQMethodBody methodPayload)
+    {
+        AMQResponseBody responseFrame = new AMQResponseBody(responseId,
+        	requestId, batchOffset, methodPayload);
         AMQFrame frame = new AMQFrame();
         frame.channel = channelId;
         frame.bodyFrame = responseFrame;

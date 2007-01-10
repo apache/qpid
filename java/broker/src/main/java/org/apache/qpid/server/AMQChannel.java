@@ -170,49 +170,48 @@ public class AMQChannel
         _prefetch_HighWaterMark = prefetchCount;
     }
 
-
     public void setPublishFrame(BasicPublishBody publishBody, AMQProtocolSession publisher) throws AMQException
     {
         _currentMessage = new AMQMessage(_messageStore, publishBody);
         _currentMessage.setPublisher(publisher);
     }
 
-    public void publishContentHeader(ContentHeaderBody contentHeaderBody)
-            throws AMQException
-    {
-        if (_currentMessage == null)
-        {
-            throw new AMQException("Received content header without previously receiving a BasicDeliver frame");
-        }
-        else
-        {
-            _currentMessage.setContentHeaderBody(contentHeaderBody);
-            // check and route if header says body length is zero
-            if (contentHeaderBody.bodySize == 0)
-            {
-                routeCurrentMessage();
-            }
-        }
-    }
-
-    public void publishContentBody(ContentBody contentBody)
-            throws AMQException
-    {
-        if (_currentMessage == null)
-        {
-            throw new AMQException("Received content body without previously receiving a JmsPublishBody");
-        }
-        if (_currentMessage.getContentHeaderBody() == null)
-        {
-            throw new AMQException("Received content body without previously receiving a content header");
-        }
-
-        _currentMessage.addContentBodyFrame(contentBody);
-        if (_currentMessage.isAllContentReceived())
-        {
-            routeCurrentMessage();
-        }
-    }
+//     public void publishContentHeader(ContentHeaderBody contentHeaderBody)
+//             throws AMQException
+//     {
+//         if (_currentMessage == null)
+//         {
+//             throw new AMQException("Received content header without previously receiving a BasicDeliver frame");
+//         }
+//         else
+//         {
+//             _currentMessage.setContentHeaderBody(contentHeaderBody);
+//             // check and route if header says body length is zero
+//             if (contentHeaderBody.bodySize == 0)
+//             {
+//                 routeCurrentMessage();
+//             }
+//         }
+//     }
+// 
+//     public void publishContentBody(ContentBody contentBody)
+//             throws AMQException
+//     {
+//         if (_currentMessage == null)
+//         {
+//             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
+//         }
+//         if (_currentMessage.getContentHeaderBody() == null)
+//         {
+//             throw new AMQException("Received content body without previously receiving a content header");
+//         }
+// 
+//         _currentMessage.addContentBodyFrame(contentBody);
+//         if (_currentMessage.isAllContentReceived())
+//         {
+//             routeCurrentMessage();
+//         }
+//     }
 
     protected void routeCurrentMessage() throws AMQException
     {
