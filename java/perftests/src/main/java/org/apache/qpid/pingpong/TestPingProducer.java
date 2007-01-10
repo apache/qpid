@@ -27,6 +27,7 @@ import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 
@@ -48,7 +49,7 @@ public class TestPingProducer implements ExceptionListener
 
     private AMQConnection _connection;
 
-
+    private static int _messageSize = 0;
     private boolean _publish;
 
     private long SLEEP_TIME = 250L;
@@ -105,8 +106,16 @@ public class TestPingProducer implements ExceptionListener
                 TextMessage msg = session.createTextMessage(
                         "Presented to in conjunction with Mahnah Mahnah and the Snowths: " + ++messageNumber);
 */
-                ObjectMessage msg = session.createObjectMessage();
-
+                ObjectMessage msg = null;
+                if (_messageSize != 0)
+                {
+                    msg = TestMessageFactory.newObjectMessage(session, _messageSize);
+                }
+                else
+                {
+                    msg = session.createObjectMessage();
+                }
+                
                 msg.setStringProperty("timestampString", Long.toString(System.currentTimeMillis()));
                 msg.setLongProperty("timestamp", System.currentTimeMillis());
 
@@ -184,14 +193,25 @@ public class TestPingProducer implements ExceptionListener
     {
         if (args.length < 2)
         {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted]");
+            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted] [message size in bytes]");
             System.exit(0);
         }
         try
         {
             InetAddress address = InetAddress.getLocalHost();
             String clientID = address.getHostName() + System.currentTimeMillis();
-            new TestPingProducer(args.length == 3, args[0], clientID, args[1]);
+            boolean transacted = false;
+            if (args.length == 3 )
+            {
+                transacted = Boolean.parseBoolean(args[2]);
+            }
+            else if (args.length > 3 )
+            {
+                transacted = Boolean.parseBoolean(args[2]);
+                _messageSize = Integer.parseInt(args[3]);
+            }
+
+            new TestPingProducer(transacted, args[0], clientID, args[1]);
         }
         catch (UnknownHostException e)
         {
