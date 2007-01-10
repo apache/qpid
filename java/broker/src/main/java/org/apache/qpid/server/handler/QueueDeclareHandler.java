@@ -22,12 +22,11 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueDeclareOkBody;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQMethodEvent;
@@ -83,20 +82,34 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         synchronized (queueRegistry)
         {
             AMQQueue queue;
-            if ((queue = queueRegistry.getQueue(body.queue)) == null)
+            if (((queue = queueRegistry.getQueue(body.queue)) == null) )
             {
-                queue = createQueue(body, queueRegistry, protocolSession);
-                if (queue.isDurable() && !queue.isAutoDelete())
+                if(body.passive)
                 {
-                    _store.createQueue(queue);
+                    String msg = "Queue: " + body.queue + " not found.";
+                    throw new AMQChannelException(AMQConstant.NOT_FOUND.getCode(),
+                                                                                  msg,
+                                                                                  body.getClazz(),
+                                                                                  body.getMethod(),
+                                                                                  (byte)8,
+                                                                                  (byte)0 	);
+
                 }
-                queueRegistry.registerQueue(queue);
-                if (autoRegister)
+                else
                 {
-                    Exchange defaultExchange = exchangeRegistry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
-                    defaultExchange.registerQueue(body.queue, queue, null);
-                    queue.bind(body.queue, defaultExchange);
-                    _log.info("Queue " + body.queue + " bound to default exchange");
+                    queue = createQueue(body, queueRegistry, protocolSession);
+                    if (queue.isDurable() && !queue.isAutoDelete())
+                    {
+                        _store.createQueue(queue);
+                    }
+                    queueRegistry.registerQueue(queue);
+                    if (autoRegister)
+                    {
+                        Exchange defaultExchange = exchangeRegistry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+                        defaultExchange.registerQueue(body.queue, queue, null);
+                        queue.bind(body.queue, defaultExchange);
+                        _log.info("Queue " + body.queue + " bound to default exchange");
+                    }
                 }
             }
             //set this as the default queue on the channel:

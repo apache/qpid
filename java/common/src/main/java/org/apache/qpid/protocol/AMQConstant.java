@@ -94,7 +94,7 @@ public final class AMQConstant
 
     public static final AMQConstant RESOURCE_ERROR = new AMQConstant(506, "resource error", true);
 
-    public static final AMQConstant NOT_ALLOWED = new AMQConstant(507, "not allowed", true);
+    public static final AMQConstant NOT_ALLOWED = new AMQConstant(530, "not allowed", true);
 
     public static final AMQConstant NOT_IMPLEMENTED = new AMQConstant(540, "not implemented", true);
 

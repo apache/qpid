@@ -31,7 +31,10 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -79,14 +82,30 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         }
         else
         {
-            int purged = queue.delete(body.ifUnused, body.ifEmpty);
-            _store.removeQueue(queue.getName().toString());
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            session.writeFrame(QueueDeleteOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
-                purged));	// messageCount
+            if(body.ifEmpty && !queue.isEmpty())
+            {
+                AMQShortString msg = new AMQShortString("Queue: " + body.queue + " is not empty.");
+                // TODO - Error code
+                session.writeFrame(ChannelCloseBody.createAMQFrame(evt.getChannelId(),(byte)8, (byte)0, body.getClazz(), body.getMethod(), 406, msg	));
+            }
+            else if(body.ifUnused && !queue.isUnused())
+            {
+                AMQShortString msg = new AMQShortString("Queue: " + body.queue + " is still used.");
+                // TODO - Error code
+                session.writeFrame(ChannelCloseBody.createAMQFrame(evt.getChannelId(),(byte)8, (byte)0, body.getClazz(), body.getMethod(), 406, msg	));
+
+            }
+            else
+            {
+                int purged = queue.delete(body.ifUnused, body.ifEmpty);
+                _store.removeQueue(queue.getName().toString());
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                session.writeFrame(QueueDeleteOkBody.createAMQFrame(evt.getChannelId(),
+                    (byte)8, (byte)0,	// AMQP version (major, minor)
+                    purged));	// messageCount
+            }
         }
     }
 }
