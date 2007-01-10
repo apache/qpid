@@ -47,7 +47,7 @@
     <Compile Include="connection\ConnectionTest.cs" />
     <Compile Include="failover\FailoverTest.cs" />
     <Compile Include="failover\FailoverTxTest.cs" />
-    <Compile Include="HeadersExchange\HeadersMatchingConsumer.cs" />
+    <Compile Include="HeadersExchange\HeadersExchangeTest.cs" />
     <Compile Include="HeadersExchange\HeadersMatchingProducer.cs" />
     <Compile Include="MultiConsumer\ProducerMultiConsumer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
