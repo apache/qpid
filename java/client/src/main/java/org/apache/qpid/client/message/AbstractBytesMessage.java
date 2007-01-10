@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
-import java.io.IOException;
-import java.nio.charset.Charset;
+
+import org.apache.mina.common.ByteBuffer;
 
 /**
  * @author Apache Software Foundation
@@ -55,7 +53,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     AbstractBytesMessage(ByteBuffer data)
     {
         super(data); // this instanties a content header
-        getJmsContentHeaderProperties().setContentType(getMimeType());
+        getMessageHeaders().setContentType(getMimeType());
 
         if (_data == null)
         {
@@ -69,13 +67,14 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         _data.setAutoExpand(true);
     }
 
+    /*
     AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
             throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
         getJmsContentHeaderProperties().setContentType(getMimeType());
-    }
+    }*/
 
     public void clearBodyImpl() throws JMSException
     {

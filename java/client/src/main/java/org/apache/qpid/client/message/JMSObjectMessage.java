@@ -20,17 +20,19 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
-import java.io.*;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
+
+import org.apache.mina.common.ByteBuffer;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -54,16 +56,16 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
+        getMessageHeaders().setContentType(MIME_TYPE);
     }
 
     /**
      * Creates read only message for delivery to consumers
      */
-    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
+  /*  JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
     {
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-    }
+    }*/
 
     public void clearBodyImpl() throws JMSException
     {

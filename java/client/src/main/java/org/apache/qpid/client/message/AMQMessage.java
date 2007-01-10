@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.client.AMQSession;
 
 import javax.jms.JMSException;
 
 public class AMQMessage
 {
-    protected ContentHeaderProperties _contentHeaderProperties;
+    protected MessageHeaders _messageHeaders;
 
     /**
      * If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required
@@ -36,13 +35,13 @@ public class AMQMessage
 
     protected final long _deliveryTag;
 
-    public AMQMessage(ContentHeaderProperties properties, long deliveryTag)
+    public AMQMessage(MessageHeaders properties, long deliveryTag)
     {
-        _contentHeaderProperties = properties;
+        _messageHeaders = properties;
         _deliveryTag = deliveryTag;
     }
 
-    public AMQMessage(ContentHeaderProperties properties)
+    public AMQMessage(MessageHeaders properties)
     {
         this(properties, -1);
     }

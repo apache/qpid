@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
-import org.apache.mina.common.ByteBuffer;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 import javax.jms.JMSException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharacterCodingException;
+
+import org.apache.mina.common.ByteBuffer;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {
@@ -48,17 +47,17 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     JMSTextMessage(ByteBuffer data, String encoding) throws JMSException
     {
         super(data); // this instantiates a content header
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE);
-        getJmsContentHeaderProperties().setEncoding(encoding);
+        getMessageHeaders().setContentType(MIME_TYPE);
+        getMessageHeaders().setEncoding(encoding);
     }
 
-    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+   /* JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(deliveryTag, contentHeader, data);
         contentHeader.setContentType(MIME_TYPE);
         _data = data;
-    }
+    }*/
 
     JMSTextMessage(ByteBuffer data) throws JMSException
     {
@@ -109,13 +108,13 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 _data.limit(text.length()) ;
                 //_data.sweep();
                 _data.setAutoExpand(true);
-                if (getJmsContentHeaderProperties().getEncoding() == null)
+                if (getMessageHeaders().getEncoding() == null)
                 {
                     _data.put(text.getBytes());
                 }
                 else
                 {
-                    _data.put(text.getBytes(getJmsContentHeaderProperties().getEncoding()));
+                    _data.put(text.getBytes(getMessageHeaders().getEncoding()));
                 }
                 _changedData=true;
             }
@@ -147,11 +146,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 return null;
             }
-            if (getJmsContentHeaderProperties().getEncoding() != null)
+            if (getMessageHeaders().getEncoding() != null)
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.forName(getJmsContentHeaderProperties().getEncoding()).newDecoder());
+                    _decodedValue = _data.getString(Charset.forName(getMessageHeaders().getEncoding()).newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {
