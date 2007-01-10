@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.BasicMessageProducer;
+import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 
@@ -48,7 +49,7 @@ public class TestPingPublisher implements ExceptionListener
     private AMQConnection _connection;
 
     private boolean _publish;
-
+    private static int _messageSize = 0;
     private long SLEEP_TIME = 0L;
 
 //    private class CallbackHandler implements MessageListener
@@ -94,7 +95,15 @@ public class TestPingPublisher implements ExceptionListener
                 TextMessage msg = session.createTextMessage(
                         "Presented to in conjunction with Mahnah Mahnah and the Snowths: " + ++messageNumber);
 */
-                ObjectMessage msg = session.createObjectMessage();
+                ObjectMessage msg = null;
+                if (_messageSize != 0)
+                {
+                    msg = TestMessageFactory.newObjectMessage(session, _messageSize);
+                }
+                else
+                {
+                    msg = session.createObjectMessage();
+                }
 
                 Long time = System.nanoTime();
                 msg.setStringProperty("timestampString", Long.toString(time));
@@ -121,8 +130,6 @@ public class TestPingPublisher implements ExceptionListener
                         //do nothing
                     }
                 }
-
-
             }
 
         }
@@ -135,9 +142,7 @@ public class TestPingPublisher implements ExceptionListener
     private void createConnection(String brokerDetails, String clientID, String virtualpath) throws AMQException, URLSyntaxException
     {
         _publish = true;
-        _connection = new AMQConnection(brokerDetails, "guest", "guest",
-                                        clientID, virtualpath);
-
+        _connection = new AMQConnection(brokerDetails, "guest", "guest", clientID, virtualpath);
         _log.info("Connected with URL:" + _connection.toURL());
     }
 
@@ -149,13 +154,17 @@ public class TestPingPublisher implements ExceptionListener
     {
         if (args.length < 2)
         {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path>");
+            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [message size in bytes]");
             System.exit(0);
         }
         try
         {
             InetAddress address = InetAddress.getLocalHost();
             String clientID = address.getHostName() + System.currentTimeMillis();
+            if (args.length > 2 )
+            {
+                _messageSize = Integer.parseInt(args[2]);
+            }
             new TestPingPublisher(args[0], clientID, args[1]);
         }
         catch (UnknownHostException e)
