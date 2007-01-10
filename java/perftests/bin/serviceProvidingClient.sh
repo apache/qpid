@@ -28,4 +28,4 @@ fi
 . ./setupclasspath.sh
 echo $CP
 # usage: just pass in the host(s)
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.requestreply.ServiceProvidingClient $1 guest guest /test serviceQ
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.requestreply.ServiceProvidingClient $1 guest guest /test serviceQ P T
