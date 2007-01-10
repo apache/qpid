@@ -26,19 +26,32 @@ using Qpid.Client.qms;
 
 namespace Qpid.Client.Tests
 {
+    /// <summary>
+    /// Provides a basis for writing Unit tests that communicate with an AMQ protocol broker. By default it creates a connection
+    /// to a message broker running on localhost on the standard AMQ port, 5672, using guest:guest login credentials, on the default exchange,
+    /// 'test' queue.
+    /// </summary>
     public class BaseMessagingTestFixture
     {
         private static ILog _logger = LogManager.GetLogger(typeof(BaseMessagingTestFixture));
 
+        /// <summary> The default AMQ connection URL to use for tests. </summary>
         const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
 
+        /// <summary> Holds the test connection. </summary>
         protected IConnection _connection;
 
+        /// <summary> Holds the test channel. </summary>
         protected IChannel _channel;
 
+        /// <summary>
+        /// Creates the test connection and channel.
+        /// </summary>
         [SetUp]
         public virtual void Init()
         {
+            _logger.Info("public virtual void Init(): called");
+
             try
             {
                 ConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
@@ -52,14 +65,20 @@ namespace Qpid.Client.Tests
             }
         }
 
+        /// <summary>
+        /// Disposes the test connection. This is called manually because the connection is a field so dispose will not be automatically 
+        /// called on it.
+        /// </summary>
         [TearDown]
-        public void Shutdown()
+        public virtual void Shutdown()
         {
-            Console.WriteLine("Shutdown");
+            _logger.Info("public virtual void Shutdown(): called");
+
             if (_connection != null)
             {
-                Console.WriteLine("Disposing connection");
+                _logger.Info("Disposing connection.");
                 _connection.Dispose();
+                _logger.Info("Connection disposed.");
             }
         }
     }
