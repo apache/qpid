@@ -62,6 +62,11 @@
             <version>${pom.version}</version>
         </dependency>
         <dependency>
+            <groupId>${pom.groupId}</groupId>
+            <artifactId>qpid-perftests</artifactId>
+            <version>${pom.version}</version>
+        </dependency>
+        <dependency>
             <groupId>${pom.groupId}.management</groupId>
             <artifactId>org.apache.qpid.management.ui</artifactId>
             <version>${pom.version}</version>
