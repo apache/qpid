@@ -608,6 +608,14 @@ namespace Qpid.Client
             dispatcherThread.Start();
         }
 
+        internal void Stop()
+        {
+            if (_dispatcher != null)
+            {
+                _dispatcher.StopDispatcher();
+            }
+        }
+
         internal void RegisterConsumer(string consumerTag, IMessageConsumer consumer)
         {
             _consumers[consumerTag] =  consumer;
