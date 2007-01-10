@@ -27,10 +27,7 @@ std::ostream& qpid::framing::operator<<(std::ostream& out, const qpid::framing::
     body.print(out);
     return out;
 }
-        
 
 qpid::framing::AMQBody::~AMQBody() {}
 
-void qpid::framing::AMQBody::print(std::ostream& out) const {
-    out << "unknown body";
-}
+

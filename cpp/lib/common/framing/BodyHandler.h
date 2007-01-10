@@ -39,7 +39,7 @@ namespace framing {
 	virtual void handleContent(AMQContentBody::shared_ptr body) = 0;
 	virtual void handleHeartbeat(AMQHeartbeatBody::shared_ptr body) = 0;
 
-        void handleBody(AMQBody::shared_ptr& body);
+        void handleBody(const AMQBody::shared_ptr& body);
     };
 
     class UnknownBodyType{

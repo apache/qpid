@@ -1,3 +1,6 @@
+#ifndef _AMQMethodBody_
+#define _AMQMethodBody_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -24,24 +27,26 @@
 #include <Buffer.h>
 #include <AMQP_ServerOperations.h>
 
-#ifndef _AMQMethodBody_
-#define _AMQMethodBody_
-
 namespace qpid {
 namespace framing {
 
-class AMQMethodBody : virtual public AMQBody
+class AMQP_MethodVersionMap;
+
+class AMQMethodBody : public AMQBody
 {
-public:
+  public:
     typedef boost::shared_ptr<AMQMethodBody> shared_ptr;
 
-	ProtocolVersion version;
-    inline u_int8_t type() const { return METHOD_BODY; }
-    inline u_int32_t size() const { return 4 + bodySize(); }
-    inline AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
-    inline AMQMethodBody(ProtocolVersion version) : version(version) {}
-    inline virtual ~AMQMethodBody() {}
-    virtual void print(std::ostream& out) const = 0;
+    static shared_ptr create(
+        AMQP_MethodVersionMap& map, ProtocolVersion version, Buffer& buf);
+
+    ProtocolVersion version;    
+    u_int8_t type() const { return METHOD_BODY; }
+    u_int32_t size() const { return 4 + bodySize(); }
+    AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
+    AMQMethodBody(ProtocolVersion version) : version(version) {}
+    virtual ~AMQMethodBody() {}
+
     virtual u_int16_t amqpMethodId() const = 0;
     virtual u_int16_t amqpClassId() const = 0;
     virtual void invoke(AMQP_ServerOperations& target, u_int16_t channel);
@@ -53,10 +58,7 @@ public:
     bool match(AMQMethodBody* other) const;
 };
 
-std::ostream& operator<<(std::ostream& out, const AMQMethodBody& body);
-
-}
-}
+}} // namespace qpid::framing
 
 
 #endif

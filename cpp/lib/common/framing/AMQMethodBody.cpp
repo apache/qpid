@@ -20,27 +20,40 @@
  */
 #include <AMQMethodBody.h>
 #include <QpidError.h>
+#include "AMQP_MethodVersionMap.h"
 
-void qpid::framing::AMQMethodBody::encode(Buffer& buffer) const{
+namespace qpid {
+namespace framing {
+
+void AMQMethodBody::encode(Buffer& buffer) const{
     buffer.putShort(amqpClassId());
     buffer.putShort(amqpMethodId());
     encodeContent(buffer);
 }
 
-void qpid::framing::AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/){
+void AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/){
     decodeContent(buffer);
 }
 
-bool qpid::framing::AMQMethodBody::match(AMQMethodBody* other) const{
+bool AMQMethodBody::match(AMQMethodBody* other) const{
     return other != 0 && other->amqpClassId() == amqpClassId() && other->amqpMethodId() == amqpMethodId();
 }
 
-void qpid::framing::AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channel*/){
+void AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channel*/){
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }
 
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQMethodBody& m){
-    m.print(out);
-    return out;
+
+AMQMethodBody::shared_ptr AMQMethodBody::create(
+    AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
+    Buffer& buffer)
+{
+    u_int16_t classId = buffer.getShort();
+    u_int16_t methodId = buffer.getShort();
+    return AMQMethodBody::shared_ptr(
+        versionMap.createMethodBody(
+            classId, methodId, version.getMajor(), version.getMinor()));
 }
+
+}} // namespace qpid::framing

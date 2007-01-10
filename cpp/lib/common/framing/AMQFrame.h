@@ -1,3 +1,6 @@
+#ifndef _AMQFrame_
+#define _AMQFrame_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -30,9 +33,6 @@
 #include <AMQP_HighestVersion.h>
 #include <Buffer.h>
 
-#ifndef _AMQFrame_
-#define _AMQFrame_
-
 namespace qpid {
 namespace framing {
 
@@ -43,20 +43,19 @@ class AMQFrame : virtual public AMQDataBlock
     qpid::framing::ProtocolVersion version;
             
     u_int16_t channel;
-    u_int8_t type;//used if the body is decoded separately from the 'head'
+    u_int8_t type;
     AMQBody::shared_ptr body;
-    AMQBody::shared_ptr createMethodBody(Buffer& buffer);
             
   public:
     AMQFrame(qpid::framing::ProtocolVersion& _version = highestProtocolVersion);
     AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody* body);
-    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody::shared_ptr& body);    
+    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, const AMQBody::shared_ptr& body);    
     virtual ~AMQFrame();
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
     virtual u_int32_t size() const;
     u_int16_t getChannel();
-    AMQBody::shared_ptr& getBody();
+    AMQBody::shared_ptr getBody();
 
     u_int32_t decodeHead(Buffer& buffer); 
     void decodeBody(Buffer& buffer, uint32_t size); 
