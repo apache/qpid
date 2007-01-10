@@ -35,4 +35,8 @@ public class ExchangeDefaults
     public final static AMQShortString HEADERS_EXCHANGE_NAME = new AMQShortString("amq.match");
 
     public final static AMQShortString HEADERS_EXCHANGE_CLASS = new AMQShortString("headers");
+
+    public final static AMQShortString FANOUT_EXCHANGE_NAME = new AMQShortString("amq.fanout");
+
+    public final static AMQShortString FANOUT_EXCHANGE_CLASS = new AMQShortString("fanout");
 }
