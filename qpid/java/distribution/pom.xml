@@ -66,6 +66,13 @@
             <artifactId>org.apache.qpid.management.ui</artifactId>
             <version>${pom.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${pom.groupId}</groupId>
+            <artifactId>qpid-systests</artifactId>
+            <version>${pom.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -131,6 +138,7 @@
                                 <descriptor>src/main/assembly/src.xml</descriptor>
                                 <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
                                 <descriptor>src/main/assembly/management-eclipse-plugin-unix.xml</descriptor>
+                                <descriptor>src/main/assembly/tests.xml</descriptor>
                             </descriptors>
                             <finalName>qpid-${pom.version}</finalName>
                         </configuration>
