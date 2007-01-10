@@ -80,8 +80,7 @@ public:
 
 };
 
-}
-}
+}} // namespace qpid::framing
 
 
 #endif

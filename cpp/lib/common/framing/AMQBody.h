@@ -38,12 +38,20 @@ namespace qpid {
             virtual u_int8_t type() const = 0;
             virtual void encode(Buffer& buffer) const = 0;
             virtual void decode(Buffer& buffer, u_int32_t size) = 0;
-            virtual void print(std::ostream& out) const;
+
+            virtual void print(std::ostream& out) const = 0;
         };
 
         std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
 
-        enum body_types {METHOD_BODY = 1, HEADER_BODY = 2, CONTENT_BODY = 3, HEARTBEAT_BODY = 8};
+        enum BodyTypes {
+            METHOD_BODY = 1,
+            HEADER_BODY = 2,
+            CONTENT_BODY = 3,
+            HEARTBEAT_BODY = 8,
+            REQUEST_BODY = 9,
+            RESPONSE_BODY = 10
+        };
     }
 }
 

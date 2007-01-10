@@ -26,7 +26,7 @@ using namespace boost;
 
 BodyHandler::~BodyHandler() {}
 
-void BodyHandler::handleBody(AMQBody::shared_ptr& body){
+void BodyHandler::handleBody(const AMQBody::shared_ptr& body){
 
     switch(body->type())
     {

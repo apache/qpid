@@ -21,6 +21,8 @@
  */
 #include <AMQFrame.h>
 #include <QpidError.h>
+#include "AMQRequestBody.h"
+#include "AMQResponseBody.h"
 
 using namespace qpid::framing;
 
@@ -34,7 +36,7 @@ AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel,
 version(_version), channel(_channel), body(_body)
 {}
 
-AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody::shared_ptr& _body) :
+AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
@@ -44,7 +46,7 @@ u_int16_t AMQFrame::getChannel(){
     return channel;
 }
 
-AMQBody::shared_ptr& AMQFrame::getBody(){
+AMQBody::shared_ptr AMQFrame::getBody(){
     return body;
 }
 
@@ -57,16 +59,10 @@ void AMQFrame::encode(Buffer& buffer)
     buffer.putOctet(0xCE);
 }
 
-AMQBody::shared_ptr AMQFrame::createMethodBody(Buffer& buffer){
-    u_int16_t classId = buffer.getShort();
-    u_int16_t methodId = buffer.getShort();
-    AMQBody::shared_ptr body(versionMap.createMethodBody(classId, methodId, version.getMajor(), version.getMinor()));
-    return body;
-}
-
 u_int32_t AMQFrame::size() const{
-    if(!body.get()) THROW_QPID_ERROR(INTERNAL_ERROR, "Attempt to get size of frame with no body set!");
-    return 1/*type*/ + 2/*channel*/ + 4/*body size*/ + body->size() + 1/*0xCE*/;
+    assert(body.get());
+    return 1/*type*/ + 2/*channel*/ + 4/*body size*/ + body->size()
+        + 1/*0xCE*/;
 }
 
 bool AMQFrame::decode(Buffer& buffer)
@@ -95,19 +91,26 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t bufSize)
 {    
     switch(type)
     {
-    case METHOD_BODY:
-	body = createMethodBody(buffer);
-	break;
-    case HEADER_BODY: 
+      case METHOD_BODY:
+        body = AMQMethodBody::create(versionMap, version, buffer);
+        break;
+      case HEADER_BODY: 
 	body = AMQBody::shared_ptr(new AMQHeaderBody()); 
 	break;
-    case CONTENT_BODY: 
+      case CONTENT_BODY: 
 	body = AMQBody::shared_ptr(new AMQContentBody()); 
 	break;
-    case HEARTBEAT_BODY: 
+      case HEARTBEAT_BODY: 
 	body = AMQBody::shared_ptr(new AMQHeartbeatBody()); 
 	break;
-    default:
+      case REQUEST_BODY:
+        body = AMQBody::shared_ptr(new AMQRequestBody(versionMap, version));
+        break;
+      case RESPONSE_BODY:
+        body = AMQBody::shared_ptr(new AMQResponseBody(versionMap, version));
+        break;
+      default:
+        assert(0);
 	string msg("Unknown body type: ");
 	msg += type;
 	THROW_QPID_ERROR(FRAMING_ERROR, msg);

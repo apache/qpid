@@ -1,0 +1,67 @@
+#ifndef _framing_AMQRequestBody_h
+#define _framing_AMQRequestBody_h
+
+/*
+ *
+ * Copyright (c) 2006 The Apache Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "AMQMethodBody.h"
+
+namespace qpid {
+namespace framing {
+
+class AMQP_MethodVersionMap;
+
+/**
+ * Body of an AMQP Request frame.
+ */
+class AMQRequestBody : public AMQBody
+{
+  public:
+    typedef boost::shared_ptr<AMQRequestBody> shared_ptr;
+
+    AMQRequestBody(AMQP_MethodVersionMap&, ProtocolVersion);
+    AMQRequestBody(
+        AMQP_MethodVersionMap&, ProtocolVersion,
+        u_int64_t requestId, u_int64_t responseMark,
+        AMQMethodBody::shared_ptr method);
+
+    const AMQMethodBody& getMethodBody() const { return *method; }
+    AMQMethodBody& getMethodBody()  { return *method; }
+    u_int64_t getRequestId() { return requestId; }
+    u_int64_t getResponseMark() { return responseMark; }
+    
+    u_int32_t size() const  { return 16 + method->size(); }
+    u_int8_t type() const { return REQUEST_BODY; }
+    
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer, u_int32_t size);
+    void print(std::ostream& out) const;
+
+  private:
+    AMQP_MethodVersionMap& versionMap;
+    ProtocolVersion version;
+    u_int64_t requestId;
+    u_int64_t responseMark;
+    AMQMethodBody::shared_ptr method;
+};
+
+}} // namespace qpid::framing
+
+
+
+#endif  /*!_framing_AMQRequestBody_h*/
