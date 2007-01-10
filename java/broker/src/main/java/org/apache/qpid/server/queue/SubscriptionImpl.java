@@ -301,8 +301,10 @@ public class SubscriptionImpl implements Subscription
         if (_noLocal)
         {
             // We don't want local messages so check to see if message is one we sent
-            if (protocolSession.getClientProperties().getObject(ClientProperties.instance.toString()).equals(
-                    msg.getPublisher().getClientProperties().getObject(ClientProperties.instance.toString())))
+            Object localInstance = protocolSession.getClientProperties().getObject(ClientProperties.instance.toString());
+            Object msgInstance = msg.getPublisher().getClientProperties().getObject(ClientProperties.instance.toString());
+
+            if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
             {
                 if (_logger.isTraceEnabled())
                 {

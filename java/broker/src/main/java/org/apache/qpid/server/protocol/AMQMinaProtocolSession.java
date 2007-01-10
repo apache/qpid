@@ -26,6 +26,7 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
@@ -107,7 +108,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _stateManager = stateManager;
         _minaProtocolSession = session;
         session.setAttachment(this);
-        _frameListeners.add(_stateManager);
+        
         _queueRegistry = queueRegistry;
         _exchangeRegistry = exchangeRegistry;
         _codecFactory = codecFactory;
@@ -206,11 +207,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                                                     (AMQMethodBody) frame.bodyFrame);
         try
         {
-            boolean wasAnyoneInterested = false;
-            for (AMQMethodListener listener : _frameListeners)
+            boolean wasAnyoneInterested = _stateManager.methodReceived(evt, this, _queueRegistry, _exchangeRegistry);
+
+            if(!_frameListeners.isEmpty())
             {
-                wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
-                                      wasAnyoneInterested;
+                for (AMQMethodListener listener : _frameListeners)
+                {
+                    wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
+                                          wasAnyoneInterested;
+                }
             }
             if (!wasAnyoneInterested)
             {
@@ -222,8 +227,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             _logger.error("Closing channel due to: " + e.getMessage());
             writeFrame(e.getCloseFrame(frame.channel));
         }
+        catch (AMQConnectionException e)
+        {
+            _logger.error("Closing connection due to: " + e.getMessage());
+            writeFrame(e.getCloseFrame(frame.channel));
+        }        
         catch (AMQException e)
         {
+            _stateManager.error(e);
             for (AMQMethodListener listener : _frameListeners)
             {
                 listener.error(e);
