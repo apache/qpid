@@ -410,6 +410,17 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
+    public boolean isUnused()
+    {
+        return _subscribers.isEmpty();
+    }
+
+    public boolean isEmpty()
+    {
+        return !_deliveryMgr.hasQueuedMessages();
+    }
+
+
     public int delete(boolean checkUnused, boolean checkEmpty) throws AMQException
     {
         if (checkUnused && !_subscribers.isEmpty())
