@@ -386,6 +386,7 @@ namespace Qpid.Client
         public void Start()
         {
             CheckNotClosed();
+
             if (!_started)
             {
                 foreach (DictionaryEntry lde in _sessions)
@@ -400,7 +401,16 @@ namespace Qpid.Client
         public void Stop()
         {
             CheckNotClosed();
-            throw new NotImplementedException();
+
+            if (_started)
+            {
+                foreach (DictionaryEntry lde in _sessions)
+                {
+                    AmqChannel s = (AmqChannel) lde.Value;
+                    s.Stop();
+                }
+                _started = false;
+            }
         }
 
         public IConnectionListener ConnectionListener
