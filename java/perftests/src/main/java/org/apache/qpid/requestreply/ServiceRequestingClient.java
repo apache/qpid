@@ -53,10 +53,12 @@ public class ServiceRequestingClient implements ExceptionListener
     private AMQConnection _connection;
 
     private Session _session;
+    private Session _producerSession;
 
     private long _averageLatency;
 
     private int _messageCount;
+    private boolean _isTransactional;
 
     private volatile boolean _completed;
 
@@ -106,7 +108,7 @@ public class ServiceRequestingClient implements ExceptionListener
             }
             try
             {
-                m.getPropertyNames();
+				m.getPropertyNames();
                 if (m.propertyExists("timeSent"))
                 {
                     long timeSent = Long.parseLong(m.getStringProperty("timeSent"));
@@ -122,6 +124,10 @@ public class ServiceRequestingClient implements ExceptionListener
                         _averageLatency = (_averageLatency + (now - timeSent)) / 2;
                         _log.info("Average latency now: " + _averageLatency);
                     }
+                }
+				if(_isTransactional)
+                {
+                    _session.commit();
                 }
             }
             catch (JMSException e)
@@ -168,24 +174,33 @@ public class ServiceRequestingClient implements ExceptionListener
     }
 
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
-                                   String vpath, String commandQueueName,
+                                   String vpath, String commandQueueName, 
+								   String deliveryModeString, String transactedMode,
                                    final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
     {
+		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT 
+																			   : DeliveryMode.NON_PERSISTENT;
+																			   
+		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
+
+        _log.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
+
         _messageCount = messageCount;
         MESSAGE_DATA = createMessagePayload(messageDataLength);
         try
         {
             createConnection(brokerHosts, clientID, username, password, vpath);
-            _session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            _session = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
+            _producerSession = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
 
 
             _connection.setExceptionListener(this);
 
 
             AMQQueue destination = new AMQQueue(commandQueueName);
-            _producer = (MessageProducer) _session.createProducer(destination);
+            _producer = (MessageProducer) _producerSession.createProducer(destination);
             _producer.setDisableMessageTimestamp(true);
-            _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            _producer.setDeliveryMode(deliveryMode);
 
             _tempDestination = new AMQQueue("TempResponse" +
                                             Long.toString(System.currentTimeMillis()), true);
@@ -196,6 +211,10 @@ public class ServiceRequestingClient implements ExceptionListener
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
             _producer.send(first);
+			if(_isTransactional)
+            {
+                _producerSession.commit();
+            }
             try
             {
                 Thread.sleep(1000);
@@ -227,7 +246,7 @@ public class ServiceRequestingClient implements ExceptionListener
         _connection.start();
         for (int i = 1; i < _messageCount; i++)
         {
-            TextMessage msg = _session.createTextMessage(MESSAGE_DATA + i);
+            TextMessage msg = _producerSession.createTextMessage(MESSAGE_DATA + i);
             msg.setJMSReplyTo(_tempDestination);
             if (i % 1000 == 0)
             {
@@ -235,6 +254,11 @@ public class ServiceRequestingClient implements ExceptionListener
                 msg.setStringProperty("timeSent", String.valueOf(timeNow));
             }
             _producer.send(msg);
+            if(_isTransactional)
+            {
+                _producerSession.commit();    
+            }
+
         }
         _log.info("Finished sending " + _messageCount + " messages");
     }
@@ -260,17 +284,17 @@ public class ServiceRequestingClient implements ExceptionListener
         if (args.length < 6)
         {
             System.err.println(
-                    "Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list> <username> <password> <vpath> <command queue name> <number of messages> <message size>");
+                    "Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list> <username> <password> <vpath> <command queue name> <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> <number of messages> <message size>");
             System.exit(1);
         }
         try
         {
-            int messageDataLength = args.length > 6 ? Integer.parseInt(args[6]) : 4096;
+            int messageDataLength = args.length > 8 ? Integer.parseInt(args[8]) : 4096;
 
             InetAddress address = InetAddress.getLocalHost();
             String clientID = address.getHostName() + System.currentTimeMillis();
             ServiceRequestingClient client = new ServiceRequestingClient(args[0], clientID, args[1], args[2], args[3],
-                                                                         args[4], Integer.parseInt(args[5]),
+                                                                         args[4], args[5], args[6], Integer.parseInt(args[7]),
                                                                          messageDataLength);
             Object waiter = new Object();
             client.run(waiter);

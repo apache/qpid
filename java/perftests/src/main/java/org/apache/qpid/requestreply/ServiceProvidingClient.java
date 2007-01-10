@@ -42,10 +42,21 @@ public class ServiceProvidingClient
 
     private AMQConnection _connection;
 
+    private Session _session;
+    private Session _producerSession;
+
+    private boolean _isTransactional;
+
     public ServiceProvidingClient(String brokerDetails, String username, String password,
-                                  String clientName, String virtualPath, String serviceName)
+                                  String clientName, String virtualPath, String serviceName, 
+								  String deliveryModeString, String transactedMode)
             throws AMQException, JMSException, URLSyntaxException
     {
+		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
+
+        _logger.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
+		
         _connection = new AMQConnection(brokerDetails, username, password,
                                         clientName, virtualPath);
         _connection.setConnectionListener(new ConnectionListener()
@@ -74,13 +85,14 @@ public class ServiceProvidingClient
                 _logger.info("App got failover complete callback");
             }
         });
-        final Session session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
+        _producerSession = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
 
         _logger.info("Service (queue) name is '" + serviceName + "'...");
 
         AMQQueue destination = new AMQQueue(serviceName);
 
-        MessageConsumer consumer = session.createConsumer(destination,
+        MessageConsumer consumer = _session.createConsumer(destination,
                                                           100, true, false, null);
 
         consumer.setMessageListener(new MessageListener()
@@ -107,9 +119,9 @@ public class ServiceProvidingClient
                         _responseDest = responseDest;
 
                         _logger.info("About to create a producer");
-                        _destinationProducer = session.createProducer(responseDest);
+                        _destinationProducer = _producerSession.createProducer(responseDest);
                         _destinationProducer.setDisableMessageTimestamp(true);
-                        _destinationProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                        _destinationProducer.setDeliveryMode(deliveryMode);
                         _logger.info("After create a producer");
                     }
                 }
@@ -127,7 +139,7 @@ public class ServiceProvidingClient
                 try
                 {
                     String payload = "This is a response: sing together: 'Mahnah mahnah...'" + tm.getText();
-                    TextMessage msg = session.createTextMessage(payload);
+                    TextMessage msg = _producerSession.createTextMessage(payload);
                     if (tm.propertyExists("timeSent"))
                     {
                         _logger.info("timeSent property set on message");
@@ -135,6 +147,15 @@ public class ServiceProvidingClient
                         msg.setStringProperty("timeSent", tm.getStringProperty("timeSent"));
                     }
                     _destinationProducer.send(msg);
+					
+					if(_isTransactional)
+                    {
+                        _producerSession.commit();
+                    }
+                    if(_isTransactional)
+                    {
+                        _session.commit();
+                    }
                     if (_messageCount % 1000 == 0)
                     {
                         _logger.info("Sent response to '" + _responseDest + "'");
@@ -158,9 +179,9 @@ public class ServiceProvidingClient
     {
         _logger.info("Starting...");
 
-        if (args.length < 5)
+        if (args.length < 7)
         {
-            System.out.println("Usage: brokerDetails username password virtual-path serviceQueue [selector]");
+            System.out.println("Usage: brokerDetails username password virtual-path serviceQueue <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> [selector]");
             System.exit(1);
         }
         String clientId = null;
@@ -177,7 +198,7 @@ public class ServiceProvidingClient
         try
         {
             ServiceProvidingClient client = new ServiceProvidingClient(args[0], args[1], args[2],
-                                                                       clientId, args[3], args[4]);
+                                                                       clientId, args[3], args[4], args[5], args[6]);
             client.run();
         }
         catch (JMSException e)
