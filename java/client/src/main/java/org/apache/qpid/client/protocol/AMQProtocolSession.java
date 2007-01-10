@@ -36,6 +36,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.commons.lang.StringUtils;
 
 import javax.jms.JMSException;
@@ -49,7 +50,7 @@ import java.util.concurrent.ConcurrentMap;
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
-public class AMQProtocolSession implements ProtocolVersionList
+public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionList
 {
 
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
