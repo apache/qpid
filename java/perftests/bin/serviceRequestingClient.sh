@@ -18,10 +18,16 @@
 # under the License.
 #
 # args supplied: <host:port> <num messages>
+#
+if [[ $# < 2 ]] ; then
+ echo "usage: ./serviceRequestingClient.sh <brokerdetails> <number of messages> [<message size 4096b default>]"
+ exit 1
+fi
+
 thehosts=$1
 shift
 echo $thehosts
 # XXX -Xms1024m -XX:NewSize=300m
 . ./setupclasspath.sh
 echo $CP
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="INFO" org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ "$@"
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ "$@"

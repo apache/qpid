@@ -66,6 +66,14 @@
           <include>qpid-incubating.jar</include>
       </includes>
     </fileSet>
+	<fileSet>
+      <directory>../perftests/bin</directory>
+      <outputDirectory>qpid-${qpid.version}/bin/perftests</outputDirectory>
+      <includes>
+          <include>*</include>
+      </includes>
+    </fileSet>
+	
   </fileSets>
   <files>
     <!-- due to a bug in the assembly plugin (MASSEMBLY-153) you have
