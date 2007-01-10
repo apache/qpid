@@ -17,15 +17,17 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
-# XXX -Xms1024m -XX:NewSize=300m
-
-if [[ $# != 1 ]] ; then
- echo "usage: ./serviceProvidingClient.sh <brokerdetails>"
+# args supplied: <host:port> 
+#
+if [[ $# < 1 ]] ; then
+ echo "usage: ./testPingClient.sh <host details> [<selector>]"
  exit 1
 fi
 
+thehosts=$1
+shift
+echo $thehosts
+# XXX -Xms1024m -XX:NewSize=300m
 . ./setupclasspath.sh
 echo $CP
-# usage: just pass in the host(s)
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.requestreply.ServiceProvidingClient $1 guest guest /test serviceQ
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.pingpong.TestPingClient $thehosts guest guest /test "$@"

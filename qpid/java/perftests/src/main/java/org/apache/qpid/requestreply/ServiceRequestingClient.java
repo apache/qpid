@@ -41,7 +41,6 @@ import java.net.UnknownHostException;
  * <li>Creates messages containing a property that is the name of the temporary queue</li>
  * <li>Fires off a message on the original queue and waits for a response on the temporary queue</li>
  * </ul>
- *
  */
 public class ServiceRequestingClient implements ExceptionListener
 {
@@ -167,6 +166,7 @@ public class ServiceRequestingClient implements ExceptionListener
             }
         }
     }
+
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
                                    String vpath, String commandQueueName,
                                    final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
@@ -217,6 +217,7 @@ public class ServiceRequestingClient implements ExceptionListener
 
     /**
      * Run the test and notify an object upon receipt of all responses.
+     *
      * @param waiter the object that will be notified
      * @throws JMSException
      */
@@ -260,6 +261,7 @@ public class ServiceRequestingClient implements ExceptionListener
         {
             System.err.println(
                     "Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list> <username> <password> <vpath> <command queue name> <number of messages> <message size>");
+            System.exit(1);
         }
         try
         {
@@ -292,7 +294,7 @@ public class ServiceRequestingClient implements ExceptionListener
         }
     }
 
-     /**
+    /**
      * @see javax.jms.ExceptionListener#onException(javax.jms.JMSException)
      */
     public void onException(JMSException e)
