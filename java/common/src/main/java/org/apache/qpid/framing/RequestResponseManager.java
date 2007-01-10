@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.framing;
 
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.TreeMap;
 
 import org.apache.qpid.AMQException;
-//import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class RequestResponseManager
 {
 	private int channel;
-//    AMQProtocolSession protocolSession;
+    AMQProtocolWriter protocolSession;
 
 	/**
      * Determines the batch behaviour of the manager.
@@ -88,30 +87,29 @@ public class RequestResponseManager
         }
     }
     
-    private TreeMap<Long, Method> requestSentMap;
+    private TreeMap<Long, AMQResponseCallback> requestSentMap;
     private TreeMap<Long, ResponseStatus> responseMap;
     
-//	public RequestResponseManager(int channel, AMQProtocolSession protocolSession)
-	public RequestResponseManager(int channel)
+	public RequestResponseManager(int channel, AMQProtocolWriter protocolSession)
     {
     	this.channel = channel;
-//        this.protocolSession = protocolSession;
+        this.protocolSession = protocolSession;
     	requestIdCount = 1L;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
         lastReceivedResponseId = 0L;
-        requestSentMap = new TreeMap<Long, Method>();
+        requestSentMap = new TreeMap<Long, AMQResponseCallback>();
         responseMap = new TreeMap<Long, ResponseStatus>();
     }
     
     // *** Functions to originate a request ***
     
-    public long sendRequest(AMQMethodBody requestMethodBody, Method responseCallback)
+    public long sendRequest(AMQMethodBody requestMethodBody, AMQResponseCallback responseCallback)
     {
     	long requestId = getRequestId(); // Get new request ID
     	AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
         	lastReceivedResponseId, requestMethodBody);
-//        protocolSession.writeFrame(requestFrame);
+        protocolSession.writeFrame(requestFrame);
         requestSentMap.put(requestId, responseCallback);
         return requestId;
     }
@@ -123,12 +121,11 @@ public class RequestResponseManager
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
-        	Method responseCallback = requestSentMap.get(requestId);
+        	AMQResponseCallback responseCallback = requestSentMap.get(requestId);
             if (responseCallback == null)
             	throw new AMQException("Failed to locate requestId " + requestId +
                 	" in requestSentMap.");
-            // TODO
-            // responseCallback.invoke(?);
+            responseCallback.responseFrameReceived(responseBody);
             requestSentMap.remove(requestId);
         }
     }
@@ -138,11 +135,13 @@ public class RequestResponseManager
     public void requestReceived(AMQRequestBody requestBody)
     {
     	long requestId = requestBody.getRequestId();
-        long responseMark = requestBody.getResponseMark(); // TODO - what do we do with this??
+        // TODO: responseMark is used in HA, but until then, ignore...
+        long responseMark = requestBody.getResponseMark();
 	    lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
         
-        // TODO: Initiate some action based on the MethodBody
+        // TODO: Initiate some action based on the MethodBody - like send to handlers,
+        // but how to do this in a way that will work for both client and server?
     }
     
     public void sendResponse(long requestId, AMQMethodBody responseMethodBody) throws AMQException
@@ -185,14 +184,6 @@ public class RequestResponseManager
     	return responseIdCount++;
     }
     
-/*    private Method findRequest(long requestId)
-    	throws AMQException
-    {
-    	RequestStatus requestStatus = requestMap.get(requestId);
-        // TODO
-        return null;
-    }
-*/    
     private void doBatches()
     {
     	switch (batchResponseMode)
@@ -210,6 +201,10 @@ public class RequestResponseManager
                     }
                 }
             	break;
+                
+            // TODO: Add additional batch mode handlers here...
+			// case DELAY_FIXED:
+			// case MANUAL:
         }
     }
     
@@ -219,6 +214,6 @@ public class RequestResponseManager
     	long responseId = getResponseId(); // Get new request ID
     	AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
         	firstRequestId, numAdditionalRequests, responseMethodBody);
-//        protocolSession.writeFrame(responseFrame);
+        protocolSession.writeFrame(responseFrame);
     }
 } 
