@@ -55,7 +55,7 @@ public class RecoverTest extends TestCase
         Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         //force synch to ensure the consumer has resulted in a bound queue
-        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -112,7 +112,7 @@ public class RecoverTest extends TestCase
         Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         //force synch to ensure the consumer has resulted in a bound queue
-        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
