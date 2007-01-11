@@ -21,12 +21,12 @@
 package org.apache.qpid.framing;
 
 import java.util.Iterator;
-import java.util.TreeMap;
+import java.util.Hashtable;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
-public class RequestResponseManager
+public class ResponseManager
 {
 	private int channel;
     AMQProtocolWriter protocolSession;
@@ -56,14 +56,12 @@ public class RequestResponseManager
      * indepenedently increment from 0 on a per-channel basis. These are the
      * counters, and contain the value of the next (not yet used) frame.
      */
-    private long requestIdCount;
     private long responseIdCount;
     
     /**
      * These keep track of the last requestId and responseId to be received.
      */
     private long lastReceivedRequestId;
-    private long lastReceivedResponseId;
     
     /**
      * Last requestID sent in a response (for batching)
@@ -87,49 +85,17 @@ public class RequestResponseManager
         }
     }
     
-    private TreeMap<Long, AMQResponseCallback> requestSentMap;
-    private TreeMap<Long, ResponseStatus> responseMap;
+    private Hashtable<Long, ResponseStatus> responseMap;
     
-	public RequestResponseManager(int channel, AMQProtocolWriter protocolSession)
+	public ResponseManager(int channel, AMQProtocolWriter protocolSession)
     {
     	this.channel = channel;
         this.protocolSession = protocolSession;
-    	requestIdCount = 1L;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
-        lastReceivedResponseId = 0L;
-        requestSentMap = new TreeMap<Long, AMQResponseCallback>();
-        responseMap = new TreeMap<Long, ResponseStatus>();
+        responseMap = new Hashtable<Long, ResponseStatus>();
     }
     
-    // *** Functions to originate a request ***
-    
-    public long sendRequest(AMQMethodBody requestMethodBody, AMQResponseCallback responseCallback)
-    {
-    	long requestId = getRequestId(); // Get new request ID
-    	AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
-        	lastReceivedResponseId, requestMethodBody);
-        protocolSession.writeFrame(requestFrame);
-        requestSentMap.put(requestId, responseCallback);
-        return requestId;
-    }
-    
-    public void responseReceived(AMQResponseBody responseBody) throws AMQException
-    {
-    	lastReceivedResponseId = responseBody.getResponseId();
-        long requestIdStart = responseBody.getRequestId();
-        long requestIdStop = requestIdStart + responseBody.getBatchOffset();
-        for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
-        {
-        	AMQResponseCallback responseCallback = requestSentMap.get(requestId);
-            if (responseCallback == null)
-            	throw new AMQException("Failed to locate requestId " + requestId +
-                	" in requestSentMap.");
-            responseCallback.responseFrameReceived(responseBody);
-            requestSentMap.remove(requestId);
-        }
-    }
-
 	// *** Functions to handle an incoming request ***
     
     public void requestReceived(AMQRequestBody requestBody)
@@ -144,14 +110,16 @@ public class RequestResponseManager
         // but how to do this in a way that will work for both client and server?
     }
     
-    public void sendResponse(long requestId, AMQMethodBody responseMethodBody) throws AMQException
+    public void sendResponse(long requestId, AMQMethodBody responseMethodBody)
+    	throws RequestResponseMappingException
     {
     	ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
-        	throw new AMQException("Failed to locate requestId " + requestId +
-            	" in responseMap.");
+        	throw new RequestResponseMappingException(requestId,
+            	"Failed to locate requestId " + requestId + " in responseMap.");
         if (responseStatus.responseMethodBody != null)
-        	throw new AMQException("RequestId " + requestId + " already has a response.");
+        	throw new RequestResponseMappingException(requestId, "RequestId " +
+            	requestId + " already has a response in responseMap.");
         responseStatus.responseMethodBody = responseMethodBody;
         doBatches();
     }
@@ -172,14 +140,48 @@ public class RequestResponseManager
         }
     }
     
-    // *** Private helper functions ***
-    
-    private long getRequestId()
+    public int responsesMapSize()
     {
-    	return requestIdCount++;
+    	return responseMap.size();
     }
     
-    private long getResponseId()
+    /**
+     * As the responseMap may contain both outstanding responses (those with
+     * ResponseStatus.responseMethodBody still null) and responses waiting to
+     * be batched (those with ResponseStatus.responseMethodBody not null), we
+     * need to count only those in the map with responseMethodBody null.
+     */
+    public int outstandingResponses()
+    {
+    	int cnt = 0;
+        for (Long requestId : responseMap.keySet())
+        {
+        	if (responseMap.get(requestId).responseMethodBody == null)
+            	cnt++;
+		}
+        return cnt;
+    }
+    
+    /**
+     * As the responseMap may contain both outstanding responses (those with
+     * ResponseStatus.responseMethodBody still null) and responses waiting to
+     * be batched (those with ResponseStatus.responseMethodBody not null), we
+     * need to count only those in the map with responseMethodBody not null.
+     */
+    public int batchedResponses()
+    {
+    	int cnt = 0;
+        for (Long requestId : responseMap.keySet())
+        {
+        	if (responseMap.get(requestId).responseMethodBody != null)
+            	cnt++;
+		}
+        return cnt;
+    }
+    
+    // *** Private helper functions ***
+    
+    private long getNextResponseId()
     {
     	return responseIdCount++;
     }
@@ -211,7 +213,7 @@ public class RequestResponseManager
     private void sendResponseBatch(long firstRequestId, int numAdditionalRequests,
     	AMQMethodBody responseMethodBody)
     {
-    	long responseId = getResponseId(); // Get new request ID
+    	long responseId = getNextResponseId(); // Get new request ID
     	AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
         	firstRequestId, numAdditionalRequests, responseMethodBody);
         protocolSession.writeFrame(responseFrame);
