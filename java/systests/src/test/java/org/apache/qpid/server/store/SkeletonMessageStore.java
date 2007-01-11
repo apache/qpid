@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -115,5 +116,20 @@ public class SkeletonMessageStore implements MessageStore
     public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
     {
         return null;
+    }
+
+    public void removeQueue(AMQShortString name) throws AMQException
+    {
+
+    }
+
+    public void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    {
+
+    }
+
+    public void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    {
+
     }
 }
