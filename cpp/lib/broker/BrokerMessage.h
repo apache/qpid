@@ -1,3 +1,6 @@
+#ifndef _broker_BrokerMessage_h
+#define _broker_BrokerMessage_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +21,6 @@
  * under the License.
  *
  */
-#ifndef _Message_
-#define _Message_
 
 #include <memory>
 #include <boost/shared_ptr.hpp>
@@ -142,4 +143,4 @@ namespace qpid {
 }
 
 
-#endif
+#endif  /*!_broker_BrokerMessage_h*/

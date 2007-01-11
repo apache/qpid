@@ -56,6 +56,8 @@ libqpidcommon_la_LDFLAGS =		\
 libqpidcommon_la_SOURCES =			\
   $(platform_src)				\
   $(framing)/AMQBody.cpp			\
+  $(framing)/AMQRequestBody.cpp			\
+  $(framing)/AMQResponseBody.cpp		\
   $(framing)/AMQContentBody.cpp			\
   $(framing)/AMQFrame.cpp			\
   $(framing)/AMQHeaderBody.cpp			\
@@ -72,7 +74,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/ProtocolVersionException.cpp	\
   $(framing)/Value.cpp				\
   $(gen)/AMQP_ClientProxy.cpp			\
-  $(gen)/AMQP_HighestVersion.h		\
+  $(gen)/AMQP_HighestVersion.h			\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
   Exception.cpp					\

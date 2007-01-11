@@ -1,3 +1,6 @@
+#ifndef _client_ClientChannel_h
+#define _client_ClientChannel_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,9 +25,6 @@
 #include <string>
 #include <queue>
 #include "sys/types.h"
-
-#ifndef _Channel_
-#define _Channel_
 
 #include <framing/amqp_framing.h>
 #include <Connection.h>
@@ -317,5 +317,4 @@ namespace client {
 }
 }
 
-
-#endif
+#endif  /*!_client_ClientChannel_h*/

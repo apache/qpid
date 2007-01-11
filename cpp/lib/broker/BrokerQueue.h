@@ -1,3 +1,6 @@
+#ifndef _broker_BrokerQueue_h
+#define _broker_BrokerQueue_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +21,6 @@
  * under the License.
  *
  */
-#ifndef _Queue_
-#define _Queue_
 
 #include <vector>
 #include <memory>
@@ -143,4 +144,4 @@ namespace qpid {
 }
 
 
-#endif
+#endif  /*!_broker_BrokerQueue_h*/

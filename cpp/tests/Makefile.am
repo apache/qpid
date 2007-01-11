@@ -58,7 +58,6 @@ unit_tests =		\
   $(framing_tests)	\
   $(misc_tests)
 
-
 noinst_PROGRAMS = $(client_exe_tests)
 
 CLIENT_TESTS = client_test quick_topictest

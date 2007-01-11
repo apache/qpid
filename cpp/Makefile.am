@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 README.txt etc/qpidd
 
-SUBDIRS = gen lib tests src docs/api docs/man rpm
+SUBDIRS = gen lib src docs/api docs/man rpm tests
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
