@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -174,13 +174,13 @@ public class ServiceRequestingClient implements ExceptionListener
     }
 
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
-                                   String vpath, String commandQueueName, 
+                                   String vpath, String commandQueueName,
 								   String deliveryModeString, String transactedMode,
                                    final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
     {
-		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT 
+		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT
 																			   : DeliveryMode.NON_PERSISTENT;
-																			   
+
 		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
 
         _log.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
@@ -251,12 +251,12 @@ public class ServiceRequestingClient implements ExceptionListener
             if (i % 1000 == 0)
             {
                 long timeNow = System.currentTimeMillis();
-                msg.setStringProperty("timeSent", String.valueOf(timeNow));
+                msg.setLongProperty("timeSent", timeNow);
             }
             _producer.send(msg);
             if(_isTransactional)
             {
-                _producerSession.commit();    
+                _producerSession.commit();
             }
 
         }
