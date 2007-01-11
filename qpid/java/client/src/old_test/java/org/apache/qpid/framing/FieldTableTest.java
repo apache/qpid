@@ -39,7 +39,7 @@ public class FieldTableTest extends TestCase
 
         String key = "String";
         String value = "Hello";
-        table.put(key, value);
+        table.setString(key, value);
 
         //Add one for the type encoding
         int size = EncodingUtils.encodedShortStringLength(key) + 1 +
@@ -49,7 +49,7 @@ public class FieldTableTest extends TestCase
 
         key = "Integer";
         Integer number = new Integer(60);
-        table.put(key, number);
+        table.setInteger(key, number);
 
         //Add one for the type encoding
         size += EncodingUtils.encodedShortStringLength(key) + 1 + 4;
@@ -93,10 +93,10 @@ public class FieldTableTest extends TestCase
 
     public void assertEquivalent(FieldTable table1, FieldTable table2)
     {
-        for (Object o : table1.keySet())
+        for (String  key : table1.keys())
         {
-            String key = (String) o;
-            assertEquals("Values for " + key + " did not match", table1.get(key), table2.get(key));
+
+            assertEquals("Values for " + key + " did not match", table1.getObject(key), table2.getObject(key));
             //System.out.println("Values for " + key + " matched (" + table1.get(key) + ")");
         }
     }
@@ -152,11 +152,11 @@ public class FieldTableTest extends TestCase
             try
             {
                 int ival = Integer.parseInt(value);
-                table.put(key, (long) ival);
+                table.setLong(key, (long) ival);
             }
             catch (NumberFormatException e)
             {
-                table.put(key, value);
+                table.setObject(key, value);
             }
         }
         return table;

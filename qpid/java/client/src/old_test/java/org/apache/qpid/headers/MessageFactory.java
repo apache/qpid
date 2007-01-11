@@ -129,14 +129,14 @@ class MessageFactory
     FieldTable getConsumerBinding()
     {
         FieldTable binding = FieldTableFactory.newFieldTable();
-        binding.put("SF0000", "value");
+        binding.setString("SF0000", "value");
         return binding;
     }
 
     FieldTable getControllerBinding()
     {
         FieldTable binding = FieldTableFactory.newFieldTable();
-        binding.put("SCONTROL", "value");
+        binding.setString("SCONTROL", "value");
         return binding;
     }
 
