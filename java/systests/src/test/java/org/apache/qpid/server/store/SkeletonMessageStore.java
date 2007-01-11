@@ -57,19 +57,7 @@ public class SkeletonMessageStore implements MessageStore
 
     public void createQueue(AMQQueue queue) throws AMQException
     {
-    }
-
-    public void removeQueue(AMQShortString name) throws AMQException
-    {
-    }
-
-    public void enqueueMessage(StoreContext s, AMQShortString name, long messageId) throws AMQException
-    {
-    }
-
-    public void dequeueMessage(StoreContext s, AMQShortString name, long messageId) throws AMQException
-    {
-    }
+    }        
 
     public void beginTran(StoreContext s) throws AMQException
     {
