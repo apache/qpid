@@ -37,7 +37,6 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.txn.TxnBuffer;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,7 +125,7 @@ public class AMQChannel
      */
     public void setLocalTransactional()
     {
-        _txnContext = new LocalTransactionalContext(_messageStore, _storeContext, new TxnBuffer(), _returnMessages);
+        _txnContext = new LocalTransactionalContext(_messageStore, _storeContext, _returnMessages);
     }
 
     public boolean isTransactional()
@@ -190,6 +189,10 @@ public class AMQChannel
         }
         else
         {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Content header received on channel " + _channelId);
+            }
             _currentMessage.setContentHeaderBody(contentHeaderBody);
             routeCurrentMessage();
             _currentMessage.routingComplete(_messageStore, _storeContext, _messageHandleFactory);
@@ -212,6 +215,10 @@ public class AMQChannel
 
         // returns true iff the message was delivered (i.e. if all data was
         // received
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Content body received on channel " + _channelId);
+        }
         try
         {
             if (_currentMessage.addContentBodyFrame(_storeContext, contentBody))
@@ -484,6 +491,10 @@ public class AMQChannel
 
     public void commit() throws AMQException
     {
+        if (!isTransactional())
+        {
+            throw new AMQException("Fatal error: commit called on non-transactional channel");
+        }
         _txnContext.commit();
     }
 

@@ -52,7 +52,7 @@ public class DeliverMessageOperation implements TxnOp
     {
     }
 
-    public void commit(StoreContext context)
+    public void commit(StoreContext context) throws AMQException
     {
         //do the memeory part of the record()
         _msg.incrementReference();
