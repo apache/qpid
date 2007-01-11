@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------
+ # ----------------------------------------------------------------
 # Doxygen settings for Qpid developer documentation. 
 #
 # ----------------------------------------------------------------
@@ -472,7 +472,7 @@ INPUT      		= ../../lib ../../gen ../../src
 # blank the following patterns are tested: 
 
 
-FILE_PATTERNS          = *.h
+FILE_PATTERNS          = *.h *.cpp
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
@@ -1086,7 +1086,7 @@ CLASS_DIAGRAMS         = YES
 # inheritance and usage relations if the target is undocumented 
 # or is not a class.
 
-HIDE_UNDOC_RELATIONS   = YES
+HIDE_UNDOC_RELATIONS   = NO
 
 # If you set the HAVE_DOT tag to YES then doxygen will assume the dot tool is 
 # available from the path. This tool is part of Graphviz, a graph visualization 
