@@ -19,6 +19,13 @@ public final class AMQShortString implements CharSequence
     private int _hashCode;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
 
+    public AMQShortString(byte[] data)
+    {
+
+        _data = ByteBuffer.wrap(data);
+    }
+
+
     public AMQShortString(String data)
     {
         this(data == null ? EMPTY_CHAR_ARRAY : data.toCharArray());
@@ -129,6 +136,29 @@ public final class AMQShortString implements CharSequence
 
             return new AMQShortString(data);
         }
+    }
+
+
+    public byte[] getBytes()
+    {
+
+        if(_data.buf().hasArray() && _data.arrayOffset() == 0)
+        {
+            return _data.array();
+        }
+        else
+        {
+            final int size = length();
+            byte[] b = new byte[size];
+            ByteBuffer buf = _data.duplicate();
+            buf.rewind();
+            buf.get(b);
+
+            
+            return b;
+        }
+
+
     }
 
     public void writeToBuffer(ByteBuffer buffer)
