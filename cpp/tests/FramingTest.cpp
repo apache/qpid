@@ -26,6 +26,8 @@
 #include <sstream>
 #include <typeinfo>
 #include <AMQP_HighestVersion.h>
+#include "AMQRequestBody.h"
+#include "AMQResponseBody.h"
 
 
 using namespace qpid::framing;
@@ -37,7 +39,7 @@ std::string tostring(const T& x)
     out << x;
     return out.str();
 }
-
+    
 class FramingTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(FramingTest);
@@ -48,22 +50,25 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testBasicConsumeBody);
     CPPUNIT_TEST(testConnectionRedirectBodyFrame);
     CPPUNIT_TEST(testBasicConsumeOkBodyFrame);
+    CPPUNIT_TEST(testRequestBodyFrame);
+    CPPUNIT_TEST(testResponseBodyFrame);
     CPPUNIT_TEST_SUITE_END();
 
   private:
     Buffer buffer;
-  	ProtocolVersion v;
-
+    ProtocolVersion version;
+    AMQP_MethodVersionMap versionMap;
+    
   public:
 
-    FramingTest() : buffer(100), v(qpid::framing::highestProtocolVersion){}
+    FramingTest() : buffer(1024), version(highestProtocolVersion) {}
 
     void testBasicQosBody() 
     {
-        BasicQosBody in(v, 0xCAFEBABE, 0xABBA, true);
+        BasicQosBody in(version, 0xCAFEBABE, 0xABBA, true);
         in.encodeContent(buffer);
         buffer.flip(); 
-        BasicQosBody out(v);
+        BasicQosBody out(version);
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -71,10 +76,10 @@ class FramingTest : public CppUnit::TestCase
     void testConnectionSecureBody() 
     {
         std::string s = "security credential";
-        ConnectionSecureBody in(v, s);
+        ConnectionSecureBody in(version, s);
         in.encodeContent(buffer);
         buffer.flip(); 
-        ConnectionSecureBody out(v);
+        ConnectionSecureBody out(version);
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -83,10 +88,10 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        ConnectionRedirectBody in(v, a, b);
+        ConnectionRedirectBody in(version, a, b);
         in.encodeContent(buffer);
         buffer.flip(); 
-        ConnectionRedirectBody out(v);
+        ConnectionRedirectBody out(version);
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -94,10 +99,10 @@ class FramingTest : public CppUnit::TestCase
     void testAccessRequestBody()
     {
         std::string s = "text";
-        AccessRequestBody in(v, s, true, false, true, false, true);
+        AccessRequestBody in(version, s, true, false, true, false, true);
         in.encodeContent(buffer);
         buffer.flip(); 
-        AccessRequestBody out(v);
+        AccessRequestBody out(version);
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -106,11 +111,11 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string q = "queue";
         std::string t = "tag";
-        BasicConsumeBody in(v, 0, q, t, false, true, false, false,
+        BasicConsumeBody in(version, 0, q, t, false, true, false, false,
                             FieldTable());
         in.encodeContent(buffer);
         buffer.flip(); 
-        BasicConsumeBody out(v);
+        BasicConsumeBody out(version);
         out.decodeContent(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
@@ -120,7 +125,7 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        AMQFrame in(highestProtocolVersion, 999, new ConnectionRedirectBody(v, a, b));
+        AMQFrame in(version, 999, new ConnectionRedirectBody(version, a, b));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -131,7 +136,7 @@ class FramingTest : public CppUnit::TestCase
     void testBasicConsumeOkBodyFrame()
     {
         std::string s = "hostA";
-        AMQFrame in(highestProtocolVersion, 999, new BasicConsumeOkBody(v, s));
+        AMQFrame in(version, 999, new BasicConsumeOkBody(version, s));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -140,7 +145,43 @@ class FramingTest : public CppUnit::TestCase
             CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
         }
     }
+
+    void testRequestBodyFrame() {
+        AMQMethodBody::shared_ptr method(new ChannelOkBody(version));
+        AMQRequestBody::shared_ptr request(
+            new AMQRequestBody(versionMap, version, 111, 222, method));
+        AMQFrame in(version, 999, request);
+        in.encode(buffer);
+        buffer.flip();
+        AMQFrame out;
+        out.decode(buffer);
+        request = boost::dynamic_pointer_cast<AMQRequestBody>(out.getBody());
+        CPPUNIT_ASSERT(request);
+        CPPUNIT_ASSERT_EQUAL(111ULL, request->getRequestId());
+        CPPUNIT_ASSERT_EQUAL(222ULL, request->getResponseMark());
+        AMQMethodBody& body = request->getMethodBody();
+        CPPUNIT_ASSERT(dynamic_cast<ChannelOkBody*>(&body));
+    }
+    
+    void testResponseBodyFrame() {
+        AMQMethodBody::shared_ptr method(new ChannelOkBody(version));
+        AMQResponseBody::shared_ptr response(
+            new AMQResponseBody(versionMap, version, 111, 222, 333, method));
+        AMQFrame in(version, 999, response);
+        in.encode(buffer);
+        buffer.flip();
+        AMQFrame out;
+        out.decode(buffer);
+        response = boost::dynamic_pointer_cast<AMQResponseBody>(out.getBody());
+        CPPUNIT_ASSERT(response);
+        CPPUNIT_ASSERT_EQUAL(111ULL, response->getResponseId());
+        CPPUNIT_ASSERT_EQUAL(222ULL, response->getRequestId());
+        CPPUNIT_ASSERT_EQUAL(333U, response->getBatchOffset());
+        AMQMethodBody& body = response->getMethodBody();
+        CPPUNIT_ASSERT(dynamic_cast<ChannelOkBody*>(&body));
+    }
 };
+
 
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();

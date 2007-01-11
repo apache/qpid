@@ -4,4 +4,4 @@
     echo See topictest.log.
     exit 1
 }
-
+rm topictest.log

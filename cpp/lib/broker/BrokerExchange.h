@@ -1,3 +1,6 @@
+#ifndef _broker_BrokerExchange_h
+#define _broker_BrokerExchange_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +21,6 @@
  * under the License.
  *
  */
-#ifndef _Exchange_
-#define _Exchange_
 
 #include <boost/shared_ptr.hpp>
 #include <Deliverable.h>
@@ -47,4 +48,4 @@ namespace qpid {
 }
 
 
-#endif
+#endif  /*!_broker_BrokerExchange_h*/

@@ -22,6 +22,7 @@ while getopts "s:m:b:" opt ; do
 done
 
 subscribe() {
+    echo Start subscriber $1
     LOG="subscriber_$1.log"
     ./topic_listener > $LOG 2>&1 && rm -f $LOG 
 }

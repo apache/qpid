@@ -1,3 +1,6 @@
+#ifndef _client_ClientMessage_h
+#define _client_ClientMessage_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,10 +23,6 @@
  */
 #include <string>
 #include <framing/amqp_framing.h>
-
-#ifndef _Message_
-#define _Message_
-
 
 namespace qpid {
 namespace client {
@@ -110,5 +109,4 @@ namespace client {
 }
 }
 
-
-#endif
+#endif  /*!_client_ClientMessage_h*/

@@ -1,3 +1,6 @@
+#ifndef _broker_ExchangeRegistry_h
+#define _broker_ExchangeRegistry_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,8 +21,6 @@
  * under the License.
  *
  */
-#ifndef _ExchangeRegistry_
-#define _ExchangeRegistry_
 
 #include <map>
 #include <BrokerExchange.h>
@@ -43,4 +44,4 @@ namespace broker {
 }
 
 
-#endif
+#endif  /*!_broker_ExchangeRegistry_h*/
