@@ -64,15 +64,21 @@ public class BasicDeliverTest
         long min = Long.MAX_VALUE;
         long max = 0;
         long total = 0;
-        for(int i = 0; i < iterations; i++)
+        for (int i = 0; i < iterations; i++)
         {
             long time = decode(size, count);
             total += time;
-            if(time < min) min = time;
-            if(time > max) max = time;
+            if (time < min)
+            {
+                min = time;
+            }
+            if (time > max)
+            {
+                max = time;
+            }
         }
         System.out.println("Decoded " + count + " messages of " + size +
-                " bytes: avg=" + (total / iterations) + ", min=" + min + ", max=" + max) ;
+                " bytes: avg=" + (total / iterations) + ", min=" + min + ", max=" + max);
     }
 
 
@@ -84,7 +90,7 @@ public class BasicDeliverTest
         data.flip();
         AMQDecoder decoder = new AMQDecoder(false);
         long start = System.currentTimeMillis();
-        for(int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
             decoder.decode(session, data, decoderOutput);
             data.rewind();
@@ -97,15 +103,21 @@ public class BasicDeliverTest
         long min = Long.MAX_VALUE;
         long max = 0;
         long total = 0;
-        for(int i = 0; i < iterations; i++)
+        for (int i = 0; i < iterations; i++)
         {
             long time = encode(size, count);
             total += time;
-            if(time < min) min = time;
-            if(time > max) max = time;
+            if (time < min)
+            {
+                min = time;
+            }
+            if (time > max)
+            {
+                max = time;
+            }
         }
         System.out.println("Encoded " + count + " messages of " + size +
-                " bytes: avg=" + (total / iterations) + ", min=" + min + ", max=" + max) ;
+                " bytes: avg=" + (total / iterations) + ", min=" + min + ", max=" + max);
     }
 
     long encode(int size, int count) throws Exception
@@ -114,14 +126,15 @@ public class BasicDeliverTest
         AMQDataBlock block = getDataBlock(size);
         AMQEncoder encoder = new AMQEncoder();
         long start = System.currentTimeMillis();
-        for(int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
             encoder.encode(session, block, encoderOutput);
         }
         return System.currentTimeMillis() - start;
     }
 
-    private final ProtocolEncoderOutput encoderOutput = new ProtocolEncoderOutput(){
+    private final ProtocolEncoderOutput encoderOutput = new ProtocolEncoderOutput()
+    {
 
         public void write(ByteBuffer byteBuffer)
         {
@@ -137,7 +150,8 @@ public class BasicDeliverTest
         }
     };
 
-    private final ProtocolDecoderOutput decoderOutput = new ProtocolDecoderOutput(){
+    private final ProtocolDecoderOutput decoderOutput = new ProtocolDecoderOutput()
+    {
         public void write(Object object)
         {
         }
@@ -147,7 +161,8 @@ public class BasicDeliverTest
         }
     };
 
-    private final IoSession session = new BaseIoSession(){
+    private final IoSession session = new BaseIoSession()
+    {
 
         protected void updateTrafficMask()
         {
@@ -216,9 +231,9 @@ public class BasicDeliverTest
     {
         //create a frame representing message delivery
         AMQFrame[] frames = new AMQFrame[3];
-        frames[0] = wrapBody( createBasicDeliverBody() );
-        frames[1] = wrapBody( createContentHeaderBody() );
-        frames[2] = wrapBody( createContentBody(size) );
+        frames[0] = wrapBody(createBasicDeliverBody());
+        frames[1] = wrapBody(createContentHeaderBody());
+        frames[2] = wrapBody(createContentBody(size));
 
         return new CompositeAMQDataBlock(frames);
     }
@@ -236,7 +251,7 @@ public class BasicDeliverTest
     {
         ContentBody body = new ContentBody();
         body.payload = ByteBuffer.allocate(size);
-        for(int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++)
         {
             body.payload.put((byte) DATA[i % DATA.length]);
         }
@@ -254,12 +269,9 @@ public class BasicDeliverTest
 
     static BasicDeliverBody createBasicDeliverBody()
     {
-        BasicDeliverBody body = new BasicDeliverBody((byte)8, (byte)0);
-        body.consumerTag = "myConsumerTag";
-        body.deliveryTag = 1;
-        body.exchange = "myExchange";
-        body.redelivered = false;
-        body.routingKey = "myRoutingKey";
+        BasicDeliverBody body = new BasicDeliverBody((byte) 8, (byte) 0, new AMQShortString("myConsumerTag"), 1,
+                                                     new AMQShortString("myExchange"), false,
+                                                     new AMQShortString("myRoutingKey"));
         return body;
     }
 }
