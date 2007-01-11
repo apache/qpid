@@ -98,7 +98,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
             else
             {
                 int purged = queue.delete(body.ifUnused, body.ifEmpty);
-                _store.removeQueue(queue.getName().toString());
+                _store.removeQueue(queue.getName());
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.

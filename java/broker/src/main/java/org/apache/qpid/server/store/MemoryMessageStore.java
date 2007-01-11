@@ -24,6 +24,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -100,17 +101,17 @@ public class MemoryMessageStore implements MessageStore
         // Not required to do anything
     }
 
-    public void removeQueue(String name) throws AMQException
+    public void removeQueue(AMQShortString name) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
     {
         // Not required to do anything
     }
