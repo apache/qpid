@@ -23,7 +23,7 @@ package org.apache.qpid.server.cluster.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;

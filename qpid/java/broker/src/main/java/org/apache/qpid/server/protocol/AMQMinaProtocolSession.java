@@ -28,6 +28,7 @@ import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 

@@ -23,13 +23,14 @@ package org.apache.qpid.server.protocol;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
 import javax.security.sasl.SaslServer;
 
 
-public interface AMQProtocolSession
+public interface AMQProtocolSession extends AMQProtocolWriter
 {
     /**
      * Called when a protocol data block is received
@@ -37,12 +38,6 @@ public interface AMQProtocolSession
      * @throws Exception if processing the datablock fails
      */
     void dataBlockReceived(AMQDataBlock message) throws Exception;
-
-    /**
-     * Write a datablock, encoding where necessary (e.g. into a sequence of bytes)
-     * @param frame the frame to be encoded and written
-     */
-    void writeFrame(AMQDataBlock frame);
 
     /**
      * Get the context key associated with this session. Context key is described

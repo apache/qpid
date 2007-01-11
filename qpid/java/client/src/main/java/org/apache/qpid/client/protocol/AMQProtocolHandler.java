@@ -29,6 +29,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.failover.FailoverHandler;
@@ -310,19 +311,19 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 _logger.debug("Method frame received: " + frame);
             }
 
-            final AMQMethodEvent evt = new AMQMethodEvent(frame.channel, (AMQMethodBody) frame.bodyFrame, _protocolSession);
+            final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel, (AMQMethodBody) frame.bodyFrame);
 
             try
             {
 
-                boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
+                boolean wasAnyoneInterested = _stateManager.methodReceived(evt, _protocolSession);
                 if(!_frameListeners.isEmpty())
                 {
                     Iterator it = _frameListeners.iterator();
                     while (it.hasNext())
                     {
                         final AMQMethodListener listener = (AMQMethodListener) it.next();
-                        wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                        wasAnyoneInterested = listener.methodReceived(evt, _protocolSession) || wasAnyoneInterested;
                     }
                 }
                 if (!wasAnyoneInterested)
