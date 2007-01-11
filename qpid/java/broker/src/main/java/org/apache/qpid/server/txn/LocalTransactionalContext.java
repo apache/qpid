@@ -17,16 +17,18 @@
  */
 package org.apache.qpid.server.txn;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,7 +36,11 @@ import java.util.List;
  */
 public class LocalTransactionalContext implements TransactionalContext
 {
-    private final TxnBuffer _txnBuffer;
+    private static final Logger _log = Logger.getLogger(LocalTransactionalContext.class);
+
+    private final TxnBuffer _txnBuffer = new TxnBuffer();
+
+    private final List<DeliveryDetails> _postCommitDeliveryList = new LinkedList<DeliveryDetails>();
 
     /**
      * We keep hold of the ack operation so that we can consolidate acks, i.e. multiple acks within a txn are
@@ -50,14 +56,34 @@ public class LocalTransactionalContext implements TransactionalContext
 
     private boolean _inTran = false;
 
+    private boolean _messageDelivered = false;
+
+    private static class DeliveryDetails
+    {
+        public AMQMessage message;
+        public AMQQueue queue;
+
+
+        public DeliveryDetails(AMQMessage message, AMQQueue queue)
+        {
+            this.message = message;
+            this.queue = queue;
+        }
+    }
+
     public LocalTransactionalContext(MessageStore messageStore, StoreContext storeContext,
-                                     TxnBuffer txnBuffer, List<RequiredDeliveryException> returnMessages)
+                                     List<RequiredDeliveryException> returnMessages)
     {
         _messageStore = messageStore;
         _storeContext = storeContext;
-        _txnBuffer = txnBuffer;
         _returnMessages = returnMessages;
-        _txnBuffer.enlist(new StoreMessageOperation(messageStore));
+        //_txnBuffer.enlist(new StoreMessageOperation(messageStore));
+    }
+
+
+    public StoreContext getStoreContext()
+    {
+        return _storeContext;
     }
 
     public void rollback() throws AMQException
@@ -73,9 +99,19 @@ public class LocalTransactionalContext implements TransactionalContext
         // be added for every queue onto which the message is
         // enqueued. Finally a cleanup op will be added to decrement
         // the reference associated with the routing.
-
-        _txnBuffer.enlist(new DeliverMessageOperation(message, queue));
+        message.incrementReference();
+        _postCommitDeliveryList.add(new DeliveryDetails(message, queue));
+        _messageDelivered = true;
+        /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Incrementing ref count on message and enlisting cleanup operation - id " +
+                       message.getMessageId());
+        }
+        message.incrementReference();
+        _messageDelivered = true;
         _txnBuffer.enlist(new CleanupMessageOperation(message, _returnMessages));
+        */
     }
 
     private void checkAck(long deliveryTag, UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException
@@ -129,6 +165,10 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         if (!_inTran)
         {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Starting transaction on message store");
+            }
             _messageStore.beginTran(_storeContext);
             _inTran = true;
         }
@@ -136,6 +176,10 @@ public class LocalTransactionalContext implements TransactionalContext
 
     public void commit() throws AMQException
     {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Committing transactional context");
+        }
         if (_ackOp != null)
         {
             _ackOp.consolidate();
@@ -143,13 +187,48 @@ public class LocalTransactionalContext implements TransactionalContext
             _ackOp = null;
         }
 
+        if (_messageDelivered)
+        {
+            _txnBuffer.enlist(new StoreMessageOperation(_messageStore));
+        }
         try
         {
             _txnBuffer.commit(_storeContext);
         }
         finally
         {
-            _inTran = false;
+            _messageDelivered = false;
+            _inTran = _messageStore.inTran(_storeContext);
         }
+
+        try
+        {
+            postCommitDelivery();
+        }
+        catch (AMQException e)
+        {
+            // OK so what do we do now...?
+            _log.error("Failed to deliver messages following txn commit: " + e, e);
+        }
+    }
+
+    private void postCommitDelivery() throws AMQException
+    {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Performing post commit delivery");
+        }
+        try
+        {
+            for (DeliveryDetails dd : _postCommitDeliveryList)
+            {
+                dd.queue.process(_storeContext, dd.message);
+            }
+        }
+        finally
+        {
+            _postCommitDeliveryList.clear();
+        }
+
     }
 }

@@ -59,15 +59,15 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
-    public void removeQueue(String name) throws AMQException
+    public void removeQueue(AMQShortString name) throws AMQException
     {
     }
 
-    public void enqueueMessage(StoreContext s, String name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext s, AMQShortString name, long messageId) throws AMQException
     {
     }
 
-    public void dequeueMessage(StoreContext s, String name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext s, AMQShortString name, long messageId) throws AMQException
     {
     }
 

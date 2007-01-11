@@ -25,6 +25,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -45,4 +46,6 @@ public interface TransactionalContext
     void messageFullyReceived(boolean persistent) throws AMQException;
 
     void messageProcessed(AMQProtocolSession protocolSession) throws AMQException;
+
+    StoreContext getStoreContext();
 }

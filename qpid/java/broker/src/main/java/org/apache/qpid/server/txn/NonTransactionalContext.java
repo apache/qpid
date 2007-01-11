@@ -72,6 +72,12 @@ public class NonTransactionalContext implements TransactionalContext
         _browsedAcks = browsedAcks;
     }
 
+
+    public StoreContext getStoreContext()
+    {
+        return _storeContext;
+    }
+
     public void beginTranIfNecessary() throws AMQException
     {
         if (!_inTran)

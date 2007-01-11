@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
@@ -27,14 +28,13 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.message.MessageDecorator;
-import org.apache.qpid.server.message.jms.JMSMessage;
-import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
@@ -166,7 +166,7 @@ public class AMQMessage
         _messageId = messageId;
         _txnContext = txnContext;
         _transientMessageData.setPublishBody(publishBody);
-        
+
         _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
         {
@@ -468,7 +468,7 @@ public class AMQMessage
         if (pb.immediate && !_deliveredToConsumer)
         {
             throw new NoConsumersException(this);
-        }
+        }        
     }
 
     public BasicPublishBody getPublishBody() throws AMQException
@@ -509,6 +509,10 @@ public class AMQMessage
         // we get a reference to the destination queues now so that we can clear the
         // transient message data as quickly as possible
         List<AMQQueue> destinationQueues = _transientMessageData.getDestinationQueues();
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Delivering message " + _messageId);
+        }
         try
         {
             // first we allow the handle to know that the message has been fully received. This is useful if it is
@@ -555,7 +559,7 @@ public class AMQMessage
             //
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
-            //            
+            //
             ContentBody cb = _messageHandle.getContentBody(_messageId, 0);
 
             AMQDataBlock firstContentBody = ContentBody.createAMQFrame(channelId, cb);
