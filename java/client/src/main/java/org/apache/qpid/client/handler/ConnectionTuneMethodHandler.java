@@ -23,7 +23,7 @@ package org.apache.qpid.client.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.ConnectionTuneParameters;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
@@ -45,13 +45,12 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("ConnectionTune frame received");
         ConnectionTuneBody frame = (ConnectionTuneBody) evt.getMethod();
-        AMQProtocolSession session = evt.getProtocolSession();
 
-        ConnectionTuneParameters params = session.getConnectionTuneParameters();
+        ConnectionTuneParameters params = protocolSession.getConnectionTuneParameters();
         if (params == null)
         {
             params = new ConnectionTuneParameters();
@@ -60,11 +59,11 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
         params.setFrameMax(frame.frameMax);        
         params.setChannelMax(frame.channelMax);
         params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.heartbeat));
-        session.setConnectionTuneParameters(params);
+        protocolSession.setConnectionTuneParameters(params);
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        session.writeFrame(createTuneOkFrame(evt.getChannelId(), params));
-        session.writeFrame(createConnectionOpenFrame(evt.getChannelId(), new AMQShortString(session.getAMQConnection().getVirtualHost()), null, true));
+        protocolSession.writeFrame(createTuneOkFrame(evt.getChannelId(), params));
+        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), new AMQShortString(protocolSession.getAMQConnection().getVirtualHost()), null, true));
     }
 
     protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist)

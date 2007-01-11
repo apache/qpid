@@ -24,9 +24,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionSecureOkBody;
 import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
@@ -40,9 +41,9 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
-        SaslClient client = evt.getProtocolSession().getSaslClient();
+        SaslClient client = protocolSession.getSaslClient();
         if (client == null)
         {
             throw new AMQException("No SASL client set up - cannot proceed with authentication");
@@ -60,7 +61,7 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
             AMQFrame responseFrame = ConnectionSecureOkBody.createAMQFrame(evt.getChannelId(),
                 (byte)8, (byte)0,	// AMQP version (major, minor)
                 response);	// response
-            evt.getProtocolSession().writeFrame(responseFrame);
+            protocolSession.writeFrame(responseFrame);
         }
         catch (SaslException e)
         {

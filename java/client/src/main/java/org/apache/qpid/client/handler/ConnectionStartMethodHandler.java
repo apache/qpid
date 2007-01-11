@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.common.QpidProperties;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
@@ -56,7 +56,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
@@ -78,25 +78,24 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 throw new AMQException("No supported security mechanism found, passed: " + new String(body.mechanisms));
             }
 
-            final AMQProtocolSession ps = evt.getProtocolSession();
             byte[] saslResponse;
             try
             {
                 SaslClient sc = Sasl.createSaslClient(new String[]{mechanism},
                                                       null, "AMQP", "localhost",
-                                                      null, createCallbackHandler(mechanism, ps));
+                                                      null,createCallbackHandler(mechanism, protocolSession));
                 if (sc == null)
                 {
                     throw new AMQException("Client SASL configuration error: no SaslClient could be created for mechanism " +
                                            mechanism + ". Please ensure all factories are registered. See DynamicSaslRegistrar for " +
                                            " details of how to register non-standard SASL client providers.");
                 }
-                ps.setSaslClient(sc);
+                protocolSession.setSaslClient(sc);
                 saslResponse = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
             }
             catch (SaslException e)
             {
-                ps.setSaslClient(null);
+                protocolSession.setSaslClient(null);
                 throw new AMQException("Unable to create SASL client: " + e, e);
             }
 
@@ -119,14 +118,14 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
             FieldTable clientProperties = FieldTableFactory.newFieldTable();
             
-            clientProperties.setString(ClientProperties.instance.toString(), ps.getClientID());
+            clientProperties.setString(ClientProperties.instance.toString(), protocolSession.getClientID());
             clientProperties.setString(ClientProperties.product.toString(), QpidProperties.getProductName());
             clientProperties.setString(ClientProperties.version.toString(), QpidProperties.getReleaseVersion());
             clientProperties.setString(ClientProperties.platform.toString(), getFullSystemInfo());
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
+            protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
                 (byte)8, (byte)0,	// AMQP version (major, minor)
                 clientProperties,	// clientProperties
                 new AMQShortString(selectedLocale),	// locale

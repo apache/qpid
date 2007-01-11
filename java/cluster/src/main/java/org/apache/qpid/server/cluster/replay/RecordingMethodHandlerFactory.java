@@ -33,7 +33,7 @@ import org.apache.qpid.server.cluster.MethodHandlerFactory;
 import org.apache.qpid.server.cluster.MethodHandlerRegistry;
 import org.apache.qpid.server.cluster.handler.WrappingMethodHandlerFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQState;

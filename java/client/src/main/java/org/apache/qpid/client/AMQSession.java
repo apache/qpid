@@ -28,7 +28,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
