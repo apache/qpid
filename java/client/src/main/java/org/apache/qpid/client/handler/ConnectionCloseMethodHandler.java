@@ -24,7 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
@@ -48,7 +49,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.info("ConnectionClose frame received");
         ConnectionCloseBody method = (ConnectionCloseBody) evt.getMethod();
@@ -63,7 +64,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        evt.getProtocolSession().writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0, (byte)8, (byte)0));
+        protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0, (byte)8, (byte)0));
 
         if (errorCode != 200)
         {
@@ -71,7 +72,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
             {
                 _logger.info("Authentication Error:"+Thread.currentThread().getName());
 
-                evt.getProtocolSession().closeProtocolSession();
+                protocolSession.closeProtocolSession();
 
                  //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                  stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
@@ -89,7 +90,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
 
         // this actually closes the connection in the case where it is not an error.
 
-        evt.getProtocolSession().closeProtocolSession();
+        protocolSession.closeProtocolSession();
 
         stateManager.changeState(AMQState.CONNECTION_CLOSED);
     }

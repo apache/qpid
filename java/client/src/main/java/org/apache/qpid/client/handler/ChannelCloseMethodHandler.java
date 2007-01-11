@@ -27,7 +27,8 @@ import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.AMQFrame;
@@ -46,7 +47,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("ChannelClose method received");
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
@@ -62,7 +63,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-        evt.getProtocolSession().writeFrame(frame);
+        protocolSession.writeFrame(frame);
         if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
         {
             _logger.error("Channel close received with errorCode " + errorCode + ", and reason " + reason);
@@ -86,6 +87,6 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             }
 
         }
-        evt.getProtocolSession().channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
+        protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
     }
 }

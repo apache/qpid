@@ -22,7 +22,8 @@ package org.apache.qpid.client.state;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.handler.*;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.protocol.AMQMethodListener;
 import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
@@ -146,12 +147,12 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public boolean methodReceived(AMQMethodEvent evt) throws AMQException
+    public boolean methodReceived(AMQMethodEvent evt, AMQProtocolSession protocolSession) throws AMQException
     {
         StateAwareMethodListener handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, evt);
+            handler.methodReceived(this, protocolSession, evt);
             return true;
         }
         return false;

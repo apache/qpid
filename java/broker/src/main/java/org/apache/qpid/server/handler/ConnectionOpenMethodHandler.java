@@ -26,7 +26,7 @@ import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQState;

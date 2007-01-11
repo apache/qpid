@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol;
+package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.AMQMethodBody;
 
