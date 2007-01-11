@@ -187,7 +187,7 @@ public class LocalTransactionalContext implements TransactionalContext
             _ackOp = null;
         }
 
-        if (_messageDelivered)
+        if (_messageDelivered && _inTran)
         {
             _txnBuffer.enlist(new StoreMessageOperation(_messageStore));
         }
