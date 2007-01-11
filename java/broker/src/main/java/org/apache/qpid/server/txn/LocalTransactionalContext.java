@@ -143,6 +143,13 @@ public class LocalTransactionalContext implements TransactionalContext
             _ackOp = null;
         }
 
-        _txnBuffer.commit(_storeContext);
+        try
+        {
+            _txnBuffer.commit(_storeContext);
+        }
+        finally
+        {
+            _inTran = false;
+        }
     }
 }
