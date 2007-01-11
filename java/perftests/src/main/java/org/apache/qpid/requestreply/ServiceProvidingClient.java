@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -48,7 +48,7 @@ public class ServiceProvidingClient
     private boolean _isTransactional;
 
     public ServiceProvidingClient(String brokerDetails, String username, String password,
-                                  String clientName, String virtualPath, String serviceName, 
+                                  String clientName, String virtualPath, String serviceName,
 								  String deliveryModeString, String transactedMode)
             throws AMQException, JMSException, URLSyntaxException
     {
@@ -56,7 +56,7 @@ public class ServiceProvidingClient
 		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
 
         _logger.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
-		
+
         _connection = new AMQConnection(brokerDetails, username, password,
                                         clientName, virtualPath);
         _connection.setConnectionListener(new ConnectionListener()
@@ -143,11 +143,12 @@ public class ServiceProvidingClient
                     if (tm.propertyExists("timeSent"))
                     {
                         _logger.info("timeSent property set on message");
-                        _logger.info("timeSent value is: " + tm.getLongProperty("timeSent"));
-                        msg.setStringProperty("timeSent", tm.getStringProperty("timeSent"));
+                        long timesent = tm.getLongProperty("timeSent");
+                        _logger.info("timeSent value is: " + timesent);
+                        msg.setLongProperty("timeSent", timesent);
                     }
                     _destinationProducer.send(msg);
-					
+
 					if(_isTransactional)
                     {
                         _producerSession.commit();
