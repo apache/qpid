@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -52,11 +53,11 @@ public interface MessageStore
 
     void createQueue(AMQQueue queue) throws AMQException;
 
-    void removeQueue(String name) throws AMQException;
+    void removeQueue(AMQShortString name) throws AMQException;
 
-    void enqueueMessage(StoreContext context, String name, long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException;
 
-    void dequeueMessage(StoreContext context, String name, long messageId) throws AMQException;
+    void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException;
 
     void beginTran(StoreContext context) throws AMQException;
 
