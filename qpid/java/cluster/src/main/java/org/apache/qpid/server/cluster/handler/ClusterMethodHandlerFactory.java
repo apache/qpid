@@ -49,7 +49,7 @@ import org.apache.qpid.server.handler.BasicQosHandler;
 import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.handler.TxCommitHandler;
 import org.apache.qpid.server.handler.TxRollbackHandler;
-import org.apache.qpid.server.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQState;

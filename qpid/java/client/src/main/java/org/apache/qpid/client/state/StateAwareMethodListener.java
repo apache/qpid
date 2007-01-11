@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 
 /**
@@ -30,5 +31,6 @@ import org.apache.qpid.AMQException;
  */
 public interface StateAwareMethodListener
 {
-    void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException;
+    void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession,
+        AMQMethodEvent evt) throws AMQException;
 }

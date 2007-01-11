@@ -27,7 +27,7 @@ import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.policy.StandardPolicies;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;

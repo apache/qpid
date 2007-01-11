@@ -21,6 +21,8 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public interface AMQMethodListener
 {
@@ -34,7 +36,7 @@ public interface AMQMethodListener
      * to all registered listeners using the error() method (see below) allowing them to
      * perform cleanup if necessary.
      */
-    boolean methodReceived(AMQMethodEvent evt) throws AMQException;
+    boolean methodReceived(AMQMethodEvent evt, AMQProtocolSession protocolSession) throws AMQException;
 
     /**
      * Callback when an error has occurred. Allows listeners to clean up.
