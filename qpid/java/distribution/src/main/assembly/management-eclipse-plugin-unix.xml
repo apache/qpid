@@ -85,7 +85,7 @@
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
       <includes>
-        <include>qpidmc.sh</include>
+        <include>qpidmc*.sh</include>
       </includes>
       <fileMode>777</fileMode>
     </fileSet>
