@@ -21,9 +21,10 @@
 package org.apache.qpid.client.state;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.handler.*;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQMethodListener;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
 
@@ -101,9 +102,16 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(ChannelCloseBody.class, ChannelCloseMethodHandler.getInstance());
         frame2handlerMap.put(ChannelCloseOkBody.class, ChannelCloseOkMethodHandler.getInstance());
         frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());
-        frame2handlerMap.put(BasicDeliverBody.class, BasicDeliverMethodHandler.getInstance());
-        frame2handlerMap.put(BasicReturnBody.class, BasicReturnMethodHandler.getInstance());
-        frame2handlerMap.put(BasicCancelOkBody.class, BasicCancelOkMethodHandler.getInstance());
+        frame2handlerMap.put(MessageAppendBody.class, MessageAppendMethodHandler.getInstance());
+        frame2handlerMap.put(MessageCheckpointBody.class, MessageCheckpointMethodHandler.getInstance());
+        frame2handlerMap.put(MessageCloseBody.class, MessageCloseMethodHandler.getInstance());
+        frame2handlerMap.put(MessageEmptyBody.class, MessageEmptyMethodHandler.getInstance());
+        frame2handlerMap.put(MessageOffsetBody.class, MessageOffsetMethodHandler.getInstance());
+        frame2handlerMap.put(MessageOkBody.class, MessageOkMethodHandler.getInstance());
+        frame2handlerMap.put(MessageOpenBody.class, MessageOpenMethodHandler.getInstance());
+        frame2handlerMap.put(MessageRejectBody.class, MessageRejectMethodHandler.getInstance());
+        frame2handlerMap.put(MessageResumeBody.class, MessageResumeMethodHandler.getInstance());
+        frame2handlerMap.put(MessageTransferBody.class, MessageTransferMethodHandler.getInstance());
         frame2handlerMap.put(ChannelFlowOkBody.class, ChannelFlowOkMethodHandler.getInstance());
         frame2handlerMap.put(QueueDeleteOkBody.class, QueueDeleteOkMethodHandler.getInstance());
         frame2handlerMap.put(ExchangeBoundOkBody.class, ExchangeBoundOkMethodHandler.getInstance());
@@ -146,12 +154,12 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public boolean methodReceived(AMQMethodEvent evt) throws AMQException
+    public boolean methodReceived(AMQMethodEvent evt, AMQProtocolSession protocolSession) throws AMQException
     {
         StateAwareMethodListener handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, evt);
+            handler.methodReceived(this, protocolSession, evt);
             return true;
         }
         return false;

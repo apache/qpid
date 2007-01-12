@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
@@ -37,14 +38,6 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      * @throws Exception if processing the datablock fails
      */
     void dataBlockReceived(AMQDataBlock message) throws Exception;
-
-// This is now a part of AMQProtocolWriter (inherited) to provide uniformity across both
-// client and server.
-//     /**
-//      * Write a datablock, encoding where necessary (e.g. into a sequence of bytes)
-//      * @param frame the frame to be encoded and written
-//      */
-//     void writeFrame(AMQDataBlock frame);
 
     /**
      * Get the context key associated with this session. Context key is described

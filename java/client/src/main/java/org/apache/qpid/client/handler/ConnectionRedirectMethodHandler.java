@@ -22,7 +22,8 @@ package org.apache.qpid.client.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionRedirectBody;
@@ -44,7 +45,7 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.info("ConnectionRedirect frame received");
         ConnectionRedirectBody method = (ConnectionRedirectBody) evt.getMethod();
@@ -63,6 +64,6 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
             host = method.host.substring(0, portIndex);
             port = Integer.parseInt(method.host.substring(portIndex + 1));
         }
-        evt.getProtocolSession().failover(host, port);
+        protocolSession.failover(host, port);
     }
 }

@@ -23,10 +23,10 @@ package org.apache.qpid.server.cluster;
 import org.apache.mina.common.IoSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 /**
  * Hack to assist with reuse of the client handlers for connection setup in
@@ -51,8 +51,8 @@ class ClientAdapter implements MethodHandler
 
     public void handle(int channel, AMQMethodBody method) throws AMQException
     {
-        AMQMethodEvent evt = new AMQMethodEvent(channel, method, _session);
-        _stateMgr.methodReceived(evt);
+        AMQMethodEvent evt = new AMQMethodEvent(channel, method);
+        _stateMgr.methodReceived(evt, _session);
     }
 
     private class SessionAdapter extends AMQProtocolSession

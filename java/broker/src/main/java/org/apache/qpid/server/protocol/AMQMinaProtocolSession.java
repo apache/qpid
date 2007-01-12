@@ -30,14 +30,18 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.AMQRequestBody;
+import org.apache.qpid.framing.AMQResponseBody;
+//import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+//import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -195,124 +199,130 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             AMQFrame frame = (AMQFrame) message;
 
-            if (frame.bodyFrame instanceof AMQRequest)
+            if (frame.bodyFrame instanceof AMQRequestBody)
             {
             	requestFrameReceived(frame);
             }
-            else if (frame.bodyFrame instanceof AMQResponse)
+            else if (frame.bodyFrame instanceof AMQResponseBody)
             {
             	responseFrameReceived(frame);
             }
-            else if (frame.bodyFrame instanceof AMQMethodBody)
-            {
-                methodFrameReceived(frame);
-            }
             else
             {
-                try
-                {
-                    contentFrameReceived(frame);
-                }
-                catch (RequiredDeliveryException e)
-                {
-                    //need to return the message:
-                    _logger.info("Returning message to " + this + " channel " + frame.channel
-                                 + ": " + e.getMessage());
-                    writeFrame(e.getReturnMessage(frame.channel));
-                }
+                _logger.error("Received invalid frame: " + frame.toString());
             }
+//             else if (frame.bodyFrame instanceof AMQMethodBody)
+//             {
+//                 methodFrameReceived(frame);
+//             }
+//             else
+//             {
+//                 try
+//                 {
+//                     contentFrameReceived(frame);
+//                 }
+//                 catch (RequiredDeliveryException e)
+//                 {
+//                     //need to return the message:
+//                     _logger.info("Returning message to " + this + " channel " + frame.channel
+//                                  + ": " + e.getMessage());
+//                     writeFrame(e.getReturnMessage(frame.channel));
+//                 }
+//             }
         }
     }
     
-    private void requestFrameReceived(AMQFrame frame)
+    private void requestFrameReceived(AMQFrame frame) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Request frame received: " + frame);
         }
+        AMQChannel channel = getChannel(frame.channel);
     }
     
-    private void responseFrameReceived(AMQFrame frame)
+    private void responseFrameReceived(AMQFrame frame) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Response frame received: " + frame);
         }
+        AMQChannel channel = getChannel(frame.channel);
     }
 
-    private void methodFrameReceived(AMQFrame frame)
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Method frame received: " + frame);
-        }
-        final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel,
-                                                                                    (AMQMethodBody) frame.bodyFrame);
-        try
-        {
-            boolean wasAnyoneInterested = false;
-            for (AMQMethodListener listener : _frameListeners)
-            {
-                wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
-                                      wasAnyoneInterested;
-            }
-            if (!wasAnyoneInterested)
-            {
-                throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
-            }
-        }
-        catch (AMQChannelException e)
-        {
-            _logger.error("Closing channel due to: " + e.getMessage());
-            writeFrame(e.getCloseFrame(frame.channel));
-        }
-        catch (AMQException e)
-        {
-            for (AMQMethodListener listener : _frameListeners)
-            {
-                listener.error(e);
-            }
-            _minaProtocolSession.close();
-        }
-    }
+//     private void methodFrameReceived(AMQFrame frame)
+//     {
+//         if (_logger.isDebugEnabled())
+//         {
+//             _logger.debug("Method frame received: " + frame);
+//         }
+//         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel,
+//                                                                                     (AMQMethodBody) frame.bodyFrame);
+//         try
+//         {
+//             boolean wasAnyoneInterested = false;
+//             for (AMQMethodListener listener : _frameListeners)
+//             {
+//                 wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
+//                                       wasAnyoneInterested;
+//             }
+//             if (!wasAnyoneInterested)
+//             {
+//                 throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
+//             }
+//         }
+//         catch (AMQChannelException e)
+//         {
+//             _logger.error("Closing channel due to: " + e.getMessage());
+//             writeFrame(e.getCloseFrame(frame.channel));
+//         }
+//         catch (AMQException e)
+//         {
+//             for (AMQMethodListener listener : _frameListeners)
+//             {
+//                 listener.error(e);
+//             }
+//             _minaProtocolSession.close();
+//         }
+//     }
 
-    private void contentFrameReceived(AMQFrame frame) throws AMQException
-    {
-        if (frame.bodyFrame instanceof ContentHeaderBody)
-        {
-            contentHeaderReceived(frame);
-        }
-        else if (frame.bodyFrame instanceof ContentBody)
-        {
-            contentBodyReceived(frame);
-        }
-        else if (frame.bodyFrame instanceof HeartbeatBody)
-        {
-            _logger.debug("Received heartbeat from client");
-        }
-        else
-        {
-            _logger.warn("Unrecognised frame " + frame.getClass().getName());
-        }
-    }
+//     private void contentFrameReceived(AMQFrame frame) throws AMQException
+//     {
+//         if (frame.bodyFrame instanceof ContentHeaderBody)
+//         {
+//             contentHeaderReceived(frame);
+//         }
+//         else if (frame.bodyFrame instanceof ContentBody)
+//         {
+//             contentBodyReceived(frame);
+//         }
+//         else if (frame.bodyFrame instanceof HeartbeatBody)
+//         {
+//             _logger.debug("Received heartbeat from client");
+//         }
+//         else
+//         {
+//             _logger.warn("Unrecognised frame " + frame.getClass().getName());
+//         }
+//     }
 
-    private void contentHeaderReceived(AMQFrame frame) throws AMQException
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Content header frame received: " + frame);
-        }
-        getChannel(frame.channel).publishContentHeader((ContentHeaderBody) frame.bodyFrame);
-    }
+//     private void contentHeaderReceived(AMQFrame frame) throws AMQException
+//     {
+//         if (_logger.isDebugEnabled())
+//         {
+//             _logger.debug("Content header frame received: " + frame);
+//         }
+//         getChannel(frame.channel).publishContentHeader((ContentHeaderBody) frame.bodyFrame);
+//     }
 
-    private void contentBodyReceived(AMQFrame frame) throws AMQException
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Content body frame received: " + frame);
-        }
-        getChannel(frame.channel).publishContentBody((ContentBody) frame.bodyFrame);
-    }
+//     private void contentBodyReceived(AMQFrame frame) throws AMQException
+//     {
+//         if (_logger.isDebugEnabled())
+//         {
+//             _logger.debug("Content body frame received: " + frame);
+//         }
+//         getChannel(frame.channel).publishContentBody((ContentBody) frame.bodyFrame);
+//     }
 
     /**
      * Convenience method that writes a frame to the protocol session. Equivalent

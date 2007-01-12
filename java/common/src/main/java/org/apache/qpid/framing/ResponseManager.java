@@ -28,10 +28,11 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class ResponseManager
 {
-	private int channel;
+    private int channel;
+    RequestHandler requestHandler;
     AMQProtocolWriter protocolSession;
 
-	/**
+    /**
      * Determines the batch behaviour of the manager.
      *
      * Responses are sent to the RequestResponseManager through sendResponse().
@@ -48,7 +49,7 @@ public class ResponseManager
      * MANUAL: No response is sent until it is explicitly released by calling
      *     function xxxx(). (TODO)
      */
-	public enum batchResponseModeEnum { NONE }
+    public enum batchResponseModeEnum { NONE }
     private batchResponseModeEnum batchResponseMode;
     
     /**
@@ -70,79 +71,79 @@ public class ResponseManager
     
     private class ResponseStatus implements Comparable<ResponseStatus>
     {
-     	public long requestId;
+         public long requestId;
         public AMQMethodBody responseMethodBody;
          
         public ResponseStatus(long requestId)
         {
-	       	this.requestId = requestId;
-        	responseMethodBody = null;
+               this.requestId = requestId;
+            responseMethodBody = null;
         }
          
         public int compareTo(ResponseStatus o)
         {
-        	return (int)(requestId - o.requestId);
+            return (int)(requestId - o.requestId);
         }
     }
     
     private Hashtable<Long, ResponseStatus> responseMap;
     
-	public ResponseManager(int channel, AMQProtocolWriter protocolSession)
+    public ResponseManager(int channel, RequestHandler requestHandler,
+        AMQProtocolWriter protocolSession)
     {
-    	this.channel = channel;
+        this.channel = channel;
+        this.requestHandler = requestHandler;
         this.protocolSession = protocolSession;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
         responseMap = new Hashtable<Long, ResponseStatus>();
     }
     
-	// *** Functions to handle an incoming request ***
+    // *** Functions to handle an incoming request ***
     
     public void requestReceived(AMQRequestBody requestBody)
     {
-    	long requestId = requestBody.getRequestId();
+        long requestId = requestBody.getRequestId();
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
-	    lastReceivedRequestId = requestId;
+        lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
-        
-        // TODO: Initiate some action based on the MethodBody - like send to handlers,
-        // but how to do this in a way that will work for both client and server?
+        requestHandler.requestReceived(requestBody);
     }
     
     public void sendResponse(long requestId, AMQMethodBody responseMethodBody)
-    	throws RequestResponseMappingException
+        throws RequestResponseMappingException
     {
-    	ResponseStatus responseStatus = responseMap.get(requestId);
+        ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
-        	throw new RequestResponseMappingException(requestId,
-            	"Failed to locate requestId " + requestId + " in responseMap.");
+            throw new RequestResponseMappingException(requestId,
+                "Failed to locate requestId " + requestId + " in responseMap.");
         if (responseStatus.responseMethodBody != null)
-        	throw new RequestResponseMappingException(requestId, "RequestId " +
-            	requestId + " already has a response in responseMap.");
+            throw new RequestResponseMappingException(requestId, "RequestId " +
+                requestId + " already has a response in responseMap.");
         responseStatus.responseMethodBody = responseMethodBody;
         doBatches();
     }
     
     // *** Management functions ***
 
-	public batchResponseModeEnum getBatchResponseMode()
+    public batchResponseModeEnum getBatchResponseMode()
     {
-    	return batchResponseMode;
+        return batchResponseMode;
     }
     
     public void setBatchResponseMode(batchResponseModeEnum batchResponseMode)
     {
-    	if (this.batchResponseMode != batchResponseMode)
+        if (this.batchResponseMode != batchResponseMode)
         {
-    		this.batchResponseMode = batchResponseMode;
-        	doBatches();
+            this.batchResponseMode = batchResponseMode;
+            doBatches();
         }
     }
     
     public int responsesMapSize()
     {
-    	return responseMap.size();
+        return responseMap.size();
     }
     
     /**
@@ -153,12 +154,12 @@ public class ResponseManager
      */
     public int outstandingResponses()
     {
-    	int cnt = 0;
+        int cnt = 0;
         for (Long requestId : responseMap.keySet())
         {
-        	if (responseMap.get(requestId).responseMethodBody == null)
-            	cnt++;
-		}
+            if (responseMap.get(requestId).responseMethodBody == null)
+                cnt++;
+        }
         return cnt;
     }
     
@@ -170,12 +171,12 @@ public class ResponseManager
      */
     public int batchedResponses()
     {
-    	int cnt = 0;
+        int cnt = 0;
         for (Long requestId : responseMap.keySet())
         {
-        	if (responseMap.get(requestId).responseMethodBody != null)
-            	cnt++;
-		}
+            if (responseMap.get(requestId).responseMethodBody != null)
+                cnt++;
+        }
         return cnt;
     }
     
@@ -183,39 +184,39 @@ public class ResponseManager
     
     private long getNextResponseId()
     {
-    	return responseIdCount++;
+        return responseIdCount++;
     }
     
     private void doBatches()
     {
-    	switch (batchResponseMode)
+        switch (batchResponseMode)
         {
-        	case NONE:
-            	Iterator<Long> lItr = responseMap.keySet().iterator();
-            	while (lItr.hasNext())
+            case NONE:
+                Iterator<Long> lItr = responseMap.keySet().iterator();
+                while (lItr.hasNext())
                 {
-                	long requestId = lItr.next();
-                	ResponseStatus responseStatus = responseMap.get(requestId);
-                	if (responseStatus.responseMethodBody != null)
+                    long requestId = lItr.next();
+                    ResponseStatus responseStatus = responseMap.get(requestId);
+                    if (responseStatus.responseMethodBody != null)
                     {
-                    	sendResponseBatch(requestId, 0, responseStatus.responseMethodBody);
+                        sendResponseBatch(requestId, 0, responseStatus.responseMethodBody);
                         lItr.remove();
                     }
                 }
-            	break;
+                break;
                 
             // TODO: Add additional batch mode handlers here...
-			// case DELAY_FIXED:
-			// case MANUAL:
+            // case DELAY_FIXED:
+            // case MANUAL:
         }
     }
     
     private void sendResponseBatch(long firstRequestId, int numAdditionalRequests,
-    	AMQMethodBody responseMethodBody)
+        AMQMethodBody responseMethodBody)
     {
-    	long responseId = getNextResponseId(); // Get new request ID
-    	AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
-        	firstRequestId, numAdditionalRequests, responseMethodBody);
+        long responseId = getNextResponseId(); // Get new request ID
+        AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
+            firstRequestId, numAdditionalRequests, responseMethodBody);
         protocolSession.writeFrame(responseFrame);
     }
 } 

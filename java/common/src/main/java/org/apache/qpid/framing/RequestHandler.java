@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,23 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.state;
+package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.framing.AMQMethodBody;
-
-/**
- * A frame listener that is informed of the protocol state when invoked and has
- * the opportunity to update state.
- *
- */
-public interface StateAwareMethodListener <B extends AMQMethodBody>
+public interface RequestHandler
 {
-    void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                        AMQMethodEvent<B> evt) throws AMQException;
+	public boolean requestReceived(AMQRequestBody requestBody);
 }

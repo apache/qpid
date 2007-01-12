@@ -33,9 +33,9 @@ public class AMQResponseBody extends AMQBody
     // Constructor
     public AMQResponseBody() {}
     public AMQResponseBody(long getResponseId, long getRequestId,
-    		int batchOffset, AMQMethodBody methodPayload)
+            int batchOffset, AMQMethodBody methodPayload)
     {
-    	this.responseId = responseId;
+        this.responseId = responseId;
         this.requestId = requestId;
         this.batchOffset = batchOffset;
         this.methodPayload = methodPayload;
@@ -49,12 +49,12 @@ public class AMQResponseBody extends AMQBody
     
     protected byte getFrameType()
     {
-    	return (byte)AmqpConstants.frameResponseAsInt();
+        return (byte)AmqpConstants.frameResponseAsInt();
     }
     
     protected int getSize()
     {
-    	return 8 + 8 + 4 + methodPayload.getBodySize();
+        return 8 + 8 + 4 + methodPayload.getBodySize();
     }
         
     protected void writePayload(ByteBuffer buffer)
@@ -76,15 +76,15 @@ public class AMQResponseBody extends AMQBody
     
     public String toString()
     {
-    	return "Res[" + responseId + " " + requestId + "-" + requestId + batchOffset + "] C" +
-        	methodPayload.getClazz() + " M" + methodPayload.getMethod();
+        return "Res[" + responseId + " " + requestId + "-" + requestId + batchOffset + "] C" +
+            methodPayload.getClazz() + " M" + methodPayload.getMethod();
     }
     
     public static AMQFrame createAMQFrame(int channelId, long responseId,
             long requestId, int batchOffset, AMQMethodBody methodPayload)
     {
         AMQResponseBody responseFrame = new AMQResponseBody(responseId,
-        	requestId, batchOffset, methodPayload);
+            requestId, batchOffset, methodPayload);
         AMQFrame frame = new AMQFrame();
         frame.channel = channelId;
         frame.bodyFrame = responseFrame;
