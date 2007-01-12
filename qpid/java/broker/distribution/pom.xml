@@ -65,6 +65,9 @@
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>${assembly.version}</version>
                     <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/broker-bin.xml</descriptor>
+                            </descriptors>
                         <finalName>qpid-${pom.version}</finalName>
                         <outputDirectory>${qpid.targetDir}</outputDirectory>
                         <tarLongFileMode>gnu</tarLongFileMode>
