@@ -19,7 +19,7 @@
 -->
 <assembly>
   <!-- id typically identifies the "type" (src vs bin etc) of the assembly -->
-  <id>java-bin</id>
+  <id>java-bin-with-tests</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>tar.gz</format>

@@ -35,38 +35,49 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
+        <java.source.version>1.5</java.source.version>
+        <qpid.version>${pom.version}</qpid.version>
+        <qpid.targetDir>${project.build.directory}</qpid.targetDir>
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-broker</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jms_1.1_spec</artifactId>
         </dependency>
+
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
+            <exclusions> <!-- Tries to download 1.2.7-->
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-filter-ssl</artifactId>
+        </dependency>
+
+<!-- Test Dependencies -->
+        <dependency> <!-- for inVm Broker -->
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -85,12 +96,14 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymockclassextension</artifactId>
+            <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -115,24 +128,67 @@
                         </property>
                         <property>
                             <name>log4j.configuration</name>
-                            <value>file:///${basedir}/src/main/java/log4j.properties</value>
+                            <value>file:///${basedir}/src/main/java/client.log4j</value>
                         </property>
                     </systemProperties>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>bundle-test-jar</id>
                         <phase>package</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
                     </execution>
-                </executions>                
+                </executions>
             </plugin>
+
         </plugins>
+
+<!-- The inclusion of this resource causes the build to hang. -->
+    <!--resources>
+        <resource>
+            <targetPath>META-INF/</targetPath>
+            <filtering>false</filtering>
+            <directory>../resources/META-INF</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </resource>
+    </resources-->
+
+    <testResources>
+        <testResource>
+            <targetPath>META-INF/</targetPath>
+            <filtering>false</filtering>
+            <directory>../resources/META-INF</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </testResource>
+        <testResource>
+            <targetPath>src/</targetPath>
+            <filtering>false</filtering>
+            <directory>src/test/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </testResource>
+
+        <testResource>
+            <targetPath></targetPath>
+            <filtering>false</filtering>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>client.log4j</include>
+            </includes>
+        </testResource>
+    </testResources>
+
     </build>
+
 </project>

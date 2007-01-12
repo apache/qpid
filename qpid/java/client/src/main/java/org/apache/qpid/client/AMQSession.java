@@ -34,7 +34,6 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.handler.ExchangeBoundHandler;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -1425,7 +1424,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             throw new JMSAMQException(e);
         }
         ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
-        return (responseBody.replyCode == ExchangeBoundHandler.OK);
+        return (responseBody.replyCode == 0); //ExchangeBoundHandler.OK); Remove Broker compile dependency
     }
 
     private void checkTransacted() throws JMSException
