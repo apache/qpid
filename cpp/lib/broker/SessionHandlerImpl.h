@@ -68,9 +68,9 @@ class Settings {
     Settings(u_int32_t _timeout, u_int64_t _stagingThreshold) : timeout(_timeout), stagingThreshold(_stagingThreshold) {}
 };
 
-class SessionHandlerImpl : public virtual qpid::sys::SessionHandler, 
-                           public virtual qpid::framing::AMQP_ServerOperations, 
-                           public virtual ConnectionToken
+class SessionHandlerImpl : public qpid::sys::SessionHandler, 
+                           public qpid::framing::AMQP_ServerOperations, 
+                           public ConnectionToken
 {
     typedef std::map<u_int16_t, Channel*>::iterator channel_iterator;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -88,6 +88,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     std::auto_ptr<ExchangeHandler> exchangeHandler;
     std::auto_ptr<QueueHandler> queueHandler;
     std::auto_ptr<TxHandler> txHandler;
+    std::auto_ptr<MessageHandler> messageHandler;
 
     std::map<u_int16_t, Channel*> channels;
     std::vector<Queue::shared_ptr> exclusiveQueues;
@@ -120,7 +121,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     virtual void closed();
     virtual ~SessionHandlerImpl();
 
-    class ConnectionHandlerImpl : public virtual ConnectionHandler{
+    class ConnectionHandlerImpl : public ConnectionHandler{
         SessionHandlerImpl* parent;
       public:
         inline ConnectionHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -145,7 +146,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual ~ConnectionHandlerImpl(){}
     };
     
-    class ChannelHandlerImpl : public virtual ChannelHandler{
+    class ChannelHandlerImpl : public ChannelHandler{
         SessionHandlerImpl* parent;
       public:
         inline ChannelHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -174,7 +175,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual ~ChannelHandlerImpl(){}
     };
     
-    class ExchangeHandlerImpl : public virtual ExchangeHandler{
+    class ExchangeHandlerImpl : public ExchangeHandler{
         SessionHandlerImpl* parent;
       public:
         inline ExchangeHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -196,7 +197,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
     };
 
     
-    class QueueHandlerImpl : public virtual QueueHandler{
+    class QueueHandlerImpl : public QueueHandler{
         SessionHandlerImpl* parent;
       public:
         inline QueueHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -226,7 +227,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual ~QueueHandlerImpl(){}
     };
 
-    class BasicHandlerImpl : public virtual BasicHandler{
+    class BasicHandlerImpl : public BasicHandler{
         SessionHandlerImpl* parent;
       public:
         inline BasicHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -255,7 +256,7 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual ~BasicHandlerImpl(){}
     };
 
-    class TxHandlerImpl : public virtual TxHandler{
+    class TxHandlerImpl : public TxHandler{
         SessionHandlerImpl* parent;
       public:
         TxHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
@@ -265,26 +266,110 @@ class SessionHandlerImpl : public virtual qpid::sys::SessionHandler,
         virtual void rollback(u_int16_t channel);
     };
 
+    class MessageHandlerImpl : public MessageHandler {
+        SessionHandlerImpl* parent;
 
-    inline virtual ChannelHandler* getChannelHandler(){ return channelHandler.get(); }
-    inline virtual ConnectionHandler* getConnectionHandler(){ return connectionHandler.get(); }
-    inline virtual BasicHandler* getBasicHandler(){ return basicHandler.get(); }
-    inline virtual ExchangeHandler* getExchangeHandler(){ return exchangeHandler.get(); }
-    inline virtual QueueHandler* getQueueHandler(){ return queueHandler.get(); }
-    inline virtual TxHandler* getTxHandler(){ return txHandler.get(); }       
+        // Constructors and destructors
+
+      public:
+        MessageHandlerImpl() {}
+        MessageHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        virtual ~MessageHandlerImpl() {}
+
+        // Protocol methods
+        virtual void append( u_int16_t channel,
+                            const string& reference,
+                            const string& bytes );
+
+        virtual void cancel( u_int16_t channel,
+                            const string& destination );
+
+        virtual void checkpoint( u_int16_t channel,
+                            const string& reference,
+                            const string& identifier );
+
+        virtual void close( u_int16_t channel,
+                            const string& reference );
+
+        virtual void consume( u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& queue,
+                            const string& destination,
+                            bool noLocal,
+                            bool noAck,
+                            bool exclusive,
+                            const qpid::framing::FieldTable& filter );
+
+        virtual void empty( u_int16_t channel );
+
+        virtual void get( u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& queue,
+                            const string& destination,
+                            bool noAck );
+
+        virtual void offset( u_int16_t channel,
+                            u_int64_t value );
+
+        virtual void ok( u_int16_t channel );
+
+        virtual void open( u_int16_t channel,
+                            const string& reference );
+
+        virtual void qos( u_int16_t channel,
+                            u_int32_t prefetchSize,
+                            u_int16_t prefetchCount,
+                            bool global );
+
+        virtual void recover( u_int16_t channel,
+                            bool requeue );
+
+        virtual void reject( u_int16_t channel,
+                            u_int16_t code,
+                            const string& text );
+
+        virtual void resume( u_int16_t channel,
+                            const string& reference,
+                            const string& identifier );
+
+        virtual void transfer( u_int16_t channel,
+                            u_int16_t ticket,
+                            const string& destination,
+                            bool redelivered,
+                            bool immediate,
+                            u_int64_t ttl,
+                            u_int8_t priority,
+                            u_int64_t timestamp,
+                            u_int8_t deliveryMode,
+                            u_int64_t expiration,
+                            const string& exchange,
+                            const string& routingKey,
+                            const string& messageId,
+                            const string& correlationId,
+                            const string& replyTo,
+                            const string& contentType,
+                            const string& contentEncoding,
+                            const string& userId,
+                            const string& appId,
+                            const string& transactionId,
+                            const string& securityToken,
+                            const qpid::framing::FieldTable& applicationHeaders,
+                            qpid::framing::Content body );
+    };
+
+    virtual ChannelHandler* getChannelHandler(){ return channelHandler.get(); }
+    virtual ConnectionHandler* getConnectionHandler(){ return connectionHandler.get(); }
+    virtual BasicHandler* getBasicHandler(){ return basicHandler.get(); }
+    virtual ExchangeHandler* getExchangeHandler(){ return exchangeHandler.get(); }
+    virtual QueueHandler* getQueueHandler(){ return queueHandler.get(); }
+    virtual TxHandler* getTxHandler(){ return txHandler.get(); }       
+    virtual MessageHandler* getMessageHandler(){ return messageHandler.get(); } 
  
-    inline virtual AccessHandler* getAccessHandler(){ throw ConnectionException(540, "Access class not implemented"); }       
-    inline virtual FileHandler* getFileHandler(){ throw ConnectionException(540, "File class not implemented"); }       
-    inline virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
-    inline virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
-    inline virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
-
-    virtual AMQP_ServerOperations::MessageHandler* getMessageHandler(){ throw ConnectionException(540, "Message class not implemented"); } 
-
-    // FIXME aconway 2007-01-04: Remove?
-    // Temporary add-in to resolve version conflicts: AMQP v8.0 still defines class Test;
-    // however v0.9 will not - kpvdr 2006-11-17      
-    // inline virtual TestHandler* getTestHandler(){ throw ConnectionException(540, "Test class not implemented"); }       
+    virtual AccessHandler* getAccessHandler(){ throw ConnectionException(540, "Access class not implemented"); }       
+    virtual FileHandler* getFileHandler(){ throw ConnectionException(540, "File class not implemented"); }       
+    virtual StreamHandler* getStreamHandler(){ throw ConnectionException(540, "Stream class not implemented"); }       
+    virtual DtxHandler* getDtxHandler(){ throw ConnectionException(540, "Dtx class not implemented"); }       
+    virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
 };
 
 }
