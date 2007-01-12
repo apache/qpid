@@ -49,13 +49,13 @@ public class ServiceProvidingClient
 
     public ServiceProvidingClient(String brokerDetails, String username, String password,
                                   String clientName, String virtualPath, String serviceName,
-								  String deliveryModeString, String transactedMode)
+                                  final int deliveryMode, boolean transactedMode, String selector)
             throws AMQException, JMSException, URLSyntaxException
     {
-		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
-		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
+        _isTransactional = transactedMode;
 
-        _logger.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
+        _logger.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent")
+                     + "\t isTransactional: " + _isTransactional);
 
         _connection = new AMQConnection(brokerDetails, username, password,
                                         clientName, virtualPath);
@@ -93,7 +93,7 @@ public class ServiceProvidingClient
         AMQQueue destination = new AMQQueue(serviceName);
 
         MessageConsumer consumer = _session.createConsumer(destination,
-                                                          100, true, false, null);
+                                                           100, true, false, selector);
 
         consumer.setMessageListener(new MessageListener()
         {
@@ -153,11 +153,11 @@ public class ServiceProvidingClient
                     
                     _destinationProducer.send(msg);
 
-					if(_isTransactional)
+                    if (_isTransactional)
                     {
                         _producerSession.commit();
                     }
-                    if(_isTransactional)
+                    if (_isTransactional)
                     {
                         _session.commit();
                     }
@@ -184,10 +184,9 @@ public class ServiceProvidingClient
     {
         _logger.info("Starting...");
 
-        if (args.length < 7)
+        if (args.length < 5)
         {
-            System.out.println("Usage: <brokerDetails> <username> <password> <virtual-path> <serviceQueue>" +
-                               " <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> [selector]");
+            System.out.println("Usage: serviceProvidingClient <brokerDetails> <username> <password> <virtual-path> <serviceQueue> [<P[ersistent]|N[onPersistent]> <T[ransacted]|N[onTransacted]>] [selector]");
             System.exit(1);
         }
         String clientId = null;
@@ -201,10 +200,29 @@ public class ServiceProvidingClient
             _logger.error("Error: " + e, e);
         }
 
+
+        int deliveryMode = DeliveryMode.NON_PERSISTENT;
+        boolean transactedMode = false;
+
+        if (args.length > 7)
+        {
+            deliveryMode = args[args.length - 2].toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT
+                           : DeliveryMode.NON_PERSISTENT;
+
+            transactedMode = args[args.length - 1].toUpperCase().charAt(0) == 'T' ? true : false;
+        }
+
+        String selector = null;
+        if ((args.length == 8) || (args.length == 7))
+        {
+            selector = args[args.length - 1];
+        }
+
         try
         {
             ServiceProvidingClient client = new ServiceProvidingClient(args[0], args[1], args[2],
-                                                                       clientId, args[3], args[4], args[5], args[6]);
+                                                                       clientId, args[3], args[4],
+                                                                       deliveryMode, transactedMode, selector);
             client.run();
         }
         catch (JMSException e)
@@ -219,6 +237,8 @@ public class ServiceProvidingClient
         {
             _logger.error("Error: " + e, e);
         }
+
+
     }
 
 }
