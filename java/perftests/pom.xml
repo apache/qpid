@@ -57,8 +57,10 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+
         </plugins>
-         <!-- Include source files in built jar -->
+
+        <!-- Include source files in built jar -->
         <resources>
             <resource>
                 <targetPath>src/</targetPath>
@@ -69,13 +71,14 @@
                 </includes>
             </resource>
             <resource>
-		<targetPath></targetPath>
-		<filtering>false</filtering>
-		<directory>src/main/java</directory>
-		<includes>
-			<include>perftests.log4j</include>
-		</includes>
+                <targetPath>src/</targetPath>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>perftests.log4j</include>
+                </includes>
             </resource>
         </resources>
     </build>
+
 </project>

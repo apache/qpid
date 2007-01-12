@@ -39,23 +39,20 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-client</artifactId>
+            <type>jar</type>
         </dependency>
+
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
+            <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -65,38 +62,30 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <systemProperties>
-                        <property>
-                            <name>amqj.noAutoCreateVMBroker</name>
-                            <value>true</value>
-                        </property>
-                        <property>
-                            <name>amqj.logging.level</name>
-                            <value>${amqj.logging.level}</value>
-                        </property>
-                        <property>
-                            <name>log4j.debug</name>
-                            <value>true</value>
-                        </property>
-                         <property>
-                            <name>log4j.configuration</name>
-                            <value>file:///${basedir}/src/test/java/log4j.properties</value>
-                        </property>
-                    </systemProperties>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>bundle-test-jar</id>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>                
-            </plugin>
+
         </plugins>
+
+        <!-- Include source files in built jar -->
+        <resources>
+            <resource>
+                <targetPath>src/</targetPath>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.java</include>
+                </includes>
+            </resource>
+            <resource>
+                <targetPath>src/</targetPath>
+                <filtering>false</filtering>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>systests.log4j</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>
