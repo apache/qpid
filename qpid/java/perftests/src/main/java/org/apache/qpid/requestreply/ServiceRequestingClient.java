@@ -281,7 +281,7 @@ public class ServiceRequestingClient implements ExceptionListener
      */
     public static void main(String[] args)
     {
-        if (args.length < 6)
+        if (args.length < 9)
         {
             System.err.println(
                     "Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list> <username> <password> <vpath> <command queue name> <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> <number of messages> <message size>");

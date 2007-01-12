@@ -334,4 +334,15 @@ public class AMQBrokerDetails implements BrokerDetails
     }
 
 
+    public static String checkTransport(String broker)
+    {
+        if ((!broker.contains("://")))
+        {
+            return "tcp://" + broker;
+        }
+        else
+        {
+            return broker;
+        }
+    }
 }
