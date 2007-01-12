@@ -33,6 +33,7 @@ import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.commons.lang.StringUtils;
 
 import javax.jms.JMSException;
@@ -62,6 +63,8 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     protected static final String SASL_CLIENT = "SASLClient";
 
     protected final IoSession _minaProtocolSession;
+
+    private AMQStateManager _stateManager;
 
     protected WriteFuture _lastWriteFuture;
 
@@ -98,6 +101,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         _protocolHandler = null;
         _minaProtocolSession = null;
+        _stateManager = new AMQStateManager(this);
     }
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
@@ -106,6 +110,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _minaProtocolSession = protocolSession;
         // properties of the connection are made available to the event handlers
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
+        _stateManager = new AMQStateManager(this);
     }
 
     public void init()
@@ -135,6 +140,16 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     public void setClientID(String clientID) throws JMSException
     {
         getAMQConnection().setClientID(clientID);
+    }
+    
+    public AMQStateManager getStateManager()
+    {
+        return _stateManager;
+    }
+    
+    public void setStateManager(AMQStateManager stateManager)
+    {
+        _stateManager = stateManager;
     }
 
     public String getVirtualHost()

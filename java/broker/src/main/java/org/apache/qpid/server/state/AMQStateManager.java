@@ -25,7 +25,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.handler.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.log4j.Logger;
@@ -43,7 +43,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
-
+    private final QueueRegistry _queueRegistry;
+    private final ExchangeRegistry _exchangeRegistry;
+    private final AMQProtocolSession _protocolSession;
     /**
      * The current state
      */
@@ -58,13 +60,16 @@ public class AMQStateManager implements AMQMethodListener
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
-    public AMQStateManager()
+    public AMQStateManager(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
-        this(AMQState.CONNECTION_NOT_STARTED, true);
+        this(AMQState.CONNECTION_NOT_STARTED, true, queueRegistry, exchangeRegistry, protocolSession);
     }
 
-    protected AMQStateManager(AMQState initial, boolean register)
+    protected AMQStateManager(AMQState initial, boolean register, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
+        _queueRegistry = queueRegistry;
+        _exchangeRegistry = exchangeRegistry;
+        _protocolSession = protocolSession;
         _currentState = initial;
         if (register)
         {
@@ -149,7 +154,7 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public void error(AMQException e)
+    public void error(Exception e)
     {
         _logger.error("State manager received error notification: " + e, e);
         for (StateListener l : _stateListeners)
@@ -158,15 +163,12 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt,
-                           AMQProtocolSession protocolSession,
-                           QueueRegistry queueRegistry,
-                           ExchangeRegistry exchangeRegistry) throws AMQException
+    public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
     {
         StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, queueRegistry, exchangeRegistry, protocolSession, evt);
+            handler.methodReceived(this, _queueRegistry, _exchangeRegistry, _protocolSession, evt);
             return true;
         }
         return false;

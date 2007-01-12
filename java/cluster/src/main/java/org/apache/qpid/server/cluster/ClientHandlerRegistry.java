@@ -29,6 +29,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.IllegalStateTransitionException;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.*;
 
 import java.util.HashMap;
@@ -43,9 +44,9 @@ public class ClientHandlerRegistry extends AMQStateManager
     private final Map<AMQState, ClientRegistry> _handlers = new HashMap<AMQState, ClientRegistry>();
     private final MemberHandle _identity;
 
-    protected ClientHandlerRegistry(MemberHandle local)
+    protected ClientHandlerRegistry(MemberHandle local, AMQProtocolSession protocolSession)
     {
-        super(AMQState.CONNECTION_NOT_STARTED, false);
+        super(AMQState.CONNECTION_NOT_STARTED, false, protocolSession);
 
         _identity = local;
 
