@@ -17,17 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# args supplied: <host:port> <num messages>
-#
+# usage: ./serviceRequestingClient.sh <brokerdetails> <number of messages> [<message size 4096b default>] [<P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]>]
+
 if [[ $# < 2 ]] ; then
- echo "usage: ./serviceRequestingClient.sh <brokerdetails> <number of messages> [<message size 4096b default>]"
+ echo "usage: ./serviceRequestingClient.sh <brokerdetails> <number of messages> [<message size 4096b default>] [<P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]>]"
  exit 1
 fi
 
 thehosts=$1
 shift
-echo $thehosts
+
 # XXX -Xms1024m -XX:NewSize=300m
 . ./setupclasspath.sh
 echo $CP
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Dlog.dir="$QPID_HOME/logs" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ P T "$@"
+
+$JAVA_HOME/bin/java -cp $CP -Dlog.dir="$QPID_HOME/logs" -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ "$@"

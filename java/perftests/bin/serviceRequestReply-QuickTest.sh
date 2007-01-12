@@ -19,15 +19,25 @@
 #
 # args supplied: <brokerdetails> <num messages>
 
-if [[ $# != 1 ]] ; then
- echo "usage: ./serviceProvidingClient.sh <brokerdetails>  [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>] [selector]"
+if [[ $# != 2 ]] ; then
+ echo "usage: ./serviceQuickTest.sh <brokerdetails> <Number of messages> [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>]"
  exit 1
 fi
 
 thehosts=$1
 shift
 
+numberofmessages=$1
+shift
+
 . ./setupclasspath.sh
 echo $CP
 
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.requestreply.ServiceProvidingClient $thehosts guest guest /test serviceQ "$@"
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.requestreply.ServiceProvidingClient $thehosts guest guest /test serviceQ "$@" &
+
+providingclient=$!
+
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ $numberofmessages "$@"
+
+kill $providingclient
+
