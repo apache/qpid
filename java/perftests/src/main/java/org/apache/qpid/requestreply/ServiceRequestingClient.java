@@ -22,13 +22,14 @@ package org.apache.qpid.requestreply;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
 import java.net.InetAddress;
@@ -46,8 +47,8 @@ public class ServiceRequestingClient implements ExceptionListener
 {
     private static final Logger _log = Logger.getLogger(ServiceRequestingClient.class);
 
-    private static final String MESSAGE_DATA_BYTES = "jfd ghljgl hjvhlj cvhvjf ldhfsj lhfdsjf hldsjfk hdslkfj hsdflk  ";
-
+    private static final String MESSAGE_IDENTIFIER = "MessageIdentifier";
+    private static int _messageIdentifier = 0;
     private String MESSAGE_DATA;
 
     private AMQConnection _connection;
@@ -67,24 +68,6 @@ public class ServiceRequestingClient implements ExceptionListener
     private MessageProducer _producer;
 
     private Object _waiter;
-
-    private static String createMessagePayload(int size)
-    {
-        _log.info("Message size set to " + size + " bytes");
-        StringBuffer buf = new StringBuffer(size);
-        int count = 0;
-        while (count < size + MESSAGE_DATA_BYTES.length())
-        {
-            buf.append(MESSAGE_DATA_BYTES);
-            count += MESSAGE_DATA_BYTES.length();
-        }
-        if (count < size)
-        {
-            buf.append(MESSAGE_DATA_BYTES, 0, size - count);
-        }
-
-        return buf.toString();
-    }
 
     private class CallbackHandler implements MessageListener
     {
@@ -125,7 +108,11 @@ public class ServiceRequestingClient implements ExceptionListener
                         _log.info("Average latency now: " + _averageLatency);
                     }
                 }
-				if(_isTransactional)
+                if (m.propertyExists(MESSAGE_IDENTIFIER))
+                {
+                    _log.info("Received Message Identifier: " + m.getIntProperty(MESSAGE_IDENTIFIER));
+                }
+                if(_isTransactional)
                 {
                     _session.commit();
                 }
@@ -186,7 +173,7 @@ public class ServiceRequestingClient implements ExceptionListener
         _log.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
 
         _messageCount = messageCount;
-        MESSAGE_DATA = createMessagePayload(messageDataLength);
+        MESSAGE_DATA = TestMessageFactory.createMessagePayload(messageDataLength);
         try
         {
             createConnection(brokerHosts, clientID, username, password, vpath);
@@ -210,7 +197,7 @@ public class ServiceRequestingClient implements ExceptionListener
             //Send first message, then wait a bit to allow the provider to get initialised
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
-            _producer.send(first);
+            send(first);
 			if(_isTransactional)
             {
                 _producerSession.commit();
@@ -234,6 +221,13 @@ public class ServiceRequestingClient implements ExceptionListener
         }
     }
 
+    private void send(TextMessage msg) throws JMSException
+    {
+        msg.setIntProperty(MESSAGE_IDENTIFIER, ++_messageIdentifier);
+        _producer.send(msg);
+        _log.info("Sent Message Identifier: " + _messageIdentifier);
+    }
+
     /**
      * Run the test and notify an object upon receipt of all responses.
      *
@@ -253,7 +247,7 @@ public class ServiceRequestingClient implements ExceptionListener
                 long timeNow = System.currentTimeMillis();
                 msg.setLongProperty("timeSent", timeNow);
             }
-            _producer.send(msg);
+            send(msg);
             if(_isTransactional)
             {
                 _producerSession.commit();
@@ -283,8 +277,9 @@ public class ServiceRequestingClient implements ExceptionListener
     {
         if (args.length < 9)
         {
-            System.err.println(
-                    "Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list> <username> <password> <vpath> <command queue name> <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> <number of messages> <message size>");
+            System.err.println("Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list>" +
+                               " <username> <password> <vpath> <command queue name> <P[ersistent]|N[onPersistent]>" +
+                               " <T[ransacted]|N[onTransacted]> <number of messages> <message size>");
             System.exit(1);
         }
         try
@@ -305,7 +300,6 @@ public class ServiceRequestingClient implements ExceptionListener
                     waiter.wait();
                 }
             }
-
         }
         catch (UnknownHostException e)
         {
