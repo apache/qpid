@@ -95,7 +95,9 @@ void SessionHandlerImpl::received(qpid::framing::AMQFrame* frame){
 
     switch(body->type())
     {
-    case METHOD_BODY:
+      case REQUEST_BODY:
+      case RESPONSE_BODY:
+      case METHOD_BODY:
         method = dynamic_pointer_cast<AMQMethodBody, AMQBody>(body);
         try{
             method->invoke(*this, channel);

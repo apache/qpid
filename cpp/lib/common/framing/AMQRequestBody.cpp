@@ -22,37 +22,37 @@
 namespace qpid {
 namespace framing {
 
-AMQRequestBody::AMQRequestBody(AMQP_MethodVersionMap& vm, ProtocolVersion v)
-    : versionMap(vm), version(v) {}
-
-AMQRequestBody::AMQRequestBody(
-    AMQP_MethodVersionMap& vm, ProtocolVersion v,
-    u_int64_t reqId, u_int64_t respMark,
-    AMQMethodBody::shared_ptr m
-) : versionMap(vm), version(v), 
-    requestId(reqId), responseMark(respMark), method(m)
-{}
-    
-
-void
-AMQRequestBody::encode(Buffer& buffer) const {
-    assert(method.get());
+void AMQRequestBody::Data::encode(Buffer& buffer) const {
     buffer.putLongLong(requestId);
     buffer.putLongLong(responseMark);
-    method->encode(buffer);
 }
-
-void
-AMQRequestBody::decode(Buffer& buffer, u_int32_t /*size*/) {
+    
+void AMQRequestBody::Data::decode(Buffer& buffer) {
     requestId = buffer.getLongLong();
     responseMark = buffer.getLongLong();
-    method = AMQMethodBody::create(versionMap, version, buffer);
 }
 
-void
-AMQRequestBody::print(std::ostream& out) const
+void AMQRequestBody::encode(Buffer& buffer) const {
+    data.encode(buffer);
+    encodeId(buffer);
+    encodeContent(buffer);
+}
+
+AMQRequestBody::shared_ptr    
+AMQRequestBody::create(
+    AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
+    Buffer& buffer)
 {
-    out << "request(" << size() << " bytes) " << *method;
+    MethodId id;
+    Data data;
+    data.decode(buffer);
+    id.decode(buffer);
+    AMQRequestBody* body = dynamic_cast<AMQRequestBody*>(
+        versionMap.createMethodBody(
+            id.classId, id.methodId, version.getMajor(), version.getMinor()));
+    assert(body);
+    body->data = data;
+    return AMQRequestBody::shared_ptr(body);
 }
 
 }} // namespace qpid::framing

@@ -39,13 +39,6 @@ namespace framing {
 	
 class AMQFrame : virtual public AMQDataBlock
 {
-    static AMQP_MethodVersionMap versionMap;
-    qpid::framing::ProtocolVersion version;
-            
-    u_int16_t channel;
-    u_int8_t type;
-    AMQBody::shared_ptr body;
-            
   public:
     AMQFrame(qpid::framing::ProtocolVersion& _version = highestProtocolVersion);
     AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody* body);
@@ -59,6 +52,15 @@ class AMQFrame : virtual public AMQDataBlock
 
     u_int32_t decodeHead(Buffer& buffer); 
     void decodeBody(Buffer& buffer, uint32_t size); 
+
+  private:
+        static AMQP_MethodVersionMap versionMap;
+    qpid::framing::ProtocolVersion version;
+            
+    u_int16_t channel;
+    u_int8_t type;
+    AMQBody::shared_ptr body;
+            
 
   friend std::ostream& operator<<(std::ostream& out, const AMQFrame& body);
 };

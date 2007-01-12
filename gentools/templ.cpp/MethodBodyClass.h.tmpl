@@ -30,7 +30,7 @@
 #include <sstream>
 
 #include <amqp_types.h>
-#include <AMQMethodBody.h>
+#include <${mb_base_class}.h>
 #include <Buffer.h>
 #include <FieldTable.h>
 #include <FramingContent.h>
@@ -44,7 +44,7 @@ namespace framing
 {
 ${version_namespace_start}
  
-class ${CLASS}${METHOD}Body : public AMQMethodBody
+class ${CLASS}${METHOD}Body : public ${mb_base_class}
 {
 	// Method field declarations
 
@@ -58,8 +58,7 @@ public:
 
 ${mb_constructor_with_initializers}
 
-    inline ${CLASS}${METHOD}Body(u_int8_t major, u_int8_t minor): AMQMethodBody(major, minor) {}
-    inline ${CLASS}${METHOD}Body(ProtocolVersion& version): AMQMethodBody(version) {}
+    ${CLASS}${METHOD}Body(const ProtocolVersion& version): ${mb_base_class}(version) {}
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods
@@ -84,19 +83,19 @@ ${mb_constructor_with_initializers}
     	return ${METHOD_ID_INIT};
     }
 
-    inline u_int32_t bodySize() const
+    u_int32_t size() const
     {
-		u_int32_t size = 0;        
+        u_int32_t sz = baseSize();
 %{FLIST} ${mb_body_size}
-        return size;
+        return sz;
     }
 
-    inline void encodeContent(Buffer&${mb_buffer_param}) const
+    void encodeContent(Buffer& ${mb_buffer_param}) const
     {
 %{FLIST} ${mb_encode}
     }
 
-    inline void decodeContent(Buffer&${mb_buffer_param})
+    inline void decodeContent(Buffer& ${mb_buffer_param})
     {
 %{FLIST} ${mb_decode}
     }       

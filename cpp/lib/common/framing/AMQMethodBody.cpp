@@ -25,14 +25,9 @@
 namespace qpid {
 namespace framing {
 
-void AMQMethodBody::encode(Buffer& buffer) const{
+void AMQMethodBody::encodeId(Buffer& buffer) const{
     buffer.putShort(amqpClassId());
     buffer.putShort(amqpMethodId());
-    encodeContent(buffer);
-}
-
-void AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/){
-    decodeContent(buffer);
 }
 
 bool AMQMethodBody::match(AMQMethodBody* other) const{
@@ -43,17 +38,25 @@ void AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channe
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }
 
-
-
 AMQMethodBody::shared_ptr AMQMethodBody::create(
     AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
     Buffer& buffer)
 {
-    u_int16_t classId = buffer.getShort();
-    u_int16_t methodId = buffer.getShort();
+    MethodId id;
+    id.decode(buffer);
     return AMQMethodBody::shared_ptr(
         versionMap.createMethodBody(
-            classId, methodId, version.getMajor(), version.getMinor()));
+            id.classId, id.methodId, version.getMajor(), version.getMinor()));
 }
+
+void AMQMethodBody::MethodId::decode(Buffer& buffer) {
+    classId = buffer.getShort();
+    methodId = buffer.getShort();
+}
+
+void AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/) {
+    decodeContent(buffer);
+}
+
 
 }} // namespace qpid::framing

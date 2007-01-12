@@ -39,7 +39,7 @@ std::string tostring(const T& x)
     out << x;
     return out.str();
 }
-    
+
 class FramingTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(FramingTest);
@@ -147,38 +147,29 @@ class FramingTest : public CppUnit::TestCase
     }
 
     void testRequestBodyFrame() {
-        AMQMethodBody::shared_ptr method(new ChannelOkBody(version));
-        AMQRequestBody::shared_ptr request(
-            new AMQRequestBody(versionMap, version, 111, 222, method));
+        std::string testing("testing");
+        AMQBody::shared_ptr request(new ChannelOpenBody(version, testing));
         AMQFrame in(version, 999, request);
         in.encode(buffer);
         buffer.flip();
         AMQFrame out;
         out.decode(buffer);
-        request = boost::dynamic_pointer_cast<AMQRequestBody>(out.getBody());
-        CPPUNIT_ASSERT(request);
-        CPPUNIT_ASSERT_EQUAL(111ULL, request->getRequestId());
-        CPPUNIT_ASSERT_EQUAL(222ULL, request->getResponseMark());
-        AMQMethodBody& body = request->getMethodBody();
-        CPPUNIT_ASSERT(dynamic_cast<ChannelOkBody*>(&body));
+        ChannelOpenBody* decoded =
+            dynamic_cast<ChannelOpenBody*>(out.getBody().get());
+        CPPUNIT_ASSERT(decoded);
+        CPPUNIT_ASSERT_EQUAL(testing, decoded->getOutOfBand());
     }
     
     void testResponseBodyFrame() {
-        AMQMethodBody::shared_ptr method(new ChannelOkBody(version));
-        AMQResponseBody::shared_ptr response(
-            new AMQResponseBody(versionMap, version, 111, 222, 333, method));
+        AMQBody::shared_ptr response(new ChannelOkBody(version));
         AMQFrame in(version, 999, response);
         in.encode(buffer);
         buffer.flip();
         AMQFrame out;
         out.decode(buffer);
-        response = boost::dynamic_pointer_cast<AMQResponseBody>(out.getBody());
-        CPPUNIT_ASSERT(response);
-        CPPUNIT_ASSERT_EQUAL(111ULL, response->getResponseId());
-        CPPUNIT_ASSERT_EQUAL(222ULL, response->getRequestId());
-        CPPUNIT_ASSERT_EQUAL(333U, response->getBatchOffset());
-        AMQMethodBody& body = response->getMethodBody();
-        CPPUNIT_ASSERT(dynamic_cast<ChannelOkBody*>(&body));
+        ChannelOkBody* decoded =
+            dynamic_cast<ChannelOkBody*>(out.getBody().get());
+        CPPUNIT_ASSERT(decoded);
     }
 };
 
