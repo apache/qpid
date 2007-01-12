@@ -75,7 +75,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
     {
         synchronized (_lock)
         {
-            for(UnacknowledgedMessage msg : msgs)
+            for (UnacknowledgedMessage msg : msgs)
             {
                 _map.remove(msg.deliveryTag);
             }
@@ -95,7 +95,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             Collection<UnacknowledgedMessage> currentEntries = _map.values();
-            for (UnacknowledgedMessage msg: currentEntries)
+            for (UnacknowledgedMessage msg : currentEntries)
             {
                 visitor.callback(msg);
             }
@@ -103,9 +103,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
+    public Object getLock()
+    {
+        return _lock;
+    }
+
     public void add(long deliveryTag, UnacknowledgedMessage message)
     {
-        synchronized( _lock)
+        synchronized (_lock)
         {
             _map.put(deliveryTag, message);
             _lastDeliveryTag = deliveryTag;
@@ -209,7 +214,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
     {
         synchronized (_lock)
         {
-            for(Map.Entry<Long, UnacknowledgedMessage> entry : _map.entrySet())
+            for (Map.Entry<Long, UnacknowledgedMessage> entry : _map.entrySet())
             {
                 msgs.add(entry.getValue());
                 if (entry.getKey() == key)

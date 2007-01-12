@@ -43,6 +43,8 @@ public interface UnacknowledgedMessageMap
 
     void visit(Visitor visitor) throws AMQException;
 
+    Object getLock();
+
     void add(long deliveryTag, UnacknowledgedMessage message);
 
     void collect(long deliveryTag, boolean multiple, List<UnacknowledgedMessage> msgs);
@@ -67,6 +69,7 @@ public interface UnacknowledgedMessageMap
 
     /**
      * Get the set of delivery tags that are outstanding.
+     *
      * @return a set of delivery tags
      */
     Set<Long> getDeliveryTags();
