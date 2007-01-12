@@ -23,8 +23,8 @@ package org.apache.qpid.client.state;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.handler.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.protocol.AMQMethodListener;
 import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
 
@@ -41,6 +41,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
+    private final AMQProtocolSession _protocolSession;
 
     /**
      * The current state
@@ -55,13 +56,14 @@ public class AMQStateManager implements AMQMethodListener
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
 
-    public AMQStateManager()
+    public AMQStateManager(AMQProtocolSession protocolSession)
     {
-        this(AMQState.CONNECTION_NOT_STARTED, true);
+        this(AMQState.CONNECTION_NOT_STARTED, true, protocolSession);
     }
 
-    protected AMQStateManager(AMQState state, boolean register)
+    protected AMQStateManager(AMQState state, boolean register, AMQProtocolSession protocolSession)
     {
+        _protocolSession = protocolSession;
         _currentState = state;
         if(register)
         {
@@ -147,12 +149,12 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public boolean methodReceived(AMQMethodEvent evt, AMQProtocolSession protocolSession) throws AMQException
+    public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt) throws AMQException
     {
         StateAwareMethodListener handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, protocolSession, evt);
+            handler.methodReceived(this, _protocolSession, evt);
             return true;
         }
         return false;
