@@ -63,13 +63,6 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
 
-<!-- This is a mina dependency but it isn't being picked up-->
-       <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-       </dependency>
-
-
 <!-- Test Dependencies -->
         <dependency>
             <groupId>junit</groupId>

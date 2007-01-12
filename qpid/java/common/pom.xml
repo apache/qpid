@@ -74,6 +74,13 @@
             <artifactId>log4j</artifactId>
         </dependency>
 
+
+<!-- This is a mina dependency but it isn't being picked up-->
+       <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+       </dependency>
+
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-java5</artifactId>
