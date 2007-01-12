@@ -18,40 +18,45 @@
  * under the License.
 -->
 <assembly>
-  <id>java-tests</id>
+  <!-- id typically identifies the "type" (src vs bin etc) of the assembly -->
+  <id>java-client-src</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>tar.gz</format>
     <format>zip</format>
   </formats>
-  
+
   <fileSets>
+   
+      <fileSet>
+          <!-- Apache license files -->
+          <directory>../../resources</directory>
+          <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
+          <includes>
+              <include>DISCLAIMER</include>
+              <include>LICENSE.txt</include>
+              <include>NOTICE.txt</include>
+              <include>README.txt</include>
+          </includes>
+      </fileSet>
+
     <fileSet>
-      <directory>../broker/target</directory>
-      <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
+      <directory>..</directory>
+      <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
       <includes>
-        <include>*-tests.jar</include>
+        <include>src/main/**</include>
+        <include>src/test/**</include>
+        <include>test/main/**</include>
+        <include>test/test/**</include>
+        <include>pom.xml</include>
+        <include>distribution/**</include>
       </includes>
-    </fileSet>
-    <fileSet>
-      <directory>../client/target</directory>
-      <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
-      <includes>
-        <include>*-tests.jar</include>
-      </includes>
+      <excludes>
+        <exclude>**/target</exclude>
+        <exclude>**/target/**/*</exclude>
+        <exclude>**/build</exclude>
+        <exclude>**/build/**/*</exclude>
+      </excludes>
     </fileSet>
   </fileSets>
-
-  <dependencySets>
-    <dependencySet>
-      <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
-      <unpack>false</unpack>
-      <includes>
-        <include>org.apache.qpid:qpid-systests</include>
-        <include>org.apache.qpid:qpid-perftests</include>
-      </includes>
-      <scope>test</scope>
-    </dependencySet>
-  </dependencySets>
-
 </assembly>
