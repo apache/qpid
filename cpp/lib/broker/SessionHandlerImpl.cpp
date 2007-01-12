@@ -252,7 +252,7 @@ void SessionHandlerImpl::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16
         try{
             std::pair<Exchange::shared_ptr, bool> response = parent->exchanges->declare(exchange, type);
             if(!response.second && response.first->getType() != type){
-                throw ConnectionException(507, "Exchange already declared to be of type " 
+                throw ConnectionException(530, "Exchange already declared to be of type " 
                                           + response.first->getType() + ", requested " + type);
             }
         }catch(UnknownExchangeTypeException& e){
