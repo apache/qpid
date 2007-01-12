@@ -24,15 +24,14 @@ BuildRequires: pkgconfig
 BuildRequires: e2fsprogs-devel
 BuildRequires: apr-devel
 
-Requires: apr
 Requires: boost
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
 Requires(preun):/sbin/service
-Requires(postun): /sbin/service
+Requires(postun):/sbin/service
 
-%description 
+%description
 Run-time libraries for AMQP client applications developed using Qpid
 C++. Clients exchange messages with an AMQP message broker using
 the AMQP protocol.
@@ -44,7 +43,6 @@ Requires: %name = %version-%release
 Requires: libtool
 Requires: apr-devel
 Requires: boost-devel
-Requires: cppunit
 Requires: cppunit-devel
 
 %description devel
@@ -134,10 +132,9 @@ fi
 %changelog
 
 * Mon Dec 22 2006 Alan Conway <aconway@redhat.com> - 0.1-1
-- Fixed all rpmlint complaints (with help from David Lutterkort) 
+- Fixed all rpmlint complaints (with help from David Lutterkort)
 - Added qpidd --daemon behaviour, fix init.rc scripts
 
 * Fri Dec  8 2006 David Lutterkort <dlutter@redhat.com> - 0.1-1
 - Initial version based on Jim Meyering's sketch and discussions with Alan
   Conway
-
