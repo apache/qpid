@@ -46,6 +46,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.ssl.BogusSSLContextFactory;
 
 import java.util.Iterator;
@@ -313,14 +314,14 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 _logger.debug("Method frame received: " + frame);
             }
 
-            final AMQMethodEvent evt = new AMQMethodEvent(frame.channel, (AMQMethodBody) frame.bodyFrame, _protocolSession);
+            final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel, (AMQMethodBody) frame.bodyFrame);
             try
             {
                 boolean wasAnyoneInterested = false;
                 while (it.hasNext())
                 {
                     final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                    wasAnyoneInterested = listener.methodReceived(evt, _protocolSession) || wasAnyoneInterested;
                 }
                 if (!wasAnyoneInterested)
                 {

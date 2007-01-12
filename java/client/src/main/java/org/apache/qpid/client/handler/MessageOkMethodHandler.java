@@ -21,31 +21,27 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageCheckpointBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.state.StateAwareMethodListener;
 
-public class MessageCheckpointHandler implements StateAwareMethodListener<MessageCheckpointBody>
+public class MessageOkMethodHandler implements StateAwareMethodListener
 {
-    private static MessageCheckpointHandler _instance = new MessageCheckpointHandler();
+    private static MessageOkMethodHandler _instance = new MessageOkMethodHandler();
 
-    public static MessageCheckpointHandler getInstance()
+    public static MessageOkMethodHandler getInstance()
     {
         return _instance;
     }
 
-    private MessageCheckpointHandler() {}
+    private MessageOkMethodHandler() {}
     
     
     public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
                                 AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageCheckpointBody> evt)
+                               	AMQMethodEvent<MessageOkBody> evt)
                                 throws AMQException
     {
 		// TODO

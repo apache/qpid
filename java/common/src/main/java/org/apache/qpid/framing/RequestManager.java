@@ -26,7 +26,7 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class RequestManager
 {
-	private int channel;
+    private int channel;
     AMQProtocolWriter protocolSession;
     
     /**
@@ -39,60 +39,60 @@ public class RequestManager
     /**
      * These keep track of the last requestId and responseId to be received.
      */
-    private long lastReceivedResponseId;
+    private long lastProcessedResponseId;
             
     private Hashtable<Long, AMQResponseCallback> requestSentMap;
     
-	public RequestManager(int channel, AMQProtocolWriter protocolSession)
+    public RequestManager(int channel, AMQProtocolWriter protocolSession)
     {
-    	this.channel = channel;
+        this.channel = channel;
         this.protocolSession = protocolSession;
-    	requestIdCount = 1L;
-        lastReceivedResponseId = 0L;
+        requestIdCount = 1L;
+        lastProcessedResponseId = 0L;
         requestSentMap = new Hashtable<Long, AMQResponseCallback>();
     }
     
     // *** Functions to originate a request ***
     
     public long sendRequest(AMQMethodBody requestMethodBody,
-    	AMQResponseCallback responseCallback)
+        AMQResponseCallback responseCallback)
     {
-    	long requestId = getNextRequestId(); // Get new request ID
-    	AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
-        	lastReceivedResponseId, requestMethodBody);
+        long requestId = getNextRequestId(); // Get new request ID
+        AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
+            lastProcessedResponseId, requestMethodBody);
         protocolSession.writeFrame(requestFrame);
         requestSentMap.put(requestId, responseCallback);
         return requestId;
     }
     
     public void responseReceived(AMQResponseBody responseBody)
-    	throws RequestResponseMappingException
+        throws RequestResponseMappingException
     {
-    	lastReceivedResponseId = responseBody.getResponseId();
         long requestIdStart = responseBody.getRequestId();
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
-        	AMQResponseCallback responseCallback = requestSentMap.get(requestId);
+            AMQResponseCallback responseCallback = requestSentMap.get(requestId);
             if (responseCallback == null)
-            	throw new RequestResponseMappingException(requestId,
-                	"Failed to locate requestId " + requestId + " in requestSentMap.");
+                throw new RequestResponseMappingException(requestId,
+                    "Failed to locate requestId " + requestId + " in requestSentMap.");
             responseCallback.responseFrameReceived(responseBody);
             requestSentMap.remove(requestId);
         }
+        lastProcessedResponseId = responseBody.getResponseId();
     }
     
     // *** Management functions ***
     
     public int requestsMapSize()
     {
-    	return requestSentMap.size();
+        return requestSentMap.size();
     }
         
     // *** Private helper functions ***
     
     private long getNextRequestId()
     {
-    	return requestIdCount++;
+        return requestIdCount++;
     }
 } 

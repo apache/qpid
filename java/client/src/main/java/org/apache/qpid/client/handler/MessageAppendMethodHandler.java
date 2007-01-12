@@ -18,35 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
+import org.apache.qpid.framing.MessageAppendBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.BasicReturnBody;
 
-public class BasicReturnMethodHandler implements StateAwareMethodListener
+public class MessageAppendMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(BasicReturnMethodHandler.class);
+    private static MessageAppendMethodHandler _instance = new MessageAppendMethodHandler();
 
-    private static final BasicReturnMethodHandler _instance = new BasicReturnMethodHandler();
-
-    public static BasicReturnMethodHandler getInstance()
+    public static MessageAppendMethodHandler getInstance()
     {
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    private MessageAppendMethodHandler() {}
+    
+    
+    public void methodReceived (AMQStateManager stateManager,
+                                AMQProtocolSession protocolSession,
+                               	AMQMethodEvent<MessageAppendBody> evt)
+                                throws AMQException
     {
-        _logger.debug("New JmsBounce method received");
-        final UnprocessedMessage msg = new UnprocessedMessage();
-        msg.deliverBody = null;
-        msg.bounceBody = (BasicReturnBody) evt.getMethod();
-        msg.channelId = evt.getChannelId();
-
-        evt.getProtocolSession().unprocessedMessageReceived(msg);
+		// TODO
     }
 }
+

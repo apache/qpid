@@ -33,11 +33,11 @@ public class AMQRequestBody extends AMQBody
     // Constructor
     public AMQRequestBody() {}
     public AMQRequestBody(long requestId, long responseMark,
-    		AMQMethodBody methodPayload)
+            AMQMethodBody methodPayload)
     {
-    	this.requestId = requestId;
-    	this.responseMark = responseMark;
-    	this.methodPayload = methodPayload;
+        this.requestId = requestId;
+        this.responseMark = responseMark;
+        this.methodPayload = methodPayload;
     }
 
 
@@ -49,42 +49,42 @@ public class AMQRequestBody extends AMQBody
     
     protected byte getFrameType()
     {
-    	return (byte)AmqpConstants.frameRequestAsInt();
+        return (byte)AmqpConstants.frameRequestAsInt();
     }
     
     protected int getSize()
     {
-    	return 8 + 8 + 4 + methodPayload.getBodySize();
+        return 8 + 8 + 4 + methodPayload.getBodySize();
     }
     
     protected void writePayload(ByteBuffer buffer)
     {
-    	EncodingUtils.writeLong(buffer, requestId);
-    	EncodingUtils.writeLong(buffer, responseMark);
-    	EncodingUtils.writeUnsignedShort(buffer, 0); // reserved, set to 0
+        EncodingUtils.writeLong(buffer, requestId);
+        EncodingUtils.writeLong(buffer, responseMark);
+        EncodingUtils.writeUnsignedShort(buffer, 0); // reserved, set to 0
         methodPayload.writePayload(buffer);
     }
     
     protected void populateFromBuffer(ByteBuffer buffer, long size)
         throws AMQFrameDecodingException, AMQProtocolVersionException
     {
-    	requestId = EncodingUtils.readLong(buffer);
-    	responseMark = EncodingUtils.readLong(buffer);
-    	int reserved = EncodingUtils.readShort(buffer); // reserved, throw away
-    	methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
+        requestId = EncodingUtils.readLong(buffer);
+        responseMark = EncodingUtils.readLong(buffer);
+        int reserved = EncodingUtils.readShort(buffer); // reserved, throw away
+        methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     
     public String toString()
     {
-    	return "Req[" + requestId + " " + responseMark + "] C" +
-        	methodPayload.getClazz() + " M" + methodPayload.getMethod();
+        return "Req[" + requestId + " " + responseMark + "] C" +
+            methodPayload.getClazz() + " M" + methodPayload.getMethod();
     }
     
     public static AMQFrame createAMQFrame(int channelId, long requestId,
             long responseMark, AMQMethodBody methodPayload)
     {
         AMQRequestBody requestFrame = new AMQRequestBody(requestId, responseMark,
-        	methodPayload);
+            methodPayload);
         AMQFrame frame = new AMQFrame();
         frame.channel = channelId;
         frame.bodyFrame = requestFrame;
