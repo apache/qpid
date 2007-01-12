@@ -26,6 +26,7 @@
   </formats>
 
   <fileSets>
+  <!-- Apache Licensing -->
     <fileSet>
       <directory>../../resources</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
@@ -36,13 +37,7 @@
           <include>README.txt</include>
       </includes>
     </fileSet>
-    <fileSet>
-      <directory>..</directory>
-      <outputDirectory>qpid-${qpid.version}</outputDirectory>
-      <includes>
-          <include>*.txt</include>
-      </includes>
-    </fileSet>
+
     <fileSet>
       <directory>../../release-docs</directory>
       <outputDirectory>qpid-${qpid.version}/docs</outputDirectory>
@@ -50,6 +45,17 @@
           <include>RELEASE_NOTES.txt</include>
       </includes>
     </fileSet>
+
+    <!-- Performance txt files-->
+    <fileSet>
+      <directory>..</directory>
+      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+      <includes>
+          <include>*.txt</include>
+      </includes>
+    </fileSet>
+
+    <!-- Execution Scripts -->
     <fileSet>
       <directory>../bin</directory>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
@@ -57,6 +63,8 @@
           <include>*</include>
       </includes>
     </fileSet>
+
+    <!-- Provide Source in easy access location -->
     <fileSet>
       <directory>../src/main</directory>
       <outputDirectory>qpid-${qpid.version}/src</outputDirectory>
@@ -66,6 +74,7 @@
       </includes>
     </fileSet>
 
+    <!-- Metadata Jar -->
     <fileSet>
           <directory>target</directory>
           <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>

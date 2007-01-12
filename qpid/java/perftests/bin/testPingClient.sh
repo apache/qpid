@@ -30,4 +30,4 @@ echo $thehosts
 # XXX -Xms1024m -XX:NewSize=300m
 . ./setupclasspath.sh
 echo $CP
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=perftests.log4j org.apache.qpid.pingpong.TestPingClient $thehosts guest guest /test "$@"
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.pingpong.TestPingClient $thehosts guest guest /test "$@"

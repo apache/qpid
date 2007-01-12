@@ -91,7 +91,7 @@ public class ServiceRequestingClient implements ExceptionListener
             }
             try
             {
-				m.getPropertyNames();
+                m.getPropertyNames();
                 if (m.propertyExists("timeSent"))
                 {
                     long timeSent = Long.parseLong(m.getStringProperty("timeSent"));
@@ -162,15 +162,13 @@ public class ServiceRequestingClient implements ExceptionListener
 
     public ServiceRequestingClient(String brokerHosts, String clientID, String username, String password,
                                    String vpath, String commandQueueName,
-								   String deliveryModeString, String transactedMode,
+                                   int deliveryMode, boolean transactedMode,
                                    final int messageCount, final int messageDataLength) throws AMQException, URLSyntaxException
     {
-		final int deliveryMode = deliveryModeString.toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT
-																			   : DeliveryMode.NON_PERSISTENT;
+        _isTransactional = transactedMode;
 
-		_isTransactional = transactedMode.toUpperCase().charAt(0) == 'T' ? true : false;
-
-        _log.info("Delivery Mode: " + deliveryMode + "\t isTransactional: " + _isTransactional);
+        _log.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent") +
+                  "\t isTransactional: " + _isTransactional);
 
         _messageCount = messageCount;
         MESSAGE_DATA = TestMessageFactory.createMessagePayload(messageDataLength);
@@ -198,7 +196,7 @@ public class ServiceRequestingClient implements ExceptionListener
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
             send(first);
-			if(_isTransactional)
+            if (_isTransactional)
             {
                 _producerSession.commit();
             }
@@ -248,7 +246,7 @@ public class ServiceRequestingClient implements ExceptionListener
                 msg.setLongProperty("timeSent", timeNow);
             }
             send(msg);
-            if(_isTransactional)
+            if (_isTransactional)
             {
                 _producerSession.commit();
             }
@@ -275,22 +273,36 @@ public class ServiceRequestingClient implements ExceptionListener
      */
     public static void main(String[] args)
     {
-        if (args.length < 9)
+        if (args.length < 6)
         {
-            System.err.println("Usage: ServiceRequestingClient <brokerDetails - semicolon separated host:port list>" +
-                               " <username> <password> <vpath> <command queue name> <P[ersistent]|N[onPersistent]>" +
-                               " <T[ransacted]|N[onTransacted]> <number of messages> <message size>");
+            System.err.println(
+                    "Usage: ServiceRequestingClient <brokerDetails> <username> <password> <vpath> <command queue name> <number of messages> [<message size>] [<P[ersistent]|N[onPersistent] (Default N)>  <T[ransacted]|N[onTransacted] (Default N)>]");
             System.exit(1);
         }
         try
         {
-            int messageDataLength = args.length > 8 ? Integer.parseInt(args[8]) : 4096;
+            int messageSize = 4096;
+            boolean transactedMode = false;
+            int deliveryMode = DeliveryMode.NON_PERSISTENT;
+
+            if (args.length > 7)
+            {
+                deliveryMode = args[args.length - 2].toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT
+                               : DeliveryMode.NON_PERSISTENT;
+
+                transactedMode = args[args.length - 1].toUpperCase().charAt(0) == 'T' ? true : false;
+            }
+
+            if ((args.length == 9) ||(args.length == 7))
+            {
+                messageSize = Integer.parseInt(args[6]);
+            }          
 
             InetAddress address = InetAddress.getLocalHost();
             String clientID = address.getHostName() + System.currentTimeMillis();
             ServiceRequestingClient client = new ServiceRequestingClient(args[0], clientID, args[1], args[2], args[3],
-                                                                         args[4], args[5], args[6], Integer.parseInt(args[7]),
-                                                                         messageDataLength);
+                                                                         args[4], deliveryMode, transactedMode, Integer.parseInt(args[5]),
+                                                                         messageSize);
             Object waiter = new Object();
             client.run(waiter);
             synchronized (waiter)
