@@ -135,6 +135,7 @@ public class LocalTransactionalContext implements TransactionalContext
         //we will need to create and enlist the op.
         if (_ackOp == null)
         {
+            beginTranIfNecessary();
             _ackOp = new TxAck(unacknowledgedMessageMap);
             _txnBuffer.enlist(_ackOp);
         }
@@ -182,6 +183,8 @@ public class LocalTransactionalContext implements TransactionalContext
         }
         if (_ackOp != null)
         {
+
+            _messageDelivered = true;
             _ackOp.consolidate();
             //already enlisted, after commit will reset regardless of outcome
             _ackOp = null;
