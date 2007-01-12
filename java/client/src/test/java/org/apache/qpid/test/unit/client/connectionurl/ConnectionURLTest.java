@@ -207,6 +207,72 @@ public class ConnectionURLTest extends TestCase
         assertTrue(service.getPort() == 5672);
     }
 
+    public void testSingleTransportDefaultedBrokerWithPort() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/temp?brokerlist='localhost:1234'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+
+
+        assertTrue(connectionurl.getBrokerCount() == 1);
+
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+
+        assertTrue(service.getTransport().equals("tcp"));
+
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 1234);
+    }
+
+    public void testSingleTransportDefaultedBrokerWithIP() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/temp?brokerlist='127.0.0.1'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+
+
+        assertTrue(connectionurl.getBrokerCount() == 1);
+
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+
+        assertTrue(service.getTransport().equals("tcp"));
+
+        assertTrue(service.getHost().equals("127.0.0.1"));
+        assertTrue(service.getPort() == 5672);
+    }
+
+    public void testSingleTransportDefaultedBrokerWithIPandPort() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/temp?brokerlist='127.0.0.1:1234'";
+
+//        ConnectionURL connectionurl = new AMQConnectionURL(url);
+//
+//        assertTrue(connectionurl.getFailoverMethod() == null);
+//        assertTrue(connectionurl.getUsername().equals("guest"));
+//        assertTrue(connectionurl.getPassword().equals("guest"));
+//        assertTrue(connectionurl.getVirtualHost().equals("/temp"));
+//
+//
+//        assertTrue(connectionurl.getBrokerCount() == 1);
+//
+//        BrokerDetails service = connectionurl.getBrokerDetails(0);
+//
+//        assertTrue(service.getTransport().equals("tcp"));
+//
+//        assertTrue(service.getHost().equals("127.0.0.1"));
+//        assertTrue(service.getPort() == 1234);
+    }
+
 
     public void testSingleTransportMultiOptionURL() throws URLSyntaxException
     {
@@ -307,7 +373,6 @@ public class ConnectionURLTest extends TestCase
 
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
-
 
 
     public void testWrongOptionSeparatorInOptions()
