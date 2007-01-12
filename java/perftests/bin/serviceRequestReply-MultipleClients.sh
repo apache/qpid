@@ -17,10 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# args supplied: <brokerdetails> <num messages>
+# args supplied: <brokerdetails> <num messages> <num clients>
 
-if [[ $# < 2 ]] ; then
- echo "usage: ./serviceRequestReply-QuickTest.sh <brokerdetails> <Number of messages> [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>]"
+if [[ $# < 3 ]] ; then
+ echo "usage: ./serviceRequestReply-QuickTest.sh <brokerdetails> <Number of messages> <number of clients> [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>]"
  exit 1
 fi
 
@@ -30,6 +30,9 @@ shift
 numberofmessages=$1
 shift
 
+numberofclients=$1
+shift
+
 . ./setupclasspath.sh
 echo $CP
 
@@ -37,7 +40,14 @@ $JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.leve
 
 providingclient=$!
 
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.requestreply.ServiceRequestingClient $thehosts guest guest /test serviceQ $numberofmessages "$@"
+./run_many.sh $numberofclients requestClients "./serviceRequestingClient.sh $thehosts $numberofmessages $@"
+
+sleeping=$(( numberofmessages * 1  / 10 ))
+
+echo "Sleeping for $sleeping secconds to completion"
+sleep $sleeping
 
 kill $providingclient
 
+echo "Results"
+cat requestClients.*.out
