@@ -47,9 +47,9 @@ SessionHandlerImpl::SessionHandlerImpl(SessionContext* _context,
     exchangeHandler(new ExchangeHandlerImpl(this)),
     queueHandler(new QueueHandlerImpl(this)),
     txHandler(new TxHandlerImpl(this)),
+    messageHandler(new MessageHandlerImpl(this)),
     framemax(65536), 
-    heartbeat(0) 
-    {
+    heartbeat(0){
     
     client =NULL;    
 }
@@ -511,4 +511,144 @@ SessionHandlerImpl::ChannelHandlerImpl::resume(
         assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
+// Message class method handlers
+void
+SessionHandlerImpl::MessageHandlerImpl::append( u_int16_t /*channel*/,
+                    const string& /*reference*/,
+                    const string& /*bytes*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
 
+
+void
+SessionHandlerImpl::MessageHandlerImpl::cancel( u_int16_t /*channel*/,
+                    const string& /*destination*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::checkpoint( u_int16_t /*channel*/,
+                    const string& /*reference*/,
+                    const string& /*identifier*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::close( u_int16_t /*channel*/,
+                    const string& /*reference*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::consume( u_int16_t /*channel*/,
+                    u_int16_t /*ticket*/,
+                    const string& /*queue*/,
+                    const string& /*destination*/,
+                    bool /*noLocal*/,
+                    bool /*noAck*/,
+                    bool /*exclusive*/,
+                    const qpid::framing::FieldTable& /*filter*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::empty( u_int16_t /*channel*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::get( u_int16_t /*channel*/,
+                    u_int16_t /*ticket*/,
+                    const string& /*queue*/,
+                    const string& /*destination*/,
+                    bool /*noAck*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::offset( u_int16_t /*channel*/,
+                    u_int64_t /*value*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::ok( u_int16_t /*channel*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::open( u_int16_t /*channel*/,
+                    const string& /*reference*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::qos( u_int16_t /*channel*/,
+                    u_int32_t /*prefetchSize*/,
+                    u_int16_t /*prefetchCount*/,
+                    bool /*global*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::recover( u_int16_t /*channel*/,
+                    bool /*requeue*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::reject( u_int16_t /*channel*/,
+                    u_int16_t /*code*/,
+                    const string& /*text*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::resume( u_int16_t /*channel*/,
+                    const string& /*reference*/,
+                    const string& /*identifier*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+
+void
+SessionHandlerImpl::MessageHandlerImpl::transfer( u_int16_t /*channel*/,
+                    u_int16_t /*ticket*/,
+                    const string& /*destination*/,
+                    bool /*redelivered*/,
+                    bool /*immediate*/,
+                    u_int64_t /*ttl*/,
+                    u_int8_t /*priority*/,
+                    u_int64_t /*timestamp*/,
+                    u_int8_t /*deliveryMode*/,
+                    u_int64_t /*expiration*/,
+                    const string& /*exchange*/,
+                    const string& /*routingKey*/,
+                    const string& /*messageId*/,
+                    const string& /*correlationId*/,
+                    const string& /*replyTo*/,
+                    const string& /*contentType*/,
+                    const string& /*contentEncoding*/,
+                    const string& /*userId*/,
+                    const string& /*appId*/,
+                    const string& /*transactionId*/,
+                    const string& /*securityToken*/,
+                    const qpid::framing::FieldTable& /*applicationHeaders*/,
+                    qpid::framing::Content /*body*/ )
+{
+        assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
+}
+ 
