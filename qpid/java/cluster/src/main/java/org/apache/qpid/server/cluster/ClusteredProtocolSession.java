@@ -37,10 +37,12 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
 {
     private MemberHandle _peer;
 
-    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager)
-            throws AMQException
+    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager) throws AMQException
+//    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry,
+//        ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory) throws AMQException
     {
         super(session, queueRegistry, exchangeRegistry, codecFactory, stateManager);
+//        super(session, queueRegistry, exchangeRegistry, codecFactory);
     }
 
     public boolean isPeerSession()

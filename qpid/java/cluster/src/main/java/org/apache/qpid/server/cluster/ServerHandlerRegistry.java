@@ -27,6 +27,9 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.IllegalStateTransitionException;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,20 +43,23 @@ class ServerHandlerRegistry extends AMQStateManager
     private final Logger _logger = Logger.getLogger(ServerHandlerRegistry.class);
     private final Map<AMQState, MethodHandlerRegistry> _handlers = new HashMap<AMQState, MethodHandlerRegistry>();
 
-    ServerHandlerRegistry()
+    ServerHandlerRegistry(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
+        AMQProtocolSession protocolSession)
     {
-        super(AMQState.CONNECTION_NOT_STARTED, false);
+        super(AMQState.CONNECTION_NOT_STARTED, false, queueRegistry, exchangeRegistry, protocolSession);
     }
 
-    ServerHandlerRegistry(ServerHandlerRegistry s)
+    ServerHandlerRegistry(ServerHandlerRegistry s, QueueRegistry queueRegistry,
+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
-        this();
+        this(queueRegistry, exchangeRegistry, protocolSession);
         _handlers.putAll(s._handlers);
     }
 
-    ServerHandlerRegistry(MethodHandlerFactory factory)
+    ServerHandlerRegistry(MethodHandlerFactory factory, QueueRegistry queueRegistry,
+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
-        this();
+        this(queueRegistry, exchangeRegistry, protocolSession);
         init(factory);
     }
 

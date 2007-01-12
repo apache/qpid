@@ -52,7 +52,7 @@ class ClientAdapter implements MethodHandler
     public void handle(int channel, AMQMethodBody method) throws AMQException
     {
         AMQMethodEvent evt = new AMQMethodEvent(channel, method);
-        _stateMgr.methodReceived(evt, _session);
+        _stateMgr.methodReceived(evt);
     }
 
     private class SessionAdapter extends AMQProtocolSession
