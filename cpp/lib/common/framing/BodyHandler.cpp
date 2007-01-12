@@ -30,24 +30,25 @@ void BodyHandler::handleBody(const AMQBody::shared_ptr& body){
 
     switch(body->type())
     {
-
-    case METHOD_BODY:
+      case METHOD_BODY:
+      case REQUEST_BODY:
+      case RESPONSE_BODY:
 	handleMethod(dynamic_pointer_cast<AMQMethodBody, AMQBody>(body));
 	break;
  
-   case HEADER_BODY:
+      case HEADER_BODY:
 	handleHeader(dynamic_pointer_cast<AMQHeaderBody, AMQBody>(body));
 	break;
 
-    case CONTENT_BODY:
+      case CONTENT_BODY:
 	handleContent(dynamic_pointer_cast<AMQContentBody, AMQBody>(body));
 	break;
 
-    case HEARTBEAT_BODY:
+      case HEARTBEAT_BODY:
 	handleHeartbeat(dynamic_pointer_cast<AMQHeartbeatBody, AMQBody>(body));
 	break;
 
-    default:
+      default:
 	throw UnknownBodyType(body->type());
     }
 

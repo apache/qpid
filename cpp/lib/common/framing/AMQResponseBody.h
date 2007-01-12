@@ -27,40 +27,44 @@ namespace framing {
 class AMQP_MethodVersionMap;
 
 /**
- * Body of an AMQP Response frame.
+ * Body of a response method frame.
  */
-class AMQResponseBody : public AMQBody
+class AMQResponseBody : public AMQMethodBody
 {
 
   public:
     typedef boost::shared_ptr<AMQResponseBody> shared_ptr;
+    
+    static shared_ptr create(
+        AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
+        Buffer& buffer);
 
-    AMQResponseBody(AMQP_MethodVersionMap&, ProtocolVersion);
     AMQResponseBody(
-        AMQP_MethodVersionMap&, ProtocolVersion,
-        u_int64_t responseId, u_int64_t requestId, u_int32_t batchOffset,
-        AMQMethodBody::shared_ptr method);
+        ProtocolVersion v, ResponseId id=0, RequestId req=0, BatchOffset off=0)
+        : AMQMethodBody(v), data(id, req, off) {}
 
-    const AMQMethodBody& getMethodBody() const { return *method; }
-    AMQMethodBody& getMethodBody()  { return *method; }
-    u_int64_t getResponseId() { return responseId; }
-    u_int64_t getRequestId() { return requestId; }
-    u_int32_t getBatchOffset() { return batchOffset; }
-    
-    u_int32_t size() const  { return 20 + method->size(); }
     u_int8_t type() const { return RESPONSE_BODY; }
-    
     void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer, u_int32_t size);
-    void print(std::ostream& out) const;
 
+    ResponseId getResponseId() { return data.responseId; }
+    RequestId getRequestId() { return data.requestId; }
+    BatchOffset getBatchOffset() { return data.batchOffset; }
+
+  protected:
+    static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
   private:
-    AMQP_MethodVersionMap& versionMap;
-    ProtocolVersion version;
-    u_int64_t responseId;
-    u_int64_t requestId;
-    u_int32_t batchOffset;
-    AMQMethodBody::shared_ptr method;
+    struct Data {
+        Data(ResponseId id=0, RequestId req=0, BatchOffset off=0)
+            : responseId(id), requestId(req), batchOffset(off) {}
+        void encode(Buffer&) const;
+        void decode(Buffer&);
+
+        u_int64_t responseId;
+        u_int64_t requestId;
+        u_int32_t batchOffset;
+    };
+
+    Data data;
 };
 
 }} // namespace qpid::framing

@@ -42,20 +42,28 @@ class AMQMethodBody : public AMQBody
 
     ProtocolVersion version;    
     u_int8_t type() const { return METHOD_BODY; }
-    u_int32_t size() const { return 4 + bodySize(); }
     AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
     AMQMethodBody(ProtocolVersion version) : version(version) {}
     virtual ~AMQMethodBody() {}
+    void decode(Buffer&, u_int32_t);
 
     virtual u_int16_t amqpMethodId() const = 0;
     virtual u_int16_t amqpClassId() const = 0;
     virtual void invoke(AMQP_ServerOperations& target, u_int16_t channel);
+    bool match(AMQMethodBody* other) const;
+
+  protected:
+    static u_int32_t baseSize() { return 4; }
+
+    struct MethodId {
+        u_int16_t classId;
+        u_int16_t methodId;
+        void decode(Buffer& b);
+    };
+    
+    void encodeId(Buffer& buffer) const;
     virtual void encodeContent(Buffer& buffer) const = 0;
     virtual void decodeContent(Buffer& buffer) = 0;
-    virtual u_int32_t bodySize() const = 0;
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer, u_int32_t size);
-    bool match(AMQMethodBody* other) const;
 };
 
 }} // namespace qpid::framing

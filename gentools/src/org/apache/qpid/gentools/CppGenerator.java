@@ -340,24 +340,30 @@ public class CppGenerator extends Generator
             }
         if (token.compareTo("${FIELD}") == 0 && field != null)
             return field.name;
-        if (token.compareTo(versionNamespaceStartToken) == 0 && version != null)
+        if (token.equals(versionNamespaceStartToken) && version != null)
             return "namespace " + version.namespace() + cr + "{";
-        if (token.compareTo(versionNamespaceEndToken) == 0 && version != null)
+        if (token.equals(versionNamespaceEndToken) && version != null)
             return "} // namespace " + version.namespace();
-        if (token.compareTo("${mb_constructor_with_initializers}") == 0)
+        if (token.equals("${mb_constructor_with_initializers}"))
             return generateConstructor(thisClass, method, version, 4, 4);
-        if (token.compareTo("${mb_server_operation_invoke}") == 0)
+        if (token.equals("${mb_server_operation_invoke}"))
             return generateServerOperationsInvoke(thisClass, method, version, 4, 4);
-        if (token.compareTo("${mb_buffer_param}") == 0)
-            return method.fieldMap.size() > 0 ? " buffer" : "";
-        if (token.compareTo("${hv_latest_major}") == 0)
+        if (token.equals("${mb_buffer_param}"))
+            return method.fieldMap.size() > 0 ? " buffer" : "/*buffer*/";
+        if (token.equals("${hv_latest_major}"))
             return String.valueOf(globalVersionSet.last().getMajor());
-        if (token.compareTo("${hv_latest_minor}") == 0)
+        if (token.equals("${hv_latest_minor}"))
             return String.valueOf(globalVersionSet.last().getMinor());
+	if (token.equals("${mb_base_class}")) 
+	    return baseClass(method);
             
         throw new AmqpTemplateException("Template token " + token + " unknown.");       
     }
-        
+
+    private String baseClass(AmqpMethod method) {
+	return method.isRequest ? "AMQRequestBody" : "AMQResponseBody";
+    }
+    
     @Override
         protected void processClassList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
                                         AmqpModel model)
@@ -524,35 +530,20 @@ public class CppGenerator extends Generator
         String token = tline.substring(tokxStart).trim();
         sb.delete(listMarkerStartIndex, lend);
                 
-        if (token.compareTo("${mb_field_declaration}") == 0)
-            {
-                codeSnippet = generateFieldDeclarations(fieldMap, version, 4);
-            }
-        else if (token.compareTo("${mb_field_get_method}") == 0)
-            {
-                codeSnippet = generateFieldGetMethods(fieldMap, version, 4);
-            }
-        else if (token.compareTo("${mb_field_print}") == 0)
-            {
-                codeSnippet = generatePrintMethodContents(fieldMap, version, 8);
-            }
-        else if (token.compareTo("${mb_body_size}") == 0)
-            {
-                codeSnippet = generateBodySizeMethodContents(fieldMap, version, 8);
-            }
-        else if (token.compareTo("${mb_encode}") == 0)
-            {
-                codeSnippet = generateEncodeMethodContents(fieldMap, version, 8);
-            }
-        else if (token.compareTo("${mb_decode}") == 0)
-            {
-                codeSnippet = generateDecodeMethodContents(fieldMap, version, 8);
-            }
-                
+        if (token.equals("${mb_field_declaration}") )
+	    codeSnippet = generateFieldDeclarations(fieldMap, version, 4);
+        else if (token.equals("${mb_field_get_method}") )
+	    codeSnippet = generateFieldGetMethods(fieldMap, version, 4);
+        else if (token.equals("${mb_field_print}") )
+	    codeSnippet = generatePrintMethodContents(fieldMap, version, 8);
+        else if (token.equals("${mb_body_size}") )
+	    codeSnippet = generateBodySizeMethodContents(fieldMap, version, 8);
+        else if (token.equals("${mb_encode}") )
+	    codeSnippet = generateEncodeMethodContents(fieldMap, version, 8);
+        else if (token.equals("${mb_decode}") )
+	    codeSnippet = generateDecodeMethodContents(fieldMap, version, 8);
         else // Oops!
-            {
-                throw new AmqpTemplateException("Template token " + token + " unknown.");
-            }
+	    throw new AmqpTemplateException("Template token " + token + " unknown.");
         sb.insert(listMarkerStartIndex, codeSnippet);
     }
 
@@ -1214,7 +1205,7 @@ public class CppGenerator extends Generator
                             {
                                 sb.append(generateBitArrayBodySizeMethodContents(bitFieldList, ordinal, indentSize));
                             }
-                        sb.append(indent + "size += " +
+                        sb.append(indent + "sz += " +
                                   typeMap.get(domainType).size.replaceAll("#", fieldDomainPair[FIELD_NAME]) +
                                   "; /* " + fieldDomainPair[FIELD_NAME] + ": " +
                                   domainType + " */" + cr);
@@ -1236,7 +1227,7 @@ public class CppGenerator extends Generator
         String comment = bitFieldList.size() == 1 ?
             bitFieldList.get(0) + ": bit" :
             "Combinded bits: " + bitFieldList;
-        sb.append(indent + "size += " +
+        sb.append(indent + "sz += " +
                   typeMap.get("bit").size.replaceAll("~", String.valueOf(numBytes)) +
                   "; /* " + comment + " */" + cr);
         bitFieldList.clear();           
@@ -1437,7 +1428,7 @@ public class CppGenerator extends Generator
                 sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion& version," + cr);
                 sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
                 sb.append(indent + tab + ") :" + cr);
-                sb.append(indent + tab + "AMQMethodBody(version)," + cr);
+                sb.append(indent + tab + baseClass(method) + "(version)," + cr);
                 sb.append(generateFieldList(method.fieldMap, version, false, true, 8));
                 sb.append(indent + "{ }" + cr);
             }

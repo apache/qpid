@@ -31,6 +31,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	public AmqpVersionSet versionSet;
 	public AmqpFieldMap fieldMap;
 	public String name;
+        public boolean isRequest;
 	public AmqpOrdinalVersionMap indexMap;
 	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
 	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
@@ -64,6 +65,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		}
 		NodeList nList = methodNode.getChildNodes();
 		int fieldCntr = 0;
+		isRequest = false; // Assume not a request  unless we find a response node.
 		for (int i=0; i<nList.getLength(); i++)
 		{
 			Node child = nList.item(i);
@@ -102,6 +104,9 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 				String value = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_VALUE);
 				if (value.compareTo("no-gen") == 0)
 					return false;
+			}
+			else if (child.getNodeName().equals("response")) {
+			    isRequest = true;
 			}
 		}
 		processChassisFlags(serverChassisFlag, clientChassisFlag, version);

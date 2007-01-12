@@ -39,7 +39,7 @@ namespace qpid
 namespace framing
 {
 
-template <class T> AMQMethodBody* createMethodBodyFn(u_int8_t major, u_int8_t minor) { return new T(major, minor); }
+template <class T> AMQMethodBody* createMethodBodyFn(u_int8_t major, u_int8_t minor) { return new T(ProtocolVersion(major, minor)); }
 typedef AMQMethodBody* (*fnPtr)(u_int8_t, u_int8_t);
 
 class AMQP_MethodVersionMap: public std::map<u_int64_t, fnPtr>

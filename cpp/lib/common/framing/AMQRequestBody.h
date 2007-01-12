@@ -24,40 +24,44 @@
 namespace qpid {
 namespace framing {
 
-class AMQP_MethodVersionMap;
-
 /**
- * Body of an AMQP Request frame.
+ * Body of a request method frame.
  */
-class AMQRequestBody : public AMQBody
+class AMQRequestBody : public AMQMethodBody
 {
-  public:
+ public:
     typedef boost::shared_ptr<AMQRequestBody> shared_ptr;
-
-    AMQRequestBody(AMQP_MethodVersionMap&, ProtocolVersion);
-    AMQRequestBody(
-        AMQP_MethodVersionMap&, ProtocolVersion,
-        u_int64_t requestId, u_int64_t responseMark,
-        AMQMethodBody::shared_ptr method);
-
-    const AMQMethodBody& getMethodBody() const { return *method; }
-    AMQMethodBody& getMethodBody()  { return *method; }
-    u_int64_t getRequestId() { return requestId; }
-    u_int64_t getResponseMark() { return responseMark; }
     
-    u_int32_t size() const  { return 16 + method->size(); }
+    static shared_ptr create(
+        AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
+        Buffer& buffer);
+
+    AMQRequestBody(ProtocolVersion v, RequestId id=0, ResponseId mark=0)
+        : AMQMethodBody(v), data(id, mark) {}
+
     u_int8_t type() const { return REQUEST_BODY; }
-    
     void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer, u_int32_t size);
-    void print(std::ostream& out) const;
 
+    RequestId  getRequestId() const { return data.requestId; }
+    void setRequestId(RequestId id) { data.requestId=id; }
+    ResponseId getResponseMark() const { return data.responseMark; }
+    void setResponseMark(ResponseId mark) { data.responseMark=mark; }
+
+  protected:
+    static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+16; }
+    
   private:
-    AMQP_MethodVersionMap& versionMap;
-    ProtocolVersion version;
-    u_int64_t requestId;
-    u_int64_t responseMark;
-    AMQMethodBody::shared_ptr method;
+    struct Data {
+        Data(RequestId id=0, ResponseId mark=0)
+            : requestId(id), responseMark(mark) {}
+        void encode(Buffer&) const;
+        void decode(Buffer&);
+
+        RequestId requestId;
+        ResponseId responseMark;
+    };
+
+    Data data;
 };
 
 }} // namespace qpid::framing
