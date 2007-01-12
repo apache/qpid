@@ -20,7 +20,7 @@
 # args supplied: <brokerdetails> <num messages>
 
 if [[ $# != 2 ]] ; then
- echo "usage: ./serviceQuickTest.sh <brokerdetails> <Number of messages> [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>]"
+ echo "usage: ./serviceRequestReply-QuickTest.sh <brokerdetails> <Number of messages> [<P[ersistent]|N[onPersistent] (default N)> <T[ransacted]|N[onTransacted] (default N)>]"
  exit 1
 fi
 

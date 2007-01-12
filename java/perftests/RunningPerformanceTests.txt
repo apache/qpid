@@ -5,7 +5,7 @@ This performance test suite contains a number of tests.
 
 - Service request-reply
 - Ping-Pong 
-- Headers
+- Topic
 
 Service request-reply
 ---------------------
@@ -20,7 +20,7 @@ message to the well known service queue. The test allows you to time how long
 it takes to send messages and receive the response back. It also allows varying 
 of the message size.
 
-QuickRun:
+Quick Run:
 
 ./serviceRequestReply-QuickTest.sh <brokerdetails> <number of messages>
 
@@ -49,48 +49,64 @@ After receiving all the messages the client outputs the rate it achieved.
 Ping-Pong
 ---------
 
+Description:
+Quick Run:
+Detailed Run:
 
-
-
-Headers
+Topic
 -------
 
+Description:
+A more realistic test is the topic test, which tests the
+performance of the topic exchange to a configurable number of clients (e.g. 50). 
+A publisher sends batches of of messages to a topic that a number of clients are 
+subscribed to. The clients recevie each all the messages and then send a response.
 
-A more realistic test is the "headers test", which tests the
-performance of routing messages based on message headers to a
-configurable number of clients (e.g. 50). A publisher sends 10000
-messages to each client and waits to receive a message from each
-client when it has received all the messages.
+The time taken to send all messages and receive a response from all clients is displayed.
 
-You run the listener processes first:
+Quick Run:
 
-run_many.sh 10 header "headersListener.sh -host 10.0.0.1 -port 5672"
+./topic-QuickTest.sh <host> <port> <messages> <clients> <batches>
+
+This provides a quick test to run everything against a running broker. Simply specify host, port, the number of messages, number of clients and number of batches to run this quick test.
+
+Detailed Run:
+
+You must run the listener processes first:
+
+run_many.sh 10 topic "topicListener.sh [-host <host> -port <port>]"
 
 In this command, the first argument means start 10 processes, the
 second is just a name use in the log files generated and the third
-argument is the command to run. In this case it runs another shell
-script but it could be anything.
+argument is the command to run the specified number of times.
+
+The topicListener by default connects to localhost:5672 this can be changed using the above flags.
 
 Then run the publisher process:
 
-headersPublisher.sh -host 10.0.0.1 -port 5672 10000 10
+headersPublisher.sh [-host <host> -port <port> -messages <number> -clients <number> -batch <number>]
 
-The last two arguments are: the number of messages to send to each
-client, and the number of clients.
+The default is to connect to localhost:5672 and send 1 batch of 1000 messages expecting 1 client to respond.
 
 Note that before starting the publisher you should wait about 30
 seconds to ensure all the clients are registered with the broker (you
 can see this from the broker output). Otherwise the numbers will be
 slightly skewed.
 
-A third useful test, which can easily be ported to other JMS
-implementations is the "topic test". It does the same as the headers
-test but using a standard topic (e.g. pub sub).
 
-To run the listeners:
+Additional parameters to scripts
 
-run_many.sh 10 topic "topicListener.sh -host 10.0.0.1 -port 5672"
-
-and to run the publisher:
-
-topicPublisher.sh -host 10.0.0.1 -port 5672 -clients 10 -messages 10000
+Publisher
+-payload <int>             : specify the payload size (256b Default)
+-delay <long>              : Number of seconds to send between batches (0 Default)
+-warmup <int>              : Number of messages to send as a warm up (0 Default)
+-ack <int>                 : Acknowledgement mode 
+                                - 1   : Auto
+                                - 2   : Client 
+                                - 3   : Dups_OK
+                                - 257 : No (Default)
+                                - 258 : Pre
+-factory <string>          : ConnectionFactoryInitialiser class 
+-persistent <"true"|other> : User persistent messages if string equals "true" (false Default)
+-clientId <string>         : Set client id 
+-subscriptionId <string>   : set subscription id
