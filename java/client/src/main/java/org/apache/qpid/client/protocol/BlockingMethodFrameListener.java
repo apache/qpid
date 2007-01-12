@@ -23,6 +23,7 @@ package org.apache.qpid.client.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public abstract class BlockingMethodFrameListener implements AMQMethodListener
@@ -55,7 +56,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
      * @return true if the listener has dealt with this frame
      * @throws AMQException
      */
-    public boolean methodReceived(AMQMethodEvent evt, AMQProtocolSession protocolSession) throws AMQException
+    public boolean methodReceived(AMQMethodEvent evt) throws AMQException
     {
         AMQMethodBody method = evt.getMethod();
 

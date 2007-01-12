@@ -29,6 +29,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 
@@ -99,10 +100,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                   AMQCodecFactory codecFactory)
             throws AMQException
     {
-        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
+        _stateManager = new AMQStateManager(queueRegistry, exchangeRegistry, this);
+        _minaProtocolSession = session;
+        session.setAttachment(this);
+        
+        _queueRegistry = queueRegistry;
+        _exchangeRegistry = exchangeRegistry;
+        _codecFactory = codecFactory;
+        _managedObject = createMBean();
+        _managedObject.register();
+//        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
-    public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
+     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
                                   AMQCodecFactory codecFactory, AMQStateManager stateManager)
             throws AMQException
     {
@@ -208,13 +218,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                                                     (AMQMethodBody) frame.bodyFrame);
         try
         {
-            boolean wasAnyoneInterested = _stateManager.methodReceived(evt, this, _queueRegistry, _exchangeRegistry);
+            boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
 
             if(!_frameListeners.isEmpty())
             {
                 for (AMQMethodListener listener : _frameListeners)
                 {
-                    wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
+                    wasAnyoneInterested = listener.methodReceived(evt) ||
                                           wasAnyoneInterested;
                 }
             }
@@ -233,7 +243,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             _logger.error("Closing connection due to: " + e.getMessage());
             writeFrame(e.getCloseFrame(frame.channel));
         }        
-        catch (AMQException e)
+        catch (Exception e)
         {
             _stateManager.error(e);
             for (AMQMethodListener listener : _frameListeners)
