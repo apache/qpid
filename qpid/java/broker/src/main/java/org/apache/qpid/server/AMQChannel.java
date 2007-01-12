@@ -275,7 +275,7 @@ public class AMQChannel
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString subscribeToQueue(AMQShortString tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
-                                   FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
+                                           FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -326,20 +326,24 @@ public class AMQChannel
     /**
      * Add a message to the channel-based list of unacknowledged messages
      *
-     * @param message the message that was delivered
+     * @param message     the message that was delivered
      * @param deliveryTag the delivery tag used when delivering the message (see protocol spec for description of
-     * the delivery tag)
-     * @param queue the queue from which the message was delivered
+     *                    the delivery tag)
+     * @param queue       the queue from which the message was delivered
      */
     public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, AMQShortString consumerTag, AMQQueue queue)
     {
-        _unacknowledgedMessageMap.add(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
-        checkSuspension();
+        synchronized (_unacknowledgedMessageMap.getLock())
+        {
+            _unacknowledgedMessageMap.add(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
+            checkSuspension();
+        }
     }
 
     /**
      * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel.
      * May result in delivery to this same channel or to other subscribers.
+     *
      * @throws org.apache.qpid.AMQException if the requeue fails
      */
     public void requeue() throws AMQException
@@ -427,8 +431,11 @@ public class AMQChannel
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
     {
-        _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
-        checkSuspension();
+        synchronized (_unacknowledgedMessageMap.getLock())
+        {
+            _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
+            checkSuspension();
+        }
     }
 
     /**
@@ -450,6 +457,7 @@ public class AMQChannel
     private void checkSuspension()
     {
         boolean suspend;
+        
         suspend = _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark;
 
         setSuspended(suspend);
