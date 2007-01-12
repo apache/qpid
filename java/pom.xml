@@ -65,6 +65,7 @@
             <archive>http://mail-archives.apache.org/mod_mbox/incubator-qpid-commits</archive>
         </mailingList>
     </mailingLists>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -72,10 +73,12 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <organization>
         <name>Apache Software Foundation</name>
         <url>http://www.apache.org/</url>
     </organization>
+
     <properties>
         <topDirectoryLocation>.</topDirectoryLocation>
 
@@ -148,6 +151,7 @@
                 </includes>
             </resource>
         </resources>
+
         <testResources>
             <testResource>
                 <directory>src/test/java</directory>
@@ -183,7 +187,6 @@
                             <artifactId>ant-nodeps</artifactId>
                             <version>1.6.5</version>
                         </dependency>
-
                     </dependencies>
 
                     <executions>
@@ -232,16 +235,19 @@
                         </execution>
                    </executions>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${jar.version}</version>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>${resources.version}</version>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -252,6 +258,7 @@
                         <fork>${compile.forked}</fork>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -273,11 +280,13 @@
                         </systemproperties>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
                     <version>${site.version}</version>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-eclipse-plugin</artifactId>
@@ -292,14 +301,16 @@
                         </projectnatures>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-idea-plugin</artifactId>
                     <configuration>
-                        <downloadSources>true</downloadSources>
+                        <!--downloadSources>true</downloadSources-->
                         <downloadJavadocs>true</downloadJavadocs>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clover-plugin</artifactId>
@@ -407,6 +418,8 @@
                 <artifactId>backport-util-concurrent</artifactId>
                 <version>2.2</version>
             </dependency>
+
+            <!-- Test Dependencies -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -419,6 +432,8 @@
                 <version>2.2</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- Qpid Version Dependencies -->
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-common</artifactId>
@@ -432,6 +447,16 @@
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-broker</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>qpid-perftests</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>qpid-systests</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

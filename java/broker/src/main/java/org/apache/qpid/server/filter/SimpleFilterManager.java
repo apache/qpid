@@ -21,15 +21,14 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.qpid.server.queue.AMQMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SimpleFilterManager implements FilterManager
 {
-    private final Logger _logger = LoggerFactory.getLogger(SimpleFilterManager.class);
+    private final Logger _logger = Logger.getLogger(SimpleFilterManager.class);
 
     private final ConcurrentLinkedQueue<MessageFilter> _filters;
 
