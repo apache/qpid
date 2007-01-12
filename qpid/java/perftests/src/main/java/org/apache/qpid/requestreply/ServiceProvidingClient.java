@@ -21,11 +21,11 @@
 package org.apache.qpid.requestreply;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.jms.Session;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.Session;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
@@ -35,7 +35,7 @@ import java.net.UnknownHostException;
 public class ServiceProvidingClient
 {
     private static final Logger _logger = Logger.getLogger(ServiceProvidingClient.class);
-
+    private static final String MESSAGE_IDENTIFIER = "MessageIdentifier";
     private MessageProducer _destinationProducer;
 
     private Destination _responseDest;
@@ -102,9 +102,7 @@ public class ServiceProvidingClient
             public void onMessage(Message message)
             {
                 //_logger.info("Got message '" + message + "'");
-
                 TextMessage tm = (TextMessage) message;
-
                 try
                 {
                     Destination responseDest = tm.getJMSReplyTo();
@@ -147,6 +145,12 @@ public class ServiceProvidingClient
                         _logger.info("timeSent value is: " + timesent);
                         msg.setLongProperty("timeSent", timesent);
                     }
+                    // this identifier set in the serviceRequestingClient is used to match the response with the request
+                    if (tm.propertyExists(MESSAGE_IDENTIFIER))
+                    {
+                        msg.setIntProperty(MESSAGE_IDENTIFIER, tm.getIntProperty(MESSAGE_IDENTIFIER));
+                    }
+                    
                     _destinationProducer.send(msg);
 
 					if(_isTransactional)
@@ -182,7 +186,8 @@ public class ServiceProvidingClient
 
         if (args.length < 7)
         {
-            System.out.println("Usage: brokerDetails username password virtual-path serviceQueue <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> [selector]");
+            System.out.println("Usage: <brokerDetails> <username> <password> <virtual-path> <serviceQueue>" +
+                               " <P[ersistent]|N[onPersistent]>  <T[ransacted]|N[onTransacted]> [selector]");
             System.exit(1);
         }
         String clientId = null;
@@ -214,9 +219,6 @@ public class ServiceProvidingClient
         {
             _logger.error("Error: " + e, e);
         }
-
-
-
     }
 
 }
