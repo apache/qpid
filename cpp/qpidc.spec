@@ -87,7 +87,7 @@ make check
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE.txt NOTICE.txt README.txt
+%doc LICENSE.txt NOTICE.txt README
 %_libdir/libqpidcommon.so.0
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
