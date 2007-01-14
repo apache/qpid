@@ -224,7 +224,6 @@ void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const strin
         parent->framemax, parent->queues->getStore(),
         parent->settings.stagingThreshold);
 
-    // FIXME aconway 2007-01-04: provide valid channel Id as per ampq 0-9
     parent->client->getChannel().openOk(channel, std::string()/* ID */);
 } 
         
@@ -279,7 +278,7 @@ void SessionHandlerImpl::ExchangeHandlerImpl::unbind(
     const string& /*routingKey*/,
     const qpid::framing::FieldTable& /*arguments*/ )
 {
-        assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+        assert(0);            // FIXME aconway 2007-01-04: 0-9 feature
 }
 
 

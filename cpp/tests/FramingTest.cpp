@@ -28,7 +28,8 @@
 #include <AMQP_HighestVersion.h>
 #include "AMQRequestBody.h"
 #include "AMQResponseBody.h"
-
+#include "Requester.h"
+#include "Responder.h"
 
 using namespace qpid::framing;
 
@@ -52,6 +53,8 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testBasicConsumeOkBodyFrame);
     CPPUNIT_TEST(testRequestBodyFrame);
     CPPUNIT_TEST(testResponseBodyFrame);
+    CPPUNIT_TEST(testRequester);
+    CPPUNIT_TEST(testResponder);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -170,6 +173,98 @@ class FramingTest : public CppUnit::TestCase
         ChannelOkBody* decoded =
             dynamic_cast<ChannelOkBody*>(out.getBody().get());
         CPPUNIT_ASSERT(decoded);
+    }
+
+    void testRequester() {
+        Requester r;
+        AMQRequestBody::Data q;
+        AMQResponseBody::Data p;
+
+        r.sending(q);
+        CPPUNIT_ASSERT_EQUAL(1ULL, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(0ULL, q.responseMark);
+
+        r.sending(q);
+        CPPUNIT_ASSERT_EQUAL(2ULL, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(0ULL, q.responseMark);
+
+        // Now process a response
+        p.responseId = 1;
+        p.requestId = 2;
+        r.processed(AMQResponseBody::Data(1, 2));
+
+        r.sending(q);
+        CPPUNIT_ASSERT_EQUAL(3ULL, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(1ULL, q.responseMark);
+        
+        try {
+            r.processed(p);     // Already processed this response.
+            CPPUNIT_FAIL("Expected exception");
+        } catch (...) {}
+
+        try {
+            p.requestId = 50;
+            r.processed(p);     // No such request
+            CPPUNIT_FAIL("Expected exception");
+        } catch (...) {}
+
+        r.sending(q);           // reqId=4
+        r.sending(q);           // reqId=5
+        r.sending(q);           // reqId=6
+        p.responseId++;
+        p.requestId = 4;
+        p.batchOffset = 2;
+        r.processed(p);
+        r.sending(q);
+        CPPUNIT_ASSERT_EQUAL(7ULL, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(2ULL, q.responseMark);
+
+        p.responseId++;
+        p.requestId = 1;        // Out of order
+        p.batchOffset = 0;
+        r.processed(p);
+        r.sending(q);
+        CPPUNIT_ASSERT_EQUAL(8ULL, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(3ULL, q.responseMark);
+    }
+
+    void testResponder() {
+        Responder r;
+        AMQRequestBody::Data q;
+        AMQResponseBody::Data p;
+
+        q.requestId = 1;
+        q.responseMark = 0;
+        r.received(q);
+        r.sending(p, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(1ULL, p.responseId);
+        CPPUNIT_ASSERT_EQUAL(1ULL, p.requestId);
+        CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
+        CPPUNIT_ASSERT_EQUAL(0ULL, r.getResponseMark());
+
+        q.requestId++;
+        q.responseMark = 1;
+        r.received(q);
+        r.sending(p, q.requestId);
+        CPPUNIT_ASSERT_EQUAL(2ULL, p.responseId);
+        CPPUNIT_ASSERT_EQUAL(2ULL, p.requestId);
+        CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
+        CPPUNIT_ASSERT_EQUAL(1ULL, r.getResponseMark());
+
+        try {
+            // Response mark higher any request ID sent.
+            q.responseMark = 3;
+            r.received(q);
+        } catch(...) {}
+
+        try {
+            // Response mark lower than previous response mark.
+            q.responseMark = 0;
+            r.received(q);
+        } catch(...) {}
+
+        // TODO aconway 2007-01-14: Test for batching when supported.
+        
     }
 };
 
