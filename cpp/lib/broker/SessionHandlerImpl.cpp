@@ -224,6 +224,7 @@ void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const strin
         parent->framemax, parent->queues->getStore(),
         parent->settings.stagingThreshold);
 
+    // FIXME aconway 2007-01-04: provide valid channel Id as per ampq 0-9
     parent->client->getChannel().openOk(channel, std::string()/* ID */);
 } 
         

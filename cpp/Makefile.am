@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 README.txt etc/qpidd
+EXTRA_DIST = README README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 etc/qpidd
 
 SUBDIRS = gen lib src docs/api docs/man rpm tests
 
