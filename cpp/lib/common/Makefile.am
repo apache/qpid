@@ -72,6 +72,8 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/ProtocolInitiation.cpp		\
   $(framing)/ProtocolVersion.cpp		\
   $(framing)/ProtocolVersionException.cpp	\
+  $(framing)/Requester.cpp			\
+  $(framing)/Responder.cpp			\
   $(framing)/Value.cpp				\
   $(gen)/AMQP_ClientProxy.cpp			\
   $(gen)/AMQP_HighestVersion.h			\

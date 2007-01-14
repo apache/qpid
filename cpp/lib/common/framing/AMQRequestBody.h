@@ -31,7 +31,17 @@ class AMQRequestBody : public AMQMethodBody
 {
  public:
     typedef boost::shared_ptr<AMQRequestBody> shared_ptr;
-    
+
+    struct Data {
+        Data(RequestId id=0, ResponseId mark=0)
+            : requestId(id), responseMark(mark) {}
+        void encode(Buffer&) const;
+        void decode(Buffer&);
+
+        RequestId requestId;
+        ResponseId responseMark;
+    };
+
     static shared_ptr create(
         AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
         Buffer& buffer);
@@ -51,16 +61,6 @@ class AMQRequestBody : public AMQMethodBody
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+16; }
     
   private:
-    struct Data {
-        Data(RequestId id=0, ResponseId mark=0)
-            : requestId(id), responseMark(mark) {}
-        void encode(Buffer&) const;
-        void decode(Buffer&);
-
-        RequestId requestId;
-        ResponseId responseMark;
-    };
-
     Data data;
 };
 
