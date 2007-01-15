@@ -236,7 +236,8 @@ class FramingTest : public CppUnit::TestCase
         q.requestId = 1;
         q.responseMark = 0;
         r.received(q);
-        r.sending(p, q.requestId);
+        p.requestId = q.requestId;
+        r.sending(p);
         CPPUNIT_ASSERT_EQUAL(1ULL, p.responseId);
         CPPUNIT_ASSERT_EQUAL(1ULL, p.requestId);
         CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
@@ -245,9 +246,8 @@ class FramingTest : public CppUnit::TestCase
         q.requestId++;
         q.responseMark = 1;
         r.received(q);
-        r.sending(p, q.requestId);
+        r.sending(p);
         CPPUNIT_ASSERT_EQUAL(2ULL, p.responseId);
-        CPPUNIT_ASSERT_EQUAL(2ULL, p.requestId);
         CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
         CPPUNIT_ASSERT_EQUAL(1ULL, r.getResponseMark());
 

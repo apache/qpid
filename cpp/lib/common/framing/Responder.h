@@ -40,7 +40,7 @@ class Responder
     void received(const AMQRequestBody::Data& request);
 
     /** Called before sending a response to set respose data.  */
-    void sending(AMQResponseBody::Data& response, RequestId toRequest);
+    void sending(AMQResponseBody::Data& response);
 
     /** Get the ID of the highest response acknowledged by the peer. */
     ResponseId getResponseMark() { return responseMark; }
