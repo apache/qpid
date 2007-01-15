@@ -89,7 +89,7 @@ public class FailoverHandler implements Runnable
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
-            _amqProtocolHandler.setStateManager(new AMQStateManager());
+            _amqProtocolHandler.setStateManager(new AMQStateManager(_amqProtocolHandler.getProtocolSession()));
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
                 _amqProtocolHandler.setStateManager(existingStateManager);
