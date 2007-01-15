@@ -27,7 +27,7 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 public class RequestManager
 {
     private int channel;
-    AMQProtocolWriter protocolSession;
+    AMQProtocolWriter protocolWriter;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -43,10 +43,10 @@ public class RequestManager
 
     private Hashtable<Long, AMQResponseCallback> requestSentMap;
 
-    public RequestManager(int channel, AMQProtocolWriter protocolSession)
+    public RequestManager(int channel, AMQProtocolWriter protocolWriter)
     {
         this.channel = channel;
-        this.protocolSession = protocolSession;
+        this.protocolWriter = protocolWriter;
         requestIdCount = 1L;
         lastProcessedResponseId = 0L;
         requestSentMap = new Hashtable<Long, AMQResponseCallback>();
@@ -60,7 +60,7 @@ public class RequestManager
         long requestId = getNextRequestId(); // Get new request ID
         AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
             lastProcessedResponseId, requestMethodBody);
-        protocolSession.writeFrame(requestFrame);
+        protocolWriter.writeFrame(requestFrame);
         requestSentMap.put(requestId, responseCallback);
         return requestId;
     }

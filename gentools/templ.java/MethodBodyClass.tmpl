@@ -84,16 +84,13 @@ ${METHOD_ID_INIT}
         return buf.toString();
     }
 
-    public static AMQFrame createAMQFrame(int _channelId, byte major, byte minor
+    public static ${CLASS}${METHOD}Body createMethodBody(byte major, byte minor
 %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
         ${CLASS}${METHOD}Body bodyFrame = new ${CLASS}${METHOD}Body(major, minor);
 %{FLIST}    ${mb_field_body_initialize}
         		 
-        AMQFrame frame = new AMQFrame();
-        frame.channel = _channelId;
-        frame.bodyFrame = bodyFrame;
-        return frame;
+        return bodyFrame;
     }
 }

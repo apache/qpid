@@ -23,14 +23,12 @@ package org.apache.qpid.server;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
-//import org.apache.qpid.framing.BasicPublishBody;
-//import org.apache.qpid.framing.ContentBody;
-//import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
@@ -121,7 +119,7 @@ public class AMQChannel
     private final List<AMQDataBlock> _returns = new LinkedList<AMQDataBlock>();
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
-    public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges, AMQProtocolWriter protocolSession)
+    public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges, AMQProtocolWriter protocolWriter, AMQMethodListener methodListener)
             throws AMQException
     {
         _channelId = channelId;
@@ -129,8 +127,8 @@ public class AMQChannel
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
-   		_requestManager = new RequestManager(channelId, protocolSession);
-    	_responseManager = new ResponseManager(channelId, protocolSession);
+   		_requestManager = new RequestManager(channelId, protocolWriter);
+    	_responseManager = new ResponseManager(channelId, methodListener, protocolWriter);
         _txnBuffer = new TxnBuffer(_messageStore);
     }
 
@@ -279,8 +277,15 @@ public class AMQChannel
         }
     }
     
-    public RequestManager getRequestManager() { return _requestManager; }
-    public ResponseManager getResponseManager() { return _responseManager; }
+    public RequestManager getRequestManager()
+    {
+        return _requestManager;
+    }
+    
+    public ResponseManager getResponseManager()
+    {
+        return _responseManager;
+    }
 
     public long getNextDeliveryTag()
     {
