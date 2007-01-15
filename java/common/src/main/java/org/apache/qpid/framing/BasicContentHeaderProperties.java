@@ -638,7 +638,18 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
     public String toString()
     {
-        return "reply-to = " + _replyTo + " propertyFlags = " + _propertyFlags;
+        return "reply-to = " + _replyTo +
+               ",propertyFlags = " + _propertyFlags +
+               ",ApplicationID = " + _appId +
+               ",ClusterID = " + _clusterId +
+               ",UserId = " + _userId +
+               ",JMSMessageID = " + _messageId +
+               ",JMSCorrelationID = " + _correlationId +
+               ",JMSDeliveryMode = " + _deliveryMode +
+               ",JMSExpiration = " + _expiration +
+               ",JMSPriority = " + _priority +
+               ",JMSTimestamp = " + _timestamp +
+               ",JMSType = " + _type;
     }
 
     // MapMessage  Interface
