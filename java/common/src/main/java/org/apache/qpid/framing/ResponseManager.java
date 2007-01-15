@@ -32,7 +32,7 @@ public class ResponseManager
 {
     private int channel;
     AMQMethodListener methodListener;
-    AMQProtocolWriter protocolSession;
+    AMQProtocolWriter protocolWriter;
 
     /**
      * Determines the batch behaviour of the manager.
@@ -91,11 +91,11 @@ public class ResponseManager
     private Hashtable<Long, ResponseStatus> responseMap;
 
     public ResponseManager(int channel, AMQMethodListener methodListener,
-        AMQProtocolWriter protocolSession)
+        AMQProtocolWriter protocolWriter)
     {
         this.channel = channel;
         this.methodListener = methodListener;
-        this.protocolSession = protocolSession;
+        this.protocolWriter = protocolWriter;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
         responseMap = new Hashtable<Long, ResponseStatus>();
@@ -221,6 +221,6 @@ public class ResponseManager
         long responseId = getNextResponseId(); // Get new request ID
         AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
             firstRequestId, numAdditionalRequests, responseMethodBody);
-        protocolSession.writeFrame(responseFrame);
+        protocolWriter.writeFrame(responseFrame);
     }
 } 

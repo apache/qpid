@@ -36,7 +36,9 @@ import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
+import org.apache.qpid.framing.AMQResponseCallback;
 import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -119,7 +121,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
-//        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
@@ -209,11 +210,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
             if (frame.bodyFrame instanceof AMQRequestBody)
             {
-            	requestFrameReceived(frame);
+            	requestFrameReceived(frame.channel, (AMQRequestBody)frame.bodyFrame);
             }
             else if (frame.bodyFrame instanceof AMQResponseBody)
             {
-            	responseFrameReceived(frame);
+            	responseFrameReceived(frame.channel, (AMQResponseBody)frame.bodyFrame);
             }
             else
             {
@@ -222,97 +223,43 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
     }
     
-    private void requestFrameReceived(AMQFrame frame) throws AMQException
+    private void requestFrameReceived(int channel, AMQRequestBody requestBody) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Request frame received: " + frame);
         }
-        AMQChannel channel = getChannel(frame.channel);
+        AMQChannel channel = getChannel(channel);
+        ResponseManager responseManager = channel.getResponseManager();
+        responseManager.requestReceived(requestBody);
     }
     
-    private void responseFrameReceived(AMQFrame frame) throws AMQException
+    private void responseFrameReceived(int channel, AMQResponseBody responseBody) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Response frame received: " + frame);
         }
-        AMQChannel channel = getChannel(frame.channel);
+        AMQChannel channel = getChannel(channel);
+        RequestManager requestManager = channel.getRequestManager();
+        requestManager.responseReceived(responseBody);
     }
 
-//     private void methodFrameReceived(AMQFrame frame)
-//     {
-//         if (_logger.isDebugEnabled())
-//         {
-//             _logger.debug("Method frame received: " + frame);
-//         }
-//         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel,
-//                                                                                     (AMQMethodBody) frame.bodyFrame);
-//         try
-//         {
-//             boolean wasAnyoneInterested = false;
-//             for (AMQMethodListener listener : _frameListeners)
-//             {
-//                 wasAnyoneInterested = listener.methodReceived(evt) ||
-//                                       wasAnyoneInterested;
-//             }
-//             if (!wasAnyoneInterested)
-//             {
-//                 throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
-//             }
-//         }
-//         catch (AMQChannelException e)
-//         {
-//             _logger.error("Closing channel due to: " + e.getMessage());
-//             writeFrame(e.getCloseFrame(frame.channel));
-//         }
-//         catch (Exception e)
-//         {
-//             for (AMQMethodListener listener : _frameListeners)
-//             {
-//                 listener.error(e);
-//             }
-//             _minaProtocolSession.close();
-//         }
-//     }
+    public long writeRequest(int channel, AMQMethodBody methodBody, AMQResponseCallback responseCallback)
+        throws RequestResponseMappingException
+    {
+        AMQChannel channel = getChannel(channel);
+        RequestManager requestManager = channel.getRequestManager();
+        return requestManager.sendRequest(methodBody, responseCallback);
+    }
 
-//     private void contentFrameReceived(AMQFrame frame) throws AMQException
-//     {
-//         if (frame.bodyFrame instanceof ContentHeaderBody)
-//         {
-//             contentHeaderReceived(frame);
-//         }
-//         else if (frame.bodyFrame instanceof ContentBody)
-//         {
-//             contentBodyReceived(frame);
-//         }
-//         else if (frame.bodyFrame instanceof HeartbeatBody)
-//         {
-//             _logger.debug("Received heartbeat from client");
-//         }
-//         else
-//         {
-//             _logger.warn("Unrecognised frame " + frame.getClass().getName());
-//         }
-//     }
-
-//     private void contentHeaderReceived(AMQFrame frame) throws AMQException
-//     {
-//         if (_logger.isDebugEnabled())
-//         {
-//             _logger.debug("Content header frame received: " + frame);
-//         }
-//         getChannel(frame.channel).publishContentHeader((ContentHeaderBody) frame.bodyFrame);
-//     }
-
-//     private void contentBodyReceived(AMQFrame frame) throws AMQException
-//     {
-//         if (_logger.isDebugEnabled())
-//         {
-//             _logger.debug("Content body frame received: " + frame);
-//         }
-//         getChannel(frame.channel).publishContentBody((ContentBody) frame.bodyFrame);
-//     }
+    public void writeResponse(int channel, long requestId, AMQMethodBody methodBody)
+        throws RequestResponseMappingException
+    {
+        AMQChannel channel = getChannel(channel);
+        ResponseManager responseManager = channel.getResponseManager();
+        responseManager(requestId, methodBody);
+    }
 
     /**
      * Convenience method that writes a frame to the protocol session. Equivalent
