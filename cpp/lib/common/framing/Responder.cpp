@@ -30,9 +30,9 @@ void Responder::received(const AMQRequestBody::Data& request) {
     responseMark = request.responseMark;
 }
 
-void Responder::sending(AMQResponseBody::Data& response, RequestId toRequest) {
+void Responder::sending(AMQResponseBody::Data& response) {
     response.responseId = ++lastId;
-    response.requestId = toRequest;
+    // response.requestId should have been set by caller.
     response.batchOffset = 0;
 }
 

@@ -20,19 +20,61 @@
  */
 #include <iostream>
 #include <memory>
-#include <Broker.h>
 
+#include "AMQFrame.h"
+#include "DirectExchange.h"
+#include "FanOutExchange.h"
+#include "HeadersExchange.h"
+#include "MessageStoreModule.h"
+#include "NullMessageStore.h"
+#include "ProtocolInitiation.h"
+#include "SessionHandlerImpl.h"
+#include "sys/SessionContext.h"
+#include "sys/SessionHandler.h"
+#include "sys/SessionHandlerFactory.h"
+#include "sys/TimeoutHandler.h"
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+#include "Broker.h"
+
+namespace qpid {
+namespace broker {
+
+const std::string empty;
+const std::string amq_direct("amq.direct");
+const std::string amq_topic("amq.topic");
+const std::string amq_fanout("amq.fanout");
+const std::string amq_match("amq.match");
 
 Broker::Broker(const Configuration& config) :
     acceptor(Acceptor::create(config.getPort(),
                               config.getConnectionBacklog(),
                               config.getWorkerThreads(),
                               config.isTrace())),
-    factory(config.getStore())
-{ }
+    queues(store.get()),
+    timeout(30000),
+    stagingThreshold(0),
+    cleaner(&queues, timeout/10),
+    factory(*this)
+{
+    if (config.getStore().empty())
+        store.reset(new NullMessageStore());
+    else
+        store.reset(new MessageStoreModule(config.getStore()));
+
+    exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
+    exchanges.declare(amq_direct, DirectExchange::typeName);
+    exchanges.declare(amq_topic, TopicExchange::typeName);
+    exchanges.declare(amq_fanout, FanOutExchange::typeName);
+    exchanges.declare(amq_match, HeadersExchange::typeName);
+
+    if(store.get()) {
+        RecoveryManager recoverer(queues, exchanges);
+        MessageStoreSettings storeSettings = { getStagingThreshold() };
+        store->recover(recoverer, &storeSettings);
+    }
+
+    cleaner.start();
+}
 
 
 Broker::shared_ptr Broker::create(int16_t port) 
@@ -57,3 +99,6 @@ void Broker::shutdown() {
 Broker::~Broker() { }
 
 const int16_t Broker::DEFAULT_PORT(5672);
+
+
+}} // namespace qpid::broker

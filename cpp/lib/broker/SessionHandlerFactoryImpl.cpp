@@ -19,51 +19,25 @@
  *
  */
 #include <SessionHandlerFactoryImpl.h>
-
-#include <DirectExchange.h>
-#include <FanOutExchange.h>
-#include <HeadersExchange.h>
-#include <MessageStoreModule.h>
-#include <NullMessageStore.h>
 #include <SessionHandlerImpl.h>
 
-using namespace qpid::broker;
-using namespace qpid::sys;
+namespace qpid {
+namespace broker {
 
-namespace
-{
-const std::string empty;
-const std::string amq_direct("amq.direct");
-const std::string amq_topic("amq.topic");
-const std::string amq_fanout("amq.fanout");
-const std::string amq_match("amq.match");
-}
 
-SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(const std::string& _store, u_int64_t _stagingThreshold, u_int32_t _timeout) : 
-    store(_store.empty() ? (MessageStore*)  new NullMessageStore() : (MessageStore*) new MessageStoreModule(_store)), 
-    queues(store.get()), settings(_timeout, _stagingThreshold), cleaner(&queues, _timeout/10)
-{
-    exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
-    exchanges.declare(amq_direct, DirectExchange::typeName);
-    exchanges.declare(amq_topic, TopicExchange::typeName);
-    exchanges.declare(amq_fanout, FanOutExchange::typeName);
-    exchanges.declare(amq_match, HeadersExchange::typeName);
+SessionHandlerFactoryImpl::SessionHandlerFactoryImpl(Broker& b) : broker(b)
+{}
 
-    if(store.get()) {
-        RecoveryManager recoverer(queues, exchanges);
-        MessageStoreSettings storeSettings = { settings.stagingThreshold };
-        store->recover(recoverer, &storeSettings);
-    }
-
-    cleaner.start();
-}
-
-SessionHandler* SessionHandlerFactoryImpl::create(SessionContext* ctxt)
-{
-    return new SessionHandlerImpl(ctxt, &queues, &exchanges, &cleaner, settings);
-}
 
 SessionHandlerFactoryImpl::~SessionHandlerFactoryImpl()
 {
-    cleaner.stop();
+    broker.getCleaner().stop();
 }
+
+qpid::sys::SessionHandler*
+SessionHandlerFactoryImpl::create(qpid::sys::SessionContext* ctxt)
+{
+    return new SessionHandlerImpl(ctxt, broker);
+}
+
+}} // namespace qpid::broker

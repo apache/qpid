@@ -27,6 +27,8 @@
 #include <sys/Runnable.h>
 #include <sys/Acceptor.h>
 #include <SharedObject.h>
+#include <MessageStore.h>
+#include <AutoDelete.h>
 
 namespace qpid {
 namespace broker {
@@ -69,13 +71,27 @@ class Broker : public qpid::sys::Runnable,
     /** Shut down the broker */
     virtual void shutdown();
 
+    MessageStore& getStore() { return *store; }
+    QueueRegistry& getQueues() { return queues; }
+    ExchangeRegistry& getExchanges() { return exchanges; }
+    u_int32_t getTimeout() { return timeout; }
+    u_int64_t getStagingThreshold() { return stagingThreshold; }
+    AutoDelete& getCleaner() { return cleaner; }
+    
   private:
     Broker(const Configuration& config); 
+
     qpid::sys::Acceptor::shared_ptr acceptor;
+    std::auto_ptr<MessageStore> store;
+    QueueRegistry queues;
+    ExchangeRegistry exchanges;
+    u_int32_t timeout;
+    u_int64_t stagingThreshold;
+    AutoDelete cleaner;
     SessionHandlerFactoryImpl factory;
 };
-}
-}
+
+}}
             
 
 

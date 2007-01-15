@@ -21,37 +21,26 @@
 #ifndef _SessionHandlerFactoryImpl_
 #define _SessionHandlerFactoryImpl_
 
-#include <AutoDelete.h>
-#include <ExchangeRegistry.h>
-#include <MessageStore.h>
-#include <QueueRegistry.h>
-#include <AMQFrame.h>
-#include <ProtocolInitiation.h>
-#include <sys/SessionContext.h>
-#include <sys/SessionHandler.h>
-#include <sys/SessionHandlerFactory.h>
-#include <sys/TimeoutHandler.h>
-#include <SessionHandlerImpl.h>
-#include <memory>
+#include "SessionHandlerFactory.h"
 
 namespace qpid {
-    namespace broker {
+namespace broker {
+class Broker;
 
-        class SessionHandlerFactoryImpl : public virtual qpid::sys::SessionHandlerFactory
-        {
-            std::auto_ptr<MessageStore> store;
-            QueueRegistry queues;
-            ExchangeRegistry exchanges;
-            const Settings settings;
-            AutoDelete cleaner;
-        public:
-            SessionHandlerFactoryImpl(const std::string& store = "", u_int64_t stagingThreshold = 0, u_int32_t timeout = 30000);
-            virtual qpid::sys::SessionHandler* create(qpid::sys::SessionContext* ctxt);
-            virtual ~SessionHandlerFactoryImpl();
-        };
+class SessionHandlerFactoryImpl : public qpid::sys::SessionHandlerFactory
+{
+  public:
+    SessionHandlerFactoryImpl(Broker& b);
+            
+    virtual qpid::sys::SessionHandler* create(qpid::sys::SessionContext* ctxt);
+            
+    virtual ~SessionHandlerFactoryImpl();
 
-    }
-}
+  private:
+    Broker& broker;
+};
+
+}}
 
 
 #endif

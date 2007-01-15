@@ -40,6 +40,7 @@
 #include <sys/SessionHandler.h>
 #include <sys/TimeoutHandler.h>
 #include <TopicExchange.h>
+#include "Broker.h"
 
 namespace qpid {
 namespace broker {
@@ -77,11 +78,10 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
 
     qpid::sys::SessionContext* context;
     qpid::framing::AMQP_ClientProxy* client;
-    QueueRegistry* queues;
-    ExchangeRegistry* const exchanges;
-    AutoDelete* const cleaner;
-    const Settings settings;
-
+    QueueRegistry& queues;
+    ExchangeRegistry& exchanges;
+    AutoDelete& cleaner;
+    Settings settings;
     std::auto_ptr<BasicHandler> basicHandler;
     std::auto_ptr<ChannelHandler> channelHandler;
     std::auto_ptr<ConnectionHandler> connectionHandler;
@@ -112,8 +112,7 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     Exchange::shared_ptr findExchange(const string& name);
     
   public:
-    SessionHandlerImpl(qpid::sys::SessionContext* context, QueueRegistry* queues, 
-                       ExchangeRegistry* exchanges, AutoDelete* cleaner, const Settings& settings);
+    SessionHandlerImpl(qpid::sys::SessionContext* context, Broker& broker);
     virtual void received(qpid::framing::AMQFrame* frame);
     virtual void initiated(qpid::framing::ProtocolInitiation* header);
     virtual void idleOut();
