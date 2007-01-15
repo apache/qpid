@@ -46,6 +46,14 @@
             <name>Apache SNAPSHOT Repository</name>
             <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
         </snapshotRepository>
+
+	<!-- Qpid has a Wiki site, maven generated site not used. This is just so that it can be created locally for viewing the reports. -->
+        <site>
+          <id>Qpid_Site</id>
+          <name>Qpid Site</name>
+          <url>file:/temp</url>
+        </site>
+
     </distributionManagement>
 
     <inceptionYear>2006</inceptionYear>
@@ -199,13 +207,13 @@
                               time, during the 'package' phase to capture the version of any resources added to jar files.
                               This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules 
                               at the time of the build.
-                              The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module that runs 
-                              this plugin.
+                              The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module
+                              that runs this plugin.
                               The 'qpidversion.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
                               Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of 
-                              qpidversion.properties and then the client or broker being built against an older version of the common library ending up with
-                              the wrong version information. This is unlikely to happen because the client or broker should pick up its own properties
-                              from the classpath first. If this happens it will be obvious because the productName property will be 
+                              qpidversion.properties and then the client or broker being built against an older version of the common library ending 
+                              up with the wrong version information. This is unlikely to happen because the client or broker should pick up its own 
+                              properties from the classpath first. If this happens it will be obvious because the productName property will be 
                               'Qpid Common Utilities'. If this is a problem then push this ant task down into the client and broker poms and remove it
                               from here.
                          -->
@@ -331,7 +339,9 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
         <defaultGoal>install</defaultGoal>
+
     </build>
 
     <dependencyManagement>
@@ -360,13 +370,6 @@
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>2.1</version>
-                <exclusions>
-                    <!-- this seems to have a junit compile dependency -->
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
@@ -426,12 +429,22 @@
                 <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.easymock</groupId>
                 <artifactId>easymockclassextension</artifactId>
                 <version>2.2</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- Will be added to maven repo soon. JUnit test runner that can add repeats/concurrenct/timing etc to tests.
+            <dependency>
+                <groupId>uk.co.thebadgerset</groupId>
+                <artifactId>junit-toolkit</artifactId>
+                <version>0.3</version>
+                <scope>test</scope>
+            </dependency>
+            -->
 
             <!-- Qpid Version Dependencies -->
             <dependency>
