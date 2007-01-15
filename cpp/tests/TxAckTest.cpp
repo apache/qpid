@@ -66,7 +66,7 @@ class TxAckTest : public CppUnit::TestCase
 
 public:
 
-    TxAckTest() : queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries, &xid)
+    TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries, &xid)
     {
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(new Message(0, "exchange", "routing_key", false, false));

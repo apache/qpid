@@ -40,6 +40,7 @@ Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, 
     prefetchCount(0),
     framesize(_framesize),
     tagGenerator("sgen"),
+    accumulatedAck(0),
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
     version(_version){
