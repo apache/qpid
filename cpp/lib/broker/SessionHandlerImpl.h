@@ -24,28 +24,20 @@
 #include <map>
 #include <sstream>
 #include <vector>
-#include <exception>
+
 #include <AMQFrame.h>
 #include <AMQP_ClientProxy.h>
 #include <AMQP_ServerOperations.h>
-#include <AutoDelete.h>
-#include <ExchangeRegistry.h>
-#include <BrokerChannel.h>
-#include <ConnectionToken.h>
-#include <DirectExchange.h>
-#include <OutputHandler.h>
-#include <ProtocolInitiation.h>
-#include <QueueRegistry.h>
 #include <sys/SessionContext.h>
 #include <sys/SessionHandler.h>
 #include <sys/TimeoutHandler.h>
-#include <TopicExchange.h>
 #include "Broker.h"
+#include "Exception.h"
 
 namespace qpid {
 namespace broker {
 
-struct ChannelException : public std::exception {
+struct ChannelException : public qpid::Exception {
     u_int16_t code;
     string text;
     ChannelException(u_int16_t _code, string _text) : code(_code), text(_text) {}
@@ -53,7 +45,7 @@ struct ChannelException : public std::exception {
     const char* what() const throw() { return text.c_str(); }
 };
 
-struct ConnectionException : public std::exception {
+struct ConnectionException : public qpid::Exception {
     u_int16_t code;
     string text;
     ConnectionException(u_int16_t _code, string _text) : code(_code), text(_text) {}
@@ -75,13 +67,25 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
 {
     typedef std::map<u_int16_t, Channel*>::iterator channel_iterator;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
-
+    class Sender : public qpid::framing::OutputHandler {
+      public:
+        Sender(qpid::framing::OutputHandler&,
+               qpid::framing::Requester&, qpid::framing::Responder&);
+        void send(qpid::framing::AMQFrame* frame);
+      private:
+        OutputHandler& out;
+        qpid::framing::Requester& requester;
+        qpid::framing::Responder& responder;
+    };
+    
     qpid::sys::SessionContext* context;
     qpid::framing::AMQP_ClientProxy* client;
     QueueRegistry& queues;
     ExchangeRegistry& exchanges;
     AutoDelete& cleaner;
     Settings settings;
+    qpid::framing::Requester& requester;
+    qpid::framing::Responder& responder;
     std::auto_ptr<BasicHandler> basicHandler;
     std::auto_ptr<ChannelHandler> channelHandler;
     std::auto_ptr<ConnectionHandler> connectionHandler;
@@ -98,6 +102,7 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
 
     void handleHeader(u_int16_t channel, qpid::framing::AMQHeaderBody::shared_ptr body);
     void handleContent(u_int16_t channel, qpid::framing::AMQContentBody::shared_ptr body);
+    void handleMethod(u_int16_t channel, qpid::framing::AMQBody::shared_ptr body);
     void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
 
     Channel* getChannel(u_int16_t channel);
@@ -371,8 +376,6 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     virtual TunnelHandler* getTunnelHandler(){ throw ConnectionException(540, "Tunnel class not implemented"); } 
 };
 
-}
-}
-
+}}
 
 #endif

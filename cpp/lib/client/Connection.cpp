@@ -32,10 +32,14 @@ using namespace qpid::sys;
 
 u_int16_t Connection::channelIdCounter;
 
-Connection::Connection(  bool debug, u_int32_t _max_frame_size, qpid::framing::ProtocolVersion* _version) : max_frame_size(_max_frame_size), closed(true),
+Connection::Connection(
+    bool debug, u_int32_t _max_frame_size,
+    qpid::framing::ProtocolVersion* _version
+) : max_frame_size(_max_frame_size), closed(true),
     version(_version->getMajor(),_version->getMinor())
 {
-    connector = new Connector(version, debug, _max_frame_size);
+    connector = new Connector(
+        version, requester, responder, debug, _max_frame_size);
 }
 
 Connection::~Connection(){
@@ -152,6 +156,16 @@ void Connection::removeChannel(Channel* channel){
 }
 
 void Connection::received(AMQFrame* frame){
+    AMQBody::shared_ptr body = frame->getBody();
+    u_int8_t type = body->type();
+    if (type == REQUEST_BODY) 
+        responder.received(AMQRequestBody::getData(body));
+    handleFrame(frame);
+    if (type == RESPONSE_BODY)
+        requester.processed(AMQResponseBody::getData(body));
+}
+
+void Connection::handleFrame(AMQFrame* frame){
     u_int16_t channelId = frame->getChannel();
 
     if(channelId == 0){

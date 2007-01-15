@@ -42,6 +42,10 @@ class AMQRequestBody : public AMQMethodBody
         ResponseId responseMark;
     };
 
+    static Data& getData(const AMQBody::shared_ptr& body) {
+        return boost::dynamic_pointer_cast<AMQRequestBody>(body)->getData();
+    }
+
     static shared_ptr create(
         AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
         Buffer& buffer);
@@ -52,6 +56,7 @@ class AMQRequestBody : public AMQMethodBody
     u_int8_t type() const { return REQUEST_BODY; }
     void encode(Buffer& buffer) const;
 
+    Data& getData() { return data; }
     RequestId  getRequestId() const { return data.requestId; }
     void setRequestId(RequestId id) { data.requestId=id; }
     ResponseId getResponseMark() const { return data.responseMark; }
@@ -59,6 +64,7 @@ class AMQRequestBody : public AMQMethodBody
 
   protected:
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+16; }
+    void printPrefix(std::ostream& out) const;
     
   private:
     Data data;

@@ -27,12 +27,10 @@
 #include <string>
 #include <vector>
 
-namespace qpid
-{
-namespace framing
-{
+namespace qpid {
+namespace framing {
 
-class ProtocolVersionException : virtual public qpid::Exception
+class ProtocolVersionException : public qpid::Exception
 {
 protected:
     ProtocolVersion versionFound;
@@ -49,7 +47,6 @@ public:
     virtual std::string toString() const throw();
 }; // class ProtocolVersionException
 
-} // namespace framing
-} // namespace qpid
+}} // namespace qpid::framing
 
 #endif //ifndef _ProtocolVersionException_

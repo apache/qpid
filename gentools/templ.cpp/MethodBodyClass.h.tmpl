@@ -69,7 +69,8 @@ ${mb_constructor_with_initializers}
     
     inline void print(std::ostream& out) const
     {
-	    out << "${CLASS}${METHOD}: ";
+            printPrefix(out);
+            out << "${CLASS}${METHOD}: ";
 %{FLIST} ${mb_field_print}
     }
 

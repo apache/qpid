@@ -55,4 +55,10 @@ AMQRequestBody::create(
     return AMQRequestBody::shared_ptr(body);
 }
 
+void AMQRequestBody::printPrefix(std::ostream& out) const {
+    out << "request(id=" << data.requestId << ",mark="
+        << data.responseMark << "): ";
+}
+
 }} // namespace qpid::framing
+

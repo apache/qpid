@@ -46,6 +46,10 @@ class AMQResponseBody : public AMQMethodBody
         u_int32_t batchOffset;
     };
 
+    static Data& getData(const AMQBody::shared_ptr& body) {
+        return boost::dynamic_pointer_cast<AMQResponseBody>(body)->getData();
+    }
+
     static shared_ptr create(
         AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
         Buffer& buffer);
@@ -57,12 +61,15 @@ class AMQResponseBody : public AMQMethodBody
     u_int8_t type() const { return RESPONSE_BODY; }
     void encode(Buffer& buffer) const;
 
+    Data& getData() { return data; }
     ResponseId getResponseId() { return data.responseId; }
     RequestId getRequestId() { return data.requestId; }
     BatchOffset getBatchOffset() { return data.batchOffset; }
 
   protected:
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
+    void printPrefix(std::ostream& out) const;
+
   private:
     Data data;
 };

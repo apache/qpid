@@ -22,13 +22,17 @@
 #include <QpidError.h>
 #include <sys/Time.h>
 #include "Connector.h"
+#include "Requester.h"
+#include "Responder.h"
 
 using namespace qpid::sys;
 using namespace qpid::client;
 using namespace qpid::framing;
 using qpid::QpidError;
 
-Connector::Connector(const qpid::framing::ProtocolVersion& pVersion, bool _debug, u_int32_t buffer_size) :
+Connector::Connector(const qpid::framing::ProtocolVersion& pVersion,
+                     Requester& req, Responder& resp,
+                     bool _debug, u_int32_t buffer_size) :
     debug(_debug),
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
@@ -40,7 +44,10 @@ Connector::Connector(const qpid::framing::ProtocolVersion& pVersion, bool _debug
     timeoutHandler(0),
     shutdownHandler(0),
     inbuf(receive_buffer_size), 
-    outbuf(send_buffer_size){ }
+    outbuf(send_buffer_size),
+    requester(req),
+    responder(resp)
+{ }
 
 Connector::~Connector(){ }
 
@@ -75,7 +82,13 @@ OutputHandler* Connector::getOutputHandler(){
 }
 
 void Connector::send(AMQFrame* frame){
-    writeBlock(frame);    
+    AMQBody::shared_ptr body = frame->getBody();
+    u_int8_t type = body->type();
+    if (type == REQUEST_BODY)
+        requester.sending(AMQRequestBody::getData(body));
+    else if (type == RESPONSE_BODY)
+        responder.sending(AMQResponseBody::getData(body));
+    writeBlock(frame);
     if(debug) std::cout << "SENT: " << *frame << std::endl; 
     delete frame;
 }
