@@ -56,5 +56,10 @@ AMQResponseBody::shared_ptr AMQResponseBody::create(
     return AMQResponseBody::shared_ptr(body);
 }
 
+void AMQResponseBody::printPrefix(std::ostream& out) const {
+    out << "response(id=" << data.responseId << ",request=" << data.requestId
+        << ",batch=" << data.batchOffset << "): ";
+}
+
 
 }} // namespace qpid::framing

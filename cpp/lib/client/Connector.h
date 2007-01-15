@@ -34,60 +34,73 @@
 #include <sys/Socket.h>
 
 namespace qpid {
+
+namespace framing {
+
+class Requester;
+class Responder;
+
+} // namespace framing
+
 namespace client {
 
-    class Connector : public qpid::framing::OutputHandler, 
-                      private qpid::sys::Runnable
-    {
-        const bool debug;
-	const int receive_buffer_size;
-	const int send_buffer_size;
-	qpid::framing::ProtocolVersion version;
+class Connector : public qpid::framing::OutputHandler, 
+                  private qpid::sys::Runnable
+{
+    const bool debug;
+    const int receive_buffer_size;
+    const int send_buffer_size;
+    qpid::framing::ProtocolVersion version;
 
-	bool closed;
+    bool closed;
 
-        int64_t lastIn;
-        int64_t lastOut;
-        int64_t timeout;
-        u_int32_t idleIn;
-        u_int32_t idleOut;
+    int64_t lastIn;
+    int64_t lastOut;
+    int64_t timeout;
+    u_int32_t idleIn;
+    u_int32_t idleOut;
 
-        qpid::sys::TimeoutHandler* timeoutHandler;
-        qpid::sys::ShutdownHandler* shutdownHandler;
-	qpid::framing::InputHandler* input;
-	qpid::framing::InitiationHandler* initialiser;
-	qpid::framing::OutputHandler* output;
+    qpid::sys::TimeoutHandler* timeoutHandler;
+    qpid::sys::ShutdownHandler* shutdownHandler;
+    qpid::framing::InputHandler* input;
+    qpid::framing::InitiationHandler* initialiser;
+    qpid::framing::OutputHandler* output;
 	
-	qpid::framing::Buffer inbuf;
-	qpid::framing::Buffer outbuf;
+    qpid::framing::Buffer inbuf;
+    qpid::framing::Buffer outbuf;
 
-        qpid::sys::Mutex writeLock;
-	qpid::sys::Thread receiver;
+    qpid::sys::Mutex writeLock;
+    qpid::sys::Thread receiver;
 
-	qpid::sys::Socket socket;
+    qpid::sys::Socket socket;
+
+    qpid::framing::Requester& requester;
+    qpid::framing::Responder& responder;
         
-        void checkIdle(ssize_t status);
-	void writeBlock(qpid::framing::AMQDataBlock* data);
-	void writeToSocket(char* data, size_t available);
-        void setSocketTimeout();
+    void checkIdle(ssize_t status);
+    void writeBlock(qpid::framing::AMQDataBlock* data);
+    void writeToSocket(char* data, size_t available);
+    void setSocketTimeout();
 
-	void run();
-	void handleClosed();
+    void run();
+    void handleClosed();
 
-    public:
-	Connector(const qpid::framing::ProtocolVersion& pVersion, bool debug = false, u_int32_t buffer_size = 1024);
-	virtual ~Connector();
-	virtual void connect(const std::string& host, int port);
-	virtual void init(qpid::framing::ProtocolInitiation* header);
-	virtual void close();
-	virtual void setInputHandler(qpid::framing::InputHandler* handler);
-	virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);
-	virtual void setShutdownHandler(qpid::sys::ShutdownHandler* handler);
-	virtual qpid::framing::OutputHandler* getOutputHandler();
-	virtual void send(qpid::framing::AMQFrame* frame);
-        virtual void setReadTimeout(u_int16_t timeout);
-        virtual void setWriteTimeout(u_int16_t timeout);
-    };
+  public:
+    Connector(const qpid::framing::ProtocolVersion& pVersion,
+              qpid::framing::Requester& req, qpid::framing::Responder& resp,
+              bool debug = false, u_int32_t buffer_size = 1024);
+    virtual ~Connector();
+    virtual void connect(const std::string& host, int port);
+    virtual void init(qpid::framing::ProtocolInitiation* header);
+    virtual void close();
+    virtual void setInputHandler(qpid::framing::InputHandler* handler);
+    virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);
+    virtual void setShutdownHandler(qpid::sys::ShutdownHandler* handler);
+    virtual qpid::framing::OutputHandler* getOutputHandler();
+    virtual void send(qpid::framing::AMQFrame* frame);
+    virtual void setReadTimeout(u_int16_t timeout);
+    virtual void setWriteTimeout(u_int16_t timeout);
+};
 
 }
 }

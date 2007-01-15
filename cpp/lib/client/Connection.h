@@ -37,6 +37,8 @@
 #include <ClientQueue.h>
 #include <ResponseHandler.h>
 #include <AMQP_HighestVersion.h>
+#include "Requester.h"
+#include "Responder.h"
 
 namespace qpid {
 
@@ -79,6 +81,8 @@ namespace client {
 	ResponseHandler responses;
         volatile bool closed;
         qpid::framing::ProtocolVersion version;
+        qpid::framing::Requester requester;
+        qpid::framing::Responder responder;
 
         void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
         void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
@@ -89,6 +93,7 @@ namespace client {
 	virtual void handleHeader(qpid::framing::AMQHeaderBody::shared_ptr body);
 	virtual void handleContent(qpid::framing::AMQContentBody::shared_ptr body);
 	virtual void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
+        void handleFrame(qpid::framing::AMQFrame* frame);
 
     public:
         /**

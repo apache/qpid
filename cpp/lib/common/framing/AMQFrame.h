@@ -21,7 +21,8 @@
  * under the License.
  *
  */
-/*#include <qpid/framing/amqp_methods.h>*/
+#include <boost/cast.hpp>
+
 #include <amqp_types.h>
 #include <AMQBody.h>
 #include <AMQDataBlock.h>
@@ -49,6 +50,12 @@ class AMQFrame : virtual public AMQDataBlock
     virtual u_int32_t size() const;
     u_int16_t getChannel();
     AMQBody::shared_ptr getBody();
+
+    /** Convenience template to cast the body to an expected type */
+    template <class T> boost::shared_ptr<T> castBody() {
+        assert(dynamic_cast<T*>(getBody().get()));
+        boost::static_pointer_cast<T>(getBody());
+    }
 
     u_int32_t decodeHead(Buffer& buffer); 
     void decodeBody(Buffer& buffer, uint32_t size); 

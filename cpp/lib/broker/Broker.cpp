@@ -23,6 +23,7 @@
 
 #include "AMQFrame.h"
 #include "DirectExchange.h"
+#include "TopicExchange.h"
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "MessageStoreModule.h"
@@ -102,3 +103,4 @@ const int16_t Broker::DEFAULT_PORT(5672);
 
 
 }} // namespace qpid::broker
+
