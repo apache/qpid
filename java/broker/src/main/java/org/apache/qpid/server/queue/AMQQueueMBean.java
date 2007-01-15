@@ -54,16 +54,16 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     private AMQQueue _queue = null;
     private String _queueName = null;
     // OpenMBean data types for viewMessages method
-    private String[] _msgAttributeNames = {"Message Id", "Header", "Size(bytes)", "Redelivered"};
-    private String[] _msgAttributeIndex = {_msgAttributeNames[0]};
-    private OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
-    private CompositeType _messageDataType = null;           // Composite type for representing AMQ Message data.
-    private TabularType _messagelistDataType = null;         // Datatype for representing AMQ messages list.
+    private final static String[] _msgAttributeNames = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered"};
+    private static String[] _msgAttributeIndex = {_msgAttributeNames[0]};
+    private static OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
+    private static CompositeType _messageDataType = null;           // Composite type for representing AMQ Message data.
+    private static TabularType _messagelistDataType = null;         // Datatype for representing AMQ messages list.
 
     // OpenMBean data types for viewMessageContent method
-    private CompositeType _msgContentType = null;
-    private String[] _msgContentAttributes = {"Message Id", "MimeType", "Encoding", "Content"};
-    private OpenType[] _msgContentAttributeTypes = new OpenType[4];
+    private static CompositeType _msgContentType = null;
+    private final static String[] _msgContentAttributes = {"AMQ MessageId", "MimeType", "Encoding", "Content"};
+    private static OpenType[] _msgContentAttributeTypes = new OpenType[4];
 
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
@@ -71,13 +71,25 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
         _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
-        init();
+    }
+
+    static
+    {
+        try
+        {
+            init();
+        }
+        catch(JMException ex)
+        {
+            // It should never occur
+            System.out.println(ex.getMessage());
+        }
     }
 
     /**
      * initialises the openmbean data types
      */
-    private void init() throws OpenDataException
+    private static void init() throws OpenDataException
     {
         _msgContentAttributeTypes[0] = SimpleType.LONG;                    // For message id
         _msgContentAttributeTypes[1] = SimpleType.STRING;                  // For MimeType
@@ -376,4 +388,4 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         return new MBeanNotificationInfo[]{info1};
     }
 
-} // End of AMQMBean class
+} // End of AMQQueueMBean class
