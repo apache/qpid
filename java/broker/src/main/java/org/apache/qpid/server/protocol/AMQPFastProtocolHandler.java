@@ -49,7 +49,7 @@ import java.io.IOException;
  * the state for the connection.
  *
  */
-public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList
+public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList, AMQResponseCallback
 {
     private static final Logger _logger = Logger.getLogger(AMQPFastProtocolHandler.class);
 
@@ -175,16 +175,21 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
+            AMQMethodBody closeBody = ConnectionCloseBody.createMethodBody(
             	(byte)0, (byte)9,	// AMQP version (major, minor)
             	0,	// classId
                 0,	// methodId
                 200,	// replyCode
-                throwable.getMessage()	// replyText
-                ));
+                throwable.getMessage());	// replyText
+            protocolSession.writeRequest(0, closeBody, this);
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
             protocolSession.close();
         }
+    }
+    
+	public void responseFrameReceived(AMQResponseBody responseBody)
+    {
+        // do nothing
     }
 
     /**

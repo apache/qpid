@@ -111,7 +111,7 @@ public class ResponseManager
         lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
         // TODO: Update MethodEvent to use the RequestBody instead of MethodBody
-        AMQMethodEvent methodEvent = new AMQMethodEvent(channel, requestBody.getMethodPayload());
+        AMQMethodEvent methodEvent = new AMQMethodEvent(channel, requestBody.getMethodPayload(), requestId);
         methodListener.methodReceived(methodEvent);
     }
 

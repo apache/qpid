@@ -36,13 +36,14 @@ import org.apache.qpid.framing.AMQMethodBody;
 public class AMQMethodEvent<M extends AMQMethodBody>
 {
     private final M _method;
-
     private final int _channelId;
+    private final long _requestResponseId;
 
-    public AMQMethodEvent(int channelId, M method)
+    public AMQMethodEvent(int channelId, M method, long requestResponseId)
     {
         _channelId = channelId;
         _method = method;
+        _requestResponseId = requestResponseId;
     }
 
     public M getMethod()
@@ -55,11 +56,17 @@ public class AMQMethodEvent<M extends AMQMethodBody>
         return _channelId;
     }
 
+    public long getRequestResponseId()
+    {
+        return _requestResponseId;
+    }
+
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("Method event: ");
-        buf.append("\nChannel id: ").append(_channelId);
-        buf.append("\nMethod: ").append(_method);
+        StringBuilder buf = new StringBuilder("Method event: \n");
+        buf.append("Channel id: \n").append(_channelId);
+        buf.append("Method: \n").append(_method);
+        buf.append("Request/Response Id: ").append(_requestResponseId);
         return buf.toString();
     }
 }
