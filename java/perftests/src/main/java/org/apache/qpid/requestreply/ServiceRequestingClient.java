@@ -26,6 +26,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.message.TestMessageFactory;
+import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
@@ -47,8 +48,7 @@ public class ServiceRequestingClient implements ExceptionListener
 {
     private static final Logger _log = Logger.getLogger(ServiceRequestingClient.class);
 
-    private static final String MESSAGE_IDENTIFIER = "MessageIdentifier";
-    private static int _messageIdentifier = 0;
+    private long _messageIdentifier = 0;
     private String MESSAGE_DATA;
 
     private AMQConnection _connection;
@@ -108,10 +108,6 @@ public class ServiceRequestingClient implements ExceptionListener
                         _log.info("Average latency now: " + _averageLatency);
                     }
                 }
-                if (m.propertyExists(MESSAGE_IDENTIFIER))
-                {
-                    _log.info("Received Message Identifier: " + m.getIntProperty(MESSAGE_IDENTIFIER));
-                }
                 if(_isTransactional)
                 {
                     _session.commit();
@@ -127,6 +123,7 @@ public class ServiceRequestingClient implements ExceptionListener
                 _log.info("Received message count: " + _actualMessageCount);
             }
 
+            checkForMessageID(m);
             if (_actualMessageCount == _expectedMessageCount)
             {
                 _completed = true;
@@ -147,6 +144,30 @@ public class ServiceRequestingClient implements ExceptionListener
                 }
             }
         }
+    }
+
+    /**
+     * Checks if the received AMQ Message ID(delivery tag) is in sequence, by comparing it with the AMQ MessageID
+     * of previous message.
+     * @param receivedMsg
+     */
+    private void checkForMessageID(Message receivedMsg)
+    {
+        try
+        {
+            JMSTextMessage msg = (JMSTextMessage)receivedMsg;
+            if (! (msg.getDeliveryTag() == _messageIdentifier + 1))
+            {
+                _log.info("Out of sequence message received. Previous AMQ MessageID= " + _messageIdentifier +
+                          ", Received AMQ messageID= " + receivedMsg.getJMSMessageID());
+            }
+            _messageIdentifier = msg.getDeliveryTag();
+        }
+        catch (Exception ex)
+        {
+            _log.error("Error in checking messageID ", ex);
+        }
+
     }
 
     private void notifyWaiter()
@@ -178,9 +199,7 @@ public class ServiceRequestingClient implements ExceptionListener
             _session = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
             _producerSession = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
 
-
             _connection.setExceptionListener(this);
-
 
             AMQQueue destination = new AMQQueue(commandQueueName);
             _producer = (MessageProducer) _producerSession.createProducer(destination);
@@ -195,7 +214,7 @@ public class ServiceRequestingClient implements ExceptionListener
             //Send first message, then wait a bit to allow the provider to get initialised
             TextMessage first = _session.createTextMessage(MESSAGE_DATA);
             first.setJMSReplyTo(_tempDestination);
-            send(first);
+             _producer.send(first);
             if (_isTransactional)
             {
                 _producerSession.commit();
@@ -219,13 +238,6 @@ public class ServiceRequestingClient implements ExceptionListener
         }
     }
 
-    private void send(TextMessage msg) throws JMSException
-    {
-        msg.setIntProperty(MESSAGE_IDENTIFIER, ++_messageIdentifier);
-        _producer.send(msg);
-        _log.info("Sent Message Identifier: " + _messageIdentifier);
-    }
-
     /**
      * Run the test and notify an object upon receipt of all responses.
      *
@@ -245,7 +257,7 @@ public class ServiceRequestingClient implements ExceptionListener
                 long timeNow = System.currentTimeMillis();
                 msg.setLongProperty("timeSent", timeNow);
             }
-            send(msg);
+             _producer.send(msg);
             if (_isTransactional)
             {
                 _producerSession.commit();
@@ -263,8 +275,7 @@ public class ServiceRequestingClient implements ExceptionListener
     private void createConnection(String brokerHosts, String clientID, String username, String password,
                                   String vpath) throws AMQException, URLSyntaxException
     {
-        _connection = new AMQConnection(brokerHosts, username, password,
-                                        clientID, vpath);
+        _connection = new AMQConnection(brokerHosts, username, password, clientID, vpath);
     }
 
     /**
