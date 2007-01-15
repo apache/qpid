@@ -38,6 +38,8 @@ import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.AMQResponseCallback;
 import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.RequestManager;
+import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
@@ -64,6 +66,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
+                                               AMQResponseCallback,
                                                ProtocolVersionList,
                                                Managable
 {
@@ -179,14 +182,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
                 // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
+                AMQMethodBody connectionStartBody = ConnectionStartBody.createMethodBody(
             	    (byte)_major, (byte)_minor,	// AMQP version (major, minor)
                     locales.getBytes(),	// locales
                     mechanisms.getBytes(),	// mechanisms
                     null,	// serverProperties
                     (short)_major,	// versionMajor
                     (short)_minor);	// versionMinor
-                _minaProtocolSession.write(response);
+                writeRequest(0, connectionStartBody, this);
             }
             catch (AMQException e)
             {
@@ -223,42 +226,47 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
     }
     
-    private void requestFrameReceived(int channel, AMQRequestBody requestBody) throws AMQException
+	public void responseFrameReceived(AMQResponseBody responseBody)
+    {
+        // do nothing
+    }
+    
+    private void requestFrameReceived(int channelNum, AMQRequestBody requestBody) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Request frame received: " + frame);
+            _logger.debug("Request frame received: " + requestBody);
         }
-        AMQChannel channel = getChannel(channel);
+        AMQChannel channel = getChannel(channelNum);
         ResponseManager responseManager = channel.getResponseManager();
         responseManager.requestReceived(requestBody);
     }
     
-    private void responseFrameReceived(int channel, AMQResponseBody responseBody) throws AMQException
+    private void responseFrameReceived(int channelNum, AMQResponseBody responseBody) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Response frame received: " + frame);
+            _logger.debug("Response frame received: " + responseBody);
         }
-        AMQChannel channel = getChannel(channel);
+        AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
         requestManager.responseReceived(responseBody);
     }
 
-    public long writeRequest(int channel, AMQMethodBody methodBody, AMQResponseCallback responseCallback)
+    public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQResponseCallback responseCallback)
         throws RequestResponseMappingException
     {
-        AMQChannel channel = getChannel(channel);
+        AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
         return requestManager.sendRequest(methodBody, responseCallback);
     }
 
-    public void writeResponse(int channel, long requestId, AMQMethodBody methodBody)
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
         throws RequestResponseMappingException
     {
-        AMQChannel channel = getChannel(channel);
+        AMQChannel channel = getChannel(channelNum);
         ResponseManager responseManager = channel.getResponseManager();
-        responseManager(requestId, methodBody);
+        responseManager.sendResponse(requestId, methodBody);
     }
 
     /**
