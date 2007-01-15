@@ -37,13 +37,13 @@ public class AMQMethodEvent<M extends AMQMethodBody>
 {
     private final M _method;
     private final int _channelId;
-    private final long _requestResponseId;
+    private final long _requestId;
 
-    public AMQMethodEvent(int channelId, M method, long requestResponseId)
+    public AMQMethodEvent(int channelId, M method, long requestId)
     {
         _channelId = channelId;
         _method = method;
-        _requestResponseId = requestResponseId;
+        _requestId = requestId;
     }
 
     public M getMethod()
@@ -56,9 +56,9 @@ public class AMQMethodEvent<M extends AMQMethodBody>
         return _channelId;
     }
 
-    public long getRequestResponseId()
+    public long getRequestId()
     {
-        return _requestResponseId;
+        return _requestId;
     }
 
     public String toString()
@@ -66,7 +66,7 @@ public class AMQMethodEvent<M extends AMQMethodBody>
         StringBuilder buf = new StringBuilder("Method event: \n");
         buf.append("Channel id: \n").append(_channelId);
         buf.append("Method: \n").append(_method);
-        buf.append("Request/Response Id: ").append(_requestResponseId);
+        buf.append("Request Id: ").append(_requestId);
         return buf.toString();
     }
 }

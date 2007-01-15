@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -49,7 +50,7 @@ import java.io.IOException;
  * the state for the connection.
  *
  */
-public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList, AMQResponseCallback
+public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList
 {
     private static final Logger _logger = Logger.getLogger(AMQPFastProtocolHandler.class);
 
@@ -153,7 +154,8 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
 
     }
 
-    public void exceptionCaught(IoSession protocolSession, Throwable throwable) throws Exception
+    public void exceptionCaught(IoSession protocolSession, AMQMethodListener methodListener,
+        Throwable throwable) throws Exception
     {
         AMQProtocolSession session = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
         if (throwable instanceof AMQProtocolHeaderException)
@@ -181,15 +183,10 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
                 0,	// methodId
                 200,	// replyCode
                 throwable.getMessage());	// replyText
-            protocolSession.writeRequest(0, closeBody, this);
+            session.writeRequest(0, closeBody, methodListener);
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
             protocolSession.close();
         }
-    }
-    
-	public void responseFrameReceived(AMQResponseBody responseBody)
-    {
-        // do nothing
     }
 
     /**

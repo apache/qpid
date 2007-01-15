@@ -21,6 +21,9 @@
 package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.RequestResponseMappingException;
+import org.apache.qpid.protocol.AMQMethodListener;
 
 public interface AMQProtocolWriter
 {
@@ -29,4 +32,10 @@ public interface AMQProtocolWriter
      * @param frame the frame to be encoded and written
      */
 	public void writeFrame(AMQDataBlock frame);
+    
+    public long writeRequest(int channelNum, AMQMethodBody methodBody,
+        AMQMethodListener methodListener) throws RequestResponseMappingException;
+
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
+        throws RequestResponseMappingException;
 }
