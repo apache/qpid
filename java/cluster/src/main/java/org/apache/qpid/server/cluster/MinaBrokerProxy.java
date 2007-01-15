@@ -63,7 +63,8 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     {
         super(host, port);
         _local = local;
-        _legacyHandler = new ClientHandlerRegistry(local);
+        // TODO - FIX THIS
+        _legacyHandler = new ClientHandlerRegistry(local, null);
     }
 
     private void init(IoSession session)

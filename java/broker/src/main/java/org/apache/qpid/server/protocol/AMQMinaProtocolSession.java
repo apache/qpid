@@ -42,6 +42,7 @@ import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -111,7 +112,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                   AMQCodecFactory codecFactory)
             throws AMQException
     {
-        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
+        _stateManager = new AMQStateManager(queueRegistry, exchangeRegistry, this);
+        _minaProtocolSession = session;
+        session.setAttachment(this);
+        _frameListeners.add(_stateManager);
+        _queueRegistry = queueRegistry;
+        _exchangeRegistry = exchangeRegistry;
+        _codecFactory = codecFactory;
+        _managedObject = createMBean();
+        _managedObject.register();
+//        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
@@ -263,7 +273,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 //             boolean wasAnyoneInterested = false;
 //             for (AMQMethodListener listener : _frameListeners)
 //             {
-//                 wasAnyoneInterested = listener.methodReceived(evt, this, _queueRegistry, _exchangeRegistry) ||
+//                 wasAnyoneInterested = listener.methodReceived(evt) ||
 //                                       wasAnyoneInterested;
 //             }
 //             if (!wasAnyoneInterested)
@@ -276,7 +286,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 //             _logger.error("Closing channel due to: " + e.getMessage());
 //             writeFrame(e.getCloseFrame(frame.channel));
 //         }
-//         catch (AMQException e)
+//         catch (Exception e)
 //         {
 //             for (AMQMethodListener listener : _frameListeners)
 //             {
