@@ -24,12 +24,14 @@ import java.util.Iterator;
 import java.util.Hashtable;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class ResponseManager
 {
     private int channel;
-    RequestHandler requestHandler;
+    AMQMethodListener methodListener;
     AMQProtocolWriter protocolSession;
 
     /**
@@ -51,66 +53,68 @@ public class ResponseManager
      */
     public enum batchResponseModeEnum { NONE }
     private batchResponseModeEnum batchResponseMode;
-    
+
     /**
      * Request and response frames must have a requestID and responseID which
      * indepenedently increment from 0 on a per-channel basis. These are the
      * counters, and contain the value of the next (not yet used) frame.
      */
     private long responseIdCount;
-    
+
     /**
      * These keep track of the last requestId and responseId to be received.
      */
     private long lastReceivedRequestId;
-    
+
     /**
      * Last requestID sent in a response (for batching)
      */
     private long lastSentRequestId;
-    
+
     private class ResponseStatus implements Comparable<ResponseStatus>
     {
-         public long requestId;
-        public AMQMethodBody responseMethodBody;
-         
+        private long requestId;
+        private AMQMethodBody responseMethodBody;
+
         public ResponseStatus(long requestId)
         {
-               this.requestId = requestId;
+            this.requestId = requestId;
             responseMethodBody = null;
         }
-         
+
         public int compareTo(ResponseStatus o)
         {
             return (int)(requestId - o.requestId);
         }
     }
-    
+
     private Hashtable<Long, ResponseStatus> responseMap;
-    
-    public ResponseManager(int channel, RequestHandler requestHandler,
+
+    public ResponseManager(int channel, AMQMethodListener methodListener,
         AMQProtocolWriter protocolSession)
     {
         this.channel = channel;
-        this.requestHandler = requestHandler;
+        this.methodListener = methodListener;
         this.protocolSession = protocolSession;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
         responseMap = new Hashtable<Long, ResponseStatus>();
     }
-    
+
     // *** Functions to handle an incoming request ***
-    
-    public void requestReceived(AMQRequestBody requestBody)
+
+    public void requestReceived(AMQRequestBody requestBody) throws Exception
     {
         long requestId = requestBody.getRequestId();
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
         lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
-        requestHandler.requestReceived(requestBody);
+        // TODO: Update MethodEvent to use the RequestBody instead of MethodBody
+        AMQMethodEvent methodEvent = new AMQMethodEvent(channel, requestBody.getMethodPayload());
+        methodListener.methodReceived(methodEvent);
     }
-    
+
     public void sendResponse(long requestId, AMQMethodBody responseMethodBody)
         throws RequestResponseMappingException
     {
@@ -124,14 +128,14 @@ public class ResponseManager
         responseStatus.responseMethodBody = responseMethodBody;
         doBatches();
     }
-    
+
     // *** Management functions ***
 
     public batchResponseModeEnum getBatchResponseMode()
     {
         return batchResponseMode;
     }
-    
+
     public void setBatchResponseMode(batchResponseModeEnum batchResponseMode)
     {
         if (this.batchResponseMode != batchResponseMode)
@@ -140,12 +144,12 @@ public class ResponseManager
             doBatches();
         }
     }
-    
+
     public int responsesMapSize()
     {
         return responseMap.size();
     }
-    
+
     /**
      * As the responseMap may contain both outstanding responses (those with
      * ResponseStatus.responseMethodBody still null) and responses waiting to
@@ -162,7 +166,7 @@ public class ResponseManager
         }
         return cnt;
     }
-    
+
     /**
      * As the responseMap may contain both outstanding responses (those with
      * ResponseStatus.responseMethodBody still null) and responses waiting to
@@ -179,14 +183,14 @@ public class ResponseManager
         }
         return cnt;
     }
-    
+
     // *** Private helper functions ***
-    
+
     private long getNextResponseId()
     {
         return responseIdCount++;
     }
-    
+
     private void doBatches()
     {
         switch (batchResponseMode)
@@ -204,13 +208,13 @@ public class ResponseManager
                     }
                 }
                 break;
-                
+
             // TODO: Add additional batch mode handlers here...
             // case DELAY_FIXED:
             // case MANUAL:
         }
     }
-    
+
     private void sendResponseBatch(long firstRequestId, int numAdditionalRequests,
         AMQMethodBody responseMethodBody)
     {

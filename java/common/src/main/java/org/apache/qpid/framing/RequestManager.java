@@ -28,21 +28,21 @@ public class RequestManager
 {
     private int channel;
     AMQProtocolWriter protocolSession;
-    
+
     /**
      * Request and response frames must have a requestID and responseID which
      * indepenedently increment from 0 on a per-channel basis. These are the
      * counters, and contain the value of the next (not yet used) frame.
      */
     private long requestIdCount;
-    
+
     /**
      * These keep track of the last requestId and responseId to be received.
      */
     private long lastProcessedResponseId;
-            
+
     private Hashtable<Long, AMQResponseCallback> requestSentMap;
-    
+
     public RequestManager(int channel, AMQProtocolWriter protocolSession)
     {
         this.channel = channel;
@@ -51,9 +51,9 @@ public class RequestManager
         lastProcessedResponseId = 0L;
         requestSentMap = new Hashtable<Long, AMQResponseCallback>();
     }
-    
+
     // *** Functions to originate a request ***
-    
+
     public long sendRequest(AMQMethodBody requestMethodBody,
         AMQResponseCallback responseCallback)
     {
@@ -64,7 +64,7 @@ public class RequestManager
         requestSentMap.put(requestId, responseCallback);
         return requestId;
     }
-    
+
     public void responseReceived(AMQResponseBody responseBody)
         throws RequestResponseMappingException
     {
@@ -81,16 +81,16 @@ public class RequestManager
         }
         lastProcessedResponseId = responseBody.getResponseId();
     }
-    
+
     // *** Management functions ***
-    
+
     public int requestsMapSize()
     {
         return requestSentMap.size();
     }
-        
+
     // *** Private helper functions ***
-    
+
     private long getNextRequestId()
     {
         return requestIdCount++;

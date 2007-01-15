@@ -36,9 +36,7 @@ import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
-//import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.HeartbeatBody;
-//import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -221,24 +219,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             {
                 _logger.error("Received invalid frame: " + frame.toString());
             }
-//             else if (frame.bodyFrame instanceof AMQMethodBody)
-//             {
-//                 methodFrameReceived(frame);
-//             }
-//             else
-//             {
-//                 try
-//                 {
-//                     contentFrameReceived(frame);
-//                 }
-//                 catch (RequiredDeliveryException e)
-//                 {
-//                     //need to return the message:
-//                     _logger.info("Returning message to " + this + " channel " + frame.channel
-//                                  + ": " + e.getMessage());
-//                     writeFrame(e.getReturnMessage(frame.channel));
-//                 }
-//             }
         }
     }
     
