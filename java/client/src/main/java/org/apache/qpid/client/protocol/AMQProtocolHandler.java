@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 
+
 public class AMQProtocolHandler extends IoHandlerAdapter
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolHandler.class);
@@ -69,7 +70,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     private volatile AMQProtocolSession _protocolSession;
 
-//    private AMQStateManager _stateManager = new AMQStateManager();
+    private AMQStateManager _stateManager = new AMQStateManager();
 
     private final CopyOnWriteArraySet _frameListeners = new CopyOnWriteArraySet();
 
@@ -142,7 +143,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
         }
 
-        _protocolSession = new AMQProtocolSession(this, session, _connection);
+        _protocolSession = new AMQProtocolSession(this, session, _connection, getStateManager());
         _protocolSession.init();
     }
 
@@ -278,7 +279,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void propagateExceptionToWaiters(Exception e)
     {
-        _protocolSession.getStateManager().error(e);
+        getStateManager().error(e);
         if(!_frameListeners.isEmpty())
         {
             final Iterator it = _frameListeners.iterator();
@@ -317,7 +318,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             try
             {
 
-                boolean wasAnyoneInterested = _protocolSession.getStateManager().methodReceived(evt);
+                boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
                 if(!_frameListeners.isEmpty())
                 {
                     Iterator it = _frameListeners.iterator();
@@ -329,12 +330,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 }
                 if (!wasAnyoneInterested)
                 {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
+                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"  + _frameListeners);
                 }
             }
             catch (AMQException e)
             {
-                _protocolSession.getStateManager().error(e);
+                getStateManager().error(e);
                 if(!_frameListeners.isEmpty())
                 {
                     Iterator it = _frameListeners.iterator();
@@ -395,7 +396,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
   */
     public void attainState(AMQState s) throws AMQException
     {
-        _protocolSession.getStateManager().attainState(s);
+        getStateManager().attainState(s);
     }
 
     /**
@@ -487,7 +488,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void closeConnection() throws AMQException
     {
-        _protocolSession.getStateManager().changeState(AMQState.CONNECTION_CLOSING);
+        getStateManager().changeState(AMQState.CONNECTION_CLOSING);
 
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -557,11 +558,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public AMQStateManager getStateManager()
     {
-        return _protocolSession.getStateManager();
+        return _stateManager;
     }
 
     public void setStateManager(AMQStateManager stateManager)
     {
+        _stateManager = stateManager;
         _protocolSession.setStateManager(stateManager);
     }
     
