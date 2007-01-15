@@ -36,7 +36,6 @@ import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
-import org.apache.qpid.framing.AMQResponseCallback;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
@@ -66,7 +65,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
-                                               AMQResponseCallback,
                                                ProtocolVersionList,
                                                Managable
 {
@@ -189,7 +187,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                     null,	// serverProperties
                     (short)_major,	// versionMajor
                     (short)_minor);	// versionMinor
-                writeRequest(0, connectionStartBody, this);
+                writeRequest(0, connectionStartBody, _stateManager);
             }
             catch (AMQException e)
             {
@@ -226,11 +224,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
     }
     
-	public void responseFrameReceived(AMQResponseBody responseBody)
-    {
-        // do nothing
-    }
-    
     private void requestFrameReceived(int channelNum, AMQRequestBody requestBody) throws AMQException
     {
         if (_logger.isDebugEnabled())
@@ -253,12 +246,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         requestManager.responseReceived(responseBody);
     }
 
-    public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQResponseCallback responseCallback)
+    public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQMethodListener methodListener)
         throws RequestResponseMappingException
     {
         AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
-        return requestManager.sendRequest(methodBody, responseCallback);
+        return requestManager.sendRequest(methodBody, methodListener);
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)

@@ -22,6 +22,8 @@ package org.apache.qpid.framing;
 
 import java.util.Hashtable;
 
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class RequestManager
@@ -41,7 +43,7 @@ public class RequestManager
      */
     private long lastProcessedResponseId;
 
-    private Hashtable<Long, AMQResponseCallback> requestSentMap;
+    private Hashtable<Long, AMQMethodListener> requestSentMap;
 
     public RequestManager(int channel, AMQProtocolWriter protocolWriter)
     {
@@ -49,34 +51,36 @@ public class RequestManager
         this.protocolWriter = protocolWriter;
         requestIdCount = 1L;
         lastProcessedResponseId = 0L;
-        requestSentMap = new Hashtable<Long, AMQResponseCallback>();
+        requestSentMap = new Hashtable<Long, AMQMethodListener>();
     }
 
     // *** Functions to originate a request ***
 
     public long sendRequest(AMQMethodBody requestMethodBody,
-        AMQResponseCallback responseCallback)
+        AMQMethodListener methodListener)
     {
         long requestId = getNextRequestId(); // Get new request ID
         AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
             lastProcessedResponseId, requestMethodBody);
         protocolWriter.writeFrame(requestFrame);
-        requestSentMap.put(requestId, responseCallback);
+        requestSentMap.put(requestId, methodListener);
         return requestId;
     }
 
     public void responseReceived(AMQResponseBody responseBody)
-        throws RequestResponseMappingException
+        throws Exception
     {
         long requestIdStart = responseBody.getRequestId();
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
-            AMQResponseCallback responseCallback = requestSentMap.get(requestId);
-            if (responseCallback == null)
+            AMQMethodListener methodListener = requestSentMap.get(requestId);
+            if (methodListener == null)
                 throw new RequestResponseMappingException(requestId,
                     "Failed to locate requestId " + requestId + " in requestSentMap.");
-            responseCallback.responseFrameReceived(responseBody);
+            AMQMethodEvent methodEvent = new AMQMethodEvent(channel, responseBody.getMethodPayload(),
+                requestId);
+            methodListener.methodReceived(methodEvent);
             requestSentMap.remove(requestId);
         }
         lastProcessedResponseId = responseBody.getResponseId();
