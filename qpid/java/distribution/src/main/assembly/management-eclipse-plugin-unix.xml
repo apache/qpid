@@ -19,11 +19,10 @@
 -->
 <assembly>
   <!-- id typically identifies the "type" (src vs bin etc) of the assembly -->
-  <id>eclipse-plugin-unix</id>
+  <id>management-console-unix</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>tar.gz</format>
-    <format>zip</format>
   </formats>
 <!--
   <moduleSets>
