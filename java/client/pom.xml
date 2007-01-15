@@ -55,12 +55,6 @@
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
-            <exclusions> <!-- Tries to download 1.2.7-->
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -73,7 +67,7 @@
             <artifactId>mina-filter-ssl</artifactId>
         </dependency>
 
-<!-- Test Dependencies -->
+	<!-- Test Dependencies -->
         <dependency> <!-- for inVm Broker -->
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
