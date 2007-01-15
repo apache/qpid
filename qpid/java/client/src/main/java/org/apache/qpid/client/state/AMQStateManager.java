@@ -41,7 +41,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
-    private final AMQProtocolSession _protocolSession;
+    private AMQProtocolSession _protocolSession;
 
     /**
      * The current state
@@ -55,6 +55,12 @@ public class AMQStateManager implements AMQMethodListener
     private final Map _state2HandlersMap = new HashMap();
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
+
+    public AMQStateManager()
+    {
+        this(null);
+    }
+    
 
     public AMQStateManager(AMQProtocolSession protocolSession)
     {
@@ -229,5 +235,15 @@ public class AMQStateManager implements AMQMethodListener
             sw.waituntilStateHasChanged();
         }
         // at this point the state will have changed.
+    }
+
+    public AMQProtocolSession getProtocolSession()
+    {
+        return _protocolSession;
+    }
+
+    public void setProtocolSession(AMQProtocolSession session)
+    {
+        _protocolSession = session;
     }
 }
