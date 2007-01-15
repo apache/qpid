@@ -38,10 +38,32 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-client</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+
+	<!-- Here JUnit is a deliberate 'compile' scope dependency, it will be packaged with the perf testing tools. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Will be added to maven repo soon. JUnit test runner that can add repeats/concurrenct/timing etc to tests.
+        <dependency>
+            <groupId>uk.co.thebadgerset</groupId>
+            <artifactId>junit-toolkit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        -->
+
     </dependencies>
 
     <build>
@@ -54,7 +76,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <!--<skip>true</skip>-->
                 </configuration>
             </plugin>
 
