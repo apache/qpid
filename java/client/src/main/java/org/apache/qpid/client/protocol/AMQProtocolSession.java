@@ -113,6 +113,18 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _stateManager = new AMQStateManager(this);
     }
 
+    public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection, AMQStateManager stateManager)
+    {
+        _protocolHandler = protocolHandler;
+        _minaProtocolSession = protocolSession;
+        // properties of the connection are made available to the event handlers
+        _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
+
+        _stateManager = stateManager;
+        _stateManager.setProtocolSession(this);
+                
+    }
+
     public void init()
     {
         // start the process of setting up the connection. This is the first place that
