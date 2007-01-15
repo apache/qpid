@@ -35,7 +35,7 @@ import java.net.UnknownHostException;
 public class ServiceProvidingClient
 {
     private static final Logger _logger = Logger.getLogger(ServiceProvidingClient.class);
-    private static final String MESSAGE_IDENTIFIER = "MessageIdentifier";
+
     private MessageProducer _destinationProducer;
 
     private Destination _responseDest;
@@ -57,8 +57,7 @@ public class ServiceProvidingClient
         _logger.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent")
                      + "\t isTransactional: " + _isTransactional);
 
-        _connection = new AMQConnection(brokerDetails, username, password,
-                                        clientName, virtualPath);
+        _connection = new AMQConnection(brokerDetails, username, password, clientName, virtualPath);
         _connection.setConnectionListener(new ConnectionListener()
         {
 
@@ -145,11 +144,6 @@ public class ServiceProvidingClient
                         _logger.info("timeSent value is: " + timesent);
                         msg.setLongProperty("timeSent", timesent);
                     }
-                    // this identifier set in the serviceRequestingClient is used to match the response with the request
-                    if (tm.propertyExists(MESSAGE_IDENTIFIER))
-                    {
-                        msg.setIntProperty(MESSAGE_IDENTIFIER, tm.getIntProperty(MESSAGE_IDENTIFIER));
-                    }
                     
                     _destinationProducer.send(msg);
 
@@ -200,7 +194,6 @@ public class ServiceProvidingClient
             _logger.error("Error: " + e, e);
         }
 
-
         int deliveryMode = DeliveryMode.NON_PERSISTENT;
         boolean transactedMode = false;
 
@@ -237,9 +230,6 @@ public class ServiceProvidingClient
         {
             _logger.error("Error: " + e, e);
         }
-
-
     }
-
 }
 
