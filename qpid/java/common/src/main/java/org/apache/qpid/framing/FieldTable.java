@@ -364,7 +364,7 @@ public class FieldTable
     public Object setByte(String string, byte b)
     {
         return setByte(new AMQShortString(string), b);
-    }    
+    }
 
     public Object setByte(AMQShortString string, byte b)
     {
@@ -453,7 +453,9 @@ public class FieldTable
 
     public Object setString(AMQShortString string, String value)
     {
-        checkPropertyName(string);
+        // temporary for interop until field table types are standardised
+        return setAsciiString(string, value);
+        /*checkPropertyName(string);
         if (value == null)
         {
             return setProperty(string, AMQType.VOID.asTypedValue(null));
@@ -469,7 +471,7 @@ public class FieldTable
 //            {
 //                return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
 //            }
-        }
+        } */
     }
 
 
@@ -648,7 +650,7 @@ public class FieldTable
         }
     }
 
- 
+
     // *************************  Byte Buffer Processing
 
     public void writeToBuffer(ByteBuffer buffer)
@@ -823,7 +825,7 @@ public class FieldTable
     public void clear()
     {
         initMapIfNecessary();
-        _encodedForm = null;        
+        _encodedForm = null;
         _properties.clear();
         _encodedSize = 0;
     }
@@ -914,7 +916,7 @@ public class FieldTable
                 _properties.put(key,value);
 
 
-            
+
             }
             while (buffer.remaining() > expectedRemaining);
 
