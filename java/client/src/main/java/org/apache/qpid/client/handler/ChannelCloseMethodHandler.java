@@ -30,6 +30,7 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
@@ -61,8 +62,8 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)0, (byte)9);
-        protocolSession.writeFrame(frame);
+        AMQMethodBody methodBody = ChannelCloseOkBody.createMethodBody((byte)0, (byte)9);
+        protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
         if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
         {
             _logger.error("Channel close received with errorCode " + errorCode + ", and reason " + reason);

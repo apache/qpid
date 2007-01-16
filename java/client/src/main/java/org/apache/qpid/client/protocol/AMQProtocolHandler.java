@@ -40,10 +40,10 @@ import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQRequestBody;
+import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -308,48 +308,56 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
         HeartbeatDiagnostics.received(frame.bodyFrame instanceof HeartbeatBody);
 
-        if (frame.bodyFrame instanceof AMQMethodBody)
+        if (frame.bodyFrame instanceof AMQRequestBody)
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Method frame received: " + frame);
-            }
-
-            final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel, (AMQMethodBody) frame.bodyFrame);
-            try
-            {
-                boolean wasAnyoneInterested = false;
-                while (it.hasNext())
-                {
-                    final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
-                }
-                if (!wasAnyoneInterested)
-                {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"  + _frameListeners);
-                }
-            }
-            catch (AMQException e)
-            {
-                it = _frameListeners.iterator();
-                while (it.hasNext())
-                {
-                    final AMQMethodListener listener = (AMQMethodListener) it.next();
-                    listener.error(e);
-                }
-                exceptionCaught(session, e);
-            }
+            _protocolSession.messageRequestBodyReceived(frame.channel, (AMQRequestBody)frame.bodyFrame);
         }
-        else if (frame.bodyFrame instanceof ContentHeaderBody)
+        else if (frame.bodyFrame instanceof AMQResponseBody)
         {
-            _protocolSession.messageContentHeaderReceived(frame.channel,
-                                                          (ContentHeaderBody) frame.bodyFrame);
+            _protocolSession.messageResponseBodyReceived(frame.channel, (AMQResponseBody)frame.bodyFrame);
         }
-        else if (frame.bodyFrame instanceof ContentBody)
-        {
-            _protocolSession.messageContentBodyReceived(frame.channel,
-                                                        (ContentBody) frame.bodyFrame);
-        }
+//         if (frame.bodyFrame instanceof AMQMethodBody)
+//         {
+//             if (_logger.isDebugEnabled())
+//             {
+//                 _logger.debug("Method frame received: " + frame);
+//             }
+// 
+//             final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel, (AMQMethodBody) frame.bodyFrame);
+//             try
+//             {
+//                 boolean wasAnyoneInterested = false;
+//                 while (it.hasNext())
+//                 {
+//                     final AMQMethodListener listener = (AMQMethodListener) it.next();
+//                     wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+//                 }
+//                 if (!wasAnyoneInterested)
+//                 {
+//                     throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"  + _frameListeners);
+//                 }
+//             }
+//             catch (AMQException e)
+//             {
+//                 it = _frameListeners.iterator();
+//                 while (it.hasNext())
+//                 {
+//                     final AMQMethodListener listener = (AMQMethodListener) it.next();
+//                     listener.error(e);
+//                 }
+//                 exceptionCaught(session, e);
+//             }
+//         }
+//         else if (frame.bodyFrame instanceof ContentHeaderBody)
+//         {
+//             _protocolSession.messageContentHeaderReceived(frame.channel,
+//                                                           (ContentHeaderBody) frame.bodyFrame);
+//         }
+//         else if (frame.bodyFrame instanceof ContentBody)
+//         {
+//             _protocolSession.messageContentBodyReceived(frame.channel,
+//                                                         (ContentBody) frame.bodyFrame);
+//         }
         else if (frame.bodyFrame instanceof HeartbeatBody)
         {
             _logger.debug("Received heartbeat");
@@ -402,23 +410,33 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         _protocolSession.writeFrame(frame, wait);
     }
+    
+    public long writeRequest(int channelNum, AMQMethodBody methodBody)
+    {
+         return _protocolSession.writeRequest(channelNum, methodBody, _protocolSession.getStateManager());
+    }
+    
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
+    {
+         _protocolSession.writeResponse(channelNum, requestId, methodBody);
+    }
 
     /**
      * Convenience method that writes a frame to the protocol session and waits for
      * a particular response. Equivalent to calling getProtocolSession().write() then
      * waiting for the response.
      *
-     * @param frame
+     * @param methodBody
      * @param listener the blocking listener. Note the calling thread will block.
      */
-    private AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
+    private AMQMethodEvent writeCommandFrameAndWaitForReply(int channelNum, AMQMethodBody methodBody,
                                                             BlockingMethodFrameListener listener)
             throws AMQException
     {
         try
         {
             _frameListeners.add(listener);
-            _protocolSession.writeFrame(frame);
+            _protocolSession.writeRequest(channelNum, methodBody, listener);
 
             AMQMethodEvent e = listener.blockForFrame();
             return e;
@@ -436,10 +454,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     /**
      * More convenient method to write a frame and wait for it's response.
      */
-    public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass) throws AMQException
+    public AMQMethodEvent syncWrite(int channelNum, AMQMethodBody methodBody, Class responseClass) throws AMQException
     {
-        return writeCommandFrameAndWaitForReply(frame,
-                                                new SpecificMethodFrameListener(frame.channel, responseClass));
+        return writeCommandFrameAndWaitForReply(channelNum, methodBody,
+                                                new SpecificMethodFrameListener(channelNum, responseClass));
     }
 
     /**
@@ -477,13 +495,14 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame frame = ConnectionCloseBody.createAMQFrame(0,
+        AMQMethodBody methodBody = ConnectionCloseBody.createMethodBody(
             (byte)0, (byte)9,	// AMQP version (major, minor)
             0,	// classId
             0,	// methodId
             AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
             "JMS client is closing the connection.");	// replyText
-        syncWrite(frame, ConnectionCloseOkBody.class);
+        
+        syncWrite(0, methodBody, ConnectionCloseOkBody.class);
 
         _protocolSession.closeProtocolSession();
     }

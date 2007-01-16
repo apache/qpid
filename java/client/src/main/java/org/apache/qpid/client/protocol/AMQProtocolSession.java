@@ -33,10 +33,15 @@ import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQRequestBody;
+import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.RequestManager;
+import org.apache.qpid.framing.ResponseManager;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.commons.lang.StringUtils;
 
@@ -90,6 +95,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      * JmsDeliverBody (which arrives first) with the subsequent content header and content bodies.
      */
     protected ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
+
+    protected ConcurrentMap _channelId2RequestMgrMap = new ConcurrentHashMap();
+    protected ConcurrentMap _channelId2ResponseMgrMap = new ConcurrentHashMap();
 
     /**
      * Counter to ensure unique queue names
@@ -234,52 +242,76 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         _channelId2UnprocessedMsgMap.put(message.channelId, message);
     }
-
-    public void messageContentHeaderReceived(int channelId, ContentHeaderBody contentHeader)
-            throws AMQException
+    
+    public void messageRequestBodyReceived(int channelId, AMQRequestBody requestBody) throws Exception
     {
-        UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
-        if (msg == null)
+        if (_logger.isDebugEnabled())
         {
-            throw new AMQException("Error: received content header without having received a BasicDeliver frame first");
+            _logger.debug("Request frame received: " + requestBody);
         }
-        if (msg.contentHeader != null)
+        ResponseManager responseManager = (ResponseManager)_channelId2ResponseMgrMap.get(channelId);
+        if (responseManager == null)
+            throw new AMQException("Unable to find ResponseManager for channel " + channelId);
+        responseManager.requestReceived(requestBody);
+    }
+    
+    public void messageResponseBodyReceived(int channelId, AMQResponseBody responseBody) throws Exception
+    {
+        if (_logger.isDebugEnabled())
         {
-            throw new AMQException("Error: received duplicate content header or did not receive correct number of content body frames");
+            _logger.debug("Response frame received: " + responseBody);
         }
-        msg.contentHeader = contentHeader;
-        if (contentHeader.bodySize == 0)
-        {
-            deliverMessageToAMQSession(channelId, msg);
-        }
+        RequestManager requestManager = (RequestManager)_channelId2RequestMgrMap.get(channelId);
+        if (requestManager == null)
+            throw new AMQException("Unable to find RequestManager for channel " + channelId);
+        requestManager.responseReceived(responseBody);
     }
 
-    public void messageContentBodyReceived(int channelId, ContentBody contentBody) throws AMQException
-    {
-        UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
-        if (msg == null)
-        {
-            throw new AMQException("Error: received content body without having received a JMSDeliver frame first");
-        }
-        if (msg.contentHeader == null)
-        {
-            _channelId2UnprocessedMsgMap.remove(channelId);
-            throw new AMQException("Error: received content body without having received a ContentHeader frame first");
-        }
-        try
-        {
-            msg.receiveBody(contentBody);
-        }
-        catch (UnexpectedBodyReceivedException e)
-        {
-            _channelId2UnprocessedMsgMap.remove(channelId);
-            throw e;
-        }
-        if (msg.isAllBodyDataReceived())
-        {
-            deliverMessageToAMQSession(channelId, msg);
-        }
-    }
+//     public void messageContentHeaderReceived(int channelId, ContentHeaderBody contentHeader)
+//             throws AMQException
+//     {
+//         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
+//         if (msg == null)
+//         {
+//             throw new AMQException("Error: received content header without having received a BasicDeliver frame first");
+//         }
+//         if (msg.contentHeader != null)
+//         {
+//             throw new AMQException("Error: received duplicate content header or did not receive correct number of content body frames");
+//         }
+//         msg.contentHeader = contentHeader;
+//         if (contentHeader.bodySize == 0)
+//         {
+//             deliverMessageToAMQSession(channelId, msg);
+//         }
+//     }
+// 
+//     public void messageContentBodyReceived(int channelId, ContentBody contentBody) throws AMQException
+//     {
+//         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
+//         if (msg == null)
+//         {
+//             throw new AMQException("Error: received content body without having received a JMSDeliver frame first");
+//         }
+//         if (msg.contentHeader == null)
+//         {
+//             _channelId2UnprocessedMsgMap.remove(channelId);
+//             throw new AMQException("Error: received content body without having received a ContentHeader frame first");
+//         }
+//         try
+//         {
+//             msg.receiveBody(contentBody);
+//         }
+//         catch (UnexpectedBodyReceivedException e)
+//         {
+//             _channelId2UnprocessedMsgMap.remove(channelId);
+//             throw e;
+//         }
+//         if (msg.isAllBodyDataReceived())
+//         {
+//             deliverMessageToAMQSession(channelId, msg);
+//         }
+//     }
 
     /**
      * Deliver a message to the appropriate session, removing the unprocessed message
@@ -292,6 +324,31 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         AMQSession session = (AMQSession) _channelId2SessionMap.get(channelId);
         session.messageReceived(msg);
         _channelId2UnprocessedMsgMap.remove(channelId);
+    }
+    
+    public long writeRequest(int channelNum, AMQMethodBody methodBody,
+                             AMQMethodListener methodListener)
+        throws AMQException
+    {
+        RequestManager requestManager = (RequestManager)_channelId2RequestMgrMap.get(channelNum);
+        if (requestManager == null)
+            throw new AMQException("Unable to find RequestManager for channel " + channelNum);
+        requestManager.sendRequest(methodBody, methodListener);
+    }
+
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
+        throws AMQException
+    {
+        ResponseManager responseManager = (ResponseManager)_channelId2ResponseMgrMap.get(channelNum);
+        if (responseManager == null)
+            throw new AMQException("Unable to find ResponseManager for channel " + channelNum);
+        responseManager.sendResponse(requestId, methodBody);
+    }
+
+    public void writeResponse(AMQMethodEvent evt, AMQMethodBody response)
+        throws AMQException
+    {
+        writeResponse(evt.getChannelId(), evt.getRequestId(), response);
     }
 
     /**
@@ -330,6 +387,17 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         }
         _logger.debug("Add session with channel id  " + channelId);
         _channelId2SessionMap.put(channelId, session);
+        
+        // Add request and response handlers, one per channel, if they do not already exist
+        if (_channelId2RequestMgrMap.get(channelId) == null)
+        {
+            _channelId2RequestMgrMap.put(channelId, new RequestManager(channelId, this));
+        }
+        if (_channelId2ResponseMgrMap.get(channelId) == null)
+        {
+            
+            _channelId2ResponseMgrMap.put(channelId, new ResponseManager(channelId, _stateManager, this));
+        }
     }
 
     public void removeSessionByChannel(int channelId)

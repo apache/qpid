@@ -24,7 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 
 public class AMQRequestBody extends AMQBody
 {
-    public static final byte TYPE = 9;
+    public static final byte TYPE = (byte)AmqpConstants.frameRequestAsInt();
 
     // Fields declared in specification
     protected long requestId;
@@ -51,7 +51,7 @@ public class AMQRequestBody extends AMQBody
     
     protected byte getFrameType()
     {
-        return (byte)AmqpConstants.frameRequestAsInt();
+        return TYPE;
     }
     
     protected int getSize()
