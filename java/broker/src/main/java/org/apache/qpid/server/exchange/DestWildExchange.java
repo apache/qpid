@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -152,9 +152,9 @@ public class DestWildExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        BasicPublishBody publishBody = payload.getPublishBody();
+        MessageTransferBody transferBody = payload.getTransferBody();
 
-        final String routingKey = publishBody.routingKey;
+        final String routingKey = transferBody.routingKey;
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         // if we have no registered queues we have nothing to do
         // TODO: add support for the immediate flag

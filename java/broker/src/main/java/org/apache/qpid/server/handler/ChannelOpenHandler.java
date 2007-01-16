@@ -21,7 +21,7 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -50,15 +50,12 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
                                ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
                                AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
-    {        
-        IApplicationRegistry registry = ApplicationRegistry.getInstance();
-        final AMQChannel channel = new AMQChannel(evt.getChannelId(), registry.getMessageStore(),
-                                                  exchangeRegistry);
-        protocolSession.addChannel(channel);
+    {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ChannelOpenOkBody.createAMQFrame(evt.getChannelId(), (byte)0, (byte)9);
-        protocolSession.writeFrame(response);
+        // XXX: Client id
+        AMQMethodBody response = ChannelOpenOkBody.createMethodBody((byte)0, (byte)9, "XXX".getBytes());
+        protocolSession.writeResponse(evt, response);
     }
 }

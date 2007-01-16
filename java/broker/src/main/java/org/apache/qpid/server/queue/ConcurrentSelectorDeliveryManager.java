@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.configuration.Configurator;
 
 import java.util.ArrayList;
@@ -97,7 +96,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     private boolean addMessageToQueue(AMQMessage msg)
     {
         // Shrink the ContentBodies to their actual size to save memory.
-        if (compressBufferOnQueue)
+        if (true) throw new Error("XXX");
+        /*if (compressBufferOnQueue)
         {
             Iterator it = msg.getContentBodies().iterator();
             while (it.hasNext())
@@ -105,7 +105,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 ContentBody cb = (ContentBody) it.next();
                 cb.reduceBufferToFit();
             }
-        }
+            }*/
 
         _messages.offer(msg);
 

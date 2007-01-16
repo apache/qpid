@@ -17,13 +17,11 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.openmbean.*;
@@ -34,6 +32,7 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.OperationsException;
 import javax.management.monitor.MonitorNotification;
 import java.util.List;
+import java.util.Set;
 import java.util.ArrayList;
 
 /**
@@ -191,7 +190,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
             return 0l;
         }
 
-        return msg.getContentHeaderBody().bodySize;
+        return msg.getSize();
     }
 
     /**
@@ -273,32 +272,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
             throw new OperationsException("AMQMessage with message id = " + msgId + " is not in the " + _queueName);
         }
         // get message content
-        List<ContentBody> cBodies = msg.getContentBodies();
-        List<Byte> msgContent = new ArrayList<Byte>();
-        if (cBodies != null)
-        {
-            for (ContentBody body : cBodies)
-            {
-                if (body.getSize() != 0)
-                {
-                    ByteBuffer slice = body.payload.slice();
-                    for (int j = 0; j < slice.limit(); j++)
-                    {
-                        msgContent.add(slice.get());
-                    }
-                }
-            }
-        }
+        byte[] msgContent = msg.getMessageBytes();
 
         // Create header attributes list
-        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
-        String mimeType = null, encoding = null;
-        if (headerProperties != null)
-        {
-            mimeType = headerProperties.getContentType();
-            encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
-        }
-        Object[] itemValues = {msgId, mimeType, encoding, msgContent.toArray(new Byte[0])};
+        String mimeType = msg.getContentType();
+        String encoding = msg.getEncoding();
+        Object[] itemValues = {msgId, mimeType, encoding, msgContent};
 
         return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
     }
@@ -321,11 +300,15 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         for (int i = beginIndex; i <= endIndex && i <= list.size(); i++)
         {
             AMQMessage msg = list.get(i - 1);
-            ContentHeaderBody headerBody = msg.getContentHeaderBody();
             // Create header attributes list
-            BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.properties;
-            String[] headerAttributes = headerProperties.toString().split(",");
-            Object[] itemValues = {msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered()};
+            FieldTable headers = msg.getHeadersTable();
+            Set<String> names = headers.keys();
+            String[] values = new String[names.size()];
+            int index = 0;
+            for (String name : names) {
+                values[index++] = "" + headers.get(name);
+            }
+            Object[] itemValues = {msg.getMessageId(), values, msg.getSize(), msg.isRedelivered()};
             CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
             _messageList.put(messageData);
         }

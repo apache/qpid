@@ -24,6 +24,8 @@ import org.apache.mina.common.ByteBuffer;
 
 public class AMQResponseBody extends AMQBody
 {
+    public static final byte TYPE = 10;
+
     // Fields declared in specification
     protected long responseId;
     protected long requestId;
@@ -54,14 +56,15 @@ public class AMQResponseBody extends AMQBody
     
     protected int getSize()
     {
-        return 8 + 8 + 4 + methodPayload.getBodySize();
+        return 8 + 8 + 4 + methodPayload.getSize();
     }
         
     protected void writePayload(ByteBuffer buffer)
     {
         EncodingUtils.writeLong(buffer, responseId);
         EncodingUtils.writeLong(buffer, requestId);
-        EncodingUtils.writeUnsignedShort(buffer, batchOffset);
+        // XXX
+        EncodingUtils.writeInteger(buffer, batchOffset);
         methodPayload.writePayload(buffer);
     }
     
@@ -70,7 +73,8 @@ public class AMQResponseBody extends AMQBody
     {
         responseId = EncodingUtils.readLong(buffer);
         requestId = EncodingUtils.readLong(buffer);
-        batchOffset = EncodingUtils.readShort(buffer);
+        // XXX
+        batchOffset = EncodingUtils.readInteger(buffer);
         methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     

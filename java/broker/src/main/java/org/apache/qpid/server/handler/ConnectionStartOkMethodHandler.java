@@ -23,7 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
@@ -95,22 +95,22 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
-                        (byte)0, (byte)9,	// AMQP version (major, minor)
-                        Integer.MAX_VALUE,	// channelMax
-                        getConfiguredFrameSize(),	// frameMax
-                        HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                    protocolSession.writeFrame(tune);
+                    AMQMethodBody tune = ConnectionTuneBody.createMethodBody
+                        ((byte)0, (byte)9,	// AMQP version (major, minor)
+                         Integer.MAX_VALUE,	// channelMax
+                         getConfiguredFrameSize(),	// frameMax
+                         HeartbeatConfig.getInstance().getDelay());	// heartbeat
+                    protocolSession.writeResponse(evt, tune);
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
                     // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
-                        (byte)0, (byte)9,	// AMQP version (major, minor)
-                        authResult.challenge);	// challenge
-                    protocolSession.writeFrame(challenge);
+                    AMQMethodBody challenge = ConnectionSecureBody.createMethodBody
+                        ((byte)0, (byte)9,	// AMQP version (major, minor)
+                         authResult.challenge);	// challenge
+                    protocolSession.writeResponse(evt, challenge);
             }
         }
         catch (SaslException e)

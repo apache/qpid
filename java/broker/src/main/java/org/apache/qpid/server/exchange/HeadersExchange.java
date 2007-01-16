@@ -187,7 +187,7 @@ public class HeadersExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        FieldTable headers = getHeaders(payload.getContentHeaderBody());
+        FieldTable headers = payload.getHeadersTable();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
@@ -211,11 +211,12 @@ public class HeadersExchange extends AbstractExchange
 
             String msg = "Exchange " + getName() + ": message not routable.";
 
-            if (payload.getPublishBody().mandatory)
+            // XXX
+            /*            if (payload.getTransferBody().mandatory)
             {
                 throw new NoRouteException(msg, payload);
             }
-            else
+            else*/
             {
                 _logger.warn(msg);
             }
@@ -248,13 +249,6 @@ public class HeadersExchange extends AbstractExchange
     public boolean hasBindings() throws AMQException
     {
         return !_bindings.isEmpty();
-    }
-
-    protected FieldTable getHeaders(ContentHeaderBody contentHeaderFrame)
-    {
-        //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,
-        //but these are not yet implemented.
-        return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
     }
 
     protected ExchangeMBean createMBean() throws AMQException

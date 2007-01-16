@@ -127,7 +127,7 @@ public class AMQChannel
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
-   		_requestManager = new RequestManager(channelId, protocolWriter);
+        _requestManager = new RequestManager(channelId, protocolWriter);
     	_responseManager = new ResponseManager(channelId, methodListener, protocolWriter);
         _txnBuffer = new TxnBuffer(_messageStore);
     }
@@ -827,7 +827,8 @@ public class AMQChannel
             catch (NoConsumersException e)
             {
                 //TODO: store this for delivery after the commit-ok
-                _returns.add(e.getReturnMessage(_channelId));
+                throw new Error("XXX");
+                //_returns.add(e.getReturnMessage(_channelId));
             }
         }
 

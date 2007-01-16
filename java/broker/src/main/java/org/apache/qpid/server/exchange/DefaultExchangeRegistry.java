@@ -81,7 +81,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      */
     public void routeContent(AMQMessage payload) throws AMQException
     {
-        final String exchange = payload.getPublishBody().exchange;
+        final String exchange = payload.getTransferBody().exchange;
         final Exchange exch = _exchangeMap.get(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
         // the JmsPublish being received (where the exchange is validated) and the final

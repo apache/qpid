@@ -31,10 +31,10 @@ import javax.jms.JMSException;
 //import org.apache.activemq.command.Message;
 //import org.apache.activemq.command.TransactionId;
 //import org.apache.activemq.util.JMSExceptionSupport;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.log4j.Logger;
 
 /**
@@ -243,12 +243,12 @@ public class PropertyExpression implements Expression
         else
         {
 
-            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+            FieldTable headers = message.getApplicationHeaders();
 
             _logger.info("Looking up property:" + name);
-            _logger.info("Properties are:" + _properties.getHeaders().keySet());
+            _logger.info("Properties are:" + headers.keySet());
 
-            return _properties.getHeaders().get(name);
+            return headers.get(name);
         }
 //            catch (IOException ioe)
 //            {
