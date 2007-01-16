@@ -39,6 +39,7 @@ import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageOkBody;
@@ -452,13 +453,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame cancelFrame = MessageCancelBody.createAMQFrame(_channelId,
+                    final AMQMethodBody cancelBody = MessageCancelBody.createMethodBody(
                         (byte)0, (byte)9,	// AMQP version (major, minor)
                         _consumerTag);	// consumerTag
 
                     try
                     {
-                        _protocolHandler.syncWrite(cancelFrame, MessageOkBody.class);
+                        _protocolHandler.syncWrite(_channelId, cancelBody, MessageOkBody.class);
                     }
                     catch (AMQException e)
                     {

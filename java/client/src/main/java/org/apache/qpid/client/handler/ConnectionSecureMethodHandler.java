@@ -22,6 +22,7 @@ package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ConnectionSecureOkBody;
 import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -58,10 +59,9 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQFrame responseFrame = ConnectionSecureOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)0, (byte)9,	// AMQP version (major, minor)
+            AMQMethodBody methodBody = ConnectionSecureOkBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
                 response);	// response
-            protocolSession.writeFrame(responseFrame);
+            protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
         }
         catch (SaslException e)
         {

@@ -137,7 +137,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId,
+        AMQPMethodBody methodBody = ExchangeDeclareBody.createMethodBody(
             (byte)0, (byte)9,	// AMQP version (major, minor)
             null,	// arguments
             false,	// autoDelete
@@ -148,7 +148,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             false,	// passive
             0,	// ticket
             destination.getExchangeClass());	// type
-        _protocolHandler.writeFrame(declare);
+        _protocolHandler.writeRequest(_channelId, methodBody);
     }
 
     public void setDisableMessageID(boolean b) throws JMSException

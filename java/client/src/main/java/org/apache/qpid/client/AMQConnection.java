@@ -59,6 +59,7 @@ import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.framing.MessageOkBody;
@@ -481,9 +482,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(
-            ChannelOpenBody.createAMQFrame(channelId,
-                (byte)0, (byte)9,	// AMQP version (major, minor)
+        _protocolHandler.syncWrite(channelId,
+            ChannelOpenBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
                 null),	// outOfBand
                 ChannelOpenOkBody.class);
 
@@ -491,9 +491,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(
-		MessageQosBody.createAMQFrame(channelId,
-                (byte)0, (byte)9,	// AMQP version (major, minor)
+        _protocolHandler.syncWrite(channelId,
+		MessageQosBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
                 false,	// global
                 prefetchHigh,	// prefetchCount
                 0),	// prefetchSize
@@ -508,7 +507,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            _protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId, (byte)0, (byte)9), TxSelectOkBody.class);
+            _protocolHandler.syncWrite(channelId, TxSelectBody.createMethodBody((byte)0, (byte)9), TxSelectOkBody.class);
         }
     }
 
