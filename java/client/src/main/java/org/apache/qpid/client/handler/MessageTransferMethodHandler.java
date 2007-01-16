@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.handler;
+package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageTransferBody;
@@ -41,7 +41,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
     
     public void methodReceived (AMQStateManager stateManager,
                                 AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageTransferBody> evt)
+                               	AMQMethodEvent evt)
                                 throws AMQException
     {
 		// TODO

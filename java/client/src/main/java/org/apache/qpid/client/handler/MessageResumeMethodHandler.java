@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.handler;
+package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageResumeBody;
@@ -41,10 +41,10 @@ public class MessageResumeMethodHandler implements StateAwareMethodListener
     
     public void methodReceived (AMQStateManager stateManager,
                                 AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageResumeBody> evt)
+                               	AMQMethodEvent evt)
                                 throws AMQException
     {
-		// TODO
+		System.out.println("");
     }
 }
 
