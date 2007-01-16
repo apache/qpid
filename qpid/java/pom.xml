@@ -337,6 +337,15 @@
                         </execution>
                     </executions>
                 </plugin>
+
+		<!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository. It will take a day or two from 16/1/2007.
+                <plugin>
+                    <groupId>uk.co.thebadgerset</groupId>
+                    <artifactId>junit-toolkit-maven-plugin</artifactId>
+                    <version>0.3</version>
+		</plugin>
+		-->
+
             </plugins>
         </pluginManagement>
 
@@ -437,14 +446,12 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- Will be added to maven repo soon. JUnit test runner that can add repeats/concurrenct/timing etc to tests.
             <dependency>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
                 <version>0.3</version>
                 <scope>test</scope>
             </dependency>
-            -->
 
             <!-- Qpid Version Dependencies -->
             <dependency>

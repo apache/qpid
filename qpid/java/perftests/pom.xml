@@ -49,20 +49,16 @@
             <artifactId>log4j</artifactId>
         </dependency>
 
-	<!-- Here JUnit is a deliberate 'compile' scope dependency, it will be packaged with the perf testing tools. -->
+        <!-- Test dependencies. -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>compile</scope>
         </dependency>
 
-        <!-- Will be added to maven repo soon. JUnit test runner that can add repeats/concurrenct/timing etc to tests.
         <dependency>
             <groupId>uk.co.thebadgerset</groupId>
             <artifactId>junit-toolkit</artifactId>
-            <scope>compile</scope>
         </dependency>
-        -->
 
     </dependencies>
 
@@ -78,6 +74,85 @@
                 <configuration>
                     <!--<skip>true</skip>-->
                 </configuration>
+            </plugin>
+
+            <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository. It will take a day or two from 16/1/2007.
+
+	         Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
+                 scripts.
+
+		 To run from maven:
+
+		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
+
+		 To run from the command line (after doing assembly:assembly goal):
+
+		 java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.OldTKTestRunner -s 1 -r 100000 -o target org.apache.qpid.requestreply.PingPongTestPerf
+
+		 To generate the scripts do:
+
+		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:scripts
+
+		 Then to run the scripts do (after doing assembly:assembly goal):
+
+		 ./bin/script_name or ./bin/script_name.bat
+
+		 These scripts can find everything in the 'all test dependencies' jar.
+		 -->	
+            <!--	 
+            <plugin>
+              <groupId>uk.co.thebadgerset</groupId>
+              <artifactId>junit-toolkit-maven-plugin</artifactId> 
+              <version>0.3</version>
+
+              <configuration>
+                <commands>
+                  <!## Run the ping pong test once. This is just to check toolkit test runner is working. Real tests to follow. ##>
+                  <param>-s 1 -r 1 -o target org.apache.qpid.requestreply.PingPongTestPerf</param>
+                  <!## Add more here... <param> ... </param> ##>
+
+		  <!## A little bit of work needs to be done on TKTestRunner before the following syntax works. See Javadoc for details. ##>
+		  <!## Thread ramp up: <param>-c [1,5,10,50,100] -r 1000 -o target org.apache.qpid.requestreply.PingPongTestPerf</param> ##>
+		  <!## Run for a length of time: <param>-d1H -o target org.apache.qpid.requestreply.PingPongTestPerf</param> ##>
+		  <!## Configure test parameters: <param>pingQueue=myping persistent=true transacted=true messageSize=1000 -d10M ... </param> ##>
+		  <!## And so on. ##>
+                </commands>
+              </configuration>
+
+              <executions>
+                <execution>
+                  <phase>test</phase>
+                  <!##<goals>
+                    <goal>tktest</goal>
+                  </goals>##>
+                </execution>
+              </executions>
+            </plugin>
+	    -->
+
+            <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
+
+                 Usefull when bundling system, integration or performance tests into a convenient
+                 package to hand over to testers. To use it run:
+
+                 java -cp target/your_app_name-all-test-deps.jar path.to.your.Class
+     
+                 or often:
+
+                 java -cp target/your_app_name-all-test-deps.jar junit.framework.textui.TestRunner path.to.your.test.Class
+
+                 or other JUnit test runner invocations.
+                 -->
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <configuration>
+                <descriptors>
+                  <descriptor>jar-with-dependencies.xml</descriptor>
+                </descriptors>
+                <outputDirectory>target</outputDirectory>
+                <workDirectory>target/assembly/work</workDirectory>
+              </configuration>
             </plugin>
 
         </plugins>
