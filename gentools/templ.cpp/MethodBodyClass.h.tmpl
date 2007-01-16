@@ -26,6 +26,9 @@
 %{VLIST} *   ${major}-${minor}
  */
 
+#ifndef qpid_framing_${CLASS}${METHOD}Body__
+#define qpid_framing_${CLASS}${METHOD}Body__
+
 #include <string>
 #include <sstream>
 
@@ -33,9 +36,6 @@
 #include <AMQMethodBody.h>
 #include <Buffer.h>
 #include <FieldTable.h>
-
-#ifndef _${CLASS}${METHOD}Body_
-#define _${CLASS}${METHOD}Body_
 
 namespace qpid
 {
