@@ -56,8 +56,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQFrame response = ExchangeDeleteOkBody.createAMQFrame(evt.getChannelId(), (byte)0, (byte)9);
-            protocolSession.writeFrame(response);
+            protocolSession.writeResponse(evt, ExchangeDeleteOkBody.createMethodBody((byte)0, (byte)9));
         }
         catch (ExchangeInUseException e)
         {

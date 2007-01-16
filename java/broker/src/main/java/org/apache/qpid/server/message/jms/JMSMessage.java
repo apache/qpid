@@ -22,8 +22,6 @@ package org.apache.qpid.server.message.jms;
 
 import org.apache.qpid.server.message.MessageDecorator;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 
 import javax.jms.Message;
 import javax.jms.JMSException;
@@ -35,13 +33,10 @@ public class JMSMessage implements MessageDecorator
 {
 
     private AMQMessage _message;
-    private BasicContentHeaderProperties _properties;
 
     public JMSMessage(AMQMessage message)
     {
         _message = message;
-        ContentHeaderBody contentHeader = message.getContentHeaderBody();
-        _properties = (BasicContentHeaderProperties) contentHeader.properties;
     }
 
     protected void checkWriteable() throws MessageNotWriteableException
@@ -56,29 +51,29 @@ public class JMSMessage implements MessageDecorator
 
     public String getJMSMessageID()
     {
-        return _properties.getMessageId();
+        return _message.getXXXMessageId();
     }
 
     public void setJMSMessageID(String string) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setMessageId(string);
+        _message.setXXXMessageId(string);
     }
 
     public long getJMSTimestamp()
     {
-        return _properties.getTimestamp();
+        return _message.getTimestamp();
     }
 
     public void setJMSTimestamp(long l) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setTimestamp(l);
+        _message.setTimestamp(l);
     }
 
     public byte[] getJMSCorrelationIDAsBytes()
     {
-        return _properties.getCorrelationId().getBytes();
+        return _message.getCorrelationId().getBytes();
     }
 
 //    public void setJMSCorrelationIDAsBytes(byte[] bytes)
@@ -88,23 +83,23 @@ public class JMSMessage implements MessageDecorator
     public void setJMSCorrelationID(String string) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setCorrelationId(string);
+        _message.setCorrelationId(string);
     }
 
     public String getJMSCorrelationID()
     {
-        return _properties.getCorrelationId();
+        return _message.getCorrelationId();
     }
 
     public String getJMSReplyTo()
     {
-        return _properties.getReplyTo();
+        return _message.getReplyTo();
     }
 
     public void setJMSReplyTo(Destination destination) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setReplyTo(destination.toString());
+        _message.setReplyTo(destination.toString());
     }
 
     public String getJMSDestination()
@@ -121,13 +116,13 @@ public class JMSMessage implements MessageDecorator
 
     public int getJMSDeliveryMode()
     {
-        return _properties.getDeliveryMode();
+        return _message.getDeliveryMode();
     }
 
     public void setJMSDeliveryMode(byte i) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setDeliveryMode(i);
+        _message.setDeliveryMode(i);
     }
 
     public boolean getJMSRedelivered()
@@ -143,150 +138,150 @@ public class JMSMessage implements MessageDecorator
 
     public String getJMSType()
     {
-        return _properties.getType();
+        return _message.getType();
     }
 
     public void setJMSType(String string) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setType(string);
+        _message.setType(string);
     }
 
     public long getJMSExpiration()
     {
-        return _properties.getExpiration();
+        return _message.getExpiration();
     }
 
     public void setJMSExpiration(long l) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setExpiration(l);
+        _message.setExpiration(l);
     }
 
     public int getJMSPriority()
     {
-        return _properties.getPriority();
+        return _message.getPriority();
     }
 
     public void setJMSPriority(byte i) throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.setPriority(i);
+        _message.setPriority(i);
     }
 
     public void clearProperties() throws MessageNotWriteableException
     {
         checkWriteable();
-        _properties.getJMSHeaders().clear();
+        _message.getApplicationHeaders().clear();
     }
 
     public boolean propertyExists(String string)
     {
-        return _properties.getJMSHeaders().propertyExists(string);
+        return _message.getApplicationHeaders().propertyExists(string);
     }
 
     public boolean getBooleanProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getBoolean(string);
+        return _message.getApplicationHeaders().getBoolean(string);
     }
 
     public byte getByteProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getByte(string);
+        return _message.getApplicationHeaders().getByte(string);
     }
 
     public short getShortProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getShort(string);
+        return _message.getApplicationHeaders().getShort(string);
     }
 
     public int getIntProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getInteger(string);
+        return _message.getApplicationHeaders().getInteger(string);
     }
 
     public long getLongProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getLong(string);
+        return _message.getApplicationHeaders().getLong(string);
     }
 
     public float getFloatProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getFloat(string);
+        return _message.getApplicationHeaders().getFloat(string);
     }
 
     public double getDoubleProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getDouble(string);
+        return _message.getApplicationHeaders().getDouble(string);
     }
 
     public String getStringProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getString(string);
+        return _message.getApplicationHeaders().getString(string);
     }
 
     public Object getObjectProperty(String string) throws JMSException
     {
-        return _properties.getJMSHeaders().getObject(string);
+        return _message.getApplicationHeaders().getObject(string);
     }
 
     public Enumeration getPropertyNames()
     {
-        return _properties.getJMSHeaders().getPropertyNames();
+        return _message.getApplicationHeaders().getPropertyNames();
     }
 
     public void setBooleanProperty(String string, boolean b) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setBoolean(string, b);
+        _message.getApplicationHeaders().setBoolean(string, b);
     }
 
     public void setByteProperty(String string, byte b) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setByte(string, b);
+        _message.getApplicationHeaders().setByte(string, b);
     }
 
     public void setShortProperty(String string, short i) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setShort(string, i);
+        _message.getApplicationHeaders().setShort(string, i);
     }
 
     public void setIntProperty(String string, int i) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setInteger(string, i);
+        _message.getApplicationHeaders().setInteger(string, i);
     }
 
     public void setLongProperty(String string, long l) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setLong(string, l);
+        _message.getApplicationHeaders().setLong(string, l);
     }
 
     public void setFloatProperty(String string, float v) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setFloat(string, v);
+        _message.getApplicationHeaders().setFloat(string, v);
     }
 
     public void setDoubleProperty(String string, double v) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setDouble(string, v);
+        _message.getApplicationHeaders().setDouble(string, v);
     }
 
     public void setStringProperty(String string, String string1) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setString(string, string1);
+        _message.getApplicationHeaders().setString(string, string1);
     }
 
     public void setObjectProperty(String string, Object object) throws JMSException
     {
         checkWriteable();
-        _properties.getJMSHeaders().setObject(string, object);
+        _message.getApplicationHeaders().setObject(string, object);
     }
 
     public void acknowledge() throws MessageNotWriteableException

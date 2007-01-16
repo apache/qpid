@@ -28,7 +28,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ChannelFlowBody;
 import org.apache.qpid.framing.ChannelFlowOkBody;
 import org.apache.qpid.AMQException;
@@ -61,9 +61,9 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ChannelFlowOkBody.createAMQFrame(evt.getChannelId(),
-            (byte)0, (byte)9,	// AMQP version (major, minor)
-            body.active);	// active
-        protocolSession.writeFrame(response);
+        AMQMethodBody response = ChannelFlowOkBody.createMethodBody
+            ((byte)0, (byte)9,	// AMQP version (major, minor)
+             body.active);	// active
+        protocolSession.writeResponse(evt, response);
     }
 }

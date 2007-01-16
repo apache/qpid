@@ -28,9 +28,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.BasicCancelOkBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -235,7 +234,9 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
-            ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+            ByteBuffer deliver = null;
+            if (true) throw new Error("XXX");
+            //createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
             AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
 
             protocolSession.writeFrame(frame);
@@ -268,7 +269,9 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+                ByteBuffer deliver = null;
+                if (true) throw new Error("XXX");
+                //createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
                 AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
 
                 protocolSession.writeFrame(frame);
@@ -382,10 +385,11 @@ public class SubscriptionImpl implements Subscription
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
-        		(byte)0, (byte)9,	// AMQP version (major, minor)
+            if (true) throw new Error("XXX");
+            /*protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
+        		(byte)8, (byte)0,	// AMQP version (major, minor)
             	consumerTag	// consumerTag
-                ));
+                ));*/
             _closed = true;
         }
     }
@@ -396,12 +400,12 @@ public class SubscriptionImpl implements Subscription
     }
 
 
-    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
+    /*    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
     {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channel.getChannelId(),
+        AMQFrame deliverFrame = MessageTransferBody.createAMQFrame(channel.getChannelId(),
         	(byte)0, (byte)9,	// AMQP version (major, minor)
             consumerTag,	// consumerTag
         	deliveryTag,	// deliveryTag
@@ -413,5 +417,5 @@ public class SubscriptionImpl implements Subscription
         deliverFrame.writePayload(buf);
         buf.flip();
         return buf;
-    }
+        }*/
 }

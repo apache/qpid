@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.CompositeAMQDataBlock;
-import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -39,57 +36,26 @@ import java.util.List;
 public abstract class RequiredDeliveryException extends AMQException
 {
     private final String _message;
-    private final BasicPublishBody _publishBody;
-    private final ContentHeaderBody _contentHeaderBody;
-    private final List<ContentBody> _contentBodies;
+    private final AMQMessage _payload;
 
     public RequiredDeliveryException(String message, AMQMessage payload)
     {
         super(message);
         _message = message;
-        _publishBody = payload.getPublishBody();
-        _contentHeaderBody = payload.getContentHeaderBody();
-        _contentBodies = payload.getContentBodies();
+        _payload = payload;
     }
 
-    public RequiredDeliveryException(String message,
-                                BasicPublishBody publishBody,
-                                ContentHeaderBody contentHeaderBody,
-                                List<ContentBody> contentBodies)
-    {
-        super(message);
-        _message = message;
-        _publishBody = publishBody;
-        _contentHeaderBody = contentHeaderBody;
-        _contentBodies = contentBodies;
-    }
-
-    public BasicPublishBody getPublishBody()
-    {
-        return _publishBody;
-    }
-
-    public ContentHeaderBody getContentHeaderBody()
-    {
-        return _contentHeaderBody;
-    }
-
-    public List<ContentBody> getContentBodies()
-    {
-        return _contentBodies;
-    }
-
-    public CompositeAMQDataBlock getReturnMessage(int channel)
+    /*    public CompositeAMQDataBlock getReturnMessage(int channel)
     {
 	    // AMQP version change: All generated *Body classes are now version-aware.
         // Shortcut: hardwire version to 0-9 (major=0, minor=9) for now.
         // TODO: Connect the version to that returned by the ProtocolInitiation
         // for this session.
         BasicReturnBody returnBody = new BasicReturnBody((byte)0, (byte)9);
-        returnBody.exchange = _publishBody.exchange;
+        returnBody.exchange = _transferBody.exchange;
         returnBody.replyCode = getReplyCode();
         returnBody.replyText = _message;
-        returnBody.routingKey = _publishBody.routingKey;
+        returnBody.routingKey = _transferBody.routingKey;
 
         AMQFrame[] allFrames = new AMQFrame[2 + _contentBodies.size()];
 
@@ -105,7 +71,7 @@ public abstract class RequiredDeliveryException extends AMQException
         }
 
         return new CompositeAMQDataBlock(allFrames);
-    }
+        }*/
 
     public int getErrorCode()
     {

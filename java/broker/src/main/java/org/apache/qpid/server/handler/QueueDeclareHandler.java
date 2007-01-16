@@ -23,7 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -105,13 +105,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQFrame response = QueueDeclareOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)0, (byte)9,	// AMQP version (major, minor)
-                0L, // consumerCount
-                0L, // messageCount
-                body.queue); // queue
+            AMQMethodBody response = QueueDeclareOkBody.createMethodBody
+                ((byte)0, (byte)9,	// AMQP version (major, minor)
+                 0L, // consumerCount
+                 0L, // messageCount
+                 body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
-            protocolSession.writeFrame(response);
+            protocolSession.writeResponse(evt, response);
         }
     }
 

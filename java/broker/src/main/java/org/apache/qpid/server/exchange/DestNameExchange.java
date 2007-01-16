@@ -22,7 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -168,18 +168,19 @@ public class DestNameExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        BasicPublishBody publishBody = payload.getPublishBody();
+        MessageTransferBody transferBody = payload.getTransferBody();
 
-        final String routingKey = publishBody.routingKey;
+        final String routingKey = transferBody.routingKey;
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {
             String msg = "Routing key " + routingKey + " is not known to " + this;
-            if (publishBody.mandatory)
+            // XXX
+            /*if (transferBody.mandatory)
             {
                 throw new NoRouteException(msg, payload);
             }
-            else
+            else*/
             {
                 _logger.warn(msg);
             }

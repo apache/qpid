@@ -22,7 +22,7 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -78,8 +78,8 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQFrame response = ExchangeDeclareOkBody.createAMQFrame(evt.getChannelId(), (byte)0, (byte)9);
-            protocolSession.writeFrame(response);
+            AMQMethodBody response = ExchangeDeclareOkBody.createMethodBody((byte)0, (byte)9);
+            protocolSession.writeResponse(evt, response);
         }
     }
 }

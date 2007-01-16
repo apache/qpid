@@ -37,9 +37,9 @@
         </layout>
     </appender>
 
-    <!--<category name="org.apache.qpid.server.store">
+    <category name="org.apache.qpid.framing">
         <priority value="debug"/>
-    </category>-->
+    </category>
 
     <root>
         <priority value="info"/>

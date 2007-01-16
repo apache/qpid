@@ -49,11 +49,9 @@ public class AMQMessage
 
     private AMQProtocolSession _publisher;
 
-    private final BasicPublishBody _publishBody;
+    private final MessageTransferBody _transferBody;
 
-    private ContentHeaderBody _contentHeaderBody;
-
-    private List<ContentBody> _contentBodies;
+    private List<MessageAppendBody> _contentBodies;
 
     private boolean _redelivered;
 
@@ -93,29 +91,28 @@ public class AMQMessage
     private AtomicBoolean _taken;
 
 
-    public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody)
+    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody)
     {
-        this(messageStore, publishBody, true);
+        this(messageStore, transferBody, true);
     }
 
-    public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody, boolean storeWhenComplete)
+    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody, boolean storeWhenComplete)
     {
         _messageId = messageStore.getNewMessageId();
-        _publishBody = publishBody;
+        _transferBody = transferBody;
         _store = messageStore;
-        _contentBodies = new LinkedList<ContentBody>();
+        _contentBodies = new LinkedList<MessageAppendBody>();
         _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _storeWhenComplete = storeWhenComplete;
         _taken = new AtomicBoolean(false);
     }
 
-    public AMQMessage(MessageStore store, long messageId, BasicPublishBody publishBody,
-                      ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
+    public AMQMessage(MessageStore store, long messageId, MessageTransferBody transferBody,
+                      List<MessageAppendBody> contentBodies)
             throws AMQException
 
     {
-        _publishBody = publishBody;
-        _contentHeaderBody = contentHeaderBody;
+        _transferBody = transferBody;
         _contentBodies = contentBodies;
         _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _messageId = messageId;
@@ -123,16 +120,103 @@ public class AMQMessage
         storeMessage();
     }
 
-    public AMQMessage(MessageStore store, BasicPublishBody publishBody,
-                      ContentHeaderBody contentHeaderBody, List<ContentBody> contentBodies)
+    public AMQMessage(MessageStore store, MessageTransferBody transferBody, List<MessageAppendBody> contentBodies)
             throws AMQException
     {
-        this(store, store.getNewMessageId(), publishBody, contentHeaderBody, contentBodies);
+        this(store, store.getNewMessageId(), transferBody, contentBodies);
     }
 
     protected AMQMessage(AMQMessage msg) throws AMQException
     {
-        this(msg._store, msg._messageId, msg._publishBody, msg._contentHeaderBody, msg._contentBodies);
+        this(msg._store, msg._messageId, msg._transferBody, msg._contentBodies);
+    }
+
+    public long getSize() {
+        throw new Error("XXX");
+    }
+
+    public FieldTable getHeadersTable() {
+        throw new Error("XXX");
+    }
+
+    public FieldTable getApplicationHeaders() {
+        throw new Error("XXX");
+    }
+
+    public void setXXXMessageId(String messageId) {
+        throw new Error("XXX");
+    }
+
+    public String getXXXMessageId() {
+        throw new Error("XXX");
+    }
+
+    public void setType(String type) {
+        throw new Error("XXX");
+    }
+
+    public String getType() {
+        throw new Error("XXX");
+    }
+
+    public void setDeliveryMode(byte mode) {
+        throw new Error("XXX");
+    }
+
+    public byte getDeliveryMode() {
+        throw new Error("XXX");
+    }
+
+    public void setReplyTo(String replyTo) {
+        throw new Error("XXX");
+    }
+
+    public String getReplyTo() {
+        throw new Error("XXX");
+    }
+
+    public void setCorrelationId(String correlationId) {
+        throw new Error("XXX");
+    }
+
+    public String getCorrelationId() {
+        throw new Error("XXX");
+    }
+
+    public void setPriority(byte priority) {
+        throw new Error("XXX");
+    }
+
+    public byte getPriority() {
+        throw new Error("XXX");
+    }
+
+    public void setExpiration(long l) {
+        throw new Error("XXX");
+    }
+
+    public long getExpiration() {
+        throw new Error("XXX");
+    }
+
+    public void setTimestamp(long l) {
+        throw new Error("XXX");
+    }
+
+    public long getTimestamp() {
+        throw new Error("XXX");
+    }
+
+    public String getContentType() {
+        throw new Error("XXX");
+    }
+
+    public String getEncoding() {
+        throw new Error("XXX");
+    }
+
+    public byte[] getMessageBytes() {
+        throw new Error("XXX");
     }
 
     public void storeMessage() throws AMQException
@@ -147,11 +231,12 @@ public class AMQMessage
     {
         AMQFrame[] allFrames = new AMQFrame[1 + _contentBodies.size()];
 
-        allFrames[0] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
+        if (true) throw new Error("XXX");
+        /*allFrames[0] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
         for (int i = 1; i < allFrames.length; i++)
         {
             allFrames[i] = ContentBody.createAMQFrame(channel, _contentBodies.get(i - 1));
-        }
+            }*/
         return new CompositeAMQDataBlock(encodedDeliverBody, allFrames);
     }
 
@@ -163,7 +248,9 @@ public class AMQMessage
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        allFrames[0] = BasicDeliverBody.createAMQFrame(channel,
+        if (true) throw new Error("XXX");
+        /*
+        allFrames[0] = MessageTransferBody.createAMQFrame(channel,
         	(byte)0, (byte)9,	// AMQP version (major, minor)
             consumerTag,	// consumerTag
         	deliveryTag,	// deliveryTag
@@ -171,65 +258,32 @@ public class AMQMessage
             _redelivered,	// redelivered
             getRoutingKey()	// routingKey
             );
-        allFrames[1] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
+            allFrames[1] = ContentHeaderBody.createAMQFrame(channel, _contentHeaderBody);
         for (int i = 2; i < allFrames.length; i++)
         {
             allFrames[i] = ContentBody.createAMQFrame(channel, _contentBodies.get(i - 2));
-        }
+            }*/
         return new CompositeAMQDataBlock(allFrames);
     }
 
     public List<AMQBody> getPayload()
     {
         List<AMQBody> payload = new ArrayList<AMQBody>(2 + _contentBodies.size());
-        payload.add(_publishBody);
-        payload.add(_contentHeaderBody);
+        payload.add(_transferBody);
         payload.addAll(_contentBodies);
         return payload;
     }
 
-    public BasicPublishBody getPublishBody()
+    public MessageTransferBody getTransferBody()
     {
-        return _publishBody;
-    }
-
-    public ContentHeaderBody getContentHeaderBody()
-    {
-        return _contentHeaderBody;
-    }
-
-    public void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException
-    {
-        _contentHeaderBody = contentHeaderBody;
-        if (_storeWhenComplete && isAllContentReceived())
-        {
-            storeMessage();
-        }
-    }
-
-    public List<ContentBody> getContentBodies()
-    {
-        return _contentBodies;
-    }
-
-    public void setContentBodies(List<ContentBody> contentBodies)
-    {
-        _contentBodies = contentBodies;
-    }
-
-    public void addContentBodyFrame(ContentBody contentBody) throws AMQException
-    {
-        _contentBodies.add(contentBody);
-        _bodyLengthReceived += contentBody.getSize();
-        if (_storeWhenComplete && isAllContentReceived())
-        {
-            storeMessage();
-        }
+        return _transferBody;
     }
 
     public boolean isAllContentReceived()
     {
-        return _bodyLengthReceived == _contentHeaderBody.bodySize;
+        if (true) throw new Error("XXX");
+        /*XXX*/return false;
+        //return _bodyLengthReceived == _contentHeaderBody.bodySize;
     }
 
 
@@ -240,22 +294,22 @@ public class AMQMessage
 
     String getExchangeName()
     {
-        return _publishBody.exchange;
+        return _transferBody.exchange;
     }
 
     String getRoutingKey()
     {
-        return _publishBody.routingKey;
+        return _transferBody.routingKey;
     }
 
     boolean isImmediate()
     {
-        return _publishBody.immediate;
+        return _transferBody.immediate;
     }
 
     NoConsumersException getNoConsumersException(String queue)
     {
-        return new NoConsumersException(queue, _publishBody, _contentHeaderBody, _contentBodies);
+        return new NoConsumersException(queue, this);
     }
 
     public void setRedelivered(boolean redelivered)
@@ -347,14 +401,7 @@ public class AMQMessage
 
     public boolean isPersistent() throws AMQException
     {
-        if (_contentHeaderBody == null)
-        {
-            throw new AMQException("Cannot determine delivery mode of message. Content header not found.");
-        }
-
-        //todo remove literal values to a constant file such as AMQConstants in common
-        return _contentHeaderBody.properties instanceof BasicContentHeaderProperties
-               && ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+        return getDeliveryMode() == 2;
     }
 
     public void setTxnBuffer(TxnBuffer buffer)
@@ -377,7 +424,7 @@ public class AMQMessage
     {
         if (isImmediate() && !_deliveredToConsumer)
         {
-            throw new NoConsumersException(_publishBody, _contentHeaderBody, _contentBodies);
+            throw new NoConsumersException(this);
         }
     }
 

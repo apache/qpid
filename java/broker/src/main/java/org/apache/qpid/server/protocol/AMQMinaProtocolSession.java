@@ -52,6 +52,7 @@ import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 
 import javax.management.JMException;
@@ -162,10 +163,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return (AMQProtocolSession) minaProtocolSession.getAttachment();
     }
 
+    private AMQChannel createChannel(int id) throws AMQException {
+        IApplicationRegistry registry = ApplicationRegistry.getInstance();
+        AMQChannel channel = new AMQChannel(id, registry.getMessageStore(),
+                                            _exchangeRegistry, this, _stateManager);
+        addChannel(channel);
+        return channel;
+    }
+
     public void dataBlockReceived(AMQDataBlock message)
             throws Exception
     {
         _lastReceived = message;
+
         if (message instanceof ProtocolInitiation)
         {
             ProtocolInitiation pi = (ProtocolInitiation) message;
@@ -180,13 +190,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
                 // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-                AMQMethodBody connectionStartBody = ConnectionStartBody.createMethodBody(
-            	    (byte)_major, (byte)_minor,	// AMQP version (major, minor)
-                    locales.getBytes(),	// locales
-                    mechanisms.getBytes(),	// mechanisms
-                    null,	// serverProperties
-                    (short)_major,	// versionMajor
-                    (short)_minor);	// versionMinor
+                createChannel(0);
+                AMQMethodBody connectionStartBody = ConnectionStartBody.createMethodBody
+                    ((byte)_major, (byte)_minor,	// AMQP version (major, minor)
+                     locales.getBytes(),	// locales
+                     mechanisms.getBytes(),	// mechanisms
+                     null,	// serverProperties
+                     (short)_major,	// versionMajor
+                     (short)_minor);	// versionMinor
                 writeRequest(0, connectionStartBody, _stateManager);
             }
             catch (AMQException e)
@@ -209,6 +220,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             AMQFrame frame = (AMQFrame) message;
 
+            AMQChannel channel = getChannel(frame.channel);
+            if (channel == null) {
+                channel = createChannel(frame.channel);
+            }
+
             if (frame.bodyFrame instanceof AMQRequestBody)
             {
             	requestFrameReceived(frame.channel, (AMQRequestBody)frame.bodyFrame);
@@ -224,7 +240,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
     }
     
-    private void requestFrameReceived(int channelNum, AMQRequestBody requestBody) throws AMQException
+    private void requestFrameReceived(int channelNum, AMQRequestBody requestBody) throws Exception
     {
         if (_logger.isDebugEnabled())
         {
@@ -235,7 +251,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         responseManager.requestReceived(requestBody);
     }
     
-    private void responseFrameReceived(int channelNum, AMQResponseBody responseBody) throws AMQException
+    private void responseFrameReceived(int channelNum, AMQResponseBody responseBody) throws Exception
     {
         if (_logger.isDebugEnabled())
         {
@@ -247,7 +263,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQMethodListener methodListener)
-        throws RequestResponseMappingException
+        throws AMQException
     {
         AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
@@ -255,11 +271,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
-        throws RequestResponseMappingException
+        throws AMQException
     {
         AMQChannel channel = getChannel(channelNum);
         ResponseManager responseManager = channel.getResponseManager();
         responseManager.sendResponse(requestId, methodBody);
+    }
+
+    public void writeResponse(AMQMethodEvent evt, AMQMethodBody response)
+        throws AMQException
+    {
+        writeResponse(evt.getChannelId(), evt.getRequestId(), response);
     }
 
     /**

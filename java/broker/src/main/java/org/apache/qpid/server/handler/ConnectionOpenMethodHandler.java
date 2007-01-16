@@ -21,7 +21,7 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -67,10 +67,10 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ConnectionOpenOkBody.createAMQFrame((short)0,
-            (byte)0, (byte)9,	// AMQP version (major, minor)
-            contextKey);	// knownHosts
+        AMQMethodBody response = ConnectionOpenOkBody.createMethodBody
+            ((byte)0, (byte)9,	// AMQP version (major, minor)
+             contextKey);	// knownHosts
         stateManager.changeState(AMQState.CONNECTION_OPEN);
-        protocolSession.writeFrame(response);
+        protocolSession.writeResponse(evt, response);
     }
 }

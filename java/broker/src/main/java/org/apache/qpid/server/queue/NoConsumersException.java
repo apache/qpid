@@ -21,9 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.protocol.AMQConstant;
 
 import java.util.List;
@@ -35,19 +32,14 @@ import java.util.List;
  */
 public class NoConsumersException extends RequiredDeliveryException
 {
-    public NoConsumersException(String queue,
-                                BasicPublishBody publishBody,
-                                ContentHeaderBody contentHeaderBody,
-                                List<ContentBody> contentBodies)
+    public NoConsumersException(String queue, AMQMessage message)
     {
-        super("Immediate delivery to " + queue + " is not possible.", publishBody, contentHeaderBody, contentBodies);
+        super("Immediate delivery to " + queue + " is not possible.", message);
     }
 
-    public NoConsumersException(BasicPublishBody publishBody,
-                                ContentHeaderBody contentHeaderBody,
-                                List<ContentBody> contentBodies)
+    public NoConsumersException(AMQMessage message)
     {
-        super("Immediate delivery is not possible.", publishBody, contentHeaderBody, contentBodies);
+        super("Immediate delivery is not possible.", message);
     }
 
     public int getReplyCode()

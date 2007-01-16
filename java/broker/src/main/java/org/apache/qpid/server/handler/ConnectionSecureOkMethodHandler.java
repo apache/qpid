@@ -78,13 +78,13 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQFrame close = ConnectionCloseBody.createAMQFrame(0,
-                    (byte)0, (byte)9,	// AMQP version (major, minor)
-                    ConnectionCloseBody.getClazz((byte)0, (byte)9),		// classId
-                    ConnectionCloseBody.getMethod((byte)0, (byte)9),	// methodId
-                    AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
-                    AMQConstant.NOT_ALLOWED.getName());	// replyText
-                protocolSession.writeFrame(close);
+                AMQMethodBody close = ConnectionCloseBody.createMethodBody
+                    ((byte)0, (byte)9,	// AMQP version (major, minor)
+                     ConnectionCloseBody.getClazz((byte)0, (byte)9),		// classId
+                     ConnectionCloseBody.getMethod((byte)0, (byte)9),	// methodId
+                     AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
+                     AMQConstant.NOT_ALLOWED.getName());	// replyText
+                protocolSession.writeResponse(evt, close);
                 disposeSaslServer(protocolSession);
                 break;
             case SUCCESS:
@@ -96,12 +96,12 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
-                    (byte)0, (byte)9,	// AMQP version (major, minor)
-                    Integer.MAX_VALUE,	// channelMax
-                    ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
-                    HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                protocolSession.writeFrame(tune);
+                AMQMethodBody tune = ConnectionTuneBody.createMethodBody
+                    ((byte)0, (byte)9,	// AMQP version (major, minor)
+                     Integer.MAX_VALUE,	// channelMax
+                     ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
+                     HeartbeatConfig.getInstance().getDelay());	// heartbeat
+                protocolSession.writeResponse(evt, tune);
                 disposeSaslServer(protocolSession);
                 break;
             case CONTINUE:
@@ -109,10 +109,10 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
-                    (byte)0, (byte)9,	// AMQP version (major, minor)
-                    authResult.challenge);	// challenge
-                protocolSession.writeFrame(challenge);
+                AMQMethodBody challenge = ConnectionSecureBody.createMethodBody
+                    ((byte)0, (byte)9,	// AMQP version (major, minor)
+                     authResult.challenge);	// challenge
+                protocolSession.writeResponse(evt, challenge);
         }
     }
 
