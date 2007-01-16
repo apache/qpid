@@ -100,7 +100,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                          Integer.MAX_VALUE,	// channelMax
                          getConfiguredFrameSize(),	// frameMax
                          HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                    protocolSession.writeResponse(evt, tune);
+                    protocolSession.writeRequest(evt.getChannelId(), tune, stateManager);
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
@@ -110,7 +110,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     AMQMethodBody challenge = ConnectionSecureBody.createMethodBody
                         ((byte)0, (byte)9,	// AMQP version (major, minor)
                          authResult.challenge);	// challenge
-                    protocolSession.writeResponse(evt, challenge);
+                    protocolSession.writeRequest(evt.getChannelId(), challenge, stateManager);
             }
         }
         catch (SaslException e)
