@@ -31,7 +31,7 @@ public class BasicContentHeaderPropertiesTest extends TestCase
 {
 
     BasicContentHeaderProperties _testProperties;
-    PropertyFieldTable _testTable;
+    FieldTable _testTable;
     String _testString = "This is a test string";
     int _testint = 666;
 
@@ -45,11 +45,9 @@ public class BasicContentHeaderPropertiesTest extends TestCase
 
     public void setUp()
     {
-        HashMap _testMap = new HashMap(10);
-        _testMap.put("TestString", _testString);
-        _testMap.put("Testint", _testint);
-        _testTable = new PropertyFieldTable();
-        _testTable.putAll(_testMap);
+        _testTable = new FieldTable();
+        _testTable.setString("TestString", _testString);
+        _testTable.setInteger("Testint", _testint);
         _testProperties = new BasicContentHeaderProperties();
         _testProperties.setHeaders(_testTable);
     }
@@ -57,7 +55,7 @@ public class BasicContentHeaderPropertiesTest extends TestCase
     public void testGetPropertyListSize()
     {
         //needs a better test but at least we're exercising the code !
-         // FT size is encoded in an int
+         // FT length is encoded in an int
         int expectedSize = EncodingUtils.encodedIntegerLength();
 
         expectedSize += EncodingUtils.encodedShortStringLength("TestInt");

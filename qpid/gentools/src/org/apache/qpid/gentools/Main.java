@@ -174,7 +174,7 @@ public class Main
         };
         classTemplateFiles = new File[]
         {
-            new File(tmplDir + Utils.fileSeparator + "PropertyContentHeaderClass.tmpl")
+//            new File(tmplDir + Utils.fileSeparator + "PropertyContentHeaderClass.tmpl")
         };
         methodTemplateFiles = new File[]
         {
@@ -202,7 +202,7 @@ public class Main
             new File(tmplDir + Utils.fileSeparator + "AMQP_Constants.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.cpp.tmpl"),
-           new File(tmplDir + Utils.fileSeparator + "AMQP_HighestVersion.cpp.tmpl")
+           new File(tmplDir + Utils.fileSeparator + "AMQP_HighestVersion.h.tmpl")
         };
         methodTemplateFiles = new File[]
         {
@@ -261,19 +261,30 @@ public class Main
     
 	public static void main(String[] args)
 	{
+		int exitCode = 1;
 		// TODO: This is a simple and klunky way of hangling command-line args, and could be improved upon.
 		if (args.length < 2)
+		{
 			usage();
-		try { new Main().run(args); }
-		catch (IOException e) { e.printStackTrace(); }
-		catch (ParserConfigurationException e) { e.printStackTrace(); }
-		catch (SAXException e) { e.printStackTrace(); }
-		catch (AmqpParseException e) { e.printStackTrace(); }
-		catch (AmqpTypeMappingException e) { e.printStackTrace(); }
-		catch (AmqpTemplateException e) { e.printStackTrace(); }
-		catch (TargetDirectoryException e) { e.printStackTrace(); }
-		catch (IllegalAccessException e) { e.printStackTrace(); }
-		catch (InvocationTargetException e) { e.printStackTrace(); }
+		}
+		else
+		{
+			try
+			{
+				new Main().run(args);
+				exitCode = 0;
+			}
+			catch (IOException e) { e.printStackTrace(); }
+			catch (ParserConfigurationException e) { e.printStackTrace(); }
+			catch (SAXException e) { e.printStackTrace(); }
+			catch (AmqpParseException e) { e.printStackTrace(); }
+			catch (AmqpTypeMappingException e) { e.printStackTrace(); }
+			catch (AmqpTemplateException e) { e.printStackTrace(); }
+			catch (TargetDirectoryException e) { e.printStackTrace(); }
+			catch (IllegalAccessException e) { e.printStackTrace(); }
+			catch (InvocationTargetException e) { e.printStackTrace(); }
+		}
+		System.exit(exitCode);
 	}
 
 	public static void usage()
@@ -287,7 +298,6 @@ public class Main
         System.out.println("                         Defaults: \"" + defaultCppTemplateDir + "\" for C++;");
         System.out.println("                                   \"" + defaultJavaTemplateDir + "\" for java.");
 		System.out.println("             XMLfile is a space-separated list of AMQP XML files to be parsed.");
-		System.exit(0);
 	}
 	
 	public static String ListTemplateList(File[] list)

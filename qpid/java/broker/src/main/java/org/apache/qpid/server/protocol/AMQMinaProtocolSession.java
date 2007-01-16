@@ -165,8 +165,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 _minor = pi.protocolMinor;
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
-                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0, pi.protocolMajor, pi.protocolMinor, null,
-                                                                       mechanisms.getBytes(), locales.getBytes());
+                // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
+                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
+            		_major, _minor,	// AMQP version (major, minor)
+                    locales.getBytes(),	// locales
+                    mechanisms.getBytes(),	// mechanisms
+                    null,	// serverProperties
+                	(short)_major,	// versionMajor
+                    (short)_minor);	// versionMinor
                 _minaProtocolSession.write(response);
             }
             catch (AMQException e)
@@ -316,8 +322,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _channelMap.get(channelId);
     }
 
-    public void addChannel(AMQChannel channel)
+    public void addChannel(AMQChannel channel) throws AMQException
     {
+        if (_closed)
+        {
+            throw new AMQException("Session is closed");    
+        }
+
         _channelMap.put(channel.getChannelId(), channel);
         checkForNotification();
     }

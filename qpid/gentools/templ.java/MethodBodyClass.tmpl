@@ -54,6 +54,8 @@ ${METHOD_ID_INIT}
 
     public int getClazz() { return classIdMap.get(major + "-" + minor); }
     public int getMethod() { return methodIdMap.get(major + "-" + minor); }
+    public static int getClazz(byte major, byte minor) { return classIdMap.get(major + "-" + minor); }
+    public static int getMethod(byte major, byte minor) { return methodIdMap.get(major + "-" + minor); }
     
     // Field methods		
 %{FLIST}    ${mb_field_get_method}
@@ -82,7 +84,7 @@ ${METHOD_ID_INIT}
         return buf.toString();
     }
 
-    public static AMQFrame createAMQFrame(int channelId, byte major, byte minor
+    public static AMQFrame createAMQFrame(int _channelId, byte major, byte minor
 %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
@@ -90,7 +92,7 @@ ${METHOD_ID_INIT}
 %{FLIST}    ${mb_field_body_initialize}
         		 
         AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
+        frame.channel = _channelId;
         frame.bodyFrame = body;
         return frame;
     }

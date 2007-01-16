@@ -79,12 +79,10 @@ public class AmqpOrdinalFieldMap extends TreeMap<Integer, String[]> implements C
 	public String toString()
 	{
 		StringBuffer sb = new StringBuffer();
-		Iterator<Integer> itr = keySet().iterator();
-		while (itr.hasNext())
+		for (Integer thisOrdinal : keySet())
 		{
-			int ordinal = itr.next();
-			String[] pair = get(ordinal);
-			sb.append("[" + ordinal + "] " + pair[0] + " : " + pair[1] + Utils.lineSeparator);
+			String[] pair = get(thisOrdinal);
+			sb.append("[" + thisOrdinal + "] " + pair[0] + " : " + pair[1] + Utils.lineSeparator);
 		}
 		return sb.toString();
 	}

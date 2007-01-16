@@ -58,7 +58,8 @@ public class ContentHeaderBody extends AMQBody
         return TYPE;
     }
 
-    protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
+    protected void populateFromBuffer(ByteBuffer buffer, long size)
+        throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         classId = buffer.getUnsignedShort();
         weight = buffer.getUnsignedShort();
@@ -75,7 +76,8 @@ public class ContentHeaderBody extends AMQBody
      * @return
      * @throws AMQFrameDecodingException
      */
-    public static ContentHeaderBody createFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
+    public static ContentHeaderBody createFromBuffer(ByteBuffer buffer, long size)
+        throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         ContentHeaderBody body = new ContentHeaderBody();
         body.populateFromBuffer(buffer, size);

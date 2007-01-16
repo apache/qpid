@@ -22,9 +22,9 @@ package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 {
@@ -43,7 +43,7 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		ordinalMap = new AmqpOrdinalVersionMap();
 	}
 
-	public void addFromNode(Node fieldNode, int ordinal, AmqpVersion version)
+	public boolean addFromNode(Node fieldNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		versionSet.add(version);
@@ -71,6 +71,25 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 			ordinalMap.put(ordinal, thisVersionList);
 		}
 		thisVersionList.add(version);
+		NodeList nList = fieldNode.getChildNodes();
+		for (int i=0; i<nList.getLength(); i++)
+		{
+			Node child = nList.item(i);
+			if (child.getNodeName().compareTo(Utils.ELEMENT_CODEGEN) == 0)
+			{
+				String value = Utils.getNamedAttribute(child, Utils.ATTRIBUTE_VALUE);
+				if (value.compareTo("no-gen") == 0)
+					return false;
+			}
+		}
+		return true;
+	}
+	
+	public void removeVersion(AmqpVersion version)
+	{
+		domainMap.removeVersion(version);
+		ordinalMap.removeVersion(version);
+		versionSet.remove(version);
 	}
 	
 	public boolean isCodeTypeConsistent(LanguageConverter converter)
@@ -79,12 +98,10 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		if (domainMap.size() == 1)
 			return true; // By definition
 		ArrayList<String> codeTypeList = new ArrayList<String>();
-		Iterator<String> itr = domainMap.keySet().iterator();
-		while (itr.hasNext())
+		for (String thisDomainName : domainMap.keySet())
 		{
-			String domainName = itr.next();
-			AmqpVersionSet versionSet = domainMap.get(domainName);
-			String codeType = converter.getGeneratedType(domainName, versionSet.first());
+			AmqpVersionSet versionSet = domainMap.get(thisDomainName);
+			String codeType = converter.getGeneratedType(thisDomainName, versionSet.first());
 			if (!codeTypeList.contains(codeType))
 				codeTypeList.add(codeType);
 		}
@@ -101,9 +118,10 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		// Since the various doamin names map to the same code type, add the version occurrences
 		// across all domains to see we have all possible versions covered
 		int vCntr = 0;
-		Iterator<String> itr = domainMap.keySet().iterator();
-		while (itr.hasNext())
-			vCntr += domainMap.get(itr.next()).size();
+		for (String thisDomainName : domainMap.keySet())
+		{
+			vCntr += domainMap.get(thisDomainName).size();
+		}
 		return vCntr == generator.globalVersionSet.size();
 	}
 	
@@ -112,20 +130,16 @@ public class AmqpField implements Printable, NodeAware, VersionConsistencyCheck
 		String margin = Utils.createSpaces(marginSize);
 		out.println(margin + "[F] " + name + ": " + versionSet);
 
-		Iterator<Integer> iItr = ordinalMap.keySet().iterator();
-		while (iItr.hasNext())
+		for (Integer thisOrdinal : ordinalMap.keySet())
 		{
-			Integer ordinalValue = iItr.next();
-			AmqpVersionSet versionList = ordinalMap.get(ordinalValue);
-			out.println(margin + "  [O] " + ordinalValue + " : " + versionList.toString());
+			AmqpVersionSet versionList = ordinalMap.get(thisOrdinal);
+			out.println(margin + "  [O] " + thisOrdinal + " : " + versionList.toString());
 		}
 
-		Iterator<String> sItr = domainMap.keySet().iterator();
-		while (sItr.hasNext())
+		for (String thisDomainName : domainMap.keySet())
 		{
-			String domainKey = sItr.next();
-			AmqpVersionSet versionList = domainMap.get(domainKey);
-			out.println(margin + "  [D] " + domainKey + " : " + versionList.toString());
+			AmqpVersionSet versionList = domainMap.get(thisDomainName);
+			out.println(margin + "  [D] " + thisDomainName + " : " + versionList.toString());
 		}
 	}
 	

@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 import org.w3c.dom.Node;
@@ -38,7 +37,7 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 		this.converter.setDomainMap(this);
 	}
 	
-	public void addFromNode(Node n, int o, AmqpVersion v)
+	public boolean addFromNode(Node n, int o, AmqpVersion v)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
 		NodeList nl = n.getChildNodes();
@@ -82,7 +81,8 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 			{
 				addFromNode(c, 0, v);
 			}
-		}	
+		}
+		return true;
 	}
 
 	public String getDomainType(String domainName, AmqpVersion version)
@@ -110,11 +110,9 @@ public class AmqpDomainMap extends TreeMap<String, AmqpDomain> implements Printa
 	public void print(PrintStream out, int marginSize, int tabSize)
 	{
         out.println(Utils.createSpaces(marginSize) + "Domain Map:");
-		Iterator<String> i = keySet().iterator();
-		while (i.hasNext())
+        for (String thisDomainName : keySet())
 		{
-			String domainName = i.next();
-			AmqpDomain domain = get(domainName);
+			AmqpDomain domain = get(thisDomainName);
 			domain.print(out, marginSize + tabSize, tabSize);
 		}
 	}

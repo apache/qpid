@@ -40,6 +40,14 @@
         <maven>2.0.4</maven>
     </prerequisites>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>apache.snapshots</id>
+            <name>Apache SNAPSHOT Repository</name>
+            <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <inceptionYear>2006</inceptionYear>
     <mailingLists>
         <mailingList>
@@ -87,6 +95,7 @@
         <eclipse.plugin.version>2.2</eclipse.plugin.version>
         <jar.version>2.0</jar.version>
         <javadoc.version>2.0</javadoc.version>
+        <junit.version>3.8.1</junit.version>
         <jxr.version>2.0</jxr.version>
         <mprojectinfo.version>2.0</mprojectinfo.version>
         <resources.version>2.2</resources.version>
@@ -94,9 +103,10 @@
         <surefire-report.version>2.1-SNAPSHOT</surefire-report.version>
         <surefire.version>2.2</surefire.version>
 
-        <amqj.logging.level>debug</amqj.logging.level>
+        <amqj.logging.level>warn</amqj.logging.level>
 
         <eclipse.workspace.dir>${basedir}/${topDirectoryLocation}/../workspace</eclipse.workspace.dir>
+        <clover.license.pathname>/set/clover/license/path/here</clover.license.pathname>
     </properties>
 
     <modules>
@@ -160,6 +170,7 @@
 
         <pluginManagement>
             <plugins>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
@@ -172,6 +183,52 @@
                         </dependency>
 
                     </dependencies>
+
+                    <executions>
+
+                         <!-- This Ant task writes the module name, version and the Subversion version information out to a properties file.
+                              The svnversion command must be available to run from the command line for this to work. The build will not fail if
+                              svnversion cannot be run though.
+                              This is done during the 'compile' phase to reflect the version of the currently compiled code and to ensure that
+                              these properties are up to date when running from a file system classpath. Consider moving this to, or running a second
+                              time, during the 'package' phase to capture the version of any resources added to jar files.
+                              This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules 
+                              at the time of the build.
+                              The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module that runs 
+                              this plugin.
+                              The 'qpidversion.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
+                              Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of 
+                              qpidversion.properties and then the client or broker being built against an older version of the common library ending up with
+                              the wrong version information. This is unlikely to happen because the client or broker should pick up its own properties
+                              from the classpath first. If this happens it will be obvious because the productName property will be 
+                              'Qpid Common Utilities'. If this is a problem then push this ant task down into the client and broker poms and remove it
+                              from here.
+                         -->
+                         <execution>
+                             <id>version_properties</id>
+                             <phase>compile</phase>
+                             <configuration>
+                             <tasks>
+
+                               <exec executable="svnversion" spawn="false" failifexecutionfails="false" 
+                                     dir="${topDirectoryLocation}" outputproperty="svnversion">
+                                 <arg line="."/>
+                               </exec>
+
+                               <!-- Write the version.properties out. -->
+                               <propertyfile file="target/classes/qpidversion.properties">
+                                 <entry key="qpid.svnversion" value="${svnversion}"/>
+                                 <entry key="qpid.name" value="${project.name}"/>
+                                 <entry key="qpid.version" value="${project.version}"/>
+                               </propertyfile>
+
+                             </tasks>
+                           </configuration>
+                           <goals>
+                             <goal>run</goal>
+                           </goals>
+                        </execution>
+                   </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -241,9 +298,25 @@
                         <downloadJavadocs>true</downloadJavadocs>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clover-plugin</artifactId>
+                    <version>2.3</version>
+                    <configuration>
+                        <licenseLocation>${clover.license.pathname}</licenseLocation>
+                        <jdk>${java.source.version}</jdk>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>instrument</goal>
+                                <goal>aggregate</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
-
         </pluginManagement>
         <defaultGoal>install</defaultGoal>
     </build>
@@ -335,7 +408,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>3.8.1</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -398,6 +471,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${javadoc.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clover-plugin</artifactId>
             </plugin>
         </plugins>
     </reporting>

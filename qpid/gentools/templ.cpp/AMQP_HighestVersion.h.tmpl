@@ -1,4 +1,4 @@
-&{AMQP_HighestVersion.cpp}
+&{AMQP_HighestVersion.h}
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -25,7 +25,18 @@
  * Supported AMQP versions:
 %{VLIST} *   ${major}-${minor}
  */
+#ifndef _AMQP_HighestVersion_
+#define _AMQP_HighestVersion_
 
-#include <AMQP_HighestVersion.h>
+#include <ProtocolVersion.h>
 
-qpid::framing::ProtocolVersion highestProtocolVersion(${hv_latest_major}, ${hv_latest_minor});
+
+namespace qpid {
+namespace framing {
+
+static ProtocolVersion highestProtocolVersion(${hv_latest_major}, ${hv_latest_minor});
+
+} /* namespace framing */
+} /* namespace qpid */
+
+#endif

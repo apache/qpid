@@ -37,16 +37,19 @@ public class ContentHeaderPropertiesFactory
 
     public ContentHeaderProperties createContentHeaderProperties(int classId, int propertyFlags,
                                                                  ByteBuffer buffer, int size)
-             throws AMQFrameDecodingException
+             throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         ContentHeaderProperties properties;
-        switch (classId)
+        // AMQP version change: "Hardwired" version to major=8, minor=0
+        // TODO: Change so that the actual version is obtained from
+        // the ProtocolInitiation object for this session.
+        if (classId == BasicConsumeBody.getClazz((byte)8, (byte)0))
         {
-            case BasicConsumeBody.CLASS_ID:
-                properties = new BasicContentHeaderProperties();
-                break;
-            default:
-                throw new AMQFrameDecodingException("Unsupport content header class id: " + classId);
+        	properties = new BasicContentHeaderProperties();
+        }
+        else
+        {
+        	throw new AMQFrameDecodingException("Unsupport content header class id: " + classId);
         }
         properties.populatePropertiesFromBuffer(buffer, propertyFlags, size);
         return properties;

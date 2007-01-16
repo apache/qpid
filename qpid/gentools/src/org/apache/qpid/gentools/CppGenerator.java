@@ -31,8 +31,10 @@ public class CppGenerator extends Generator
 {
 	protected static final String versionNamespaceStartToken = "${version_namespace_start}";
 	protected static final String versionNamespaceEndToken = "${version_namespace_end}";
+	
+	// TODO: Move this to parent class
 	protected static final int FIELD_NAME = 0;
-	protected static final int FIELD_DOMAIN = 1;
+	protected static final int FIELD_CODE_TYPE = 1;
     
     /**
      * A complete list of C++ reserved words. The names of varous XML elements within the AMQP
@@ -558,7 +560,7 @@ public class CppGenerator extends Generator
     protected void processConstantList(StringBuffer sb, int listMarkerStartIndex, int listMarkerEndIndex,
         AmqpConstantSet constantSet)
         throws AmqpTemplateException, AmqpTypeMappingException
-        {
+    {
         String codeSnippet;
         int lend = sb.indexOf(cr, listMarkerStartIndex) + 1; // Include cr at end of line
         String tline = sb.substring(listMarkerEndIndex, lend); // Line excluding line marker, including cr
@@ -575,8 +577,8 @@ public class CppGenerator extends Generator
         {
             throw new AmqpTemplateException("Template token " + token + " unknown.");
         }
-       sb.insert(listMarkerStartIndex, codeSnippet);
-        }
+        sb.insert(listMarkerStartIndex, codeSnippet);
+    }
 		
 	// === Protected and private helper functions unique to C++ implementation ===
     
@@ -588,34 +590,32 @@ public class CppGenerator extends Generator
     {
         String indent = Utils.createSpaces(indentSize);
         StringBuffer sb = new StringBuffer();
-        Iterator<AmqpConstant> cItr = constantSet.iterator();
-        while (cItr.hasNext())
+        for (AmqpConstant thisConstant : constantSet)
         {
-            AmqpConstant constant = cItr.next();
-            if (constant.isVersionConsistent(globalVersionSet))
+            if (thisConstant.isVersionConsistent(globalVersionSet))
             {
                 // return a constant
-                String value = constant.firstKey();
-                sb.append(indent + "static const char* " + constant.name + "() { return \"" +
-                    constant.firstKey() + "\"; }" + cr);
+                String value = thisConstant.firstKey();
+                sb.append(indent + "static const char* " + thisConstant.name + "() { return \"" +
+                    thisConstant.firstKey() + "\"; }" + cr);
                 if (Utils.containsOnlyDigits(value))
                 {
-                    sb.append(indent + "static int " + constant.name + "AsInt() { return " +
-                        constant.firstKey() + "; }" + cr);
+                    sb.append(indent + "static int " + thisConstant.name + "AsInt() { return " +
+                        thisConstant.firstKey() + "; }" + cr);
                 }
                 if (Utils.containsOnlyDigitsAndDecimal(value))
                 {
-                    sb.append(indent + "static double " + constant.name + "AsDouble() { return (double)" +
-                        constant.firstKey() + "; }" + cr);
+                    sb.append(indent + "static double " + thisConstant.name + "AsDouble() { return (double)" +
+                        thisConstant.firstKey() + "; }" + cr);
                 }
                 sb.append(cr);
-           }
+            }
             else
             {
                 // Return version-specific constant
-                sb.append(generateVersionDependentGet(constant, "const char*", "", "\"", "\"", indentSize, tabSize));
-                sb.append(generateVersionDependentGet(constant, "int", "AsInt", "", "", indentSize, tabSize));
-                sb.append(generateVersionDependentGet(constant, "double", "AsDouble", "(double)", "", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(thisConstant, "const char*", "", "\"", "\"", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(thisConstant, "int", "AsInt", "", "", indentSize, tabSize));
+                sb.append(generateVersionDependentGet(thisConstant, "double", "AsDouble", "(double)", "", indentSize, tabSize));
                 sb.append(cr);
             }
         }        
@@ -633,27 +633,25 @@ public class CppGenerator extends Generator
             "() const" + cr);
         sb.append(indent + "{" + cr);
         boolean first = true;
-        Iterator<String> sItr = constant.keySet().iterator();
-        while (sItr.hasNext())
+        for (String thisValue : constant.keySet())
         {
-            String value = sItr.next();
-            AmqpVersionSet versionSet = constant.get(value);
+            AmqpVersionSet versionSet = constant.get(thisValue);
             sb.append(indent + tab + (first ? "" : "else ") + "if (" + generateVersionCheck(versionSet) +
                 ")" + cr);
             sb.append(indent + tab + "{" + cr);
-            if (methodReturnType.compareTo("int") == 0 && !Utils.containsOnlyDigits(value))
+            if (methodReturnType.compareTo("int") == 0 && !Utils.containsOnlyDigits(thisValue))
             {
                 sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
                     indentSize + (2*tabSize), tabSize));
             }
-            else if (methodReturnType.compareTo("double") == 0 && !Utils.containsOnlyDigitsAndDecimal(value))
+            else if (methodReturnType.compareTo("double") == 0 && !Utils.containsOnlyDigitsAndDecimal(thisValue))
             {
                 sb.append(generateConstantDeclarationException(constant.name, methodReturnType,
                     indentSize + (2*tabSize), tabSize));                            
             }
             else
             {
-                sb.append(indent + tab + tab + "return " + returnPrefix + value + returnPostfix + ";" + cr);
+                sb.append(indent + tab + tab + "return " + returnPrefix + thisValue + returnPostfix + ";" + cr);
             }
             sb.append(indent + tab + "}" + cr);
             first = false;
@@ -681,7 +679,7 @@ public class CppGenerator extends Generator
             methodReturnType + " for AMQP version \" <<" + cr);        
         sb.append(indent + tab + "version.toString() << \".\";" + cr);        
         sb.append(indent + "throw ProtocolVersionException(ss.str());" + cr);        
-       return sb.toString();       
+        return sb.toString();       
     }
 	
 	// Methods used for generation of code snippets for Server/ClientOperations class generation
@@ -690,25 +688,25 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+		for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
+			AmqpClass thisClass = model.classMap.get(thisClassName);
 			// Only generate for this class if there is at least one method of the
 			// required chassis (server/client flag).
 			boolean chassisFoundFlag = false;
-			Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-			while (mItr.hasNext() && !chassisFoundFlag)
+			for (String thisMethodName : thisClass.methodMap.keySet())
 			{
-				AmqpMethod method = thisClass.methodMap.get(mItr.next());
+				AmqpMethod method = thisClass.methodMap.get(thisMethodName);
 				boolean clientChassisFlag = method.clientMethodFlagMap.isSet();
 				boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
 				if ((serverFlag && serverChassisFlag) || (!serverFlag && clientChassisFlag))
 					chassisFoundFlag = true;
 			}
 			if (chassisFoundFlag)
+			{
 				sb.append(indent + "virtual AMQP_" + (serverFlag ? "Server" : "Client") + "Operations::" +
 				    thisClass.name + "Handler* get" + thisClass.name + "Handler() = 0;" + cr);
+			}
 		}
 		return sb.toString();
 	}
@@ -716,43 +714,42 @@ public class CppGenerator extends Generator
 	protected String generateOpsInnerClasses(AmqpModel model, boolean serverFlag, int indentSize, int tabSize)
 		throws AmqpTypeMappingException
 	{
+		
+		String proxyClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		String indent = Utils.createSpaces(indentSize);
 		String tab = Utils.createSpaces(tabSize);
 		StringBuffer sb = new StringBuffer();
 		boolean first = true;
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+		for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
-			String className = thisClass.name + "Handler";
+			AmqpClass thisClass = model.classMap.get(thisClassName);
+			String handlerClassName = thisClass.name + "Handler";
 			if (!first)
 				sb.append(cr);
-			sb.append(indent + "// ==================== class " + className +
+			sb.append(indent + "// ==================== class " + handlerClassName +
 				" ====================" + cr);
-			sb.append(indent + "class " + className);
+			sb.append(indent + "class " + handlerClassName);
 			if (thisClass.versionSet.size() != globalVersionSet.size())
 				sb.append(" // AMQP Version(s) " + thisClass.versionSet + cr);
 			else
 				sb.append(cr);
 			sb.append(indent + "{" + cr);
 			sb.append(indent + "private:" + cr);
-			sb.append(indent + tab + "ProtocolVersion version;" + cr);
+			sb.append(indent + tab + proxyClassName+ "* parent;" + cr);
             sb.append(cr);
             sb.append(indent + tab + "// Constructors and destructors" + cr);
             sb.append(cr);
 			sb.append(indent + "protected:" + cr);
-            sb.append(indent + tab + className + "() {}" + cr);
+            sb.append(indent + tab + handlerClassName + "() {}" + cr);
 			sb.append(indent + "public:" + cr);
-			sb.append(indent + tab + className +
-				"(u_int8_t major, u_int8_t minor) : version(major, minor) {}" + cr);
-			sb.append(indent + tab + className +
-					"(ProtocolVersion version) : version(version) {}" + cr);
-			sb.append(indent + tab + "virtual ~" + className + "() {}" + cr);
+			sb.append(indent + tab + handlerClassName +
+				"(" + proxyClassName + "* _parent) {parent = _parent;}" + cr);
+			sb.append(indent + tab + "virtual ~" + handlerClassName + "() {}" + cr);
 			sb.append(cr);
 			sb.append(indent + tab + "// Protocol methods" + cr);
 			sb.append(cr);
 			sb.append(generateInnerClassMethods(thisClass, serverFlag, true, indentSize + tabSize, tabSize));
-			sb.append(indent + "}; // class " + className + cr);
+			sb.append(indent + "}; // class " + handlerClassName + cr);
 			first = false;
 		}
 		return sb.toString();		
@@ -766,10 +763,9 @@ public class CppGenerator extends Generator
 		StringBuffer sb = new StringBuffer();
         String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + (abstractMethodFlag ? "Operations" : "Proxy");
 		boolean first = true;
-		Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-		while (mItr.hasNext())
+		for (String thisMethodName : thisClass.methodMap.keySet())
 		{
-			AmqpMethod method = thisClass.methodMap.get(mItr.next());
+			AmqpMethod method = thisClass.methodMap.get(thisMethodName);
 			boolean clientChassisFlag = method.clientMethodFlagMap.isSet();
 			boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
 			if ((serverFlag && serverChassisFlag) || (!serverFlag && clientChassisFlag))
@@ -777,15 +773,13 @@ public class CppGenerator extends Generator
 				String methodName = parseForReservedWords(method.name, outerClassName + "." + thisClass.name);				
 				AmqpOverloadedParameterMap overloadededParameterMap =
 					method.getOverloadedParameterLists(thisClass.versionSet, this);
-				Iterator<AmqpOrdinalFieldMap> ofmItr = overloadededParameterMap.keySet().iterator();
-				while (ofmItr.hasNext())
+				for (AmqpOrdinalFieldMap thisFieldMap : overloadededParameterMap.keySet())
 				{
-					AmqpOrdinalFieldMap fieldMap = ofmItr.next();
-					AmqpVersionSet versionSet = overloadededParameterMap.get(fieldMap);
+					AmqpVersionSet versionSet = overloadededParameterMap.get(thisFieldMap);
 					if (!first)
 						sb.append(cr);
 					sb.append(indent + "virtual void " + methodName + "( u_int16_t channel");
-					sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, true, true));
+					sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), true, true, true));
 					sb.append(" )");
 					if (abstractMethodFlag)
 						sb.append(" = 0");
@@ -808,10 +802,9 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         StringBuffer sb = new StringBuffer();
         String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Operations";
-        Iterator<String> cItr = model.classMap.keySet().iterator();
-        while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
         {
-            AmqpClass thisClass = model.classMap.get(cItr.next());
+            AmqpClass thisClass = model.classMap.get(thisClassName);
             sb.append(indent + outerClassName + "::" + thisClass.name + "Handler* " +
                 thisClass.name + "HandlerPtr;" + cr);
         }
@@ -824,10 +817,9 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         StringBuffer sb = new StringBuffer();
         String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Operations";
-        Iterator<String> cItr = model.classMap.keySet().iterator();
-        while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
         {
-            AmqpClass thisClass = model.classMap.get(cItr.next());
+            AmqpClass thisClass = model.classMap.get(thisClassName);
             sb.append(indent + "virtual inline " + outerClassName + "::" + thisClass.name + "Handler* get" +
                 thisClass.name + "Handler() { return &" + Utils.firstLower(thisClass.name) + ";}" + cr);
         }
@@ -840,10 +832,9 @@ public class CppGenerator extends Generator
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
         String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
+			AmqpClass thisClass = model.classMap.get(thisClassName);
 			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			String className = parseForReservedWords(thisClass.name, null);
 			sb.append(indent + className + " " + instanceName + ";");
@@ -861,10 +852,9 @@ public class CppGenerator extends Generator
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
         String outerClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
+			AmqpClass thisClass = model.classMap.get(thisClassName);
 			String className = parseForReservedWords(thisClass.name, outerClassName);
 			sb.append(indent + className + "& get" + className + "();");
 			if (thisClass.versionSet.size() != globalVersionSet.size())
@@ -879,14 +869,14 @@ public class CppGenerator extends Generator
 		int indentSize, int tabSize)
 		throws AmqpTypeMappingException
 	{
+		String proxyClassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		String indent = Utils.createSpaces(indentSize);
 		String tab = Utils.createSpaces(tabSize);
 		StringBuffer sb = new StringBuffer();
 		boolean first = true;
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
+			AmqpClass thisClass = model.classMap.get(thisClassName);
 			String className = thisClass.name;
 			String superclassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Operations::" +
 				thisClass.name + "Handler";
@@ -902,15 +892,13 @@ public class CppGenerator extends Generator
 			sb.append(indent + "{" + cr);
 			sb.append(indent + "private:" + cr);
             sb.append(indent + tab + "OutputHandler* out;" + cr);
-			sb.append(indent + tab + "ProtocolVersion version;" + cr);
+			sb.append(indent + tab + proxyClassName + "* parent;" + cr);
 			sb.append(cr);
 			sb.append(indent + "public:" + cr);
 			sb.append(indent + tab + "// Constructors and destructors" + cr);
 			sb.append(cr);
-			sb.append(indent + tab + className + "(OutputHandler* out, u_int8_t major, u_int8_t minor) : " + cr);
-			sb.append(indent + tab + tab + "out(out), version(major, minor) {}" + cr);
-			sb.append(indent + tab + className + "(OutputHandler* out, ProtocolVersion version) : " + cr);
-			sb.append(indent + tab + tab + "out(out), version(version) {}" + cr);
+			sb.append(indent + tab + className + "(OutputHandler* out, " + proxyClassName + "* _parent) : " + cr);
+			sb.append(indent + tab + tab + "out(out) {parent = _parent;}" + cr);
 			sb.append(indent + tab + "virtual ~" + className + "() {}" + cr);
 			sb.append(cr);
 			sb.append(indent + tab + "// Protocol methods" + cr);
@@ -929,6 +917,7 @@ public class CppGenerator extends Generator
         String superclassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Operations";
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer(indent + superclassName + "(major, minor)," + cr);
+		sb.append(indent + "version(major, minor)," + cr);
         sb.append(indent + "out(out)");
 		Iterator<String> cItr = model.classMap.keySet().iterator();
 		while (cItr.hasNext())
@@ -936,7 +925,7 @@ public class CppGenerator extends Generator
 			AmqpClass thisClass = model.classMap.get(cItr.next());
 			String instanceName = parseForReservedWords(Utils.firstLower(thisClass.name), outerClassName);
 			sb.append("," + cr);
-			sb.append(indent + instanceName + "(out, major, minor)");
+			sb.append(indent + instanceName + "(out, this)");
 			if (!cItr.hasNext())
 				sb.append(cr);
 		}
@@ -980,10 +969,9 @@ public class CppGenerator extends Generator
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
 		boolean firstClassFlag = true;
-		Iterator<String> cItr = model.classMap.keySet().iterator();
-		while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
 		{
-			AmqpClass thisClass = model.classMap.get(cItr.next());
+			AmqpClass thisClass = model.classMap.get(thisClassName);
 			String className = thisClass.name;
 			if (!firstClassFlag)
 				sb.append(cr);
@@ -1003,10 +991,9 @@ public class CppGenerator extends Generator
 		StringBuffer sb = new StringBuffer();
 		String outerclassName = "AMQP_" + (serverFlag ? "Server" : "Client") + "Proxy";
 		boolean first = true;
-		Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-		while (mItr.hasNext())
+		for (String thisMethodName : thisClass.methodMap.keySet())
 		{
-			AmqpMethod method = thisClass.methodMap.get(mItr.next());
+			AmqpMethod method = thisClass.methodMap.get(thisMethodName);
 			String methodBodyClassName = thisClass.name + Utils.firstUpper(method.name) + "Body";
 			boolean clientChassisFlag = method.clientMethodFlagMap.isSet();
 			boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
@@ -1016,22 +1003,20 @@ public class CppGenerator extends Generator
 				String methodName = parseForReservedWords(method.name, outerclassName + "." + thisClass.name);
 				AmqpOverloadedParameterMap overloadededParameterMap =
 					method.getOverloadedParameterLists(thisClass.versionSet, this);
-				Iterator<AmqpOrdinalFieldMap> ofmItr = overloadededParameterMap.keySet().iterator();
-				while (ofmItr.hasNext())
+				for (AmqpOrdinalFieldMap thisFieldMap : overloadededParameterMap.keySet())
 				{
-					AmqpOrdinalFieldMap fieldMap = ofmItr.next();
-					AmqpVersionSet versionSet = overloadededParameterMap.get(fieldMap);
+					AmqpVersionSet versionSet = overloadededParameterMap.get(thisFieldMap);
 					if (!first)
 						sb.append(cr);
 					sb.append(indent + "void " + outerclassName + "::" + thisClass.name + "::" +
                         methodName + "( u_int16_t channel");
-					sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, true, true));
+					sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), true, true, true));
 					sb.append(" )");
 					if (versionSet.size() != globalVersionSet.size())
 						sb.append(" // AMQP Version(s) " + versionSet);
 					sb.append(cr);
 					sb.append(indent + "{" + cr);
-					sb.append(generateMethodBodyCallContext(fieldMap, outerclassName, methodBodyClassName,
+					sb.append(generateMethodBodyCallContext(thisFieldMap, outerclassName, methodBodyClassName,
                         versionConsistentFlag, versionSet, indentSize + tabSize, tabSize));
 					sb.append(indent + "}" + cr);
 					sb.append(cr);
@@ -1057,16 +1042,14 @@ public class CppGenerator extends Generator
 		else
 		{
 			boolean firstOverloadedMethodFlag = true;
-			Iterator<AmqpVersion> vItr = versionSet.iterator();
-			while (vItr.hasNext())
+			for (AmqpVersion thisVersion : versionSet)
 			{
-				AmqpVersion version = vItr.next();
 				sb.append(indent);
 				if (!firstOverloadedMethodFlag)
 					sb.append("else ");
-				sb.append("if (" + generateVersionCheck(version) + ")" + cr);
+				sb.append("if (" + generateVersionCheck(thisVersion) + ")" + cr);
 				sb.append(indent + "{" + cr);
-				sb.append(generateMethodBodyCall(fieldMap, methodBodyClassName, version,
+				sb.append(generateMethodBodyCall(fieldMap, methodBodyClassName, thisVersion,
 					indentSize + tabSize, tabSize));
 				sb.append(indent + "}" + cr);
 				firstOverloadedMethodFlag = false;
@@ -1091,7 +1074,7 @@ public class CppGenerator extends Generator
 		String tab = Utils.createSpaces(tabSize);
 		String namespace = version != null ? version.namespace() + "::" : "";
 		StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( channel," + cr);
-		sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( version");
+		sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
 		sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
 		sb.append(" )));" + cr);	
 		return sb.toString();		
@@ -1106,10 +1089,9 @@ public class CppGenerator extends Generator
         }
         else
         {
-            Iterator<String> cItr = model.classMap.keySet().iterator();
-            while (cItr.hasNext())
+        	for (String thisClassName : model.classMap.keySet())
             {
-                thisClass = model.classMap.get(cItr.next());
+                thisClass = model.classMap.get(thisClassName);
                 sb.append(generateClassMethodBodyInclude(thisClass, indentSize));
            }
         }
@@ -1120,10 +1102,9 @@ public class CppGenerator extends Generator
     {
         StringBuffer sb = new StringBuffer();
         String indent = Utils.createSpaces(indentSize);
-        Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-        while (mItr.hasNext())
+        for (String thisMethodName : thisClass.methodMap.keySet())
         {
-            AmqpMethod method = thisClass.methodMap.get(mItr.next());
+            AmqpMethod method = thisClass.methodMap.get(thisMethodName);
             sb.append(indent + "#include <" + thisClass.name +
                 Utils.firstUpper(method.name) + "Body.h>" + cr);
         }
@@ -1135,13 +1116,11 @@ public class CppGenerator extends Generator
 	protected String getIndex(AmqpOrdinalVersionMap indexMap, AmqpVersion version)
 		throws AmqpTemplateException
 	{
-		Iterator<Integer> iItr = indexMap.keySet().iterator();
-		while (iItr.hasNext())
+		for (Integer thisIndex : indexMap.keySet())
 		{
-			int index = iItr.next();
-			AmqpVersionSet versionSet = indexMap.get(index);
+			AmqpVersionSet versionSet = indexMap.get(thisIndex);
 			if (versionSet.contains(version))
-				return String.valueOf(index);
+				return String.valueOf(thisIndex);			
 		}
 		throw new AmqpTemplateException("Unable to find index for version " + version); 
 	}
@@ -1155,38 +1134,11 @@ public class CppGenerator extends Generator
         if (version == null)
             version = globalVersionSet.first();
         AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, this);
-        Iterator<Integer> oItr = ordinalFieldMap.keySet().iterator();
-        while (oItr.hasNext())
+        for (Integer thisOrdinal : ordinalFieldMap.keySet())
         {
-            String[] fieldDomainPair = ordinalFieldMap.get(oItr.next());
-            sb.append(indent + fieldDomainPair[FIELD_DOMAIN] + " " + fieldDomainPair[FIELD_NAME] + ";" + cr);
+            String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
+            sb.append(indent + fieldDomainPair[FIELD_CODE_TYPE] + " " + fieldDomainPair[FIELD_NAME] + ";" + cr);        	
         }
-        // TODO: Replace the pattern below with that above in the JavaGenerator and elsewhere here.
-//		Iterator<String> fItr = fieldMap.keySet().iterator();
-//		while(fItr.hasNext())
-//		{
-//			AmqpField fieldDetails = fieldMap.get(fItr.next());
-//			if (version == null) // Version consistent - there *should* be only one domain
-//			{
-//				String domainName =  fieldDetails.domainMap.firstKey();
-//				String codeType = getGeneratedType(domainName, globalVersionSet.first());
-//				sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
-//			}
-//			else
-//			{
-//				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
-//				while (dItr.hasNext())
-//				{
-//					String domainName = dItr.next();
-//					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
-//					if (versionSet.contains(version))
-//					{
-//						String codeType = getGeneratedType(domainName, version);
-//						sb.append(indent + codeType + " " + fieldDetails.name + ";" + cr);
-//					}
-//				}
-//			}
-//		}
 		return sb.toString();
 	}
 	
@@ -1195,35 +1147,17 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
-		Iterator<String> fItr = fieldMap.keySet().iterator();
-		while(fItr.hasNext())
-		{
-			AmqpField fieldDetails = fieldMap.get(fItr.next());
-			if (version == null) // Version consistent - there *should* be only one domain
-			{
-				String domainName =  fieldDetails.domainMap.firstKey();
-				String codeType = getGeneratedType(domainName, globalVersionSet.first());
-				sb.append(indent + "inline " + setRef(codeType) + " get" +
-					Utils.firstUpper(fieldDetails.name) + "() { return " +
-					fieldDetails.name + "; }" + cr);
-			}
-			else
-			{
-				Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
-				while (dItr.hasNext())
-				{
-					String domainName = dItr.next();
-					AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
-					if (versionSet.contains(version))
-					{
-						String codeType = getGeneratedType(domainName, version);
-						sb.append(indent + "inline " + setRef(codeType) + " get" +
-								Utils.firstUpper(fieldDetails.name) + "() { return " +
-								fieldDetails.name + "; }" + cr);
-					}
-				}
-			}
-		}
+		
+        if (version == null)
+            version = globalVersionSet.first();
+        AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, this);
+        for (Integer thisOrdinal : ordinalFieldMap.keySet())
+        {
+            String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
+			sb.append(indent + "inline " + setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " get" +
+				Utils.firstUpper(fieldDomainPair[FIELD_NAME]) + "() { return " +
+				fieldDomainPair[FIELD_NAME] + "; }" + cr);
+        }
 		return sb.toString();
 	}
 	
@@ -1232,42 +1166,21 @@ public class CppGenerator extends Generator
 	{
 		String indent = Utils.createSpaces(indentSize);
 		StringBuffer sb = new StringBuffer();
-		Iterator<String> fItr = fieldMap.keySet().iterator();
-		boolean firstFlag = true;
-		while(fItr.hasNext())
-		{
-			AmqpField fieldDetails = fieldMap.get(fItr.next());
-            if (version == null) // Version consistent - there *should* be only one domain
-            {
-                String domainName =  fieldDetails.domainMap.firstKey();
-                String codeType = getGeneratedType(domainName, globalVersionSet.first());
-                String cast = codeType.compareTo("u_int8_t") == 0 ? "(int)" : "";
-                sb.append(indent + "out << \"");
-                if (!firstFlag)
-                    sb.append("; ");
-                sb.append(fieldDetails.name + "=\" << " + cast + fieldDetails.name + ";" + cr);
-               firstFlag = false;
-            }
-            else
-            {
-                Iterator<String> dItr = fieldDetails.domainMap.keySet().iterator();
-                while (dItr.hasNext())
-                {
-                    String domainName = dItr.next();
-                    AmqpVersionSet versionSet = fieldDetails.domainMap.get(domainName);
-                    if (versionSet.contains(version))
-                    {
-                        String codeType = getGeneratedType(domainName, version);
-                        String cast = codeType.compareTo("u_int8_t") == 0 ? "(int)" : "";
-                        sb.append(indent + "out << \"");
-                        if (!firstFlag)
-                            sb.append("; ");
-                        sb.append(fieldDetails.name + "=\" << " + cast + fieldDetails.name + ";" + cr);                    
-                        firstFlag = false;
-                    }
-                }
-            }
-		}
+		
+        if (version == null)
+            version = globalVersionSet.first();
+        AmqpOrdinalFieldMap ordinalFieldMap = fieldMap.getMapForVersion(version, true, this);
+        boolean firstFlag = true;
+        for (Integer thisOrdinal : ordinalFieldMap.keySet())
+        {
+            String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
+            String cast = fieldDomainPair[FIELD_CODE_TYPE].compareTo("u_int8_t") == 0 ? "(int)" : "";
+            sb.append(indent + "out << \"");
+            if (!firstFlag)
+                sb.append("; ");
+            sb.append(fieldDomainPair[FIELD_NAME] + "=\" << " + cast + fieldDomainPair[FIELD_NAME] + ";" + cr);
+            firstFlag = false;
+        }
 		return sb.toString();		
 	}
 	
@@ -1286,7 +1199,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1345,7 +1258,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1413,7 +1326,7 @@ public class CppGenerator extends Generator
 			ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
 			AmqpVersion thisVersion = version == null ? globalVersionSet.first() : version;
-			String domainType = getDomainType(fieldDomainPair[FIELD_DOMAIN], thisVersion);
+			String domainType = getDomainType(fieldDomainPair[FIELD_CODE_TYPE], thisVersion);
 			
 			// Defer bit types by adding them to an array. When the first subsequent non-bit
 			// type is encountered, then handle the bits. This allows consecutive bits to be
@@ -1477,7 +1390,7 @@ public class CppGenerator extends Generator
 		{
 			int ordinal = oItr.next();
 			String[] fieldDomainPair = ordinalFieldMap.get(ordinal);
-			sb.append(indent + (defineFlag ? setRef(fieldDomainPair[FIELD_DOMAIN]) + " " : "") +
+			sb.append(indent + (defineFlag ? setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " " : "") +
 				fieldDomainPair[FIELD_NAME] + (initializerFlag ? "(" + fieldDomainPair[FIELD_NAME] + ")" : "") +
 				(oItr.hasNext() ? "," : "") + cr);
 		}
@@ -1504,7 +1417,7 @@ public class CppGenerator extends Generator
 				sb.append(indent);
 			}
 			sb.append(
-                (fieldTypeFlag ? setRef(field[FIELD_DOMAIN]) : "") +
+                (fieldTypeFlag ? setRef(field[FIELD_CODE_TYPE]) : "") +
 				(fieldNameFlag ? " " + field[FIELD_NAME] : "") +
 				(pItr.hasNext() ? "," + (fieldNameFlag ? cr : " ") : ""));
 			first = false;
@@ -1521,7 +1434,7 @@ public class CppGenerator extends Generator
         StringBuffer sb = new StringBuffer();
         if (method.fieldMap.size() > 0)
         {
-            sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion version," + cr);
+            sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion& version," + cr);
             sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
             sb.append(indent + tab + ") :" + cr);
             sb.append(indent + tab + "AMQMethodBody(version)," + cr);
@@ -1573,14 +1486,12 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         StringBuffer sb = new StringBuffer();
         
-        Iterator<String> cItr = model.classMap.keySet().iterator();
-        while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
         {
-            AmqpClass thisClass = model.classMap.get(cItr.next());
-            Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-            while (mItr.hasNext())
+            AmqpClass thisClass = model.classMap.get(thisClassName);
+            for (String thisMethodName : thisClass.methodMap.keySet())
             {
-                AmqpMethod method = thisClass.methodMap.get(mItr.next());
+                AmqpMethod method = thisClass.methodMap.get(thisMethodName);
                 sb.append(indent + "#include \"" + thisClass.name + Utils.firstUpper(method.name) + "Body.h\"" + cr);
             }
         }
@@ -1593,14 +1504,12 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         StringBuffer sb = new StringBuffer();
         
-        Iterator<String> cItr = model.classMap.keySet().iterator();
-        while (cItr.hasNext())
+        for (String thisClassName : model.classMap.keySet())
         {
-            AmqpClass thisClass = model.classMap.get(cItr.next());
-            Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-            while (mItr.hasNext())
+            AmqpClass thisClass = model.classMap.get(thisClassName);
+            for (String thisMethodName : thisClass.methodMap.keySet())
             {
-                AmqpMethod method = thisClass.methodMap.get(mItr.next());
+                AmqpMethod method = thisClass.methodMap.get(thisMethodName);
                 sb.append(indent + "const " + thisClass.name + Utils.firstUpper(method.name) + "Body " +
                     Utils.firstLower(thisClass.name) + "_" + method.name + ";" + cr);
             }
@@ -1617,14 +1526,12 @@ public class CppGenerator extends Generator
         
         for (AmqpVersion version : globalVersionSet)
         {
-            Iterator<String> cItr = model.classMap.keySet().iterator();
-            while (cItr.hasNext())
+            for (String thisClassName : model.classMap.keySet())
             {
-                AmqpClass thisClass = model.classMap.get(cItr.next());
-                Iterator<String> mItr = thisClass.methodMap.keySet().iterator();
-                while (mItr.hasNext())
+                AmqpClass thisClass = model.classMap.get(thisClassName);
+                for (String thisMethodName : thisClass.methodMap.keySet())
                 {
-                    AmqpMethod method = thisClass.methodMap.get(mItr.next());
+                    AmqpMethod method = thisClass.methodMap.get(thisMethodName);
                     String namespace = method.isVersionConsistent(globalVersionSet) ? "" : version.namespace() + "::";
                     try
                     {

@@ -18,10 +18,10 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.management.ManagedObject;
 
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
@@ -33,12 +33,13 @@ import java.util.ArrayList;
 public class ExchangeMBeanTest  extends TestCase
 {
     private AMQQueue _queue;
-    private QueueRegistry _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
+    private QueueRegistry _queueRegistry;
 
     /**
      * Test for direct exchange mbean
      * @throws Exception
      */
+
     public void testDirectExchangeMBean() throws Exception
     {
         DestNameExchange exchange = new DestNameExchange();
@@ -65,6 +66,7 @@ public class ExchangeMBeanTest  extends TestCase
      * Test for "topic" exchange mbean
      * @throws Exception
      */
+
     public void testTopicExchangeMBean() throws Exception
     {
         DestWildExchange exchange = new DestWildExchange();
@@ -91,6 +93,7 @@ public class ExchangeMBeanTest  extends TestCase
      * Test for "Headers" exchange mbean
      * @throws Exception
      */
+
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
@@ -117,6 +120,7 @@ public class ExchangeMBeanTest  extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
         _queue = new AMQQueue("testQueue", false, "ExchangeMBeanTest", false, _queueRegistry);
         _queueRegistry.registerQueue(_queue);
     }

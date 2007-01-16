@@ -18,6 +18,9 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -183,33 +186,25 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     }
 
     /**
-     * @see AMQMinaProtocolSession#closeChannel(int) 
-     */
-    public void closeChannel(int id) throws JMException
-    {
-        try
-        {
-            AMQChannel channel = _session.getChannel(id);
-            if (channel == null)
-            {
-                throw new JMException("The channel (channel Id = " + id + ") does not exist");
-            }
-
-            _session.closeChannel(id);
-        }
-        catch (AMQException ex)
-        {
-            throw new MBeanException(ex, ex.toString());
-        }
-    }
-
-    /**
      * closes the connection. The administrator can use this management operation to close connection to free up
      * resources.
      * @throws JMException
      */
     public void closeConnection() throws JMException
     {
+        
+        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        final AMQFrame response = ConnectionCloseBody.createAMQFrame(0,
+            (byte)8, (byte)0,	// AMQP version (major, minor)
+            0,	// classId
+            0,	// methodId
+        	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
+            "Broker Management Console has closing the connection."	// replyText
+            );
+        _session.writeFrame(response);
+
         try
         {
             _session.closeSession();

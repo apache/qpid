@@ -46,6 +46,7 @@ public class Utils
 	public final static String ELEMENT_AMQP = "amqp";
 	public final static String ELEMENT_CHASSIS = "chassis";
 	public final static String ELEMENT_CLASS = "class";
+	public final static String ELEMENT_CODEGEN = "codegen";
     public final static String ELEMENT_CONSTANT = "constant";
 	public final static String ELEMENT_DOMAIN = "domain";
 	public final static String ELEMENT_METHOD = "method";

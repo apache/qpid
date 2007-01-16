@@ -36,14 +36,17 @@
 namespace qpid {
 namespace framing {
 
-class AMQP_ClientProxy : virtual public AMQP_ClientOperations
+class AMQP_ClientProxy : public AMQP_ClientOperations
 {
 private:
+    
+    ProtocolVersion version;
     OutputHandler* out;
 %{CLIST} ${cph_handler_pointer_defn}
 
 public:
     AMQP_ClientProxy(OutputHandler* out, u_int8_t major, u_int8_t minor);
+    ProtocolVersion& getProtocolVersion() {return version;}
     virtual ~AMQP_ClientProxy() {}
 
 	// Get methods for handlers

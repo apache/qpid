@@ -48,7 +48,7 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
    /* (non-Javadoc)
      * @see org.apache.qpid.gentools.NodeAware#addFromNode(org.w3c.dom.Node, int, org.apache.qpid.gentools.AmqpVersion)
      */
-    public void addFromNode(Node node, int ordinal, AmqpVersion version)
+    public boolean addFromNode(Node node, int ordinal, AmqpVersion version)
         throws AmqpParseException, AmqpTypeMappingException
     {
         NodeList nodeList = node.getChildNodes();
@@ -71,10 +71,8 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
                         thisConstant.versionSet.add(version);
                         // Now, find the value in the map
                         boolean foundValue = false;
-                        Iterator<String> vItr = thisConstant.keySet().iterator();
-                        while (vItr.hasNext() && !foundValue)
+                        for (String thisValue : thisConstant.keySet())
                         {
-                            String thisValue = vItr.next();
                             if (value.compareTo(thisValue) == 0)
                             {
                                 foundValue = true;
@@ -97,6 +95,7 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
                 }
            }
         }
+        return true;
     }
     
     /* (non-Javadoc)
@@ -105,10 +104,9 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
     public void print(PrintStream out, int marginSize, int tabSize)
     {
         out.println(Utils.createSpaces(marginSize) + "Constants: ");
-        Iterator<AmqpConstant> cItr = iterator();
-        while (cItr.hasNext())
+        for (AmqpConstant thisAmqpConstant : this)
         {
-            cItr.next().print(out, marginSize, tabSize);
+        	thisAmqpConstant.print(out, marginSize, tabSize);
         }
     }
     

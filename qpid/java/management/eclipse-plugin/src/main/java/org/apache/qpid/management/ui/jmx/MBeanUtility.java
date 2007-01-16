@@ -22,8 +22,10 @@ package org.apache.qpid.management.ui.jmx;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -35,6 +37,7 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
@@ -140,30 +143,30 @@ public class MBeanUtility
     {
         if (mbean == null)
         {
-            ViewUtility.popupErrorMessage("Error", ex.getMessage());
+            ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
         }
         else if (ex instanceof IOException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "IO Error occured \n" + ex.toString());
         }
         else if (ex instanceof ReflectionException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Server has thrown error \n" + ex.toString());
         }
         else if (ex instanceof InstanceNotFoundException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Managed Object Not Found \n" + ex.toString());
         }
         else if (ex instanceof MBeanException)
         {
-            String cause = ((MBeanException)ex).getTargetException().getMessage();
+            String cause = ((MBeanException)ex).getTargetException().toString();
             if (cause == null)
-                cause = ex.getMessage();
+                cause = ex.toString();
             ViewUtility.popupInfoMessage(mbean.getName(), cause);
         }
         else if (ex instanceof JMException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getName(), "Management Exception occured \n" + ex.toString());
         }
         else if (ex instanceof ManagementConsoleException)
         {
@@ -171,9 +174,9 @@ public class MBeanUtility
         }
         else 
         {
-            ViewUtility.popupError(mbean.getName(), "Error occured", ex);
+            ViewUtility.popupErrorMessage(mbean.getName(), ex.toString());
         }
-        //ex.printStackTrace();
+        ex.printStackTrace();
     }
     
     /**
@@ -204,7 +207,36 @@ public class MBeanUtility
         serverRegistry.removeNotificationListener(mbean, name, type);
     }
     
-    public static int refreshAttribute(ManagedBean mbean, String attribute) throws Exception
+    /**
+     * Checks if the server registry contains attribute information for this mbean. If not then it queries the
+     * mbean server for complete mbean information, else it gets the latest value of the given attribute
+     * from mbean server.
+     * @return attribute data for the given mbean attribute
+     */
+    public static AttributeData getAttributeData(ManagedBean mbean, String attribute) throws Exception
+    {
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(mbean);
+        ManagedAttributeModel attributeModel = serverRegistry.getAttributeModel(mbean);
+        if (attributeModel == null)
+        {
+            // If process is here, it means the mbeanInfo is not retrieved from mbean server even once for this mbean
+            getMBeanInfo(mbean);
+        }
+        else
+        {
+            // refresh attribute value from mbean server
+            refreshAttribute(mbean, attribute);
+        }
+        attributeModel = serverRegistry.getAttributeModel(mbean);
+        return attributeModel.getAttribute(attribute);
+    }
+    
+    /**
+     * Retrieves the latest attribute value from mbean server for the given mbean attribute
+     * and also sets that value in the attribute model in the server registry
+     * @return latest attribute value for the given mbean attribute
+     */
+    public static Object refreshAttribute(ManagedBean mbean, String attribute) throws Exception
     {
         JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(mbean);
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
@@ -215,10 +247,10 @@ public class MBeanUtility
         }
         
         Object value = mbsc.getAttribute(((JMXManagedObject)mbean).getObjectName(), attribute);
-        
+        // update the attribute data in server registry for this attribute
         ManagedAttributeModel attributeModel = serverRegistry.getAttributeModel(mbean);
         attributeModel.setAttributeValue(attribute, value);
-        return Integer.parseInt(String.valueOf(value));
+        return value;
     }
     
     /**
@@ -237,9 +269,12 @@ public class MBeanUtility
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
         MBeanAttributeInfo[] attributesInfo = null;
         ManagedAttributeModel attributeModel = serverRegistry.getAttributeModel(mbean);
-        // If retrieving attributeInfo for the first time.
+        
         if (attributeModel == null)
         {
+            // If the process is here, then it means the attribute values are not retrieved from mbean server
+            // even once for this mbean. Create attribute model, retrieve values from mbean server and 
+            // set the attribute model in server registry for this mbean
             attributeModel = new ManagedAttributeModel();
             attributesInfo = serverRegistry.getMBeanInfo(mbean).getAttributes();
             attributes = new String[attributesInfo.length];
@@ -311,8 +346,8 @@ public class MBeanUtility
         OperationDataModel dataModel = serverRegistry.getOperationModel(mbean);
         if (dataModel == null)
         {
-            MBeanInfo mbeanInfo = serverRegistry.getMBeanInfo(mbean);
-            MBeanOperationInfo[] operationsInfo = mbeanInfo.getOperations();
+            // Create operation model and set it in server registry for this mbean
+            MBeanOperationInfo[] operationsInfo = serverRegistry.getMBeanInfo(mbean).getOperations();
             dataModel = new OperationDataModel();
             
             for (int i = 0; i < operationsInfo.length; i++)
@@ -322,7 +357,6 @@ public class MBeanUtility
             
             serverRegistry.setOperationModel(mbean, dataModel);
         }
-        
         return dataModel;
     }
     
@@ -333,15 +367,15 @@ public class MBeanUtility
      */
     public static NotificationInfoModel[] getNotificationInfo(ManagedBean mbean)
     {
-        
         JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(mbean);
         MBeanNotificationInfo[] info = serverRegistry.getMBeanInfo(mbean).getNotifications();
         
+        // Check if this mbean sends any notification
         if (info == null || info.length == 0)
             return null;
         
+        // Create notification model if not already set in the server registry for this mbean
         List<NotificationInfoModel> list = serverRegistry.getNotificationInfo(mbean);
-        
         if (list != null) 
             return list.toArray(new NotificationInfoModel[0]);
         else
@@ -351,8 +385,43 @@ public class MBeanUtility
         {
             list.add(new NotificationInfoModel(info[i].getName(), info[i].getDescription(), info[i].getNotifTypes()));
         }
-        serverRegistry.setNotificationInfo(mbean, list);
         
+        // Set the notification model in the server registry for this mbean
+        serverRegistry.setNotificationInfo(mbean, list);
         return list.toArray(new NotificationInfoModel[0]);
+    }
+    
+    /**
+     * Retrieves all the MBeans from mbean server for a given domain
+     * @return list of ManagedBeans
+     */
+    public static List<ManagedBean> getManagedObjectsForDomain(ManagedServer server, String domain) throws Exception
+    {
+        List<ManagedBean> mbeans = new ArrayList<ManagedBean>();
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
+        ObjectName objName = new ObjectName(domain + ":*"); 
+        Set objectInstances = mbsc.queryMBeans(objName, null);
+
+        for (Iterator itr = objectInstances.iterator(); itr.hasNext();)
+        {
+            ObjectInstance instance = (ObjectInstance)itr.next();
+            ManagedBean obj = new JMXManagedObject(instance.getObjectName());
+            mbeans.add(obj);
+        }
+        
+        return mbeans;
+    }
+    
+    /**
+     * Returns all the domains for the given server. This method can be removed as now this RCP is specific to 
+     * Qpid and domain is also fixed
+     */
+    public static List<String> getAllDomains(ManagedServer server) throws Exception
+    {
+        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
+        String[] domains = mbsc.getDomains();
+        return Arrays.asList(domains);
     }
 }

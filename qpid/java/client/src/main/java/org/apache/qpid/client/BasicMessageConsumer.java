@@ -448,7 +448,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 if(sendClose)
                 {
-                    final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId, _consumerTag, false);
+                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId,
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        _consumerTag,	// consumerTag
+                        false);	// nowait
 
                     try
                     {

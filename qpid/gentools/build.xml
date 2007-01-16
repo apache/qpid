@@ -1,4 +1,3 @@
-<?xml version="1.0"?>
 <!--
  -
  - Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +18,17 @@
  - under the License.
  -
  -->
-<registries>
-    <registry name="MainRegistry"/>
-    <registry name="ClusterRegistry"/>
-</registries>
+<project name="gentools" default="compile">
+	<property name="src" location="src" />
+
+	<target name="compile">
+    	<javac srcdir="${src}" source="1.5" fork="true" />
+    </target>
+    
+	<target name="clean">
+    	<delete>
+        	<fileset dir="${src}/org/apache/qpid/gentools" includes="*.class" />
+    	</delete>
+    </target>
+
+</project>

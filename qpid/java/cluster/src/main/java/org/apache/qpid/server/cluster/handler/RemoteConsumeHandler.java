@@ -48,7 +48,13 @@ public class RemoteConsumeHandler implements StateAwareMethodListener<BasicConsu
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).addRemoteSubcriber(ClusteredProtocolSession.getSessionPeer(session));
-            session.writeFrame(BasicConsumeOkBody.createAMQFrame(evt.getChannelId(), evt.getMethod().queue));
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            session.writeFrame(BasicConsumeOkBody.createAMQFrame(evt.getChannelId(),
+            	(byte)8, (byte)0,	// AMQP version (major, minor)
+            	evt.getMethod().queue	// consumerTag
+                ));
         }
         else
         {

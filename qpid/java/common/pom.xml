@@ -35,13 +35,11 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-        <cluster.asl>${basedir}/src/main/xsl/cluster.asl</cluster.asl>
-        <spec.stylesheet>${basedir}/src/main/xsl/framing.xsl</spec.stylesheet>
-        <registry.stylesheet>${basedir}/src/main/xsl/registry.xsl</registry.stylesheet>
-        <registry.template>${basedir}/src/main/xsl/registry.template</registry.template>
-        <generated.path>${project.build.directory}/generated-sources/xsl</generated.path>
+        <gentools.home>${topDirectoryLocation}/../gentools</gentools.home>
+        <generated.path>${project.build.directory}/generated-sources/gentools</generated.path>
         <generated.package>org/apache/qpid/framing</generated.package>
         <generated.dir>${generated.path}/${generated.package}</generated.dir>
+        <generated.timestamp>${generated.dir}/timestamp</generated.timestamp>
         <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
     </properties>
 
@@ -56,15 +54,7 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <tasks>
-                                <ant antfile="protocol-version.xml">
-                                    <property name="cluster.asl" value="${cluster.asl}"/>
-                                    <property name="spec.stylesheet" value="${spec.stylesheet}"/>
-                                    <property name="registry.stylesheet" value="${registry.stylesheet}"/>
-                                    <property name="registry.template" value="${registry.template}"/>
-                                    <property name="generated.dir" value="${generated.dir}"/>
-                                    <property name="proto_version" value="${generated.dir}/ProtocolVersionList.java"/>
-                                    <property name="specs.dir" value="${specs.dir}"/>
-                                </ant>
+                                <ant antfile="protocol-version.xml" />
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>
                         </configuration>
