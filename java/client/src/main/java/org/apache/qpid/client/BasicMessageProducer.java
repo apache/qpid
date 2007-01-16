@@ -520,9 +520,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
 
-        
+
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
-        message.getJmsContentHeaderProperties().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName(), destination.toByteEncoding());
+        message.getJmsContentHeaderProperties().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.
+                                                         getShortStringName(), destination.toByteEncoding());
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
@@ -645,7 +646,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 int length = (remaining >= framePayloadMax) ? (int) framePayloadMax : (int) remaining;
                 payload.limit(payload.position() + length);
                 frames[i] = ContentBody.createAMQFrame(channelId,new ContentBody(payload.slice()));
-                                            
+
                 remaining -= length;
             }
         }
