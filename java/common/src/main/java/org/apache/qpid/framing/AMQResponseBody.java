@@ -34,7 +34,7 @@ public class AMQResponseBody extends AMQBody
 
     // Constructor
     public AMQResponseBody() {}
-    public AMQResponseBody(long getResponseId, long getRequestId,
+    public AMQResponseBody(long responseId, long requestId,
             int batchOffset, AMQMethodBody methodPayload)
     {
         this.responseId = responseId;

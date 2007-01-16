@@ -307,9 +307,8 @@ public class EncodingUtils
 
     public static Content readContent(ByteBuffer buffer) throws AMQFrameDecodingException
     {
-        long length = buffer.getUnsignedInt();
     	Content content = new Content();
-        content.populateFromBuffer(buffer, length);
+        content.populateFromBuffer(buffer);
         return content;
     }
 
