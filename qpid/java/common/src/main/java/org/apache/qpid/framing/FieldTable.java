@@ -278,7 +278,8 @@ public class FieldTable
     {
         AMQTypedValue value = getProperty(string);
         if ((value != null) && ((value.getType() == AMQType.WIDE_STRING) ||
-                                (value.getType() == AMQType.ASCII_STRING)))
+                                (value.getType() == AMQType.ASCII_STRING ||
+                                (value.getType() == AMQType.LONG_STRING))))
         {
             return (String) value.getValue();
         }
@@ -446,7 +447,7 @@ public class FieldTable
         }
         else
         {
-            return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
+            return setProperty(string, AMQType.LONG_STRING.asTypedValue(value));
         }
 
     }
