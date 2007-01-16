@@ -20,22 +20,18 @@
  */
 package org.apache.qpid.requestreply;
 
-import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.jms.*;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingProducer;
 import org.apache.qpid.util.concurrent.BooleanLatch;
+
+import javax.jms.*;
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * PingPongProducer is a client that sends pings to a queue and waits for pongs to be bounced back by a bounce back
@@ -238,7 +234,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
-    public Message pingAndWaitForReply(Message message, long timeout) throws JMSException
+    public Message pingAndWaitForReply(Message message, long timeout) throws JMSException, InterruptedException
     {
         _producer.send(message);
 
@@ -296,6 +292,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         {
             _publish = false;
             _logger.debug("There was a JMSException: " + e.getMessage(), e);
+        }
+        catch (InterruptedException e)
+        {
+            _publish = false;
+            _logger.debug("There was an interruption: " + e.getMessage(), e);
         }
     }
 }
