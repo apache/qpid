@@ -311,6 +311,7 @@ public class AMQChannel
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
         requeue();
+		_txnContext.commit();
     }
 
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
