@@ -38,7 +38,10 @@ public class Main
 {
     private static final String defaultOutDir = ".." + Utils.fileSeparator + "gen";
     private static final String defaultCppTemplateDir = ".." + Utils.fileSeparator + "templ.cpp";
+    private static final String defaultDotnetTemplateDir = ".." + Utils.fileSeparator + "templ.net";
     private static final String defaultJavaTemplateDir = ".." + Utils.fileSeparator + "templ.java";
+    
+    private enum GeneratorLangEnum { CPP, DOTNET, JAVA }
     
 	private DocumentBuilder docBuilder;
 	private AmqpVersionSet versionSet;
@@ -49,7 +52,7 @@ public class Main
     
     private String outDir;
     private String tmplDir;
-    private boolean javaFlag;
+    private GeneratorLangEnum generatorLang;
     private ArrayList<String> xmlFiles;
     private File[] modelTemplateFiles;
     private File[] classTemplateFiles;
@@ -81,13 +84,20 @@ public class Main
         // 0. Initialize
         outDir = defaultOutDir;
         tmplDir = null;
-        javaFlag = true;
+        generatorLang = GeneratorLangEnum.CPP; // Default generation language
         xmlFiles.clear();
         processArgs(args);
-		if (javaFlag)
-            prepareJava();
-        else
+        switch (generatorLang)
+        {
+        case JAVA:
+        	prepareJava();
+        	break;
+        case DOTNET:
+        	prepareDotnet();
+        	break;
+        default:
             prepareCpp();
+        }
 
 		if (modelTemplateFiles.length == 0 && classTemplateFiles.length == 0 &&
 			methodTemplateFiles.length == 0 && fieldTemplateFiles.length == 0)
@@ -128,11 +138,15 @@ public class Main
                 {
                     case 'c':
                     case 'C':
-                        javaFlag = false;
+                    	generatorLang = GeneratorLangEnum.CPP;
                         break;
                     case 'j':
                     case 'J':
-                        javaFlag = true;
+                    	generatorLang = GeneratorLangEnum.JAVA;
+                        break;
+                    case 'n':
+                    case 'N':
+                    	generatorLang = GeneratorLangEnum.DOTNET;
                         break;
                     case 'o':
                     case 'O':
@@ -182,6 +196,30 @@ public class Main
         };
     }
     
+    private void prepareDotnet()
+    {
+        if (tmplDir == null)
+            tmplDir = defaultDotnetTemplateDir;
+        System.out.println(".NET generation mode.");
+        generator = new DotnetGenerator(versionSet);
+        constants = new AmqpConstantSet(generator);
+        domainMap = new AmqpDomainMap(generator);
+        model = new AmqpModel(generator);       
+    	// TODO: Add templated that should be handled in here...
+       modelTemplateFiles = new File[]
+        {
+//          new File(tmplDir + Utils.fileSeparator + "XXXClass.tmpl"),
+        };
+        classTemplateFiles = new File[]
+        {
+//          new File(tmplDir + Utils.fileSeparator + "XXXClass.tmpl"),
+        };
+        methodTemplateFiles = new File[]
+        {
+//          new File(tmplDir + Utils.fileSeparator + "XXXClass.tmpl"),
+        };
+   }
+   
     private void prepareCpp()
     {
         if (tmplDir == null)
@@ -293,6 +331,7 @@ public class Main
 		System.out.println("Usage: Main -c|-j [-o outDir] [-t tmplDir] XMLfile [XMLfile ...]");
 		System.out.println("       where -c:         Generate C++.");
 		System.out.println("             -j:         Generate Java.");
+		System.out.println("             -n:         Generate .NET.");
         System.out.println("             -o outDir:  Use outDir as the output dir (default=\"" + defaultOutDir + "\").");
         System.out.println("             -t tmplDir: Find templates in tmplDir.");
         System.out.println("                         Defaults: \"" + defaultCppTemplateDir + "\" for C++;");
