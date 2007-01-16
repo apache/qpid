@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.handler;
+package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageEmptyBody;
@@ -41,7 +41,7 @@ public class MessageEmptyMethodHandler implements StateAwareMethodListener
     
     public void methodReceived (AMQStateManager stateManager,
                                 AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageEmptyBody> evt)
+                               	AMQMethodEvent evt)
                                 throws AMQException
     {
 		// TODO
