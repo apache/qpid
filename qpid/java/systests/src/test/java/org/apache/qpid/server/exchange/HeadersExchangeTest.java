@@ -43,8 +43,6 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         TestQueue q6 = bindDefault("F0000=Aardvark", "F0001=Bear");
         TestQueue q7 = bindDefault("F0000", "F0001=Bear");
         TestQueue q8 = bindDefault("F0000=Aardvark", "F0001");
-        TestQueue q9 = bindDefault("F0000=Apple", "F0001=Banana");
-        TestQueue q10 = bindDefault("F0000=Apple", "F0001");
 
         routeAndTest(new Message("Message1", "F0000"), q1);
         routeAndTest(new Message("Message2", "F0000=Aardvark"), q1, q2);
@@ -74,7 +72,6 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         TestQueue q2 = bindDefault("F0000=Aardvark", "F0001=Bear", "X-match=any");
         TestQueue q3 = bindDefault("F0000", "F0001=Bear", "X-match=any");
         TestQueue q4 = bindDefault("F0000=Aardvark", "F0001", "X-match=any");
-        TestQueue q5 = bindDefault("F0000=Apple", "F0001=Banana", "X-match=any");
         TestQueue q6 = bindDefault("F0000=Apple", "F0001", "X-match=any");
 
         routeAndTest(new Message("Message1", "F0000"), q1, q3);
@@ -87,16 +84,14 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 
     public void testMandatory() throws AMQException
     {
-        TestQueue q1 = bindDefault("F0000");
+        bindDefault("F0000");
         Message m1 = new Message("Message1", "XXXXX");
         Message m2 = new Message("Message2", "F0000");
         BasicPublishBody pb1 = m1.getPublishBody();
         pb1.mandatory = true;
-        BasicPublishBody pb2 = m1.getPublishBody();
+        BasicPublishBody pb2 = m2.getPublishBody();
         pb2.mandatory = true;
         routeAndTest(m1,true);
-
-
     }
 
     public static junit.framework.Test suite()

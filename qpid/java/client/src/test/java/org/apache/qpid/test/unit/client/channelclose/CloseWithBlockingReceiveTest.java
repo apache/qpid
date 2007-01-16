@@ -25,7 +25,6 @@ import org.apache.qpid.client.transport.TransportConnection;
 import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.MessageConsumer;
-import javax.jms.Message;
 
 /**
  * @author Apache Software Foundation
@@ -72,7 +71,7 @@ public class CloseWithBlockingReceiveTest extends TestCase
         };
         long startTime = System.currentTimeMillis();
         new Thread(r).start();
-        Message m = consumer.receive(10000);
+        consumer.receive(10000);
         assertTrue(System.currentTimeMillis() - startTime < 10000);
     }
 

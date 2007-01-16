@@ -23,13 +23,15 @@ package org.apache.qpid.client;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
+import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
@@ -69,15 +71,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
 
     /**
-     *  Used to reference durable subscribers so they requests for unsubscribe can be handled
-     *  correctly.  Note this only keeps a record of subscriptions which have been created
-     *  in the current instance.  It does not remember subscriptions between executions of the
-     *  client
+     * Used to reference durable subscribers so they requests for unsubscribe can be handled
+     * correctly.  Note this only keeps a record of subscriptions which have been created
+     * in the current instance.  It does not remember subscriptions between executions of the
+     * client
      */
     private final ConcurrentHashMap<String, TopicSubscriberAdaptor> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
     private final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
-                new ConcurrentHashMap<BasicMessageConsumer, String>();
+            new ConcurrentHashMap<BasicMessageConsumer, String>();
 
     /**
      * Used in the consume method. We generate the consume tag on the client so that we can use the nowait
@@ -143,6 +145,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private boolean _inRecovery;
 
 
+
     /**
      * Responsible for decoding a message fragment and passing it to the appropriate message consumer.
      */
@@ -176,7 +179,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             if (message.deliverBody != null)
             {
-                final BasicMessageConsumer consumer = _consumers.get(message.deliverBody.consumerTag);
+                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.deliverBody.consumerTag);
 
                 if (consumer == null)
                 {
@@ -210,17 +213,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     {
                         _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
                     }
+                    else if (errorCode == AMQConstant.NO_ROUTE.getCode())
+                    {
+                        _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
+                    }
                     else
                     {
-                        if (errorCode == AMQConstant.NO_ROUTE.getCode())
-                        {
-                            _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
-                        }
-                        else
-                        {
-                            _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage));
-                        }
+                        _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage));
                     }
+
                 }
                 catch (Exception e)
                 {
@@ -318,7 +319,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public BytesMessage createBytesMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -334,7 +335,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public MapMessage createMapMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -350,7 +351,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public javax.jms.Message createMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -366,7 +367,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public ObjectMessage createObjectMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -382,7 +383,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -400,7 +401,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public StreamMessage createStreamMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
 
@@ -417,7 +418,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public TextMessage createTextMessage() throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
 
@@ -434,7 +435,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public TextMessage createTextMessage(String text) throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             checkNotClosed();
             try
@@ -504,7 +505,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         // We must close down all producers and consumers in an orderly fashion. This is the only method
         // that can be called from a different thread of control from the one controlling the session
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             //Ensure we only try and close an open session.
             if (!_closed.getAndSet(true))
@@ -569,7 +570,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void closed(Throwable e)
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized(_connection.getFailoverMutex())
         {
             // An AMQException has an error code and message already and will be passed in when closure occurs as a
             // result of a channel close request
@@ -721,18 +722,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void acknowledge() throws JMSException
     {
-        if(isClosed())
+        if (isClosed())
         {
             throw new IllegalStateException("Session is already closed");
         }
-        for(BasicMessageConsumer consumer : _consumers.values())
+        for (BasicMessageConsumer consumer : _consumers.values())
         {
             consumer.acknowledge();
         }
 
 
     }
-
 
 
     public MessageListener getMessageListener() throws JMSException
@@ -843,7 +843,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                   false,
                                   false,
                                   null,
-                                  null);
+                                  null,
+                                  false,
+                                  false);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
@@ -855,7 +857,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                   false,
                                   false,
                                   messageSelector,
-                                  null);
+                                  null,
+                                  false,
+                                  false);
     }
 
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
@@ -868,7 +872,26 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                   noLocal,
                                   false,
                                   messageSelector,
-                                  null);
+                                  null,
+                                  false,
+                                  false);
+    }
+
+    public MessageConsumer createBrowserConsumer(Destination destination,
+                                         String messageSelector,
+                                         boolean noLocal)
+            throws JMSException
+    {
+        checkValidDestination(destination);
+        return createConsumerImpl(destination,
+                                  _defaultPrefetchHighMark,
+                                  _defaultPrefetchLowMark,
+                                  noLocal,
+                                  false,
+                                  messageSelector,
+                                  null,
+                                  true,
+                                  true);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -878,7 +901,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, null);
+        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, null, false, false);
     }
 
 
@@ -890,7 +913,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                           String selector) throws JMSException
     {
         checkValidDestination(destination);
-        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null);
+        return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive, selector, null, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -902,7 +925,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkValidDestination(destination);
         return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive,
-                                  selector, rawSelector);
+                                  selector, rawSelector, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination,
@@ -915,7 +938,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkValidDestination(destination);
         return createConsumerImpl(destination, prefetchHigh, prefetchLow, noLocal, exclusive,
-                                  selector, rawSelector);
+                                  selector, rawSelector, false, false);
     }
 
     protected MessageConsumer createConsumerImpl(final Destination destination,
@@ -924,7 +947,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                  final boolean noLocal,
                                                  final boolean exclusive,
                                                  final String selector,
-                                                 final FieldTable rawSelector) throws JMSException
+                                                 final FieldTable rawSelector,
+                                                 final boolean noConsume,
+                                                 final boolean autoClose) throws JMSException
     {
         checkTemporaryDestination(destination);
 
@@ -948,11 +973,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 BasicMessageConsumer consumer = new BasicMessageConsumer(_channelId, _connection, amqd, selector, noLocal,
                                                                          _messageFactoryRegistry, AMQSession.this,
                                                                          protocolHandler, ft, prefetchHigh, prefetchLow, exclusive,
-                                                                         _acknowledgeMode);
+                                                                         _acknowledgeMode, noConsume, autoClose);
 
                 try
                 {
                     registerConsumer(consumer, false);
+                }
+                catch (AMQInvalidSelectorException ise)
+                {
+                    JMSException ex = new InvalidSelectorException(ise.getMessage());
+                    ex.setLinkedException(ise);
+                    throw ex;
                 }
                 catch (AMQException e)
                 {
@@ -963,7 +994,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 synchronized(destination)
                 {
-                    _destinationConsumerCount.putIfAbsent(destination,new AtomicInteger());
+                    _destinationConsumerCount.putIfAbsent(destination, new AtomicInteger());
                     _destinationConsumerCount.get(destination).incrementAndGet();
                 }
 
@@ -975,16 +1006,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private void checkTemporaryDestination(Destination destination)
             throws JMSException
     {
-        if((destination instanceof TemporaryDestination))
+        if ((destination instanceof TemporaryDestination))
         {
             _logger.debug("destination is temporary");
             final TemporaryDestination tempDest = (TemporaryDestination) destination;
-            if(tempDest.getSession() != this)
+            if (tempDest.getSession() != this)
             {
                 _logger.debug("destination is on different session");
                 throw new JMSException("Cannot consume from a temporary destination created onanother session");
             }
-            if(tempDest.isDeleted())
+            if (tempDest.isDeleted())
             {
                 _logger.debug("destination is deleted");
                 throw new JMSException("Cannot consume from a deleted destination");
@@ -1065,11 +1096,25 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @return the consumer tag generated by the broker
      */
     private void consumeFromQueue(BasicMessageConsumer consumer, String queueName, AMQProtocolHandler protocolHandler,
-                                  boolean nowait) throws AMQException
+                                  boolean nowait, String messageSelector) throws AMQException
     {
         //fixme prefetch values are not used here. Do we need to have them as parametsrs?
         //need to generate a consumer tag on the client so we can exploit the nowait flag
         String tag = Integer.toString(_nextTag++);
+
+        FieldTable arguments = FieldTableFactory.newFieldTable();
+        if (messageSelector != null && !messageSelector.equals(""))
+        {
+            arguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector);
+        }
+        if(consumer.isAutoClose())
+        {
+            arguments.put(AMQPFilterTypes.AUTO_CLOSE.getValue(), Boolean.TRUE);
+        }
+        if(consumer.isNoConsume())
+        {
+            arguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
+        }
 
         consumer.setConsumerTag(tag);
         // we must register the consumer in the map before we actually start listening
@@ -1080,7 +1125,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId, 0,
                                                                   queueName, tag, consumer.isNoLocal(),
                                                                   consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
-                                                                  consumer.isExclusive(), nowait);
+                                                                  consumer.isExclusive(), nowait, arguments);
             if (nowait)
             {
                 protocolHandler.writeFrame(jmsConsume);
@@ -1220,7 +1265,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkNotClosed();
         checkValidTopic(topic);
-        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic)topic, name, _connection);
+        AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
         TopicSubscriberAdaptor subscriber = _subscriptions.get(name);
         if (subscriber != null)
         {
@@ -1247,8 +1292,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         subscriber = new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest));
 
-        _subscriptions.put(name,subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(),name);
+        _subscriptions.put(name, subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
 
         return subscriber;
     }
@@ -1278,8 +1323,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         AMQTopic dest = AMQTopic.createDurableTopic((AMQTopic) topic, name, _connection);
         BasicMessageConsumer consumer = (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal);
         TopicSubscriberAdaptor subscriber = new TopicSubscriberAdaptor(dest, consumer);
-        _subscriptions.put(name,subscriber);
-        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(),name);
+        _subscriptions.put(name, subscriber);
+        _reverseSubscriptionMap.put(subscriber.getMessageConsumer(), name);
         return subscriber;
     }
 
@@ -1291,16 +1336,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
     {
-        checkNotClosed();
-        checkValidQueue(queue);
-        throw new UnsupportedOperationException("Queue browsing not supported");
+        return createBrowser(queue, null);
     }
 
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
         checkNotClosed();
         checkValidQueue(queue);
-        throw new UnsupportedOperationException("Queue browsing not supported");
+        return new AMQQueueBrowser(this, (AMQQueue) queue,messageSelector);
     }
 
     public TemporaryQueue createTemporaryQueue() throws JMSException
@@ -1476,7 +1519,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
 
-        consumeFromQueue(consumer, queueName, protocolHandler, nowait);
+        try
+        {
+            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer.getMessageSelector());
+        }
+        catch (JMSException e) //thrown by getMessageSelector
+        {
+            throw new AMQException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -1489,7 +1539,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         _consumers.remove(consumer.getConsumerTag());
         String subscriptionName = _reverseSubscriptionMap.remove(consumer);
-        if(subscriptionName != null)
+        if (subscriptionName != null)
         {
             _subscriptions.remove(subscriptionName);
         }
@@ -1497,7 +1547,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         Destination dest = consumer.getDestination();
         synchronized(dest)
         {
-            if(_destinationConsumerCount.get(dest).decrementAndGet() == 0)
+            if (_destinationConsumerCount.get(dest).decrementAndGet() == 0)
             {
                 _destinationConsumerCount.remove(dest);
             }
@@ -1567,6 +1617,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _connection.getProtocolHandler().writeFrame(channelFlowFrame);
     }
 
+    public void confirmConsumerCancelled(String consumerTag)
+    {
+        BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
+        if((consumer != null) && (consumer.isAutoClose()))
+        {
+            consumer.closeWhenNoMessages(true);
+        }
+    }
+
+
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
@@ -1576,7 +1636,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             throw new javax.jms.InvalidDestinationException("Invalid Topic");
         }
-        if((topic instanceof TemporaryDestination) && ((TemporaryDestination)topic).getSession() != this)
+        if ((topic instanceof TemporaryDestination) && ((TemporaryDestination) topic).getSession() != this)
         {
             throw new JMSException("Cannot create a subscription on a temporary topic created in another session");
         }
@@ -1597,4 +1657,5 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             throw new javax.jms.InvalidDestinationException("Invalid Queue");
         }
     }
+
 }

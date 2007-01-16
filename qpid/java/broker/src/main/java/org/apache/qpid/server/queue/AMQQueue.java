@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -95,7 +96,7 @@ public class AMQQueue implements Managable, Comparable
      * max allowed number of messages on a queue.
      */
     private Integer _maxMessageCount = 10000;
-    
+
     /**
      * max queue depth(KB) for the queue
      */
@@ -187,16 +188,29 @@ public class AMQQueue implements Managable, Comparable
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
 
-        //fixme - Pick one.
-        if (Boolean.getBoolean("concurrentdeliverymanager"))
+        //fixme - Make this configurable via the broker config.xml
+        if (System.getProperties().getProperty("deliverymanager") != null)
         {
-            _logger.info("Using ConcurrentDeliveryManager");
-            _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
+            if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentSelectorDeliveryManager"))
+            {
+                _logger.info("Using ConcurrentSelectorDeliveryManager");
+                _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
+            }
+            else if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentDeliveryManager"))
+            {
+                _logger.info("Using ConcurrentDeliveryManager");
+                _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
+            }
+            else
+            {
+                _logger.info("Using SynchronizedDeliveryManager");
+                _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
+            }
         }
         else
         {
-            _logger.info("Using SynchronizedDeliveryManager");
-            _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
+            _logger.info("Using Default DeliveryManager: ConcurrentSelectorDeliveryManager");
+            _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
         }
     }
 
@@ -348,12 +362,26 @@ public class AMQQueue implements Managable, Comparable
         _bindings.addBinding(routingKey, exchange);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks)
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters) throws AMQException
+    {
+        registerProtocolSession(ps, channel, consumerTag, acks, filters, false);
+    }
+
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks);
+        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
+
+        if(subscription.hasFilters())
+        {
+            if (_deliveryMgr.hasQueuedMessages())
+            {
+                _deliveryMgr.populatePreDeliveryQueue(subscription);   
+            }
+        }
+
         _subscribers.addSubscriber(subscription);
     }
 

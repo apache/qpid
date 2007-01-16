@@ -22,6 +22,8 @@ package org.apache.qpid.client.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.ClientProperties;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.client.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
@@ -119,10 +121,11 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
             stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
             FieldTable clientProperties = FieldTableFactory.newFieldTable();
-            clientProperties.put("instance", ps.getClientID());
-            clientProperties.put("product", "Qpid");
-            clientProperties.put("version", "1.0");
-            clientProperties.put("platform", getFullSystemInfo());
+            
+            clientProperties.put(ClientProperties.instance.toString(), ps.getClientID());
+            clientProperties.put(ClientProperties.product.toString(), QpidProperties.getProductName());
+            clientProperties.put(ClientProperties.version.toString(), QpidProperties.getReleaseVerision());
+            clientProperties.put(ClientProperties.platform.toString(), getFullSystemInfo());
             ps.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(), clientProperties, mechanism,
                                                                saslResponse, selectedLocale));
         }

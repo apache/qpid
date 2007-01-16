@@ -26,6 +26,7 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
@@ -45,6 +46,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -109,6 +112,7 @@ public class AMQChannel
     private TxAck ackOp;
 
     private final List<AMQDataBlock> _returns = new LinkedList<AMQDataBlock>();
+    private Set<Long> _browsedAcks = new HashSet<Long>();
 
     public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
@@ -285,12 +289,14 @@ public class AMQChannel
      * @param tag     the tag chosen by the client (if null, server will generate one)
      * @param queue   the queue to subscribe to
      * @param session the protocol session of the subscriber
+     * @param noLocal
      * @return the consumer tag. This is returned to the subscriber and used in
      *         subsequent unsubscribe requests
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
-    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks) throws AMQException, ConsumerTagNotUniqueException
+    public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
+                                   FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -301,7 +307,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }
@@ -379,6 +385,8 @@ public class AMQChannel
         {
             if (unacked.queue != null)
             {
+                unacked.message.setTxnBuffer(null);
+
                 unacked.queue.deliver(unacked.message);
             }
         }
@@ -498,7 +506,7 @@ public class AMQChannel
         if (_log.isDebugEnabled())
         {
             _log.debug("Handling acknowledgement for channel " + _channelId + " with delivery tag " + deliveryTag +
-                      " and multiple " + multiple);
+                       " and multiple " + multiple);
         }
         if (multiple)
         {
@@ -550,7 +558,14 @@ public class AMQChannel
 
             for (UnacknowledgedMessage msg : acked)
             {
-                msg.discard();
+                if (!_browsedAcks.contains(deliveryTag))
+                {
+                    msg.discard();
+                }
+                else
+                {
+                    _browsedAcks.remove(deliveryTag);
+                }
             }
 
         }
@@ -567,7 +582,16 @@ public class AMQChannel
                 _log.trace("Single ack on delivery tag " + deliveryTag + " not known for channel:" + _channelId);
                 throw new AMQException("Single ack on delivery tag " + deliveryTag + " not known for channel:" + _channelId);
             }
-            msg.discard();
+
+            if (!_browsedAcks.contains(deliveryTag))
+            {
+                msg.discard();
+            }
+            else
+            {
+                _browsedAcks.remove(deliveryTag);
+            }
+
             if (_log.isTraceEnabled())
             {
                 _log.trace("Received non-multiple ack for messaging with delivery tag " + deliveryTag);
@@ -686,6 +710,12 @@ public class AMQChannel
             session.writeFrame(block);
         }
         _returns.clear();
+    }
+
+    public void addUnacknowledgedBrowsedMessage(AMQMessage msg, long deliveryTag, String consumerTag, AMQQueue queue)
+    {
+        _browsedAcks.add(deliveryTag);
+        addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
     }
 
     //we use this wrapper to ensure we are always using the correct

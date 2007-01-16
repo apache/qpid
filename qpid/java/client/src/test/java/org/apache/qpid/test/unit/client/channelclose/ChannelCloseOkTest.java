@@ -121,7 +121,7 @@ public class ChannelCloseOkTest extends TestCase
     {
         if (_connection != null)
         {
-            System.out.println(">>>>>>>>>>>>>>.. closing");
+            _log.info(">>>>>>>>>>>>>>.. closing");
             _connection.close();
         }
     }
@@ -137,7 +137,7 @@ public class ChannelCloseOkTest extends TestCase
         {
             public void onException(JMSException jmsException)
             {
-                _log.error("onException - ", jmsException);
+                _log.warn("onException - "+jmsException.getMessage());
             }
         });
 
