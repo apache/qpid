@@ -146,6 +146,7 @@
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-assembly-plugin</artifactId>
+              <version>${assembly.version}</version>
               <configuration>
                 <descriptors>
                   <descriptor>jar-with-dependencies.xml</descriptor>
