@@ -278,8 +278,7 @@ public class FieldTable
     {
         AMQTypedValue value = getProperty(string);
         if ((value != null) && ((value.getType() == AMQType.WIDE_STRING) ||
-                                (value.getType() == AMQType.ASCII_STRING ||
-                                (value.getType() == AMQType.LONG_STRING))))
+                                (value.getType() == AMQType.ASCII_STRING)))
         {
             return (String) value.getValue();
         }
@@ -321,7 +320,7 @@ public class FieldTable
     public byte[] getBytes(AMQShortString string)
     {
         AMQTypedValue value = getProperty(string);
-        if (value != null && (value.getType() == AMQType.BINARY || value.getType() == AMQType.LONG_STRING))
+        if (value != null && (value.getType() == AMQType.BINARY))
         {
             return (byte[]) value.getValue();
         }
@@ -365,7 +364,7 @@ public class FieldTable
     public Object setByte(String string, byte b)
     {
         return setByte(new AMQShortString(string), b);
-    }
+    }    
 
     public Object setByte(AMQShortString string, byte b)
     {
@@ -447,16 +446,14 @@ public class FieldTable
         }
         else
         {
-            return setProperty(string, AMQType.LONG_STRING.asTypedValue(value));
+            return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
         }
 
     }
 
     public Object setString(AMQShortString string, String value)
     {
-        // temporary for interop until field table types are standardised
-        return setAsciiString(string, value);
-        /*checkPropertyName(string);
+        checkPropertyName(string);
         if (value == null)
         {
             return setProperty(string, AMQType.VOID.asTypedValue(null));
@@ -472,7 +469,7 @@ public class FieldTable
 //            {
 //                return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
 //            }
-        } */
+        }
     }
 
 
@@ -497,9 +494,7 @@ public class FieldTable
     public Object setBytes(AMQShortString string, byte[] bytes)
     {
         checkPropertyName(string);
-        // HACK for interop
-        //return setProperty(string, AMQType.BINARY.asTypedValue(bytes));
-        return setProperty(string, AMQType.LONG_STRING.asTypedValue(bytes));
+        return setProperty(string, AMQType.BINARY.asTypedValue(bytes));
     }
 
     public Object setBytes(String string, byte[] bytes, int start, int length)
@@ -653,7 +648,7 @@ public class FieldTable
         }
     }
 
-
+ 
     // *************************  Byte Buffer Processing
 
     public void writeToBuffer(ByteBuffer buffer)
@@ -828,7 +823,7 @@ public class FieldTable
     public void clear()
     {
         initMapIfNecessary();
-        _encodedForm = null;
+        _encodedForm = null;        
         _properties.clear();
         _encodedSize = 0;
     }
@@ -919,7 +914,7 @@ public class FieldTable
                 _properties.put(key,value);
 
 
-
+            
             }
             while (buffer.remaining() > expectedRemaining);
 
