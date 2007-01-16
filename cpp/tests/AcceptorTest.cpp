@@ -28,7 +28,7 @@
 #include "framing/Buffer.h"
 #include "qpid_test_plugin.h"
 
-#include "MockSessionHandler.h"
+#include "MockConnectionInputHandler.h"
 
 using namespace qpid::sys;
 using namespace qpid::framing;
@@ -45,7 +45,7 @@ class AcceptorTest : public CppUnit::TestCase, private Runnable
     CPPUNIT_TEST_SUITE_END();
 
   private:
-    MockSessionHandlerFactory factory;
+    MockConnectionInputHandlerFactory factory;
     Acceptor::shared_ptr acceptor;
 
   public:

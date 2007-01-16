@@ -33,13 +33,15 @@ void Requester::sending(AMQRequestBody::Data& request) {
 void Requester::processed(const AMQResponseBody::Data& response) {
     responseMark = response.responseId;
     RequestId id = response.requestId;
-    RequestId end = id + response.batchOffset;
+    RequestId end = id + response.batchOffset + 1;
     for ( ; id < end; ++id) {
         std::set<RequestId>::iterator i = requests.find(id);
-        if (i == requests.end())
-            // TODO aconway 2007-01-12: Verify this is the right exception.
-            THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid response.");
-        requests.erase(i);
+        if (i != requests.end())
+            requests.erase(i);
+        else {
+            // FIXME aconway 2007-01-16: Uncomment exception when ids are propagating.
+//             THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid response.");
+        }
     }
 }
 

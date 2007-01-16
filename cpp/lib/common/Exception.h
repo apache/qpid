@@ -54,6 +54,17 @@ class Exception : public std::exception
     typedef boost::shared_ptr<Exception> shared_ptr;
 };
 
+struct ChannelException : public qpid::Exception {
+    u_int16_t code;
+    ChannelException(u_int16_t _code, std::string _text)
+        : Exception(_text), code(_code) {}
+};
+
+struct ConnectionException : public qpid::Exception {
+    u_int16_t code;
+    ConnectionException(u_int16_t _code, std::string _text)
+        : Exception(_text), code(_code) {}
+};
 
 
 }

@@ -22,7 +22,7 @@
 #include <boost/assert.hpp>
 
 #include "EventChannelConnection.h"
-#include "sys/SessionHandlerFactory.h"
+#include "sys/ConnectionInputHandlerFactory.h"
 #include "QpidError.h"
 
 using namespace std;
@@ -36,7 +36,7 @@ const size_t EventChannelConnection::bufferSize = 65536;
     
 EventChannelConnection::EventChannelConnection(
     EventChannelThreads::shared_ptr threads_, 
-    SessionHandlerFactory& factory_,
+    ConnectionInputHandlerFactory& factory_,
     int rfd,
     int wfd,
     bool isTrace_

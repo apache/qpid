@@ -12,7 +12,7 @@ INCLUDES =				\
 EXTRA_DIST =		\
   topictest		\
   qpid_test_plugin.h	\
-  MockSessionHandler.h
+  MockConnectionInputHandler.h
 
 
 client_exe_tests =	\

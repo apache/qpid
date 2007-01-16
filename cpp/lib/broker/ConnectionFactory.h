@@ -18,28 +18,29 @@
  * under the License.
  *
  */
-#ifndef _SessionHandler_
-#define _SessionHandler_
+#ifndef _ConnectionFactory_
+#define _ConnectionFactory_
 
-#include <InputHandler.h>
-#include <InitiationHandler.h>
-#include <ProtocolInitiation.h>
-#include <sys/TimeoutHandler.h>
+#include "ConnectionInputHandlerFactory.h"
 
 namespace qpid {
-namespace sys {
+namespace broker {
+class Broker;
 
-    class SessionHandler :
-        public qpid::framing::InitiationHandler,
-        public qpid::framing::InputHandler, 
-        public TimeoutHandler
-    {
-    public:
-        virtual void closed() = 0;
-    };
+class ConnectionFactory : public qpid::sys::ConnectionInputHandlerFactory
+{
+  public:
+    ConnectionFactory(Broker& b);
+            
+    virtual qpid::sys::ConnectionInputHandler* create(qpid::sys::SessionContext* ctxt);
+            
+    virtual ~ConnectionFactory();
 
-}
-}
+  private:
+    Broker& broker;
+};
+
+}}
 
 
 #endif

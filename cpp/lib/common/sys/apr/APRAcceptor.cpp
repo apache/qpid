@@ -19,7 +19,7 @@
  *
  */
 #include <sys/Acceptor.h>
-#include <sys/SessionHandlerFactory.h>
+#include <sys/ConnectionInputHandlerFactory.h>
 #include "LFProcessor.h"
 #include "LFSessionContext.h"
 #include "APRBase.h"
@@ -33,7 +33,7 @@ class APRAcceptor : public Acceptor
   public:
     APRAcceptor(int16_t port, int backlog, int threads, bool trace);
     virtual int16_t getPort() const;
-    virtual void run(qpid::sys::SessionHandlerFactory* factory);
+    virtual void run(qpid::sys::ConnectionInputHandlerFactory* factory);
     virtual void shutdown();
 
   private:
@@ -75,7 +75,7 @@ int16_t APRAcceptor::getPort() const {
     return address->port;
 }
 
-void APRAcceptor::run(SessionHandlerFactory* factory) {
+void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
     running = true;
     processor.start();
     std::cout << "Listening on port " << getPort() << "..." << std::endl;

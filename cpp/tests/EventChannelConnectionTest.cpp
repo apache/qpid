@@ -24,11 +24,11 @@
 #include "framing/AMQHeartbeatBody.h"
 #include "framing/AMQFrame.h"
 #include "sys/posix/EventChannelConnection.h"
-#include "sys/SessionHandler.h"
-#include "sys/SessionHandlerFactory.h"
+#include "sys/ConnectionInputHandler.h"
+#include "sys/ConnectionInputHandlerFactory.h"
 #include "sys/Socket.h"
 #include "qpid_test_plugin.h"
-#include "MockSessionHandler.h"
+#include "MockConnectionInputHandler.h"
 
 using namespace qpid::sys;
 using namespace qpid::framing;
@@ -100,7 +100,7 @@ class EventChannelConnectionTest : public CppUnit::TestCase
     EventChannelThreads::shared_ptr threads;
     int pipe[2];
     std::auto_ptr<EventChannelConnection> connection;
-    MockSessionHandlerFactory factory;
+    MockConnectionInputHandlerFactory factory;
 };
 
 // Make this test suite a plugin.

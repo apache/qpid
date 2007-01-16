@@ -27,8 +27,8 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <sys/SessionContext.h>
-#include <sys/SessionHandler.h>
-#include <sys/SessionHandlerFactory.h>
+#include <sys/ConnectionInputHandler.h>
+#include <sys/ConnectionInputHandlerFactory.h>
 #include <sys/Acceptor.h>
 #include <sys/Socket.h>
 #include <framing/Buffer.h>
@@ -53,7 +53,7 @@ class EventChannelAcceptor : public Acceptor {
         
     int getPort() const;
     
-    void run(SessionHandlerFactory& factory);
+    void run(ConnectionInputHandlerFactory& factory);
 
     void shutdown();
 
@@ -68,7 +68,7 @@ class EventChannelAcceptor : public Acceptor {
     bool isRunning;
     boost::ptr_vector<EventChannelConnection> connections;
     AcceptEvent acceptEvent;
-    SessionHandlerFactory* factory;
+    ConnectionInputHandlerFactory* factory;
     bool isShutdown;
     EventChannelThreads::shared_ptr threads;
 };
@@ -100,7 +100,7 @@ int EventChannelAcceptor::getPort() const {
     return port;                // Immutable no need for lock.
 }
     
-void EventChannelAcceptor::run(SessionHandlerFactory& f) {
+void EventChannelAcceptor::run(ConnectionInputHandlerFactory& f) {
     {
         Mutex::ScopedLock l(lock);
         if (!isRunning && !isShutdown) {

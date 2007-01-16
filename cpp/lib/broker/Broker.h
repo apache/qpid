@@ -23,7 +23,7 @@
  */
 
 #include <Configuration.h>
-#include <SessionHandlerFactoryImpl.h>
+#include <ConnectionFactory.h>
 #include <sys/Runnable.h>
 #include <sys/Acceptor.h>
 #include <SharedObject.h>
@@ -99,7 +99,7 @@ class Broker : public qpid::sys::Runnable,
     u_int32_t timeout;
     u_int64_t stagingThreshold;
     AutoDelete cleaner;
-    SessionHandlerFactoryImpl factory;
+    ConnectionFactory factory;
     qpid::framing::Requester requester;
     qpid::framing::Responder responder;
 };
