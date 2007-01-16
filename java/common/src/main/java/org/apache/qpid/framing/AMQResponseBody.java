@@ -75,6 +75,8 @@ public class AMQResponseBody extends AMQBody
         requestId = EncodingUtils.readLong(buffer);
         // XXX
         batchOffset = EncodingUtils.readInteger(buffer);
+        AMQMethodBodyFactory factory = AMQMethodBodyFactory.getInstance();
+        methodPayload = factory.createBody(buffer);
         methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     

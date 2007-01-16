@@ -73,6 +73,8 @@ public class AMQRequestBody extends AMQBody
         requestId = EncodingUtils.readLong(buffer);
         responseMark = EncodingUtils.readLong(buffer);
         int reserved = EncodingUtils.readInteger(buffer); // reserved, throw away
+        AMQMethodBodyFactory factory = AMQMethodBodyFactory.getInstance();
+        methodPayload = factory.createBody(buffer);
         methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
     }
     
