@@ -42,7 +42,7 @@ except GetoptError, e:
   die(str(e))
 
 regexp = False
-spec = "../specs/amqp.0-8.xml"
+spec = "../specs/amqp.0-9.xml"
 for k, v in opts:
   if k == "-e" or k == "--regexp": regexp = True
   if k == "-s" or k == "--spec": spec = v

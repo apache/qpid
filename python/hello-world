@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+import qpid
+from qpid.client import Client
+from qpid.content import Content
+
+client = Client("127.0.0.1", 5672, qpid.spec.load("../specs/amqp.0-9.xml"))
+client.start({"LOGIN": "guest", "PASSWORD": "guest"})
+ch = client.channel(1)
+ch.channel_open()
+ch.message_transfer(destination="amq.direct", routing_key="asdf",
+                    body="hello world")

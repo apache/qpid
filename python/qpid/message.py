@@ -16,22 +16,19 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from connection import Method, Request
 from sets import Set
 
 class Message:
 
-  COMMON_FIELDS = Set(("content", "method", "fields"))
-
-  def __init__(self, method, fields, content = None):
-    self.method = method
-    self.fields = fields
+  def __init__(self, channel, frame, content = None):
+    self.channel = channel
+    self.frame = frame
+    self.method = frame.method_type
     self.content = content
 
   def __len__(self):
-    l = len(self.fields)
-    if self.method.content:
-      l += 1
-    return len(self.fields)
+    return len(self.frame.args)
 
   def _idx(self, idx):
     if idx < 0: idx += len(self)
@@ -40,45 +37,29 @@ class Message:
     return idx
 
   def __getitem__(self, idx):
-    idx = self._idx(idx)
-    if idx == len(self.fields):
-      return self.content
-    else:
-      return self.fields[idx]
-
-  def __setitem__(self, idx, value):
-    idx = self._idx(idx)
-    if idx == len(self.fields):
-      self.content = value
-    else:
-      self.fields[idx] = value
-
-  def _slot(self, attr):
-    if attr in Message.COMMON_FIELDS:
-      env = self.__dict__
-      key = attr
-    else:
-      env = self.fields
-      try:
-        field = self.method.fields.bypyname[attr]
-        key = self.method.fields.index(field)
-      except KeyError:
-        raise AttributeError(attr)
-    return env, key
+    return self.frame.args[idx]
 
   def __getattr__(self, attr):
-    env, key = self._slot(attr)
-    return env[key]
-
-  def __setattr__(self, attr, value):
-    env, key = self._slot(attr)
-    env[attr] = value
+    fields = self.method.fields.byname
+    if fields.has_key(attr):
+      f = fields[attr]
+      result = self[self.method.fields.index(f)]
+    else:
+      for r in self.method.responses:
+        if attr == r.name:
+          result = lambda *args, **kwargs: \
+                   self.channel.respond(Method(r, r.arguments(*args, **kwargs)),
+                                        self.frame)
+          break
+      else:
+        raise AttributeError(attr)
+    return result
 
   STR = "%s %s content = %s"
   REPR = STR.replace("%s", "%r")
 
   def __str__(self):
-    return Message.STR % (self.method, self.fields, self.content)
+    return Message.STR % (self.method, self.frame.args, self.content)
 
   def __repr__(self):
-    return Message.REPR % (self.method, self.fields, self.content)
+    return Message.REPR % (self.method, self.frame.args, self.content)
