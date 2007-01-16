@@ -1072,7 +1072,7 @@ public class JavaGenerator extends Generator
 				line.append(bitFieldList.get(i));
 			}
 			
-			sb.append(Utils.createSpaces(indentSize) +
+			sb.append(indent +
 				typeMap.get("bit").encodeExpression.replaceAll("#", line.toString()) + ";" + cr);
 		}
 		return sb.toString();
