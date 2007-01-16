@@ -105,9 +105,9 @@ public class Content
         EncodingUtils.writeLongStringBytes(buffer, content);
     }
     
-    public void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
+    public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException
     {
-   		contentType = ContentTypeEnum.toContentEnum(buffer.get());
-   		content = EncodingUtils.readLongstr(buffer);
+        contentType = ContentTypeEnum.toContentEnum(buffer.get());
+        content = EncodingUtils.readLongstr(buffer);
     }
 }

@@ -52,7 +52,7 @@ public class ResponseManager
      *     function xxxx(). (TODO)
      */
     public enum batchResponseModeEnum { NONE }
-    private batchResponseModeEnum batchResponseMode;
+    private batchResponseModeEnum batchResponseMode = batchResponseModeEnum.NONE;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -121,7 +121,7 @@ public class ResponseManager
         ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
             throw new RequestResponseMappingException(requestId,
-                "Failed to locate requestId " + requestId + " in responseMap.");
+                "Failed to locate requestId " + requestId + " in responseMap." + responseMap);
         if (responseStatus.responseMethodBody != null)
             throw new RequestResponseMappingException(requestId, "RequestId " +
                 requestId + " already has a response in responseMap.");
@@ -218,7 +218,7 @@ public class ResponseManager
     private void sendResponseBatch(long firstRequestId, int numAdditionalRequests,
         AMQMethodBody responseMethodBody)
     {
-        long responseId = getNextResponseId(); // Get new request ID
+        long responseId = getNextResponseId(); // Get new response ID
         AMQFrame responseFrame = AMQResponseBody.createAMQFrame(channel, responseId,
             firstRequestId, numAdditionalRequests, responseMethodBody);
         protocolWriter.writeFrame(responseFrame);

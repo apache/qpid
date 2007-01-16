@@ -32,8 +32,8 @@ public interface AMQProtocolWriter
      * Write a datablock, encoding where necessary (e.g. into a sequence of bytes)
      * @param frame the frame to be encoded and written
      */
-	public void writeFrame(AMQDataBlock frame);
-    
+    public void writeFrame(AMQDataBlock frame);
+
     public long writeRequest(int channelNum, AMQMethodBody methodBody,
                              AMQMethodListener methodListener)
         throws AMQException;
