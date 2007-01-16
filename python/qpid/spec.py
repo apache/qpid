@@ -38,21 +38,16 @@ class SpecContainer:
     self.byname = {}
     self.byid = {}
     self.indexes = {}
-    self.bypyname = {}
 
   def add(self, item):
     if self.byname.has_key(item.name):
       raise ValueError("duplicate name: %s" % item)
     if self.byid.has_key(item.id):
       raise ValueError("duplicate id: %s" % item)
-    pyname = pythonize(item.name)
-    if self.bypyname.has_key(pyname):
-      raise ValueError("duplicate pyname: %s" % item)
     self.indexes[item] = len(self.items)
     self.items.append(item)
     self.byname[item.name] = item
     self.byid[item.id] = item
-    self.bypyname[pyname] = item
 
   def index(self, item):
     try:
@@ -91,10 +86,22 @@ class Spec(Metadata):
     self.file = file
     self.constants = SpecContainer()
     self.classes = SpecContainer()
+    # methods indexed by classname_methname
+    self.methods = {}
 
   def post_load(self):
     self.module = self.define_module("amqp%s%s" % (self.major, self.minor))
     self.klass = self.define_class("Amqp%s%s" % (self.major, self.minor))
+
+  def method(self, name):
+    if not self.methods.has_key(name):
+      for cls in self.classes:
+        clen = len(cls.name)
+        if name.startswith(cls.name) and name[clen] == "_":
+          end = name[clen + 1:]
+          if cls.methods.byname.has_key(end):
+            self.methods[name] = cls.methods.byname[end]
+    return self.methods.get(name)
 
   def parse_method(self, name):
     parts = re.split(r"\s*\.\s*", name)
@@ -107,17 +114,16 @@ class Spec(Metadata):
     module = new.module(name, doc)
     module.__file__ = self.file
     for c in self.classes:
-      classname = pythonize(c.name)
-      cls = c.define_class(classname)
+      cls = c.define_class(c.name)
       cls.__module__ = module.__name__
-      setattr(module, classname, cls)
+      setattr(module, c.name, cls)
     return module
 
   def define_class(self, name):
     methods = {}
     for c in self.classes:
       for m in c.methods:
-        meth = pythonize(m.klass.name + "_" + m.name)
+        meth = m.klass.name + "_" + m.name
         methods[meth] = m.define_method(meth)
     return type(name, (), methods)
 
@@ -150,8 +156,7 @@ class Class(Metadata):
   def define_class(self, name):
     methods = {}
     for m in self.methods:
-      meth = pythonize(m.name)
-      methods[meth] = m.define_method(meth)
+      methods[m.name] = m.define_method(m.name)
     return type(name, (), methods)
 
 class Method(Metadata):
@@ -172,11 +177,35 @@ class Method(Metadata):
     self.docs = docs
     self.response = False
 
+  def arguments(self, *args, **kwargs):
+    nargs = len(args) + len(kwargs)
+    maxargs = len(self.fields)
+    if nargs > maxargs:
+      self._type_error("takes at most %s arguments (%s) given", maxargs, nargs)
+    result = []
+    for f in self.fields:
+      idx = self.fields.index(f)
+      if idx < len(args):
+        result.append(args[idx])
+      elif kwargs.has_key(f.name):
+        result.append(kwargs.pop(f.name))
+      else:
+        result.append(Method.DEFAULTS[f.type])
+    for key, value in kwargs.items():
+      if self.fields.byname.has_key(key):
+        self._type_error("got multiple values for keyword argument '%s'", key)
+      else:
+        self._type_error("got an unexpected keyword argument '%s'", key)
+    return tuple(result)
+
+  def _type_error(self, msg, *args):
+    raise TypeError("%s %s" % (self.name, msg % args))
+
   def docstring(self):
     s = "\n\n".join([fill(d, 2) for d in [self.description] + self.docs])
     for f in self.fields:
       if f.docs:
-        s += "\n\n" + "\n\n".join([fill(f.docs[0], 4, pythonize(f.name))] +
+        s += "\n\n" + "\n\n".join([fill(f.docs[0], 4, f.name)] +
                                   [fill(d, 4) for d in f.docs[1:]])
     return s
 
@@ -195,16 +224,13 @@ class Method(Metadata):
   def define_method(self, name):
     g = {Method.METHOD: self}
     l = {}
-    args = [(pythonize(f.name), Method.DEFAULTS[f.type]) for f in self.fields]
+    args = [(f.name, Method.DEFAULTS[f.type]) for f in self.fields]
+    methargs = args[:]
     if self.content:
       args += [("content", None)]
     code = "def %s(self, %s):\n" % \
            (name, ", ".join(["%s = %r" % a for a in args]))
     code += "  %r\n" % self.docstring()
-    if self.content:
-      methargs = args[:-1]
-    else:
-      methargs = args
     argnames = ", ".join([a[0] for a in methargs])
     code += "  return self.invoke(%s" % Method.METHOD
     if argnames:
@@ -239,7 +265,7 @@ def load_fields(nd, l, domains):
       type = f_nd["@type"]
     while domains.has_key(type) and domains[type] != type:
       type = domains[type]
-    l.add(Field(f_nd["@name"], f_nd.index(), type, get_docs(f_nd)))
+    l.add(Field(pythonize(f_nd["@name"]), f_nd.index(), type, get_docs(f_nd)))
 
 def load(specfile):
   doc = xmlutil.parse(specfile)
@@ -248,8 +274,8 @@ def load(specfile):
 
   # constants
   for nd in root["constant"]:
-    const = Constant(spec, nd["@name"], int(nd["@value"]), nd.get("@class"),
-                     get_docs(nd))
+    const = Constant(spec, pythonize(nd["@name"]), int(nd["@value"]),
+                     nd.get("@class"), get_docs(nd))
     spec.constants.add(const)
 
   # domains are typedefs
@@ -259,14 +285,14 @@ def load(specfile):
 
   # classes
   for c_nd in root["class"]:
-    klass = Class(spec, c_nd["@name"], int(c_nd["@index"]), c_nd["@handler"],
-                  get_docs(c_nd))
+    klass = Class(spec, pythonize(c_nd["@name"]), int(c_nd["@index"]),
+                  c_nd["@handler"], get_docs(c_nd))
     load_fields(c_nd, klass.fields, domains)
     for m_nd in c_nd["method"]:
-      meth = Method(klass, m_nd["@name"],
+      meth = Method(klass, pythonize(m_nd["@name"]),
                     int(m_nd["@index"]),
                     m_nd.get_bool("@content", False),
-                    [nd["@name"] for nd in m_nd["response"]],
+                    [pythonize(nd["@name"]) for nd in m_nd["response"]],
                     m_nd.get_bool("@synchronous", False),
                     m_nd.text,
                     get_docs(m_nd))

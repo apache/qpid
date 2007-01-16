@@ -25,7 +25,7 @@ interacting with the server.
 import threading
 from peer import Peer, Closed
 from delegate import Delegate
-from connection import Connection, Frame
+from connection import Connection, Frame, connect
 from spec import load
 from queue import Queue
 
@@ -49,15 +49,13 @@ class Client:
     self.lock = threading.Lock()
 
     self.closed = False
+    self.reason = None
     self.started = threading.Event()
-
-    self.conn = Connection(self.host, self.port, self.spec)
-    self.peer = Peer(self.conn, ClientDelegate(self))
 
   def wait(self):
     self.started.wait()
     if self.closed:
-      raise EOFError()
+      raise Closed(self.reason)
 
   def queue(self, key):
     self.lock.acquire()
@@ -76,7 +74,9 @@ class Client:
     self.response = response
     self.locale = locale
 
-    self.conn.connect()
+    self.conn = Connection(connect(self.host, self.port), self.spec)
+    self.peer = Peer(self.conn, ClientDelegate(self))
+
     self.conn.init()
     self.peer.start()
     self.wait()
@@ -92,12 +92,12 @@ class ClientDelegate(Delegate):
     self.client = client
 
   def connection_start(self, ch, msg):
-    ch.connection_start_ok(mechanism=self.client.mechanism,
-                           response=self.client.response,
-                           locale=self.client.locale)
+    msg.start_ok(mechanism=self.client.mechanism,
+                 response=self.client.response,
+                 locale=self.client.locale)
 
   def connection_tune(self, ch, msg):
-    ch.connection_tune_ok(*msg.fields)
+    msg.tune_ok(*msg.frame.args)
     self.client.started.set()
 
   def basic_deliver(self, ch, msg):
@@ -111,4 +111,5 @@ class ClientDelegate(Delegate):
 
   def close(self, reason):
     self.client.closed = True
+    self.client.reason = reason
     self.client.started.set()

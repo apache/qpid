@@ -58,7 +58,7 @@ class ExampleTest (TestBase):
 
         # Here we use ordinal arguments.
         self.exchange_declare(channel, 0, "test", "direct")
-        
+
         # Here we use keyword arguments.
         self.queue_declare(channel, queue="test-queue")
         channel.queue_bind(queue="test-queue", exchange="test", routing_key="key")
@@ -85,7 +85,7 @@ class ExampleTest (TestBase):
         # argument in case the server hangs. By default queue.get() will wait
         # until a message arrives or the connection to the server dies.
         msg = queue.get(timeout=10)
-        
+
         # And check that we got the right response with assertEqual
         self.assertEqual(body, msg.content.body)
 
