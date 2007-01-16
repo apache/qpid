@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,226 +18,196 @@
  * under the License.
  *
  */
-package org.apache.qpid.pingpong;
+package org.apache.qpid.ping;
+
+import java.net.InetAddress;
+
+import javax.jms.*;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQNoConsumersException;
-import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 
-import javax.jms.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 /**
- * A client that behaves as follows:
- * <ul><li>Connects to a queue, whose name is specified as a cmd-line argument</li>
- * <li>Creates a temporary queue</li>
- * <li>Creates messages containing a property that is the name of the temporary queue</li>
- * <li>Fires off a message on the original queue and waits for a response on the temporary queue</li>
- * </ul>
+ * PingProducer is a client that sends timestamped pings to a queue. It is designed to be run from the command line
+ * as a stand alone test tool, but it may also be fairly easily instantiated by other code by supplying a session and
+ * configured message producer.
+ *
+ * <p/>This implements the Runnable interface with a run method that implements an infinite ping loop. The ping loop
+ * does all its work through helper methods, so that code wishing to run a ping cycle is not forced to do so
+ * by starting a new thread. The command line invocation does take advantage of this ping loop. A shutdown hook is
+ * also registered to terminate the ping loop cleanly.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Provide a ping cycle.
+ * <tr><td> Provide command line invocation to loop the ping cycle on a configurable broker url.
+ * </table>
  */
-public class TestPingProducer implements ExceptionListener
+class TestPingProducer extends AbstractPingProducer
 {
-    private static final Logger _log = Logger.getLogger(TestPingProducer.class);
+    private static final Logger _logger = Logger.getLogger(TestPingProducer.class);
 
-    private AMQConnection _connection;
+    /** Used to set up a default message size. */
+    private static final int DEFAULT_MESSAGE_SIZE = 0;
 
-    private static int _messageSize = 0;
-    private boolean _publish;
+    /** Used to define how long to wait between pings. */
+    private static final long SLEEP_TIME = 250;
 
-    private long SLEEP_TIME = 250L;
+    /** Used to define how long to wait before assuming that a ping has timed out. */
+    private static final long TIMEOUT = 3000;
 
-//    private class CallbackHandler implements MessageListener
-//    {
-//
-//        private int _actualMessageCount;
-//
-//
-//        public void onMessage(Message m)
-//        {
-//            if (_log.isDebugEnabled())
-//            {
-//                _log.debug("Message received: " + m);
-//            }
-//            _actualMessageCount++;
-//            if (_actualMessageCount % 1000 == 0)
-//            {
-//                _log.info("Received message count: " + _actualMessageCount);
-//            }
-//        }
-//    }
+    /** Holds the name of the queue to send pings on. */
+    private static final String PING_QUEUE_NAME = "ping";
+    private static TestPingProducer _pingProducer;
 
-    public TestPingProducer(boolean TRANSACTED, String brokerDetails, String clientID,
-                            String virtualpath) throws AMQException, URLSyntaxException
+    /** Holds the message producer to send the pings through. */
+    private MessageProducer _producer;
+
+    /** Determines whether this producer sends persistent messages from the run method. */
+    private boolean _persistent;
+
+    /** Holds the message size to send, from the run method. */
+    private int _messageSize;
+
+    public TestPingProducer(Session session, MessageProducer producer) throws JMSException
+    {
+        super(session);
+        _producer = producer;
+    }
+
+    public TestPingProducer(Session session, MessageProducer producer, boolean persistent, int messageSize)
+                     throws JMSException
+    {
+        this(session, producer);
+
+        _persistent = persistent;
+        _messageSize = messageSize;
+    }
+
+    /**
+     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongClient} also needs
+     * to be started to bounce the pings back again.
+     *
+     * <p/>The command line takes from 2 to 4 arguments:
+     * <p/><table>
+     * <tr><td>brokerDetails <td> The broker connection string.
+     * <tr><td>virtualPath   <td> The virtual path.
+     * <tr><td>transacted    <td> A boolean flag, telling this client whether or not to use transactions.
+     * <tr><td>size          <td> The size of ping messages to use, in bytes.
+     * </table>
+     *
+     * @param args The command line arguments as defined above.
+     */
+    public static void main(String[] args) throws Exception
+    {
+        // Extract the command line.
+        if (args.length < 2)
+        {
+            System.err.println(
+                "Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted] [persistent] [message size in bytes]");
+            System.exit(0);
+        }
+
+        String brokerDetails = args[0];
+        String virtualpath = args[1];
+        boolean transacted = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : false;
+        boolean persistent = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
+        int messageSize = (args.length >= 5) ? Integer.parseInt(args[4]) : DEFAULT_MESSAGE_SIZE;
+
+        // Create a connection to the broker.
+        InetAddress address = InetAddress.getLocalHost();
+        String clientID = address.getHostName() + System.currentTimeMillis();
+
+        Connection _connection = new AMQConnection(brokerDetails, "guest", "guest", clientID, virtualpath);
+
+        // Create a transactional or non-transactional session, based on the command line arguments.
+        Session session;
+
+        if (transacted)
+        {
+            session = (Session) _connection.createSession(true, Session.SESSION_TRANSACTED);
+        }
+        else
+        {
+            session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        }
+
+        // Create a queue to send the pings on.
+        Queue pingQueue = new AMQQueue(PING_QUEUE_NAME);
+        MessageProducer producer = (MessageProducer) session.createProducer(pingQueue);
+
+        // Create a ping producer to handle the request/wait/reply cycle.
+        _pingProducer = new TestPingProducer(session, producer, persistent, messageSize);
+
+        // Start the message consumers running.
+        _connection.start();
+
+        // Create a shutdown hook to terminate the ping-pong producer.
+        Runtime.getRuntime().addShutdownHook(_pingProducer.getShutdownHook());
+
+        // Start the ping loop running, ensuring that it is registered to listen for exceptions on the connection too.
+        _connection.setExceptionListener(_pingProducer);
+        Thread pingThread = new Thread(_pingProducer);
+        pingThread.run();
+
+        // Run until the ping loop is terminated.
+        pingThread.join();
+    }
+
+    /**
+     * Sends the specified ping message.
+     *
+     * @param message The message to send.
+     *
+     * @throws JMSException All underlying JMSExceptions are allowed to fall through.
+     */
+    public void ping(Message message) throws JMSException
+    {
+        _producer.send(message);
+
+        // Keep the messageId to correlate with the reply.
+        String messageId = message.getJMSMessageID();
+
+        // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
+        // this method, as the message will not be sent until the transaction is committed.
+        commitTx();
+    }
+
+    /**
+     * Stops the ping loop by clearing the publish flag. The current loop will complete before it notices that this
+     * flag has been cleared.
+     */
+    public void stop()
+    {
+        _publish = false;
+    }
+
+    /**
+     * The ping loop implementation. This send out pings of the configured size, persistence and transactionality, and
+     * waits for short pauses in between each.
+     */
+    public void pingLoop()
     {
         try
         {
-            createConnection(brokerDetails, clientID, virtualpath);
+            // Generate a sample message and time stamp it.
+            ObjectMessage msg = getTestMessage(_session, null, _messageSize, System.currentTimeMillis(), _persistent);
+            msg.setLongProperty("timestamp", System.currentTimeMillis());
 
-            Session session;
+            // Send the message.
+            ping(msg);
 
-            if (TRANSACTED)
-            {
-                session = (Session) _connection.createSession(true, Session.SESSION_TRANSACTED);
-            }
-            else
-            {
-                session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            }
-
-            String queue = "ping";
-            AMQQueue destination = new AMQQueue(queue);
-            MessageProducer producer = (MessageProducer) session.createProducer(destination);
-
-            _connection.setExceptionListener(this);
-
-            _connection.start();
-
-            while (_publish)
-            {
-/*
-                TextMessage msg = session.createTextMessage(
-                        "Presented to in conjunction with Mahnah Mahnah and the Snowths: " + ++messageNumber);
-*/
-                ObjectMessage msg = null;
-                if (_messageSize != 0)
-                {
-                    msg = TestMessageFactory.newObjectMessage(session, _messageSize);
-                }
-                else
-                {
-                    msg = session.createObjectMessage();
-                }
-                
-                msg.setStringProperty("timestampString", Long.toString(System.currentTimeMillis()));
-                msg.setLongProperty("timestamp", System.currentTimeMillis());
-
-                ((BasicMessageProducer) producer).send(msg, DeliveryMode.NON_PERSISTENT, true);
-                _log.info("Message Sent.");
-                _log.debug(msg);
-
-
-                if (TRANSACTED)
-                {
-                    try
-                    {
-                        session.commit();
-                        _log.debug("Session Commited.");
-                    }
-                    catch (JMSException e)
-                    {
-                        _log.trace("JMSException on commit:" + e);
-                        try
-                        {
-                            session.rollback();
-                            _log.debug("Message rolled back.");
-                        }
-                        catch (JMSException jsme)
-                        {
-                            _log.trace("JMSE on rollback:" + jsme);
-                        }
-
-
-                        if (e.getLinkedException() instanceof AMQNoConsumersException)
-                        {
-                            _log.info("No Consumers on queue:'" + queue + "'");
-                            continue;
-                        }
-                    }
-                }
-
-
-                if (SLEEP_TIME > 0)
-                {
-                    try
-                    {
-                        Thread.sleep(SLEEP_TIME);
-                    }
-                    catch (InterruptedException ie)
-                    {
-                        //do nothing
-                    }
-                }
-
-
-            }
-
+            // Introduce a short pause if desired.
+            pause(SLEEP_TIME);
         }
         catch (JMSException e)
         {
             _publish = false;
-            e.printStackTrace();
+            _logger.debug("There was a JMSException: " + e.getMessage(), e);
         }
-    }
-
-    private void createConnection(String brokerDetails, String clientID, String virtualpath) throws AMQException, URLSyntaxException
-    {
-        _publish = true;
-        _connection = new AMQConnection(brokerDetails, "guest", "guest",
-                                        clientID, virtualpath);
-        _log.info("Connected with URL:" + _connection.toURL());
-    }
-
-    /**
-     * @param args argument 1 if present specifies the name of the temporary queue to create. Leaving it blank
-     *             means the server will allocate a name.
-     */
-    public static void main(String[] args)
-    {
-        if (args.length < 2)
-        {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted] [message size in bytes]");
-            System.exit(0);
-        }
-        try
-        {
-            InetAddress address = InetAddress.getLocalHost();
-            String clientID = address.getHostName() + System.currentTimeMillis();
-            boolean transacted = false;
-            if (args.length == 3 )
-            {
-                transacted = Boolean.parseBoolean(args[2]);
-            }
-            else if (args.length > 3 )
-            {
-                transacted = Boolean.parseBoolean(args[2]);
-                _messageSize = Integer.parseInt(args[3]);
-            }
-
-            new TestPingProducer(transacted, args[0], clientID, args[1]);
-        }
-        catch (UnknownHostException e)
-        {
-            e.printStackTrace();
-        }
-        catch (AMQException e)
-        {
-            System.err.println("Error in client: " + e);
-            e.printStackTrace();
-        }
-        catch (URLSyntaxException e)
-        {
-            System.err.println("Error in connection arguments : " + e);
-        }
-
-        //System.exit(0);
-    }
-
-    /**
-     * @see javax.jms.ExceptionListener#onException(javax.jms.JMSException)
-     */
-    public void onException(JMSException e)
-    {
-        System.err.println(e.getMessage());
-
-        _publish = false;
-        e.printStackTrace(System.err);
     }
 }
