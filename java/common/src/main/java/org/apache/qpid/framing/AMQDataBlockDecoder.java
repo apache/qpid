@@ -36,7 +36,16 @@ public class AMQDataBlockDecoder
 
     public AMQDataBlockDecoder()
     {
-        _supportedBodies.put(new Byte(AMQMethodBody.TYPE), AMQMethodBodyFactory.getInstance());
+        _supportedBodies.put(new Byte(AMQRequestBody.TYPE), new BodyFactory() {
+            public AMQBody createBody(ByteBuffer in) {
+                return new AMQRequestBody();
+            }
+        });
+        _supportedBodies.put(new Byte(AMQResponseBody.TYPE), new BodyFactory() {
+            public AMQBody createBody(ByteBuffer in) {
+                return new AMQResponseBody();
+            }
+        });
         _supportedBodies.put(new Byte(HeartbeatBody.TYPE), new HeartbeatBodyFactory());
     }
 
