@@ -176,7 +176,7 @@ class Channel:
     self.responder = Responder(self.write)
 
     # XXX: better switch
-    self.reliable = False
+    self.reliable = True
 
   def close(self, reason):
     if self.closed:
