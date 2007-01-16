@@ -34,6 +34,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.jms.Destination;
@@ -63,7 +64,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /**
      * Holds an atomic reference to the listener installed.
      */
-    private final AtomicReference _messageListener = new AtomicReference();
+    private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
     /**
      * The consumer tag allows us to close the consumer by sending a jmsCancel method to the
@@ -78,13 +79,17 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     /**
      * Used in the blocking receive methods to receive a message from
-     * the Session thread. Argument true indicates we want strict FIFO semantics
+     * the Session thread.
+     * <p/>
+     * Or to notify of errors
+     * <p/>
+     * Argument true indicates we want strict FIFO semantics
      */
     private final ArrayBlockingQueue _synchronousQueue;
 
     private MessageFactoryRegistry _messageFactory;
 
-    private AMQSession _session;
+    private final AMQSession _session;
 
     private AMQProtocolHandler _protocolHandler;
 
@@ -141,8 +146,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     private Thread _receivingThread;
 
     /**
-     *  autoClose denotes that the consumer will automatically cancel itself when there are no more messages to receive
-     *  on the queue.  This is used for queue browsing.
+     * autoClose denotes that the consumer will automatically cancel itself when there are no more messages to receive
+     * on the queue.  This is used for queue browsing.
      */
     private boolean _autoClose;
     private boolean _closeWhenNoMessages;
@@ -179,14 +184,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public String getMessageSelector() throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
         return _messageSelector;
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
-    	checkPreConditions();
-        return (MessageListener) _messageListener.get();
+        checkPreConditions();
+        return _messageListener.get();
     }
 
     public int getAcknowledgeMode()
@@ -199,9 +204,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         return _messageListener.get() != null;
     }
 
-    public void setMessageListener(MessageListener messageListener) throws JMSException
+    public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         //if the current listener is non-null and the session is not stopped, then
         //it is an error to call this method.
@@ -216,7 +221,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if (_session.isStopped())
         {
             _messageListener.set(messageListener);
-            _logger.debug("Message listener set for destination " + _destination);
+            _logger.debug("Session stopped : Message listener set for destination " + _destination);
         }
         else
         {
@@ -228,18 +233,35 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 throw new javax.jms.IllegalStateException("Attempt to alter listener while session is started.");
             }
+
             _logger.debug("Message listener set for destination " + _destination);
 
             if (messageListener != null)
             {
-                //handle case where connection has already been started, and the dispatcher is blocked
-                //doing a put on the _synchronousQueue
-                AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
-                if (jmsMsg != null)
+                //handle case where connection has already been started, and the dispatcher has alreaded started
+                // putting values on the _synchronousQueue
+
+                synchronized (_session)
                 {
-                    preApplicationProcessing(jmsMsg);
-                    messageListener.onMessage(jmsMsg);
-                    postDeliver(jmsMsg);
+                    //Pause Dispatcher
+                    _session.doDispatcherTask(new DispatcherCallback(this)
+                    {
+                        public void whilePaused(Queue<MessageConsumerPair> reprocessQueue)
+                        {
+                            // Prepend messages in _synchronousQueue to dispatcher queue
+                            _logger.debug("ReprocessQueue current size:" + reprocessQueue.size());
+                            for (Object item : _synchronousQueue)
+                            {
+                                reprocessQueue.offer(new MessageConsumerPair(_consumer, item));
+                            }
+                            _logger.debug("Added items to reprocessQueue:" + reprocessQueue.size());
+
+                            // Set Message Listener
+                            _logger.debug("Set Message Listener");
+                            _messageListener.set(messageListener);                            
+                        }
+                    }
+                    );                    
                 }
             }
         }
@@ -247,7 +269,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-        if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
             byte[] url = jmsMsg.getBytesProperty(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName());
@@ -314,13 +336,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         acquireReceiving();
 
         try
         {
-            if(closeOnAutoClose())
+            if (closeOnAutoClose())
             {
                 return null;
             }
@@ -355,7 +377,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private boolean closeOnAutoClose() throws JMSException
     {
-        if(isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
+        if (isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
         {
             close(false);
             return true;
@@ -368,13 +390,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         acquireReceiving();
 
         try
         {
-            if(closeOnAutoClose())
+            if (closeOnAutoClose())
             {
                 return null;
             }
@@ -430,19 +452,19 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close(boolean sendClose) throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
+        synchronized (_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
-                if(sendClose)
+                if (sendClose)
                 {
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        _consumerTag,	// consumerTag
-                        false);	// nowait
+                                                                                (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                                _consumerTag,    // consumerTag
+                                                                                false);    // nowait
 
                     try
                     {
@@ -499,7 +521,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                                                                           messageFrame.contentHeader,
                                                                           messageFrame.bodies);
 
-            if(debug)
+            if (debug)
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             }
@@ -507,18 +529,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             preDeliver(jmsMessage);
 
-            if (isMessageListenerSet())
-            {
-                //we do not need a lock around the test above, and the dispatch below as it is invalid
-                //for an application to alter an installed listener while the session is started
-                preApplicationProcessing(jmsMessage);
-                getMessageListener().onMessage(jmsMessage);
-                postDeliver(jmsMessage);
-            }
-            else
-            {
-                _synchronousQueue.put(jmsMessage);
-            }
+            notifyMessage(jmsMessage, channelId);
         }
         catch (Exception e)
         {
@@ -529,6 +540,41 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             else
             {
                 _logger.error("Caught exception (dump follows) - ignoring...", e);
+            }
+        }
+    }
+
+    /**
+     * @param jmsMessage this message has already been processed so can't redo preDeliver
+     * @param channelId
+     */
+    public void notifyMessage(AbstractJMSMessage jmsMessage, int channelId)
+    {
+        try
+        {
+            if (isMessageListenerSet())
+            {
+                //we do not need a lock around the test above, and the dispatch below as it is invalid
+                //for an application to alter an installed listener while the session is started
+                preApplicationProcessing(jmsMessage);
+                getMessageListener().onMessage(jmsMessage);
+                postDeliver(jmsMessage);
+            }
+            else
+            {
+                //This shouldn't be possible.
+                _synchronousQueue.put(jmsMessage);
+            }
+        }
+        catch (Exception e)
+        {
+            if (e instanceof InterruptedException)
+            {
+                _logger.info("reNotification : SynchronousQueue.put interupted. Usually result of connection closing");
+            }
+            else
+            {
+                _logger.error("reNotification : Caught exception (dump follows) - ignoring...", e);
             }
         }
     }
@@ -550,7 +596,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
-    	msg.setJMSDestination(_destination);
+        msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
             case Session.CLIENT_ACKNOWLEDGE:
@@ -613,6 +659,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         _closed.set(true);
 
+        //QPID-293 can "request redelivery of this error through dispatcher"
+
         // we have no way of propagating the exception to a message listener - a JMS limitation - so we
         // deal with the case where we have a synchronous receive() waiting for a message to arrive
         if (!isMessageListenerSet())
@@ -626,13 +674,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         deregisterConsumer();
     }
 
+
     /**
      * Perform cleanup to deregister this consumer. This occurs when closing the consumer in both the clean
      * case and in the case of an error occurring.
      */
     private void deregisterConsumer()
     {
-    	_session.deregisterConsumer(this);
+        _session.deregisterConsumer(this);
     }
 
     public AMQShortString getConsumerTag()
@@ -645,26 +694,29 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _consumerTag = consumerTag;
     }
 
-	public AMQSession getSession() {
-		return _session;
-	}
+    public AMQSession getSession()
+    {
+        return _session;
+    }
 
-	private void checkPreConditions() throws JMSException{
+    private void checkPreConditions() throws JMSException
+    {
 
-		this.checkNotClosed();
+        this.checkNotClosed();
 
-		if(_session == null || _session.isClosed()){
-			throw new javax.jms.IllegalStateException("Invalid Session");
-		}
-	}
+        if (_session == null || _session.isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+    }
 
     public void acknowledge() throws JMSException
     {
-        if(!isClosed())
+        if (!isClosed())
         {
 
             Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
-            while(tags.hasNext())
+            while (tags.hasNext())
             {
                 _session.acknowledgeMessage(tags.next(), false);
                 tags.remove();
@@ -699,10 +751,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         _closeWhenNoMessages = b;
 
-        if(_closeWhenNoMessages
-                && _synchronousQueue.isEmpty() 
-                && _receiving.get()
-                && _messageListener != null)
+        if (_closeWhenNoMessages
+            && _synchronousQueue.isEmpty()
+            && _receiving.get()
+            && _messageListener != null)
         {
             _receivingThread.interrupt();
         }
