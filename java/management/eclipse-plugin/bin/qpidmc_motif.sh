@@ -18,7 +18,7 @@
 # under the License.
 #
 
-os=`uname | tr A-Z a-z`
+os=`uname`
 arch=`uname -p`
 
-$QPIDMC_HOME/bin/qpidms.sh -os $os -ws motif -arch $arch
+$QPIDMC_HOME/bin/qpidmc.sh $os motif $arch

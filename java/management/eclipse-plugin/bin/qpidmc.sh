@@ -45,4 +45,10 @@ if [ $# -eq 3 ]; then
     arch=$3
 fi
 
+if [ $os = "SunOS" ]; then
+    os="solaris"
+elif [ $os = "Linux" ]; then
+    os="linux"
+fi
+
 "$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=false -jar $QPIDMC_HOME/eclipse/startup.jar org.eclipse.core.launcher.Main -launcher $QPIDMC_HOME/eclipse/eclipse -name "Qpid Management Console" -showsplash 600 -configuration "file:$QPIDMC_HOME/configuration" -os $os -ws $ws -arch $arch
