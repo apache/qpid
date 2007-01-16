@@ -19,7 +19,6 @@
  *
  */
 #include <QueueRegistry.h>
-#include <SessionHandlerImpl.h>
 #include <sstream>
 #include <assert.h>
 

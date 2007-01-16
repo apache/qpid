@@ -18,29 +18,26 @@
  * under the License.
  *
  */
-#ifndef _SessionHandlerFactory_
-#define _SessionHandlerFactory_
-
-#include <boost/noncopyable.hpp>
+#include <ConnectionFactory.h>
+#include <Connection.h>
 
 namespace qpid {
-namespace sys {
+namespace broker {
 
-class SessionContext;
-class SessionHandler;
 
-/**
- * Callback interface used by the Acceptor to
- * create a SessionHandler for each new connection.
- */
-class SessionHandlerFactory : private boost::noncopyable
+ConnectionFactory::ConnectionFactory(Broker& b) : broker(b)
+{}
+
+
+ConnectionFactory::~ConnectionFactory()
 {
-  public:
-    virtual SessionHandler* create(SessionContext* ctxt) = 0;
-    virtual ~SessionHandlerFactory(){}
-};
+    broker.getCleaner().stop();
+}
 
-}}
+qpid::sys::ConnectionInputHandler*
+ConnectionFactory::create(qpid::sys::SessionContext* ctxt)
+{
+    return new Connection(ctxt, broker);
+}
 
-
-#endif
+}} // namespace qpid::broker

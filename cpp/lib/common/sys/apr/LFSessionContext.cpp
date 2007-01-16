@@ -160,7 +160,7 @@ void LFSessionContext::shutdown(){
     handleClose();
 }
 
-void LFSessionContext::init(SessionHandler* _handler){
+void LFSessionContext::init(ConnectionInputHandler* _handler){
     handler = _handler;
     processor->add(&fd);
 }

@@ -29,10 +29,10 @@
 #include "MessageStoreModule.h"
 #include "NullMessageStore.h"
 #include "ProtocolInitiation.h"
-#include "SessionHandlerImpl.h"
+#include "Connection.h"
 #include "sys/SessionContext.h"
-#include "sys/SessionHandler.h"
-#include "sys/SessionHandlerFactory.h"
+#include "sys/ConnectionInputHandler.h"
+#include "sys/ConnectionInputHandlerFactory.h"
 #include "sys/TimeoutHandler.h"
 
 #include "Broker.h"

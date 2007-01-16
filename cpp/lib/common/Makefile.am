@@ -120,8 +120,8 @@ nobase_pkginclude_HEADERS =			\
   sys/Mutex.h					\
   sys/Runnable.h				\
   sys/SessionContext.h				\
-  sys/SessionHandler.h				\
-  sys/SessionHandlerFactory.h			\
+  sys/ConnectionInputHandler.h				\
+  sys/ConnectionInputHandlerFactory.h			\
   sys/ShutdownHandler.h				\
   sys/Socket.h					\
   sys/Thread.h					\

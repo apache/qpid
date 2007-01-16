@@ -32,7 +32,7 @@ void fail() { throw qpid::Exception("PosixAcceptor not implemented"); }
 class PosixAcceptor : public Acceptor {
   public:
     virtual int16_t getPort() const { fail(); return 0; }
-    virtual void run(qpid::sys::SessionHandlerFactory* ) { fail(); }
+    virtual void run(qpid::sys::ConnectionInputHandlerFactory* ) { fail(); }
     virtual void shutdown() { fail(); }
 };
 

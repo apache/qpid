@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#ifndef _SessionHandlerImpl_
-#define _SessionHandlerImpl_
+#ifndef _Connection_
+#define _Connection_
 
 #include <map>
 #include <sstream>
@@ -29,29 +29,13 @@
 #include <AMQP_ClientProxy.h>
 #include <AMQP_ServerOperations.h>
 #include <sys/SessionContext.h>
-#include <sys/SessionHandler.h>
+#include <sys/ConnectionInputHandler.h>
 #include <sys/TimeoutHandler.h>
 #include "Broker.h"
 #include "Exception.h"
 
 namespace qpid {
 namespace broker {
-
-struct ChannelException : public qpid::Exception {
-    u_int16_t code;
-    string text;
-    ChannelException(u_int16_t _code, string _text) : code(_code), text(_text) {}
-    ~ChannelException() throw() {}
-    const char* what() const throw() { return text.c_str(); }
-};
-
-struct ConnectionException : public qpid::Exception {
-    u_int16_t code;
-    string text;
-    ConnectionException(u_int16_t _code, string _text) : code(_code), text(_text) {}
-    ~ConnectionException() throw() {}
-    const char* what() const throw() { return text.c_str(); }
-};
 
 class Settings {
   public:
@@ -61,7 +45,7 @@ class Settings {
     Settings(u_int32_t _timeout, u_int64_t _stagingThreshold) : timeout(_timeout), stagingThreshold(_stagingThreshold) {}
 };
 
-class SessionHandlerImpl : public qpid::sys::SessionHandler, 
+class Connection : public qpid::sys::ConnectionInputHandler, 
                            public qpid::framing::AMQP_ServerOperations, 
                            public ConnectionToken
 {
@@ -117,31 +101,28 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     Exchange::shared_ptr findExchange(const string& name);
     
   public:
-    SessionHandlerImpl(qpid::sys::SessionContext* context, Broker& broker);
+    Connection(qpid::sys::SessionContext* context, Broker& broker);
     virtual void received(qpid::framing::AMQFrame* frame);
     virtual void initiated(qpid::framing::ProtocolInitiation* header);
     virtual void idleOut();
     virtual void idleIn();
     virtual void closed();
-    virtual ~SessionHandlerImpl();
+    virtual ~Connection();
 
     class ConnectionHandlerImpl : public ConnectionHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        inline ConnectionHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        inline ConnectionHandlerImpl(Connection* _parent) : parent(_parent) {}
 
         virtual void startOk(u_int16_t channel, const qpid::framing::FieldTable& clientProperties, const string& mechanism, 
                              const string& response, const string& locale); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void secureOk(u_int16_t channel, const string& response); 
                 
         virtual void tuneOk(u_int16_t channel, u_int16_t channelMax, u_int32_t frameMax, u_int16_t heartbeat); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void open(u_int16_t channel, const string& virtualHost, const string& capabilities, bool insist); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void close(u_int16_t channel, u_int16_t replyCode, const string& replyText, u_int16_t classId, 
                            u_int16_t methodId); 
  
@@ -151,11 +132,10 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     };
     
     class ChannelHandlerImpl : public ChannelHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        inline ChannelHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        inline ChannelHandlerImpl(Connection* _parent) : parent(_parent) {}
         
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void open(u_int16_t channel, const string& outOfBand); 
         
         virtual void flow(u_int16_t channel, bool active); 
@@ -180,9 +160,9 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     };
     
     class ExchangeHandlerImpl : public ExchangeHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        inline ExchangeHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        inline ExchangeHandlerImpl(Connection* _parent) : parent(_parent) {}
         
         virtual void declare(u_int16_t channel, u_int16_t ticket, const string& exchange, const string& type, 
                              bool passive, bool durable, bool autoDelete, bool internal, bool nowait, 
@@ -202,9 +182,9 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
 
     
     class QueueHandlerImpl : public QueueHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        inline QueueHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        inline QueueHandlerImpl(Connection* _parent) : parent(_parent) {}
         
         virtual void declare(u_int16_t channel, u_int16_t ticket, const string& queue, 
                              bool passive, bool durable, bool exclusive, 
@@ -224,7 +204,6 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
         virtual void purge(u_int16_t channel, u_int16_t ticket, const string& queue, 
                            bool nowait); 
                 
-        // Change to match new code generator function signature (adding const to string&) - kpvdr 2006-11-20
         virtual void delete_(u_int16_t channel, u_int16_t ticket, const string& queue, bool ifUnused, bool ifEmpty, 
                              bool nowait); 
 
@@ -232,9 +211,9 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     };
 
     class BasicHandlerImpl : public BasicHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        inline BasicHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        inline BasicHandlerImpl(Connection* _parent) : parent(_parent) {}
         
         virtual void qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool global); 
 
@@ -261,9 +240,9 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     };
 
     class TxHandlerImpl : public TxHandler{
-        SessionHandlerImpl* parent;
+        Connection* parent;
       public:
-        TxHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        TxHandlerImpl(Connection* _parent) : parent(_parent) {}
         virtual ~TxHandlerImpl() {}
         virtual void select(u_int16_t channel);
         virtual void commit(u_int16_t channel);
@@ -271,13 +250,13 @@ class SessionHandlerImpl : public qpid::sys::SessionHandler,
     };
 
     class MessageHandlerImpl : public MessageHandler {
-        SessionHandlerImpl* parent;
+        Connection* parent;
 
         // Constructors and destructors
 
       public:
         MessageHandlerImpl() {}
-        MessageHandlerImpl(SessionHandlerImpl* _parent) : parent(_parent) {}
+        MessageHandlerImpl(Connection* _parent) : parent(_parent) {}
         virtual ~MessageHandlerImpl() {}
 
         // Protocol methods

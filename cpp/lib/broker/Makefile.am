@@ -65,10 +65,10 @@ libqpidbroker_la_SOURCES =				\
   QueueRegistry.h				\
   RecoveryManager.cpp				\
   RecoveryManager.h				\
-  SessionHandlerFactoryImpl.cpp			\
-  SessionHandlerFactoryImpl.h			\
-  SessionHandlerImpl.cpp			\
-  SessionHandlerImpl.h				\
+  ConnectionFactory.cpp			\
+  ConnectionFactory.h			\
+  Connection.cpp			\
+  Connection.h				\
   TopicExchange.cpp				\
   TopicExchange.h				\
   TransactionalStore.h				\

@@ -1,5 +1,5 @@
-#ifndef _tests_MockSessionHandler_h
-#define _tests_MockSessionHandler_h
+#ifndef _tests_MockConnectionInputHandler_h
+#define _tests_MockConnectionInputHandler_h
 
 /*
  *
@@ -19,16 +19,16 @@
  *
  */
 
-#include "sys/SessionHandler.h"
-#include "sys/SessionHandlerFactory.h"
+#include "sys/ConnectionInputHandler.h"
+#include "sys/ConnectionInputHandlerFactory.h"
 #include "sys/Monitor.h"
 #include "framing/ProtocolInitiation.h"
 
-struct MockSessionHandler : public qpid::sys::SessionHandler {
+struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 
-    MockSessionHandler() : state(START) {}
+    MockConnectionInputHandler() : state(START) {}
 
-    ~MockSessionHandler() {}
+    ~MockConnectionInputHandler() {}
     
     void initiated(qpid::framing::ProtocolInitiation* pi) {
         qpid::sys::Monitor::ScopedLock l(monitor);
@@ -86,12 +86,12 @@ struct MockSessionHandler : public qpid::sys::SessionHandler {
 };
 
 
-struct MockSessionHandlerFactory : public qpid::sys::SessionHandlerFactory {
-    MockSessionHandlerFactory() : handler(0) {}
+struct MockConnectionInputHandlerFactory : public qpid::sys::ConnectionInputHandlerFactory {
+    MockConnectionInputHandlerFactory() : handler(0) {}
 
-    qpid::sys::SessionHandler* create(qpid::sys::SessionContext*) {
+    qpid::sys::ConnectionInputHandler* create(qpid::sys::SessionContext*) {
         qpid::sys::Monitor::ScopedLock lock(monitor);
-        handler = new MockSessionHandler();
+        handler = new MockConnectionInputHandler();
         monitor.notifyAll();
         return handler;
     }
@@ -104,10 +104,10 @@ struct MockSessionHandlerFactory : public qpid::sys::SessionHandlerFactory {
             CPPUNIT_ASSERT(monitor.wait(deadline));
     }
     
-    MockSessionHandler* handler;
+    MockConnectionInputHandler* handler;
     qpid::sys::Monitor monitor;
 };
 
 
 
-#endif  /*!_tests_MockSessionHandler_h*/
+#endif  /*!_tests_MockConnectionInputHandler_h*/
