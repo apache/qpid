@@ -22,6 +22,7 @@
 #include <Buffer.h>
 #include <FieldTable.h>
 #include <QpidError.h>
+#include <sstream>
 
 namespace qpid {
 namespace framing {
@@ -85,7 +86,9 @@ std::auto_ptr<Value> Value::decode_value(Buffer& buffer)
         value.reset(new FieldTableValue());
 	break;
       default:
-	THROW_QPID_ERROR(FRAMING_ERROR, "Unknown field table value type");
+        std::stringstream out;
+        out << "Unknown field table value type: " << type;
+	THROW_QPID_ERROR(FRAMING_ERROR, out.str());
     }
     value->decode(buffer);
     return value;
