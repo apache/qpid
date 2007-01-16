@@ -321,7 +321,7 @@ public class FieldTable
     public byte[] getBytes(AMQShortString string)
     {
         AMQTypedValue value = getProperty(string);
-        if (value != null && (value.getType() == AMQType.BINARY))
+        if (value != null && (value.getType() == AMQType.BINARY || value.getType() == AMQType.LONG_STRING))
         {
             return (byte[]) value.getValue();
         }
@@ -497,7 +497,9 @@ public class FieldTable
     public Object setBytes(AMQShortString string, byte[] bytes)
     {
         checkPropertyName(string);
-        return setProperty(string, AMQType.BINARY.asTypedValue(bytes));
+        // HACK for interop
+        //return setProperty(string, AMQType.BINARY.asTypedValue(bytes));
+        return setProperty(string, AMQType.LONG_STRING.asTypedValue(bytes));
     }
 
     public Object setBytes(String string, byte[] bytes, int start, int length)
