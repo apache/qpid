@@ -65,10 +65,12 @@ libqpidbroker_la_SOURCES =				\
   QueueRegistry.h				\
   RecoveryManager.cpp				\
   RecoveryManager.h				\
-  ConnectionFactory.cpp			\
-  ConnectionFactory.h			\
-  Connection.cpp			\
-  Connection.h				\
+  ConnectionFactory.cpp				\
+  ConnectionFactory.h				\
+  Connection.cpp				\
+  Connection.h					\
+  BrokerAdapter.cpp				\
+  BrokerAdapter.h				\
   TopicExchange.cpp				\
   TopicExchange.h				\
   TransactionalStore.h				\

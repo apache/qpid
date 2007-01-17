@@ -42,12 +42,15 @@ Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, 
     tagGenerator("sgen"),
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
-    version(_version){
+    version(_version),
+    isClosed(false)
+{
 
     outstanding.reset();
 }
 
 Channel::~Channel(){
+    close();
 }
 
 bool Channel::exists(const string& consumerTag){
@@ -83,12 +86,13 @@ void Channel::cancel(const string& tag){
 }
 
 void Channel::close(){
-    //cancel all consumers
-    for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin() ){
-        cancel(i);
+    if (!isClosed) {
+        isClosed = true;
+        while (!consumers.empty()) 
+            cancel(consumers.begin());
+        //requeue:
+        recover(true);
     }
-    //requeue:
-    recover(true);
 }
 
 void Channel::begin(){

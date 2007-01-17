@@ -90,6 +90,7 @@ namespace qpid {
             MessageBuilder messageBuilder;//builder for in-progress message
             Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
 	    qpid::framing::ProtocolVersion version; // version used for this channel
+            bool isClosed;
 
             virtual void complete(Message::shared_ptr& msg);
             void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
