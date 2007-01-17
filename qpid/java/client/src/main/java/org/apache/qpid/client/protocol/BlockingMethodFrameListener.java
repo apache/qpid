@@ -21,6 +21,7 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.AMQMethodBody;
 
 public abstract class BlockingMethodFrameListener implements AMQMethodListener
@@ -49,6 +50,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This method is called by the MINA dispatching thread. Note that it could
      * be called before blockForFrame() has been called.
+     *
      * @param evt the frame event
      * @return true if the listener has dealt with this frame
      * @throws AMQException
@@ -106,11 +108,16 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         {
             if (_error instanceof AMQException)
             {
-                throw (AMQException)_error;
+                throw(AMQException) _error;
+            }
+            else if (_error instanceof FailoverException)
+            {
+                // This should ensure that FailoverException is not wrapped and can be caught.
+                throw(FailoverException) _error;  // needed to expose FailoverException.
             }
             else
             {
-                throw new AMQException("Woken up due to " + _error.getClass(), _error); // FIXME: This will wrap FailoverException and prevent it being caught.
+                throw new AMQException("Woken up due to " + _error.getClass(), _error);
             }
         }
 
@@ -120,6 +127,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This is a callback, called by the MINA dispatcher thread only. It is also called from within this
      * class to avoid code repetition but again is only called by the MINA dispatcher thread.
+     *
      * @param e
      */
     public void error(Exception e)

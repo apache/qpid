@@ -85,7 +85,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             }
             else
             {
-                _logger.warn("No Provider URL specified.");
+                _logger.info("No Provider URL specified.");
             }
         }
         catch (IOException ioe)

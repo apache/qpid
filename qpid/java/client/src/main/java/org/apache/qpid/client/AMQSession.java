@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -91,6 +92,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * This queue is bounded and is used to store messages before being dispatched to the consumer
      */
     private final FlowControllingBlockingQueue _queue;
+
+    private final java.util.Queue<MessageConsumerPair> _reprocessQueue;
 
     private Dispatcher _dispatcher;
 
@@ -139,11 +142,32 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private volatile AtomicBoolean _stopped = new AtomicBoolean(true);
 
     /**
+     * Used to signal 'pausing' the dispatcher when setting a message listener on a consumer
+     */
+    private final AtomicBoolean _pausing = new AtomicBoolean(false);
+
+    /**
+     * Used to signal 'pausing' the dispatcher when setting a message listener on a consumer
+     */
+    private final AtomicBoolean _paused = new AtomicBoolean(false);
+
+    /**
      * Set when recover is called. This is to handle the case where recover() is called by application code
      * during onMessage() processing. We need to make sure we do not send an auto ack if recover was called.
      */
     private boolean _inRecovery;
 
+    public void doDispatcherTask(DispatcherCallback dispatcherCallback)
+    {
+        synchronized (this)
+        {
+            _dispatcher.pause();
+
+            dispatcherCallback.whilePaused(_reprocessQueue);
+
+            _dispatcher.reprocess();
+        }
+    }
 
 
     /**
@@ -151,6 +175,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private class Dispatcher extends Thread
     {
+        private final Logger _logger = Logger.getLogger(Dispatcher.class);        
+
         public Dispatcher()
         {
             super("Dispatcher-Channel-" + _channelId);
@@ -158,22 +184,104 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         public void run()
         {
-            UnprocessedMessage message;
             _stopped.set(false);
+
+            while (!_stopped.get())
+            {
+                if (_pausing.get())
+                {
+                    try
+                    {
+                        //Wait for unpausing
+                        synchronized (_pausing)
+                        {
+                            synchronized (_paused)
+                            {
+                                _paused.notify();
+                            }
+
+                            _logger.info("dispatcher paused");
+                            
+                            _pausing.wait();
+                            _logger.info("dispatcher notified");
+                        }
+
+                    }
+                    catch (InterruptedException e)
+                    {
+                        //do nothing... occurs when a pause request occurs will already
+                        // be here if another pause event is pending
+                        _logger.info("dispacher interrupted");
+                    }
+
+                    doReDispatch();
+
+                }
+                else
+                {
+                    doNormalDispatch();
+                }
+            }
+
+            _logger.info("Dispatcher thread terminating for channel " + _channelId);
+        }
+
+        private void doNormalDispatch()
+        {
+            UnprocessedMessage message;
             try
             {
-                while (!_stopped.get() && (message = (UnprocessedMessage) _queue.take()) != null)
+                while (!_stopped.get() && !_pausing.get() && (message = (UnprocessedMessage) _queue.take()) != null)
                 {
                     dispatchMessage(message);
                 }
             }
             catch (InterruptedException e)
             {
-                ;
+                _logger.info("dispatcher normal dispatch interrupted");
             }
 
-            _logger.info("Dispatcher thread terminating for channel " + _channelId);
         }
+
+        private void doReDispatch()
+        {
+            _logger.info("doRedispatching");
+
+            MessageConsumerPair messageConsumerPair;
+
+            if (_reprocessQueue != null)
+            {
+                _logger.info("Reprocess Queue has size:" + _reprocessQueue.size());
+                while (!_stopped.get() && ((messageConsumerPair = _reprocessQueue.poll()) != null))
+                {
+                    reDispatchMessage(messageConsumerPair);
+                }
+            }
+
+            if (_reprocessQueue == null || _reprocessQueue.isEmpty())
+            {
+                _logger.info("Reprocess Queue emptied");
+                _pausing.set(false);
+            }
+            else
+            {
+                _logger.info("Reprocess Queue still contains contains:" + _reprocessQueue.size());
+            }
+
+        }
+
+        private void reDispatchMessage(MessageConsumerPair consumerPair)
+        {
+            if (consumerPair.getItem() instanceof AbstractJMSMessage)
+            {
+                _logger.info("do renotify:" + consumerPair.getItem());
+                consumerPair.getConsumer().notifyMessage((AbstractJMSMessage) consumerPair.getItem(), _channelId);
+            }
+
+            //    BasicMessageConsumer.notifyError(Throwable cause)
+            // will put the cause in to the list which could come out here... need to watch this.
+        }
+
 
         private void dispatchMessage(UnprocessedMessage message)
         {
@@ -235,6 +343,36 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             _stopped.set(true);
             interrupt();
         }
+
+        public void pause()
+        {
+            _logger.info("pausing");
+            _pausing.set(true);
+
+
+            interrupt();
+
+            synchronized (_paused)
+            {
+                try
+                {
+                    _paused.wait();
+                }
+                catch (InterruptedException e)
+                {
+                  //do nothing
+                }
+            }
+        }
+
+        public void reprocess()
+        {
+            synchronized (_pausing)
+            {
+                _logger.info("reprocessing");
+                _pausing.notify();
+            }
+        }
     }
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
@@ -266,6 +404,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _messageFactoryRegistry = messageFactoryRegistry;
         _defaultPrefetchHighMark = defaultPrefetchHighMark;
         _defaultPrefetchLowMark = defaultPrefetchLowMark;
+
+        _reprocessQueue = new ConcurrentLinkedQueue<MessageConsumerPair>();
 
         if (_acknowledgeMode == NO_ACKNOWLEDGE)
         {
@@ -1583,7 +1723,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         //stop the server delivering messages to this session
         suspendChannel();
 
-//stop the dispatcher thread
+        //stop the dispatcher thread
         _stopped.set(true);
     }
 
