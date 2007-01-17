@@ -245,7 +245,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     // Bounced message is processed here, away from the mina thread
                     AbstractJMSMessage bouncedMessage = _messageFactoryRegistry.createMessage(0,
                                                                                               false,
-                            e                                                                  message.contentHeader,
+                                                                                              message.contentHeader,
                                                                                               message.content);
 
                     int errorCode = message.bounceBody.replyCode;
