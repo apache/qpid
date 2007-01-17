@@ -106,6 +106,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted,
                                    int channelId, AMQSession session, AMQProtocolHandler protocolHandler,
                                    long producerId, boolean immediate, boolean mandatory, boolean waitUntilSent)
+                                   throws AMQException
     {
         _connection = connection;
         _destination = destination;
@@ -131,7 +132,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
     }
 
-    private void declareDestination(AMQDestination destination)
+    private void declareDestination(AMQDestination destination) throws AMQException
     {
         // Declare the exchange
         // Note that the durable and internal arguments are ignored since passive is set to false
@@ -344,7 +345,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public void send(Destination destination, Message message, int deliveryMode,
                      int priority, long timeToLive, boolean mandatory,
                      boolean immediate, boolean waitUntilSent)
-            throws JMSException
+            throws JMSException, AMQException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -494,7 +495,14 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             throw new JMSException("Unsupported destination class: " +
                     (destination != null ? destination.getClass() : null));
         }
-        declareDestination((AMQDestination) destination);
+        try
+        {
+            declareDestination((AMQDestination) destination);
+        }
+        catch (AMQException e)
+        {
+            throw new JMSException(e.toString());
+        }
     }
 
     protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority,
@@ -560,32 +568,39 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
         for (int i = 0; i < content.length; i++)
         {
-            AMQMethodBody methodBody = MessageTransferBody.createMethodBody(
-                (byte)0, (byte)9,               // AMQP version (major, minor)
-                messageHeaders.getAppId(),      // String appId
-                messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
-                content[i],                     // Content body
-                messageHeaders.getEncoding(),   // String contentEncoding
-                messageHeaders.getContentType(), // String contentType
-                messageHeaders.getCorrelationId(), // String correlationId
-                (short)deliveryMode,            // short deliveryMode
-                messageHeaders.getDestination(), // String destination
-                destination.getExchangeName(),  // String exchange
-                messageHeaders.getExpiration(), // long expiration
-                immediate,                      // boolean immediate
-                messageHeaders.getMessageId(),  // String messageId
-                (short)priority,                // short priority
-                false,                          // boolean redelivered
-                messageHeaders.getReplyTo(),    // String replyTo
-                destination.getRoutingKey(),    // String routingKey
-                new String("abc123").getBytes(), // byte[] securityToken
-                0,                              // int ticket
-                messageHeaders.getTimestamp(),  // long timestamp
-                messageHeaders.getTransactionId(), // String transactionId
-                timeToLive,                     // long ttl
-                messageHeaders.getUserId());    // String userId
+            try
+            {
+                AMQMethodBody methodBody = MessageTransferBody.createMethodBody(
+                    (byte)0, (byte)9,               // AMQP version (major, minor)
+                    messageHeaders.getAppId(),      // String appId
+                    messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
+                    content[i],                     // Content body
+                    messageHeaders.getEncoding(),   // String contentEncoding
+                    messageHeaders.getContentType(), // String contentType
+                    messageHeaders.getCorrelationId(), // String correlationId
+                    (short)deliveryMode,            // short deliveryMode
+                    messageHeaders.getDestination(), // String destination
+                    destination.getExchangeName(),  // String exchange
+                    messageHeaders.getExpiration(), // long expiration
+                    immediate,                      // boolean immediate
+                    messageHeaders.getMessageId(),  // String messageId
+                    (short)priority,                // short priority
+                    message.getJMSRedelivered(),    // boolean redelivered
+                    messageHeaders.getReplyTo(),    // String replyTo
+                    destination.getRoutingKey(),    // String routingKey
+                    new String("abc123").getBytes(), // byte[] securityToken
+                    0,                              // int ticket
+                    messageHeaders.getTimestamp(),  // long timestamp
+                    messageHeaders.getTransactionId(), // String transactionId
+                    timeToLive,                     // long ttl
+                    messageHeaders.getUserId());    // String userId
         
-            _protocolHandler.writeRequest(_channelId, methodBody);
+                _protocolHandler.writeRequest(_channelId, methodBody);
+            }
+            catch (AMQException e)
+            {
+                throw new JMSException(e.toString());
+            }
         }
 
 
