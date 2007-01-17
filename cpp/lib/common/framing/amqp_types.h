@@ -36,7 +36,7 @@ namespace qpid {
 namespace framing {
 
 using std::string;
-
+typedef u_int16_t ChannelId;
 typedef u_int64_t RequestId;
 typedef u_int64_t ResponseId;
 typedef u_int32_t BatchOffset;
