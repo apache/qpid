@@ -10,6 +10,7 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 /**
  * @author Apache Software Foundation
@@ -61,12 +62,12 @@ public abstract class AbstractBytesTypedMessage extends AbstractBytesMessage
         super(data); // this instanties a content header
     }
 
-/*
-    AbstractBytesTypedMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+
+    AbstractBytesTypedMessage(long messageNbr, MessageHeaders contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
-    }*/
+    }
 
 
     protected byte readWireType() throws MessageFormatException, MessageEOFException,

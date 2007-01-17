@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 import javax.jms.StreamMessage;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 /**
  * @author Apache Software Foundation
@@ -56,11 +57,11 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     }
 
 
- /*   JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+    JMSStreamMessage(long messageNbr, MessageHeaders contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(messageNbr, contentHeader, data);
-    }*/
+    }
 
     public void reset()
     {

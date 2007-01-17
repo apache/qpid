@@ -21,8 +21,7 @@
 package org.apache.qpid.client.message;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.Content;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
@@ -35,44 +34,27 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     private static final Logger _logger = Logger.getLogger(AbstractJMSMessageFactory.class);
 
 
-    protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data,
-                                                                ContentHeaderBody contentHeader) throws AMQException;
+    protected abstract AbstractJMSMessage createMessage(long messageNbr,
+			ByteBuffer data, MessageHeaders contentHeader) throws AMQException;
 
-    protected AbstractJMSMessage createMessageWithBody(long messageNbr,
-                                                       ContentHeaderBody contentHeader,
-                                                       List bodies) throws AMQException
-    {
+	protected AbstractJMSMessage createMessageWithBody(long messageNbr,
+			MessageHeaders contentHeader, Content body) throws AMQException {
         ByteBuffer data;
 
-        // we optimise the non-fragmented case to avoid copying
-        if (bodies != null && bodies.size() == 1)
-        {
-            _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize +")");
-            data = ((ContentBody)bodies.get(0)).payload;
-        }
-        else
-        {
-            _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize + ")");
-            data = ByteBuffer.allocate((int)contentHeader.bodySize); // XXX: Is cast a problem?
-            final Iterator it = bodies.iterator();
-            while (it.hasNext())
-            {
-                ContentBody cb = (ContentBody) it.next();
-                data.put(cb.payload);
-                cb.payload.release();
-            }
-            data.flip();
-        }
+        data = ByteBuffer.allocate(body.content.length);
+        data.put(body.content);
+        data.flip();
+        
         _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
 
         return createMessage(messageNbr, data, contentHeader);
     }
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered,
-                                            ContentHeaderBody contentHeader,
-                                            List bodies) throws JMSException, AMQException
+    										MessageHeaders contentHeader,
+    										Content body) throws JMSException, AMQException
     {
-        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, bodies);
+        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, body);
         msg.setJMSRedelivered(redelivered);
         return msg;
     }

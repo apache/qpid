@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.AMQException;
-
 import javax.jms.JMSException;
+
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public class JMSStreamMessageFactory extends AbstractJMSMessageFactory
 {
-    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws
+    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, MessageHeaders contentHeader) throws
                                                                                                                    AMQException
     {
         return new JMSStreamMessage(deliveryTag, contentHeader, data);

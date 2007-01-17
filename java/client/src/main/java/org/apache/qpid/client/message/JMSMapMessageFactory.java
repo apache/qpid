@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.AMQException;
-
 import javax.jms.JMSException;
+
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public class JMSMapMessageFactory extends AbstractJMSMessageFactory
 {
@@ -33,7 +32,7 @@ public class JMSMapMessageFactory extends AbstractJMSMessageFactory
         return new JMSMapMessage();
     }
 
-    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws AMQException
+    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, MessageHeaders contentHeader) throws AMQException
     {
         return new JMSMapMessage(deliveryTag, contentHeader, data);
     }

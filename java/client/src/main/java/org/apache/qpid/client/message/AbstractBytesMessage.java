@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 /**
  * @author Apache Software Foundation
@@ -67,14 +68,14 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         _data.setAutoExpand(true);
     }
 
-    /*
-    AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
+    
+    AbstractBytesMessage(long messageNbr, MessageHeaders contentHeader, ByteBuffer data)
             throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-        getJmsContentHeaderProperties().setContentType(getMimeType());
-    }*/
+        super(messageNbr, contentHeader, data);
+        getMessageHeaders().setContentType(getMimeType());
+    }
 
     public void clearBodyImpl() throws JMSException
     {
