@@ -205,7 +205,6 @@ public class ServiceRequestingClient implements ExceptionListener
                     // exit if callbackHandler has received all messages
                     if (_completed)
                     {
-                        _log.info("timer " + new java.util.Date());
                         return;
                     }
                 }
@@ -261,8 +260,8 @@ public class ServiceRequestingClient implements ExceptionListener
     {
         _isTransactional = transactedMode;
 
-        _log.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent") +
-                  "\t isTransactional: " + _isTransactional);
+        _log.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent"));
+        _log.info("isTransactional: " + _isTransactional);
 
         _messageCount = messageCount;
         MESSAGE_DATA = TestMessageFactory.createMessagePayload(messageDataLength);
