@@ -24,7 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 
 public class Content
 {
-	enum ContentTypeEnum
+	public enum ContentTypeEnum
     {
     	CONTENT_TYPE_INLINE((byte)0), CONTENT_TYPE_REFERENCE((byte)1);
         private byte type;
@@ -77,6 +77,19 @@ public class Content
         }
     	this.contentType = contentType;
         this.content = content.getBytes();
+    }
+    
+    public Content(ContentTypeEnum contentType, ByteBuffer content)
+    {
+    	if (contentType == ContentTypeEnum.CONTENT_TYPE_REFERENCE)
+        {
+        	if (content == null)
+            	throw new IllegalArgumentException("Content cannot be null for a ref type.");
+        	if (content.array().length == 0)
+            	throw new IllegalArgumentException("Content cannot be empty for a ref type.");
+        }
+    	this.contentType = contentType;
+        this.content = content.array();
     }
     
     // Get functions
