@@ -797,7 +797,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _inRecovery = inRecovery;
     }
 
-    public void acknowledge() throws JMSException, AMQException
+    public void acknowledge() throws JMSException
     {
         if (isClosed())
         {
@@ -868,13 +868,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             public Object operation() throws JMSException
             {
-                checkNotClosed();
-                long producerId = getNextProducerId();
-                BasicMessageProducer producer = new BasicMessageProducer(_connection, (AMQDestination) destination, _transacted, _channelId,
-                                                                         AMQSession.this, _connection.getProtocolHandler(),
-                                                                         producerId, immediate, mandatory, waitUntilSent);
-                registerProducer(producerId, producer);
-                return producer;
+                try
+                {
+                    checkNotClosed();
+                    long producerId = getNextProducerId();
+                    BasicMessageProducer producer = new BasicMessageProducer(_connection, (AMQDestination) destination, _transacted, _channelId,
+                                                                             AMQSession.this, _connection.getProtocolHandler(),
+                                                                             producerId, immediate, mandatory, waitUntilSent);
+                    registerProducer(producerId, producer);
+                    return producer;
+                }
+                catch (AMQException e) { throw new JMSException(e.toString()); }
             }
         }.execute(_connection);
     }
