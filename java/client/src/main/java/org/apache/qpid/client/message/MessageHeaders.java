@@ -34,16 +34,20 @@ import java.util.Enumeration;
 public class MessageHeaders
 {
     private static final Logger _logger = Logger.getLogger(MessageHeaders.class);
-
+    
     private String _contentType;
 
     private String _encoding;
+    
+    private String _destination;
+    
+    private String _exchange;
 
     private FieldTable _jmsHeaders;
 
-    private byte _deliveryMode;
+    private short _deliveryMode;
 
-    private byte _priority;
+    private short _priority;
 
     private String _correlationId;
 
@@ -63,6 +67,8 @@ public class MessageHeaders
 
     private String _transactionId;
 
+    private String _routingKey;
+    
     public MessageHeaders()
     {
     }
@@ -108,22 +114,22 @@ public class MessageHeaders
     }
 
 
-    public byte getDeliveryMode()
+    public short getDeliveryMode()
     {
         return _deliveryMode;
     }
 
-    public void setDeliveryMode(byte deliveryMode)
+    public void setDeliveryMode(short deliveryMode)
     {
         _deliveryMode = deliveryMode;
     }
 
-    public byte getPriority()
+    public short getPriority()
     {
         return _priority;
     }
 
-    public void setPriority(byte priority)
+    public void setPriority(short priority)
     {
         _priority = priority;
     }
@@ -161,12 +167,12 @@ public class MessageHeaders
 
     public String getMessageId()
     {
-        return _messageId == null ? null : _messageId.toString();
+        return _messageId;
     }
 
     public void setMessageId(String messageId)
     {
-        _messageId = messageId == null ? null : new String(messageId);
+        _messageId = messageId;
     }
 
     public long getTimestamp()
@@ -621,12 +627,36 @@ public class MessageHeaders
 
     }
 
-	public String get_transactionId() {
+	public String getTransactionId() {
 		return _transactionId;
 	}
 
-	public void set_transactionId(String id) {
+	public void setTransactionId(String id) {
 		_transactionId = id;
+	}
+
+	public String getDestination() {
+		return _destination;
+	}
+
+	public void setDestination(String destination) {
+		this._destination = destination;
+	}
+
+	public String getExchange() {
+		return _exchange;
+	}
+
+	public void setExchange(String exchange) {
+		this._exchange = exchange;
+	}
+
+	public String getRoutingKey() {
+		return _routingKey;
+	}
+
+	public void setRoutingKey(String routingKey) {
+		this._routingKey = routingKey;
 	}
 }
 

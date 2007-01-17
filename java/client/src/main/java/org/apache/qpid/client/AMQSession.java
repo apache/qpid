@@ -221,13 +221,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         private void dispatchMessage(UnprocessedMessage message)
         {
-            if (message.deliverBody != null)
+            if (message.content != null)
             {
-                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.deliverBody.consumerTag);
+                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.content.consumerTag);
 
                 if (consumer == null)
                 {
-                    _logger.warn("Received a message from queue " + message.deliverBody.consumerTag + " without a handler - ignoring...");
+                    _logger.warn("Received a message from queue " + message.content.consumerTag + " without a handler - ignoring...");
                     _logger.warn("Consumers that exist: " + _consumers);
                     _logger.warn("Session hashcode: " + System.identityHashCode(this));
                 }

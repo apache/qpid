@@ -240,7 +240,8 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      */
     public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
     {
-        _channelId2UnprocessedMsgMap.put(message.channelId, message);
+        //_channelId2UnprocessedMsgMap.put(message.channelId, message);
+    	deliverMessageToAMQSession(message.channelId, message);
     }
     
     public void messageRequestBodyReceived(int channelId, AMQRequestBody requestBody) throws Exception
@@ -323,7 +324,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         AMQSession session = (AMQSession) _channelId2SessionMap.get(channelId);
         session.messageReceived(msg);
-        _channelId2UnprocessedMsgMap.remove(channelId);
+        //_channelId2UnprocessedMsgMap.remove(channelId);
     }
     
     public long writeRequest(int channelNum, AMQMethodBody methodBody,
