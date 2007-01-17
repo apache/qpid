@@ -395,7 +395,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
             // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
             // received on the session
-            _session.acknowledgeMessage(_deliveryTag, true);
+            try {
+				_session.acknowledgeMessage(_deliveryTag, true);
+			} catch (AMQException e) {
+				JMSException ex = new JMSException("Error trying to acknowledge");
+				ex.initCause(e);
+				throw ex;
+			}
         }
     }
 

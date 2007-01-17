@@ -238,7 +238,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 }
             }
-            else
+            /*else
             {
                 try
                 {
@@ -271,7 +271,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     _logger.error("Caught exception trying to raise undelivered message exception (dump follows) - ignoring...", e);
                 }
-            }
+            }*/
         }
 
         public void stopDispatcher()

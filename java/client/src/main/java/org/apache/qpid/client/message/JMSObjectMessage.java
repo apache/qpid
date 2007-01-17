@@ -33,6 +33,7 @@ import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -62,10 +63,10 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
     /**
      * Creates read only message for delivery to consumers
      */
-  /*  JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
+    JMSObjectMessage(long messageNbr, MessageHeaders contentHeader, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-    }*/
+        super(messageNbr, contentHeader, data);
+    }
 
     public void clearBodyImpl() throws JMSException
     {

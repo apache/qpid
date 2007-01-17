@@ -31,6 +31,7 @@ import javax.jms.MessageFormatException;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
 {
@@ -52,6 +53,21 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         populateMapFromData();
     }
 
+    JMSMapMessage(long messageNbr, MessageHeaders contentHeader, ByteBuffer data)throws AMQException
+	{
+		super(messageNbr, contentHeader, data);
+		try
+		{
+		    populateMapFromData();
+		}                                                        
+		catch (JMSException je)
+		{
+		    throw new AMQException("Error populating MapMessage from ByteBuffer", je);
+		    
+		}
+	}	
+
+    
     public String toBodyString() throws JMSException
     {
         return _map.toString();
@@ -69,7 +85,6 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         writeMapToData();
         return super.getData();
     }
-
 
 
     @Override

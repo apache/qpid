@@ -27,6 +27,7 @@ import java.nio.charset.Charset;
 import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {
@@ -51,13 +52,13 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         getMessageHeaders().setEncoding(encoding);
     }
 
-   /* JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+    JMSTextMessage(long deliveryTag, MessageHeaders contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(deliveryTag, contentHeader, data);
         contentHeader.setContentType(MIME_TYPE);
         _data = data;
-    }*/
+    }
 
     JMSTextMessage(ByteBuffer data) throws JMSException
     {
