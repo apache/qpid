@@ -21,17 +21,16 @@
 package org.apache.qpid.client.message;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.Content;
 
 import javax.jms.JMSException;
-import java.util.List;
 
 
 public interface MessageFactory
 {
     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                     ContentHeaderBody contentHeader,
-                                     List bodies)
+                                     MessageHeaders contentHeader,
+                                     Content body)
         throws JMSException, AMQException;
 
     AbstractJMSMessage createMessage() throws JMSException;
