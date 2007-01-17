@@ -681,16 +681,22 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 		}
 	}
 
-    public void acknowledge() throws JMSException, AMQException
+    public void acknowledge() throws JMSException
     {
         if(!isClosed())
         {
-
-            Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
-            while(tags.hasNext())
+            try
             {
-                _session.acknowledgeMessage(tags.next(), false);
-                tags.remove();
+                Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
+                while(tags.hasNext())
+                {
+                    _session.acknowledgeMessage(tags.next(), false);
+                    tags.remove();
+                }
+            }
+            catch (AMQException e)
+            {
+                throw new JMSException(e.toString());
             }
         }
         else

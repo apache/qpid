@@ -40,6 +40,7 @@ public class UnprocessedMessage
 
     public Content content;
     public int channelId;
+    public long deliveryTag;
     public MessageHeaders contentHeader;
     
 }
