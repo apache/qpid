@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-
-import javax.jms.JMSException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
+
+import javax.jms.JMSException;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.Content;
 
 public class MessageFactoryRegistry
 {
@@ -59,18 +58,17 @@ public class MessageFactoryRegistry
      * @throws JMSException
      */
     public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                            ContentHeaderBody contentHeader,
-                                            List bodies) throws AMQException, JMSException
+                                            MessageHeaders contentHeader,
+                                            Content body) throws AMQException, JMSException
     {
-        BasicContentHeaderProperties properties =  (BasicContentHeaderProperties) contentHeader.properties;
-        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(properties.getContentType());
+        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(contentHeader.getContentType());
         if (mf == null)
         {
-            throw new AMQException("Unsupport MIME type of " + properties.getContentType());
+            throw new AMQException("Unsupport MIME type of " + contentHeader.getContentType());
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, bodies);
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, body);
         }
     }
 
