@@ -334,7 +334,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         RequestManager requestManager = (RequestManager)_channelId2RequestMgrMap.get(channelNum);
         if (requestManager == null)
             throw new AMQException("Unable to find RequestManager for channel " + channelNum);
-        requestManager.sendRequest(methodBody, methodListener);
+        return requestManager.sendRequest(methodBody, methodListener);
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)

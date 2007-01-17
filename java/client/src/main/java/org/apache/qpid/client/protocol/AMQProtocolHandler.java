@@ -403,12 +403,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _protocolSession.writeFrame(frame, wait);
     }
     
-    public long writeRequest(int channelNum, AMQMethodBody methodBody)
+    public long writeRequest(int channelNum, AMQMethodBody methodBody) throws AMQException
     {
          return _protocolSession.writeRequest(channelNum, methodBody, _protocolSession.getStateManager());
     }
     
-    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody) throws AMQException
     {
          _protocolSession.writeResponse(channelNum, requestId, methodBody);
     }
