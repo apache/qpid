@@ -52,6 +52,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
     	MessageTransferBody transferBody = (MessageTransferBody) evt.getMethod();
         msg.content = transferBody.getBody();
         msg.channelId = evt.getChannelId();
+        msg.deliveryTag = evt.getRequestId();
         _logger.debug("New JmsDeliver method received");
         
         MessageHeaders messageHeaders = new MessageHeaders();

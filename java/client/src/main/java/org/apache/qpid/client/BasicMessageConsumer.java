@@ -239,14 +239,21 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (messageListener != null)
             {
-                //handle case where connection has already been started, and the dispatcher is blocked
-                //doing a put on the _synchronousQueue
-                AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
-                if (jmsMsg != null)
+                try
                 {
-                    preApplicationProcessing(jmsMsg);
-                    messageListener.onMessage(jmsMsg);
-                    postDeliver(jmsMsg);
+                    //handle case where connection has already been started, and the dispatcher is blocked
+                    //doing a put on the _synchronousQueue
+                    AbstractJMSMessage jmsMsg = (AbstractJMSMessage)_synchronousQueue.poll();
+                    if (jmsMsg != null)
+                    {
+                        preApplicationProcessing(jmsMsg);
+                        messageListener.onMessage(jmsMsg);
+                        postDeliver(jmsMsg);
+                    }
+                }
+                catch (AMQException e)
+                {
+                    throw new JMSException(e.toString());
                 }
             }
         }
@@ -361,6 +368,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             _logger.warn("Interrupted: " + e);
             return null;
         }
+        catch (AMQException e)
+        {
+            throw new JMSException(e.toString());
+        }
         finally
         {
             releaseReceiving();
@@ -401,6 +412,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
 
             return m;
+        }
+        catch (AMQException e)
+        {
+            throw new JMSException(e.toString());
         }
         finally
         {
@@ -501,12 +516,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.content.getDestination());
+            _logger.debug("notifyMessage called with message number " + messageFrame.deliveryTag);
         }
         try
         {
-            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.contentHeader.getDestination(),
-                                                                          messageFrame.contentHeader.getr,
+            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.deliveryTag,
+                                                                          false,
                                                                           messageFrame.contentHeader,
                                                                           messageFrame.content);
 
@@ -541,7 +556,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    private void preDeliver(AbstractJMSMessage msg)
+    private void preDeliver(AbstractJMSMessage msg) throws AMQException
     {
         switch (_acknowledgeMode)
         {
@@ -556,7 +571,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    private void postDeliver(AbstractJMSMessage msg) throws JMSException
+    private void postDeliver(AbstractJMSMessage msg) throws JMSException, AMQException
     {
     	msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
@@ -608,7 +623,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /**
      * Acknowledge up to last message delivered (if any). Used when commiting.
      */
-    void acknowledgeLastDelivered()
+    void acknowledgeLastDelivered() throws AMQException
     {
         if (_lastDeliveryTag > 0)
         {
@@ -666,7 +681,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 		}
 	}
 
-    public void acknowledge() throws JMSException
+    public void acknowledge() throws JMSException, AMQException
     {
         if(!isClosed())
         {

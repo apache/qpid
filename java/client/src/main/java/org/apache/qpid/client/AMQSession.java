@@ -797,7 +797,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _inRecovery = inRecovery;
     }
 
-    public void acknowledge() throws JMSException
+    public void acknowledge() throws JMSException, AMQException
     {
         if (isClosed())
         {
