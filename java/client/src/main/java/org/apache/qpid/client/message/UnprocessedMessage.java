@@ -38,27 +38,8 @@ public class UnprocessedMessage
 {
     private long _bytesReceived = 0;
 
-    public BasicDeliverBody deliverBody;
-    public BasicReturnBody bounceBody; // TODO: check change (gustavo)
+    public Content content;
     public int channelId;
-    public ContentHeaderBody contentHeader;
-
-    /**
-     * List of ContentBody instances. Due to fragmentation you don't know how big this will be in general
-     */
-    public List bodies = new LinkedList();
-
-    public void receiveBody(ContentBody body) throws UnexpectedBodyReceivedException
-    {
-        bodies.add(body);
-        if (body.payload != null)
-        {
-            _bytesReceived += body.payload.remaining();
-        }
-    }
-
-    public boolean isAllBodyDataReceived()
-    {
-        return _bytesReceived == contentHeader.bodySize;
-    }
+    public MessageHeaders contentHeader;
+    
 }

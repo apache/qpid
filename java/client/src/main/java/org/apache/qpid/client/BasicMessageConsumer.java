@@ -501,12 +501,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.deliverBody.deliveryTag);
+            _logger.debug("notifyMessage called with message number " + messageFrame.content.deliveryTag);
         }
         try
         {
-            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.deliverBody.deliveryTag,
-                                                                          messageFrame.deliverBody.redelivered,
+            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.content.deliveryTag,
+                                                                          messageFrame.content.redelivered,
                                                                           messageFrame.contentHeader,
                                                                           messageFrame.bodies);
 

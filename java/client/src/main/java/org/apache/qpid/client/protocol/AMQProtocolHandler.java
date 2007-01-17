@@ -309,7 +309,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         HeartbeatDiagnostics.received(frame.bodyFrame instanceof HeartbeatBody);
 
         if (frame.bodyFrame instanceof AMQRequestBody)
-        {
+        {   
             _protocolSession.messageRequestBodyReceived(frame.channel, (AMQRequestBody)frame.bodyFrame);
         }
         else if (frame.bodyFrame instanceof AMQResponseBody)
@@ -327,15 +327,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 //             try
 //             {
 //                 boolean wasAnyoneInterested = false;
-//                 while (it.hasNext())
-//                 {
-//                     final AMQMethodListener listener = (AMQMethodListener) it.next();
-//                     wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
-//                 }
-//                 if (!wasAnyoneInterested)
-//                 {
-//                     throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"  + _frameListeners);
-//                 }
+//                 Q
 //             }
 //             catch (AMQException e)
 //             {
