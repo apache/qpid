@@ -253,4 +253,5 @@ void Connection::shutdown(){
     for(iterator i = channels.begin(); i != channels.end(); i++){
         i->second->stop();
     }
+    responses.signalResponse(AMQMethodBody::shared_ptr());
 }

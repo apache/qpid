@@ -1,3 +1,6 @@
+#ifndef _BodyHandler_
+#define _BodyHandler_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,37 +21,55 @@
  * under the License.
  *
  */
-#include <string>
 
-#ifndef _BodyHandler_
-#define _BodyHandler_
+#include <boost/shared_ptr.hpp>
 
-#include <AMQMethodBody.h>
-#include <AMQHeaderBody.h>
-#include <AMQContentBody.h>
-#include <AMQHeartbeatBody.h>
+#include "Requester.h"
+#include "Responder.h"
 
 namespace qpid {
 namespace framing {
 
-    class BodyHandler{
-    public:
-        virtual ~BodyHandler();
-	virtual void handleMethod(AMQMethodBody::shared_ptr body) = 0;
-	virtual void handleHeader(AMQHeaderBody::shared_ptr body) = 0;
-	virtual void handleContent(AMQContentBody::shared_ptr body) = 0;
-	virtual void handleHeartbeat(AMQHeartbeatBody::shared_ptr body) = 0;
+class AMQRequestBody;
+class AMQResponseBody;
+class AMQMethodBody;
+class AMQHeaderBody;
+class AMQContentBody;
+class AMQHeartbeatBody;
 
-        void handleBody(const AMQBody::shared_ptr& body);
-    };
+/**
+ * Base class for client and broker channel handlers.
+ * 
+ * Handles request/response id management common to client and broker.
+ * Derived classes provide remaining client/broker specific handling.
+ */
+class BodyHandler {
+  public:
+    virtual ~BodyHandler();
+    
+    void handleBody(boost::shared_ptr<AMQBody> body);
 
-    class UnknownBodyType{
-    public:
-	const u_int16_t type;
-	inline UnknownBodyType(u_int16_t _type) : type(_type){}
-    };
-}
-}
+  protected:
+    virtual void handleRequest(boost::shared_ptr<AMQRequestBody>);
+    virtual void handleResponse(boost::shared_ptr<AMQResponseBody>);
+
+    virtual void handleMethod(boost::shared_ptr<AMQMethodBody>) = 0;
+    virtual void handleHeader(boost::shared_ptr<AMQHeaderBody>) = 0;
+    virtual void handleContent(boost::shared_ptr<AMQContentBody>) = 0;
+    virtual void handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>) = 0;
+
+  protected:
+    /** Throw protocol exception if this is not channel 0. */
+    static void assertChannelZero(u_int16_t id);
+    /** Throw protocol exception if this is channel 0. */
+    static void assertChannelNonZero(u_int16_t id);
+
+  private:
+    Requester requester;
+    Responder responder;
+};
+
+}}
 
 
 #endif

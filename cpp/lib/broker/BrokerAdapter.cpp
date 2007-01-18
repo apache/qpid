@@ -15,9 +15,10 @@
  * limitations under the License.
  *
  */
-
 #include "BrokerAdapter.h"
 #include "Connection.h"
+#include "Exception.h"
+#include "AMQMethodBody.h"
 #include "Exception.h"
 
 namespace qpid {
@@ -28,75 +29,263 @@ using namespace qpid::framing;
 
 typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
-BrokerAdapter::BrokerAdapter(Connection& c) :
-    connection(c),
-    basicHandler(c),
-    channelHandler(c),
-    connectionHandler(c),
-    exchangeHandler(c),
-    messageHandler(c),
-    queueHandler(c),
-    txHandler(c)    
-{}
+class BrokerAdapter::ServerOps : public AMQP_ServerOperations
+{
+  public:
+    ServerOps(Channel& ch, Connection& c, Broker& b) :
+        basicHandler(ch, c, b),
+        channelHandler(ch, c, b),
+        connectionHandler(ch, c, b),
+        exchangeHandler(ch, c, b),
+        messageHandler(ch, c, b),
+        queueHandler(ch, c, b),
+        txHandler(ch, c, b)    
+    {}
+    
+    ChannelHandler* getChannelHandler() { return &channelHandler; }
+    ConnectionHandler* getConnectionHandler() { return &connectionHandler; }
+    BasicHandler* getBasicHandler() { return &basicHandler; }
+    ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
+    QueueHandler* getQueueHandler() { return &queueHandler; }
+    TxHandler* getTxHandler() { return &txHandler;  }
+    MessageHandler* getMessageHandler() { return &messageHandler;  }
+    AccessHandler* getAccessHandler() {
+        throw ConnectionException(540, "Access class not implemented");  }
+    FileHandler* getFileHandler() {
+        throw ConnectionException(540, "File class not implemented");  }
+    StreamHandler* getStreamHandler() {
+        throw ConnectionException(540, "Stream class not implemented");  }
+    DtxHandler* getDtxHandler() {
+        throw ConnectionException(540, "Dtx class not implemented");  }
+    TunnelHandler* getTunnelHandler() {
+        throw ConnectionException(540, "Tunnel class not implemented"); }
 
-typedef qpid::framing::AMQP_ServerOperations Ops;
+  private:
+    struct CoreRefs {
+        CoreRefs(Channel& ch, Connection& c, Broker& b)
+            : channel(ch), connection(c), broker(b) {}
 
-Ops::ChannelHandler* BrokerAdapter::getChannelHandler() {
-    return &channelHandler;
-}
-Ops::ConnectionHandler* BrokerAdapter::getConnectionHandler() {
-    return &connectionHandler;
-}
-Ops::BasicHandler* BrokerAdapter::getBasicHandler() {
-    return &basicHandler;
-}
-Ops::ExchangeHandler* BrokerAdapter::getExchangeHandler() {
-    return &exchangeHandler;
-}
-Ops::QueueHandler* BrokerAdapter::getQueueHandler() {
-    return &queueHandler;
-}
-Ops::TxHandler* BrokerAdapter::getTxHandler() {
-    return &txHandler; 
-}
-Ops::MessageHandler* BrokerAdapter::getMessageHandler() {
-    return &messageHandler; 
-}
-Ops::AccessHandler* BrokerAdapter::getAccessHandler() {
-    throw ConnectionException(540, "Access class not implemented"); 
-}
-Ops::FileHandler* BrokerAdapter::getFileHandler() {
-    throw ConnectionException(540, "File class not implemented"); 
-}
-Ops::StreamHandler* BrokerAdapter::getStreamHandler() {
-    throw ConnectionException(540, "Stream class not implemented"); 
-}
-Ops::DtxHandler* BrokerAdapter::getDtxHandler() {
-    throw ConnectionException(540, "Dtx class not implemented"); 
-}
-Ops::TunnelHandler* BrokerAdapter::getTunnelHandler() {
-    throw ConnectionException(540, "Tunnel class not implemented");
-}
+        Channel& channel;
+        Connection& connection;
+        Broker& broker;
+    };
+    
+    class ConnectionHandlerImpl : private CoreRefs, public ConnectionHandler {
+      public:
+        ConnectionHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
 
-void BrokerAdapter::ConnectionHandlerImpl::startOk(
+        void startOk(u_int16_t channel,
+                     const qpid::framing::FieldTable& clientProperties,
+                     const std::string& mechanism, const std::string& response,
+                     const std::string& locale); 
+        void secureOk(u_int16_t channel, const std::string& response); 
+        void tuneOk(u_int16_t channel, u_int16_t channelMax,
+                    u_int32_t frameMax, u_int16_t heartbeat); 
+        void open(u_int16_t channel, const std::string& virtualHost,
+                  const std::string& capabilities, bool insist); 
+        void close(u_int16_t channel, u_int16_t replyCode,
+                   const std::string& replyText,
+                   u_int16_t classId, u_int16_t methodId); 
+        void closeOk(u_int16_t channel); 
+    };
+
+    class ChannelHandlerImpl : private CoreRefs, public ChannelHandler{
+      public:
+        ChannelHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        void open(u_int16_t channel, const std::string& outOfBand); 
+        void flow(u_int16_t channel, bool active); 
+        void flowOk(u_int16_t channel, bool active); 
+        void ok( u_int16_t channel );
+        void ping( u_int16_t channel );
+        void pong( u_int16_t channel );
+        void resume( u_int16_t channel, const std::string& channelId );
+        void close(u_int16_t channel, u_int16_t replyCode, const
+                   std::string& replyText, u_int16_t classId, u_int16_t methodId); 
+        void closeOk(u_int16_t channel); 
+    };
+    
+    class ExchangeHandlerImpl : private CoreRefs, public ExchangeHandler{
+      public:
+        ExchangeHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        void declare(u_int16_t channel, u_int16_t ticket,
+                     const std::string& exchange, const std::string& type, 
+                     bool passive, bool durable, bool autoDelete,
+                     bool internal, bool nowait, 
+                     const qpid::framing::FieldTable& arguments); 
+        void delete_(u_int16_t channel, u_int16_t ticket,
+                     const std::string& exchange, bool ifUnused, bool nowait); 
+        void unbind(u_int16_t channel,
+                    u_int16_t ticket, const std::string& queue,
+                    const std::string& exchange, const std::string& routingKey,
+                    const qpid::framing::FieldTable& arguments );
+    };
+
+    class QueueHandlerImpl : private CoreRefs, public QueueHandler{
+      public:
+        QueueHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        void declare(u_int16_t channel, u_int16_t ticket, const std::string& queue, 
+                     bool passive, bool durable, bool exclusive, 
+                     bool autoDelete, bool nowait,
+                     const qpid::framing::FieldTable& arguments); 
+        void bind(u_int16_t channel, u_int16_t ticket, const std::string& queue, 
+                  const std::string& exchange, const std::string& routingKey,
+                  bool nowait, const qpid::framing::FieldTable& arguments); 
+        void unbind(u_int16_t channel,
+                    u_int16_t ticket,
+                    const std::string& queue,
+                    const std::string& exchange,
+                    const std::string& routingKey,
+                    const qpid::framing::FieldTable& arguments );
+        void purge(u_int16_t channel, u_int16_t ticket, const std::string& queue, 
+                   bool nowait); 
+        void delete_(u_int16_t channel, u_int16_t ticket, const std::string& queue,
+                     bool ifUnused, bool ifEmpty, 
+                     bool nowait);
+    };
+
+    class BasicHandlerImpl : private CoreRefs, public BasicHandler{
+      public:
+        BasicHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        void qos(u_int16_t channel, u_int32_t prefetchSize,
+                 u_int16_t prefetchCount, bool global); 
+        void consume(
+            u_int16_t channel, u_int16_t ticket, const std::string& queue,
+            const std::string& consumerTag, bool noLocal, bool noAck,
+            bool exclusive, bool nowait,
+            const qpid::framing::FieldTable& fields); 
+        void cancel(u_int16_t channel, const std::string& consumerTag,
+                    bool nowait); 
+        void publish(u_int16_t channel, u_int16_t ticket,
+                     const std::string& exchange, const std::string& routingKey, 
+                     bool mandatory, bool immediate); 
+        void get(u_int16_t channel, u_int16_t ticket, const std::string& queue,
+                 bool noAck); 
+        void ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple); 
+        void reject(u_int16_t channel, u_int64_t deliveryTag, bool requeue); 
+        void recover(u_int16_t channel, bool requeue); 
+    };
+
+    class TxHandlerImpl : private CoreRefs, public TxHandler{
+      public:
+        TxHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        void select(u_int16_t channel);
+        void commit(u_int16_t channel);
+        void rollback(u_int16_t channel);
+    };
+
+    class MessageHandlerImpl : private CoreRefs, public MessageHandler {
+      public:
+        MessageHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+
+        void append( u_int16_t channel,
+                     const std::string& reference,
+                     const std::string& bytes );
+
+        void cancel( u_int16_t channel,
+                     const std::string& destination );
+
+        void checkpoint( u_int16_t channel,
+                         const std::string& reference,
+                         const std::string& identifier );
+
+        void close( u_int16_t channel,
+                    const std::string& reference );
+
+        void consume( u_int16_t channel,
+                      u_int16_t ticket,
+                      const std::string& queue,
+                      const std::string& destination,
+                      bool noLocal,
+                      bool noAck,
+                      bool exclusive,
+                      const qpid::framing::FieldTable& filter );
+
+        void empty( u_int16_t channel );
+
+        void get( u_int16_t channel,
+                  u_int16_t ticket,
+                  const std::string& queue,
+                  const std::string& destination,
+                  bool noAck );
+
+        void offset( u_int16_t channel,
+                     u_int64_t value );
+
+        void ok( u_int16_t channel );
+
+        void open( u_int16_t channel,
+                   const std::string& reference );
+
+        void qos( u_int16_t channel,
+                  u_int32_t prefetchSize,
+                  u_int16_t prefetchCount,
+                  bool global );
+
+        void recover( u_int16_t channel,
+                      bool requeue );
+
+        void reject( u_int16_t channel,
+                     u_int16_t code,
+                     const std::string& text );
+
+        void resume( u_int16_t channel,
+                     const std::string& reference,
+                     const std::string& identifier );
+
+        void transfer( u_int16_t channel,
+                       u_int16_t ticket,
+                       const std::string& destination,
+                       bool redelivered,
+                       bool immediate,
+                       u_int64_t ttl,
+                       u_int8_t priority,
+                       u_int64_t timestamp,
+                       u_int8_t deliveryMode,
+                       u_int64_t expiration,
+                       const std::string& exchange,
+                       const std::string& routingKey,
+                       const std::string& messageId,
+                       const std::string& correlationId,
+                       const std::string& replyTo,
+                       const std::string& contentType,
+                       const std::string& contentEncoding,
+                       const std::string& userId,
+                       const std::string& appId,
+                       const std::string& transactionId,
+                       const std::string& securityToken,
+                       const qpid::framing::FieldTable& applicationHeaders,
+                       qpid::framing::Content body );
+    };
+
+    BasicHandlerImpl basicHandler;
+    ChannelHandlerImpl channelHandler;
+    ConnectionHandlerImpl connectionHandler;
+    ExchangeHandlerImpl exchangeHandler;
+    MessageHandlerImpl messageHandler;
+    QueueHandlerImpl queueHandler;
+    TxHandlerImpl txHandler;
+
+};
+
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::startOk(
     u_int16_t /*channel*/, const FieldTable& /*clientProperties*/, const string& /*mechanism*/, 
     const string& /*response*/, const string& /*locale*/){
     connection.client->getConnection().tune(0, 100, connection.framemax, connection.heartbeat);
 }
         
-void BrokerAdapter::ConnectionHandlerImpl::secureOk(u_int16_t /*channel*/, const string& /*response*/){}
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::secureOk(u_int16_t /*channel*/, const string& /*response*/){}
         
-void BrokerAdapter::ConnectionHandlerImpl::tuneOk(u_int16_t /*channel*/, u_int16_t /*channelmax*/, u_int32_t framemax, u_int16_t heartbeat){
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::tuneOk(u_int16_t /*channel*/, u_int16_t /*channelmax*/, u_int32_t framemax, u_int16_t heartbeat){
     connection.framemax = framemax;
     connection.heartbeat = heartbeat;
 }
         
-void BrokerAdapter::ConnectionHandlerImpl::open(u_int16_t /*channel*/, const string& /*virtualHost*/, const string& /*capabilities*/, bool /*insist*/){
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::open(u_int16_t /*channel*/, const string& /*virtualHost*/, const string& /*capabilities*/, bool /*insist*/){
     string knownhosts;
     connection.client->getConnection().openOk(0, knownhosts);
 }
         
-void BrokerAdapter::ConnectionHandlerImpl::close(
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::close(
     u_int16_t /*channel*/, u_int16_t /*replyCode*/, const string& /*replyText*/, 
     u_int16_t /*classId*/, u_int16_t /*methodId*/)
 {
@@ -104,47 +293,55 @@ void BrokerAdapter::ConnectionHandlerImpl::close(
     connection.context->close();
 } 
         
-void BrokerAdapter::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
     connection.context->close();
 } 
               
-void BrokerAdapter::ChannelHandlerImpl::open(
-    u_int16_t channel, const string& /*outOfBand*/){
-    connection.openChannel(channel);
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::open(
+    u_int16_t channelId, const string& /*outOfBand*/){
+    // FIXME aconway 2007-01-17: Assertions on all channel methods,
+    // Drop channelId param.
+    assertChannelNonZero(channel.getId());
+    if (channel.isOpen())
+        throw ConnectionException(504, "Channel already open");
+    channel.open();
     // FIXME aconway 2007-01-04: provide valid channel Id as per ampq 0-9
-    connection.client->getChannel().openOk(channel, std::string()/* ID */);
+    connection.client->getChannel().openOk(channelId, std::string()/* ID */);
 } 
         
-void BrokerAdapter::ChannelHandlerImpl::flow(u_int16_t /*channel*/, bool /*active*/){}         
-void BrokerAdapter::ChannelHandlerImpl::flowOk(u_int16_t /*channel*/, bool /*active*/){} 
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::flow(u_int16_t /*channel*/, bool /*active*/){}         
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::flowOk(u_int16_t /*channel*/, bool /*active*/){} 
         
-void BrokerAdapter::ChannelHandlerImpl::close(u_int16_t channel, u_int16_t /*replyCode*/, const string& /*replyText*/, 
-                                                   u_int16_t /*classId*/, u_int16_t /*methodId*/){
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::close(u_int16_t channel, u_int16_t /*replyCode*/, const string& /*replyText*/, 
+                                                         u_int16_t /*classId*/, u_int16_t /*methodId*/){
     connection.closeChannel(channel);
     connection.client->getChannel().closeOk(channel);
 } 
         
-void BrokerAdapter::ChannelHandlerImpl::closeOk(u_int16_t /*channel*/){} 
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::closeOk(u_int16_t /*channel*/){} 
               
 
 
-void BrokerAdapter::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, const string& exchange, const string& type, 
-                                                      bool passive, bool /*durable*/, bool /*autoDelete*/, bool /*internal*/, bool nowait, 
-                                                      const FieldTable& /*arguments*/){
+void BrokerAdapter::ServerOps::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, const string& exchange, const string& type, 
+                                                            bool passive, bool /*durable*/, bool /*autoDelete*/, bool /*internal*/, bool nowait, 
+                                                            const FieldTable& /*arguments*/){
 
     if(passive){
-        if(!connection.broker.getExchanges().get(exchange)){
-            throw ChannelException(404, "Exchange not found: " + exchange);            
+        if(!broker.getExchanges().get(exchange)) {
+            throw ChannelException(404, "Exchange not found: " + exchange);
         }
     }else{        
         try{
-            std::pair<Exchange::shared_ptr, bool> response = connection.broker.getExchanges().declare(exchange, type);
+            std::pair<Exchange::shared_ptr, bool> response = broker.getExchanges().declare(exchange, type);
             if(!response.second && response.first->getType() != type){
-                throw ConnectionException(507, "Exchange already declared to be of type " 
-                                          + response.first->getType() + ", requested " + type);
+                throw ConnectionException(
+                    507,
+                    "Exchange already declared to be of type "
+                    + response.first->getType() + ", requested " + type);
             }
         }catch(UnknownExchangeTypeException& e){
-            throw ConnectionException(503, "Exchange type not implemented: " + type);
+            throw ConnectionException(
+                503, "Exchange type not implemented: " + type);
         }
     }
     if(!nowait){
@@ -153,7 +350,7 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(u_int16_t channel, u_int16_t /*
 }
 
                 
-void BrokerAdapter::ExchangeHandlerImpl::unbind(
+void BrokerAdapter::ServerOps::ExchangeHandlerImpl::unbind(
     u_int16_t /*channel*/,
     u_int16_t /*ticket*/,
     const string& /*queue*/,
@@ -166,23 +363,23 @@ void BrokerAdapter::ExchangeHandlerImpl::unbind(
 
 
                 
-void BrokerAdapter::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, 
-                                                      const string& exchange, bool /*ifUnused*/, bool nowait){
+void BrokerAdapter::ServerOps::ExchangeHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, 
+                                                            const string& exchange, bool /*ifUnused*/, bool nowait){
 
     //TODO: implement unused
-    connection.broker.getExchanges().destroy(exchange);
+    broker.getExchanges().destroy(exchange);
     if(!nowait) connection.client->getExchange().deleteOk(channel);
 } 
 
-void BrokerAdapter::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, const string& name, 
-                                                   bool passive, bool durable, bool exclusive, 
-                                                   bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments){
+void BrokerAdapter::ServerOps::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*ticket*/, const string& name, 
+                                                         bool passive, bool durable, bool exclusive, 
+                                                         bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments){
     Queue::shared_ptr queue;
     if (passive && !name.empty()) {
 	queue = connection.getQueue(name, channel);
     } else {
 	std::pair<Queue::shared_ptr, bool> queue_created =  
-            connection.broker.getQueues().declare(name, durable, autoDelete ? connection.settings.timeout : 0, exclusive ? &connection : 0);
+            broker.getQueues().declare(name, durable, autoDelete ? connection.settings.timeout : 0, exclusive ? &connection : 0);
 	queue = queue_created.first;
 	assert(queue);
 	if (queue_created.second) { // This is a new queue
@@ -192,11 +389,11 @@ void BrokerAdapter::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*tic
             queue_created.first->create(arguments);
 
 	    //add default binding:
-	    connection.broker.getExchanges().getDefault()->bind(queue, name, 0);
+	    broker.getExchanges().getDefault()->bind(queue, name, 0);
 	    if (exclusive) {
 		connection.exclusiveQueues.push_back(queue);
 	    } else if(autoDelete){
-		connection.broker.getCleaner().add(queue);
+		broker.getCleaner().add(queue);
 	    }
 	}
     }
@@ -209,12 +406,12 @@ void BrokerAdapter::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t /*tic
     }
 } 
         
-void BrokerAdapter::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t /*ticket*/, const string& queueName, 
-                                                const string& exchangeName, const string& routingKey, bool nowait, 
-                                                const FieldTable& arguments){
+void BrokerAdapter::ServerOps::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t /*ticket*/, const string& queueName, 
+                                                      const string& exchangeName, const string& routingKey, bool nowait, 
+                                                      const FieldTable& arguments){
 
     Queue::shared_ptr queue = connection.getQueue(queueName, channel);
-    Exchange::shared_ptr exchange = connection.broker.getExchanges().get(exchangeName);
+    Exchange::shared_ptr exchange = broker.getExchanges().get(exchangeName);
     if(exchange){
         // kpvdr - cannot use this any longer as routingKey is now const
         //        if(routingKey.empty() && queueName.empty()) routingKey = queue->getName();
@@ -223,19 +420,20 @@ void BrokerAdapter::QueueHandlerImpl::bind(u_int16_t channel, u_int16_t /*ticket
         exchange->bind(queue, exchangeRoutingKey, &arguments);
         if(!nowait) connection.client->getQueue().bindOk(channel);    
     }else{
-        throw ChannelException(404, "Bind failed. No such exchange: " + exchangeName);
+        throw ChannelException(
+            404, "Bind failed. No such exchange: " + exchangeName);
     }
 } 
         
-void BrokerAdapter::QueueHandlerImpl::purge(u_int16_t channel, u_int16_t /*ticket*/, const string& queueName, bool nowait){
+void BrokerAdapter::ServerOps::QueueHandlerImpl::purge(u_int16_t channel, u_int16_t /*ticket*/, const string& queueName, bool nowait){
 
     Queue::shared_ptr queue = connection.getQueue(queueName, channel);
     int count = queue->purge();
     if(!nowait) connection.client->getQueue().purgeOk(channel, count);
 } 
         
-void BrokerAdapter::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, const string& queue, 
-                                                   bool ifUnused, bool ifEmpty, bool nowait){
+void BrokerAdapter::ServerOps::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t /*ticket*/, const string& queue, 
+                                                         bool ifUnused, bool ifEmpty, bool nowait){
     ChannelException error(0, "");
     int count(0);
     Queue::shared_ptr q = connection.getQueue(queue, channel);
@@ -251,7 +449,7 @@ void BrokerAdapter::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t /*tic
         }
         count = q->getMessageCount();
         q->destroy();
-        connection.broker.getQueues().destroy(queue);
+        broker.getQueues().destroy(queue);
     }
 
     if(!nowait) connection.client->getQueue().deleteOk(channel, count);
@@ -260,14 +458,14 @@ void BrokerAdapter::QueueHandlerImpl::delete_(u_int16_t channel, u_int16_t /*tic
         
 
 
-void BrokerAdapter::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool /*global*/){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::qos(u_int16_t channel, u_int32_t prefetchSize, u_int16_t prefetchCount, bool /*global*/){
     //TODO: handle global
     connection.getChannel(channel).setPrefetchSize(prefetchSize);
     connection.getChannel(channel).setPrefetchCount(prefetchCount);
     connection.client->getBasic().qosOk(channel);
 } 
         
-void BrokerAdapter::BasicHandlerImpl::consume(
+void BrokerAdapter::ServerOps::BasicHandlerImpl::consume(
     u_int16_t channelId, u_int16_t /*ticket*/, 
     const string& queueName, const string& consumerTag, 
     bool noLocal, bool noAck, bool exclusive, 
@@ -296,26 +494,27 @@ void BrokerAdapter::BasicHandlerImpl::consume(
 
 } 
         
-void BrokerAdapter::BasicHandlerImpl::cancel(u_int16_t channel, const string& consumerTag, bool nowait){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::cancel(u_int16_t channel, const string& consumerTag, bool nowait){
     connection.getChannel(channel).cancel(consumerTag);
 
     if(!nowait) connection.client->getBasic().cancelOk(channel, consumerTag);
 } 
         
-void BrokerAdapter::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t /*ticket*/, 
-                                                   const string& exchangeName, const string& routingKey, 
-                                                   bool mandatory, bool immediate){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::publish(u_int16_t channel, u_int16_t /*ticket*/, 
+                                                         const string& exchangeName, const string& routingKey, 
+                                                         bool mandatory, bool immediate){
 
-    Exchange::shared_ptr exchange = exchangeName.empty() ? connection.broker.getExchanges().getDefault() : connection.broker.getExchanges().get(exchangeName);
+    Exchange::shared_ptr exchange = exchangeName.empty() ? broker.getExchanges().getDefault() : broker.getExchanges().get(exchangeName);
     if(exchange){
         Message* msg = new Message(&connection, exchangeName, routingKey, mandatory, immediate);
         connection.getChannel(channel).handlePublish(msg, exchange);
     }else{
-        throw ChannelException(404, "Exchange not found '" + exchangeName + "'");
+        throw ChannelException(
+            404, "Exchange not found '" + exchangeName + "'");
     }
 } 
         
-void BrokerAdapter::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t /*ticket*/, const string& queueName, bool noAck){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = connection.getQueue(queueName, channelId);    
     if(!connection.getChannel(channelId).get(queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
@@ -324,7 +523,7 @@ void BrokerAdapter::BasicHandlerImpl::get(u_int16_t channelId, u_int16_t /*ticke
     }
 } 
         
-void BrokerAdapter::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deliveryTag, bool multiple){
     try{
         connection.getChannel(channel).ack(deliveryTag, multiple);
     }catch(InvalidAckException& e){
@@ -332,23 +531,23 @@ void BrokerAdapter::BasicHandlerImpl::ack(u_int16_t channel, u_int64_t deliveryT
     }
 } 
         
-void BrokerAdapter::BasicHandlerImpl::reject(u_int16_t /*channel*/, u_int64_t /*deliveryTag*/, bool /*requeue*/){} 
+void BrokerAdapter::ServerOps::BasicHandlerImpl::reject(u_int16_t /*channel*/, u_int64_t /*deliveryTag*/, bool /*requeue*/){} 
         
-void BrokerAdapter::BasicHandlerImpl::recover(u_int16_t channel, bool requeue){
+void BrokerAdapter::ServerOps::BasicHandlerImpl::recover(u_int16_t channel, bool requeue){
     connection.getChannel(channel).recover(requeue);
 } 
 
-void BrokerAdapter::TxHandlerImpl::select(u_int16_t channel){
+void BrokerAdapter::ServerOps::TxHandlerImpl::select(u_int16_t channel){
     connection.getChannel(channel).begin();
     connection.client->getTx().selectOk(channel);
 }
 
-void BrokerAdapter::TxHandlerImpl::commit(u_int16_t channel){
+void BrokerAdapter::ServerOps::TxHandlerImpl::commit(u_int16_t channel){
     connection.getChannel(channel).commit();
     connection.client->getTx().commitOk(channel);
 }
 
-void BrokerAdapter::TxHandlerImpl::rollback(u_int16_t channel){
+void BrokerAdapter::ServerOps::TxHandlerImpl::rollback(u_int16_t channel){
     
     connection.getChannel(channel).rollback();
     connection.client->getTx().rollbackOk(channel);
@@ -356,7 +555,7 @@ void BrokerAdapter::TxHandlerImpl::rollback(u_int16_t channel){
 }
               
 void
-BrokerAdapter::QueueHandlerImpl::unbind(
+BrokerAdapter::ServerOps::QueueHandlerImpl::unbind(
     u_int16_t /*channel*/,
     u_int16_t /*ticket*/,
     const string& /*queue*/,
@@ -368,25 +567,25 @@ BrokerAdapter::QueueHandlerImpl::unbind(
 }
 
 void
-BrokerAdapter::ChannelHandlerImpl::ok( u_int16_t /*channel*/ )
+BrokerAdapter::ServerOps::ChannelHandlerImpl::ok( u_int16_t /*channel*/ )
 {
     assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
 void
-BrokerAdapter::ChannelHandlerImpl::ping( u_int16_t /*channel*/ )
+BrokerAdapter::ServerOps::ChannelHandlerImpl::ping( u_int16_t /*channel*/ )
 {
     assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
 void
-BrokerAdapter::ChannelHandlerImpl::pong( u_int16_t /*channel*/ )
+BrokerAdapter::ServerOps::ChannelHandlerImpl::pong( u_int16_t /*channel*/ )
 {
     assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
 }
 
 void
-BrokerAdapter::ChannelHandlerImpl::resume(
+BrokerAdapter::ServerOps::ChannelHandlerImpl::resume(
     u_int16_t /*channel*/,
     const string& /*channelId*/ )
 {
@@ -395,143 +594,191 @@ BrokerAdapter::ChannelHandlerImpl::resume(
 
 // Message class method handlers
 void
-BrokerAdapter::MessageHandlerImpl::append( u_int16_t /*channel*/,
-                                                const string& /*reference*/,
-                                                const string& /*bytes*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::append( u_int16_t /*channel*/,
+                                                      const string& /*reference*/,
+                                                      const string& /*bytes*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 
 void
-BrokerAdapter::MessageHandlerImpl::cancel( u_int16_t /*channel*/,
-                                                const string& /*destination*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::cancel( u_int16_t /*channel*/,
+                                                      const string& /*destination*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::checkpoint( u_int16_t /*channel*/,
-                                                    const string& /*reference*/,
-                                                    const string& /*identifier*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::checkpoint( u_int16_t /*channel*/,
+                                                          const string& /*reference*/,
+                                                          const string& /*identifier*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::close( u_int16_t /*channel*/,
-                                               const string& /*reference*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::close( u_int16_t /*channel*/,
+                                                     const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::consume( u_int16_t /*channel*/,
-                                                 u_int16_t /*ticket*/,
-                                                 const string& /*queue*/,
-                                                 const string& /*destination*/,
-                                                 bool /*noLocal*/,
-                                                 bool /*noAck*/,
-                                                 bool /*exclusive*/,
-                                                 const qpid::framing::FieldTable& /*filter*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::consume( u_int16_t /*channel*/,
+                                                       u_int16_t /*ticket*/,
+                                                       const string& /*queue*/,
+                                                       const string& /*destination*/,
+                                                       bool /*noLocal*/,
+                                                       bool /*noAck*/,
+                                                       bool /*exclusive*/,
+                                                       const qpid::framing::FieldTable& /*filter*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::empty( u_int16_t /*channel*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::empty( u_int16_t /*channel*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::get( u_int16_t /*channel*/,
-                                             u_int16_t /*ticket*/,
-                                             const string& /*queue*/,
-                                             const string& /*destination*/,
-                                             bool /*noAck*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::get( u_int16_t /*channel*/,
+                                                   u_int16_t /*ticket*/,
+                                                   const string& /*queue*/,
+                                                   const string& /*destination*/,
+                                                   bool /*noAck*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::offset( u_int16_t /*channel*/,
-                                                u_int64_t /*value*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::offset( u_int16_t /*channel*/,
+                                                      u_int64_t /*value*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::ok( u_int16_t /*channel*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::ok( u_int16_t /*channel*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::open( u_int16_t /*channel*/,
-                                              const string& /*reference*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::open( u_int16_t /*channel*/,
+                                                    const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::qos( u_int16_t /*channel*/,
-                                             u_int32_t /*prefetchSize*/,
-                                             u_int16_t /*prefetchCount*/,
-                                             bool /*global*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::qos( u_int16_t /*channel*/,
+                                                   u_int32_t /*prefetchSize*/,
+                                                   u_int16_t /*prefetchCount*/,
+                                                   bool /*global*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::recover( u_int16_t /*channel*/,
-                                                 bool /*requeue*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::recover( u_int16_t /*channel*/,
+                                                       bool /*requeue*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::reject( u_int16_t /*channel*/,
-                                                u_int16_t /*code*/,
-                                                const string& /*text*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::reject( u_int16_t /*channel*/,
+                                                      u_int16_t /*code*/,
+                                                      const string& /*text*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::resume( u_int16_t /*channel*/,
-                                                const string& /*reference*/,
-                                                const string& /*identifier*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::resume( u_int16_t /*channel*/,
+                                                      const string& /*reference*/,
+                                                      const string& /*identifier*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-BrokerAdapter::MessageHandlerImpl::transfer( u_int16_t /*channel*/,
-                                                  u_int16_t /*ticket*/,
-                                                  const string& /*destination*/,
-                                                  bool /*redelivered*/,
-                                                  bool /*immediate*/,
-                                                  u_int64_t /*ttl*/,
-                                                  u_int8_t /*priority*/,
-                                                  u_int64_t /*timestamp*/,
-                                                  u_int8_t /*deliveryMode*/,
-                                                  u_int64_t /*expiration*/,
-                                                  const string& /*exchange*/,
-                                                  const string& /*routingKey*/,
-                                                  const string& /*messageId*/,
-                                                  const string& /*correlationId*/,
-                                                  const string& /*replyTo*/,
-                                                  const string& /*contentType*/,
-                                                  const string& /*contentEncoding*/,
-                                                  const string& /*userId*/,
-                                                  const string& /*appId*/,
-                                                  const string& /*transactionId*/,
-                                                  const string& /*securityToken*/,
-                                                  const qpid::framing::FieldTable& /*applicationHeaders*/,
-                                                  qpid::framing::Content /*body*/ )
+BrokerAdapter::ServerOps::MessageHandlerImpl::transfer( u_int16_t /*channel*/,
+                                                        u_int16_t /*ticket*/,
+                                                        const string& /*destination*/,
+                                                        bool /*redelivered*/,
+                                                        bool /*immediate*/,
+                                                        u_int64_t /*ttl*/,
+                                                        u_int8_t /*priority*/,
+                                                        u_int64_t /*timestamp*/,
+                                                        u_int8_t /*deliveryMode*/,
+                                                        u_int64_t /*expiration*/,
+                                                        const string& /*exchange*/,
+                                                        const string& /*routingKey*/,
+                                                        const string& /*messageId*/,
+                                                        const string& /*correlationId*/,
+                                                        const string& /*replyTo*/,
+                                                        const string& /*contentType*/,
+                                                        const string& /*contentEncoding*/,
+                                                        const string& /*userId*/,
+                                                        const string& /*appId*/,
+                                                        const string& /*transactionId*/,
+                                                        const string& /*securityToken*/,
+                                                        const qpid::framing::FieldTable& /*applicationHeaders*/,
+                                                        qpid::framing::Content /*body*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
+
+BrokerAdapter::BrokerAdapter(
+    Channel* ch, Connection& c, Broker& b
+) :
+    channel(ch),
+    connection(c),
+    broker(b),
+    serverOps(new ServerOps(*ch,c,b))
+{
+    assert(ch);
+}
+
+void BrokerAdapter::handleMethod(
+    boost::shared_ptr<qpid::framing::AMQMethodBody> method)
+{
+    try{
+        // FIXME aconway 2007-01-17: invoke to take Channel&?
+        method->invoke(*serverOps, channel->getId());
+    }catch(ChannelException& e){
+        connection.closeChannel(channel->getId());
+        connection.client->getChannel().close(
+            channel->getId(), e.code, e.toString(),
+            method->amqpClassId(), method->amqpMethodId());
+    }catch(ConnectionException& e){
+        connection.client->getConnection().close(
+            0, e.code, e.toString(),
+            method->amqpClassId(), method->amqpMethodId());
+    }catch(std::exception& e){
+        connection.client->getConnection().close(
+            0, 541/*internal error*/, e.what(),
+            method->amqpClassId(), method->amqpMethodId());
+    }
+}
+
+void BrokerAdapter::handleHeader(AMQHeaderBody::shared_ptr body) {
+    channel->handleHeader(body);
+}
+
+void BrokerAdapter::handleContent(AMQContentBody::shared_ptr body) {
+    channel->handleContent(body);
+}
+
+void BrokerAdapter::handleHeartbeat(AMQHeartbeatBody::shared_ptr) {
+    // TODO aconway 2007-01-17: Implement heartbeats.
+}
+
+
 
 }} // namespace qpid::broker
+

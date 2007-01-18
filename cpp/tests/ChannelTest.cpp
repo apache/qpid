@@ -135,6 +135,7 @@ class ChannelTest : public CppUnit::TestCase
     void testConsumerMgmt(){
         Queue::shared_ptr queue(new Queue("my_queue"));
         Channel channel(qpid::framing::highestProtocolVersion, 0, 0, 0);
+        channel.open();
         CPPUNIT_ASSERT(!channel.exists("my_consumer"));
 
         ConnectionToken* owner = 0;

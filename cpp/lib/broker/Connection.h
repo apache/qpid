@@ -33,8 +33,8 @@
 #include <sys/ConnectionInputHandler.h>
 #include <sys/TimeoutHandler.h>
 #include "Broker.h"
-#include "BrokerAdapter.h"
 #include "Exception.h"
+#include "BrokerAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -50,38 +50,15 @@ class Settings {
 class Connection : public qpid::sys::ConnectionInputHandler, 
                    public ConnectionToken
 {
-    typedef boost::ptr_map<u_int16_t, Channel> ChannelMap;
-
-    // TODO aconway 2007-01-16: belongs on broker.
-    typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
-
-    class Sender : public qpid::framing::OutputHandler {
-      public:
-        Sender(qpid::framing::OutputHandler&,
-               qpid::framing::Requester&, qpid::framing::Responder&);
-        void send(qpid::framing::AMQFrame* frame);
-      private:
-        OutputHandler& out;
-        qpid::framing::Requester& requester;
-        qpid::framing::Responder& responder;
-    };
-
-    BrokerAdapter adapter;
-    // FIXME aconway 2007-01-16: On Channel
-    qpid::framing::Requester& requester;
-    qpid::framing::Responder& responder;
-    ChannelMap channels;
-
-    void handleHeader(u_int16_t channel,
-                      qpid::framing::AMQHeaderBody::shared_ptr body);
-    void handleContent(u_int16_t channel,
-                       qpid::framing::AMQContentBody::shared_ptr body);
-    void handleMethod(u_int16_t channel,
-                      qpid::framing::AMQBody::shared_ptr body);
-    void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
+    typedef boost::ptr_map<u_int16_t, BrokerAdapter> AdapterMap;
 
     // FIXME aconway 2007-01-16: on broker.
+    typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
     Exchange::shared_ptr findExchange(const string& name);
+
+    BrokerAdapter& getAdapter(u_int16_t id);
+    
+    AdapterMap adapters;
     
   public:
     Connection(qpid::sys::SessionContext* context, Broker& broker);
@@ -111,10 +88,9 @@ class Connection : public qpid::sys::ConnectionInputHandler,
      */
     Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
 
-
-    void openChannel(u_int16_t channel);
-    void closeChannel(u_int16_t channel);
+    Channel& newChannel(u_int16_t channel);
     Channel& getChannel(u_int16_t channel);
+    void closeChannel(u_int16_t channel);
 };
 
 }}

@@ -29,28 +29,28 @@ qpid::client::ResponseHandler::ResponseHandler() : waiting(false){}
 qpid::client::ResponseHandler::~ResponseHandler(){}
 
 bool qpid::client::ResponseHandler::validate(const qpid::framing::AMQMethodBody& expected){
-    return expected.match(response.get());
+    return response != 0 && expected.match(response.get());
 }
 
 void qpid::client::ResponseHandler::waitForResponse(){
     Monitor::ScopedLock l(monitor);
-    if(waiting){
+    while (waiting)
 	monitor.wait();
-    }
 }
 
-void qpid::client::ResponseHandler::signalResponse(qpid::framing::AMQMethodBody::shared_ptr _response){
-    response = _response;
+void qpid::client::ResponseHandler::signalResponse(
+    qpid::framing::AMQMethodBody::shared_ptr _response)
+{
     Monitor::ScopedLock l(monitor);
+    response = _response;
     waiting = false;
     monitor.notify();
 }
 
 void qpid::client::ResponseHandler::receive(const qpid::framing::AMQMethodBody& expected){
     Monitor::ScopedLock l(monitor);
-    if(waiting){
+    while (waiting)
 	monitor.wait();
-    }
     if(!validate(expected)){
 	THROW_QPID_ERROR(PROTOCOL_ERROR, "Protocol Error");
     }
