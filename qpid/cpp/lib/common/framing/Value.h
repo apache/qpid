@@ -158,6 +158,14 @@ class EmptyValue : public Value {
     virtual void print(std::ostream& out) const;
 };
 
+//non-standard types, introduced in java client for JMS compliance
+class BinaryValue : public StringValue {
+  public:
+    BinaryValue(const std::string& v) : StringValue(v) {}
+    BinaryValue() {}
+    virtual char getType() const { return 'x'; }
+};
+
 }} // qpid::framing
 
 #endif
