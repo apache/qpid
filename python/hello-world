@@ -12,3 +12,8 @@ ch.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
 ch.message_consume(queue="test", destination="test")
 ch.message_transfer(destination="amq.direct", routing_key="test",
                     body="hello world")
+msg = client.queue("test").get()
+print msg
+msg.ok()
+import time
+time.sleep(3)

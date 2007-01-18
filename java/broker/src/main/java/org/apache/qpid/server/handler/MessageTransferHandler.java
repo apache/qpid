@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -89,6 +90,7 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
             // it is routed to the exchange.
             AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
             channel.addMessageTransfer(body, protocolSession);
+            protocolSession.writeResponse(evt, MessageOkBody.createMethodBody((byte)0, (byte)9));
         }
     }
 }
