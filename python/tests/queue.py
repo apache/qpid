@@ -74,7 +74,8 @@ class QueueTests(TestBase):
             self.assertConnectionException(530, e.args[0])
 
         #cleanup    
-        channel = self.client.channel(4)
+        other = self.connect()
+        channel = other.channel(1)
         channel.channel_open()
         channel.exchange_delete(exchange="test-exchange")
 
