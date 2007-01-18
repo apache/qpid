@@ -97,7 +97,7 @@
 
 		 ./bin/script_name or ./bin/script_name.bat
 
-		 These scripts can find everything in the 'all test dependencies' jar.
+		 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
 		 -->	
             <!--	 
             <plugin>
@@ -146,7 +146,7 @@
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-assembly-plugin</artifactId>
-              <version>${assembly.version}</version>
+              <!--<version>2.2-SNAPSHOT</version>-->
               <configuration>
                 <descriptors>
                   <descriptor>jar-with-dependencies.xml</descriptor>

@@ -99,7 +99,7 @@
 
         <!--Versions for various plugins and features -->
         <antrun.version>1.2-SNAPSHOT</antrun.version>
-        <assembly.version>2.1</assembly.version>
+        <assembly.version>2.2-SNAPSHOT</assembly.version>
         <cobertura.version>2.0</cobertura.version>
         <compiler.version>2.0.1</compiler.version>
         <dependency.plugin.version>1.0</dependency.plugin.version>
@@ -284,6 +284,8 @@
                             <property>
                                 <name>amqj.logging.level</name>
                                 <value>${amqj.logging.level}</value>
+				<!--<name>log4j.configuration</name>
+				<value>file:/${topDirectoryLocation}/etc/log4j.xml</value>-->
                             </property>
                         </systemproperties>
                     </configuration>

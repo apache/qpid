@@ -20,22 +20,28 @@
  */
 package org.apache.qpid.requestreply;
 
+import java.net.InetAddress;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.jms.*;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingProducer;
-import org.apache.qpid.util.concurrent.BooleanLatch;
-
-import javax.jms.*;
-import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * PingPongProducer is a client that sends pings to a queue and waits for pongs to be bounced back by a bounce back
- * client (see {@link org.apache.qpid.requestreply.PingPongClient} for the bounce back client). It is designed to be run from the command line
+ * client (see {@link PingPongBouncer} for the bounce back client). It is designed to be run from the command line
  * as a stand alone test tool, but it may also be fairly easily instantiated by other code by supplying a session,
  * message producer and message consumer to run the ping-pong cycle on.
  *
@@ -75,8 +81,20 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     /** Holds the name of the queue to send pings on. */
     private static final String PING_QUEUE_NAME = "ping";
 
+    /** The batch size. */
+    private static final int BATCH_SIZE = 100;
+
     /** Keeps track of the ping producer instance used in the run loop. */
     private static PingPongProducer _pingProducer;
+    private static final int PREFETCH = 100;
+    private static final boolean NO_LOCAL = true;
+    private static final boolean EXCLUSIVE = false;
+
+    /** The number of priming loops to run. */
+    private static final int PRIMING_LOOPS = 3;
+
+    /** A source for providing sequential unique correlation ids. */
+    private AtomicLong idGenerator = new AtomicLong(0L);
 
     /** Holds the message producer to send the pings through. */
     private MessageProducer _producer;
@@ -91,32 +109,65 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     private int _messageSize;
 
     /** Holds a map from message ids to latches on which threads wait for replies. */
-    private Map<String, BooleanLatch> trafficLights = new HashMap<String, BooleanLatch>();
+    private Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
 
-    /** Holds a map from message ids to correlated replies. */
-    private Map<String, Message> replies = new HashMap<String, Message>();
+    /** Used to indicate that the ping loop should print out whenever it pings. */
+    private boolean _verbose = false;
 
-    public PingPongProducer(Session session, Queue replyQueue, MessageProducer producer, MessageConsumer consumer)
-                     throws JMSException
+    private Session _consumerSession;
+
+    /**
+     * Creates a ping pong producer with the specified connection details and type.
+     *
+     * @param brokerDetails
+     * @param username
+     * @param password
+     * @param virtualpath
+     * @param transacted
+     * @param persistent
+     * @param messageSize
+     * @param verbose
+     *
+     * @throws Exception All allowed to fall through. This is only test code...
+     */
+    public PingPongProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
+                            String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose)
+                     throws Exception
     {
-        super(session);
-        _producer = producer;
-        _replyQueue = replyQueue;
+        // Create a connection to the broker.
+        InetAddress address = InetAddress.getLocalHost();
+        String clientID = address.getHostName() + System.currentTimeMillis();
 
+        setConnection(new AMQConnection(brokerDetails, username, password, clientID, virtualpath));
+
+        // Create transactional or non-transactional sessions, based on the command line arguments.
+        setProducerSession((Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE));
+        _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
+
+        // Create a queue and producer to send the pings on.
+        Queue pingQueue = new AMQQueue(queueName);
+        _producer = (MessageProducer) getProducerSession().createProducer(pingQueue);
+        _producer.setDisableMessageTimestamp(true);
+        _producer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+
+        // Create a temporary queue to get the pongs on.
+        _replyQueue = _consumerSession.createTemporaryQueue();
+
+        // Create a message consumer to get the replies with and register this to be called back by it.
+        MessageConsumer consumer = _consumerSession.createConsumer(_replyQueue, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
         consumer.setMessageListener(this);
-    }
 
-    public PingPongProducer(Session session, Queue replyQueue, MessageProducer producer, MessageConsumer consumer,
-                            boolean persistent, int messageSize) throws JMSException
-    {
-        this(session, replyQueue, producer, consumer);
+        // Run a few priming pings to remove warm up time from test results.
+        prime(PRIMING_LOOPS);
 
         _persistent = persistent;
         _messageSize = messageSize;
+
+        _verbose = verbose;
     }
 
     /**
-     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongClient} also needs
+     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs
      * to be started to bounce the pings back again.
      *
      * <p/>The command line takes from 2 to 4 arguments:
@@ -141,59 +192,59 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
         String brokerDetails = args[0];
         String virtualpath = args[1];
-        boolean transacted = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : false;
-        boolean persistent = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
-        int messageSize = (args.length >= 5) ? Integer.parseInt(args[4]) : DEFAULT_MESSAGE_SIZE;
-
-        // Create a connection to the broker.
-        InetAddress address = InetAddress.getLocalHost();
-        String clientID = address.getHostName() + System.currentTimeMillis();
-
-        Connection _connection = new AMQConnection(brokerDetails, "guest", "guest", clientID, virtualpath);
-
-        // Create a transactional or non-transactional session, based on the command line arguments.
-        Session session;
-
-        if (transacted)
-        {
-            session = (Session) _connection.createSession(true, Session.SESSION_TRANSACTED);
-        }
-        else
-        {
-            session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        }
-
-        // Create a queue to send the pings on.
-        Queue pingQueue = new AMQQueue(PING_QUEUE_NAME);
-        MessageProducer producer = (MessageProducer) session.createProducer(pingQueue);
-
-        // Create a temporary queue to reply with the pongs on.
-        Queue replyQueue = session.createTemporaryQueue();
-
-        // Create a message consumer to get the replies with.
-        MessageConsumer consumer = session.createConsumer(replyQueue);
+        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
+        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
+        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
+        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        _pingProducer = new PingPongProducer(session, replyQueue, producer, consumer, persistent, messageSize);
-
-        // Start the message consumers running.
-        _connection.start();
+        _pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
+                                             persistent, messageSize, verbose);
+        _pingProducer.getConnection().start();
 
         // Create a shutdown hook to terminate the ping-pong producer.
         Runtime.getRuntime().addShutdownHook(_pingProducer.getShutdownHook());
 
-        // Start the ping loop running, ensuring that it is registered to listen for exceptions on the connection too.
-        _connection.setExceptionListener(_pingProducer);
+        // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
+        _pingProducer.getConnection().setExceptionListener(_pingProducer);
+
+        // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
         Thread pingThread = new Thread(_pingProducer);
         pingThread.run();
-
-        // Run until the ping loop is terminated.
         pingThread.join();
     }
 
     /**
+     * Primes the test loop by sending a few messages, then introducing a short wait. This allows the bounce back client
+     * on the other end a chance to configure its reply producer on the reply to destination. It is also worth calling
+     * this a few times, in order to prime the JVMs JIT compilation.
+     *
+     * @param x The number of priming loops to run.
+     *
+     * @throws JMSException All underlying exceptions are allowed to fall through.
+     */
+    public void prime(int x) throws JMSException
+    {
+        for (int i = 0; i < x; i++)
+        {
+            // Create and send a small message.
+            Message first = getTestMessage(_replyQueue, 0, false);
+            _producer.send(first);
+            commitTx(getProducerSession());
+
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException ignore)
+            { }
+        }
+    }
+
+    /**
      * Stores the received message in the replies map, then resets the boolean latch that a thread waiting for a
-     * correlating reply may be waiting on.
+     * correlating reply may be waiting on. This is only done if the reply has a correlation id that is expected
+     * in the replies map.
      *
      * @param message The received message.
      */
@@ -201,20 +252,36 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     {
         try
         {
-            // Store the reply.
+            // Store the reply, if it has a correlation id that is expected.
             String correlationID = message.getJMSCorrelationID();
-            replies.put(correlationID, message);
+
+            if (_verbose)
+            {
+                _logger.info(timestampFormatter.format(new Date()) + ": Got reply with correlation id, " + correlationID);
+            }
 
             // Turn the traffic light to green.
-            BooleanLatch trafficLight = trafficLights.get(correlationID);
+            CountDownLatch trafficLight = trafficLights.get(correlationID);
 
             if (trafficLight != null)
             {
-                trafficLight.signal();
+                _logger.debug("Reply was expected, decrementing the latch for the id.");
+                trafficLight.countDown();
             }
             else
             {
                 _logger.debug("There was no thread waiting for reply: " + correlationID);
+            }
+
+            if (_verbose)
+            {
+                Long timestamp = message.getLongProperty("timestamp");
+
+                if (timestamp != null)
+                {
+                    long diff = System.currentTimeMillis() - timestamp;
+                    _logger.info("Time for round trip: " + diff);
+                }
             }
         }
         catch (JMSException e)
@@ -224,50 +291,90 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     }
 
     /**
-     * Sends the specified ping message and then waits for a correlating reply. If the wait times out before a reply
-     * arrives, then a null reply is returned from this method.
+     * Sends the specified number of ping message and then waits for all correlating replies. If the wait times out
+     * before a reply arrives, then a null reply is returned from this method.
      *
-     * @param message The message to send.
-     * @param timeout The timeout in milliseconds.
+     * @param message  The message to send.
+     * @param numPings The number of ping messages to send.
+     * @param timeout  The timeout in milliseconds.
+     *
+     * @return The number of replies received. This may be less than the number sent if the timeout terminated the
+     *         wait for all prematurely.
+     *
+     * @throws JMSException All underlying JMSExceptions are allowed to fall through.
+     */
+    public int pingAndWaitForReply(Message message, int numPings, long timeout) throws JMSException, InterruptedException
+    {
+        // Put a unique correlation id on the message before sending it.
+        String messageCorrelationId = Long.toString(idGenerator.incrementAndGet());
+        message.setJMSCorrelationID(messageCorrelationId);
+
+        for (int i = 0; i < numPings; i++)
+        {
+            // Re-timestamp the message.
+            message.setLongProperty("timestamp", System.currentTimeMillis());
+
+            _producer.send(message);
+        }
+
+        // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
+        // this method, as the message will not be sent until the transaction is committed.
+        commitTx(getProducerSession());
+
+        // Keep the messageId to correlate with the reply.
+        //String messageId = message.getJMSMessageID();
+
+        if (_verbose)
+        {
+            _logger.info(timestampFormatter.format(new Date()) + ": Pinged at with correlation id, " + messageCorrelationId);
+        }
+
+        // Block the current thread until a reply to the message is received, or it times out.
+        CountDownLatch trafficLight = new CountDownLatch(numPings);
+        trafficLights.put(messageCorrelationId, trafficLight);
+
+        // Note that this call expects a timeout in nanoseconds, millisecond timeout is multiplied up.
+        trafficLight.await(timeout, TimeUnit.MILLISECONDS);
+
+        // Work out how many replies were receieved.
+        int numReplies = numPings - (int) trafficLight.getCount();
+
+        if ((numReplies < numPings) && _verbose)
+        {
+            _logger.info("Timed out before all replies received on id, " + messageCorrelationId);
+        }
+        else if (_verbose)
+        {
+            _logger.info("Got all replies on id, " + messageCorrelationId);
+        }
+
+        return numReplies;
+    }
+
+    /**
+     * Sends the specified ping message but does not wait for a correlating reply.
+     *
+     * @param message  The message to send.
+     * @param numPings The number of pings to send.
      *
      * @return The reply, or null if no reply arrives before the timeout.
      *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
-    public Message pingAndWaitForReply(Message message, long timeout) throws JMSException, InterruptedException
+    public void pingNoWaitForReply(Message message, int numPings) throws JMSException, InterruptedException
     {
-        _producer.send(message);
+        for (int i = 0; i < numPings; i++)
+        {
+            _producer.send(message);
 
-        // Keep the messageId to correlate with the reply.
-        String messageId = message.getJMSMessageID();
+            if (_verbose)
+            {
+                _logger.info(timestampFormatter.format(new Date()) + ": Pinged at.");
+            }
+        }
 
-        // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
-        // this method, as the message will not be sent until the transaction is committed.
-        commitTx();
-
-        // Block the current thread until a reply to the message is received, or it times out.
-        BooleanLatch trafficLight = new BooleanLatch();
-        trafficLights.put(messageId, trafficLight);
-
-        // Note that this call expects a timeout in nanoseconds, millisecond timeout is multiplied up.
-        trafficLight.await(timeout * 1000);
-
-        // Check the replies to see if one was generated, if not then the reply timed out.
-        Message result = replies.get(messageId);
-
-        return result;
-    }
-
-    /**
-     * Callback method, implementing ExceptionListener. This should be registered to listen for exceptions on the
-     * connection, this clears the publish flag which in turn will halt the ping loop.
-     *
-     * @param e The exception that triggered this callback method.
-     */
-    public void onException(JMSException e)
-    {
-        _publish = false;
-        _logger.debug("There was a JMSException: " + e.getMessage(), e);
+        // Commit the transaction if running in transactional mode, to force the send now.
+        commitTx(getProducerSession());
     }
 
     /**
@@ -279,11 +386,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         try
         {
             // Generate a sample message and time stamp it.
-            ObjectMessage msg = getTestMessage(_session, _replyQueue, _messageSize, System.currentTimeMillis(), _persistent);
+            ObjectMessage msg = getTestMessage(_replyQueue, _messageSize, _persistent);
             msg.setLongProperty("timestamp", System.currentTimeMillis());
 
             // Send the message and wait for a reply.
-            pingAndWaitForReply(msg, TIMEOUT);
+            pingAndWaitForReply(msg, BATCH_SIZE, TIMEOUT);
 
             // Introduce a short pause if desired.
             pause(SLEEP_TIME);
@@ -297,6 +404,39 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         {
             _publish = false;
             _logger.debug("There was an interruption: " + e.getMessage(), e);
+        }
+    }
+
+    public Queue getReplyQueue()
+    {
+        return _replyQueue;
+    }
+
+    /**
+     * A connection listener that logs out any failover complete events. Could do more interesting things with this
+     * at some point...
+     */
+    public static class FailoverNotifier implements ConnectionListener
+    {
+        public void bytesSent(long count)
+        { }
+
+        public void bytesReceived(long count)
+        { }
+
+        public boolean preFailover(boolean redirect)
+        {
+            return true;
+        }
+
+        public boolean preResubscribe()
+        {
+            return true;
+        }
+
+        public void failoverComplete()
+        {
+            _logger.info("App got failover complete callback.");
         }
     }
 }

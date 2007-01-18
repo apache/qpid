@@ -1,9 +1,13 @@
 package org.apache.qpid.ping;
 
+import java.text.SimpleDateFormat;
+
+import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.Session;
 
 /**
@@ -19,19 +23,20 @@ import org.apache.qpid.jms.Session;
  */
 public abstract class AbstractPingClient
 {
+    /** Used to format time stamping output. */
+    protected static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
+
     private static final Logger _logger = Logger.getLogger(TestPingClient.class);
+    private AMQConnection _connection;
 
-    /** Used to keep a handle on the JMS session to send replies using. */
-    protected Session _session;
-
-    /**
-     * Creates an abstract ping client to manage the specified transcation.
-     *
-     * @param session The session.
-     */
-    public AbstractPingClient(Session session)
+    public AMQConnection getConnection()
     {
-        _session = session;
+        return _connection;
+    }
+
+    public void setConnection(AMQConnection _connection)
+    {
+        this._connection = _connection;
     }
 
     /**
@@ -39,13 +44,13 @@ public abstract class AbstractPingClient
      *
      * @throws javax.jms.JMSException If the commit fails and then the rollback fails.
      */
-    protected void commitTx() throws JMSException
+    protected void commitTx(Session session) throws JMSException
     {
-        if (_session.getTransacted())
+        if (session.getTransacted())
         {
             try
             {
-                _session.commit();
+                session.commit();
                 _logger.trace("Session Commited.");
             }
             catch (JMSException e)
@@ -54,7 +59,7 @@ public abstract class AbstractPingClient
 
                 try
                 {
-                    _session.rollback();
+                    session.rollback();
                     _logger.debug("Message rolled back.");
                 }
                 catch (JMSException jmse)
