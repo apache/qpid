@@ -26,6 +26,7 @@
 #include <AMQBody.h>
 #include <Buffer.h>
 #include <AMQP_ServerOperations.h>
+#include <MethodContext.h>
 
 namespace qpid {
 namespace framing {
