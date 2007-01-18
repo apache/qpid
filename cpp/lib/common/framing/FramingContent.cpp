@@ -22,26 +22,57 @@
 
 #include "Buffer.h"
 #include "FramingContent.h"
+#include <QpidError.h>
+#include <sstream>
 
 namespace qpid {
 namespace framing {
 
-Content::~Content() {}
-  
-void Content::encode(Buffer&) const {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+Content::Content() : discriminator(0) {}
+
+Content::Content(u_int8_t _discriminator, const string& _value): discriminator(_discriminator), value(_value) {
+    validate();
 }
 
-void Content::decode(Buffer&) {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+void Content::validate() {
+    //validation:
+    if (discriminator == REFERENCE) {
+        if(value.empty()) {
+            //cannot have empty reference
+            THROW_QPID_ERROR(FRAMING_ERROR, "Reference cannot be empty");
+        }
+    }else if (discriminator != INLINE) {
+        //invalid discriminator
+        std::stringstream out;
+        out << "Invalid discriminator: " << discriminator;
+	THROW_QPID_ERROR(FRAMING_ERROR, out.str());
+    }
+}
+
+Content::~Content() {}
+  
+void Content::encode(Buffer& buffer) const {
+    buffer.putOctet(discriminator);
+    buffer.putLongString(value);
+}
+
+void Content::decode(Buffer& buffer) {
+    discriminator = buffer.getOctet();
+    buffer.getLongString(value);
+    validate();
 }
 
 size_t Content::size() const {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+    return 1 + 4 + value.size();
 }
 
-std::ostream& operator<<(std::ostream&, const Content&) {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+std::ostream& operator<<(std::ostream& out, const Content& content) {
+    if (content.discriminator == REFERENCE) {
+        out << "{REF:" << content.value << "}";
+    } else if (content.discriminator == INLINE) {
+        out << "{INLINE:" << content.value.size() << " bytes}";
+    }
+    return out;
 }
 
 }} // namespace framing::qpid

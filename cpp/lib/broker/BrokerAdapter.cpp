@@ -491,13 +491,14 @@ BrokerAdapter::ServerOps::ChannelHandlerImpl::ok( const MethodContext& )
 void
 BrokerAdapter::ServerOps::ChannelHandlerImpl::ping( const MethodContext& )
 {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+    connection.client->getChannel().ok(channel.getId());
+    connection.client->getChannel().pong(channel.getId());
 }
 
 void
 BrokerAdapter::ServerOps::ChannelHandlerImpl::pong( const MethodContext& )
 {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+    connection.client->getChannel().ok(channel.getId());
 }
 
 void

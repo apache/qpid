@@ -55,6 +55,8 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testResponseBodyFrame);
     CPPUNIT_TEST(testRequester);
     CPPUNIT_TEST(testResponder);
+    CPPUNIT_TEST(testInlineContent);
+    CPPUNIT_TEST(testContentReference);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -173,6 +175,28 @@ class FramingTest : public CppUnit::TestCase
         ChannelOkBody* decoded =
             dynamic_cast<ChannelOkBody*>(out.getBody().get());
         CPPUNIT_ASSERT(decoded);
+    }
+
+    void testInlineContent() {        
+        Content content(INLINE, "MyData");
+        CPPUNIT_ASSERT(content.isInline());
+        content.encode(buffer);
+        buffer.flip();
+        Content recovered;
+        recovered.decode(buffer);
+        CPPUNIT_ASSERT(recovered.isInline());
+        CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
+    }
+
+    void testContentReference() {        
+        Content content(REFERENCE, "MyRef");
+        CPPUNIT_ASSERT(content.isReference());
+        content.encode(buffer);
+        buffer.flip();
+        Content recovered;
+        recovered.decode(buffer);
+        CPPUNIT_ASSERT(recovered.isReference());
+        CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
     }
 
     void testRequester() {
