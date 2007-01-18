@@ -1,11 +1,10 @@
-package org.apache.qpid.requestreply;
+package org.apache.qpid.ping;
 
 import java.net.InetAddress;
 import java.util.Properties;
 
 import javax.jms.*;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -16,36 +15,17 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
-import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
 
 /**
- * PingPongTestPerf is a full round trip ping test, that has been written with the intention of being scaled up to run
- * many times simultaneously. A full round trip ping sends a message from a producer to a conumer, then the consumer
- * replies to the message on a temporary queue.
- *
- * <p/>A single run of the test using the default JUnit test runner will result in the sending and timing of a single
- * full round trip ping. This test may be scaled up using a suitable JUnit test runner. See {@link TKTestRunner} or
- * {@link PPTestRunner} for more information on how to do this.
- *
- * <p/>The setup/teardown cycle establishes a connection to a broker and sets up a queue to send ping messages to and a
- * temporary queue for replies. This setup is only established once for all the test repeats/threads that may be run,
- * except if the connection is lost in which case an attempt to re-establish the setup is made.
- *
- * <p/>The test cycle is: Connects to a queue, creates a temporary queue, creates messages containing a property that
- * is the name of the temporary queue, fires off a message on the original queue and waits for a response on the
- * temporary queue.
- *
- * <p/>Configurable test properties: message size, transacted or not, persistent or not. Broker connection details.
- *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * </table>
  *
  * @author Rupert Smith
  */
-public class PingPongTestPerf extends TestCase //implements TimingControllerAware
+public class PingTestPerf extends TestCase //implements TimingControllerAware
 {
-    private static Logger _logger = Logger.getLogger(PingPongTestPerf.class);
+    private static Logger _logger = Logger.getLogger(PingTestPerf.class);
 
     /** Holds the name of the property to get the test message size from. */
     private static final String MESSAGE_SIZE_PROPNAME = "messageSize";
@@ -98,18 +78,18 @@ public class PingPongTestPerf extends TestCase //implements TimingControllerAwar
     }
 
     /** Holds the test ping-pong producer. */
-    private PingPongProducer _testPingProducer;
+    private TestPingProducer _testPingProducer;
 
     /** Holds the test ping client. */
-    private PingPongBouncer _testPingBouncer;
+    private TestPingClient _testPingClient;
 
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
-    // of the test parameters to log with the results. It also providers some basic type parsing convenience methods.
+    // of the test parameters to log with the results.
     private Properties testParameters = System.getProperties();
     //private Properties testParameters = new ContextualProperties(System.getProperties());
 
-    public PingPongTestPerf(String name)
+    public PingTestPerf(String name)
     {
         super(name);
     }
@@ -122,27 +102,26 @@ public class PingPongTestPerf extends TestCase //implements TimingControllerAwar
         }
     }
 
-    public void testPingPongOk() throws Exception
+    public void testPingOk() throws Exception
     {
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-            _testPingProducer.getTestMessage(_testPingProducer.getReplyQueue(),
-                                            Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME)),
-                                            Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME)));
+            _testPingProducer.getTestMessage(null, Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME)),
+                                             Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME)));
 
         // Use the test timing controller to reset the test timer now and obtain the current time.
         // This can be used to remove the message creation time from the test.
         //TestTimingController timingUtils = getTimingController();
         //long startTime = timingUtils.restart();
 
-        // Send the message and wait for a reply.
-        int numReplies = _testPingProducer.pingAndWaitForReply(msg, 1, TIMEOUT);
+        // Send the message.
+        _testPingProducer.ping(msg);
 
         // Fail the test if the timeout was exceeded.
-        if (numReplies != 1)
+        /*if (reply == null)
         {
             Assert.fail("The ping timed out for message id: " + msg.getJMSMessageID());
-        }
+        }*/
     }
 
     protected void setUp() throws Exception
@@ -166,15 +145,15 @@ public class PingPongTestPerf extends TestCase //implements TimingControllerAwar
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
 
             // Establish a bounce back client on the ping queue to bounce back the pings.
-            _testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName, persistent,
-                                                 transacted, selector, verbose);
+            _testPingClient = new TestPingClient(brokerDetails, username, password, queueName, virtualpath, transacted,
+                                                 selector, verbose);
 
             // Establish a ping-pong client on the ping queue to send the pings with.
-            _testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath, queueName, selector,
-                                                     transacted, persistent, messageSize, verbose);
+            _testPingProducer = new TestPingProducer(brokerDetails, username, password, virtualpath, queueName, transacted,
+                                                     persistent, messageSize, verbose);
 
             // Start the connections for client and producer running.
-            _testPingBouncer.getConnection().start();
+            _testPingClient.getConnection().start();
             _testPingProducer.getConnection().start();
         }
     }
@@ -183,9 +162,9 @@ public class PingPongTestPerf extends TestCase //implements TimingControllerAwar
     {
         try
         {
-            if ((_testPingBouncer != null) && (_testPingBouncer.getConnection() != null))
+            if ((_testPingClient != null) && (_testPingClient.getConnection() != null))
             {
-                _testPingBouncer.getConnection().close();
+                _testPingClient.getConnection().close();
             }
 
             if ((_testPingProducer != null) && (_testPingProducer.getConnection() != null))

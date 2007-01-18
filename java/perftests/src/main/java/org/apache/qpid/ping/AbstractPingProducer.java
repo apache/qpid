@@ -1,5 +1,7 @@
 package org.apache.qpid.ping;
 
+import java.text.SimpleDateFormat;
+
 import javax.jms.*;
 
 import org.apache.log4j.Logger;
@@ -15,9 +17,10 @@ import org.apache.qpid.jms.Session;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Manage session.
+ * <tr><td> Manage the connection.
  * <tr><td> Provide clean shutdown on exception or shutdown hook.
  * <tr><td> Provide useable shutdown hook implementation.
+ * <tr><td> Run a ping loop.
  * </table>
  *
  * @author Rupert Smith
@@ -26,60 +29,17 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 {
     private static final Logger _logger = Logger.getLogger(AbstractPingProducer.class);
 
-    /** Holds the current Qpid session to send and receive pings on. */
-    protected Session _session;
+    /** Used to format time stamping output. */
+    protected static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
 
     /** Used to tell the ping loop when to terminate, it only runs while this is true. */
     protected boolean _publish = true;
 
-    /**
-     * Creates an AbstractPingProducer on a session.
-     */
-    public AbstractPingProducer(Session session)
-    {
-        _session = session;
-    }
+    /** Holds the connection handle to the broker. */
+    private Connection _connection;
 
-    /**
-     * Generates a test message of the specified size.
-     *
-     * @param session     The Qpid session under which to generate the message.
-     * @param replyQueue  The reply-to destination for the message.
-     * @param messageSize The desired size of the message in bytes.
-     * @param currentTime The timestamp to add to the message as a "timestamp" property.
-     *
-     * @return A freshly generated test message.
-     *
-     * @throws javax.jms.JMSException All underlying JMSException are allowed to fall through.
-     */
-    public static ObjectMessage getTestMessage(Session session, Queue replyQueue, int messageSize, long currentTime,
-                                               boolean persistent) throws JMSException
-    {
-        ObjectMessage msg;
-
-        if (messageSize != 0)
-        {
-            msg = TestMessageFactory.newObjectMessage(session, messageSize);
-        }
-        else
-        {
-            msg = session.createObjectMessage();
-        }
-
-        // Set the messages persistent delivery flag.
-        msg.setJMSDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-
-        // Timestamp the message.
-        msg.setLongProperty("timestamp", currentTime);
-
-        // Ensure that the temporary reply queue is set as the reply to destination for the message.
-        if (replyQueue != null)
-        {
-            msg.setJMSReplyTo(replyQueue);
-        }
-
-        return msg;
-    }
+    /** Holds the producer session, need to create test messages. */
+    private Session _producerSession;
 
     /**
      * Convenience method for a short pause.
@@ -100,6 +60,44 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     }
 
     public abstract void pingLoop();
+
+    /**
+     * Generates a test message of the specified size.
+     *
+     * @param replyQueue  The reply-to destination for the message.
+     * @param messageSize The desired size of the message in bytes.
+     *
+     * @return A freshly generated test message.
+     *
+     * @throws javax.jms.JMSException All underlying JMSException are allowed to fall through.
+     */
+    public ObjectMessage getTestMessage(Queue replyQueue, int messageSize, boolean persistent) throws JMSException
+    {
+        ObjectMessage msg;
+
+        if (messageSize != 0)
+        {
+            msg = TestMessageFactory.newObjectMessage(_producerSession, messageSize);
+        }
+        else
+        {
+            msg = _producerSession.createObjectMessage();
+        }
+
+        // Set the messages persistent delivery flag.
+        msg.setJMSDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+
+        // Timestamp the message.
+        msg.setLongProperty("timestamp", System.currentTimeMillis());
+
+        // Ensure that the temporary reply queue is set as the reply to destination for the message.
+        if (replyQueue != null)
+        {
+            msg.setJMSReplyTo(replyQueue);
+        }
+
+        return msg;
+    }
 
     /**
      * Stops the ping loop by clearing the publish flag. The current loop will complete before it notices that this
@@ -151,18 +149,38 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
             });
     }
 
+    public Connection getConnection()
+    {
+        return _connection;
+    }
+
+    public void setConnection(Connection connection)
+    {
+        this._connection = connection;
+    }
+
+    public Session getProducerSession()
+    {
+        return _producerSession;
+    }
+
+    public void setProducerSession(Session session)
+    {
+        this._producerSession = session;
+    }
+
     /**
      * Convenience method to commit the transaction on the session associated with this pinger.
      *
      * @throws javax.jms.JMSException If the commit fails and then the rollback fails.
      */
-    protected void commitTx() throws JMSException
+    protected void commitTx(Session session) throws JMSException
     {
-        if (_session.getTransacted())
+        if (session.getTransacted())
         {
             try
             {
-                _session.commit();
+                session.commit();
                 _logger.trace("Session Commited.");
             }
             catch (JMSException e)
@@ -177,7 +195,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 
                 try
                 {
-                    _session.rollback();
+                    session.rollback();
                     _logger.trace("Message rolled back.");
                 }
                 catch (JMSException jmse)
