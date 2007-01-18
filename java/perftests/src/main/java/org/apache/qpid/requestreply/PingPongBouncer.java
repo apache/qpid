@@ -125,16 +125,12 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
 
         // Create a session to listen for messages on and one to send replies on, transactional depending on the
         // command line option.
-        Session consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
-        Session producerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
+        _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
+        _producerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
 
         // Create the queue to listen for message on.
         Queue q = new AMQQueue(queueName);
-        MessageConsumer consumer = consumerSession.createConsumer(q, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
-
-        // Hang on to the sessions for the messages and replies.
-        _consumerSession = consumerSession;
-        _producerSession = producerSession;
+        MessageConsumer consumer = _consumerSession.createConsumer(q, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
 
         _verbose = verbose;
         _persistent = persistent;
