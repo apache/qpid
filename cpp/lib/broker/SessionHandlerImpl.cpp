@@ -105,9 +105,11 @@ void SessionHandlerImpl::received(qpid::framing::AMQFrame* frame){
             client->getChannel().close(channel, e.code, e.text, method->amqpClassId(), method->amqpMethodId());
         }catch(ConnectionException& e){
             client->getConnection().close(0, e.code, e.text, method->amqpClassId(), method->amqpMethodId());
+            context->close();
         }catch(std::exception& e){
             string error(e.what());
             client->getConnection().close(0, 541/*internal error*/, error, method->amqpClassId(), method->amqpMethodId());
+            context->close();
         }
 	break;
 
