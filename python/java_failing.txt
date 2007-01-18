@@ -13,3 +13,4 @@ tests.queue.QueueTests.test_declare_exclusive
 tests.queue.QueueTests.test_purge
 tests.testlib.TestBaseTest.testMessageProperties
 tests.broker.BrokerTests.test_invalid_channel
+tests.broker.BrokerTests.test_closed_channel
