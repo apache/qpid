@@ -127,16 +127,22 @@ class Channel:
     self.queue = None
     self.closed = False
     self.reason = None
+    #lock used to synchronise calls to close
+    self.lock = thread.allocate_lock()
 
   def close(self, reason):
-    if isinstance(reason, Message):
+    self.lock.acquire()
+    try:
+      if isinstance(reason, Message):
+        self.reason = reason
+      if self.closed:
+        return
+      self.closed = True
       self.reason = reason
-    if self.closed:
-      return
-    self.closed = True
-    self.reason = reason
-    self.incoming.close()
-    self.responses.close()
+      self.incoming.close()
+      self.responses.close()
+    finally:
+      self.lock.release()
 
   def dispatch(self, frame, work):
     payload = frame.payload
