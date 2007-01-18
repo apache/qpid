@@ -129,6 +129,8 @@ class Channel:
     self.reason = None
 
   def close(self, reason):
+    if isinstance(reason, Message):
+      self.reason = reason
     if self.closed:
       return
     self.closed = True

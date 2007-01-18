@@ -85,14 +85,14 @@ class BrokerTests(TestBase):
         self.assert_(msg.content.body == body)
 
     def test_invalid_channel(self):
-        other = self.connect()
-        channel = other.channel(200)
+        channel = self.client.channel(200)
         try:
             channel.queue_declare(exclusive=True)
             self.fail("Expected error on queue_declare for invalid channel")
         except Closed, e:
             self.assertConnectionException(504, e.args[0])
         
+    def test_closed_channel(self):
         channel = self.client.channel(200)
         channel.channel_open()
         channel.channel_close()
