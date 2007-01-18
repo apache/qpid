@@ -221,7 +221,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         private void dispatchMessage(UnprocessedMessage message)
         {
-            if (message.content != null)
+            if (message.contents != null)
             {
                 final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.contentHeader.getDestination());
 

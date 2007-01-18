@@ -523,7 +523,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.deliveryTag,
                                                                           false,
                                                                           messageFrame.contentHeader,
-                                                                          messageFrame.content);
+                                                                          messageFrame.contents);
 
             _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             jmsMessage.setConsumer(this);
