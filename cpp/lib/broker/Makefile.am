@@ -71,6 +71,8 @@ libqpidbroker_la_SOURCES =				\
   Connection.h					\
   BrokerAdapter.cpp				\
   BrokerAdapter.h				\
+  MessageHandlerImpl.cpp			\
+  MessageHandlerImpl.h				\
   TopicExchange.cpp				\
   TopicExchange.h				\
   TransactionalStore.h				\
