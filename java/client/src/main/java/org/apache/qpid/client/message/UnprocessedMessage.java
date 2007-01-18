@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.*;
-
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the
@@ -34,13 +32,20 @@ import java.util.LinkedList;
  * the MINA dispatcher thread.
  *
  */
-public class UnprocessedMessage
-{
-    private long _bytesReceived = 0;
+public class UnprocessedMessage {
+	public int bytesReceived = 0;
 
-    public Content content;
-    public int channelId;
-    public long deliveryTag;
-    public MessageHeaders contentHeader;
-    
+	public List contents = new LinkedList();
+
+	public int channelId;
+
+	public long deliveryTag;
+
+	public MessageHeaders contentHeader;
+
+	public void addContent(byte[] content) {
+		contents.add(content);
+		bytesReceived = bytesReceived + content.length;
+	}
+
 }

@@ -42,6 +42,7 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
+import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.RequestManager;
@@ -94,7 +95,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      * Maps from a channel id to an unprocessed message. This is used to tie together the
      * JmsDeliverBody (which arrives first) with the subsequent content header and content bodies.
      */
-    protected ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
+    protected ConcurrentMap _referenceId2UnprocessedMsgMap = new ConcurrentHashMap();
 
     protected ConcurrentMap _channelId2RequestMgrMap = new ConcurrentHashMap();
     protected ConcurrentMap _channelId2ResponseMgrMap = new ConcurrentHashMap();
@@ -244,15 +245,21 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     }
 
     /**
-     * Callback invoked from the BasicDeliverMethodHandler when a message has been received.
+     * This is involed from MessageTransferMethodHandler if type is CONTENT_TYPE_REFERENCE
      * This is invoked on the MINA dispatcher thread.
      * @param message
      * @throws AMQException if this was not expected
      */
-    public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
+    public void unprocessedMessageReceived(String referenceId, UnprocessedMessage message) throws AMQException
     {
-        //_channelId2UnprocessedMsgMap.put(message.channelId, message);
-    	deliverMessageToAMQSession(message.channelId, message);
+        _referenceId2UnprocessedMsgMap.put(referenceId, message);
+    }
+    
+    public void messageAppendBodyReceived(MessageAppendBody appendBody) throws Exception
+    {
+    	String referenceId = new String(appendBody.getReference());
+    	UnprocessedMessage msg = (UnprocessedMessage)_referenceId2UnprocessedMsgMap.get(referenceId);
+    	msg.addContent(appendBody.bytes);
     }
     
     public void messageRequestBodyReceived(int channelId, AMQRequestBody requestBody) throws Exception
@@ -279,63 +286,30 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         requestManager.responseReceived(responseBody);
     }
 
-//     public void messageContentHeaderReceived(int channelId, ContentHeaderBody contentHeader)
-//             throws AMQException
-//     {
-//         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
-//         if (msg == null)
-//         {
-//             throw new AMQException("Error: received content header without having received a BasicDeliver frame first");
-//         }
-//         if (msg.contentHeader != null)
-//         {
-//             throw new AMQException("Error: received duplicate content header or did not receive correct number of content body frames");
-//         }
-//         msg.contentHeader = contentHeader;
-//         if (contentHeader.bodySize == 0)
-//         {
-//             deliverMessageToAMQSession(channelId, msg);
-//         }
-//     }
-// 
-//     public void messageContentBodyReceived(int channelId, ContentBody contentBody) throws AMQException
-//     {
-//         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
-//         if (msg == null)
-//         {
-//             throw new AMQException("Error: received content body without having received a JMSDeliver frame first");
-//         }
-//         if (msg.contentHeader == null)
-//         {
-//             _channelId2UnprocessedMsgMap.remove(channelId);
-//             throw new AMQException("Error: received content body without having received a ContentHeader frame first");
-//         }
-//         try
-//         {
-//             msg.receiveBody(contentBody);
-//         }
-//         catch (UnexpectedBodyReceivedException e)
-//         {
-//             _channelId2UnprocessedMsgMap.remove(channelId);
-//             throw e;
-//         }
-//         if (msg.isAllBodyDataReceived())
-//         {
-//             deliverMessageToAMQSession(channelId, msg);
-//         }
-//     }
-
     /**
+     * This is involed from MessageTransferMethodHandler if type is CONTENT_TYPE_INLINE
      * Deliver a message to the appropriate session, removing the unprocessed message
      * from our map
      * @param channelId the channel id the message should be delivered to
      * @param msg the message
      */
-    private void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
+    public void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
     {
         AMQSession session = (AMQSession) _channelId2SessionMap.get(channelId);
+        msg.contentHeader.setSize(msg.bytesReceived);
         session.messageReceived(msg);
-        //_channelId2UnprocessedMsgMap.remove(channelId);
+    }
+    
+    /**
+     * This is involed from MessageCloseMethodHandler if type is CONTENT_TYPE_REFERENCE
+     * In this case we use the reference id to obtain the unprocessed message
+     * The channel id is used to retrive a session
+     */
+    public void deliverMessageToAMQSession(int channelId, String referenceId)
+    {
+    	UnprocessedMessage msg = (UnprocessedMessage)_referenceId2UnprocessedMsgMap.get(referenceId);
+    	deliverMessageToAMQSession(channelId,msg);
+    	_referenceId2UnprocessedMsgMap.remove(referenceId);
     }
     
     public long writeRequest(int channelNum, AMQMethodBody methodBody,

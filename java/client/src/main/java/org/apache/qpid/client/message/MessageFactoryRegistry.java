@@ -21,6 +21,7 @@
 package org.apache.qpid.client.message;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.JMSException;
@@ -59,7 +60,7 @@ public class MessageFactoryRegistry
      */
     public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                             MessageHeaders contentHeader,
-                                            Content body) throws AMQException, JMSException
+                                            List contents) throws AMQException, JMSException
     {
         MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(contentHeader.getContentType());
         if (mf == null)
@@ -68,7 +69,7 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, body);
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, contents);
         }
     }
 

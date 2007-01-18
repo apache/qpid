@@ -69,7 +69,17 @@ public class MessageHeaders
 
     private String _routingKey;
     
-    public MessageHeaders()
+    private int _size;
+    
+    public int getSize() {
+		return _size;
+	}
+
+	public void setSize(int size) {
+		this._size = size;
+	}
+
+	public MessageHeaders()
     {
     }
 

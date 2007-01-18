@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -30,6 +31,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 public class MessageAppendMethodHandler implements StateAwareMethodListener
 {
     private static MessageAppendMethodHandler _instance = new MessageAppendMethodHandler();
+    private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
 
     public static MessageAppendMethodHandler getInstance()
     {
@@ -44,7 +46,11 @@ public class MessageAppendMethodHandler implements StateAwareMethodListener
                                	AMQMethodEvent evt)
                                 throws AMQException
     {
-		// TODO
+    	try {
+			protocolSession.messageAppendBodyReceived((MessageAppendBody)evt.getMethod());
+		} catch (Exception e) {
+			_logger.error("Unable to add data from MessageAppendBody",e); 
+		}
     }
 }
 

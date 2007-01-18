@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageCloseBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -30,7 +31,8 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 public class MessageCloseMethodHandler implements StateAwareMethodListener
 {
     private static MessageCloseMethodHandler _instance = new MessageCloseMethodHandler();
-
+    private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+    
     public static MessageCloseMethodHandler getInstance()
     {
         return _instance;
@@ -44,7 +46,10 @@ public class MessageCloseMethodHandler implements StateAwareMethodListener
                                	AMQMethodEvent evt)
                                 throws AMQException
     {
-		// TODO
+		MessageCloseBody body = (MessageCloseBody)evt.getMethod();
+		String referenceId = new String(body.getReference());
+		protocolSession.deliverMessageToAMQSession(evt.getChannelId(), referenceId);
+		_logger.debug("Method Close Body received, notify session to accept unprocessed message");
     }
 }
 
