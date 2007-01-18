@@ -23,9 +23,9 @@ package org.apache.qpid.server.cluster.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.MessageCancelBody;
+import org.apache.qpid.framing.MessageConsumeBody;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelFlowBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -45,7 +45,7 @@ import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.ClusterSynchBody;
-import org.apache.qpid.framing.BasicQosBody;
+import org.apache.qpid.framing.MessageQosBody;
 import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxRollbackBody;
@@ -69,11 +69,11 @@ import org.apache.qpid.server.handler.ConnectionStartOkMethodHandler;
 import org.apache.qpid.server.handler.ConnectionTuneOkMethodHandler;
 import org.apache.qpid.server.handler.ExchangeDeclareHandler;
 import org.apache.qpid.server.handler.ExchangeDeleteHandler;
-import org.apache.qpid.server.handler.BasicCancelMethodHandler;
-import org.apache.qpid.server.handler.BasicPublishMethodHandler;
+import org.apache.qpid.server.handler.MessageCancelHandler;
+import org.apache.qpid.server.handler.MessageTransferHandler;
 import org.apache.qpid.server.handler.QueueBindHandler;
 import org.apache.qpid.server.handler.QueueDeleteHandler;
-import org.apache.qpid.server.handler.BasicQosHandler;
+import org.apache.qpid.server.handler.MessageQosHandler;
 import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.handler.TxCommitHandler;
 import org.apache.qpid.server.handler.TxRollbackHandler;
@@ -141,14 +141,14 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
         registry.addHandler(QueueBindBody.class, chain(channelQueueMgr.createQueueBindHandler(), replicated(QueueBindHandler.getInstance())));
         registry.addHandler(QueueDeleteBody.class, chain(channelQueueMgr.createQueueDeleteHandler(), replicated(alternate(new QueueDeleteHandler(false), new QueueDeleteHandler(true)))));
-        registry.addHandler(BasicConsumeBody.class, chain(channelQueueMgr.createBasicConsumeHandler(), new ReplicatingConsumeHandler(_groupMgr)));
+        registry.addHandler(MessageConsumeBody.class, chain(channelQueueMgr.createBasicConsumeHandler(), new ReplicatingConsumeHandler(_groupMgr)));
 
         //other modified handlers:
-        registry.addHandler(BasicCancelBody.class, alternate(new RemoteCancelHandler(), BasicCancelMethodHandler.getInstance()));
+        registry.addHandler(MessageCancelBody.class, alternate(new RemoteCancelHandler(), MessageCancelHandler.getInstance()));
 
         //other unaffected handlers:
-        registry.addHandler(BasicPublishBody.class, BasicPublishMethodHandler.getInstance());
-        registry.addHandler(BasicQosBody.class, BasicQosHandler.getInstance());
+        registry.addHandler(MessageTransferBody.class, MessageTransferHandler.getInstance());
+        registry.addHandler(MessageQosBody.class, MessageQosHandler.getInstance());
         registry.addHandler(ChannelOpenBody.class, ChannelOpenHandler.getInstance());
         registry.addHandler(ChannelCloseBody.class, ChannelCloseHandler.getInstance());
         registry.addHandler(ChannelFlowBody.class, ChannelFlowHandler.getInstance());

@@ -32,7 +32,7 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -63,9 +63,9 @@ class ChannelQueueManager
         return new QueueBindHandler();
     }
 
-    ClusterMethodHandler<BasicConsumeBody> createBasicConsumeHandler()
+    ClusterMethodHandler<MessageConsumeBody> createBasicConsumeHandler()
     {
-        return new BasicConsumeHandler();
+        return new MessageConsumeHandler();
     }
 
     private void set(int channel, String queue)
@@ -121,13 +121,13 @@ class ChannelQueueManager
         }
     }
 
-    private class BasicConsumeHandler extends ClusterMethodHandler<BasicConsumeBody>
+    private class MessageConsumeHandler extends ClusterMethodHandler<MessageConsumeBody>
     {
-        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {

@@ -22,8 +22,8 @@ package org.apache.qpid.server.cluster.replay;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.MessageCancelBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.QueueBindBody;
@@ -55,8 +55,8 @@ public class RecordingMethodHandlerFactory extends WrappingMethodHandlerFactory
                     new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor)),
                     new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor)),
                     new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor)),
-                    new FrameDescriptor(BasicConsumeBody.class, new BasicConsumeBody(major, minor)),
-                    new FrameDescriptor(BasicCancelBody.class, new BasicCancelBody(major, minor))
+                    new FrameDescriptor(MessageConsumeBody.class, new MessageConsumeBody(major, minor)),
+                    new FrameDescriptor(MessageCancelBody.class, new MessageCancelBody(major, minor))
             });
 
 

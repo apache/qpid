@@ -22,7 +22,7 @@ package org.apache.qpid.server.cluster.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicCancelBody;
+import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -33,14 +33,14 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-public class RemoteCancelHandler implements StateAwareMethodListener<BasicCancelBody>
+public class RemoteCancelHandler implements StateAwareMethodListener<MessageCancelBody>
 {
     private final Logger _logger = Logger.getLogger(RemoteCancelHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicCancelBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageCancelBody> evt) throws AMQException
     {
         //By convention, consumers setup between brokers use the queue name as the consumer tag:
-        AMQQueue queue = queues.getQueue(evt.getMethod().consumerTag);
+        AMQQueue queue = queues.getQueue(evt.getMethod().getDestination());
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).removeRemoteSubscriber(ClusteredProtocolSession.getSessionPeer(session));

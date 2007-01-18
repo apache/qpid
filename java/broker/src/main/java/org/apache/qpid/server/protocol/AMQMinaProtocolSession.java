@@ -509,6 +509,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         _clientProperties = clientProperties;
     }
+    
+    public AMQStateManager getStateManager()
+    {
+        return _stateManager;
+    }
 
     /**
      * Convenience methods for managing AMQP version.

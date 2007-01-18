@@ -22,7 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicCancelBody;
+import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
@@ -91,8 +91,8 @@ public class ClusteredQueue extends AMQQueue
         //signal other members:
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        BasicCancelBody request = new BasicCancelBody((byte)0, (byte)9);
-        request.consumerTag = getName();
+        MessageCancelBody request = new MessageCancelBody((byte)0, (byte)9);
+        request.destination = getName();
         _groupMgr.broadcast(new SimpleSendable(request));
     }
 
