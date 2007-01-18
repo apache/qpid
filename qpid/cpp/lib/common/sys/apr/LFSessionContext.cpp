@@ -145,8 +145,8 @@ void LFSessionContext::stopProcessing(){
 }
 
 void LFSessionContext::close(){
-    closing = true;
     Mutex::ScopedLock l(writeLock);
+    closing = true;
     if(!processing){
         //allow pending frames to be written to socket
         fd.reqevents = APR_POLLOUT;
