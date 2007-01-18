@@ -20,15 +20,20 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.qpid.framing.Content;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MessageAppendBody;
+import org.apache.qpid.framing.MessageCloseBody;
+import org.apache.qpid.framing.MessageOpenBody;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
-import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
@@ -66,7 +71,7 @@ public class AMQChannel
     private long _prefetch_HighWaterMark;
 
     private long _prefetch_LowWaterMark;
-    
+
     private RequestManager _requestManager;
     private ResponseManager _responseManager;
 
@@ -89,11 +94,16 @@ public class AMQChannel
     private int _consumerTag;
 
     /**
-     * The current message - which may be partial in the sense that not all frames have been received yet -
-     * which has been received by this channel. As the frames are received the message gets updated and once all
+     * The set of current messages - which may be partial in the sense that not all frames have been received yet -
+     * which has been received by this channel. As the frames are received the references get updated and once all
      * frames have been received the message can then be routed.
      */
-    private AMQMessage _currentMessage;
+    private Map<String, List<AMQMessage>> _messages = new LinkedHashMap();
+
+    /**
+     * The set of open references on this channel.
+     */
+    private Map<String, List<MessageAppendBody>> _references = new LinkedHashMap();
 
     /**
      * Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue.
@@ -177,55 +187,80 @@ public class AMQChannel
         _prefetch_HighWaterMark = prefetchCount;
     }
 
-//     public void setPublishFrame(BasicPublishBody publishBody, AMQProtocolSession publisher) throws AMQException
-//     {
-//         _currentMessage = new AMQMessage(_messageStore, publishBody);
-//         _currentMessage.setPublisher(publisher);
-//     }
+    public void addMessageTransfer(MessageTransferBody transferBody, AMQProtocolSession publisher) throws AMQException
+    {
+        AMQMessage message = new AMQMessage(_messageStore, transferBody);
+        message.setPublisher(publisher);
+        Content body = transferBody.getBody();
+        switch (body.getContentType()) {
+        case CONTENT_TYPE_INLINE:
+            route(message);
+            break;
+        case CONTENT_TYPE_REFERENCE:
+            getMessages(body.getContent()).add(message);
+            break;
+        }
+    }
 
-//     public void publishContentHeader(ContentHeaderBody contentHeaderBody)
-//             throws AMQException
-//     {
-//         if (_currentMessage == null)
-//         {
-//             throw new AMQException("Received content header without previously receiving a BasicDeliver frame");
-//         }
-//         else
-//         {
-//             _currentMessage.setContentHeaderBody(contentHeaderBody);
-//             // check and route if header says body length is zero
-//             if (contentHeaderBody.bodySize == 0)
-//             {
-//                 routeCurrentMessage();
-//             }
-//         }
-//     }
-// 
-//     public void publishContentBody(ContentBody contentBody)
-//             throws AMQException
-//     {
-//         if (_currentMessage == null)
-//         {
-//             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
-//         }
-//         if (_currentMessage.getContentHeaderBody() == null)
-//         {
-//             throw new AMQException("Received content body without previously receiving a content header");
-//         }
-// 
-//         _currentMessage.addContentBodyFrame(contentBody);
-//         if (_currentMessage.isAllContentReceived())
-//         {
-//             routeCurrentMessage();
-//         }
-//     }
+    private List<AMQMessage> getMessages(byte[] reference) {
+        String key = new String(reference);
+        List<AMQMessage> result = _messages.get(key);
+        if (result == null) {
+            throw new IllegalArgumentException(key);
+        }
+        return result;
+    }
 
-    protected void routeCurrentMessage() throws AMQException
+    private List<MessageAppendBody> getReference(byte[] reference) {
+        String key = new String(reference);
+        List<MessageAppendBody> result = _references.get(key);
+        if (result == null) {
+            throw new IllegalArgumentException(key);
+        }
+        return result;
+    }
+
+    private void createReference(byte[] reference) {
+        String key = new String(reference);
+        if (_references.containsKey(key)) {
+            throw new IllegalArgumentException(key);
+        } else {
+            _references.put(key, new LinkedList());
+            _messages.put(key, new LinkedList());
+        }
+    }
+
+    private void clearReference(byte[] reference) {
+        String key = new String(reference);
+        _references.remove(key);
+        _messages.remove(key);
+    }
+
+    public void addMessageOpen(MessageOpenBody open) {
+        createReference(open.reference);
+    }
+
+    public void addMessageAppend(MessageAppendBody append) {
+        getReference(append.reference).add(append);
+    }
+
+    public void addMessageClose(MessageCloseBody close) throws AMQException {
+        List<AMQMessage> messages = getMessages(close.reference);
+        try {
+            for (AMQMessage msg : messages) {
+                route(msg);
+            }
+        } finally {
+            clearReference(close.reference);
+        }
+    }
+
+    protected void route(AMQMessage msg) throws AMQException
     {
         if (_transactional)
         {
             //don't create a transaction unless needed
-            if (_currentMessage.isPersistent())
+            if (msg.isPersistent())
             {
                 _txnBuffer.containsPersistentChanges();
             }
@@ -236,13 +271,13 @@ public class AMQChannel
             //be added for every queue onto which the message is
             //enqueued. Finally a cleanup op will be added to decrement
             //the reference associated with the routing.
-            Store storeOp = new Store(_currentMessage);
+            Store storeOp = new Store(msg);
             _txnBuffer.enlist(storeOp);
-            _currentMessage.setTxnBuffer(_txnBuffer);
+            msg.setTxnBuffer(_txnBuffer);
             try
             {
-                _exchanges.routeContent(_currentMessage);
-                _txnBuffer.enlist(new Cleanup(_currentMessage));
+                _exchanges.routeContent(msg);
+                _txnBuffer.enlist(new Cleanup(msg));
             }
             catch (RequiredDeliveryException e)
             {
@@ -255,33 +290,28 @@ public class AMQChannel
                 _txnBuffer.cancel(storeOp);
                 throw e;
             }
-            finally
-            {
-                _currentMessage = null;
-            }
         }
         else
         {
             try
             {
-                _exchanges.routeContent(_currentMessage);
+                _exchanges.routeContent(msg);
                 //following check implements the functionality
                 //required by the 'immediate' flag:
-                _currentMessage.checkDeliveredToConsumer();
+                msg.checkDeliveredToConsumer();
             }
             finally
             {
-                _currentMessage.decrementReference();
-                _currentMessage = null;
+                msg.decrementReference();
             }
         }
     }
-    
+
     public RequestManager getRequestManager()
     {
         return _requestManager;
     }
-    
+
     public ResponseManager getResponseManager()
     {
         return _responseManager;

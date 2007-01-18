@@ -132,7 +132,38 @@ public class AMQMessage
     }
 
     public long getSize() {
-        throw new Error("XXX");
+        return getHeaderSize() + getBodySize();
+    }
+
+    public int getHeaderSize() {
+        int size = _transferBody.getBodySize();
+        Content body = _transferBody.getBody();
+        switch (body.getContentType()) {
+        case CONTENT_TYPE_INLINE:
+            size -= _transferBody.getBody().getEncodedSize();
+            break;
+        }
+        return size;
+    }
+
+    public long getBodySize() {
+        Content body = _transferBody.getBody();
+        switch (body.getContentType()) {
+        case CONTENT_TYPE_INLINE:
+            return _transferBody.getBody().getContent().length;
+        case CONTENT_TYPE_REFERENCE:
+            return getReferenceSize();
+        default:
+            throw new IllegalStateException("unrecognized type: " + body.getContentType());
+        }
+    }
+
+    public long getReferenceSize() {
+        long size = 0;
+        for (MessageAppendBody mab : _contentBodies) {
+            size += mab.getBytes().length;
+        }
+        return size;
     }
 
     public FieldTable getHeadersTable() {
@@ -164,7 +195,7 @@ public class AMQMessage
     }
 
     public byte getDeliveryMode() {
-        throw new Error("XXX");
+        return (byte) _transferBody.deliveryMode;
     }
 
     public void setReplyTo(String replyTo) {

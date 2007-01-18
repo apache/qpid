@@ -96,7 +96,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     private boolean addMessageToQueue(AMQMessage msg)
     {
         // Shrink the ContentBodies to their actual size to save memory.
-        if (true) throw new Error("XXX");
+        // XXX
         /*if (compressBufferOnQueue)
         {
             Iterator it = msg.getContentBodies().iterator();

@@ -190,7 +190,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
             return 0l;
         }
 
-        return msg.getSize();
+        return msg.getBodySize();
     }
 
     /**

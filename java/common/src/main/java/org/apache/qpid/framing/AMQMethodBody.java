@@ -42,7 +42,7 @@ public abstract class AMQMethodBody extends AMQBody
     }
 
     /** unsigned short */
-    protected abstract int getBodySize();
+    public abstract int getBodySize();
 
     /**
      * @return unsigned short
