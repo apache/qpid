@@ -37,21 +37,21 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
     MessageHandlerImpl(Channel& ch, Connection& c, Broker& b)
         : channel(ch), connection(c), broker(b) {}
 
-    void append( u_int16_t channel,
+    void append(const qpid::framing::MethodContext&,
                  const std::string& reference,
                  const std::string& bytes );
 
-    void cancel( u_int16_t channel,
+    void cancel(const qpid::framing::MethodContext&,
                  const std::string& destination );
 
-    void checkpoint( u_int16_t channel,
+    void checkpoint(const qpid::framing::MethodContext&,
                      const std::string& reference,
                      const std::string& identifier );
 
-    void close( u_int16_t channel,
+    void close(const qpid::framing::MethodContext&,
                 const std::string& reference );
 
-    void consume( u_int16_t channel,
+    void consume(const qpid::framing::MethodContext&,
                   u_int16_t ticket,
                   const std::string& queue,
                   const std::string& destination,
@@ -60,39 +60,39 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
                   bool exclusive,
                   const qpid::framing::FieldTable& filter );
 
-    void empty( u_int16_t channel );
+    void empty( const qpid::framing::MethodContext& );
 
-    void get( u_int16_t channel,
+    void get(const qpid::framing::MethodContext&,
               u_int16_t ticket,
               const std::string& queue,
               const std::string& destination,
               bool noAck );
 
-    void offset( u_int16_t channel,
+    void offset(const qpid::framing::MethodContext&,
                  u_int64_t value );
 
-    void ok( u_int16_t channel );
+    void ok( const qpid::framing::MethodContext& );
 
-    void open( u_int16_t channel,
+    void open(const qpid::framing::MethodContext&,
                const std::string& reference );
 
-    void qos( u_int16_t channel,
+    void qos(const qpid::framing::MethodContext&,
               u_int32_t prefetchSize,
               u_int16_t prefetchCount,
               bool global );
 
-    void recover( u_int16_t channel,
+    void recover(const qpid::framing::MethodContext&,
                   bool requeue );
 
-    void reject( u_int16_t channel,
+    void reject(const qpid::framing::MethodContext&,
                  u_int16_t code,
                  const std::string& text );
 
-    void resume( u_int16_t channel,
+    void resume(const qpid::framing::MethodContext&,
                  const std::string& reference,
                  const std::string& identifier );
 
-    void transfer( u_int16_t channel,
+    void transfer(const qpid::framing::MethodContext&,
                    u_int16_t ticket,
                    const std::string& destination,
                    bool redelivered,

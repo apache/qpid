@@ -23,11 +23,13 @@
 namespace qpid {
 namespace broker {
 
+using namespace framing;
+
 //
 // Message class method handlers
 //
 void
-MessageHandlerImpl::append( u_int16_t /*channel*/,
+MessageHandlerImpl::append(const MethodContext&,
                                            const string& /*reference*/,
                                            const string& /*bytes*/ )
 {
@@ -36,18 +38,18 @@ MessageHandlerImpl::append( u_int16_t /*channel*/,
 
 
 void
-MessageHandlerImpl::cancel( u_int16_t channel,
+MessageHandlerImpl::cancel( const MethodContext& context,
                                            const string& destination )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
-    connection.getChannel(channel).cancel(destination);
+    channel.cancel(destination);
 
-    connection.client->getMessageHandler()->ok(channel);
+    connection.client->getMessageHandler()->ok(context);
 }
 
 void
-MessageHandlerImpl::checkpoint( u_int16_t /*channel*/,
+MessageHandlerImpl::checkpoint(const MethodContext&,
                                                const string& /*reference*/,
                                                const string& /*identifier*/ )
 {
@@ -55,14 +57,14 @@ MessageHandlerImpl::checkpoint( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::close( u_int16_t /*channel*/,
+MessageHandlerImpl::close(const MethodContext&,
                                           const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-MessageHandlerImpl::consume( u_int16_t /*channel*/,
+MessageHandlerImpl::consume(const MethodContext&,
                                             u_int16_t /*ticket*/,
                                             const string& queueName,
                                             const string& destination,
@@ -94,13 +96,13 @@ MessageHandlerImpl::consume( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::empty( u_int16_t /*channel*/ )
+MessageHandlerImpl::empty( const MethodContext& )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-MessageHandlerImpl::get( u_int16_t /*channelId*/,
+MessageHandlerImpl::get( const MethodContext&,
                                         u_int16_t /*ticket*/,
                                         const string& queueName,
                                         const string& /*destination*/,
@@ -119,27 +121,27 @@ MessageHandlerImpl::get( u_int16_t /*channelId*/,
 }
 
 void
-MessageHandlerImpl::offset( u_int16_t /*channel*/,
+MessageHandlerImpl::offset(const MethodContext&,
                                            u_int64_t /*value*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-MessageHandlerImpl::ok( u_int16_t /*channel*/ )
+MessageHandlerImpl::ok( const MethodContext& )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-MessageHandlerImpl::open( u_int16_t /*channel*/,
+MessageHandlerImpl::open(const MethodContext&,
                                          const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
-MessageHandlerImpl::qos( u_int16_t /*channel*/,
+MessageHandlerImpl::qos(const MethodContext&,
                          u_int32_t prefetchSize,
                          u_int16_t prefetchCount,
                          bool /*global*/ )
@@ -154,7 +156,7 @@ MessageHandlerImpl::qos( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::recover( u_int16_t /*channel*/,
+MessageHandlerImpl::recover(const MethodContext&,
                              bool requeue )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
@@ -164,7 +166,7 @@ MessageHandlerImpl::recover( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::reject( u_int16_t /*channel*/,
+MessageHandlerImpl::reject(const MethodContext&,
                             u_int16_t /*code*/,
                             const string& /*text*/ )
 {
@@ -172,7 +174,7 @@ MessageHandlerImpl::reject( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::resume( u_int16_t /*channel*/,
+MessageHandlerImpl::resume(const MethodContext&,
                             const string& /*reference*/,
                             const string& /*identifier*/ )
 {
@@ -180,7 +182,7 @@ MessageHandlerImpl::resume( u_int16_t /*channel*/,
 }
 
 void
-MessageHandlerImpl::transfer( u_int16_t /*channel*/,
+MessageHandlerImpl::transfer(const MethodContext&,
                               u_int16_t /*ticket*/,
                               const string& /*destination*/,
                               bool /*redelivered*/,

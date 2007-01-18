@@ -43,13 +43,13 @@ class AMQMethodBody : public AMQBody
     ProtocolVersion version;    
     u_int8_t type() const { return METHOD_BODY; }
     AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
-    AMQMethodBody(ProtocolVersion version) : version(version) {}
+    AMQMethodBody(ProtocolVersion ver) : version(ver) {}
     virtual ~AMQMethodBody() {}
     void decode(Buffer&, u_int32_t);
 
     virtual u_int16_t amqpMethodId() const = 0;
     virtual u_int16_t amqpClassId() const = 0;
-    virtual void invoke(AMQP_ServerOperations& target, u_int16_t channel);
+    virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
     bool match(AMQMethodBody* other) const;
 
   protected:
