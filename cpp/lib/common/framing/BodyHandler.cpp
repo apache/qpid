@@ -18,38 +18,62 @@
  * under the License.
  *
  */
-#include <boost/shared_ptr.hpp>
-#include <BodyHandler.h>
+#include "QpidError.h"
+#include "BodyHandler.h"
+#include <AMQRequestBody.h>
+#include <AMQResponseBody.h>
+#include <AMQMethodBody.h>
+#include <AMQHeaderBody.h>
+#include <AMQContentBody.h>
+#include <AMQHeartbeatBody.h>
 
 using namespace qpid::framing;
 using namespace boost;
 
 BodyHandler::~BodyHandler() {}
 
-void BodyHandler::handleBody(const AMQBody::shared_ptr& body){
-
+void BodyHandler::handleBody(shared_ptr<AMQBody> body) {
     switch(body->type())
     {
-      case METHOD_BODY:
       case REQUEST_BODY:
+        handleRequest(shared_polymorphic_cast<AMQRequestBody>(body));
+        break; 
       case RESPONSE_BODY:
-	handleMethod(dynamic_pointer_cast<AMQMethodBody, AMQBody>(body));
+        handleResponse(shared_polymorphic_cast<AMQResponseBody>(body));
+        break;
+      case METHOD_BODY:
+	handleMethod(shared_polymorphic_cast<AMQMethodBody>(body));
 	break;
- 
       case HEADER_BODY:
-	handleHeader(dynamic_pointer_cast<AMQHeaderBody, AMQBody>(body));
+	handleHeader(shared_polymorphic_cast<AMQHeaderBody>(body));
 	break;
-
       case CONTENT_BODY:
-	handleContent(dynamic_pointer_cast<AMQContentBody, AMQBody>(body));
+	handleContent(shared_polymorphic_cast<AMQContentBody>(body));
 	break;
-
       case HEARTBEAT_BODY:
-	handleHeartbeat(dynamic_pointer_cast<AMQHeartbeatBody, AMQBody>(body));
+	handleHeartbeat(shared_polymorphic_cast<AMQHeartbeatBody>(body));
 	break;
-
       default:
-	throw UnknownBodyType(body->type());
+        QPID_ERROR(PROTOCOL_ERROR, "Unknown frame type "+body->type());
     }
+}
 
+void BodyHandler::handleRequest(AMQRequestBody::shared_ptr request) {
+    responder.received(request->getData());
+    handleMethod(request);
+}
+
+void BodyHandler::handleResponse(AMQResponseBody::shared_ptr response) {
+    handleMethod(response);
+    requester.processed(response->getData());
+}
+
+void BodyHandler::assertChannelZero(u_int16_t id) {
+    if (id != 0)
+        throw ConnectionException(504, "Invalid channel id, not 0");
+}
+
+void BodyHandler::assertChannelNonZero(u_int16_t id) {
+    if (id == 0)
+        throw ConnectionException(504, "Invalid channel id 0");
 }

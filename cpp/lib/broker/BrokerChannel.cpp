@@ -18,11 +18,12 @@
  * under the License.
  *
  */
-#include <BrokerChannel.h>
-#include <QpidError.h>
 #include <iostream>
 #include <sstream>
 #include <assert.h>
+
+#include <BrokerChannel.h>
+#include <QpidError.h>
 
 using std::mem_fun_ref;
 using std::bind2nd;
@@ -31,9 +32,13 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, int _id, u_int32_t _framesize, MessageStore* const _store, u_int64_t _stagingThreshold) :
-    id(_id), 
-    out(_out), 
+Channel::Channel(
+    const ProtocolVersion& _version, OutputHandler* _out, int _id,
+    u_int32_t _framesize, MessageStore* const _store,
+    u_int64_t _stagingThreshold
+) :
+    id(_id),
+    out(*_out),
     currentDeliveryTag(1),
     transactional(false),
     prefetchSize(0),
@@ -43,9 +48,8 @@ Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, 
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
     version(_version),
-    isClosed(false)
+    opened(false)
 {
-
     outstanding.reset();
 }
 
@@ -57,7 +61,7 @@ bool Channel::exists(const string& consumerTag){
     return consumers.find(consumerTag) != consumers.end();
 }
 
-void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection, const FieldTable*){
+void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks, bool exclusive, ConnectionToken* const connection, const FieldTable*) {
 	if(tag.empty()) tag = tagGenerator.generate();
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{
@@ -86,8 +90,8 @@ void Channel::cancel(const string& tag){
 }
 
 void Channel::close(){
-    if (!isClosed) {
-        isClosed = true;
+    if (isOpen()) {
+        opened = false;
         while (!consumers.empty()) 
             cancel(consumers.begin());
         //requeue:
@@ -123,7 +127,7 @@ void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, Queue
         outstanding.count++;
     }
     //send deliver method, header and content(s)
-    msg->deliver(out, id, consumerTag, deliveryTag, framesize, &version);
+    msg->deliver(&out, id, consumerTag, deliveryTag, framesize, &version);
 }
 
 bool Channel::checkPrefetch(Message::shared_ptr& msg){
@@ -178,6 +182,10 @@ void Channel::handleHeader(AMQHeaderBody::shared_ptr header){
 
 void Channel::handleContent(AMQContentBody::shared_ptr content){
     messageBuilder.addContent(content);
+}
+
+void Channel::handleHeartbeat(AMQHeartbeatBody::shared_ptr) {
+    // TODO aconway 2007-01-17: Implement heartbeating.
 }
 
 void Channel::complete(Message::shared_ptr& msg){
@@ -247,7 +255,7 @@ bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
     if(msg){
         Mutex::ScopedLock locker(deliveryLock);
         u_int64_t myDeliveryTag = currentDeliveryTag++;
-        msg->sendGetOk(out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize, &version);
+        msg->sendGetOk(&out, id, queue->getMessageCount() + 1, myDeliveryTag, framesize, &version);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
@@ -258,5 +266,6 @@ bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
 }
 
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag){
-    msg->deliver(out, id, consumerTag, deliveryTag, framesize, &version);
+    msg->deliver(&out, id, consumerTag, deliveryTag, framesize, &version);
 }
+

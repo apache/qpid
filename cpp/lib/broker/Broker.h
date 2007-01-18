@@ -29,8 +29,6 @@
 #include <SharedObject.h>
 #include <MessageStore.h>
 #include <AutoDelete.h>
-#include "Requester.h"
-#include "Responder.h"
 #include <ExchangeRegistry.h>
 #include <BrokerChannel.h>
 #include <ConnectionToken.h>
@@ -86,8 +84,6 @@ class Broker : public qpid::sys::Runnable,
     u_int32_t getTimeout() { return timeout; }
     u_int64_t getStagingThreshold() { return stagingThreshold; }
     AutoDelete& getCleaner() { return cleaner; }
-    qpid::framing::Requester& getRequester() { return requester; }
-    qpid::framing::Responder& getResponder() { return responder; }
     
   private:
     Broker(const Configuration& config); 
@@ -100,8 +96,6 @@ class Broker : public qpid::sys::Runnable,
     u_int64_t stagingThreshold;
     AutoDelete cleaner;
     ConnectionFactory factory;
-    qpid::framing::Requester requester;
-    qpid::framing::Responder responder;
 };
 
 }}

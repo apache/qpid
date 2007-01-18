@@ -41,7 +41,6 @@ broker_tests =		\
   ValueTest
 
 framing_tests =		\
-  BodyHandlerTest	\
   FieldTableTest	\
   FramingTest		\
   HeaderTest
