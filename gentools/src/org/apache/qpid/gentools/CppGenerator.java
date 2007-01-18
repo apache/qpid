@@ -769,7 +769,7 @@ public class CppGenerator extends Generator
                                 AmqpVersionSet versionSet = overloadededParameterMap.get(thisFieldMap);
                                 if (!first)
                                     sb.append(cr);
-                                sb.append(indent + "virtual void " + methodName + "( u_int16_t channel");
+                                sb.append(indent + "virtual void " + methodName + "(const MethodContext& context");
                                 sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), true, true, true));
                                 sb.append(" )");
                                 if (abstractMethodFlag)
@@ -1000,7 +1000,7 @@ public class CppGenerator extends Generator
                                 if (!first)
                                     sb.append(cr);
                                 sb.append(indent + "void " + outerclassName + "::" + thisClass.name + "::" +
-                                          methodName + "( u_int16_t channel");
+                                          methodName + "(const MethodContext& context");
                                 sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), true, true, true));
                                 sb.append(" )");
                                 if (versionSet.size() != globalVersionSet.size())
@@ -1064,7 +1064,7 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         String namespace = version != null ? version.namespace() + "::" : "";
-        StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( parent->getProtocolVersion(), channel," + cr);
+        StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( parent->getProtocolVersion(), context.channelId," + cr);
         sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
         sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
         sb.append(" )));" + cr);        
@@ -1451,11 +1451,11 @@ public class CppGenerator extends Generator
                         if (bItr.next()) // This is a server operation
                             {
                                 boolean fieldMapNotEmptyFlag = method.fieldMap.size() > 0;
-                                sb.append(indent + "inline void invoke(AMQP_ServerOperations& target, u_int16_t channel)" + cr);
+                                sb.append(indent + "inline void invoke(AMQP_ServerOperations& target, const MethodContext& context)" + cr);
                                 sb.append(indent + "{" + cr);
                                 sb.append(indent + tab + "target.get" + thisClass.name + "Handler()->" +
                                           parseForReservedWords(Utils.firstLower(method.name),
-                                                                thisClass.name + Utils.firstUpper(method.name) + "Body.invoke()") + "(channel");
+                                                                thisClass.name + Utils.firstUpper(method.name) + "Body.invoke()") + "(context");
                                 if (fieldMapNotEmptyFlag)
                                     {
                                         sb.append("," + cr);

@@ -34,7 +34,8 @@ bool AMQMethodBody::match(AMQMethodBody* other) const{
     return other != 0 && other->amqpClassId() == amqpClassId() && other->amqpMethodId() == amqpMethodId();
 }
 
-void AMQMethodBody::invoke(AMQP_ServerOperations& /*target*/, u_int16_t /*channel*/){
+void AMQMethodBody::invoke(AMQP_ServerOperations&, const MethodContext&){
+    assert(0);
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }
 
