@@ -43,7 +43,7 @@ public class Content
     }
     
     public ContentTypeEnum contentType;
-    public byte[] content;
+    public ByteBuffer content;
     
     // Constructors
     
@@ -63,20 +63,13 @@ public class Content
             	throw new IllegalArgumentException("Content cannot be empty for a ref type.");
         }
     	this.contentType = contentType;
-        this.content = content;
+        this.content = ByteBuffer.allocate(content.length);
+        this.content.put(content);
     }
     
-    public Content(ContentTypeEnum contentType, String content)
+    public Content(ContentTypeEnum contentType, String contentStr)
     {
-    	if (contentType == ContentTypeEnum.CONTENT_TYPE_REFERENCE)
-        {
-        	if (content == null)
-            	throw new IllegalArgumentException("Content cannot be null for a ref type.");
-        	if (content.length() == 0)
-            	throw new IllegalArgumentException("Content cannot be empty for a ref type.");
-        }
-    	this.contentType = contentType;
-        this.content = content.getBytes();
+        this(contentType, contentStr.getBytes());
     }
     
     public Content(ContentTypeEnum contentType, ByteBuffer content)
@@ -89,18 +82,26 @@ public class Content
             	throw new IllegalArgumentException("Content cannot be empty for a ref type.");
         }
     	this.contentType = contentType;
-        this.content = content.array();
+        this.content = content;
     }
     
     // Get functions
     
     public ContentTypeEnum getContentType() { return contentType; }
-    public byte[] getContent() { return content; }
+    public ByteBuffer getContent() { return content; }
+    
+    public byte[] getContentAsByteArray()
+    {
+        byte[] ba = new byte[content.remaining()];
+        content.get(ba);
+        return ba;
+    }
+    
     public String getContentAsString()
     {
     	if (content == null)
         	return null;
-        return new String(content);
+        return new String(getContentAsByteArray());
     }
     
     // Wire functions
@@ -109,18 +110,22 @@ public class Content
     {
     	if (content == null)
     		return 1 + 4;
-     	return 1 + 4 + content.length;   
+     	return 1 + 4 + content.remaining();   
     }
     
     public void writePayload(ByteBuffer buffer)
     {
     	EncodingUtils.writeUnsignedByte(buffer, contentType.toByte());
-        EncodingUtils.writeLongStringBytes(buffer, content);
+    	EncodingUtils.writeUnsignedInteger(buffer, content.remaining());
+        buffer.put(content);
     }
     
     public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException
     {
         contentType = ContentTypeEnum.toContentEnum(buffer.get());
-        content = EncodingUtils.readLongstr(buffer);
+        int length = buffer.getInt();
+        content = buffer.slice();
+        buffer.skip(length);
+        content.limit(length);
     }
 }

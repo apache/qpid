@@ -21,8 +21,11 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.MessageCancelBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -48,7 +51,15 @@ public class MessageCancelHandler implements StateAwareMethodListener<MessageCan
                                	AMQMethodEvent<MessageCancelBody> evt)
                                 throws AMQException
     {
-		// TODO
+        final AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        final MessageCancelBody body = evt.getMethod();
+        channel.unsubscribeConsumer(protocolSession, body.destination);
+        
+        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
+        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+        // Be aware of possible changes to parameter order as versions change.
+        final AMQMethodBody methodBody = MessageOkBody.createMethodBody((byte)0, (byte)9);
+        protocolSession.writeResponse(evt, methodBody);
     }
 }
 

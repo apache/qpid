@@ -150,7 +150,7 @@ public class AMQMessage
         Content body = _transferBody.getBody();
         switch (body.getContentType()) {
         case CONTENT_TYPE_INLINE:
-            return _transferBody.getBody().getContent().length;
+            return _transferBody.getBody().getContent().limit();
         case CONTENT_TYPE_REFERENCE:
             return getReferenceSize();
         default:
