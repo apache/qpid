@@ -100,6 +100,9 @@ class ClientDelegate(Delegate):
     msg.tune_ok(*msg.frame.args)
     self.client.started.set()
 
+  def message_transfer(self, ch, msg):
+    self.client.queue(msg.destination).put(msg)
+
   def basic_deliver(self, ch, msg):
     self.client.queue(msg.consumer_tag).put(msg)
 
