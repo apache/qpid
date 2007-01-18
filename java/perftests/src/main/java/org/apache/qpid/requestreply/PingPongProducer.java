@@ -215,7 +215,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     }
 
     /**
-     * Primes the test loop by sending a few messages, then introducing a short wait. This allows the bounce back client
+     * Primes the test loop by sending a few messages, then introduces a short wait. This allows the bounce back client
      * on the other end a chance to configure its reply producer on the reply to destination. It is also worth calling
      * this a few times, in order to prime the JVMs JIT compilation.
      *
@@ -309,6 +309,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         String messageCorrelationId = Long.toString(idGenerator.incrementAndGet());
         message.setJMSCorrelationID(messageCorrelationId);
 
+        // Create a count down latch to count the number of replies with. This is created before the message is sent
+        // so that the message is not received before the count down is created.
+        CountDownLatch trafficLight = new CountDownLatch(numPings);
+        trafficLights.put(messageCorrelationId, trafficLight);
+
         for (int i = 0; i < numPings; i++)
         {
             // Re-timestamp the message.
@@ -323,17 +328,12 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
         // Keep the messageId to correlate with the reply.
         //String messageId = message.getJMSMessageID();
-
         if (_verbose)
         {
             _logger.info(timestampFormatter.format(new Date()) + ": Pinged at with correlation id, " + messageCorrelationId);
         }
 
         // Block the current thread until a reply to the message is received, or it times out.
-        CountDownLatch trafficLight = new CountDownLatch(numPings);
-        trafficLights.put(messageCorrelationId, trafficLight);
-
-        // Note that this call expects a timeout in nanoseconds, millisecond timeout is multiplied up.
         trafficLight.await(timeout, TimeUnit.MILLISECONDS);
 
         // Work out how many replies were receieved.
