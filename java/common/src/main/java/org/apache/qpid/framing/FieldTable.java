@@ -448,7 +448,6 @@ public class FieldTable
         {
             return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
         }
-
     }
 
     public Object setString(AMQShortString string, String value)
@@ -460,15 +459,7 @@ public class FieldTable
         }
         else
         {
-            //FIXME: determine string encoding and set either WIDE or ASCII string
-//            if ()
-            {
-                return setProperty(string, AMQType.WIDE_STRING.asTypedValue(value));
-            }
-//            else
-//            {
-//                return setProperty(string, AMQType.ASCII_STRING.asTypedValue(value));
-//            }
+            return setProperty(string, AMQType.LONG_STRING.asTypedValue(value));
         }
     }
 

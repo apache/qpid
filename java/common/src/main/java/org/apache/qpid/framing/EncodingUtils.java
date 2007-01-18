@@ -747,7 +747,7 @@ public class EncodingUtils
         }
     }
 
-    public static byte[] readLongstr(ByteBuffer buffer) throws AMQFrameDecodingException
+    public static byte[] readLongstr(ByteBuffer buffer)
     {
         long length = buffer.getUnsignedInt();
         if (length == 0)
