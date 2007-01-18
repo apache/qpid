@@ -74,11 +74,11 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
             protocolSession.closeChannel(evt.getChannelId());
             // TODO: modify code gen to make getClazz and getMethod public methods rather than protected
             // then we can remove the hardcoded 0,0
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             AMQMethodBody cf = ChannelCloseBody.createMethodBody
-                ((byte)8, (byte)0,	// AMQP version (major, minor)
+                ((byte)0, (byte)9,	// AMQP version (major, minor)
                  MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
                  MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
                  500,	// replyCode

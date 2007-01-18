@@ -557,8 +557,6 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 messageHeaders.setExpiration(0);
             }
         }
-//        messageHeaders.setDeliveryMode((byte) deliveryMode);
-//        messageHeaders.setPriority((byte) priority);
 
         int size = (payload != null) ? payload.limit() : 0;
         Content[] content = createContent(payload);
@@ -656,7 +654,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         if (frameCount == 1)
         {
-            bodies[0] = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE, payload.array());
+            bodies[0] = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE, payload);
         }
         else
         {
@@ -666,7 +664,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 payload.position((int) framePayloadMax * i);
                 int length = (remaining >= framePayloadMax) ? (int) framePayloadMax : (int) remaining;
                 payload.limit(payload.position() + length);
-                bodies[i] = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE, payload.slice().array());
+                bodies[i] = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE, payload.slice());
                 remaining -= length;
             }
         }

@@ -197,7 +197,7 @@ public class AMQChannel
             route(message);
             break;
         case CONTENT_TYPE_REFERENCE:
-            getMessages(body.getContent()).add(message);
+            getMessages(body.getContentAsByteArray()).add(message);
             break;
         }
     }

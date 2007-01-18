@@ -1054,8 +1054,16 @@ public class JavaGenerator extends Generator
 		int ordinal, int indentSize, int tabSize)
 	{
 		StringBuffer sb = new StringBuffer();
-		sb.append(Utils.createSpaces(indentSize) +
-			"buf.append(\"  " + fieldName + ": \" + " + fieldName + ");" + cr);		
+        if (domain.compareTo("longstr") == 0)
+        {
+		    sb.append(Utils.createSpaces(indentSize) +
+			    "buf.append(\"  " + fieldName + ": \" + new String(" + fieldName + "));" + cr);		
+        }
+        else
+        {
+		    sb.append(Utils.createSpaces(indentSize) +
+			    "buf.append(\"  " + fieldName + ": \" + " + fieldName + ");" + cr);		
+        }
 		return sb.toString();
 	}
 	

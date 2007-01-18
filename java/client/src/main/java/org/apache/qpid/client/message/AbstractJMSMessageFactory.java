@@ -41,7 +41,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 			MessageHeaders contentHeader, Content body) throws AMQException {
         ByteBuffer data;
 
-        data = ByteBuffer.allocate(body.content.length);
+        data = ByteBuffer.allocate(body.content.remaining());
         data.put(body.content);
         data.flip();
         
