@@ -16,20 +16,21 @@ import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 
 /**
  * PingPongTestPerf is a full round trip ping test, that has been written with the intention of being scaled up to run
- * many times simultaneously. A full round trip ping sends a message from a producer to a conumer, then the consumer
- * replies to the message on a temporary queue.
+ * many times simultaneously to simluate many clients/producer/connections. A full round trip ping sends a message from
+ * a producer to a conumer, then the consumer replies to the message on a temporary queue.
  *
- * <p/>A single run of the test using the default JUnit test runner will result in the sending and timing of a single
- * full round trip ping. This test may be scaled up using a suitable JUnit test runner. See {@link TKTestRunner} or
- * {@link PPTestRunner} for more information on how to do this.
+ * <p/>A single run of the test using the default JUnit test runner will result in the sending and timing of the number
+ * of pings specified by the test size and time how long it takes for all of these to complete. This test may be scaled
+ * up using a suitable JUnit test runner. See {@link TKTestRunner} or {@link PPTestRunner} for more information on how
+ * to do this.
  *
  * <p/>The setup/teardown cycle establishes a connection to a broker and sets up a queue to send ping messages to and a
- * temporary queue for replies. This setup is only established once for all the test repeats/threads that may be run,
- * except if the connection is lost in which case an attempt to re-establish the setup is made.
+ * temporary queue for replies. This setup is only established once for all the test repeats, but each test threads
+ * gets its own connection/producer/consumer, this is only re-established if the connection is lost.
  *
  * <p/>The test cycle is: Connects to a queue, creates a temporary queue, creates messages containing a property that
- * is the name of the temporary queue, fires off a message on the original queue and waits for a response on the
- * temporary queue.
+ * is the name of the temporary queue, fires off many messages on the original queue and waits for them all to come
+ * back on the temporary queue.
  *
  * <p/>Configurable test properties: message size, transacted or not, persistent or not. Broker connection details.
  *
