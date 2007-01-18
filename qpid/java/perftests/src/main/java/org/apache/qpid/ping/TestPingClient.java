@@ -43,6 +43,8 @@ import org.apache.qpid.jms.Session;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Provide command line invocation to start the ping consumer on a configurable broker url.
  * </table>
+ *
+ * @todo Add a better command line interpreter to the main method. The command line is not very nice...
  */
 class TestPingClient extends AbstractPingClient implements MessageListener
 {
@@ -51,20 +53,42 @@ class TestPingClient extends AbstractPingClient implements MessageListener
     /** Used to indicate that the reply generator should log timing info to the console (logger info level). */
     private boolean _verbose = false;
 
-    /**
-     * Creates a PingPongClient on the specified session.
-     *
-     * @param session       The JMS Session for the ping pon client to run on.
-     * @param consumer      The message consumer to receive the messages with.
-     * @param verbose       If set to <tt>true</tt> will output timing information on every message.
-     */
-    public TestPingClient(Session session, MessageConsumer consumer, boolean verbose) throws JMSException
-    {
-        // Hang on to the session for the replies.
-        super(session);
+    /** The producer session. */
+    private Session _consumerSession;
 
-        // Set this up to listen for messages on the queue.
+    /**
+     * Creates a TestPingClient on the specified session.
+     *
+     * @param brokerDetails
+     * @param username
+     * @param password
+     * @param queueName
+     * @param virtualpath
+     * @param transacted
+     * @param selector
+     * @param verbose
+     *
+     * @throws Exception All underlying exceptions allowed to fall through. This is only test code...
+     */
+    public TestPingClient(String brokerDetails, String username, String password, String queueName, String virtualpath,
+                          boolean transacted, String selector, boolean verbose) throws Exception
+    {
+        // Create a connection to the broker.
+        InetAddress address = InetAddress.getLocalHost();
+        String clientID = address.getHostName() + System.currentTimeMillis();
+
+        setConnection(new AMQConnection(brokerDetails, username, password, clientID, virtualpath));
+
+        // Create a transactional or non-transactional session depending on the command line parameter.
+        _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
+
+        // Connect a consumer to the ping queue and register this to be called back by it.
+        Queue q = new AMQQueue(queueName);
+        MessageConsumer consumer = _consumerSession.createConsumer(q, 1, false, false, selector);
         consumer.setMessageListener(this);
+
+        // Hang on to the verbose flag setting.
+        _verbose = verbose;
     }
 
     /**
@@ -72,57 +96,32 @@ class TestPingClient extends AbstractPingClient implements MessageListener
      *
      * @param args
      */
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         _logger.info("Starting...");
 
         // Display help on the command line.
         if (args.length < 4)
         {
-            System.out.println("Usage: brokerdetails username password virtual-path [transacted] [selector]");
+            System.out.println(
+                "Usage: brokerdetails username password virtual-path [queueName] [verbose] [transacted] [selector]");
             System.exit(1);
         }
 
-        // Extract all comman line parameters.
+        // Extract all command line parameters.
         String brokerDetails = args[0];
         String username = args[1];
         String password = args[2];
         String virtualpath = args[3];
-        boolean transacted = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
-        String selector = (args.length == 6) ? args[5] : null;
+        String queueName = (args.length >= 5) ? args[4] : "ping";
+        boolean verbose = (args.length >= 6) ? Boolean.parseBoolean(args[5]) : true;
+        boolean transacted = (args.length >= 7) ? Boolean.parseBoolean(args[6]) : false;
+        String selector = (args.length == 8) ? args[7] : null;
 
-        try
-        {
-            InetAddress address = InetAddress.getLocalHost();
-
-            AMQConnection con1 = new AMQConnection(brokerDetails, username, password, address.getHostName(), virtualpath);
-
-            _logger.info("Connected with URL:" + con1.toURL());
-
-            // Create a transactional or non-transactional session depending on the command line parameter.
-            Session session = null;
-
-            if (transacted)
-            {
-                session = (org.apache.qpid.jms.Session) con1.createSession(false, Session.SESSION_TRANSACTED);
-            }
-            else if (!transacted)
-            {
-                session = (org.apache.qpid.jms.Session) con1.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            }
-
-            Queue q = new AMQQueue("ping");
-
-            MessageConsumer consumer = session.createConsumer(q, 1, false, false, selector);
-            new TestPingClient(session, consumer, true);
-
-            con1.start();
-        }
-        catch (Throwable t)
-        {
-            System.err.println("Fatal error: " + t);
-            t.printStackTrace();
-        }
+        // Create the test ping client and set it running.
+        TestPingClient pingClient =
+            new TestPingClient(brokerDetails, username, password, queueName, virtualpath, transacted, selector, verbose);
+        pingClient.getConnection().start();
 
         System.out.println("Waiting...");
     }
@@ -145,12 +144,12 @@ class TestPingClient extends AbstractPingClient implements MessageListener
                 if (timestamp != null)
                 {
                     long diff = System.currentTimeMillis() - timestamp;
-                    _logger.info("Ping time: " + diff);
+                    System.out.println("Ping time: " + diff);
                 }
             }
 
             // Commit the transaction if running in transactional mode.
-            commitTx();
+            commitTx(_consumerSession);
         }
         catch (JMSException e)
         {

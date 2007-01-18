@@ -21,6 +21,8 @@
 package org.apache.qpid.ping;
 
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.jms.*;
 
@@ -57,48 +59,48 @@ class TestPingProducer extends AbstractPingProducer
     /** Used to define how long to wait between pings. */
     private static final long SLEEP_TIME = 250;
 
-    /** Used to define how long to wait before assuming that a ping has timed out. */
-    private static final long TIMEOUT = 3000;
-
     /** Holds the name of the queue to send pings on. */
     private static final String PING_QUEUE_NAME = "ping";
+
     private static TestPingProducer _pingProducer;
 
     /** Holds the message producer to send the pings through. */
     private MessageProducer _producer;
 
     /** Determines whether this producer sends persistent messages from the run method. */
-    private boolean _persistent;
+    private boolean _persistent = false;
 
     /** Holds the message size to send, from the run method. */
-    private int _messageSize;
+    private int _messageSize = DEFAULT_MESSAGE_SIZE;
 
-    public TestPingProducer(Session session, MessageProducer producer) throws JMSException
-    {
-        super(session);
-        _producer = producer;
-    }
+    /** Used to indicate that the ping loop should print out whenever it pings. */
+    private boolean _verbose = false;
 
-    public TestPingProducer(Session session, MessageProducer producer, boolean persistent, int messageSize)
-                     throws JMSException
+    public TestPingProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
+                            boolean transacted, boolean persistent, int messageSize, boolean verbose) throws Exception
     {
-        this(session, producer);
+        // Create a connection to the broker.
+        InetAddress address = InetAddress.getLocalHost();
+        String clientID = address.getHostName() + System.currentTimeMillis();
+
+        setConnection(new AMQConnection(brokerDetails, username, password, clientID, virtualpath));
+
+        // Create a transactional or non-transactional session, based on the command line arguments.
+        setProducerSession((Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE));
+
+        // Create a queue to send the pings on.
+        Queue pingQueue = new AMQQueue(queueName);
+        _producer = (MessageProducer) getProducerSession().createProducer(pingQueue);
 
         _persistent = persistent;
         _messageSize = messageSize;
+
+        _verbose = verbose;
     }
 
     /**
-     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongClient} also needs
+     * Starts a ping-pong loop running from the command line. The bounce back client {@link TestPingClient} also needs
      * to be started to bounce the pings back again.
-     *
-     * <p/>The command line takes from 2 to 4 arguments:
-     * <p/><table>
-     * <tr><td>brokerDetails <td> The broker connection string.
-     * <tr><td>virtualPath   <td> The virtual path.
-     * <tr><td>transacted    <td> A boolean flag, telling this client whether or not to use transactions.
-     * <tr><td>size          <td> The size of ping messages to use, in bytes.
-     * </table>
      *
      * @param args The command line arguments as defined above.
      */
@@ -108,53 +110,33 @@ class TestPingProducer extends AbstractPingProducer
         if (args.length < 2)
         {
             System.err.println(
-                "Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted] [persistent] [message size in bytes]");
+                "Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose] [transacted] [persistent] [message size in bytes]");
             System.exit(0);
         }
 
         String brokerDetails = args[0];
         String virtualpath = args[1];
-        boolean transacted = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : false;
-        boolean persistent = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
-        int messageSize = (args.length >= 5) ? Integer.parseInt(args[4]) : DEFAULT_MESSAGE_SIZE;
+        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
+        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
+        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
+        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
 
-        // Create a connection to the broker.
-        InetAddress address = InetAddress.getLocalHost();
-        String clientID = address.getHostName() + System.currentTimeMillis();
+        // Create a ping producer to generate the pings.
+        _pingProducer = new TestPingProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, transacted,
+                                             persistent, messageSize, verbose);
 
-        Connection _connection = new AMQConnection(brokerDetails, "guest", "guest", clientID, virtualpath);
-
-        // Create a transactional or non-transactional session, based on the command line arguments.
-        Session session;
-
-        if (transacted)
-        {
-            session = (Session) _connection.createSession(true, Session.SESSION_TRANSACTED);
-        }
-        else
-        {
-            session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        }
-
-        // Create a queue to send the pings on.
-        Queue pingQueue = new AMQQueue(PING_QUEUE_NAME);
-        MessageProducer producer = (MessageProducer) session.createProducer(pingQueue);
-
-        // Create a ping producer to handle the request/wait/reply cycle.
-        _pingProducer = new TestPingProducer(session, producer, persistent, messageSize);
-
-        // Start the message consumers running.
-        _connection.start();
+        // Start the connection running.
+        _pingProducer.getConnection().start();
 
         // Create a shutdown hook to terminate the ping-pong producer.
         Runtime.getRuntime().addShutdownHook(_pingProducer.getShutdownHook());
 
-        // Start the ping loop running, ensuring that it is registered to listen for exceptions on the connection too.
-        _connection.setExceptionListener(_pingProducer);
+        // Ensure the ping loop execption listener is registered on the connection to terminate it on error.
+        _pingProducer.getConnection().setExceptionListener(_pingProducer);
+
+        // Start the ping loop running until it is interrupted.
         Thread pingThread = new Thread(_pingProducer);
         pingThread.run();
-
-        // Run until the ping loop is terminated.
         pingThread.join();
     }
 
@@ -174,16 +156,7 @@ class TestPingProducer extends AbstractPingProducer
 
         // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
         // this method, as the message will not be sent until the transaction is committed.
-        commitTx();
-    }
-
-    /**
-     * Stops the ping loop by clearing the publish flag. The current loop will complete before it notices that this
-     * flag has been cleared.
-     */
-    public void stop()
-    {
-        _publish = false;
+        commitTx(getProducerSession());
     }
 
     /**
@@ -195,12 +168,16 @@ class TestPingProducer extends AbstractPingProducer
         try
         {
             // Generate a sample message and time stamp it.
-            ObjectMessage msg = getTestMessage(_session, null, _messageSize, System.currentTimeMillis(), _persistent);
+            ObjectMessage msg = getTestMessage(null, _messageSize, _persistent);
             msg.setLongProperty("timestamp", System.currentTimeMillis());
 
             // Send the message.
             ping(msg);
 
+            if (_verbose)
+            {
+                System.out.println("Pinged at: " + timestampFormatter.format(new Date())); //" + " with id: " + msg.getJMSMessageID());
+            }
             // Introduce a short pause if desired.
             pause(SLEEP_TIME);
         }
