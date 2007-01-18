@@ -528,8 +528,7 @@ public class PropertyFieldTableTest extends TestCase
         table.setString("string", "hello");
         table.setString("null-string", null);
 
-
-        final ByteBuffer buffer = ByteBuffer.allocate((int) table.getEncodedSize()); // FIXME XXX: Is cast a problem?
+        final ByteBuffer buffer = ByteBuffer.allocate((int) table.getEncodedSize() + 4); // FIXME XXX: Is cast a problem?
 
         table.writeToBuffer(buffer);
 
@@ -579,7 +578,7 @@ public class PropertyFieldTableTest extends TestCase
         byte[] _bytes = {99, 98, 97, 96, 95};
 
         result.setBytes("bytes", _bytes);
-        size += 1 + EncodingUtils.encodedShortStringLength("bytes") + 1 + EncodingUtils.encodedByteLength() * _bytes.length;
+        size += 1 + EncodingUtils.encodedShortStringLength("bytes") + 4 + _bytes.length;
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setChar("char", (char) 'c');
@@ -621,7 +620,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setObject("object-bytes", _bytes);
-        size += 1 + EncodingUtils.encodedShortStringLength("object-bytes") + 1 + EncodingUtils.encodedByteLength() * _bytes.length;
+        size += 1 + EncodingUtils.encodedShortStringLength("object-bytes") + 4 + _bytes.length;
         Assert.assertEquals(size, result.getEncodedSize());
 
         result.setObject("object-char", 'c');

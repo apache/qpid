@@ -118,10 +118,10 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
             FieldTable clientProperties = FieldTableFactory.newFieldTable();
             
-            clientProperties.setAsciiString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
-            clientProperties.setAsciiString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
-            clientProperties.setAsciiString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
-            clientProperties.setAsciiString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
+            clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
+            clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
+            clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
+            clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
