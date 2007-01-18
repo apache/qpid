@@ -38,7 +38,8 @@ broker_tests =		\
   TxAckTest		\
   TxBufferTest		\
   TxPublishTest		\
-  ValueTest
+  ValueTest		\
+  MessageHandlerTest 
 
 framing_tests =		\
   FieldTableTest	\

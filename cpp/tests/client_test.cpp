@@ -70,7 +70,7 @@ int main(int argc, char**)
 	Queue queue("MyQueue", true);
 
  	
-	Connection con(argc > 1);
+	Connection con(verbose);
 	string host("localhost");	
 	con.open(host);
 	if (verbose) std::cout << "Opened connection." << std::endl;
