@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.client.message;
 
+import java.util.List;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.Content;
 
 import javax.jms.JMSException;
 
@@ -30,7 +31,7 @@ public interface MessageFactory
 {
     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                      MessageHeaders contentHeader,
-                                     Content body)
+                                     List contents)
         throws JMSException, AMQException;
 
     AbstractJMSMessage createMessage() throws JMSException;

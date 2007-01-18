@@ -22,13 +22,14 @@ package org.apache.qpid.client.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageTransferBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.message.MessageHeaders;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class MessageTransferMethodHandler implements StateAwareMethodListener
 {
@@ -50,7 +51,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
     {
     	final UnprocessedMessage msg = new UnprocessedMessage();
     	MessageTransferBody transferBody = (MessageTransferBody) evt.getMethod();
-        msg.content = transferBody.getBody();
+        
         msg.channelId = evt.getChannelId();
         msg.deliveryTag = evt.getRequestId();
         _logger.debug("New JmsDeliver method received");
@@ -74,7 +75,16 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         
         msg.contentHeader = messageHeaders;
         
-        protocolSession.unprocessedMessageReceived(msg);
+        if(transferBody.getBody().contentType == Content.ContentTypeEnum.CONTENT_TYPE_INLINE)
+        {
+        	msg.addContent(transferBody.getBody().getContentAsByteArray());
+        	protocolSession.deliverMessageToAMQSession(evt.getChannelId(), msg);
+        }
+        else
+        {
+        	String referenceId = new String(transferBody.getBody().getContentAsByteArray());
+        	protocolSession.deliverMessageToAMQSession(evt.getChannelId(),referenceId);
+        }
         
     }
 }

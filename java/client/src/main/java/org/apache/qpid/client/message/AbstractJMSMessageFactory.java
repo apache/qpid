@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.Content;
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
-
-import javax.jms.JMSException;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.jms.JMSException;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -38,11 +38,14 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 			ByteBuffer data, MessageHeaders contentHeader) throws AMQException;
 
 	protected AbstractJMSMessage createMessageWithBody(long messageNbr,
-			MessageHeaders contentHeader, Content body) throws AMQException {
-        ByteBuffer data;
-
-        data = ByteBuffer.allocate(body.content.remaining());
-        data.put(body.content);
+			MessageHeaders contentHeader, List contents) throws AMQException {
+		
+		ByteBuffer data = ByteBuffer.allocate((int)contentHeader.getSize());        
+        for (final Iterator it = contents.iterator();it.hasNext();)
+        {
+            byte[] bytes = (byte[]) it.next();
+            data.put(bytes);
+        }
         data.flip();
         
         _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
@@ -52,9 +55,9 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered,
     										MessageHeaders contentHeader,
-    										Content body) throws JMSException, AMQException
+    										List contents) throws JMSException, AMQException
     {
-        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, body);
+        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, contents);
         msg.setJMSRedelivered(redelivered);
         return msg;
     }
