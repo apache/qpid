@@ -325,6 +325,7 @@ void Channel::stop(){
     {
         Monitor::ScopedLock l(dispatchMonitor);
         closed = true;
+        responses.signalResponse(AMQMethodBody::shared_ptr());
         dispatchMonitor.notify();
     }
     dispatcher.join();        
