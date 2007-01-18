@@ -21,20 +21,20 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.BroadcastPolicy;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.handler.BasicConsumeMethodHandler;
+import org.apache.qpid.server.handler.MessageConsumeHandler;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-public class ReplicatingConsumeHandler extends ReplicatingHandler<BasicConsumeBody>
+public class ReplicatingConsumeHandler extends ReplicatingHandler<MessageConsumeBody>
 {
     ReplicatingConsumeHandler(GroupManager groupMgr)
     {
@@ -46,7 +46,7 @@ public class ReplicatingConsumeHandler extends ReplicatingHandler<BasicConsumeBo
         super(groupMgr, base(), policy);
     }
 
-    protected void replicate(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+    protected void replicate(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
     {
         //only replicate if the queue in question is a shared queue
         if (isShared(queues.getQueue(evt.getMethod().queue)))
@@ -67,18 +67,18 @@ public class ReplicatingConsumeHandler extends ReplicatingHandler<BasicConsumeBo
         return queue != null && queue.isShared();
     }
 
-    static StateAwareMethodListener<BasicConsumeBody> base()
+    static StateAwareMethodListener<MessageConsumeBody> base()
     {
-        return new PeerHandler<BasicConsumeBody>(peer(), client());
+        return new PeerHandler<MessageConsumeBody>(peer(), client());
     }
 
-    static StateAwareMethodListener<BasicConsumeBody> peer()
+    static StateAwareMethodListener<MessageConsumeBody> peer()
     {
         return new RemoteConsumeHandler();
     }
 
-    static StateAwareMethodListener<BasicConsumeBody> client()
+    static StateAwareMethodListener<MessageConsumeBody> client()
     {
-        return BasicConsumeMethodHandler.getInstance();
+        return MessageConsumeHandler.getInstance();
     }
 }

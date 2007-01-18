@@ -44,20 +44,20 @@ class ServerHandlerRegistry extends AMQStateManager
     private final Map<AMQState, MethodHandlerRegistry> _handlers = new HashMap<AMQState, MethodHandlerRegistry>();
 
     ServerHandlerRegistry(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
-+        AMQProtocolSession protocolSession)
+        AMQProtocolSession protocolSession)
     {
         super(AMQState.CONNECTION_NOT_STARTED, false, queueRegistry, exchangeRegistry, protocolSession);
     }
 
     ServerHandlerRegistry(ServerHandlerRegistry s, QueueRegistry queueRegistry,
-+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
         this(queueRegistry, exchangeRegistry, protocolSession);
         _handlers.putAll(s._handlers);
     }
 
     ServerHandlerRegistry(MethodHandlerFactory factory, QueueRegistry queueRegistry,
-+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
     {
         this(queueRegistry, exchangeRegistry, protocolSession);
         init(factory);

@@ -23,9 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.framing.Content;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.util.LogMessage;
@@ -92,9 +91,11 @@ public class RemoteQueueProxy extends AMQQueue
 
     void relay(AMQMessage msg) throws AMQException
     {
-        BasicPublishBody publish = msg.getPublishBody();
+        throw new Error("XXX");
+        /*
+        MessageTransferBody publish = msg.getPublishBody();
         ContentHeaderBody header = msg.getContentHeaderBody();
-        List<ContentBody> bodies = msg.getContentBodies();
+        List<Content> bodies = msg.getContentBodies();
 
         //(i) construct a new publishing block:
         publish.immediate = false;//can't as yet handle the immediate flag in a cluster
@@ -105,5 +106,6 @@ public class RemoteQueueProxy extends AMQQueue
 
         //(ii) send this on to the broker for which it is acting as proxy:
         _groupMgr.send(_target, new SimpleSendable(parts));
+        */
     }
 }

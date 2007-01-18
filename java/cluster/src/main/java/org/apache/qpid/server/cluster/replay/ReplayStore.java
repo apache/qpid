@@ -29,8 +29,8 @@ import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.ClusterSynchBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicCancelBody;
+import org.apache.qpid.framing.MessageConsumeBody;
+import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.util.LogMessage;
@@ -75,8 +75,8 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _localRecorders.put(QueueDeclareBody.class, new PrivateQueueDeclareRecorder());
         _localRecorders.put(QueueDeleteBody.class, new PrivateQueueDeleteRecorder());
         _localRecorders.put(QueueBindBody.class, new PrivateQueueBindRecorder());
-        _localRecorders.put(BasicConsumeBody.class, new BasicConsumeRecorder());
-        _localRecorders.put(BasicCancelBody.class, new BasicCancelRecorder());
+        _localRecorders.put(MessageConsumeBody.class, new BasicConsumeRecorder());
+        _localRecorders.put(MessageCancelBody.class, new BasicCancelRecorder());
         _localRecorders.put(ExchangeDeclareBody.class, new ExchangeDeclareRecorder());
         _localRecorders.put(ExchangeDeleteBody.class, new ExchangeDeleteRecorder());
     }
@@ -130,9 +130,9 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         return methods;
     }
 
-    private class BasicConsumeRecorder implements MethodRecorder<BasicConsumeBody>
+    private class BasicConsumeRecorder implements MethodRecorder<MessageConsumeBody>
     {
-        public void record(BasicConsumeBody method)
+        public void record(MessageConsumeBody method)
         {
             if(_sharedQueues.containsKey(method.queue))
             {
@@ -141,13 +141,13 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         }
     }
 
-    private class BasicCancelRecorder implements MethodRecorder<BasicCancelBody>
+    private class BasicCancelRecorder implements MethodRecorder<MessageCancelBody>
     {
-        public void record(BasicCancelBody method)
+        public void record(MessageCancelBody method)
         {
-            if(_sharedQueues.containsKey(method.consumerTag))
+            if(_sharedQueues.containsKey(method.getDestination()))
             {
-                _consumers.decrement(method.consumerTag);
+                _consumers.decrement(method.getDestination());
             }
         }
     }

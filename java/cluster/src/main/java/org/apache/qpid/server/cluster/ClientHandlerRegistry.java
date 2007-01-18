@@ -128,9 +128,9 @@ public class ClientHandlerRegistry extends AMQStateManager
 
     class ConnectionTuneHandler extends ConnectionTuneMethodHandler
     {
-        protected AMQFrame createConnectionOpenFrame(int channel, String path, String capabilities, boolean insist)
+        protected AMQMethodBody createConnectionOpenMethodBody(String path, String capabilities, boolean insist)
         {
-            return super.createConnectionOpenFrame(channel, path, ClusterCapability.add(capabilities, _identity), insist);
+            return super.createConnectionOpenMethodBody(path, ClusterCapability.add(capabilities, _identity), insist);
         }
     }
 }

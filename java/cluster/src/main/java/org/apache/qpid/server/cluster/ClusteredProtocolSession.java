@@ -32,6 +32,8 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class ClusteredProtocolSession extends AMQMinaProtocolSession
 {
@@ -64,7 +66,7 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
         AMQChannel channel = super.getChannel(channelId);
         if (isPeerSession() && channel == null)
         {
-            channel = new OneUseChannel(channelId);
+            channel = new OneUseChannel(channelId, this, getStateManager());
             addChannel(channel);
         }
         return channel;
@@ -100,25 +102,29 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
      */
     private class OneUseChannel extends AMQChannel
     {
-        public OneUseChannel(int channelId)
+        public OneUseChannel(int channelId, AMQProtocolWriter protocolWriter,
+            AMQMethodListener methodListener)
             throws AMQException
         {
-            this(channelId, ApplicationRegistry.getInstance());
+            this(channelId, ApplicationRegistry.getInstance(), protocolWriter, methodListener);
         }
 
-        public OneUseChannel(int channelId, IApplicationRegistry registry)
+        public OneUseChannel(int channelId, IApplicationRegistry registry,
+            AMQProtocolWriter protocolWriter, AMQMethodListener methodListener)
             throws AMQException
         {
             super(channelId,
                   registry.getMessageStore(),
-                  registry.getExchangeRegistry());
+                  registry.getExchangeRegistry(),
+                  protocolWriter,
+                  methodListener);
         }
 
-        protected void routeCurrentMessage() throws AMQException
-        {
-            super.routeCurrentMessage();
-            removeChannel(getChannelId());
-        }
+//         protected void routeCurrentMessage() throws AMQException
+//         {
+//             super.routeCurrentMessage();
+//             removeChannel(getChannelId());
+//         }
     }
 
     public static boolean isPayloadFromPeer(AMQMessage payload)

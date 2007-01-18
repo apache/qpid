@@ -22,8 +22,8 @@ package org.apache.qpid.server.cluster.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicConsumeOkBody;
+import org.apache.qpid.framing.MessageConsumeBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -38,11 +38,11 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
  * Handles consume requests from other cluster members.
  *
  */
-public class RemoteConsumeHandler implements StateAwareMethodListener<BasicConsumeBody>
+public class RemoteConsumeHandler implements StateAwareMethodListener<MessageConsumeBody>
 {
     private final Logger _logger = Logger.getLogger(RemoteConsumeHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
     {
         AMQQueue queue = queues.getQueue(evt.getMethod().queue);
         if (queue instanceof ClusteredQueue)
@@ -51,10 +51,8 @@ public class RemoteConsumeHandler implements StateAwareMethodListener<BasicConsu
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            session.writeFrame(BasicConsumeOkBody.createAMQFrame(evt.getChannelId(),
-            	(byte)0, (byte)9,	// AMQP version (major, minor)
-            	evt.getMethod().queue	// consumerTag
-                ));
+            session.writeResponse(evt.getChannelId(), evt.getRequestId(),
+                MessageOkBody.createMethodBody((byte)0, (byte)9));
         }
         else
         {

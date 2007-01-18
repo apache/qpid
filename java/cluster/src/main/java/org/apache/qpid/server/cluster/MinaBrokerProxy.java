@@ -37,6 +37,8 @@ import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQRequestBody;
+import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.ConnectionRedirectBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
@@ -166,7 +168,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
     }
 
-    public void handle(int channel, AMQMethodBody method) throws AMQException
+    public void handle(int channel, AMQMethodBody method, long requestId) throws AMQException
     {
         _logger.info(new LogMessage("Handling method: {0} for channel {1}", method, channel));
         if (!handleResponse(channel, method))
@@ -175,7 +177,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
     }
 
-    private void handleMethod(int channel, AMQMethodBody method) throws AMQException
+    private void handleMethod(int channel, AMQMethodBody method, long requestId) throws AMQException
     {
         if (method instanceof ConnectionRedirectBody)
         {
@@ -186,7 +188,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
         else
         {
-            _handler.handle(channel, method);
+            _handler.handle(channel, method, requestId);
             if (AMQState.CONNECTION_OPEN.equals(_legacyHandler.getCurrentState()) && _handler != this)
             {
                 _handler = this;
@@ -202,9 +204,15 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     private void handleFrame(AMQFrame frame) throws AMQException
     {
         AMQBody body = frame.bodyFrame;
-        if (body instanceof AMQMethodBody)
+        if (body instanceof AMQRequestBody)
         {
-            handleMethod(frame.channel, (AMQMethodBody) body);
+            handleMethod(frame.channel, ((AMQRequestBody)body).getMethodPayload(),
+                ((AMQRequestBody)body).getRequestId());
+        }
+        else if (body instanceof AMQResponseBody)
+        {
+            handleMethod(frame.channel, ((AMQResponseBody)body).getMethodPayload(),
+                ((AMQRequestBody)body).getRequestId());
         }
         else
         {

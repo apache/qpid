@@ -21,7 +21,7 @@
 package org.apache.qpid.server.cluster.replay;
 
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ class ConsumerCounts
         _counts.put(queue, get(queue) + 1);
     }
 
-   synchronized void decrement(String queue)
+    synchronized void decrement(String queue)
     {
         _counts.put(queue,  get(queue) - 1);
     }
@@ -53,14 +53,14 @@ class ConsumerCounts
         {
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            BasicConsumeBody m = new BasicConsumeBody((byte)0, (byte)9);
+            MessageConsumeBody m = new MessageConsumeBody((byte)0, (byte)9);
             m.queue = queue;
-            m.consumerTag = queue;
+            m.destination = queue;
             replay(m, messages);
         }
     }
 
-    private void replay(BasicConsumeBody msg, List<AMQMethodBody> messages)
+    private void replay(MessageConsumeBody msg, List<AMQMethodBody> messages)
     {
         int count = _counts.get(msg.queue);
         for(int i = 0; i < count; i++)

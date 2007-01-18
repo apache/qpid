@@ -49,9 +49,9 @@ class ClientAdapter implements MethodHandler
         _stateMgr = stateMgr;
     }
 
-    public void handle(int channel, AMQMethodBody method) throws AMQException
+    public void handle(int channel, AMQMethodBody method, long requestId) throws AMQException
     {
-        AMQMethodEvent evt = new AMQMethodEvent(channel, method);
+        AMQMethodEvent evt = new AMQMethodEvent(channel, method, requestId);
         _stateMgr.methodReceived(evt);
     }
 

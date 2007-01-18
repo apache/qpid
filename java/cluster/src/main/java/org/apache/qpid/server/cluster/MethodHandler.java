@@ -25,5 +25,5 @@ import org.apache.qpid.framing.AMQMethodBody;
 
 interface MethodHandler
 {
-    public void handle(int channel, AMQMethodBody method) throws AMQException;
+    public void handle(int channel, AMQMethodBody method, long requestId) throws AMQException;
 }
