@@ -230,7 +230,7 @@ public enum AMQType
     {
         public int getEncodingSize(Object value)
         {
-            return 1 + (value == null ? 0 : ((byte[]) value).length);
+            return EncodingUtils.encodedLongstrLength((byte[]) value);
         }
 
 
@@ -250,12 +250,12 @@ public enum AMQType
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            EncodingUtils.writeBytes(buffer, (byte[]) value);            
+            EncodingUtils.writeLongstr(buffer, (byte[]) value);            
         }
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
-            return EncodingUtils.readBytes(buffer);
+            return EncodingUtils.readLongstr(buffer);
         }
 
     },
