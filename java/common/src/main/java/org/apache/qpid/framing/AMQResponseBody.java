@@ -82,7 +82,7 @@ public class AMQResponseBody extends AMQBody
     
     public String toString()
     {
-        return "Res[" + responseId + " " + requestId + "-" + requestId + batchOffset + "] C" +
+        return "Res[" + responseId + " " + requestId + "-" + (requestId + batchOffset) + "] C" +
             methodPayload.getClazz() + " M" + methodPayload.getMethod();
     }
     
