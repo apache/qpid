@@ -30,8 +30,10 @@
 #include "AMQResponseBody.h"
 #include "Requester.h"
 #include "Responder.h"
+#include <QpidError.h>
 
 using namespace qpid::framing;
+using qpid::QpidError;
 
 template <class T>
 std::string tostring(const T& x) 
@@ -57,6 +59,7 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testResponder);
     CPPUNIT_TEST(testInlineContent);
     CPPUNIT_TEST(testContentReference);
+    CPPUNIT_TEST(testContentValidation);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -197,6 +200,37 @@ class FramingTest : public CppUnit::TestCase
         recovered.decode(buffer);
         CPPUNIT_ASSERT(recovered.isReference());
         CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
+    }
+
+    void testContentValidation() {
+        try {
+            Content content(REFERENCE, "");
+            CPPUNIT_ASSERT(false);//fail, expected exception
+        } catch (QpidError& e) {
+            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
+            CPPUNIT_ASSERT_EQUAL(string("Reference cannot be empty"), e.msg);
+        }
+        
+        try {
+            Content content(2, "Blah");
+            CPPUNIT_ASSERT(false);//fail, expected exception
+        } catch (QpidError& e) {
+            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
+            CPPUNIT_ASSERT_EQUAL(string("Invalid discriminator: 2"), e.msg);
+        }
+        
+        try {
+            buffer.putOctet(2);
+            buffer.putLongString("blah, blah");
+            buffer.flip();
+            Content content;
+            content.decode(buffer);
+            CPPUNIT_ASSERT(false);//fail, expected exception
+        } catch (QpidError& e) {
+            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
+            CPPUNIT_ASSERT_EQUAL(string("Invalid discriminator: 2"), e.msg);
+        }
+        
     }
 
     void testRequester() {

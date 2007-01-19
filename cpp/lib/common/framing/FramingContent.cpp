@@ -35,16 +35,13 @@ Content::Content(u_int8_t _discriminator, const string& _value): discriminator(_
 }
 
 void Content::validate() {
-    //validation:
     if (discriminator == REFERENCE) {
         if(value.empty()) {
-            //cannot have empty reference
             THROW_QPID_ERROR(FRAMING_ERROR, "Reference cannot be empty");
         }
     }else if (discriminator != INLINE) {
-        //invalid discriminator
         std::stringstream out;
-        out << "Invalid discriminator: " << discriminator;
+        out << "Invalid discriminator: " << (int) discriminator;
 	THROW_QPID_ERROR(FRAMING_ERROR, out.str());
     }
 }
@@ -63,7 +60,7 @@ void Content::decode(Buffer& buffer) {
 }
 
 size_t Content::size() const {
-    return 1 + 4 + value.size();
+    return 1/*discriminator*/ + 4/*for recording size of long string*/ + value.size();
 }
 
 std::ostream& operator<<(std::ostream& out, const Content& content) {

@@ -115,10 +115,6 @@ class BrokerAdapter::ServerOps : public AMQP_ServerOperations
                      const qpid::framing::FieldTable& arguments); 
         void delete_(const MethodContext& context, u_int16_t ticket,
                      const std::string& exchange, bool ifUnused, bool nowait); 
-        void unbind(const MethodContext& context,
-                    u_int16_t ticket, const std::string& queue,
-                    const std::string& exchange, const std::string& routingKey,
-                    const qpid::framing::FieldTable& arguments );
     };
 
     class QueueHandlerImpl : private CoreRefs, public QueueHandler{
@@ -265,20 +261,6 @@ void BrokerAdapter::ServerOps::ExchangeHandlerImpl::declare(const MethodContext&
         connection.client->getExchange().declareOk(channel.getId());
     }
 }
-
-                
-void BrokerAdapter::ServerOps::ExchangeHandlerImpl::unbind(
-    const MethodContext&,
-    u_int16_t /*ticket*/,
-    const string& /*queue*/,
-    const string& /*exchange*/,
-    const string& /*routingKey*/,
-    const qpid::framing::FieldTable& /*arguments*/ )
-{
-    assert(0);            // FIXME aconway 2007-01-04: 0-9 feature
-}
-
-
                 
 void BrokerAdapter::ServerOps::ExchangeHandlerImpl::delete_(const MethodContext&, u_int16_t /*ticket*/, 
                                                             const string& exchange, bool /*ifUnused*/, bool nowait){
@@ -330,9 +312,6 @@ void BrokerAdapter::ServerOps::QueueHandlerImpl::bind(const MethodContext&, u_in
     Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());
     Exchange::shared_ptr exchange = broker.getExchanges().get(exchangeName);
     if(exchange){
-        // kpvdr - cannot use this any longer as routingKey is now const
-        //        if(routingKey.empty() && queueName.empty()) routingKey = queue->getName();
-        //        exchange->bind(queue, routingKey, &arguments);
         string exchangeRoutingKey = routingKey.empty() && queueName.empty() ? queue->getName() : routingKey;
         exchange->bind(queue, exchangeRoutingKey, &arguments);
         if(!nowait) connection.client->getQueue().bindOk(channel.getId());    
@@ -340,7 +319,27 @@ void BrokerAdapter::ServerOps::QueueHandlerImpl::bind(const MethodContext&, u_in
         throw ChannelException(
             404, "Bind failed. No such exchange: " + exchangeName);
     }
-} 
+}
+ 
+void 
+BrokerAdapter::ServerOps::QueueHandlerImpl::unbind(
+    const MethodContext&,
+    u_int16_t /*ticket*/,
+    const string& queueName,
+    const string& exchangeName,
+    const string& routingKey,
+    const qpid::framing::FieldTable& arguments )
+{
+    Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());
+    if (!queue.get()) throw ChannelException(404, "Unbind failed. No such exchange: " + exchangeName);
+
+    Exchange::shared_ptr exchange = broker.getExchanges().get(exchangeName);
+    if (!exchange.get()) throw ChannelException(404, "Unbind failed. No such exchange: " + exchangeName);
+
+    exchange->unbind(queue, routingKey, &arguments);
+
+    connection.client->getQueue().unbindOk(channel.getId());    
+}
         
 void BrokerAdapter::ServerOps::QueueHandlerImpl::purge(const MethodContext&, u_int16_t /*ticket*/, const string& queueName, bool nowait){
 
@@ -471,21 +470,9 @@ void BrokerAdapter::ServerOps::TxHandlerImpl::rollback(const MethodContext&){
 }
               
 void
-BrokerAdapter::ServerOps::QueueHandlerImpl::unbind(
-    const MethodContext&,
-    u_int16_t /*ticket*/,
-    const string& /*queue*/,
-    const string& /*exchange*/,
-    const string& /*routingKey*/,
-    const qpid::framing::FieldTable& /*arguments*/ )
-{
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
-}
-
-void
 BrokerAdapter::ServerOps::ChannelHandlerImpl::ok( const MethodContext& )
 {
-    assert(0);                // FIXME aconway 2007-01-04: 0-9 feature
+    //no specific action required, generic response handling should be sufficient
 }
 
 void
