@@ -79,7 +79,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     protected static final long TIMEOUT = 9000;
 
     /** Holds the name of the queue to send pings on. */
-    private static final String PING_QUEUE_NAME = "ping";
+    protected static final String PING_QUEUE_NAME = "ping";
 
     /** The batch size. */
     protected static final int BATCH_SIZE = 100;
@@ -91,7 +91,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     protected static final boolean EXCLUSIVE = false;
 
     /** The number of priming loops to run. */
-    private static final int PRIMING_LOOPS = 3;
+    protected static final int PRIMING_LOOPS = 3;
 
     /** A source for providing sequential unique correlation ids. */
     private AtomicLong idGenerator = new AtomicLong(0L);
@@ -106,19 +106,19 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     private Queue _pingQueue;
 
     /** Determines whether this producer sends persistent messages from the run method. */
-    private boolean _persistent;
+    protected boolean _persistent;
 
     /** Holds the message size to send, from the run method. */
-    private int _messageSize;
+    protected int _messageSize;
 
     /** Holds a map from message ids to latches on which threads wait for replies. */
     private Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
 
     /** Used to indicate that the ping loop should print out whenever it pings. */
-    private boolean _verbose = false;
+    protected boolean _verbose = false;
 
-    private Session _consumerSession;
-
+    protected Session _consumerSession;
+    
     /**
      * Creates a ping pong producer with the specified connection details and type.
      *
@@ -151,9 +151,6 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         createProducer(queueName, persistent);
         createConsumer(selector);
 
-        // Run a few priming pings to remove warm up time from test results.
-        prime(PRIMING_LOOPS);
-
         _persistent = persistent;
         _messageSize = messageSize;
         _verbose = verbose;
@@ -168,7 +165,8 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     public void createProducer(String queueName, boolean persistent) throws JMSException
     {
         // Create a queue and producer to send the pings on.
-        _pingQueue = new AMQQueue(queueName);
+        if (_pingQueue == null)
+            _pingQueue = new AMQQueue(queueName);
         _producer = (MessageProducer) getProducerSession().createProducer(_pingQueue);
         _producer.setDisableMessageTimestamp(true);
         _producer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
@@ -197,6 +195,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     public Queue getPingQueue()
     {
         return _pingQueue;
+    }
+
+    protected void setPingQueue(Queue queue)
+    {
+        _pingQueue = queue;
     }
 
     /**
@@ -235,6 +238,8 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                                              persistent, messageSize, verbose);
         _pingProducer.getConnection().start();
 
+        // Run a few priming pings to remove warm up time from test results.
+        _pingProducer.prime(PRIMING_LOOPS);
         // Create a shutdown hook to terminate the ping-pong producer.
         Runtime.getRuntime().addShutdownHook(_pingProducer.getShutdownHook());
 
@@ -443,6 +448,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     public Queue getReplyQueue()
     {
         return _replyQueue;
+    }
+
+    protected void setReplyQueue(Queue queue)
+    {
+        _replyQueue = queue;
     }
 
     /**
