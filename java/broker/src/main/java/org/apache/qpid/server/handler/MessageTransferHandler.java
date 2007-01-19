@@ -65,10 +65,10 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
         }
 
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
-        if (body.exchange == null) {
-            body.exchange = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+        if (body.destination == null) {
+            body.destination = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
         }
-        Exchange e = exchangeRegistry.getExchange(body.exchange);
+        Exchange e = exchangeRegistry.getExchange(body.destination);
         // if the exchange does not exist we raise a channel exception
         if (e == null) {
             protocolSession.closeChannel(evt.getChannelId());
