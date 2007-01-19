@@ -110,37 +110,37 @@
       <source>../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server.bat</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.bat</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.sh</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.sh</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
     <file>
       <source>../broker/bin/runAll</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>runAll</destName>
-      <fileMode>493</fileMode>
+      <fileMode>473</fileMode>
     </file>
   </files>
   <dependencySets>
