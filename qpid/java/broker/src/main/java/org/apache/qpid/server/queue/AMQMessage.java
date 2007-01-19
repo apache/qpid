@@ -43,8 +43,6 @@ public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    public static final String JMS_MESSAGE = "jms.message";
-
     /**
      * Used in clustering
      */
@@ -74,6 +72,8 @@ public class AMQMessage
     private AtomicBoolean _taken = new AtomicBoolean(false);
 
     private TransientMessageData _transientMessageData = new TransientMessageData();
+
+
 
     /**
      * Used to iterate through all the body frames associated with this message. Will not
@@ -550,6 +550,7 @@ public class AMQMessage
         {
             SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
                                                                              contentHeader);
+
             protocolSession.writeFrame(compositeBlock);
         }
         else
@@ -582,6 +583,50 @@ public class AMQMessage
 
     }
 
+    public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
+    {
+        ByteBuffer deliver = createEncodedGetOkFrame(channelId, deliveryTag, queueSize);
+        AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
+                                                                      getContentHeaderBody());
+
+        final int bodyCount = _messageHandle.getBodyCount(_messageId);
+        if(bodyCount == 0)
+        {
+            SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
+                                                                             contentHeader);
+            protocolSession.writeFrame(compositeBlock);
+        }
+        else
+        {
+
+
+            //
+            // Optimise the case where we have a single content body. In that case we create a composite block
+            // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
+            //
+            ContentBody cb = _messageHandle.getContentBody(_messageId, 0);
+
+            AMQDataBlock firstContentBody = ContentBody.createAMQFrame(channelId, cb);
+            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
+            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
+            protocolSession.writeFrame(compositeBlock);
+
+            //
+            // Now start writing out the other content bodies
+            //
+            for(int i = 1; i < bodyCount; i++)
+            {
+                cb = _messageHandle.getContentBody(_messageId, i);
+                protocolSession.writeFrame(ContentBody.createAMQFrame(channelId, cb));
+            }
+
+
+        }
+
+
+    }
+
+
     private ByteBuffer createEncodedDeliverFrame(int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
@@ -591,6 +636,21 @@ public class AMQMessage
                                                                 pb.routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
         deliverFrame.writePayload(buf);
+        buf.flip();
+        return buf;
+    }
+
+    private ByteBuffer createEncodedGetOkFrame(int channelId, long deliveryTag, int queueSize)
+            throws AMQException
+    {
+        BasicPublishBody pb = getPublishBody();
+        AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId, (byte) 8, (byte) 0,
+                                                                deliveryTag, pb.exchange,
+                                                                queueSize,
+                                                                _messageHandle.isRedelivered(),
+                                                                pb.routingKey);
+        ByteBuffer buf = ByteBuffer.allocate((int) getOkFrame.getSize()); // XXX: Could cast be a problem?
+        getOkFrame.writePayload(buf);
         buf.flip();
         return buf;
     }
@@ -642,6 +702,24 @@ public class AMQMessage
             protocolSession.writeFrame(bodyFrameIterator.next());
         }
     }
+
+
+    public long getSize()
+    {
+        try
+        {
+            long size = getContentHeaderBody().bodySize;
+
+            return size;
+        }
+        catch (AMQException e)
+        {
+            _log.error(e);
+            return 0;
+        }
+
+    }    
+
 
     public String toString()
     {

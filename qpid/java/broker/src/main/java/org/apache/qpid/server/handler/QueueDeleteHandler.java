@@ -34,6 +34,7 @@ import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.protocol.AMQConstant;
 
 public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDeleteBody>
@@ -84,15 +85,12 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         {
             if(body.ifEmpty && !queue.isEmpty())
             {
-                AMQShortString msg = new AMQShortString("Queue: " + body.queue + " is not empty.");
-                // TODO - Error code
-                session.writeFrame(ChannelCloseBody.createAMQFrame(evt.getChannelId(),(byte)8, (byte)0, body.getClazz(), body.getMethod(), 406, msg	));
+                throw body.getChannelException(406, "Queue: " + body.queue + " is not empty." );
             }
             else if(body.ifUnused && !queue.isUnused())
-            {
-                AMQShortString msg = new AMQShortString("Queue: " + body.queue + " is still used.");
+            {                
                 // TODO - Error code
-                session.writeFrame(ChannelCloseBody.createAMQFrame(evt.getChannelId(),(byte)8, (byte)0, body.getClazz(), body.getMethod(), 406, msg	));
+                throw body.getChannelException(406, "Queue: " + body.queue + " is still used." );
 
             }
             else

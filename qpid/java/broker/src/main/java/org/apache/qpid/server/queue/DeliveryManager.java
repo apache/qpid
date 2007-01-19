@@ -23,6 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.concurrent.Executor;
 import java.util.List;
@@ -72,9 +74,11 @@ interface DeliveryManager
 
     void removeAMessageFromTop(StoreContext storeContext) throws AMQException;
 
-    void clearAllMessages(StoreContext storeContext) throws AMQException;
+    long clearAllMessages(StoreContext storeContext) throws AMQException;
 
     List<AMQMessage> getMessages();
 
     void populatePreDeliveryQueue(Subscription subscription);
+
+    boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException;
 }

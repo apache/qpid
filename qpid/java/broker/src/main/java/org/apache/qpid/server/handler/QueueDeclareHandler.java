@@ -77,22 +77,19 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         {
             body.queue = createName();
         }
+
+        AMQQueue queue = null;
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
         synchronized (queueRegistry)
         {
-            AMQQueue queue;
+
             if (((queue = queueRegistry.getQueue(body.queue)) == null) )
             {
                 if(body.passive)
                 {
                     String msg = "Queue: " + body.queue + " not found.";
-                    throw new AMQChannelException(AMQConstant.NOT_FOUND.getCode(),
-                                                                                  msg,
-                                                                                  body.getClazz(),
-                                                                                  body.getMethod(),
-                                                                                  (byte)8,
-                                                                                  (byte)0 	);
+                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(),msg );
 
                 }
                 else
@@ -112,9 +109,16 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
+            else if(queue.getOwner() != null && !protocolSession.getContextKey().equals(queue.getOwner()))
+            {
+                // todo - constant
+                throw body.getChannelException(405, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
+
+            }
             //set this as the default queue on the channel:
             protocolSession.getChannel(evt.getChannelId()).setDefaultQueue(queue);
         }
+
         if (!body.nowait)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -122,8 +126,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             // Be aware of possible changes to parameter order as versions change.
             AMQFrame response = QueueDeclareOkBody.createAMQFrame(evt.getChannelId(),
                 (byte)8, (byte)0,	// AMQP version (major, minor)
-                0L, // consumerCount
-                0L, // messageCount
+                queue.getConsumerCount(), // consumerCount
+                queue.getMessageCount(), // messageCount
                 body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
             protocolSession.writeFrame(response);

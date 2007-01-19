@@ -32,6 +32,7 @@ public class AMQConnectionException extends AMQException
     /* AMQP version for which exception ocurred */
     private final byte major;
     private final byte minor;
+    boolean _closeConnetion;
 
     public AMQConnectionException(int errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
     {
@@ -51,9 +52,12 @@ public class AMQConnectionException extends AMQException
         this.minor = minor;
     }
 
+
+
     public AMQFrame getCloseFrame(int channel)
     {
         return ConnectionCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode(), new AMQShortString(getMessage()));
     }
+
 
 }

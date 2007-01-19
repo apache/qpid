@@ -132,4 +132,9 @@ public class MockProtocolSession implements AMQProtocolSession
     public void setClientProperties(FieldTable clientProperties)
     {
     }
+	
+	public Object getClientIdentifier()
+	{
+		return null;
+	}
 }

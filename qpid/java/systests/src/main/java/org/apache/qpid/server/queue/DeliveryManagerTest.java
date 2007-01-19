@@ -172,8 +172,6 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
     public static junit.framework.Test suite()
     {
         TestSuite suite = new TestSuite();
-        suite.addTestSuite(ConcurrentDeliveryManagerTest.class);
-        suite.addTestSuite(SynchronizedDeliveryManagerTest.class);
         return suite;
     }
 }

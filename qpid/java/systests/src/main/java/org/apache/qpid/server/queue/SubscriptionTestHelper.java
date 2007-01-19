@@ -67,6 +67,12 @@ public class SubscriptionTestHelper implements Subscription
         return isSuspended;
     }
 
+	public boolean wouldSuspend(AMQMessage msg)
+    {
+        return isSuspended;
+    }
+
+	
     public void queueDeleted(AMQQueue queue)
     {
     }
