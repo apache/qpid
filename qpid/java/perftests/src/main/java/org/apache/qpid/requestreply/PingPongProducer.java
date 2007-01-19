@@ -70,25 +70,25 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     private static final Logger _logger = Logger.getLogger(PingPongProducer.class);
 
     /** Used to set up a default message size. */
-    private static final int DEFAULT_MESSAGE_SIZE = 0;
+    protected static final int DEFAULT_MESSAGE_SIZE = 0;
 
     /** Used to define how long to wait between pings. */
-    private static final long SLEEP_TIME = 250;
+    protected static final long SLEEP_TIME = 250;
 
     /** Used to define how long to wait before assuming that a ping has timed out. */
-    private static final long TIMEOUT = 3000;
+    protected static final long TIMEOUT = 9000;
 
     /** Holds the name of the queue to send pings on. */
     private static final String PING_QUEUE_NAME = "ping";
 
     /** The batch size. */
-    private static final int BATCH_SIZE = 100;
+    protected static final int BATCH_SIZE = 100;
 
     /** Keeps track of the ping producer instance used in the run loop. */
     private static PingPongProducer _pingProducer;
-    private static final int PREFETCH = 100;
-    private static final boolean NO_LOCAL = true;
-    private static final boolean EXCLUSIVE = false;
+    protected static final int PREFETCH = 100;
+    protected static final boolean NO_LOCAL = true;
+    protected static final boolean EXCLUSIVE = false;
 
     /** The number of priming loops to run. */
     private static final int PRIMING_LOOPS = 3;
@@ -101,6 +101,9 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
     /** Holds the queue to send the ping replies to. */
     private Queue _replyQueue;
+
+    /** Hold the known Queue where the producer will be sending message to*/
+    private Queue _pingQueue;
 
     /** Determines whether this producer sends persistent messages from the run method. */
     private boolean _persistent;
@@ -144,26 +147,56 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         setProducerSession((Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE));
         _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
 
-        // Create a queue and producer to send the pings on.
-        Queue pingQueue = new AMQQueue(queueName);
-        _producer = (MessageProducer) getProducerSession().createProducer(pingQueue);
-        _producer.setDisableMessageTimestamp(true);
-        _producer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-
-        // Create a temporary queue to get the pongs on.
-        _replyQueue = _consumerSession.createTemporaryQueue();
-
-        // Create a message consumer to get the replies with and register this to be called back by it.
-        MessageConsumer consumer = _consumerSession.createConsumer(_replyQueue, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
-        consumer.setMessageListener(this);
+        // Create producer and the consumer
+        createProducer(queueName, persistent);
+        createConsumer(selector);
 
         // Run a few priming pings to remove warm up time from test results.
         prime(PRIMING_LOOPS);
 
         _persistent = persistent;
         _messageSize = messageSize;
-
         _verbose = verbose;
+    }
+
+    /**
+     * Creates the queue and producer to send the pings on
+     * @param queueName
+     * @param persistent
+     * @throws JMSException
+     */
+    public void createProducer(String queueName, boolean persistent) throws JMSException
+    {
+        // Create a queue and producer to send the pings on.
+        _pingQueue = new AMQQueue(queueName);
+        _producer = (MessageProducer) getProducerSession().createProducer(_pingQueue);
+        _producer.setDisableMessageTimestamp(true);
+        _producer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+    }
+
+    /**
+     * Creates the temporary queue to listen to the responses
+     * @param selector
+     * @throws JMSException
+     */
+    public void createConsumer(String selector) throws JMSException
+    {
+        // Create a temporary queue to get the pongs on.
+        _replyQueue = _consumerSession.createTemporaryQueue();
+
+        // Create a message consumer to get the replies with and register this to be called back by it.
+        MessageConsumer consumer = _consumerSession.createConsumer(_replyQueue, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
+        consumer.setMessageListener(this);
+    }
+
+    protected Session getConsumerSession()
+    {
+        return _consumerSession;
+    }
+
+    public Queue getPingQueue()
+    {
+        return _pingQueue;
     }
 
     /**
@@ -185,8 +218,8 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         // Extract the command line.
         if (args.length < 2)
         {
-            System.err.println(
-                "Usage: TestPingPublisher <brokerDetails> <virtual path> [transacted] [persistent] [message size in bytes]");
+            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
+                    "[transacted (true/false)] [persistent (true/false)] [message size in bytes]");
             System.exit(0);
         }
 
