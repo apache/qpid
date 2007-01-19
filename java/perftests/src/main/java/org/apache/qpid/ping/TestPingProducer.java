@@ -184,7 +184,7 @@ class TestPingProducer extends AbstractPingProducer
         catch (JMSException e)
         {
             _publish = false;
-            _logger.debug("There was a JMSException: " + e.getMessage(), e);
+            _logger.error("There was a JMSException: " + e.getMessage(), e);
         }
     }
 }
