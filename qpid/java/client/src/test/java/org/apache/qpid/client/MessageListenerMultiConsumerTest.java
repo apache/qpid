@@ -36,6 +36,8 @@ import javax.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
@@ -63,6 +65,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
     private MessageConsumer _consumer2;
 
     private boolean _testAsync;
+    private final CountDownLatch _allMessagesSent = new CountDownLatch(2); //all messages Sent Lock
 
     protected void setUp() throws Exception
     {
@@ -72,7 +75,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
-        
+
         env.put("connectionfactory.connection", "amqp://client:client@MLT_ID/tests?brokerlist='vm://:1'");
         env.put("queue.queue", "direct://amq.direct//MessageListenerTest");
 
@@ -121,7 +124,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
         {
             assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
         }
-        _clientConnection.close();        
+        _clientConnection.close();
 
         super.tearDown();
         TransportConnection.killAllVMBrokers();
@@ -165,6 +168,12 @@ public class MessageListenerMultiConsumerTest extends TestCase
                 _logger.info("Client 1 Received Message(" + receivedCount1 + "):" + message);
 
                 receivedCount1++;
+
+                if (receivedCount1 == MSG_COUNT / 2)
+                {
+                    _allMessagesSent.countDown();
+                }
+
             }
         });
 
@@ -175,15 +184,19 @@ public class MessageListenerMultiConsumerTest extends TestCase
                 _logger.info("Client 2 Received Message(" + receivedCount2 + "):" + message);
 
                 receivedCount2++;
+                if (receivedCount2 == MSG_COUNT / 2)
+                {
+                    _allMessagesSent.countDown();
+                }
             }
         });
 
 
-        _logger.info("Waiting 3 seconds for messages");
+        _logger.info("Waiting upto 2 seconds for messages");
 
         try
         {
-            Thread.sleep(6000);
+            _allMessagesSent.await(2000, TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e)
         {
