@@ -68,7 +68,7 @@ public class TestPingSubscriber
                 }
                 catch (JMSException jmse)
                 {
-                    // ignore
+                    _logger.error("JMSException caught:" + jmse.getMessage(), jmse);
                 }
 
 
