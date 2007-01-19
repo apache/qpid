@@ -37,62 +37,62 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
     MessageHandlerImpl(Channel& ch, Connection& c, Broker& b)
         : channel(ch), connection(c), broker(b) {}
 
-    void append(const qpid::framing::MethodContext&,
+    void append(const framing::MethodContext&,
                  const std::string& reference,
                  const std::string& bytes );
 
-    void cancel(const qpid::framing::MethodContext&,
+    void cancel(const framing::MethodContext&,
                  const std::string& destination );
 
-    void checkpoint(const qpid::framing::MethodContext&,
+    void checkpoint(const framing::MethodContext&,
                      const std::string& reference,
                      const std::string& identifier );
 
-    void close(const qpid::framing::MethodContext&,
+    void close(const framing::MethodContext&,
                 const std::string& reference );
 
-    void consume(const qpid::framing::MethodContext&,
+    void consume(const framing::MethodContext&,
                   u_int16_t ticket,
                   const std::string& queue,
                   const std::string& destination,
                   bool noLocal,
                   bool noAck,
                   bool exclusive,
-                  const qpid::framing::FieldTable& filter );
+                  const framing::FieldTable& filter );
 
-    void empty( const qpid::framing::MethodContext& );
+    void empty( const framing::MethodContext& );
 
-    void get(const qpid::framing::MethodContext&,
+    void get(const framing::MethodContext&,
               u_int16_t ticket,
               const std::string& queue,
               const std::string& destination,
               bool noAck );
 
-    void offset(const qpid::framing::MethodContext&,
+    void offset(const framing::MethodContext&,
                  u_int64_t value );
 
-    void ok( const qpid::framing::MethodContext& );
+    void ok( const framing::MethodContext& );
 
-    void open(const qpid::framing::MethodContext&,
+    void open(const framing::MethodContext&,
                const std::string& reference );
 
-    void qos(const qpid::framing::MethodContext&,
+    void qos(const framing::MethodContext&,
               u_int32_t prefetchSize,
               u_int16_t prefetchCount,
               bool global );
 
-    void recover(const qpid::framing::MethodContext&,
+    void recover(const framing::MethodContext&,
                   bool requeue );
 
-    void reject(const qpid::framing::MethodContext&,
+    void reject(const framing::MethodContext&,
                  u_int16_t code,
                  const std::string& text );
 
-    void resume(const qpid::framing::MethodContext&,
+    void resume(const framing::MethodContext&,
                  const std::string& reference,
                  const std::string& identifier );
 
-    void transfer(const qpid::framing::MethodContext&,
+    void transfer(const framing::MethodContext&,
                    u_int16_t ticket,
                    const std::string& destination,
                    bool redelivered,
@@ -113,8 +113,8 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
                    const std::string& appId,
                    const std::string& transactionId,
                    const std::string& securityToken,
-                   const qpid::framing::FieldTable& applicationHeaders,
-                   qpid::framing::Content body );
+                   const framing::FieldTable& applicationHeaders,
+                   framing::Content body );
 };
 
 }} // namespace qpid::broker

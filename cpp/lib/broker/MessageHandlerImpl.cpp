@@ -64,7 +64,7 @@ MessageHandlerImpl::close(const MethodContext&,
 }
 
 void
-MessageHandlerImpl::consume(const MethodContext&,
+MessageHandlerImpl::consume(const MethodContext& context,
                                             u_int16_t /*ticket*/,
                                             const string& queueName,
                                             const string& destination,
@@ -85,7 +85,7 @@ MessageHandlerImpl::consume(const MethodContext&,
         string newTag = destination;
         channel.consume(newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &filter);
 
-        connection.client->getMessageHandler()->ok(channel.getId());
+        connection.client->getMessageHandler()->ok(context);
 
         //allow messages to be dispatched if required as there is now a consumer:
         queue->dispatch();
@@ -102,7 +102,7 @@ MessageHandlerImpl::empty( const MethodContext& )
 }
 
 void
-MessageHandlerImpl::get( const MethodContext&,
+MessageHandlerImpl::get( const MethodContext& context,
                                         u_int16_t /*ticket*/,
                                         const string& queueName,
                                         const string& /*destination*/,
@@ -110,12 +110,12 @@ MessageHandlerImpl::get( const MethodContext&,
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
-    Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());
+    Queue::shared_ptr queue =
+        connection.getQueue(queueName, context.channelId);
     
     // FIXME: get is probably Basic specific
-    if(!connection.getChannel(channel.getId()).get(queue, !noAck)){
-
-        connection.client->getMessageHandler()->empty(channel.getId());
+    if(!channel.get(queue, !noAck)){
+        connection.client->getMessageHandler()->empty(context);
     }
     
 }
@@ -141,7 +141,7 @@ MessageHandlerImpl::open(const MethodContext&,
 }
 
 void
-MessageHandlerImpl::qos(const MethodContext&,
+MessageHandlerImpl::qos(const MethodContext& context,
                          u_int32_t prefetchSize,
                          u_int16_t prefetchCount,
                          bool /*global*/ )
@@ -152,7 +152,7 @@ MessageHandlerImpl::qos(const MethodContext&,
     channel.setPrefetchSize(prefetchSize);
     channel.setPrefetchCount(prefetchCount);
     
-    connection.client->getMessageHandler()->ok(channel.getId());
+    connection.client->getMessageHandler()->ok(context);
 }
 
 void

@@ -38,35 +38,21 @@ class AMQContentBody;
 class AMQHeartbeatBody;
 
 /**
- * Base class for client and broker channel handlers.
- * 
- * Handles request/response id management common to client and broker.
- * Derived classes provide remaining client/broker specific handling.
+ * Interface to handle incoming frame bodies.
+ * Derived classes provide logic for each frame type.
  */
 class BodyHandler {
   public:
     virtual ~BodyHandler();
-    
-    void handleBody(boost::shared_ptr<AMQBody> body);
+    virtual void handleBody(boost::shared_ptr<AMQBody> body);
 
   protected:
-    virtual void handleRequest(boost::shared_ptr<AMQRequestBody>);
-    virtual void handleResponse(boost::shared_ptr<AMQResponseBody>);
-
+    virtual void handleRequest(boost::shared_ptr<AMQRequestBody>) = 0;
+    virtual void handleResponse(boost::shared_ptr<AMQResponseBody>) = 0;
     virtual void handleMethod(boost::shared_ptr<AMQMethodBody>) = 0;
     virtual void handleHeader(boost::shared_ptr<AMQHeaderBody>) = 0;
     virtual void handleContent(boost::shared_ptr<AMQContentBody>) = 0;
     virtual void handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>) = 0;
-
-  protected:
-    /** Throw protocol exception if this is not channel 0. */
-    static void assertChannelZero(u_int16_t id);
-    /** Throw protocol exception if this is channel 0. */
-    static void assertChannelNonZero(u_int16_t id);
-
-  private:
-    Requester requester;
-    Responder responder;
 };
 
 }}

@@ -41,9 +41,9 @@ namespace framing {
 class AMQFrame : virtual public AMQDataBlock
 {
   public:
-    AMQFrame(qpid::framing::ProtocolVersion& _version = highestProtocolVersion);
-    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody* body);
-    AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t channel, const AMQBody::shared_ptr& body);    
+    AMQFrame(const qpid::framing::ProtocolVersion& _version = highestProtocolVersion);
+    AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t channel, AMQBody* body);
+    AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t channel, const AMQBody::shared_ptr& body);    
     virtual ~AMQFrame();
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 

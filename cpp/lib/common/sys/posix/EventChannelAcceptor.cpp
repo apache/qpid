@@ -26,7 +26,7 @@
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include <sys/SessionContext.h>
+#include <sys/ConnectionOutputHandler.h>
 #include <sys/ConnectionInputHandler.h>
 #include <sys/ConnectionInputHandlerFactory.h>
 #include <sys/Acceptor.h>

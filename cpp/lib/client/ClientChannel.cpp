@@ -256,6 +256,16 @@ void Channel::rollback(){
     sendAndReceive(frame, method_bodies.tx_rollback_ok);
 }
     
+void Channel::handleRequest(AMQRequestBody::shared_ptr body) {
+    // FIXME aconway 2007-01-19: request/response handling.
+    handleMethod(body);
+}
+
+void Channel::handleResponse(AMQResponseBody::shared_ptr body) {
+    // FIXME aconway 2007-01-19: request/response handling.
+    handleMethod(body);
+}
+
 void Channel::handleMethod(AMQMethodBody::shared_ptr body){
     //channel.flow, channel.close, basic.deliver, basic.return or a response to a synchronous request
     if(responses.isWaiting()){

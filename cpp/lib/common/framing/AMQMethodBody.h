@@ -53,6 +53,13 @@ class AMQMethodBody : public AMQBody
     virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
     bool match(AMQMethodBody* other) const;
 
+
+    /**
+     * Wrap this method in a frame and send using the current context.
+     * Note the frame takes ownership of the body, it will be deleted.
+     */
+    virtual void send(const MethodContext& context);
+
   protected:
     static u_int32_t baseSize() { return 4; }
 

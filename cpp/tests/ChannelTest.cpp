@@ -27,7 +27,7 @@
 #include <iostream>
 #include <memory>
 #include <AMQP_HighestVersion.h>
-
+#include "AMQFrame.h"
 
 using namespace boost;
 using namespace qpid::broker;
@@ -107,6 +107,9 @@ class ChannelTest : public CppUnit::TestCase
             handle(call);
         }
 
+        // Don't hide overloads.
+        using NullMessageStore::destroy;
+        
         void destroy(Message* msg)
         {
             MethodCall call = {"destroy", msg, ""};

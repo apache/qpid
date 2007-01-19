@@ -30,7 +30,6 @@
 #include "NullMessageStore.h"
 #include "ProtocolInitiation.h"
 #include "Connection.h"
-#include "sys/SessionContext.h"
 #include "sys/ConnectionInputHandler.h"
 #include "sys/ConnectionInputHandlerFactory.h"
 #include "sys/TimeoutHandler.h"
@@ -97,7 +96,9 @@ void Broker::shutdown() {
     acceptor->shutdown();
 }
 
-Broker::~Broker() { }
+Broker::~Broker() {
+    shutdown();
+}
 
 const int16_t Broker::DEFAULT_PORT(5672);
 

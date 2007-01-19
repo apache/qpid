@@ -19,6 +19,7 @@
  *
  */
 #include <LazyLoadedContent.h>
+#include "AMQFrame.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;

@@ -26,7 +26,7 @@
 namespace qpid {
 namespace sys {
 
-class SessionContext;
+class ConnectionOutputHandler;
 class ConnectionInputHandler;
 
 /**
@@ -36,7 +36,7 @@ class ConnectionInputHandler;
 class ConnectionInputHandlerFactory : private boost::noncopyable
 {
   public:
-    virtual ConnectionInputHandler* create(SessionContext* ctxt) = 0;
+    virtual ConnectionInputHandler* create(ConnectionOutputHandler* ctxt) = 0;
     virtual ~ConnectionInputHandlerFactory(){}
 };
 

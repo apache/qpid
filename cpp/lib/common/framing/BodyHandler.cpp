@@ -58,22 +58,3 @@ void BodyHandler::handleBody(shared_ptr<AMQBody> body) {
     }
 }
 
-void BodyHandler::handleRequest(AMQRequestBody::shared_ptr request) {
-    responder.received(request->getData());
-    handleMethod(request);
-}
-
-void BodyHandler::handleResponse(AMQResponseBody::shared_ptr response) {
-    handleMethod(response);
-    requester.processed(response->getData());
-}
-
-void BodyHandler::assertChannelZero(u_int16_t id) {
-    if (id != 0)
-        throw ConnectionException(504, "Invalid channel id, not 0");
-}
-
-void BodyHandler::assertChannelNonZero(u_int16_t id) {
-    if (id == 0)
-        throw ConnectionException(504, "Invalid channel id 0");
-}

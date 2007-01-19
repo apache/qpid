@@ -45,7 +45,9 @@
 #include <OutputHandler.h>
 #include <AMQContentBody.h>
 #include <AMQHeaderBody.h>
+#include <AMQHeartbeatBody.h>
 #include <BasicPublishBody.h>
+#include "ChannelAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -56,8 +58,7 @@ using qpid::framing::string;
  * Maintains state for an AMQP channel. Handles incoming and
  * outgoing messages for that channel.
  */
-class Channel : private MessageBuilder::CompletionHandler
-{
+class Channel : private MessageBuilder::CompletionHandler {
     class ConsumerImpl : public virtual Consumer
     {
         Channel* parent;

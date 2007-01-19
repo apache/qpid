@@ -67,7 +67,9 @@ namespace client {
      * 
      * \ingroup clientapi
      */
-    class Channel : private virtual qpid::framing::BodyHandler, public virtual qpid::sys::Runnable{
+    class Channel : private virtual framing::BodyHandler,
+                    public virtual sys::Runnable
+    {
         struct Consumer{
             MessageListener* listener;
             int ackMode;
@@ -78,36 +80,38 @@ namespace client {
 
 	u_int16_t id;
 	Connection* con;
-	qpid::sys::Thread dispatcher;
-	qpid::framing::OutputHandler* out;
+	sys::Thread dispatcher;
+	framing::OutputHandler* out;
 	IncomingMessage* incoming;
 	ResponseHandler responses;
 	std::queue<IncomingMessage*> messages;//holds returned messages or those delivered for a consume
 	IncomingMessage* retrieved;//holds response to basic.get
-	qpid::sys::Monitor dispatchMonitor;
-	qpid::sys::Monitor retrievalMonitor;
+	sys::Monitor dispatchMonitor;
+	sys::Monitor retrievalMonitor;
 	std::map<std::string, Consumer*> consumers;
 	ReturnedMessageHandler* returnsHandler;
 	bool closed;
 
         u_int16_t prefetch;
         const bool transactional;
-        qpid::framing::ProtocolVersion version;
+        framing::ProtocolVersion version;
 
 	void enqueue();
 	void retrieve(Message& msg);
 	IncomingMessage* dequeue();
 	void dispatch();
 	void stop();
-	void sendAndReceive(qpid::framing::AMQFrame* frame, const qpid::framing::AMQMethodBody& body);            
+	void sendAndReceive(framing::AMQFrame* frame, const framing::AMQMethodBody& body);            
         void deliver(Consumer* consumer, Message& msg);
         void setQos();
 	void cancelAll();
 
-	virtual void handleMethod(qpid::framing::AMQMethodBody::shared_ptr body);
-	virtual void handleHeader(qpid::framing::AMQHeaderBody::shared_ptr body);
-	virtual void handleContent(qpid::framing::AMQContentBody::shared_ptr body);
-	virtual void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
+	virtual void handleMethod(framing::AMQMethodBody::shared_ptr body);
+	virtual void handleHeader(framing::AMQHeaderBody::shared_ptr body);
+	virtual void handleContent(framing::AMQContentBody::shared_ptr body);
+	virtual void handleHeartbeat(framing::AMQHeartbeatBody::shared_ptr body);
+        void handleRequest(framing::AMQRequestBody::shared_ptr);
+        void handleResponse(framing::AMQResponseBody::shared_ptr);
 
     public:
         /**
@@ -185,7 +189,7 @@ namespace client {
          * is received from the broker
          */
 	void bind(const Exchange& exchange, const Queue& queue, const std::string& key, 
-                  const qpid::framing::FieldTable& args, bool synch = true);
+                  const framing::FieldTable& args, bool synch = true);
         /**
          * Creates a 'consumer' for a queue. Messages in (or arriving
          * at) that queue will be delivered to consumers
@@ -216,7 +220,7 @@ namespace client {
         void consume(
             Queue& queue, std::string& tag, MessageListener* listener, 
             int ackMode = NO_ACK, bool noLocal = false, bool synch = true,
-            const qpid::framing::FieldTable* fields = 0);
+            const framing::FieldTable* fields = 0);
         
         /**
          * Cancels a subscription previously set up through a call to consume().
