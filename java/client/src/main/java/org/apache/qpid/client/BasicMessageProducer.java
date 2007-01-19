@@ -567,7 +567,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if (size < framePayloadMax){
         	// Inline message case
         	_logger.debug("Inline case, sending data inline with the transfer method");
-        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE,payload.array()); 
+        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE,payload); 
         	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
         } else {
         	// Reference message case
@@ -623,7 +623,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 messageHeaders.getContentType(), // String contentType
                 messageHeaders.getCorrelationId(), // String correlationId
                 (short)deliveryMode,            // short deliveryMode
-                messageHeaders.getDestination(), // String destination
+                destination.getExchangeName(),  // String destination
                 destination.getExchangeName(),  // String exchange
                 messageHeaders.getExpiration(), // long expiration
                 immediate,                      // boolean immediate
