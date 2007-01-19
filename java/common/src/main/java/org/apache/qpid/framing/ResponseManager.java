@@ -21,7 +21,7 @@
 package org.apache.qpid.framing;
 
 import java.util.Iterator;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -88,7 +88,7 @@ public class ResponseManager
         }
     }
 
-    private Hashtable<Long, ResponseStatus> responseMap;
+    private ConcurrentHashMap<Long, ResponseStatus> responseMap;
 
     public ResponseManager(int channel, AMQMethodListener methodListener,
         AMQProtocolWriter protocolWriter)
@@ -98,7 +98,7 @@ public class ResponseManager
         this.protocolWriter = protocolWriter;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
-        responseMap = new Hashtable<Long, ResponseStatus>();
+        responseMap = new ConcurrentHashMap<Long, ResponseStatus>();
     }
 
     // *** Functions to handle an incoming request ***
@@ -193,7 +193,7 @@ public class ResponseManager
         return responseIdCount++;
     }
 
-    private void doBatches()
+    private synchronized void doBatches()
     {
         switch (batchResponseMode)
         {

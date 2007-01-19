@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -43,7 +43,7 @@ public class RequestManager
      */
     private long lastProcessedResponseId;
 
-    private Hashtable<Long, AMQMethodListener> requestSentMap;
+    private ConcurrentHashMap<Long, AMQMethodListener> requestSentMap;
 
     public RequestManager(int channel, AMQProtocolWriter protocolWriter)
     {
@@ -51,7 +51,7 @@ public class RequestManager
         this.protocolWriter = protocolWriter;
         requestIdCount = 1L;
         lastProcessedResponseId = 0L;
-        requestSentMap = new Hashtable<Long, AMQMethodListener>();
+        requestSentMap = new ConcurrentHashMap<Long, AMQMethodListener>();
     }
 
     // *** Functions to originate a request ***
