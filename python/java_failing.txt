@@ -1,16 +1,2 @@
-tests.basic.BasicTests.test_consume_exclusive
-tests.basic.BasicTests.test_consume_no_local
-tests.basic.BasicTests.test_get
-tests.basic.BasicTests.test_qos_prefetch_size
-tests.basic.BasicTests.test_recover_requeue
-tests.exchange.DefaultExchangeRuleTests.testDefaultExchange
-tests.exchange.HeadersExchangeTests.testMatchAll
-tests.exchange.HeadersExchangeTests.testMatchAny
 tests.exchange.RecommendedTypesRuleTests.testTopic
-tests.exchange.RequiredInstancesRuleTests.testAmqMatch
 tests.exchange.RequiredInstancesRuleTests.testAmqTopic
-tests.queue.QueueTests.test_declare_exclusive
-tests.queue.QueueTests.test_purge
-tests.testlib.TestBaseTest.testMessageProperties
-tests.broker.BrokerTests.test_invalid_channel
-tests.broker.BrokerTests.test_closed_channel
