@@ -74,73 +74,67 @@
       <source>../common/etc/qpid-run.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-run.conf</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>config.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/log4j.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>log4j.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/passwd</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>passwd</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/qpid-server.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-server.conf</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/virtualhosts.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>virtualhosts.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server.bat</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.bat</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.sh</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.sh</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/runAll</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>runAll</destName>
-      <fileMode>473</fileMode>
+      <fileMode>0755</fileMode>
     </file>
   </files>
   <dependencySets>
