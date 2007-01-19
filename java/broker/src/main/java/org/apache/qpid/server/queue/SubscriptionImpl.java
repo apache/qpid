@@ -66,6 +66,7 @@ public class SubscriptionImpl implements Subscription
     private final boolean _isBrowser;
     private final Boolean _autoClose;
     private boolean _closed = false;
+    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
     public static class Factory implements SubscriptionFactory
     {
@@ -300,37 +301,54 @@ public class SubscriptionImpl implements Subscription
     {
         if (_noLocal)
         {
+            boolean isLocal;
             // We don't want local messages so check to see if message is one we sent
-            Object localInstance = protocolSession.getClientProperties().getObject(ClientProperties.instance.toString());
-            Object msgInstance = msg.getPublisher().getClientProperties().getObject(ClientProperties.instance.toString());
+            Object localInstance;
+            Object msgInstance;
 
-            if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
+            if((protocolSession.getClientProperties() != null) &&
+                 (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
             {
-                if (_logger.isTraceEnabled())
+                if((msg.getPublisher().getClientProperties() != null) &&
+                     (msgInstance = msg.getPublisher().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                 {
-                    _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
-                                  System.identityHashCode(msg) + ")");
+                    if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
+                    {
+                        if (_logger.isTraceEnabled())
+                        {
+                            _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
+                                          System.identityHashCode(msg) + ")");
+                        }
+                        return false;
+                    }
                 }
-                return false;
             }
-            else // if not then filter the message.
+            else
             {
-                if (_logger.isTraceEnabled())
+                localInstance = protocolSession.getClientIdentifier();
+                msgInstance = msg.getPublisher().getClientIdentifier();
+                if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
                 {
-                    _logger.trace("(" + System.identityHashCode(this) + ") local message(" + System.identityHashCode(msg) +
-                                  ") but not ours so filtering");
+                    if (_logger.isTraceEnabled())
+                    {
+                        _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
+                                      System.identityHashCode(msg) + ")");
+                    }
+                    return false;
                 }
-                return checkFilters(msg);
+
             }
+
+
         }
-        else
+
+
+        if (_logger.isTraceEnabled())
         {
-            if (_logger.isTraceEnabled())
-            {
-                _logger.trace("(" + System.identityHashCode(this) + ") checking filters for message (" + System.identityHashCode(msg));
-            }
-            return checkFilters(msg);
+            _logger.trace("(" + System.identityHashCode(this) + ") checking filters for message (" + System.identityHashCode(msg));
         }
+        return checkFilters(msg);
+
     }
 
     private boolean checkFilters(AMQMessage msg)
@@ -391,6 +409,11 @@ public class SubscriptionImpl implements Subscription
     public boolean isBrowser()
     {
         return _isBrowser;
+    }
+
+    public boolean wouldSuspend(AMQMessage msg)
+    {
+        return channel.wouldSuspend(msg);
     }
 
 

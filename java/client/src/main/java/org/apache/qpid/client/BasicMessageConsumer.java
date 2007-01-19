@@ -269,14 +269,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
+        byte[] url = jmsMsg.getBytesProperty(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName());
+        Destination dest = AMQDestination.createDestination(url);
+        jmsMsg.setJMSDestination(dest);
+
         if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
-            byte[] url = jmsMsg.getBytesProperty(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName());
-            Destination dest = AMQDestination.createDestination(url);
-            jmsMsg.setJMSDestination(dest);
-
         }
+
         _session.setInRecovery(false);
     }
 

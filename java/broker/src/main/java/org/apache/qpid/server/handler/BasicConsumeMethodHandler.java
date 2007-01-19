@@ -22,6 +22,8 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
@@ -66,6 +68,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         }
         else
         {
+
             AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : queueRegistry.getQueue(body.queue);
 
             if (queue == null)
@@ -73,29 +76,13 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 _log.info("No queue for '" + body.queue + "'");
                 if(body.queue!=null)
                 {
-                    AMQShortString msg = new AMQShortString("No such queue, '" + body.queue + "'");
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                    // Be aware of possible changes to parameter order as versions change.
-                    session.writeFrame(ChannelCloseBody.createAMQFrame(channelId,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
-                        BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
-                        AMQConstant.NOT_FOUND.getCode(),	// replyCode
-                        msg));	// replyText
+                    String msg = "No such queue, '" + body.queue + "'";
+                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), msg);
                 }
                 else
                 {
-                    AMQShortString msg = new AMQShortString("No queue name provided, no default queue defined.");
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                    // Be aware of possible changes to parameter order as versions change.
-                    session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
-                        BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
-                        AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
-                        msg));	// replyText
+                    String msg = "No queue name provided, no default queue defined.";
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED.getCode(),msg );
                 }
             }
             else
@@ -103,7 +90,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 try
                 {
                     AMQShortString consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
-                                                                  body.arguments, body.noLocal);
+                                                                  body.arguments, body.noLocal, body.exclusive);
                     if (!body.nowait)
                     {
                         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -143,6 +130,21 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                         AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
                         msg));	// replyText
                 }
+                catch (AMQQueue.ExistingExclusiveSubscription e)
+                {
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                                                  "Cannot subscribe to queue "
+                                                          + queue.getName()
+                                                          + " as it already has an existing exclusive consumer");
+                }
+                catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
+                                {
+                                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                                                                  "Cannot subscribe to queue "
+                                                                          + queue.getName()
+                                                                          + " exclusively as it already has a consumer");
+                                }
+
             }
         }
     }
