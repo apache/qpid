@@ -27,6 +27,7 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -56,6 +57,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                Managable
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+
+    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
+
 
     private final IoSession _minaProtocolSession;
 
@@ -218,31 +222,36 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                                                     (AMQMethodBody) frame.bodyFrame);
         try
         {
-            boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
-
-            if(!_frameListeners.isEmpty())
+            try
             {
-                for (AMQMethodListener listener : _frameListeners)
+                boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
+
+                if(!_frameListeners.isEmpty())
                 {
-                    wasAnyoneInterested = listener.methodReceived(evt) ||
-                                          wasAnyoneInterested;
+                    for (AMQMethodListener listener : _frameListeners)
+                    {
+                        wasAnyoneInterested = listener.methodReceived(evt) ||
+                                              wasAnyoneInterested;
+                    }
+                }
+                if (!wasAnyoneInterested)
+                {
+                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
                 }
             }
-            if (!wasAnyoneInterested)
+            catch (AMQChannelException e)
             {
-                throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.");
+                _logger.error("Closing channel due to: " + e.getMessage());
+                writeFrame(e.getCloseFrame(frame.channel));
+                closeChannel(frame.channel);
+            }
+            catch (AMQConnectionException e)
+            {
+                _logger.error("Closing connection due to: " + e.getMessage());
+                closeSession();
+                writeFrame(e.getCloseFrame(frame.channel));
             }
         }
-        catch (AMQChannelException e)
-        {
-            _logger.error("Closing channel due to: " + e.getMessage());
-            writeFrame(e.getCloseFrame(frame.channel));
-        }
-        catch (AMQConnectionException e)
-        {
-            _logger.error("Closing connection due to: " + e.getMessage());
-            writeFrame(e.getCloseFrame(frame.channel));
-        }        
         catch (Exception e)
         {
             _stateManager.error(e);
@@ -516,6 +525,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public void setClientProperties(FieldTable clientProperties)
     {
         _clientProperties = clientProperties;
+        if((_clientProperties != null) && (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null))
+        {
+            setContextKey(new AMQShortString(_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE)));
+        }
     }
 
     /**
@@ -536,5 +549,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public boolean amqpVersionEquals(byte major, byte minor)
     {
         return _major == major && _minor == minor;
+    }
+
+
+    public Object getClientIdentifier()
+    {
+        return _minaProtocolSession.getRemoteAddress();    
     }
 }

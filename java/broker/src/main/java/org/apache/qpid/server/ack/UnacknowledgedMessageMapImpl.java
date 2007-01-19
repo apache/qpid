@@ -32,6 +32,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 {
     private final Object _lock = new Object();
 
+    private long _unackedSize;
+
     private Map<Long, UnacknowledgedMessage> _map;
 
     private long _lastDeliveryTag;
@@ -77,7 +79,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         {
             for (UnacknowledgedMessage msg : msgs)
             {
-                _map.remove(msg.deliveryTag);
+                remove(msg.deliveryTag);
+
             }
         }
     }
@@ -86,7 +89,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
     {
         synchronized (_lock)
         {
-            return _map.remove(deliveryTag);
+
+            UnacknowledgedMessage message = _map.remove(deliveryTag);
+            if(message != null)
+            {
+                _unackedSize -= message.message.getSize();
+            }
+
+            return message;
         }
     }
 
@@ -113,6 +123,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.put(deliveryTag, message);
+            _unackedSize += message.message.getSize();            
             _lastDeliveryTag = deliveryTag;
         }
     }
@@ -123,6 +134,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         {
             Collection<UnacknowledgedMessage> currentEntries = _map.values();
             _map = new LinkedHashMap<Long, UnacknowledgedMessage>(_prefetchLimit);
+            _unackedSize = 0l;
             return currentEntries;
         }
     }
@@ -149,6 +161,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.clear();
+            _unackedSize = 0l;
         }
     }
 
@@ -169,6 +182,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 }
 
                 it.remove();
+                _unackedSize -= unacked.getValue().message.getSize();
 
                 destination.add(unacked.getValue());
                 if (unacked.getKey() == deliveryTag)
@@ -189,7 +203,10 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 AMQShortString consumerTag = entry.getValue().consumerTag;
                 AMQMessage msg = entry.getValue().message;
 
-                msg.writeDeliver(protocolSession, channelId, deliveryTag, consumerTag);
+                if(consumerTag != null)
+                {
+                    msg.writeDeliver(protocolSession, channelId, deliveryTag, consumerTag);
+                }
             }
         }
     }
@@ -223,5 +240,10 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 }
             }
         }
+    }
+
+    public long getUnacknowledgeBytes()
+    {
+        return _unackedSize;
     }
 }

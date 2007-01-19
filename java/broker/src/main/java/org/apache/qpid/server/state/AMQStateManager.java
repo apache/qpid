@@ -21,6 +21,8 @@
 package org.apache.qpid.server.state;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.handler.*;
@@ -28,6 +30,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -118,12 +121,14 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(BasicAckBody.class, BasicAckMethodHandler.getInstance());
         frame2handlerMap.put(BasicRecoverBody.class, BasicRecoverMethodHandler.getInstance());
         frame2handlerMap.put(BasicConsumeBody.class, BasicConsumeMethodHandler.getInstance());
+        frame2handlerMap.put(BasicGetBody.class, BasicGetMethodHandler.getInstance());
         frame2handlerMap.put(BasicCancelBody.class, BasicCancelMethodHandler.getInstance());
         frame2handlerMap.put(BasicPublishBody.class, BasicPublishMethodHandler.getInstance());
         frame2handlerMap.put(BasicQosBody.class, BasicQosHandler.getInstance());
         frame2handlerMap.put(QueueBindBody.class, QueueBindHandler.getInstance());
         frame2handlerMap.put(QueueDeclareBody.class, QueueDeclareHandler.getInstance());
         frame2handlerMap.put(QueueDeleteBody.class, QueueDeleteHandler.getInstance());
+        frame2handlerMap.put(QueuePurgeBody.class, QueuePurgeHandler.getInstance());
         frame2handlerMap.put(ChannelFlowBody.class, ChannelFlowHandler.getInstance());
         frame2handlerMap.put(TxSelectBody.class, TxSelectHandler.getInstance());
         frame2handlerMap.put(TxCommitBody.class, TxCommitHandler.getInstance());
@@ -168,10 +173,24 @@ public class AMQStateManager implements AMQMethodListener
         StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
+
+            checkChannel(evt, _protocolSession);
+
             handler.methodReceived(this, _queueRegistry, _exchangeRegistry, _protocolSession, evt);
             return true;
         }
         return false;
+    }
+
+    private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
+            throws AMQException
+    {
+        if(evt.getChannelId() != 0
+                && !(evt.getMethod() instanceof ChannelOpenBody)
+                && protocolSession.getChannel(evt.getChannelId()) == null)
+        {
+            throw evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR.getCode(),"No such channel: " + evt.getChannelId());
+        }
     }
 
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
