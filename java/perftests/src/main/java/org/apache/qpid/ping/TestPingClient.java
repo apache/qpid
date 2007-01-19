@@ -153,7 +153,7 @@ class TestPingClient extends AbstractPingClient implements MessageListener
         }
         catch (JMSException e)
         {
-            _logger.debug("There was a JMSException: " + e.getMessage(), e);
+            _logger.error("There was a JMSException: " + e.getMessage(), e);
         }
     }
 }
