@@ -137,7 +137,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
             ++_currentSubscriber;
             subscriberScanned();
 
-            if (!subscription.isSuspended())
+            if (!(subscription.isSuspended() || subscription.wouldSuspend(msg)))
             {
                 if (subscription.hasInterest(msg))
                 {

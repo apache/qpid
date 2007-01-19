@@ -45,4 +45,6 @@ public interface Subscription
     void close();
 
     boolean isBrowser();
+
+    boolean wouldSuspend(AMQMessage msg);
 }

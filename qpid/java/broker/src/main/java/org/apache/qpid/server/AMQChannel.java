@@ -37,6 +37,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.mina.common.ByteBuffer;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,6 +56,8 @@ public class AMQChannel
     private long _prefetch_HighWaterMark;
 
     private long _prefetch_LowWaterMark;
+
+    private long _prefetchSize;
 
     /**
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
@@ -108,6 +111,8 @@ public class AMQChannel
 
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
+
+
     public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
     {
@@ -149,6 +154,17 @@ public class AMQChannel
     public void setPrefetchCount(long prefetchCount)
     {
         _prefetch_HighWaterMark = prefetchCount;
+    }
+
+    public long getPrefetchSize()
+    {
+        return _prefetchSize;
+    }
+
+
+    public void setPrefetchSize(long prefetchSize)
+    {
+        _prefetchSize = prefetchSize;
     }
 
     public long getPrefetchLowMarkCount()
@@ -213,14 +229,15 @@ public class AMQChannel
             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
         }
 
-        // returns true iff the message was delivered (i.e. if all data was
-        // received
         if (_log.isDebugEnabled())
         {
             _log.debug("Content body received on channel " + _channelId);
         }
         try
         {
+
+            // returns true iff the message was delivered (i.e. if all data was
+            // received
             if (_currentMessage.addContentBodyFrame(_storeContext, contentBody))
             {
                 // callback to allow the context to do any post message processing
@@ -269,13 +286,14 @@ public class AMQChannel
      * @param queue   the queue to subscribe to
      * @param session the protocol session of the subscriber
      * @param noLocal
+     * @param exclusive
      * @return the consumer tag. This is returned to the subscriber and used in
      *         subsequent unsubscribe requests
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString subscribeToQueue(AMQShortString tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
-                                           FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
+                                           FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -286,7 +304,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }
@@ -364,8 +382,10 @@ public class AMQChannel
     /**
      * Called to resend all outstanding unacknowledged messages to this same channel.
      */
-    public void resend(final AMQProtocolSession session) throws AMQException
+    public void resend(final AMQProtocolSession session, final boolean requeue) throws AMQException
     {
+        final List<UnacknowledgedMessage> msgToRequeue = new LinkedList<UnacknowledgedMessage>();
+
         _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
         {
             public boolean callback(UnacknowledgedMessage message) throws AMQException
@@ -374,7 +394,20 @@ public class AMQChannel
                 AMQShortString consumerTag = message.consumerTag;
                 AMQMessage msg = message.message;
                 msg.setRedelivered(true);
-                msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
+                if((consumerTag != null) && _consumerTag2QueueMap.containsKey(consumerTag))
+                {
+                    msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
+                }
+                else
+                {
+                    // Message has no consumer tag, so was "delivered" to a GET
+                    // or consumer no longer registered
+                    // cannot resend, so re-queue.
+                    if (message.queue != null && (consumerTag == null || requeue))
+                    {
+                        msgToRequeue.add(message);                         
+                    }
+                }
                 // false means continue processing
                 return false;
             }
@@ -383,6 +416,12 @@ public class AMQChannel
             {
             }
         });
+
+        for(UnacknowledgedMessage message : msgToRequeue)
+        {
+            _txnContext.deliver(message.message, message.queue);
+            _unacknowledgedMessageMap.remove(message.deliveryTag);
+        }
     }
 
     /**
@@ -459,8 +498,9 @@ public class AMQChannel
     {
         boolean suspend;
         
-        suspend = _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark;
-
+        suspend = ((_prefetch_HighWaterMark != 0) &&  _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark)
+                 || ((_prefetchSize != 0) && _prefetchSize < _unacknowledgedMessageMap.getUnacknowledgeBytes());
+        
         setSuspended(suspend);
     }
 
@@ -544,5 +584,32 @@ public class AMQChannel
             message.writeReturn(session, _channelId, bouncedMessage.getReplyCode(), new AMQShortString(bouncedMessage.getMessage()));
         }
         _returnMessages.clear();
+    }
+
+
+    public boolean wouldSuspend(AMQMessage msg)
+    {
+        if (isSuspended())
+        {
+            return true;
+        }
+        else
+        {
+            boolean willSuspend = ((_prefetch_HighWaterMark != 0) &&  _unacknowledgedMessageMap.size() + 1 > _prefetch_HighWaterMark);
+            if(!willSuspend)
+            {
+                final long unackedSize = _unacknowledgedMessageMap.getUnacknowledgeBytes();
+
+                willSuspend = (_prefetchSize != 0) && (unackedSize != 0) && (_prefetchSize < msg.getSize() + unackedSize);
+            }
+
+
+            if(willSuspend)
+            {
+                setSuspended(true);
+            }
+            return willSuspend;
+        }
+
     }
 }

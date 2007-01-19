@@ -38,6 +38,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      */
     private ConcurrentMap<AMQShortString, Exchange> _exchangeMap = new ConcurrentHashMap<AMQShortString, Exchange>();
 
+    private Exchange _defaultExchange;
+
     public DefaultExchangeRegistry(ExchangeFactory exchangeFactory)
     {
         //create 'standard' exchanges:
@@ -53,7 +55,16 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange)
     {
+        if(_defaultExchange == null)
+        {
+            setDefaultExchange(exchange);
+        }
         _exchangeMap.put(exchange.getName(), exchange);
+    }
+
+    public void setDefaultExchange(Exchange exchange)
+    {
+        _defaultExchange = exchange;
     }
 
     public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
@@ -72,7 +83,16 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public Exchange getExchange(AMQShortString name)
     {
-        return _exchangeMap.get(name);
+
+        if(name == null || name.length() == 0)
+        {
+            return _defaultExchange;
+        }
+        else
+        {
+            return _exchangeMap.get(name);
+        }
+
     }
 
     /**
@@ -83,7 +103,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void routeContent(AMQMessage payload) throws AMQException
     {
         final AMQShortString exchange = payload.getPublishBody().exchange;
-        final Exchange exch = _exchangeMap.get(exchange);
+        final Exchange exch = getExchange(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
         // the BasicPublish being received (where the exchange is validated) and the final
         // content body being received (which triggers this method)

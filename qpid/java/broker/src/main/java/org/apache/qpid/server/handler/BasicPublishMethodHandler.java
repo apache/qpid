@@ -21,6 +21,7 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicPublishBody;
@@ -42,7 +43,6 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
 
     private static final BasicPublishMethodHandler _instance = new BasicPublishMethodHandler();
 
-    private static final AMQShortString UNKNOWN_EXCHANGE_NAME = new AMQShortString("Unknown exchange name");
 
     public static BasicPublishMethodHandler getInstance()
     {
@@ -74,19 +74,8 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
         // if the exchange does not exist we raise a channel exception
         if (e == null)
         {
-            protocolSession.closeChannel(evt.getChannelId());
-            // TODO: modify code gen to make getClazz and getMethod public methods rather than protected
-            // then we can remove the hardcoded 0,0
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQFrame cf = ChannelCloseBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
-                ChannelCloseBody.getClazz((byte)8, (byte)0),	// classId
-                ChannelCloseBody.getMethod((byte)8, (byte)0),	// methodId
-                500,	// replyCode
-                UNKNOWN_EXCHANGE_NAME);	// replyText
-            protocolSession.writeFrame(cf);
+            throw body.getChannelException(500, "Unknown exchange name");
+
         }
         else
         {

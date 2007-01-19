@@ -29,11 +29,14 @@ import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.AMQChannel;
 
 import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like
@@ -41,6 +44,30 @@ import java.util.concurrent.Executor;
  */
 public class AMQQueue implements Managable, Comparable
 {
+
+    public static final class ExistingExclusiveSubscription extends AMQException
+    {
+
+        public ExistingExclusiveSubscription()
+        {
+            super("");
+        }
+    }
+
+    public static final class ExistingSubscriptionPreventsExclusive extends AMQException
+    {
+
+        public ExistingSubscriptionPreventsExclusive()
+        {
+            super("");
+        }
+    }
+
+    private static final ExistingExclusiveSubscription EXISTING_EXCLUSIVE = new ExistingExclusiveSubscription();
+    private static final ExistingSubscriptionPreventsExclusive EXISTING_SUBSCRIPTION = new ExistingSubscriptionPreventsExclusive();
+
+
+
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
     private final AMQShortString _name;
@@ -63,6 +90,11 @@ public class AMQQueue implements Managable, Comparable
     private final SubscriptionSet _subscribers;
 
     private final SubscriptionFactory _subscriptionFactory;
+
+    private final AtomicInteger _subscriberCount = new AtomicInteger();
+
+    private final AtomicBoolean _isExclusive = new AtomicBoolean();
+
 
     /**
      * Manages message delivery.
@@ -187,31 +219,7 @@ public class AMQQueue implements Managable, Comparable
         _managedObject.register();
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
-
-        //fixme - Make this configurable via the broker config.xml
-        if (System.getProperties().getProperty("deliverymanager") != null)
-        {
-            if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentSelectorDeliveryManager"))
-            {
-                _logger.info("Using ConcurrentSelectorDeliveryManager");
-                _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
-            }
-            else if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentDeliveryManager"))
-            {
-                _logger.info("Using ConcurrentDeliveryManager");
-                _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
-            }
-            else
-            {
-                _logger.info("Using SynchronizedDeliveryManager");
-                _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
-            }
-        }
-        else
-        {
-            _logger.info("Using Default DeliveryManager: ConcurrentSelectorDeliveryManager");
-            _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
-        }
+		_deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
     }
 
     private AMQQueueMBean createMBean() throws AMQException
@@ -352,9 +360,9 @@ public class AMQQueue implements Managable, Comparable
     /**
      * removes all the messages from the queue.
      */
-    public void clearQueue(StoreContext storeContext) throws AMQException
+    public long clearQueue(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.clearAllMessages(storeContext);
+        return _deliveryMgr.clearAllMessages(storeContext);
     }
 
     public void bind(AMQShortString routingKey, Exchange exchange)
@@ -362,14 +370,30 @@ public class AMQQueue implements Managable, Comparable
         _bindings.addBinding(routingKey, exchange);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks, FieldTable filters) throws AMQException
-    {
-        registerProtocolSession(ps, channel, consumerTag, acks, filters, false);
-    }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal)
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks,
+                                        FieldTable filters, boolean noLocal, boolean exclusive)
             throws AMQException
     {
+        if(incrementSubscriberCount() > 1)
+        {
+            if(isExclusive())
+            {
+                decrementSubscriberCount();
+                throw EXISTING_EXCLUSIVE;
+            }
+            else if(exclusive)
+            {
+                decrementSubscriberCount();
+                throw EXISTING_SUBSCRIPTION;
+            }
+
+        }
+        else if(exclusive)
+        {
+            setExclusive(true);
+        }
+
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
@@ -385,6 +409,28 @@ public class AMQQueue implements Managable, Comparable
         _subscribers.addSubscriber(subscription);
     }
 
+
+    private boolean isExclusive()
+    {
+        return _isExclusive.get();
+    }
+
+    private void setExclusive(boolean exclusive)
+    {
+        _isExclusive.set(exclusive);
+    }
+
+    private int incrementSubscriberCount()
+    {
+        return _subscriberCount.incrementAndGet();
+    }
+
+    private int decrementSubscriberCount()
+    {
+        return _subscriberCount.decrementAndGet();
+    }
+
+
     public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         debug("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
@@ -399,6 +445,10 @@ public class AMQQueue implements Managable, Comparable
             throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag +
                                    " and protocol session key " + ps.getKey() + " not registered with queue " + this);
         }
+
+        setExclusive(false);
+        decrementSubscriberCount();
+
 
         // if we are eligible for auto deletion, unregister from the queue registry
         if (_autoDelete && _subscribers.isEmpty())
@@ -453,6 +503,23 @@ public class AMQQueue implements Managable, Comparable
         debug("autodeleting {0}", this);
         delete();
     }
+
+    public void processGet(StoreContext storeContext, AMQMessage msg) throws AMQException
+    {
+        _deliveryMgr.deliver(storeContext, getName(), msg);
+        try
+        {
+            msg.checkDeliveredToConsumer();
+            updateReceivedMessageCount(msg);
+        }
+        catch (NoConsumersException e)
+        {
+            // as this message will be returned, it should be removed
+            // from the queue:
+            dequeue(storeContext, msg);
+        }
+    }
+
 
     public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
@@ -547,4 +614,12 @@ public class AMQQueue implements Managable, Comparable
             _logger.debug(MessageFormat.format(msg, args));
         }
     }
+
+    public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException
+    {
+        return _deliveryMgr.performGet(session, channel, acks);
+    }
+
+    
+
 }

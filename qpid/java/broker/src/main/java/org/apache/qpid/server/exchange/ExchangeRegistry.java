@@ -38,4 +38,6 @@ public interface ExchangeRegistry extends MessageRouter
     void unregisterExchange(AMQShortString name, boolean inUse) throws ExchangeInUseException, AMQException;
 
     Exchange getExchange(AMQShortString name);
+
+    void setDefaultExchange(Exchange exchange);
 }

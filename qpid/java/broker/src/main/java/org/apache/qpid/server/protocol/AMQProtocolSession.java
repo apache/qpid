@@ -124,4 +124,6 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     FieldTable getClientProperties();
 
     void setClientProperties(FieldTable clientProperties);
+
+    Object getClientIdentifier();
 }

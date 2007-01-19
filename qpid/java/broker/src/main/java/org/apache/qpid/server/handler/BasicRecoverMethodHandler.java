@@ -52,6 +52,8 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
         {
             throw new AMQException("Unknown channel " + evt.getChannelId());
         }
-        channel.resend(protocolSession);
+        BasicRecoverBody body = evt.getMethod();
+        channel.resend(protocolSession, body.requeue);
+
     }
 }
