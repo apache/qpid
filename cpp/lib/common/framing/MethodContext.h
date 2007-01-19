@@ -19,6 +19,9 @@
  *
  */
 
+#include "OutputHandler.h"
+#include "ProtocolVersion.h"
+
 namespace qpid {
 namespace framing {
 
@@ -26,11 +29,14 @@ class BodyHandler;
 
 /**
  * Invocation context for an AMQP method.
+ * Some of the context information is related to the channel, some
+ * to the specific invocation - e.g. requestId.
+ * 
  * All generated proxy and handler functions take a MethodContext parameter.
  * 
- * The user calling on a broker proxy can simply pass an integer
- * channel ID, it will implicitly be converted to an appropriate context.
- *
+ * The user does not need to create MethodContext objects explicitly,
+ * the constructor will implicitly create one from a channel ID.
+ * 
  * Other context members are for internal use.
  */
 struct MethodContext
@@ -39,13 +45,21 @@ struct MethodContext
      * Passing a integer channel-id in place of a MethodContext
      * will automatically construct the MethodContext.
      */
-    MethodContext(ChannelId channel, RequestId request=0)
-        : channelId(channel), requestId(request) {}
+    MethodContext(
+        ChannelId channel, OutputHandler* output=0, RequestId request=0)
+        : channelId(channel), out(output), requestId(request){}
 
-    /** Channel on which the method is sent. */
-    ChannelId channelId;
-    /** \internal For proxy response: the original request or 0. */
-    RequestId requestId;
+    /** \internal Channel on which the method is sent. */
+    const ChannelId channelId;
+
+    /** Output handler for responses in this context */
+    OutputHandler* out;
+
+    /** \internal If we are in the context of processing an incoming request,
+     * this is the ID. Otherwise it is 0.
+     */ 
+    const RequestId requestId;
+
 };
 
 }} // namespace qpid::framing

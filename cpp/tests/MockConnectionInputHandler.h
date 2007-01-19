@@ -89,7 +89,7 @@ struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 struct MockConnectionInputHandlerFactory : public qpid::sys::ConnectionInputHandlerFactory {
     MockConnectionInputHandlerFactory() : handler(0) {}
 
-    qpid::sys::ConnectionInputHandler* create(qpid::sys::SessionContext*) {
+    qpid::sys::ConnectionInputHandler* create(qpid::sys::ConnectionOutputHandler*) {
         qpid::sys::Monitor::ScopedLock lock(monitor);
         handler = new MockConnectionInputHandler();
         monitor.notifyAll();

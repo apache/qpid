@@ -184,6 +184,16 @@ void Connection::handleFrame(AMQFrame* frame){
     }
 }
 
+void Connection::handleRequest(AMQRequestBody::shared_ptr body) {
+    // FIXME aconway 2007-01-19: request/response handling.
+    handleMethod(body);
+}
+
+void Connection::handleResponse(AMQResponseBody::shared_ptr body) {
+    // FIXME aconway 2007-01-19: request/response handling.
+    handleMethod(body);
+}
+
 void Connection::handleMethod(AMQMethodBody::shared_ptr body){
     //connection.close, basic.deliver, basic.return or a response to a synchronous request
     if(responses.isWaiting()){

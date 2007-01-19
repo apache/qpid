@@ -811,7 +811,7 @@ public class CppGenerator extends Generator
         for (String thisClassName : model.classMap.keySet())
             {
                 AmqpClass thisClass = model.classMap.get(thisClassName);
-                sb.append(indent + "virtual inline " + outerClassName + "::" + thisClass.name + "Handler* get" +
+                sb.append(indent + "virtual " + outerClassName + "::" + thisClass.name + "Handler* get" +
                           thisClass.name + "Handler() { return &" + Utils.firstLower(thisClass.name) + ";}" + cr);
             }
         return sb.toString();
@@ -1064,10 +1064,10 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         String namespace = version != null ? version.namespace() + "::" : "";
-        StringBuffer sb = new StringBuffer(indent + "out->send( new AMQFrame( parent->getProtocolVersion(), context.channelId," + cr);
-        sb.append(indent + tab + "new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
+        StringBuffer sb = new StringBuffer();
+        sb.append(indent + tab + "(new " + namespace + methodBodyClassName + "( parent->getProtocolVersion()");
         sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
-        sb.append(" )));" + cr);        
+        sb.append("))->send(context);\n");
         return sb.toString();           
     }
     
@@ -1145,7 +1145,7 @@ public class CppGenerator extends Generator
         for (Integer thisOrdinal : ordinalFieldMap.keySet())
             {
                 String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
-                sb.append(indent + "inline " + setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " get" +
+                sb.append(indent + "" + setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " get" +
                           Utils.firstUpper(fieldDomainPair[FIELD_NAME]) + "() { return " +
                           fieldDomainPair[FIELD_NAME] + "; }" + cr);
             }
@@ -1451,7 +1451,7 @@ public class CppGenerator extends Generator
                         if (bItr.next()) // This is a server operation
                             {
                                 boolean fieldMapNotEmptyFlag = method.fieldMap.size() > 0;
-                                sb.append(indent + "inline void invoke(AMQP_ServerOperations& target, const MethodContext& context)" + cr);
+                                sb.append(indent + "void invoke(AMQP_ServerOperations& target, const MethodContext& context)" + cr);
                                 sb.append(indent + "{" + cr);
                                 sb.append(indent + tab + "target.get" + thisClass.name + "Handler()->" +
                                           parseForReservedWords(Utils.firstLower(method.name),

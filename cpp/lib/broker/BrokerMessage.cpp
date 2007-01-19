@@ -26,6 +26,7 @@
 #include <MessageStore.h>
 #include <BasicDeliverBody.h>
 #include <BasicGetOkBody.h>
+#include "AMQFrame.h"
 
 using namespace boost;
 using namespace qpid::broker;

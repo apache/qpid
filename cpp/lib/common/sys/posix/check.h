@@ -45,7 +45,7 @@ class PosixError : public qpid::QpidError
 
     Exception* clone() const throw() { return new PosixError(*this); }
         
-    void throwSelf() { throw *this; }
+    void throwSelf() const { throw *this; }
 
   private:
     int errNo;

@@ -23,7 +23,7 @@
 
 #include "EventChannelThreads.h"
 #include "sys/Monitor.h"
-#include "sys/SessionContext.h"
+#include "sys/ConnectionOutputHandler.h"
 #include "sys/ConnectionInputHandler.h"
 #include "sys/AtomicCount.h"
 #include "framing/AMQFrame.h"
@@ -34,13 +34,13 @@ namespace sys {
 class ConnectionInputHandlerFactory;
 
 /**
- * Implements SessionContext and delegates to a ConnectionInputHandler
+ * Implements ConnectionOutputHandler and delegates to a ConnectionInputHandler
  * for a connection via the EventChannel.
  *@param readDescriptor file descriptor for reading.
  *@param writeDescriptor file descriptor for writing,
  * by default same as readDescriptor
  */
-class EventChannelConnection : public SessionContext {
+class EventChannelConnection : public ConnectionOutputHandler {
   public:
     EventChannelConnection(
         EventChannelThreads::shared_ptr threads, 
@@ -50,7 +50,7 @@ class EventChannelConnection : public SessionContext {
         bool isTrace = false
     );
 
-    // TODO aconway 2006-11-30: SessionContext::send should take auto_ptr
+    // TODO aconway 2006-11-30: ConnectionOutputHandler::send should take auto_ptr
     virtual void send(qpid::framing::AMQFrame* frame) {
         send(std::auto_ptr<qpid::framing::AMQFrame>(frame));
     }

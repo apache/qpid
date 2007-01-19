@@ -29,7 +29,7 @@
 #include <AMQFrame.h>
 #include <AMQP_ClientProxy.h>
 #include <AMQP_ServerOperations.h>
-#include <sys/SessionContext.h>
+#include <sys/ConnectionOutputHandler.h>
 #include <sys/ConnectionInputHandler.h>
 #include <sys/TimeoutHandler.h>
 #include "Broker.h"
@@ -50,18 +50,8 @@ class Settings {
 class Connection : public qpid::sys::ConnectionInputHandler, 
                    public ConnectionToken
 {
-    typedef boost::ptr_map<u_int16_t, BrokerAdapter> AdapterMap;
-
-    // FIXME aconway 2007-01-16: on broker.
-    typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
-    Exchange::shared_ptr findExchange(const string& name);
-
-    BrokerAdapter& getAdapter(u_int16_t id);
-    
-    AdapterMap adapters;
-    
   public:
-    Connection(qpid::sys::SessionContext* context, Broker& broker);
+    Connection(qpid::sys::ConnectionOutputHandler* out, Broker& broker);
     // ConnectionInputHandler methods
     void received(qpid::framing::AMQFrame* frame);
     void initiated(qpid::framing::ProtocolInitiation* header);
@@ -69,8 +59,9 @@ class Connection : public qpid::sys::ConnectionInputHandler,
     void idleIn();
     void closed();
 
+    qpid::sys::ConnectionOutputHandler& getOutput() { return *out; }
+
     // FIXME aconway 2007-01-16: encapsulate.
-    qpid::sys::SessionContext* context;
     u_int32_t framemax;
     u_int16_t heartbeat;
     Broker& broker;
@@ -91,6 +82,19 @@ class Connection : public qpid::sys::ConnectionInputHandler,
     Channel& newChannel(u_int16_t channel);
     Channel& getChannel(u_int16_t channel);
     void closeChannel(u_int16_t channel);
+
+  private:
+    typedef boost::ptr_map<u_int16_t, BrokerAdapter> AdapterMap;
+
+    // FIXME aconway 2007-01-16: on broker.
+    typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
+    Exchange::shared_ptr findExchange(const string& name);
+
+    BrokerAdapter& getAdapter(u_int16_t id);
+    
+    AdapterMap adapters;
+    qpid::sys::ConnectionOutputHandler* out;
+    
 };
 
 }}

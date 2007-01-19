@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#ifndef _SessionContext_
-#define _SessionContext_
+#ifndef _ConnectionOutputHandler_
+#define _ConnectionOutputHandler_
 
 #include <OutputHandler.h>
 
@@ -29,7 +29,7 @@ namespace sys {
 /**
  * Provides the output handler associated with a connection.
  */
-class SessionContext : public virtual qpid::framing::OutputHandler 
+class ConnectionOutputHandler : public virtual qpid::framing::OutputHandler 
 {
   public:
     virtual void close() = 0;

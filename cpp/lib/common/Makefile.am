@@ -65,6 +65,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/AMQMethodBody.cpp			\
   $(framing)/BasicHeaderProperties.cpp		\
   $(framing)/BodyHandler.cpp			\
+  $(framing)/ChannelAdapter.cpp			\
   $(framing)/Buffer.cpp				\
   $(framing)/FieldTable.cpp			\
   $(framing)/FramingContent.cpp			\
@@ -96,6 +97,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/AMQMethodBody.h			\
   $(framing)/BasicHeaderProperties.h		\
   $(framing)/BodyHandler.h			\
+  $(framing)/ChannelAdapter.h			\
   $(framing)/Buffer.h				\
   $(framing)/FieldTable.h			\
   $(framing)/FramingContent.h			\
@@ -119,7 +121,7 @@ nobase_pkginclude_HEADERS =			\
   sys/Monitor.h					\
   sys/Mutex.h					\
   sys/Runnable.h				\
-  sys/SessionContext.h				\
+  sys/ConnectionOutputHandler.h				\
   sys/ConnectionInputHandler.h				\
   sys/ConnectionInputHandlerFactory.h			\
   sys/ShutdownHandler.h				\

@@ -28,15 +28,15 @@ using namespace qpid::framing;
 
 AMQP_MethodVersionMap AMQFrame::versionMap;
 
-AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version):
+AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version):
 version(_version)
  {}
 
-AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody* _body) :
+AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody* _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
-AMQFrame::AMQFrame(qpid::framing::ProtocolVersion& _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
+AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
 version(_version), channel(_channel), body(_body)
 {}
 

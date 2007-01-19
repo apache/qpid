@@ -30,7 +30,7 @@
 #include <AMQFrame.h>
 #include <Buffer.h>
 #include <sys/Monitor.h>
-#include <sys/SessionContext.h>
+#include <sys/ConnectionOutputHandler.h>
 #include <sys/ConnectionInputHandler.h>
 
 #include "APRSocket.h"
@@ -40,7 +40,7 @@ namespace qpid {
 namespace sys {
 
 
-class LFSessionContext : public virtual qpid::sys::SessionContext
+class LFSessionContext : public virtual qpid::sys::ConnectionOutputHandler
 {
     const bool debug;
     APRSocket socket;

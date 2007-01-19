@@ -71,6 +71,9 @@ class MessageBuilderTest : public CppUnit::TestCase
             }
         }
 
+        // Don't hide overloads.
+        using NullMessageStore::destroy;
+
         void destroy(Message* msg)
         {
             CPPUNIT_ASSERT(msg->getPersistenceId());

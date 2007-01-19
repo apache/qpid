@@ -22,6 +22,7 @@
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <AMQP_HighestVersion.h>
+#include "AMQFrame.h"
 
 using namespace boost;
 using namespace qpid::broker;

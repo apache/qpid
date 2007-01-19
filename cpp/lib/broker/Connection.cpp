@@ -31,12 +31,12 @@ using namespace qpid::sys;
 namespace qpid {
 namespace broker {
 
-Connection::Connection(SessionContext* context_, Broker& broker_) :
-    context(context_), 
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
     framemax(65536), 
     heartbeat(0),
     broker(broker_),
-    settings(broker.getTimeout(), broker.getStagingThreshold())
+    settings(broker.getTimeout(), broker.getStagingThreshold()),
+    out(out_)
 {}
 
 Queue::shared_ptr Connection::getQueue(const string& name, u_int16_t channel){
@@ -68,14 +68,15 @@ void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
         // TODO aconway 2007-01-16: correct error code.
         throw ConnectionException(0, "Connection initiated twice");
     client.reset(new qpid::framing::AMQP_ClientProxy(
-                     context, header->getMajor(), header->getMinor()));
+                     out, header->getMajor(), header->getMinor()));
     FieldTable properties;
     string mechanisms("PLAIN");
     string locales("en_US");
-    // TODO aconway 2007-01-16: Move to adapter.
+    // TODO aconway 2007-01-16: Client call, move to adapter.
     client->getConnection().start(
-        0, header->getMajor(), header->getMinor(), properties,
-        mechanisms, locales);
+        MethodContext(0, out),
+        header->getMajor(), header->getMinor(),
+        properties, mechanisms, locales);
 }
 
 void Connection::idleOut(){}
@@ -105,7 +106,7 @@ BrokerAdapter& Connection::getAdapter(u_int16_t id) {
     AdapterMap::iterator i = adapters.find(id);
     if (i == adapters.end()) {
         Channel* ch=new Channel(
-            client->getProtocolVersion(), context, id,
+            client->getProtocolVersion(), out, id,
             framemax, broker.getQueues().getStore(),
             settings.stagingThreshold);
         BrokerAdapter* adapter =  new BrokerAdapter(ch, *this, broker);

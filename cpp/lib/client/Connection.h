@@ -66,7 +66,8 @@ namespace client {
     class Connection : public virtual qpid::framing::InputHandler, 
         public virtual qpid::sys::TimeoutHandler, 
         public virtual qpid::sys::ShutdownHandler, 
-        private virtual qpid::framing::BodyHandler{
+        private virtual qpid::framing::BodyHandler
+    {
 
         typedef std::map<int, Channel*>::iterator iterator;
 
@@ -80,20 +81,25 @@ namespace client {
 	qpid::framing::OutputHandler* out;
 	ResponseHandler responses;
         volatile bool closed;
-        qpid::framing::ProtocolVersion version;
-        qpid::framing::Requester requester;
-        qpid::framing::Responder responder;
+        framing::ProtocolVersion version;
+        framing::Requester requester;
+        framing::Responder responder;
 
-        void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
+        void channelException(Channel* channel, framing::AMQMethodBody* body, QpidError& e);
         void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
         void closeChannel(Channel* channel, u_int16_t code, std::string& text, u_int16_t classId = 0, u_int16_t methodId = 0);
-	void sendAndReceive(qpid::framing::AMQFrame* frame, const qpid::framing::AMQMethodBody& body);
+	void sendAndReceive(framing::AMQFrame* frame, const framing::AMQMethodBody& body);
 
-	virtual void handleMethod(qpid::framing::AMQMethodBody::shared_ptr body);
-	virtual void handleHeader(qpid::framing::AMQHeaderBody::shared_ptr body);
-	virtual void handleContent(qpid::framing::AMQContentBody::shared_ptr body);
-	virtual void handleHeartbeat(qpid::framing::AMQHeartbeatBody::shared_ptr body);
-        void handleFrame(qpid::framing::AMQFrame* frame);
+        // FIXME aconway 2007-01-19: Use channel(0) not connection
+        // to handle channel 0 requests. Remove handler methods.
+        //
+        void handleRequest(framing::AMQRequestBody::shared_ptr);
+        void handleResponse(framing::AMQResponseBody::shared_ptr);
+        void handleMethod(framing::AMQMethodBody::shared_ptr);
+	void handleHeader(framing::AMQHeaderBody::shared_ptr);
+	void handleContent(framing::AMQContentBody::shared_ptr);
+	void handleHeartbeat(framing::AMQHeartbeatBody::shared_ptr);
+        void handleFrame(framing::AMQFrame* frame);
 
     public:
         /**
@@ -110,7 +116,7 @@ namespace client {
          * client will accept. Optional and defaults to 65536.
          */
 	Connection( bool debug = false, u_int32_t max_frame_size = 65536, 
-			qpid::framing::ProtocolVersion* _version = &(qpid::framing::highestProtocolVersion));
+			framing::ProtocolVersion* _version = &(framing::highestProtocolVersion));
 	~Connection();
 
         /**
@@ -163,7 +169,7 @@ namespace client {
          */
 	void removeChannel(Channel* channel);
 
-	virtual void received(qpid::framing::AMQFrame* frame);
+	virtual void received(framing::AMQFrame* frame);
 
 	virtual void idleOut();
 	virtual void idleIn();

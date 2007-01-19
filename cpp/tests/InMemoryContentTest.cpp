@@ -23,6 +23,7 @@
 #include <AMQP_HighestVersion.h>
 #include <iostream>
 #include <list>
+#include "AMQFrame.h"
 
 using std::list;
 using std::string;

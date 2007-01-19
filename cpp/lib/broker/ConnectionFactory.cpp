@@ -35,9 +35,9 @@ ConnectionFactory::~ConnectionFactory()
 }
 
 qpid::sys::ConnectionInputHandler*
-ConnectionFactory::create(qpid::sys::SessionContext* ctxt)
+ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out)
 {
-    return new Connection(ctxt, broker);
+    return new Connection(out, broker);
 }
 
 }} // namespace qpid::broker

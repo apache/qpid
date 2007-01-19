@@ -25,6 +25,7 @@
 #include <iostream>
 #include <list>
 #include <sstream>
+#include "AMQFrame.h"
 
 using std::list;
 using std::string;

@@ -22,10 +22,10 @@
  *
  */
 #include <boost/noncopyable.hpp>
-#include <AMQFrame.h>
 
 namespace qpid {
 namespace framing {
+class AMQFrame;
 
 class OutputHandler : private boost::noncopyable {
   public:
