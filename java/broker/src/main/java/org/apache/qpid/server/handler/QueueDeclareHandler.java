@@ -65,8 +65,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         _store = ApplicationRegistry.getInstance().getMessageStore();
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
     {
         QueueDeclareBody body = evt.getMethod();
@@ -78,6 +77,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
+        QueueRegistry queueRegistry = protocolSession.getQueueRegistry();
         synchronized (queueRegistry)
         {
             AMQQueue queue;
@@ -91,7 +91,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 queueRegistry.registerQueue(queue);
                 if (autoRegister)
                 {
-                    Exchange defaultExchange = exchangeRegistry.getExchange("amq.direct");
+                    Exchange defaultExchange = protocolSession.getExchangeRegistry().getExchange("amq.direct");
                     defaultExchange.registerQueue(body.queue, queue, null);
                     queue.bind(body.queue, defaultExchange);
                     _log.info("Queue " + body.queue + " bound to default exchange");
@@ -102,14 +102,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
         if (!body.nowait)
         {
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            AMQMethodBody response = QueueDeclareOkBody.createMethodBody
-                ((byte)0, (byte)9,	// AMQP version (major, minor)
-                 0L, // consumerCount
-                 0L, // messageCount
-                 body.queue); // queue
+            AMQMethodBody response = QueueDeclareOkBody.createMethodBody(
+                protocolSession.getMajor(), // AMQP major version
+                protocolSession.getMinor(), // AMQP minor version
+                0L, // consumerCount
+                0L, // messageCount
+                body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
             protocolSession.writeResponse(evt, response);
         }

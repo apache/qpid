@@ -38,18 +38,18 @@ class ExtendedHandler<A extends AMQMethodBody> implements StateAwareMethodListen
         _base = base;
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    public void methodReceived(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
-        preHandle(stateMgr, session, evt);
-        _base.methodReceived(stateMgr, queues, exchanges, session, evt);
-        postHandle(stateMgr, session, evt);
+        preHandle(session, evt);
+        _base.methodReceived(session, evt);
+        postHandle(session, evt);
     }
 
-    void preHandle(AMQStateManager stateMgr, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    void preHandle(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
     }
 
-    void postHandle(AMQStateManager stateMgr, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    void postHandle(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
     }
 }

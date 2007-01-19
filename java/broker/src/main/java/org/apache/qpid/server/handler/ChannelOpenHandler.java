@@ -47,15 +47,15 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         // XXX: Client id
-        AMQMethodBody response = ChannelOpenOkBody.createMethodBody((byte)0, (byte)9, "XXX".getBytes());
+        AMQMethodBody response = ChannelOpenOkBody.createMethodBody(
+            protocolSession.getMajor(), // AMQP major version
+            protocolSession.getMinor(), // AMQP minor version
+            "XXX".getBytes());
         protocolSession.writeResponse(evt, response);
     }
 }

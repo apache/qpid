@@ -178,7 +178,7 @@ public class AMQStateManager implements AMQMethodListener
         StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, _queueRegistry, _exchangeRegistry, _protocolSession, evt);
+            handler.methodReceived(_protocolSession, evt);
             return true;
         }
         return false;

@@ -41,10 +41,7 @@ public class MessageAppendHandler implements StateAwareMethodListener<MessageApp
     private MessageAppendHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageAppendBody> evt)
                                 throws AMQException
     {

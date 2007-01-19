@@ -41,10 +41,7 @@ public class MessageEmptyHandler implements StateAwareMethodListener<MessageEmpt
     private MessageEmptyHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageEmptyBody> evt)
                                 throws AMQException
     {

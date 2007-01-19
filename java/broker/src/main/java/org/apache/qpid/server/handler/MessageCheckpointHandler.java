@@ -41,10 +41,7 @@ public class MessageCheckpointHandler implements StateAwareMethodListener<Messag
     private MessageCheckpointHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageCheckpointBody> evt)
                                 throws AMQException
     {

@@ -47,17 +47,12 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
     {
         ChannelCloseBody body = evt.getMethod();
         _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " + body.classId +
                      " and method " + body.methodId);
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeResponse(evt, ChannelCloseOkBody.createMethodBody((byte)0, (byte)9));
-        protocolSession.closeChannel(evt.getChannelId());
+        protocolSession.closeChannelResponse(evt.getChannelId(), evt.getRequestId());
     }
 }

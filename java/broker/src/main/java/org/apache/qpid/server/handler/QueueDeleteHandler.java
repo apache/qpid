@@ -57,7 +57,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
 
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+    public void methodReceived(AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
     {
         QueueDeleteBody body = evt.getMethod();
         AMQQueue queue;
@@ -67,7 +67,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         }
         else
         {
-            queue = queues.getQueue(body.queue);
+            queue = session.getQueueRegistry().getQueue(body.queue);
         }
 
         if(queue == null)
@@ -81,12 +81,11 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         {
             int purged = queue.delete(body.ifUnused, body.ifEmpty);
             _store.removeQueue(queue.getName());
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            session.writeResponse(evt, QueueDeleteOkBody.createMethodBody
-                                  ((byte)0, (byte)9,	// AMQP version (major, minor)
-                                   purged));	// messageCount
+            session.writeResponse(evt, QueueDeleteOkBody.createMethodBody(
+                session.getMajor(), // AMQP major version
+                session.getMinor(), // AMQP minor version
+                purged));	// messageCount
         }
     }
 }

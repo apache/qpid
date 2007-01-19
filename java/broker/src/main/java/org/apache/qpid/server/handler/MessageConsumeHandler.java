@@ -53,10 +53,7 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
     private MessageConsumeHandler() {}
 
 
-    public void methodReceived (AMQStateManager stateManager,
-                                QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession session,
+    public void methodReceived (AMQProtocolSession session,
                                	AMQMethodEvent<MessageConsumeBody> evt)
                                 throws AMQException
     {
@@ -71,19 +68,21 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
         }
         else
         {
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : queueRegistry.getQueue(body.queue);
+            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : session.getQueueRegistry().getQueue(body.queue);
 
             if (queue == null)
             {
                 _log.info("No queue for '" + body.queue + "'");
                 if(body.queue!=null)
                 {
-                    channelClose(session, channelId, stateManager,
-                                 "No such queue, '" + body.queue + "'", AMQConstant.NOT_FOUND);
+                    session.closeChannelRequest(evt.getChannelId(), AMQConstant.NOT_FOUND.getCode(),
+                        "No such queue, '" + body.queue + "'");
+//                     channelClose(session, channelId, stateManager,
+//                                  "No such queue, '" + body.queue + "'", AMQConstant.NOT_FOUND);
                 }
                 else
                 {
-                    connectionClose(session, channelId, stateManager,
+                    connectionClose(session, channelId, session.getStateManager(),
                                     "No queue name provided, no default queue defined.",
                                     AMQConstant.NOT_ALLOWED);
                 }
@@ -94,10 +93,10 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
                 {
                     /*AMQShort*/String destination = channel.subscribeToQueue
                         (body.destination, queue, session, !body.noAck, /*XXX*/null, body.noLocal);
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    session.writeResponse(evt, MessageOkBody.createMethodBody((byte)0, (byte)9));
+                    session.writeResponse(evt, MessageOkBody.createMethodBody(
+                        session.getMajor(), // AMQP major version
+                        session.getMinor())); // AMQP minor version
 
                     //now allow queue to start async processing of any backlog of messages
                     queue.deliverAsync();
@@ -105,11 +104,13 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
                 catch (AMQInvalidSelectorException ise)
                 {
                     _log.info("Closing connection due to invalid selector");
-                    channelClose(session, channelId, stateManager, ise.getMessage(), AMQConstant.INVALID_SELECTOR);
+                    session.closeChannelRequest(evt.getChannelId(), AMQConstant.INVALID_SELECTOR.getCode(),
+                        ise.getMessage());
+//                    channelClose(session, channelId, stateManager, ise.getMessage(), AMQConstant.INVALID_SELECTOR);
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
-                    connectionClose(session, channelId, stateManager,
+                    connectionClose(session, channelId, session.getStateManager(),
                                     "Non-unique consumer tag, '" + body.destination + "'",
                                     AMQConstant.NOT_ALLOWED);
                 }
@@ -117,37 +118,37 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
         }
     }
 
-    private void channelClose(AMQProtocolSession session, int channelId, AMQMethodListener listener,
-                              String message, AMQConstant code)
-        throws AMQException
-    {
-        /*AMQShort*/String msg = new /*AMQShort*/String(message);
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        session.writeRequest(channelId, ChannelCloseBody.createMethodBody
-                             ((byte)0, (byte)9,	// AMQP version (major, minor)
-                              MessageConsumeBody.getClazz((byte)0, (byte)9),	// classId
-                              MessageConsumeBody.getMethod((byte)0, (byte)9),	// methodId
-                              code.getCode(),	// replyCode
-                              msg),	// replyText
-                             listener);
-    }
+//     private void channelClose(AMQProtocolSession session, int channelId, AMQMethodListener listener,
+//                               String message, AMQConstant code)
+//         throws AMQException
+//     {
+//         /*AMQShort*/String msg = new /*AMQShort*/String(message);
+//         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
+//         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+//         // Be aware of possible changes to parameter order as versions change.
+//         session.writeRequest(channelId, ChannelCloseBody.createMethodBody
+//                              ((byte)0, (byte)9,	// AMQP version (major, minor)
+//                               MessageConsumeBody.getClazz((byte)0, (byte)9),	// classId
+//                               MessageConsumeBody.getMethod((byte)0, (byte)9),	// methodId
+//                               code.getCode(),	// replyCode
+//                               msg),	// replyText
+//                              listener);
+//     }
 
     private void connectionClose(AMQProtocolSession session, int channelId, AMQMethodListener listener,
                                  String message, AMQConstant code)
         throws AMQException
     {
+        byte major = session.getMajor();
+        byte minor = session.getMinor();
         /*AMQShort*/String msg = new /*AMQShort*/String(message);
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        session.writeRequest(channelId, ConnectionCloseBody.createMethodBody
-                             ((byte)0, (byte)9,	// AMQP version (major, minor)
-                              MessageConsumeBody.getClazz((byte)0, (byte)9),	// classId
-                              MessageConsumeBody.getMethod((byte)0, (byte)9),	// methodId
-                              code.getCode(),	// replyCode
-                              msg),	// replyText
+        session.writeRequest(channelId, ConnectionCloseBody.createMethodBody(
+                                major, minor,	// AMQP version (major, minor)
+                                MessageConsumeBody.getClazz(major, minor),	// classId
+                                MessageConsumeBody.getMethod(major, minor),	// methodId
+                                code.getCode(),	// replyCode
+                                msg),	// replyText
                              listener);
     }
 

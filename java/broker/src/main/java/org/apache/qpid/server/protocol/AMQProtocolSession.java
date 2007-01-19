@@ -25,6 +25,9 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.state.AMQStateManager;
 
 import javax.security.sasl.SaslServer;
 
@@ -73,10 +76,13 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      * <ul><li>any queue subscriptions (this may in turn remove queues if they are auto delete</li>
      * </ul>
      * @param channelId id of the channel to close
+     * @param requestId id of the request that initiated the close, used in response
      * @throws org.apache.qpid.AMQException if an error occurs closing the channel
      * @throws IllegalArgumentException if the channel id is not valid
      */
-    void closeChannel(int channelId) throws AMQException;
+    void closeChannelResponse(int channelId, long requestId) throws AMQException;
+    
+    void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException;
 
     /**
      * Remove a channel from the session but do not close it.
@@ -124,4 +130,11 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     FieldTable getClientProperties();
 
     void setClientProperties(FieldTable clientProperties);
+    
+    QueueRegistry getQueueRegistry();
+    ExchangeRegistry getExchangeRegistry();
+    AMQStateManager getStateManager();
+    byte getMajor();
+    byte getMinor();
+    boolean amqpVersionEquals(byte major, byte minor);
 }

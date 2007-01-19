@@ -46,17 +46,17 @@ public class ReplicatingConsumeHandler extends ReplicatingHandler<MessageConsume
         super(groupMgr, base(), policy);
     }
 
-    protected void replicate(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
+    protected void replicate(AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
     {
         //only replicate if the queue in question is a shared queue
-        if (isShared(queues.getQueue(evt.getMethod().queue)))
+        if (isShared(session.getQueueRegistry().getQueue(evt.getMethod().queue)))
         {
-            super.replicate(stateMgr, queues, exchanges, session, evt);
+            super.replicate(session, evt);
         }
         else
         {
             _logger.info(new LogMessage("Handling consume for private queue ({0}) locally", evt.getMethod()));
-            local(stateMgr, queues, exchanges, session, evt);
+            local(session, evt);
             _logger.info(new LogMessage("Handled consume for private queue ({0}) locally", evt.getMethod()));
 
         }

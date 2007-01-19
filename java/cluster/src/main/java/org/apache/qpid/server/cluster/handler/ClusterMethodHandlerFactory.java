@@ -162,8 +162,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class SynchHandler implements StateAwareMethodListener<ClusterSynchBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
+        public void methodReceived(AMQProtocolSession session,
                                    AMQMethodEvent<ClusterSynchBody> evt) throws AMQException
         {
             _groupMgr.handleSynch(ClusteredProtocolSession.getSessionPeer(session));
@@ -172,8 +171,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class JoinHandler implements StateAwareMethodListener<ClusterJoinBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
+        public void methodReceived(AMQProtocolSession session,
                                    AMQMethodEvent<ClusterJoinBody> evt) throws AMQException
         {
             _groupMgr.handleJoin(new SimpleMemberHandle(evt.getMethod().broker));
@@ -182,8 +180,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class LeaveHandler implements StateAwareMethodListener<ClusterLeaveBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+        public void methodReceived(AMQProtocolSession protocolSession,
                                    AMQMethodEvent<ClusterLeaveBody> evt) throws AMQException
         {
             _groupMgr.handleLeave(new SimpleMemberHandle(evt.getMethod().broker));
@@ -192,8 +189,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class SuspectHandler implements StateAwareMethodListener<ClusterSuspectBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+        public void methodReceived(AMQProtocolSession protocolSession,
                                    AMQMethodEvent<ClusterSuspectBody> evt) throws AMQException
         {
             _groupMgr.handleSuspect(new SimpleMemberHandle(evt.getMethod().broker));
@@ -202,8 +198,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class MembershipHandler implements StateAwareMethodListener<ClusterMembershipBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
+        public void methodReceived(AMQProtocolSession session,
                                    AMQMethodEvent<ClusterMembershipBody> evt) throws AMQException
         {
             ClusterMembershipBody body = evt.getMethod();
@@ -213,8 +208,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class PingHandler implements StateAwareMethodListener<ClusterPingBody>
     {
-        public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
+        public void methodReceived(AMQProtocolSession session,
                                    AMQMethodEvent<ClusterPingBody> evt) throws AMQException
         {
             MemberHandle peer = new SimpleMemberHandle(evt.getMethod().broker);

@@ -41,10 +41,7 @@ public class MessageOkHandler implements StateAwareMethodListener<MessageOkBody>
     private MessageOkHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageOkBody> evt)
                                 throws AMQException
     {

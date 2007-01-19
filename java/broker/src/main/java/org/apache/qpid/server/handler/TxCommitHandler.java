@@ -44,18 +44,17 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<TxCommitBody> evt) throws AMQException
     {
 
         try{
             AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
             channel.commit();
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeResponse(evt, TxCommitOkBody.createMethodBody((byte)0, (byte)9));
+            protocolSession.writeResponse(evt, TxCommitOkBody.createMethodBody(
+                protocolSession.getMajor(), // AMQP major version
+                protocolSession.getMinor())); // AMQP minor version
             channel.processReturns(protocolSession);
         }catch(AMQException e){
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());

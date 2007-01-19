@@ -41,10 +41,7 @@ public class MessageOffsetHandler implements StateAwareMethodListener<MessageOff
     private MessageOffsetHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageOffsetBody> evt)
                                 throws AMQException
     {

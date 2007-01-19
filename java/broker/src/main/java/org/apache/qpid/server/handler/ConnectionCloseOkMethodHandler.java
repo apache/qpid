@@ -46,8 +46,7 @@ public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ConnectionCloseOkBody> evt) throws AMQException
     {
         //todo should this not do more than just log the method?
@@ -55,7 +54,7 @@ public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<
 
         try
         {
-            stateManager.changeState(AMQState.CONNECTION_CLOSED);
+            protocolSession.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
             protocolSession.closeSession();
         }
         catch (Exception e)

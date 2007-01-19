@@ -41,10 +41,7 @@ public class MessageOpenHandler implements StateAwareMethodListener<MessageOpenB
     private MessageOpenHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageOpenBody> evt)
                                 throws AMQException
     {

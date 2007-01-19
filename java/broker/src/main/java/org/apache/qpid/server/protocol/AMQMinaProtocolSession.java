@@ -29,6 +29,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ConnectionStartBody;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
@@ -40,6 +42,7 @@ import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.framing.RequestResponseMappingException;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -270,6 +273,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return requestManager.sendRequest(methodBody, methodListener);
     }
 
+    // This version uses this session's instance of AMQStateManager as the listener
+    public long writeRequest(int channelNum, AMQMethodBody methodBody)
+        throws AMQException
+    {
+        AMQChannel channel = getChannel(channelNum);
+        RequestManager requestManager = channel.getRequestManager();
+        return requestManager.sendRequest(methodBody, _stateManager);
+    }
+
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
         throws AMQException
     {
@@ -371,7 +383,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      * @throws AMQException if an error occurs closing the channel
      * @throws IllegalArgumentException if the channel id is not valid
      */
-    public void closeChannel(int channelId) throws AMQException
+    // Used to close a channel as a response to a client close request
+    public void closeChannelResponse(int channelId, long requestId) throws AMQException
     {
         final AMQChannel channel = _channelMap.get(channelId);
         if (channel == null)
@@ -383,11 +396,35 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             try
             {
                 channel.close(this);
+                // Be aware of possible changes to parameter order as versions change.
+                writeResponse(channelId, requestId, ChannelCloseOkBody.createMethodBody(_major, _minor));
             }
             finally
             {
                 _channelMap.remove(channelId);
             }
+        }
+    }
+    
+    // Used to close a channel from the server side and inform the client
+    public void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException
+    {
+        final AMQChannel channel = _channelMap.get(channelId);
+        if (channel == null)
+        {
+            throw new IllegalArgumentException("Unknown channel id");
+        }
+        else
+        {
+            channel.close(this);
+            // Be aware of possible changes to parameter order as versions change.
+            AMQMethodBody cf = ChannelCloseBody.createMethodBody
+                (_major, _minor,	// AMQP version (major, minor)
+                MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
+                MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
+                replyCode,	// replyCode
+                replyText);	// replyText
+            writeRequest(channelId, cf);
         }
     }
 
@@ -510,6 +547,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _clientProperties = clientProperties;
     }
     
+    public QueueRegistry getQueueRegistry()
+    {
+        return _queueRegistry;
+    }
+    
+    public ExchangeRegistry getExchangeRegistry()
+    {
+        return _exchangeRegistry;
+    }
+    
     public AMQStateManager getStateManager()
     {
         return _stateManager;
@@ -520,12 +567,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      * NOTE: Both major and minor will be set to 0 prior to protocol initiation.
      */
 
-    public byte getAmqpMajor()
+    public byte getMajor()
     {
         return _major;
     }
 
-    public byte getAmqpMinor()
+    public byte getMinor()
     {
         return _minor;
     }

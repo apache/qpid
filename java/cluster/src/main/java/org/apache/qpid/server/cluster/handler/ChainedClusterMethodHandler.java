@@ -54,19 +54,19 @@ public class ChainedClusterMethodHandler <A extends AMQMethodBody> extends Clust
         }
     }
 
-    protected final void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected final void peer(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
         for(ClusterMethodHandler<A> handler : _handlers)
         {
-            handler.peer(stateMgr, queues, exchanges, session, evt);
+            handler.peer(session, evt);
         }
     }
 
-    protected final void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected final void client(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
         for(ClusterMethodHandler<A> handler : _handlers)
         {
-            handler.client(stateMgr, queues, exchanges, session, evt);
+            handler.client(session, evt);
         }
     }
 }
