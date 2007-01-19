@@ -41,10 +41,7 @@ public class MessageRecoverHandler implements StateAwareMethodListener<MessageRe
     private MessageRecoverHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageRecoverBody> evt)
                                 throws AMQException
     {

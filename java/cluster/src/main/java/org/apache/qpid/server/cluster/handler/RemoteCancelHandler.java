@@ -37,10 +37,10 @@ public class RemoteCancelHandler implements StateAwareMethodListener<MessageCanc
 {
     private final Logger _logger = Logger.getLogger(RemoteCancelHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageCancelBody> evt) throws AMQException
+    public void methodReceived(AMQProtocolSession session, AMQMethodEvent<MessageCancelBody> evt) throws AMQException
     {
         //By convention, consumers setup between brokers use the queue name as the consumer tag:
-        AMQQueue queue = queues.getQueue(evt.getMethod().getDestination());
+        AMQQueue queue = session.getQueueRegistry().getQueue(evt.getMethod().getDestination());
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).removeRemoteSubscriber(ClusteredProtocolSession.getSessionPeer(session));

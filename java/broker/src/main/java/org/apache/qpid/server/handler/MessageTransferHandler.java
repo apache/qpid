@@ -51,10 +51,7 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
 
     private MessageTransferHandler() {}
 
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageTransferBody> evt)
                                 throws AMQException
     {
@@ -68,29 +65,32 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
         if (body.destination == null) {
             body.destination = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
         }
-        Exchange e = exchangeRegistry.getExchange(body.destination);
+        Exchange e = protocolSession.getExchangeRegistry().getExchange(body.destination);
         // if the exchange does not exist we raise a channel exception
         if (e == null) {
-            protocolSession.closeChannel(evt.getChannelId());
-            // TODO: modify code gen to make getClazz and getMethod public methods rather than protected
-            // then we can remove the hardcoded 0,0
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQMethodBody cf = ChannelCloseBody.createMethodBody
-                ((byte)0, (byte)9,	// AMQP version (major, minor)
-                 MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
-                 MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
-                 500,	// replyCode
-                 UNKNOWN_EXCHANGE_NAME);	// replyText
-            protocolSession.writeRequest(evt.getChannelId(), cf, stateManager);
+//             protocolSession.closeChannel(evt.getChannelId());
+//             // TODO: modify code gen to make getClazz and getMethod public methods rather than protected
+//             // then we can remove the hardcoded 0,0
+//             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
+//             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+//             // Be aware of possible changes to parameter order as versions change.
+//             AMQMethodBody cf = ChannelCloseBody.createMethodBody
+//                 ((byte)0, (byte)9,	// AMQP version (major, minor)
+//                  MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
+//                  MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
+//                  500,	// replyCode
+//                  UNKNOWN_EXCHANGE_NAME);	// replyText
+//             protocolSession.writeRequest(evt.getChannelId(), cf, stateManager);
+            protocolSession.closeChannelRequest(evt.getChannelId(), 500, UNKNOWN_EXCHANGE_NAME);
         } else {
             // The partially populated BasicDeliver frame plus the received route body
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
             AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
             channel.addMessageTransfer(body, protocolSession);
-            protocolSession.writeResponse(evt, MessageOkBody.createMethodBody((byte)0, (byte)9));
+            protocolSession.writeResponse(evt, MessageOkBody.createMethodBody(
+                protocolSession.getMajor(), // AMQP major version
+                protocolSession.getMinor())); // AMQP minor version
         }
     }
 }

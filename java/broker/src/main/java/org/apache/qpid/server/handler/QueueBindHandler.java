@@ -50,8 +50,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<QueueBindBody> evt) throws AMQException
     {
         final QueueBindBody body = evt.getMethod();
@@ -70,14 +69,14 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = protocolSession.getQueueRegistry().getQueue(body.queue);
         }
 
         if (queue == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), "Queue " + body.queue + " does not exist.");
         }
-        final Exchange exch = exchangeRegistry.getExchange(body.exchange);
+        final Exchange exch = protocolSession.getExchangeRegistry().getExchange(body.exchange);
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), "Exchange " + body.exchange + " does not exist.");
@@ -90,10 +89,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         if (!body.nowait)
         {
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            final AMQMethodBody response = QueueBindOkBody.createMethodBody((byte)0, (byte)9);
+            final AMQMethodBody response = QueueBindOkBody.createMethodBody(
+                protocolSession.getMajor(), // AMQP major version
+                protocolSession.getMinor()); // AMQP minor version
             protocolSession.writeResponse(evt, response);
         }
     }

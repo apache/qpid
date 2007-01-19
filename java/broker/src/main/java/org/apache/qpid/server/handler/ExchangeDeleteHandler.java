@@ -45,18 +45,17 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ExchangeDeleteBody> evt) throws AMQException
     {
         ExchangeDeleteBody body = evt.getMethod();
         try
         {
-            exchangeRegistry.unregisterExchange(body.exchange, body.ifUnused);
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            protocolSession.getExchangeRegistry().unregisterExchange(body.exchange, body.ifUnused);
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeResponse(evt, ExchangeDeleteOkBody.createMethodBody((byte)0, (byte)9));
+            protocolSession.writeResponse(evt, ExchangeDeleteOkBody.createMethodBody(
+                protocolSession.getMajor(), // AMQP major version
+                protocolSession.getMinor())); // AMQP minor version
         }
         catch (ExchangeInUseException e)
         {

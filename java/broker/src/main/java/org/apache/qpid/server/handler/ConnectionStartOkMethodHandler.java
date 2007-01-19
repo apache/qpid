@@ -60,8 +60,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ConnectionStartOkBody> evt) throws AMQException
     {
         final ConnectionStartOkBody body = evt.getMethod();
@@ -84,6 +83,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                 protocolSession.setClientProperties(body.clientProperties);
             }
 
+            AMQStateManager stateManager = protocolSession.getStateManager();
             switch (authResult.status)
             {
                 case ERROR:
@@ -92,24 +92,22 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     _logger.info("Connected as: " + ss.getAuthorizationID());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-                    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    AMQMethodBody tune = ConnectionTuneBody.createMethodBody
-                        ((byte)0, (byte)9,	// AMQP version (major, minor)
-                         Integer.MAX_VALUE,	// channelMax
-                         getConfiguredFrameSize(),	// frameMax
-                         HeartbeatConfig.getInstance().getDelay());	// heartbeat
+                    AMQMethodBody tune = ConnectionTuneBody.createMethodBody(
+                        protocolSession.getMajor(), // AMQP major version
+                        protocolSession.getMinor(), // AMQP minor version
+                        Integer.MAX_VALUE,	// channelMax
+                        getConfiguredFrameSize(),	// frameMax
+                        HeartbeatConfig.getInstance().getDelay());	// heartbeat
                     protocolSession.writeRequest(evt.getChannelId(), tune, stateManager);
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                    // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
-                    AMQMethodBody challenge = ConnectionSecureBody.createMethodBody
-                        ((byte)0, (byte)9,	// AMQP version (major, minor)
-                         authResult.challenge);	// challenge
+                    AMQMethodBody challenge = ConnectionSecureBody.createMethodBody(
+                        protocolSession.getMajor(), // AMQP major version
+                        protocolSession.getMinor(), // AMQP minor version
+                        authResult.challenge);	// challenge
                     protocolSession.writeRequest(evt.getChannelId(), challenge, stateManager);
             }
         }

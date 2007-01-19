@@ -44,10 +44,7 @@ public class MessageCancelHandler implements StateAwareMethodListener<MessageCan
     private MessageCancelHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageCancelBody> evt)
                                 throws AMQException
     {
@@ -55,10 +52,10 @@ public class MessageCancelHandler implements StateAwareMethodListener<MessageCan
         final MessageCancelBody body = evt.getMethod();
         channel.unsubscribeConsumer(protocolSession, body.destination);
         
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQMethodBody methodBody = MessageOkBody.createMethodBody((byte)0, (byte)9);
+        final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
+            protocolSession.getMajor(), // AMQP major version
+            protocolSession.getMinor()); // AMQP minor version
         protocolSession.writeResponse(evt, methodBody);
     }
 }

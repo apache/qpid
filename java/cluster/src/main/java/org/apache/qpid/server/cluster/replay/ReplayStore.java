@@ -81,7 +81,7 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _localRecorders.put(ExchangeDeleteBody.class, new ExchangeDeleteRecorder());
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQProtocolSession session, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug(new LogMessage("Replay store received {0}", evt.getMethod()));
         AMQMethodBody request = evt.getMethod();

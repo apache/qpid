@@ -34,7 +34,7 @@ import org.apache.qpid.framing.AMQMethodBody;
  */
 public interface StateAwareMethodListener <B extends AMQMethodBody>
 {
-    void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                        AMQMethodEvent<B> evt) throws AMQException;
+    void methodReceived(AMQProtocolSession protocolSession, 
+        AMQMethodEvent<B> evt)
+        throws AMQException;
 }

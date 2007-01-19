@@ -42,9 +42,9 @@ public class RemoteConsumeHandler implements StateAwareMethodListener<MessageCon
 {
     private final Logger _logger = Logger.getLogger(RemoteConsumeHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
+    public void methodReceived(AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
     {
-        AMQQueue queue = queues.getQueue(evt.getMethod().queue);
+        AMQQueue queue = session.getQueueRegistry().getQueue(evt.getMethod().queue);
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).addRemoteSubcriber(ClusteredProtocolSession.getSessionPeer(session));

@@ -40,10 +40,7 @@ public class MessageGetHandler implements StateAwareMethodListener<MessageGetBod
 
     private MessageGetHandler() {}
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageGetBody> evt)
                                 throws AMQException
     {

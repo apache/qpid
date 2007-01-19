@@ -65,51 +65,45 @@ class ReplicatingHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A
         _policy = policy;
     }
 
-    protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void peer(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
-        local(stateMgr, queues, exchanges, session, evt);
+        local(session, evt);
         _logger.debug(new LogMessage("Handled {0} locally", evt.getMethod()));
     }
 
-    protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void client(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
-        replicate(stateMgr, queues, exchanges, session, evt);
+        replicate(session, evt);
     }
 
-    protected void replicate(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void replicate(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
         if (_policy == null)
         {
             //asynch delivery
             _groupMgr.broadcast(new SimpleSendable(evt.getMethod()));
-            local(stateMgr, queues, exchanges, session, evt);
+            local(session, evt);
         }
         else
         {
-            Callback callback = new Callback(stateMgr, queues, exchanges, session, evt);
+            Callback callback = new Callback(session, evt);
             _groupMgr.broadcast(new SimpleSendable(evt.getMethod()), _policy, callback);
         }
         _logger.debug(new LogMessage("Replicated {0} to peers", evt.getMethod()));
     }
 
-    protected void local(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void local(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
     {
-        _base.methodReceived(stateMgr, queues, exchanges, session, evt);
+        _base.methodReceived(session, evt);
     }
 
     private class Callback implements GroupResponseHandler
     {
-        private final AMQStateManager _stateMgr;
-        private final QueueRegistry _queues;
-        private final ExchangeRegistry _exchanges;
         private final AMQProtocolSession _session;
         private final AMQMethodEvent<A> _evt;
 
-        Callback(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt)
+        Callback(AMQProtocolSession session, AMQMethodEvent<A> evt)
         {
-            _stateMgr = stateMgr;
-            _queues = queues;
-            _exchanges = exchanges;
             _session = session;
             _evt = evt;
         }
@@ -118,7 +112,7 @@ class ReplicatingHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A
         {
             try
             {
-                local(_stateMgr, _queues, _exchanges, _session, _evt);
+                local(_session, _evt);
                 _logger.debug(new LogMessage("Handled {0} locally, in response to completion of replication", _evt.getMethod()));
             }
             catch (AMQException e)

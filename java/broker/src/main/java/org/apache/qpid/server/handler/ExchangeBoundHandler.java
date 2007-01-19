@@ -60,14 +60,11 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        byte major = (byte)0;
-        byte minor = (byte)9;
+        byte major = protocolSession.getMajor();
+        byte minor = protocolSession.getMinor();
         
         ExchangeBoundBody body = evt.getMethod();
 
@@ -78,7 +75,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         {
             throw new AMQException("Exchange exchange must not be null");
         }
-        Exchange exchange = exchangeRegistry.getExchange(exchangeName);
+        Exchange exchange = protocolSession.getExchangeRegistry().getExchange(exchangeName);
         AMQMethodBody response;
         if (exchange == null)
         {
@@ -111,7 +108,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             }
             else
             {
-                AMQQueue queue = queueRegistry.getQueue(queueName);
+                AMQQueue queue = protocolSession.getQueueRegistry().getQueue(queueName);
                 if (queue == null)
                 {
                     // AMQP version change:  Be aware of possible changes to parameter order as versions change.
@@ -143,7 +140,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         }
         else if (queueName != null)
         {
-            AMQQueue queue = queueRegistry.getQueue(queueName);
+            AMQQueue queue = protocolSession.getQueueRegistry().getQueue(queueName);
             if (queue == null)
             {
                 // AMQP version change:  Be aware of possible changes to parameter order as versions change.

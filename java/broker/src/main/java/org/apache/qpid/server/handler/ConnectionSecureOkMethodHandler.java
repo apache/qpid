@@ -54,8 +54,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ConnectionSecureOkBody> evt) throws AMQException
     {
         ConnectionSecureOkBody body = evt.getMethod();
@@ -68,6 +67,9 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         }
 
         AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
+        AMQStateManager stateManager = protocolSession.getStateManager();
+        byte major = protocolSession.getMajor();
+        byte minor = protocolSession.getMinor();
         switch (authResult.status)
         {
             case ERROR:
@@ -75,15 +77,13 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
                 _logger.info("Authentication failed");
                 stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQMethodBody close = ConnectionCloseBody.createMethodBody
-                    ((byte)0, (byte)9,	// AMQP version (major, minor)
-                     ConnectionCloseBody.getClazz((byte)0, (byte)9),		// classId
-                     ConnectionCloseBody.getMethod((byte)0, (byte)9),	// methodId
-                     AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
-                     AMQConstant.NOT_ALLOWED.getName());	// replyText
+                AMQMethodBody close = ConnectionCloseBody.createMethodBody(
+                    major, minor,	// AMQP version (major, minor)
+                    ConnectionCloseBody.getClazz(major, minor),		// classId
+                    ConnectionCloseBody.getMethod(major, minor),	// methodId
+                    AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
+                    AMQConstant.NOT_ALLOWED.getName());	// replyText
                 protocolSession.writeResponse(evt, close);
                 disposeSaslServer(protocolSession);
                 break;
@@ -93,25 +93,21 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // TODO: Check the value of channelMax here: This should be the max
                 // value of a 2-byte unsigned integer (as channel is only 2 bytes on the wire),
                 // not Integer.MAX_VALUE (which is signed 4 bytes).
-                // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQMethodBody tune = ConnectionTuneBody.createMethodBody
-                    ((byte)0, (byte)9,	// AMQP version (major, minor)
-                     Integer.MAX_VALUE,	// channelMax
-                     ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
-                     HeartbeatConfig.getInstance().getDelay());	// heartbeat
+                AMQMethodBody tune = ConnectionTuneBody.createMethodBody(
+                    major, minor,	// AMQP version (major, minor)
+                    Integer.MAX_VALUE,	// channelMax
+                    ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
+                    HeartbeatConfig.getInstance().getDelay());	// heartbeat
                 protocolSession.writeResponse(evt, tune);
                 disposeSaslServer(protocolSession);
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
-                AMQMethodBody challenge = ConnectionSecureBody.createMethodBody
-                    ((byte)0, (byte)9,	// AMQP version (major, minor)
-                     authResult.challenge);	// challenge
+                AMQMethodBody challenge = ConnectionSecureBody.createMethodBody(
+                    major, minor,	// AMQP version (major, minor)
+                    authResult.challenge);	// challenge
                 protocolSession.writeResponse(evt, challenge);
         }
     }

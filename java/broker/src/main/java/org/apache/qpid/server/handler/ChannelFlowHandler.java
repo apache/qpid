@@ -48,8 +48,7 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ChannelFlowBody> evt) throws AMQException
     {
         ChannelFlowBody body = evt.getMethod();
@@ -58,12 +57,11 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
         channel.setSuspended(!body.active);
         _logger.debug("Channel.Flow for channel " + evt.getChannelId() + ", active=" + body.active);
 
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQMethodBody response = ChannelFlowOkBody.createMethodBody
-            ((byte)0, (byte)9,	// AMQP version (major, minor)
-             body.active);	// active
+        AMQMethodBody response = ChannelFlowOkBody.createMethodBody(
+            protocolSession.getMajor(), // AMQP major version
+            protocolSession.getMinor(), // AMQP minor version
+            body.active);	// active
         protocolSession.writeResponse(evt, response);
     }
 }

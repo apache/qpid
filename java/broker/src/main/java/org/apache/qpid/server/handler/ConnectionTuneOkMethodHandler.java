@@ -42,8 +42,7 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
+    public void methodReceived(AMQProtocolSession protocolSession,
                                AMQMethodEvent<ConnectionTuneOkBody> evt) throws AMQException
     {
         ConnectionTuneOkBody body = evt.getMethod();
@@ -51,7 +50,7 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         {
             _logger.debug(body);
         }
-        stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
+        protocolSession.getStateManager().changeState(AMQState.CONNECTION_NOT_OPENED);
         protocolSession.initHeartbeats(body.heartbeat);
     }
 }

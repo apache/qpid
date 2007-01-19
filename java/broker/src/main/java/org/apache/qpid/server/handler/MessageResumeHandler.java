@@ -41,10 +41,7 @@ public class MessageResumeHandler implements StateAwareMethodListener<MessageRes
     private MessageResumeHandler() {}
     
     
-    public void methodReceived (AMQStateManager stateManager,
-    							QueueRegistry queueRegistry,
-                              	ExchangeRegistry exchangeRegistry,
-                                AMQProtocolSession protocolSession,
+    public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageResumeBody> evt)
                                 throws AMQException
     {
