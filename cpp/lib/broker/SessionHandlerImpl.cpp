@@ -19,6 +19,7 @@
  *
  */
 #include <iostream>
+#include <sstream>
 #include <SessionHandlerImpl.h>
 #include <FanOutExchange.h>
 #include <HeadersExchange.h>
@@ -64,7 +65,9 @@ SessionHandlerImpl::~SessionHandlerImpl(){
 Channel* SessionHandlerImpl::getChannel(u_int16_t channel){
     channel_iterator i = channels.find(channel);
     if(i == channels.end()){
-        throw ConnectionException(504, "Unknown channel: " + channel);
+        std::stringstream out;
+        out << "Unknown channel: " << channel;
+        throw ConnectionException(504, out.str());
     }
     return i->second;
 }
