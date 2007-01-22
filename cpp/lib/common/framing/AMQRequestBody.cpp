@@ -25,11 +25,13 @@ namespace framing {
 void AMQRequestBody::Data::encode(Buffer& buffer) const {
     buffer.putLongLong(requestId);
     buffer.putLongLong(responseMark);
+    buffer.putLong(0);          // Reserved long in spec.
 }
     
 void AMQRequestBody::Data::decode(Buffer& buffer) {
     requestId = buffer.getLongLong();
     responseMark = buffer.getLongLong();
+    buffer.getLong();           // Ignore reserved long.
 }
 
 void AMQRequestBody::encode(Buffer& buffer) const {

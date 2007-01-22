@@ -41,6 +41,10 @@ broker_tests =		\
   ValueTest		\
   MessageHandlerTest 
 
+# Tests that use the in-process BrokerSingleton to test client-broker
+# interaction. Not strictly unit tests.
+round_trip_tests =		#  TODO aconway 2007-01-22: RequestResponseTest
+
 framing_tests =		\
   FieldTableTest	\
   FramingTest		\
@@ -56,7 +60,8 @@ posix_tests =		\
 unit_tests =		\
   $(broker_tests)	\
   $(framing_tests)	\
-  $(misc_tests)
+  $(misc_tests) 	\
+  $(round_trip_tests)
 
 noinst_PROGRAMS = $(client_exe_tests)
 
