@@ -128,4 +128,9 @@ public class Content
         buffer.skip(length);
         content.limit(length);
     }
+    
+    public String toString()
+    {
+        return content.toString();
+    }
 }
