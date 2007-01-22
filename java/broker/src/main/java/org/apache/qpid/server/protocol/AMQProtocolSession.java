@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
@@ -136,5 +137,6 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     AMQStateManager getStateManager();
     byte getMajor();
     byte getMinor();
-    boolean amqpVersionEquals(byte major, byte minor);
+    boolean versionEquals(byte major, byte minor);
+    boolean checkMethodBodyVersion(AMQMethodBody methodBody);
 }

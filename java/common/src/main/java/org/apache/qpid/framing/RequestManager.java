@@ -29,7 +29,13 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 public class RequestManager
 {
     private int channel;
-    AMQProtocolWriter protocolWriter;
+    private AMQProtocolWriter protocolWriter;
+    
+    /**
+     * Used for logging and debugging only - allows the context of this instance
+     * to be known.
+     */
+    private boolean serverFlag;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -45,10 +51,11 @@ public class RequestManager
 
     private ConcurrentHashMap<Long, AMQMethodListener> requestSentMap;
 
-    public RequestManager(int channel, AMQProtocolWriter protocolWriter)
+    public RequestManager(int channel, AMQProtocolWriter protocolWriter, boolean serverFlag)
     {
         this.channel = channel;
         this.protocolWriter = protocolWriter;
+        this.serverFlag = serverFlag;
         requestIdCount = 1L;
         lastProcessedResponseId = 0L;
         requestSentMap = new ConcurrentHashMap<Long, AMQMethodListener>();
@@ -64,7 +71,7 @@ public class RequestManager
             lastProcessedResponseId, requestMethodBody);
         requestSentMap.put(requestId, methodListener);
         protocolWriter.writeFrame(requestFrame);
-        // System.out.println("[" + channel + "] SEND REQUEST: requestId = " + requestId + " {" + this.toString().substring(this.toString().lastIndexOf("@")) + "} " + requestMethodBody);
+        // System.out.println((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel + " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
         return requestId;
     }
 
@@ -73,7 +80,7 @@ public class RequestManager
     {
         long requestIdStart = responseBody.getRequestId();
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
-        // System.out.println("[" + channel + "] RECEIVE RESPONSE: " + responseBody + "; " + responseBody.getMethodPayload());
+        // System.out.println((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel + " " + responseBody + "; " + responseBody.getMethodPayload());
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
             AMQMethodListener methodListener = requestSentMap.get(requestId);
