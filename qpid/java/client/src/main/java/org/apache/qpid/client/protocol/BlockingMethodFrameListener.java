@@ -119,11 +119,11 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
                 catch (InterruptedException e)
                 {
                     // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-                    if (!_ready && timeout != -1)
-                    {
-                        _error = new AMQException("Server did not respond timely");
-                        _ready = true;
-                    }
+//                    if (!_ready && timeout != -1)
+//                    {
+//                        _error = new AMQException("Server did not respond timely");
+//                        _ready = true;
+//                    }
                 }
             }
         }
