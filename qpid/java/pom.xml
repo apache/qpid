@@ -90,7 +90,7 @@
     <properties>
         <topDirectoryLocation>.</topDirectoryLocation>
 
-        <surefire.fork.mode>once</surefire.fork.mode>
+        <surefire.fork.mode>never</surefire.fork.mode>
         <surefire.format>brief</surefire.format>
         <surefire.usefile>false</surefire.usefile>
         <compile.forked>false</compile.forked>
