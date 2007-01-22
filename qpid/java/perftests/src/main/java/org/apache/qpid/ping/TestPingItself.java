@@ -31,6 +31,8 @@ import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Queue;
 import java.net.InetAddress;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * This class is used to test sending and receiving messages to (pingQueue) and from a queue (replyQueue).
@@ -41,7 +43,7 @@ import java.net.InetAddress;
 public class TestPingItself extends PingPongProducer
 {
     private static final Logger _logger = Logger.getLogger(TestPingItself.class);
-    
+
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent,  int messageSize, boolean verbose)
             throws Exception
@@ -49,7 +51,26 @@ public class TestPingItself extends PingPongProducer
         super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize, verbose);
     }
 
+    public TestPingItself(String brokerDetails, String username, String password, String virtualpath, int queueCount,
+                          String selector, boolean transacted, boolean persistent,  int messageSize, boolean verbose)
+            throws Exception
+    {
+        super(brokerDetails, username, password, virtualpath, transacted);
+        setQueueCount(queueCount);
+        createQueues(queueCount);
+
+        _persistent = persistent;
+        _messageSize = messageSize;
+        _verbose = verbose;
+
+        createConsumers(selector);
+        createProducer();
+    }
+
     @Override
+    /**
+     * Sets the replyQueue to be the same as ping queue. 
+     */
     public void createConsumer(String selector) throws JMSException
     {
         // Create a message consumer to get the replies with and register this to be called back by it.
@@ -57,8 +78,6 @@ public class TestPingItself extends PingPongProducer
         MessageConsumer consumer = getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
         consumer.setMessageListener(this);
     }
-
-    
 
     /**
      * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs

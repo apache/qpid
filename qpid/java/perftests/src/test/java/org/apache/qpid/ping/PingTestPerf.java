@@ -46,6 +46,9 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     /** Holds the name of the property to get the ping queue name from. */
     private static final String PING_QUEUE_NAME_PROPNAME = "pingQueue";
 
+    /** holds the queue count, if the test is being performed with multiple queues */
+    private static final String PING_QUEUE_COUNT_PROPNAME = "queues";
+
     /** Holds the name of the property to get the test delivery mode from. */
     private static final String PERSISTENT_MODE_PROPNAME = "persistent";
 
@@ -92,6 +95,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
         setSystemPropertyIfNull(TIMEOUT_PROPNAME, Long.toString(TIMEOUT_DEFAULT));
+        setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));
     }
 
     /** Holds the test ping client. */
@@ -130,7 +134,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
         {
-            Assert.fail("The ping timed out. Messages Sent = " + numReplies + ", MessagesReceived = " + numPings);
+            Assert.fail("The ping timed out. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
         }
     }
 
@@ -147,6 +151,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             String username = "guest";
             String password = "guest";
             String virtualpath = testParameters.getProperty(VIRTUAL_PATH_PROPNAME);
+            int queueCount = Integer.parseInt(testParameters.getProperty(PING_QUEUE_COUNT_PROPNAME));
             String queueName = testParameters.getProperty(PING_QUEUE_NAME_PROPNAME);
             boolean persistent = Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME));
             boolean transacted = Boolean.parseBoolean(testParameters.getProperty(TRANSACTED_PROPNAME));
@@ -154,9 +159,18 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             boolean verbose = false;
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
 
-            // Establish a client to ping a Queue and listen the reply back from same Queue
-            _pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath, queueName,
-                                                   selector, transacted, persistent, messageSize, verbose);
+            if (queueCount > 1)
+            {
+                // test client with multiple queues
+                _pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath, queueCount,
+                                                       selector, transacted, persistent, messageSize, verbose);
+            }
+            else
+            {
+                // Establish a client to ping a Queue and listen the reply back from same Queue
+                _pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath, queueName,
+                                                       selector, transacted, persistent, messageSize, verbose);
+            }
 
             // Start the client connection
             _pingItselfClient.getConnection().start();
