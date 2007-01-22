@@ -64,4 +64,15 @@ public class PubSubTwoConnectionTest extends TestCase
         assertNotNull(tm1);
         assertEquals("Hello", tm1.getText());
     }
+    
+    public static void main(String[] args){
+    	PubSubTwoConnectionTest test = new PubSubTwoConnectionTest();
+    	try {
+			test.setUp();
+			test.testTwoConnections();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
 }

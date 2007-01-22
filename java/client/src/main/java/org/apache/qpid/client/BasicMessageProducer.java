@@ -564,10 +564,21 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         int size = (payload != null) ? payload.limit() : 0;
         final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize();
         
+        if(_logger.isDebugEnabled()){
+        	_logger.debug("framePayloadMax " + framePayloadMax);
+        	_logger.debug("size " + size);
+        	_logger.debug("payload capacity" + payload.capacity());
+        	_logger.debug("payload limit" + payload.limit());
+        	_logger.debug("payload remaining" + payload.remaining());
+        	_logger.debug("payload position" + payload.position());
+        }
+        
         if (size < framePayloadMax){
         	// Inline message case
         	_logger.debug("Inline case, sending data inline with the transfer method");
-        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE,payload); 
+
+        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE,payload);
+
         	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
         } else {
         	// Reference message case
