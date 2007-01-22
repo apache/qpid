@@ -16,6 +16,8 @@ libqpidbroker_la_SOURCES =				\
   Binding.h					\
   Broker.cpp					\
   Broker.h					\
+  BrokerSingleton.cpp				\
+  BrokerSingleton.h				\
   BrokerChannel.cpp				\
   BrokerChannel.h				\
   BrokerExchange.h				\
