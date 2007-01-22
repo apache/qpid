@@ -25,8 +25,9 @@ namespace framing {
 Responder::Responder() : lastId(0), responseMark(0) {}
 
 void Responder::received(const AMQRequestBody::Data& request) {
-    if (request.responseMark < responseMark || request.responseMark > lastId)
-        THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid resposne mark");
+    // FIXME aconway 2007-01-22: Re-insert strict checking when all works.
+//     if (request.responseMark < responseMark || request.responseMark > lastId)
+//         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid resposne mark");
     responseMark = request.responseMark;
 }
 

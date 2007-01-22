@@ -32,7 +32,8 @@ class ConnectionFactory : public qpid::sys::ConnectionInputHandlerFactory
   public:
     ConnectionFactory(Broker& b);
             
-    virtual qpid::sys::ConnectionInputHandler* create(qpid::sys::ConnectionOutputHandler* ctxt);
+    virtual qpid::sys::ConnectionInputHandler* create(
+        qpid::sys::ConnectionOutputHandler* ctxt);
             
     virtual ~ConnectionFactory();
 
