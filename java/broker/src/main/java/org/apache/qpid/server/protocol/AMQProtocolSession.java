@@ -72,19 +72,18 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      */
     void addChannel(AMQChannel channel) throws AMQException;
 
-    /**
-     * Close a specific channel. This will remove any resources used by the channel, including:
-     * <ul><li>any queue subscriptions (this may in turn remove queues if they are auto delete</li>
-     * </ul>
-     * @param channelId id of the channel to close
-     * @param requestId id of the request that initiated the close, used in response
-     * @throws org.apache.qpid.AMQException if an error occurs closing the channel
-     * @throws IllegalArgumentException if the channel id is not valid
-     */
+    void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException;
+    
     void closeChannelResponse(int channelId, long requestId) throws AMQException;
     
-    void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException;
+    void closeSessionRequest(int replyCode, String replyText, int classId, int methodId) throws AMQException;
 
+    void closeSessionRequest(int replyCode, String replyText) throws AMQException;
+    
+    void closeSessionResponse(long requestId) throws AMQException;
+    
+    void closeSession() throws AMQException;
+    
     /**
      * Remove a channel from the session but do not close it.
      * @param channelId
@@ -96,12 +95,6 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      * @param delay delay in seconds (not ms)
      */
     void initHeartbeats(int delay);
-
-    /**
-     * This must be called when the session is _closed in order to free up any resources
-     * managed by the session.
-     */
-    void closeSession() throws AMQException;
 
     /**
      * @return a key that uniquely identifies this session
