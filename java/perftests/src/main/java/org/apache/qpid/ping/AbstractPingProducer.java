@@ -1,5 +1,6 @@
 package org.apache.qpid.ping;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     private static final Logger _logger = Logger.getLogger(AbstractPingProducer.class);
 
     /** Used to format time stamping output. */
-    protected static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
+    protected static final DateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
 
     /** Used to tell the ping loop when to terminate, it only runs while this is true. */
     protected boolean _publish = true;

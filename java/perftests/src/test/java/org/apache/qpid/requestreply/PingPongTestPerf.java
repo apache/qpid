@@ -81,7 +81,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     private static final String VIRTUAL_PATH_DEFAULT = "/test";
 
     /** Sets a default ping timeout. */
-    private static final long TIMEOUT = 5000;
+    private static final long TIMEOUT = 15000;
 
     // Sets up the test parameters with defaults.
     static
@@ -94,11 +94,8 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
     }
 
-    /** Holds the test ping-pong producer. */
-    private PingPongProducer _testPingProducer;
-
-    /** Holds the test ping client. */
-    private PingPongBouncer _testPingBouncer;
+    /** Thread local to hold the per-thread test setup fields. */
+    ThreadLocal<PerThreadSetup> threadSetup = new ThreadLocal<PerThreadSetup>();
 
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
@@ -135,11 +132,16 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
 
     public void testPingPongOk(int numPings) throws Exception
     {
+        // Get the per thread test setup to run the test through.
+        PerThreadSetup perThreadSetup = threadSetup.get();
+
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-            _testPingProducer.getTestMessage(_testPingProducer.getReplyQueue(),
-                                             Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME)),
-                                             Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME)));
+            perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyQueue(),
+                                                            Integer.parseInt(testParameters.getProperty(
+                                                                                 MESSAGE_SIZE_PROPNAME)),
+                                                            Boolean.parseBoolean(testParameters.getProperty(
+                                                                                     PERSISTENT_MODE_PROPNAME)));
 
         // Use the test timing controller to reset the test timer now and obtain the current time.
         // This can be used to remove the message creation time from the test.
@@ -147,7 +149,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
         //long startTime = timingUtils.restart();
 
         // Send the message and wait for a reply.
-        int numReplies = _testPingProducer.pingAndWaitForReply(msg, numPings, TIMEOUT);
+        int numReplies = perThreadSetup._testPingProducer.pingAndWaitForReply(msg, numPings, TIMEOUT);
 
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
@@ -159,11 +161,14 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     protected void setUp() throws Exception
     {
         // Log4j will propagate the test name as a thread local in all log output.
-        NDC.push(getName());
+        // Carefull when using this, it can cause memory leaks when not cleaned up properly.
+        //NDC.push(getName());
 
-        // Ensure that the connection, session and ping queue are established, if they have not already been.
-        if (_testPingProducer == null)
+        // Create the test setups on a per thread basis, only if they have not already been created.
+        if (threadSetup.get() == null)
         {
+            PerThreadSetup perThreadSetup = new PerThreadSetup();
+
             // Extract the test set up paramaeters.
             String brokerDetails = testParameters.getProperty(BROKER_PROPNAME);
             String username = "guest";
@@ -177,17 +182,21 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
 
             // Establish a bounce back client on the ping queue to bounce back the pings.
-            _testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName, persistent,
-                                                   transacted, selector, verbose);
+            perThreadSetup._testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName,
+                                                                  persistent, transacted, selector, verbose);
 
             // Start the connections for client and producer running.
-            _testPingBouncer.getConnection().start();
+            perThreadSetup._testPingBouncer.getConnection().start();
 
             // Establish a ping-pong client on the ping queue to send the pings with.
-            _testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath, queueName, selector,
-                                                     transacted, persistent, messageSize, verbose);
+            perThreadSetup._testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath,
+                                                                    queueName, selector, transacted, persistent, messageSize,
+                                                                    verbose);
 
-            _testPingProducer.getConnection().start();
+            perThreadSetup._testPingProducer.getConnection().start();
+
+            // Attach the per-thread set to the thread.
+            threadSetup.set(perThreadSetup);
         }
     }
 
@@ -207,7 +216,16 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
         }
         finally
         {
-            NDC.pop();
+            //NDC.pop();
         }
+    }
+
+    private static class PerThreadSetup
+    {
+        /** Holds the test ping-pong producer. */
+        private PingPongProducer _testPingProducer;
+
+        /** Holds the test ping client. */
+        private PingPongBouncer _testPingBouncer;
     }
 }

@@ -4,12 +4,12 @@ import java.util.Properties;
 
 import javax.jms.*;
 
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 
 /**
@@ -98,8 +98,8 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));
     }
 
-    /** Holds the test ping client. */
-    private TestPingItself _pingItselfClient;
+    /** Thread local to hold the per-thread test setup fields. */
+    ThreadLocal<PerThreadSetup> threadSetup = new ThreadLocal<PerThreadSetup>();
 
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
@@ -112,6 +112,21 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         super(name);
     }
 
+    /**
+     * Compile all the tests into a test suite.
+     */
+    public static Test suite()
+    {
+        // Build a new test suite
+        TestSuite suite = new TestSuite("Ping Performance Tests");
+
+        // Run performance tests in read committed mode.
+        suite.addTest(new PingTestPerf("testPingOk"));
+
+        return suite;
+               //return new junit.framework.TestSuite(PingTestPerf.class);
+    }
+
     private static void setSystemPropertyIfNull(String propName, String propValue)
     {
         if (System.getProperty(propName) == null)
@@ -122,15 +137,23 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
 
     public void testPingOk(int numPings) throws Exception
     {
+        // Get the per thread test setup to run the test through.
+        PerThreadSetup perThreadSetup = threadSetup.get();
+
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
-        ObjectMessage msg = _pingItselfClient.getTestMessage(null,
-                                             Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME)),
-                                             Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME)));
+        ObjectMessage msg =
+            perThreadSetup._pingItselfClient.getTestMessage(null,
+                                                            Integer.parseInt(testParameters.getProperty(
+                                                                                 MESSAGE_SIZE_PROPNAME)),
+                                                            Boolean.parseBoolean(testParameters.getProperty(
+                                                                                     PERSISTENT_MODE_PROPNAME)));
 
         // start the test
         long timeout = Long.parseLong(testParameters.getProperty(TIMEOUT_PROPNAME));
-        int numReplies = _pingItselfClient.pingAndWaitForReply(msg, numPings, timeout);
+        int numReplies = perThreadSetup._pingItselfClient.pingAndWaitForReply(msg, numPings, timeout);
+
         _logger.info("replies = " + numReplies);
+
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
         {
@@ -141,11 +164,14 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     protected void setUp() throws Exception
     {
         // Log4j will propagate the test name as a thread local in all log output.
-        NDC.push(getName());
+        // Carefull when using this, it can cause memory leaks when not cleaned up properly.
+        //NDC.push(getName());
 
-        // Ensure that the connection, session and ping queue are established, if they have not already been.
-        if (_pingItselfClient == null)
+        // Create the test setups on a per thread basis, only if they have not already been created.
+        if (threadSetup.get() == null)
         {
+            PerThreadSetup perThreadSetup = new PerThreadSetup();
+
             // Extract the test set up paramaeters.
             String brokerDetails = testParameters.getProperty(BROKER_PROPNAME);
             String username = "guest";
@@ -159,21 +185,27 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             boolean verbose = false;
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
 
+            // Establish a client to ping a Queue and listen the reply back from same Queue
             if (queueCount > 1)
             {
                 // test client with multiple queues
-                _pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath, queueCount,
-                                                       selector, transacted, persistent, messageSize, verbose);
+                perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
+                                                                      queueCount, selector, transacted, persistent,
+                                                                      messageSize, verbose);
             }
             else
             {
                 // Establish a client to ping a Queue and listen the reply back from same Queue
-                _pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath, queueName,
-                                                       selector, transacted, persistent, messageSize, verbose);
+                perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
+                                                                      queueName, selector, transacted, persistent,
+                                                                      messageSize, verbose);
             }
 
             // Start the client connection
-            _pingItselfClient.getConnection().start();
+            perThreadSetup._pingItselfClient.getConnection().start();
+
+            // Attach the per-thread set to the thread.
+            threadSetup.set(perThreadSetup);
         }
     }
 
@@ -190,22 +222,13 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         }
         finally
         {
-            NDC.pop();
+            //NDC.pop();
         }
     }
 
-    /**
-     * Compile all the tests into a test suite.
-     */
-    public static Test suite()
-    {      
-        // Build a new test suite
-        TestSuite suite = new TestSuite("Ping Performance Tests");
-
-        // Run performance tests in read committed mode.
-        suite.addTest(new PingTestPerf("testPingOk"));
-
-        return suite;
-        //return new junit.framework.TestSuite(PingTestPerf.class);
+    private static class PerThreadSetup
+    {
+        /** Holds the test ping client. */
+        private TestPingItself _pingItselfClient;
     }
 }
