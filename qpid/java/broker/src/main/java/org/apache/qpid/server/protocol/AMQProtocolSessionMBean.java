@@ -178,7 +178,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         for (AMQChannel channel : list)
         {
             Object[] itemValues = {channel.getChannelId(), channel.isTransactional(),
-                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
+                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
                     channel.getUnacknowledgedMessageMap().size()};
 
             CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
