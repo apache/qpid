@@ -129,8 +129,13 @@ public class Content
         content.limit(length);
     }
     
-    public String toString()
+    public synchronized String toString()
     {
-        return content.toString();
+    	int position = content.position();
+    	content.flip();
+        String tmp = content.toString();
+        content.position(position);
+        
+        return tmp;
     }
 }
