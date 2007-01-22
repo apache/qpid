@@ -29,6 +29,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -88,6 +89,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     private FailoverState _failoverState = FailoverState.NOT_STARTED;
 
     private CountDownLatch _failoverLatch;
+
+    private final long DEFAULT_SYNC_TIMEOUT = 1000 * 30;
 
     public AMQProtocolHandler(AMQConnection con)
     {
@@ -280,7 +283,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public void propagateExceptionToWaiters(Exception e)
     {
         getStateManager().error(e);
-        if(!_frameListeners.isEmpty())
+        if (!_frameListeners.isEmpty())
         {
             final Iterator it = _frameListeners.iterator();
             while (it.hasNext())
@@ -319,7 +322,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             {
 
                 boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                if(!_frameListeners.isEmpty())
+                if (!_frameListeners.isEmpty())
                 {
                     Iterator it = _frameListeners.iterator();
                     while (it.hasNext())
@@ -330,13 +333,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 }
                 if (!wasAnyoneInterested)
                 {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"  + _frameListeners);
+                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:" + _frameListeners);
                 }
             }
             catch (AMQException e)
             {
                 getStateManager().error(e);
-                if(!_frameListeners.isEmpty())
+                if (!_frameListeners.isEmpty())
                 {
                     Iterator it = _frameListeners.iterator();
                     while (it.hasNext())
@@ -383,17 +386,18 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             _logger.debug("Sent frame " + message);
         }
     }
-/*
-    public void addFrameListener(AMQMethodListener listener)
-    {
-        _frameListeners.add(listener);
-    }
 
-    public void removeFrameListener(AMQMethodListener listener)
-    {
-        _frameListeners.remove(listener);
-    }
-  */
+    /*
+      public void addFrameListener(AMQMethodListener listener)
+      {
+          _frameListeners.add(listener);
+      }
+
+      public void removeFrameListener(AMQMethodListener listener)
+      {
+          _frameListeners.remove(listener);
+      }
+    */
     public void attainState(AMQState s) throws AMQException
     {
         getStateManager().attainState(s);
@@ -427,12 +431,27 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                                                             BlockingMethodFrameListener listener)
             throws AMQException
     {
+        return writeCommandFrameAndWaitForReply(frame, listener, DEFAULT_SYNC_TIMEOUT);
+    }
+
+    /**
+     * Convenience method that writes a frame to the protocol session and waits for
+     * a particular response. Equivalent to calling getProtocolSession().write() then
+     * waiting for the response.
+     *
+     * @param frame
+     * @param listener the blocking listener. Note the calling thread will block.
+     */
+    private AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
+                                                            BlockingMethodFrameListener listener, long timeout)
+            throws AMQException
+    {
         try
         {
             _frameListeners.add(listener);
             _protocolSession.writeFrame(frame);
 
-            AMQMethodEvent e = listener.blockForFrame();
+            AMQMethodEvent e = listener.blockForFrame(timeout);
             return e;
             // When control resumes before this line, a reply will have been received
             // that matches the criteria defined in the blocking listener
@@ -454,8 +473,16 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass) throws AMQException
     {
+        return syncWrite(frame, responseClass, DEFAULT_SYNC_TIMEOUT);
+    }
+
+    /**
+     * More convenient method to write a frame and wait for it's response.
+     */
+    public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass, long timeout) throws AMQException
+    {
         return writeCommandFrameAndWaitForReply(frame,
-                                                new SpecificMethodFrameListener(frame.channel, responseClass));
+                                                new SpecificMethodFrameListener(frame.channel, responseClass), timeout);
     }
 
     /**
@@ -488,20 +515,34 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void closeConnection() throws AMQException
     {
+        closeConnection(-1);
+    }
+
+    public void closeConnection(long timeout) throws AMQException
+    {
         getStateManager().changeState(AMQState.CONNECTION_CLOSING);
 
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame frame = ConnectionCloseBody.createAMQFrame(0,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
-            0,	// classId
-            0,	// methodId
-            AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            new AMQShortString("JMS client is closing the connection."));	// replyText
-        syncWrite(frame, ConnectionCloseOkBody.class);
+                                                                  (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                  0,    // classId
+                                                                  0,    // methodId
+                                                                  AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
+                                                                  new AMQShortString("JMS client is closing the connection."));    // replyText
 
-        _protocolSession.closeProtocolSession();
+        try
+        {
+            syncWrite(frame, ConnectionCloseOkBody.class, timeout);
+            _protocolSession.closeProtocolSession();
+        }
+        catch (AMQTimeoutException e)
+        {
+            _protocolSession.closeProtocolSession(false);
+        }
+
+
     }
 
     /**
@@ -566,7 +607,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _stateManager = stateManager;
         _protocolSession.setStateManager(stateManager);
     }
-    
+
     public AMQProtocolSession getProtocolSession()
     {
         return _protocolSession;

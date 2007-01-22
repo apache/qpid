@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.
- *
+ * <p/>
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
@@ -110,6 +110,8 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _minaProtocolSession = protocolSession;
         // properties of the connection are made available to the event handlers
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
+        //fixme - real value needed
+        _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         _stateManager = new AMQStateManager(this);
     }
 
@@ -119,10 +121,11 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _minaProtocolSession = protocolSession;
         // properties of the connection are made available to the event handlers
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
-
+        //fixme - real value needed
+        _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         _stateManager = stateManager;
         _stateManager.setProtocolSession(this);
-                
+
     }
 
     public void init()
@@ -153,12 +156,12 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         getAMQConnection().setClientID(clientID);
     }
-    
+
     public AMQStateManager getStateManager()
     {
         return _stateManager;
     }
-    
+
     public void setStateManager(AMQStateManager stateManager)
     {
         _stateManager = stateManager;
@@ -191,8 +194,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     /**
      * Store the SASL client currently being used for the authentication handshake
+     *
      * @param client if non-null, stores this in the session. if null clears any existing client
-     * being stored
+     *               being stored
      */
     public void setSaslClient(SaslClient client)
     {
@@ -223,6 +227,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     /**
      * Callback invoked from the BasicDeliverMethodHandler when a message has been received.
      * This is invoked on the MINA dispatcher thread.
+     *
      * @param message
      * @throws AMQException if this was not expected
      */
@@ -280,8 +285,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     /**
      * Deliver a message to the appropriate session, removing the unprocessed message
      * from our map
+     *
      * @param channelId the channel id the message should be delivered to
-     * @param msg the message
+     * @param msg       the message
      */
     private void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
     {
@@ -306,6 +312,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         WriteFuture f = _minaProtocolSession.write(frame);
         if (wait)
         {
+            //fixme -- time out?
             f.join();
         }
         else
@@ -340,6 +347,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     /**
      * Starts the process of closing a session
+     *
      * @param session the AMQSession being closed
      */
     public void closeSession(AMQSession session)
@@ -361,19 +369,27 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      * This method decides whether this is a response or an initiation. The latter
      * case causes the AMQSession to be closed and an exception to be thrown if
      * appropriate.
+     *
      * @param channelId the id of the channel (session)
      * @return true if the client must respond to the server, i.e. if the server
-     * initiated the channel close, false if the channel close is just the server
-     * responding to the client's earlier request to close the channel.
+     *         initiated the channel close, false if the channel close is just the server
+     *         responding to the client's earlier request to close the channel.
      */
-    public boolean channelClosed(int channelId, int code, String text)
+    public boolean channelClosed(int channelId, int code, String text) throws AMQException
     {
         final Integer chId = channelId;
         // if this is not a response to an earlier request to close the channel
         if (_closingChannels.remove(chId) == null)
         {
             final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
-            session.closed(new AMQException(_logger, code, text));
+            try
+            {
+                session.closed(new AMQException(_logger, code, text));
+            }
+            catch (JMSException e)
+            {
+                throw new AMQException("JMSException received while closing session", e);
+            }
             return true;
         }
         else
@@ -389,15 +405,20 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     public void closeProtocolSession()
     {
+        closeProtocolSession(true);
+    }
+
+    public void closeProtocolSession(boolean waitLast)
+    {
         _logger.debug("Waiting for last write to join.");
-        if (_lastWriteFuture != null)
+        if (waitLast && _lastWriteFuture != null)
         {
             _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         }
 
         _logger.debug("Closing protocol session");
         final CloseFuture future = _minaProtocolSession.close();
-        future.join();
+        future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
     }
 
     public void failover(String host, int port)
@@ -408,17 +429,16 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     protected AMQShortString generateQueueName()
     {
         int id;
-        synchronized(_queueIdLock)
+        synchronized (_queueIdLock)
         {
             id = _queueId++;
         }
         //get rid of / and : and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;:","");
+        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(), "/;:", "");
         return new AMQShortString("tmp_" + localAddress + "_" + id);
     }
 
     /**
-     *
      * @param delay delay in seconds (not ms)
      */
     void initHeartbeats(int delay)
