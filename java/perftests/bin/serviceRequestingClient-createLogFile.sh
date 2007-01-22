@@ -20,7 +20,8 @@
 
 ##LOGDIR=$QPID_HOME/logs
 LOGDIR=../logs
-LOGFILE=$LOGDIR/perftest.log
+date=`date +"%y%m%d%H%M%S"`
+LOGFILE=$LOGDIR/perftest.log.$date
 
 ## create the log dir
 if [ ! -d $LOGDIR ]; then

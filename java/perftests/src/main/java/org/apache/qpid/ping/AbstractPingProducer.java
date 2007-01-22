@@ -1,14 +1,19 @@
 package org.apache.qpid.ping;
 
 import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.*;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQNoConsumersException;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * This abstract class captures functionality that is common to all ping producers. It provides functionality to
@@ -40,6 +45,12 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 
     /** Holds the producer session, need to create test messages. */
     private Session _producerSession;
+
+
+    /** holds the no of queues the tests will be using to send messages. By default it will be 1 */
+    private int _queueCount;
+    private static AtomicInteger _queueSequenceID = new AtomicInteger();
+    private List<Queue> _queues = new ArrayList<Queue>();
 
     /**
      * Convenience method for a short pause.
@@ -167,6 +178,37 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     public void setProducerSession(Session session)
     {
         this._producerSession = session;
+    }
+
+    public int getQueueCount()
+    {
+        return _queueCount;
+    }
+
+    public void setQueueCount(int queueCount)
+    {
+        this._queueCount = queueCount;
+    }
+
+    /**
+     * Creates queues dynamically and adds to the queues list.  This is when the test is being done with
+     * multiple queues.
+     * @param queueCount
+     */
+    protected void createQueues(int queueCount)
+    {
+        for (int i = 0; i < queueCount; i++)
+        {
+            AMQShortString name = new AMQShortString("Queue_" + _queueSequenceID.incrementAndGet() + "_" + System.currentTimeMillis());
+            AMQQueue queue = new AMQQueue(name, name, false, false, false);
+            
+            _queues.add(queue);
+        }
+    }
+
+    protected Queue getQueue(int index)
+    {
+        return _queues.get(index);
     }
 
     /**
