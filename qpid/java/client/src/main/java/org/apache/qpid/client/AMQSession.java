@@ -140,12 +140,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /**
      * Used to signal 'pausing' the dispatcher when setting a message listener on a consumer
      */
-    private final AtomicBoolean _pausing = new AtomicBoolean(false);
+    private final AtomicBoolean _pausingDispatcher = new AtomicBoolean(false);
 
     /**
      * Used to signal 'pausing' the dispatcher when setting a message listener on a consumer
      */
-    private final AtomicBoolean _paused = new AtomicBoolean(false);
+    private final AtomicBoolean _pausedDispatcher = new AtomicBoolean(false);
 
     /**
      * Set when recover is called. This is to handle the case where recover() is called by application code
@@ -171,7 +171,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private class Dispatcher extends Thread
     {
-        private final Logger _logger = Logger.getLogger(Dispatcher.class);        
+        private final Logger _logger = Logger.getLogger(Dispatcher.class);
+        private boolean _reDispatching = true;
 
         public Dispatcher()
         {
@@ -184,40 +185,46 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             while (!_stopped.get())
             {
-                if (_pausing.get())
+                synchronized (_pausingDispatcher)
                 {
-                    try
+                    if (_pausingDispatcher.get())
                     {
-                        //Wait for unpausing
-                        synchronized (_pausing)
+                        try
                         {
-                            synchronized (_paused)
+
+                            _pausingDispatcher.set(false);
+
+                            //Wait to continue with pause code.
+                            synchronized (_pausedDispatcher)
                             {
-                                _paused.notify();
+                                _pausedDispatcher.notify();
                             }
 
-                            _logger.info("dispatcher paused");
-                            
-                            _pausing.wait();
-                            _logger.info("dispatcher notified");
+                            _reDispatching = true;
+
+                            _logger.info("Dispatcher paused");
+                            _pausingDispatcher.wait();
+                            _logger.info("Dispatcher notified");
+
                         }
-
+                        catch (InterruptedException e)
+                        {
+                            _logger.info("dispacher interrupted");
+                        }
                     }
-                    catch (InterruptedException e)
-                    {
-                        //do nothing... occurs when a pause request occurs will already
-                        // be here if another pause event is pending
-                        _logger.info("dispacher interrupted");
-                    }
+                }
 
+                if (_reDispatching)
+                {
                     doReDispatch();
-
                 }
                 else
                 {
                     doNormalDispatch();
                 }
+
             }
+
 
             _logger.info("Dispatcher thread terminating for channel " + _channelId);
         }
@@ -227,7 +234,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             UnprocessedMessage message;
             try
             {
-                while (!_stopped.get() && !_pausing.get() && (message = (UnprocessedMessage) _queue.take()) != null)
+                while (!_stopped.get() && !_pausingDispatcher.get() && (message = (UnprocessedMessage) _queue.take()) != null)
                 {
                     dispatchMessage(message);
                 }
@@ -257,7 +264,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             if (_reprocessQueue == null || _reprocessQueue.isEmpty())
             {
                 _logger.info("Reprocess Queue emptied");
-                _pausing.set(false);
+
+                _reDispatching = false;
             }
             else
             {
@@ -343,30 +351,30 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         public void pause()
         {
             _logger.info("pausing");
-            _pausing.set(true);
 
-
-            interrupt();
-
-            synchronized (_paused)
+            synchronized (_pausedDispatcher)
             {
+                _pausingDispatcher.set(true);
+
+                interrupt();
+
                 try
                 {
-                    _paused.wait();
+                    _pausedDispatcher.wait();
                 }
                 catch (InterruptedException e)
                 {
-                  //do nothing
+                    //do nothing
                 }
             }
         }
 
         public void reprocess()
         {
-            synchronized (_pausing)
+            synchronized (_pausingDispatcher)
             {
                 _logger.info("reprocessing");
-                _pausing.notify();
+                _pausingDispatcher.notify();
             }
         }
     }
@@ -578,6 +586,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void close() throws JMSException
     {
+        close(-1);
+    }
+
+    public void close(long timeout) throws JMSException
+    {
         // We must close down all producers and consumers in an orderly fashion. This is the only method
         // that can be called from a different thread of control from the one controlling the session
         synchronized (_connection.getFailoverMutex())
@@ -624,8 +637,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @param amqe the exception, may be null to indicate no error has occurred
      */
-    private void closeProducersAndConsumers(AMQException amqe)
+    private void closeProducersAndConsumers(AMQException amqe) throws JMSException
     {
+        JMSException jmse = null;
         try
         {
             closeProducers();
@@ -633,6 +647,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         catch (JMSException e)
         {
             _logger.error("Error closing session: " + e, e);
+            jmse = e;
         }
         try
         {
@@ -641,7 +656,19 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         catch (JMSException e)
         {
             _logger.error("Error closing session: " + e, e);
+            if (jmse == null)
+            {
+                jmse = e;
+            }
         }
+        finally
+        {
+            if (jmse != null)
+            {
+                throw jmse;
+            }
+        }
+
     }
 
     /**
@@ -650,7 +677,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @param e the exception that caused this session to be closed. Null causes the
      */
-    public void closed(Throwable e)
+    public void closed(Throwable e) throws JMSException
     {
         synchronized (_connection.getFailoverMutex())
         {

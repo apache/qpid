@@ -25,7 +25,6 @@ import org.apache.qpid.AMQException;
 
 /**
  * Waits for a particular state to be reached.
- *
  */
 public class StateWaiter implements StateListener
 {
@@ -38,6 +37,7 @@ public class StateWaiter implements StateListener
     private volatile Throwable _throwable;
 
     private final Object _monitor = new Object();
+    private static final long TIME_OUT = 1000 * 60 * 2;
 
     public StateWaiter(AMQState state)
     {
@@ -46,7 +46,7 @@ public class StateWaiter implements StateListener
 
     public void waituntilStateHasChanged() throws AMQException
     {
-        synchronized(_monitor)
+        synchronized (_monitor)
         {
             //
             // The guard is required in case we are woken up by a spurious
@@ -57,7 +57,7 @@ public class StateWaiter implements StateListener
                 try
                 {
                     _logger.debug("State " + _state + " not achieved so waiting...");
-                    _monitor.wait();
+                    _monitor.wait(TIME_OUT);
                 }
                 catch (InterruptedException e)
                 {
@@ -82,7 +82,7 @@ public class StateWaiter implements StateListener
 
     public void stateChanged(AMQState oldState, AMQState newState)
     {
-        synchronized(_monitor)
+        synchronized (_monitor)
         {
             if (_logger.isDebugEnabled())
             {
@@ -103,7 +103,7 @@ public class StateWaiter implements StateListener
 
     public void error(Throwable t)
     {
-        synchronized(_monitor)
+        synchronized (_monitor)
         {
             if (_logger.isDebugEnabled())
             {
