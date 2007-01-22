@@ -21,6 +21,8 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -91,7 +93,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This method is called by the thread that wants to wait for a frame.
      */
-    public AMQMethodEvent blockForFrame() throws AMQException
+    public AMQMethodEvent blockForFrame(long timeout) throws AMQException
     {
         synchronized (_lock)
         {
@@ -99,11 +101,29 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             {
                 try
                 {
-                    _lock.wait();
+                    if (timeout == -1)
+                    {
+                        _lock.wait();
+                    }
+                    else
+                    {
+
+                        _lock.wait(timeout);
+                        if (!_ready)
+                        {
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion");
+                            _ready = true;
+                        }
+                    }
                 }
                 catch (InterruptedException e)
                 {
-                    // IGNORE
+                    // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
+                    if (!_ready && timeout != -1)
+                    {
+                        _error = new AMQException("Server did not respond timely");
+                        _ready = true;
+                    }
                 }
             }
         }
@@ -115,7 +135,8 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             }
             else if (_error instanceof FailoverException)
             {
-                throw (FailoverException)_error;  // needed to expose FailoverException.
+                // This should ensure that FailoverException is not wrapped and can be caught.                
+                throw(FailoverException) _error;  // needed to expose FailoverException.
             }
             else
             {
