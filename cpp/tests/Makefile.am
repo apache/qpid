@@ -43,7 +43,8 @@ broker_tests =		\
 
 # Tests that use the in-process BrokerSingleton to test client-broker
 # interaction. Not strictly unit tests.
-round_trip_tests =		#  TODO aconway 2007-01-22: RequestResponseTest
+round_trip_tests =	\
+  RequestResponseTest
 
 framing_tests =		\
   FieldTableTest	\
@@ -87,7 +88,7 @@ gen.mk: Makefile.am
 	  for i in $(unit_tests); do		\
 	    libs="$$libs $${i}.la";		\
 	    echo $${i}_la_SOURCES = $$i.cpp;	\
-	    echo $${i}_la_LIBADD = '$$(lib_common)';			\
+	    echo $${i}_la_LIBADD = '$$(lib_common) $$(lib_client)';	\
 	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';	\
 	    echo $${i}_la_LDFLAGS = "-module -rpath `pwd`";	\
 	  done;					\

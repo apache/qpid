@@ -43,7 +43,7 @@ void ChannelAdapter::send(AMQFrame* frame) {
 
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     responder.received(request->getData());
-    MethodContext context(id, &out, request->getRequestId());
+    MethodContext context(id, this, request->getRequestId());
     handleMethodInContext(request, context);
 }
 
