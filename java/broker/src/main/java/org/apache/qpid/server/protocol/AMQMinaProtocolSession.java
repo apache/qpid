@@ -27,8 +27,10 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ConnectionStartBody;
+import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.framing.AMQFrame;
@@ -224,7 +226,21 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             AMQFrame frame = (AMQFrame) message;
 
             AMQChannel channel = getChannel(frame.channel);
-            if (channel == null) {
+            if (channel == null)
+            {
+                // Perform a check on incoming frames that may result in a new channel
+                // being opened. The frame MUST be:
+                // a. A new request;
+                // b. Have a request id of 1 (i.e. the first request on a new channel);
+                // c. Must be a ConnectionOpenBody method.
+                // Throw an exception for all other incoming frames on an unopened channel
+                if(!(frame.bodyFrame instanceof AMQRequestBody))
+                    throw new AMQException("Incoming frame on unopened channel not a request");
+                AMQRequestBody requestBody = (AMQRequestBody)frame.bodyFrame;
+                if (requestBody.getMethodPayload() instanceof ConnectionOpenBody)
+                    throw new AMQException("Incoming frame on unopened channel not a Connection.Open method");
+                if (requestBody.getRequestId() != 1)
+                    throw new AMQException("Incoming Connection.Open frame on unopened channel does not have a request id = 1");
                 channel = createChannel(frame.channel);
             }
 
@@ -268,6 +284,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQMethodListener methodListener)
         throws AMQException
     {
+        if (!checkMethodBodyVersion(methodBody))
+            throw new AMQProtocolVersionException("MethodBody version did not match version of current session.");
         AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
         return requestManager.sendRequest(methodBody, methodListener);
@@ -277,14 +295,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public long writeRequest(int channelNum, AMQMethodBody methodBody)
         throws AMQException
     {
-        AMQChannel channel = getChannel(channelNum);
-        RequestManager requestManager = channel.getRequestManager();
-        return requestManager.sendRequest(methodBody, _stateManager);
+        return writeRequest(channelNum, methodBody, _stateManager);
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
         throws AMQException
     {
+        if (!checkMethodBodyVersion(methodBody))
+            throw new AMQProtocolVersionException("MethodBody version did not match version of current session.");
         AMQChannel channel = getChannel(channelNum);
         ResponseManager responseManager = channel.getResponseManager();
         responseManager.sendResponse(requestId, methodBody);
@@ -380,6 +398,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      * </ul>
      *
      * @param channelId id of the channel to close
+     * @param requestId RequestId of recieved Channel.Close reuqest, used to send Channel.CloseOk response
      * @throws AMQException if an error occurs closing the channel
      * @throws IllegalArgumentException if the channel id is not valid
      */
@@ -396,6 +415,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             try
             {
                 channel.close(this);
+                // Send the Channel.CloseOk response
                 // Be aware of possible changes to parameter order as versions change.
                 writeResponse(channelId, requestId, ChannelCloseOkBody.createMethodBody(_major, _minor));
             }
@@ -425,6 +445,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 replyCode,	// replyCode
                 replyText);	// replyText
             writeRequest(channelId, cf);
+            // Wait a bit for the Channel.CloseOk to come in from the client, but don't
+            // rely on it. Attempt to remove the channel from the list if the ChannelCloseOk
+            // method handler has not already done so.
+            // TODO - Find a better way of doing this without holding up this thread...
+            try { Thread.currentThread().sleep(2000); } // 2 seconds
+            catch (InterruptedException e) {}
+            _channelMap.remove(channelId); // Returns null if already removed
         }
     }
 
@@ -577,8 +604,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _minor;
     }
 
-    public boolean amqpVersionEquals(byte major, byte minor)
+    public boolean versionEquals(byte major, byte minor)
     {
         return _major == major && _minor == minor;
+    }
+    
+    public boolean checkMethodBodyVersion(AMQMethodBody methodBody)
+    {
+        return versionEquals(methodBody.getMajor(), methodBody.getMinor());
     }
 }
