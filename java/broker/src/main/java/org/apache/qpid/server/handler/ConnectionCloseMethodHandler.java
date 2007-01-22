@@ -51,19 +51,8 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
                                AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
     {
         final ConnectionCloseBody body = evt.getMethod();
-        _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
-                     body.replyText +  " for " + protocolSession);
-        // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeResponse(evt, ConnectionCloseOkBody.createMethodBody(
-            protocolSession.getMajor(),  // AMQP major version
-            protocolSession.getMinor())); // AMQP minor version
-        try
-        {
-            protocolSession.closeSession();
-        }
-        catch (Exception e)
-        {
-            _logger.error("Error closing protocol session: " + e, e);
-        }
+        _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode +
+            "/" + body.replyText +  " for " + protocolSession);
+        protocolSession.closeSessionResponse(evt.getRequestId());
     }
 }

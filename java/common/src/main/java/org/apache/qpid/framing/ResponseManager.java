@@ -23,6 +23,8 @@ package org.apache.qpid.framing;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -30,6 +32,8 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class ResponseManager
 {
+    private static final Logger logger = Logger.getLogger(ResponseManager.class);
+
     private int channel;
     private AMQMethodListener methodListener;
     private AMQProtocolWriter protocolWriter;
@@ -113,12 +117,15 @@ public class ResponseManager
     public void requestReceived(AMQRequestBody requestBody) throws Exception
     {
         long requestId = requestBody.getRequestId();
-        // System.out.println((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel + " " + requestBody + "; " + requestBody.getMethodPayload());
+        if (logger.isDebugEnabled())
+        {
+            logger.debug((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
+                " " + requestBody + "; " + requestBody.getMethodPayload());
+        }
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
         lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
-        // TODO: Update MethodEvent to use the RequestBody instead of MethodBody
         AMQMethodEvent methodEvent = new AMQMethodEvent(channel, requestBody.getMethodPayload(), requestId);
         methodListener.methodReceived(methodEvent);
     }
@@ -126,7 +133,11 @@ public class ResponseManager
     public void sendResponse(long requestId, AMQMethodBody responseMethodBody)
         throws RequestResponseMappingException
     {
-        // System.out.println((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel + " Res[# " + requestId + "]; " + responseMethodBody);
+        if (logger.isDebugEnabled())
+        {
+            logger.debug((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel +
+                " Res[# " + requestId + "]; " + responseMethodBody);
+        }
         ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
             throw new RequestResponseMappingException(requestId,

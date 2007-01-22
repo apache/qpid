@@ -76,16 +76,9 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // Can't do this as we violate protocol. Need to send Close
                 // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
                 _logger.info("Authentication failed");
-                stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                // Be aware of possible changes to parameter order as versions change.
-                AMQMethodBody close = ConnectionCloseBody.createMethodBody(
-                    major, minor,	// AMQP version (major, minor)
-                    ConnectionCloseBody.getClazz(major, minor),		// classId
-                    ConnectionCloseBody.getMethod(major, minor),	// methodId
-                    AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
-                    AMQConstant.NOT_ALLOWED.getName());	// replyText
-                protocolSession.writeResponse(evt, close);
                 disposeSaslServer(protocolSession);
+                protocolSession.closeSessionRequest(AMQConstant.NOT_ALLOWED.getCode(),
+                    AMQConstant.NOT_ALLOWED.getName(), body.getClazz(), body.getMethod());
                 break;
             case SUCCESS:
                 _logger.info("Connected as: " + ss.getAuthorizationID());

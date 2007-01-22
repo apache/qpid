@@ -33,6 +33,9 @@ import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ChannelOpenBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
@@ -59,6 +62,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.AMQState;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
@@ -100,6 +104,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private Object _lastSent;
 
+    private boolean _closePending;
     private boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
@@ -128,6 +133,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
+        _closePending = false;
+        _closed = false;
     }
 
     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
@@ -143,6 +150,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
+        _closePending = false;
+        _closed = false;
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -168,7 +177,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return (AMQProtocolSession) minaProtocolSession.getAttachment();
     }
 
-    private AMQChannel createChannel(int id) throws AMQException {
+    private AMQChannel createChannel(int id) throws AMQException
+    {
         IApplicationRegistry registry = ApplicationRegistry.getInstance();
         AMQChannel channel = new AMQChannel(id, registry.getMessageStore(),
                                             _exchangeRegistry, this, _stateManager);
@@ -221,12 +231,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
             }
         }
-        else
+        else if(!_closed)
         {
             AMQFrame frame = (AMQFrame) message;
-
             AMQChannel channel = getChannel(frame.channel);
-            if (channel == null)
+
+            if (_closePending)
+            {
+                // If a close is pending (ie ChannelClose has been sent, but no ChannelCloseOk received), then
+                // all methods except ChannelCloseOk must be rejected. (AMQP spec)
+                if((frame.bodyFrame instanceof AMQRequestBody))
+                    throw new AMQException("Incoming request frame on connection which is pending close.");
+                AMQRequestBody requestBody = (AMQRequestBody)frame.bodyFrame;
+                if (!(requestBody.getMethodPayload() instanceof ConnectionCloseOkBody))
+                    throw new AMQException("Incoming frame on unopened channel is not a Connection.Open method.");         
+            }
+            else if (channel == null)
             {
                 // Perform a check on incoming frames that may result in a new channel
                 // being opened. The frame MUST be:
@@ -235,12 +255,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 // c. Must be a ConnectionOpenBody method.
                 // Throw an exception for all other incoming frames on an unopened channel
                 if(!(frame.bodyFrame instanceof AMQRequestBody))
-                    throw new AMQException("Incoming frame on unopened channel not a request");
+                    throw new AMQException("Incoming frame on unopened channel is not a request.");
                 AMQRequestBody requestBody = (AMQRequestBody)frame.bodyFrame;
-                if (requestBody.getMethodPayload() instanceof ConnectionOpenBody)
-                    throw new AMQException("Incoming frame on unopened channel not a Connection.Open method");
+                if (!(requestBody.getMethodPayload() instanceof ChannelOpenBody))
+                    throw new AMQException("Incoming frame on unopened channel is not a Channel.Open method.");
                 if (requestBody.getRequestId() != 1)
-                    throw new AMQException("Incoming Connection.Open frame on unopened channel does not have a request id = 1");
+                    throw new AMQException("Incoming Channel.Open frame on unopened channel does not have a request id = 1.");
                 channel = createChannel(frame.channel);
             }
 
@@ -391,17 +411,36 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             channel.rollback();
         }
     }
+    
+    // Used to initiate a channel close from the server side and inform the client
+    public void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException
+    {
+        final AMQChannel channel = _channelMap.get(channelId);
+        if (channel == null)
+        {
+            throw new IllegalArgumentException("Unknown channel id " + channelId);
+        }
+        else
+        {
+            channel.close(this);
+            // Be aware of possible changes to parameter order as versions change.
+            AMQMethodBody cf = ChannelCloseBody.createMethodBody
+                (_major, _minor,	// AMQP version (major, minor)
+                MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
+                MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
+                replyCode,	// replyCode
+                replyText);	// replyText
+            writeRequest(channelId, cf);
+            // Wait a bit for the Channel.CloseOk to come in from the client, but don't
+            // rely on it. Attempt to remove the channel from the list if the ChannelCloseOk
+            // method handler has not already done so.
+            // TODO - Find a better way of doing this without holding up this thread...
+            try { Thread.currentThread().sleep(2000); } // 2 seconds
+            catch (InterruptedException e) {}
+            _channelMap.remove(channelId); // Returns null if already removed (by closeOk handler
+        }
+    }
 
-    /**
-     * Close a specific channel. This will remove any resources used by the channel, including:
-     * <ul><li>any queue subscriptions (this may in turn remove queues if they are auto delete</li>
-     * </ul>
-     *
-     * @param channelId id of the channel to close
-     * @param requestId RequestId of recieved Channel.Close reuqest, used to send Channel.CloseOk response
-     * @throws AMQException if an error occurs closing the channel
-     * @throws IllegalArgumentException if the channel id is not valid
-     */
     // Used to close a channel as a response to a client close request
     public void closeChannelResponse(int channelId, long requestId) throws AMQException
     {
@@ -425,33 +464,52 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             }
         }
     }
-    
-    // Used to close a channel from the server side and inform the client
-    public void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException
+
+    // Used to initiate a connection close from the server side and inform the client
+    public void closeSessionRequest(int replyCode, String replyText, int classId, int methodId) throws AMQException
     {
-        final AMQChannel channel = _channelMap.get(channelId);
-        if (channel == null)
+        _closePending = true; // This prevents all methods except Close-Ok from being accepted
+        _stateManager.changeState(AMQState.CONNECTION_CLOSING);
+        AMQMethodBody close = ConnectionCloseBody.createMethodBody(
+            _major, _minor,	// AMQP version (major, minor)
+            classId,		// classId
+            methodId,	// methodId
+            replyCode,	// replyCode
+            replyText);	// replyText
+        writeRequest(0, close);        
+        // Wait a bit for the Connection.CloseOk to come in from the client, but don't
+        // rely on it. Attempt to close the connection if the ConnectionCloseOk
+        // method handler has not already done so.
+        // TODO - Find a better way of doing this without holding up this thread...
+        try { Thread.currentThread().sleep(2000); } // 2 seconds
+        catch (InterruptedException e) {}
+        closeSession();
+    }
+    
+    public void closeSessionRequest(int replyCode, String replyText) throws AMQException
+    {
+        closeSessionRequest(replyCode, replyText, 0, 0);
+    }
+    
+    // Used to close a connection as a response to a client close request
+    public void closeSessionResponse(long requestId) throws AMQException
+    {
+        // Be aware of possible changes to parameter order as versions change.
+        writeResponse(0, requestId, ConnectionCloseOkBody.createMethodBody(_major, _minor)); // AMQP version
+        closeSession();
+    }
+    
+    public void closeSession() throws AMQException
+    {
+        if (!_closed)
         {
-            throw new IllegalArgumentException("Unknown channel id");
-        }
-        else
-        {
-            channel.close(this);
-            // Be aware of possible changes to parameter order as versions change.
-            AMQMethodBody cf = ChannelCloseBody.createMethodBody
-                (_major, _minor,	// AMQP version (major, minor)
-                MessageTransferBody.getClazz((byte)0, (byte)9),	// classId
-                MessageTransferBody.getMethod((byte)0, (byte)9),	// methodId
-                replyCode,	// replyCode
-                replyText);	// replyText
-            writeRequest(channelId, cf);
-            // Wait a bit for the Channel.CloseOk to come in from the client, but don't
-            // rely on it. Attempt to remove the channel from the list if the ChannelCloseOk
-            // method handler has not already done so.
-            // TODO - Find a better way of doing this without holding up this thread...
-            try { Thread.currentThread().sleep(2000); } // 2 seconds
-            catch (InterruptedException e) {}
-            _channelMap.remove(channelId); // Returns null if already removed
+            _closed = true;
+            closeAllChannels();
+            _stateManager.changeState(AMQState.CONNECTION_CLOSED);
+            if (_managedObject != null)
+            {
+                _managedObject.unregister();
+            }        
         }
     }
 
@@ -492,23 +550,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             channel.close(this);
         }
         _channelMap.clear();
-    }
-
-    /**
-     * This must be called when the session is _closed in order to free up any resources
-     * managed by the session.
-     */
-    public void closeSession() throws AMQException
-    {
-        if (!_closed)
-        {
-            _closed = true;
-            closeAllChannels();
-            if (_managedObject != null)
-            {
-                _managedObject.unregister();
-            }
-        }
     }
 
     public String toString()

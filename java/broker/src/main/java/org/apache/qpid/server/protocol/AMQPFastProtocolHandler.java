@@ -174,18 +174,9 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         }
         else
         {
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQMethodBody closeBody = ConnectionCloseBody.createMethodBody(
-            	(byte)0, (byte)9,	// AMQP version (major, minor)
-            	0,	// classId
-                0,	// methodId
-                200,	// replyCode
-                throwable.getMessage());	// replyText
-            session.writeRequest(0, closeBody, methodListener);
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
-            protocolSession.close();
+            // TODO: Closing with code 200 ("reply-sucess") ??? This cannot be right!
+            session.closeSessionRequest(200, throwable.getMessage());
         }
     }
 

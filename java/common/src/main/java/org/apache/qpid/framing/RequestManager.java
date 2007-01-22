@@ -22,12 +22,16 @@ package org.apache.qpid.framing;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public class RequestManager
 {
+    private static final Logger logger = Logger.getLogger(RequestManager.class);
+
     private int channel;
     private AMQProtocolWriter protocolWriter;
     
@@ -71,7 +75,11 @@ public class RequestManager
             lastProcessedResponseId, requestMethodBody);
         requestSentMap.put(requestId, methodListener);
         protocolWriter.writeFrame(requestFrame);
-        // System.out.println((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel + " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
+        if (logger.isDebugEnabled())
+        {
+            logger.debug((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel +
+                " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
+        }
         return requestId;
     }
 
@@ -80,7 +88,11 @@ public class RequestManager
     {
         long requestIdStart = responseBody.getRequestId();
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
-        // System.out.println((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel + " " + responseBody + "; " + responseBody.getMethodPayload());
+        if (logger.isDebugEnabled())
+        {
+            logger.debug((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel +
+                " " + responseBody + "; " + responseBody.getMethodPayload());
+        }
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
             AMQMethodListener methodListener = requestSentMap.get(requestId);
