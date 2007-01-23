@@ -36,9 +36,10 @@ public class TestPingItself extends PingPongProducer
     private static final Logger _logger = Logger.getLogger(TestPingItself.class);
 
     /**
-     * This creates a client for pinging to a Queue. There will be one producer and one consumer instance. Consumer
-     * listening to the same Queue, producer is sending to
-     *
+     * If queueCount is <= 1 : There will be one Queue and one consumer instance for the test
+     * If queueCount is > 1 : This creats a client for tests with multiple queues. Creates as many consumer instances
+     * as there are queues, each listening to a Queue. A producer is created which picks up a queue from
+     * the list of queues to send message
      * @param brokerDetails
      * @param username
      * @param password
@@ -53,57 +54,31 @@ public class TestPingItself extends PingPongProducer
      * @param beforeCommit
      * @param afterSend
      * @param beforeSend
+     * @param failOnce
      * @param batchSize
+     * @param queueCount
      * @throws Exception
      */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                           boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                          int batchSize)
-            throws Exception
-    {
-        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, 0);
-    }
-
-    /**
-     * This creats a client for tests with multiple queues. Creates as many consumer instances as there are queues,
-     * each listening to a Queue. A producer is created which picks up a queue from the list of queues to send message.
-     *
-     * @param brokerDetails
-     * @param username
-     * @param password
-     * @param virtualpath
-     * @param selector
-     * @param transacted
-     * @param persistent
-     * @param messageSize
-     * @param verbose
-     * @param afterCommit
-     * @param beforeCommit
-     * @param afterSend
-     * @param beforeSend
-     * @param batchSize
-     * @param queueCount
-     * @throws Exception
-     */
-    public TestPingItself(String brokerDetails, String username, String password, String virtualpath,
-                          String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                           int batchSize, int queueCount)
             throws Exception
     {
-        super(brokerDetails, username, password, virtualpath, null, null, transacted, persistent, messageSize,
+        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
               verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, queueCount);
 
-        createQueues(queueCount);
+        if (queueCount > 1)
+        {
+            createQueues(queueCount);
 
-        _persistent = persistent;
-        _messageSize = messageSize;
-        _verbose = verbose;
+            _persistent = persistent;
+            _messageSize = messageSize;
+            _verbose = verbose;
 
-        createConsumers(selector);
-        createProducer();
+            createConsumers(selector);
+            createProducer();
+        }
     }
 
     /**
@@ -136,7 +111,7 @@ public class TestPingItself extends PingPongProducer
         boolean persistent = config.usePersistentMessages();
         int messageSize = config.getPayload() != 0 ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
         int messageCount = config.getMessages();
-        int queueCount = config.getQueueCount();
+        int queueCount = config.getQueueCount() != 0 ? config.getQueueCount() : 1;
         int batchSize = config.getBatchSize() != 0 ? config.getBatchSize() : BATCH_SIZE;
 
         String queue = "ping_" + System.currentTimeMillis();
@@ -182,22 +157,11 @@ public class TestPingItself extends PingPongProducer
             }
         }
 
-        TestPingItself pingItself = null;
         // Create a ping producer to handle the request/wait/reply cycle.
-        if (queueCount > 1)
-        {
-            pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, null,
-                                            transacted, persistent, messageSize, verbose,
-                                            afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                            batchSize, queueCount);
-        }
-        else
-        {
-            pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                            transacted, persistent, messageSize, verbose,
-                                            afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                            batchSize);
-        }
+        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
+                                                    transacted, persistent, messageSize, verbose,
+                                                    afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
+                                                    batchSize, queueCount);
 
         pingItself.getConnection().start();
 
