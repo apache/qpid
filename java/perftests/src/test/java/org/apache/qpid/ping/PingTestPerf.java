@@ -79,6 +79,8 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
      */
     private static final String TIMEOUT_PROPNAME = "timeout";
 
+    private static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
+
     /**
      * Holds the size of message body to attach to the ping messages.
      */
@@ -158,6 +160,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
         setSystemPropertyIfNull(TIMEOUT_PROPNAME, Long.toString(TIMEOUT_DEFAULT));
         setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));
+        setSystemPropertyIfNull(VERBOSE_OUTPUT_PROPNAME, Boolean.toString(false));
     }
 
     /**
@@ -192,7 +195,6 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     {
         // Get the per thread test setup to run the test through.
         PerThreadSetup perThreadSetup = threadSetup.get();
-
         if (numPings == 0)
         {
             _logger.error("Number of pings requested was zero.");
@@ -210,12 +212,10 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         long timeout = Long.parseLong(testParameters.getProperty(TIMEOUT_PROPNAME));
         int numReplies = perThreadSetup._pingItselfClient.pingAndWaitForReply(msg, numPings, timeout);
 
-        _logger.info("replies = " + numReplies);
-
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
         {
-            Assert.fail("The ping timed out. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
+            Assert.fail("The ping timed out after "+ timeout  + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
         }
     }
 
@@ -226,6 +226,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         //NDC.push(getName());
 
         // Create the test setups on a per thread basis, only if they have not already been created.
+
         if (threadSetup.get() == null)
         {
             PerThreadSetup perThreadSetup = new PerThreadSetup();
@@ -240,7 +241,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             boolean persistent = Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME));
             boolean transacted = Boolean.parseBoolean(testParameters.getProperty(TRANSACTED_PROPNAME));
             String selector = null;
-            boolean verbose = false;
+            boolean verbose = Boolean.parseBoolean(testParameters.getProperty(VERBOSE_OUTPUT_PROPNAME));
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
 
             boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
@@ -251,26 +252,17 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
 
             int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
 
-            // Establish a client to ping a Queue and listen the reply back from same Queue
-            if (queueCount > 1)
-            {
-                // test client with multiple queues
-                perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
-                                                                      selector, transacted, persistent,
-                                                                      messageSize, verbose,
-                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                                      batchSize, queueCount);
-            }
-            else
+            // This is synchronized because there is a race condition, which causes one connection to sleep if
+            // all threads try to create connection concurrently
+            synchronized(this)
             {
                 // Establish a client to ping a Queue and listen the reply back from same Queue
                 perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
                                                                       queueName, selector, transacted, persistent,
                                                                       messageSize, verbose,
                                                                       afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                                      batchSize);
+                                                                      batchSize, queueCount);
             }
-
             // Start the client connection
             perThreadSetup._pingItselfClient.getConnection().start();
 
