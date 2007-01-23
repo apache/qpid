@@ -20,6 +20,7 @@ package org.apache.qpid.ping;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.ObjectMessage;
+import javax.jms.MessageListener;
 
 import org.apache.log4j.Logger;
 
@@ -41,6 +42,7 @@ public class TestPingItself extends PingPongProducer
      * If queueCount is > 1 : This creats a client for tests with multiple queues. Creates as many consumer instances
      * as there are queues, each listening to a Queue. A producer is created which picks up a queue from
      * the list of queues to send message
+     *
      * @param brokerDetails
      * @param username
      * @param password
@@ -79,6 +81,25 @@ public class TestPingItself extends PingPongProducer
             createConsumers(selector);
             createProducer();
         }
+    }
+
+
+    /**
+     * Sets the replyQueue to be the same as ping queue.
+     */
+    @Override
+    public void createConsumer(String selector) throws JMSException
+    {
+        // Create a message consumer to get the replies with and register this to be called back by it.
+        setReplyQueue(getPingQueue());
+        MessageConsumer consumer =
+                getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
+        consumer.setMessageListener(this);
+    }
+
+    public void setMessageListener(MessageListener messageListener) throws JMSException
+    {
+        getConsumerSession().setMessageListener(messageListener);
     }
 
     /**
@@ -147,10 +168,10 @@ public class TestPingItself extends PingPongProducer
         }
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        TestPingItself pingItself =
-            new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null, transacted, persistent,
-                               messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
-                               queueCount, rate);
+        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
+                                                       transacted, persistent, messageSize, verbose,
+                                                       afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
+                                                       batchSize, queueCount, rate);
 
         pingItself.getConnection().start();
 
@@ -194,16 +215,5 @@ public class TestPingItself extends PingPongProducer
         System.exit(0);
     }
 
-    /**
-     * Sets the replyQueue to be the same as ping queue.
-     */
-    @Override
-    public void createConsumer(String selector) throws JMSException
-    {
-        // Create a message consumer to get the replies with and register this to be called back by it.
-        setReplyQueue(getPingQueue());
-        MessageConsumer consumer =
-            getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
-        consumer.setMessageListener(this);
-    }
+
 }

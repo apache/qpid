@@ -42,94 +42,96 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     /**
      * Holds the name of the property to get the test message size from.
      */
-    private static final String MESSAGE_SIZE_PROPNAME = "messageSize";
+    protected static final String MESSAGE_SIZE_PROPNAME = "messageSize";
 
     /**
      * Holds the name of the property to get the ping queue name from.
      */
-    private static final String PING_QUEUE_NAME_PROPNAME = "pingQueue";
+    protected static final String PING_QUEUE_NAME_PROPNAME = "pingQueue";
 
     /**
      * holds the queue count, if the test is being performed with multiple queues
      */
-    private static final String PING_QUEUE_COUNT_PROPNAME = "queues";
+    protected static final String PING_QUEUE_COUNT_PROPNAME = "queues";
 
     /**
      * Holds the name of the property to get the test delivery mode from.
      */
-    private static final String PERSISTENT_MODE_PROPNAME = "persistent";
+    protected static final String PERSISTENT_MODE_PROPNAME = "persistent";
 
     /**
      * Holds the name of the property to get the test transactional mode from.
      */
-    private static final String TRANSACTED_PROPNAME = "transacted";
+    protected static final String TRANSACTED_PROPNAME = "transacted";
 
     /**
      * Holds the name of the property to get the test broker url from.
      */
-    private static final String BROKER_PROPNAME = "broker";
+    protected static final String BROKER_PROPNAME = "broker";
 
     /**
      * Holds the name of the property to get the test broker virtual path.
      */
-    private static final String VIRTUAL_PATH_PROPNAME = "virtualPath";
+    protected static final String VIRTUAL_PATH_PROPNAME = "virtualPath";
 
     /**
      * Holds the name of the property to get the waiting timeout for response messages.
      */
-    private static final String TIMEOUT_PROPNAME = "timeout";
+    protected static final String TIMEOUT_PROPNAME = "timeout";
 
     /** Holds the name of the property to get the message rate from. */
-    private static final String RATE_PROPNAME = "rate";
+    protected static final String RATE_PROPNAME = "rate";
 
-    private static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
+    protected static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
 
     /**
      * Holds the size of message body to attach to the ping messages.
      */
-    private static final int MESSAGE_SIZE_DEFAULT = 0;
+    protected static final int MESSAGE_SIZE_DEFAULT = 0;
 
-    private static final int BATCH_SIZE_DEFAULT = 2;
+    protected static final int BATCH_SIZE_DEFAULT = 2;
+    protected static final int COMMIT_BATCH_SIZE_DEFAULT = BATCH_SIZE_DEFAULT;
 
     /**
      * Holds the name of the queue to which pings are sent.
      */
-    private static final String PING_QUEUE_NAME_DEFAULT = "ping";
+    protected static final String PING_QUEUE_NAME_DEFAULT = "ping";
 
     /**
      * Holds the message delivery mode to use for the test.
      */
-    private static final boolean PERSISTENT_MODE_DEFAULT = false;
+    protected static final boolean PERSISTENT_MODE_DEFAULT = false;
 
     /**
      * Holds the transactional mode to use for the test.
      */
-    private static final boolean TRANSACTED_DEFAULT = false;
+    protected static final boolean TRANSACTED_DEFAULT = false;
 
     /**
      * Holds the default broker url for the test.
      */
-    private static final String BROKER_DEFAULT = "tcp://localhost:5672";
+    protected static final String BROKER_DEFAULT = "tcp://localhost:5672";
 
     /**
      * Holds the default virtual path for the test.
      */
-    private static final String VIRTUAL_PATH_DEFAULT = "/test";
+    protected static final String VIRTUAL_PATH_DEFAULT = "/test";
 
     /**
      * Sets a default ping timeout.
      */
-    private static final long TIMEOUT_DEFAULT = 3000;
+    protected static final long TIMEOUT_DEFAULT = 3000;
 
     /** Holds the default rate. A value of zero means infinity, only values of 1 or greater are meaningfull. */
     private static final int RATE_DEFAULT = 0;
 
-    private static final String FAIL_AFTER_COMMIT = "FailAfterCommit";
-    private static final String FAIL_BEFORE_COMMIT = "FailBeforeCommit";
-    private static final String FAIL_AFTER_SEND = "FailAfterSend";
-    private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
-    private static final String BATCH_SIZE = "BatchSize";
-    private static final String FAIL_ONCE = "FailOnce";
+    protected static final String FAIL_AFTER_COMMIT = "FailAfterCommit";
+    protected static final String FAIL_BEFORE_COMMIT = "FailBeforeCommit";
+    protected static final String FAIL_AFTER_SEND = "FailAfterSend";
+    protected static final String FAIL_BEFORE_SEND = "FailBeforeSend";
+    protected static final String COMMIT_BATCH_SIZE = "CommitBatchSize";
+    protected static final String BATCH_SIZE = "BatchSize";
+    protected static final String FAIL_ONCE = "FailOnce";
 
     /**
      * Thread local to hold the per-thread test setup fields.
@@ -139,7 +141,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
     // of the test parameters to log with the results.
-    private Properties testParameters = System.getProperties();
+    protected Properties testParameters = System.getProperties();
     //private Properties testParameters = new ContextualProperties(System.getProperties());
 
     public PingTestPerf(String name)
@@ -154,6 +156,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(FAIL_ONCE, "true");
 
         setSystemPropertyIfNull(BATCH_SIZE, Integer.toString(BATCH_SIZE_DEFAULT));
+        setSystemPropertyIfNull(COMMIT_BATCH_SIZE, Integer.toString(COMMIT_BATCH_SIZE_DEFAULT));
         setSystemPropertyIfNull(MESSAGE_SIZE_PROPNAME, Integer.toString(MESSAGE_SIZE_DEFAULT));
         setSystemPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
         setSystemPropertyIfNull(PERSISTENT_MODE_PROPNAME, Boolean.toString(PERSISTENT_MODE_DEFAULT));
@@ -181,7 +184,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
                //return new junit.framework.TestSuite(PingTestPerf.class);
     }
 
-    private static void setSystemPropertyIfNull(String propName, String propValue)
+    protected static void setSystemPropertyIfNull(String propName, String propValue)
     {
         if (System.getProperty(propName) == null)
         {
@@ -222,6 +225,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
                         + numReplies);
         }
     }
+
 
     protected void setUp() throws Exception
     {
@@ -293,11 +297,11 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         }
     }
 
-    private static class PerThreadSetup
+    protected static class PerThreadSetup
     {
         /**
          * Holds the test ping client.
          */
-        private TestPingItself _pingItselfClient;
+        protected TestPingItself _pingItselfClient;
     }
 }
