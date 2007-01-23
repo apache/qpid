@@ -187,7 +187,7 @@ public class HeadersExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        FieldTable headers = payload.getHeadersTable();
+        FieldTable headers = payload.getApplicationHeaders();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);

@@ -154,12 +154,8 @@ public class AMQMessage
         return size;
     }
 
-    public FieldTable getHeadersTable() {
-        throw new Error("XXX");
-    }
-
     public FieldTable getApplicationHeaders() {
-        throw new Error("XXX");
+        return _transferBody.getApplicationHeaders();
     }
 
     public void setXXXMessageId(String messageId) {
@@ -191,7 +187,15 @@ public class AMQMessage
     }
 
     public String getReplyTo() {
-        throw new Error("XXX");
+        return _transferBody.getReplyTo();
+    }
+
+    public String getAppId() {
+        return _transferBody.getAppId();
+    }
+
+    public String getUserId() {
+        return _transferBody.getUserId();
     }
 
     public void setCorrelationId(String correlationId) {

@@ -31,9 +31,12 @@ import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.OperationsException;
 import javax.management.monitor.MonitorNotification;
-import java.util.List;
-import java.util.Set;
+
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * MBean class for AMQQueue. It implements all the management features exposed
@@ -282,6 +285,21 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
     }
 
+    private static Map getHeaders(AMQMessage msg) {
+        Map hdrs = new LinkedHashMap();
+        hdrs.put("Reply-To", msg.getReplyTo());
+        hdrs.put("Application-Id", msg.getAppId());
+        hdrs.put("User-Id", msg.getUserId());
+        hdrs.put("Message-Id", msg.getXXXMessageId());
+        hdrs.put("Correlation-Id", msg.getCorrelationId());
+        hdrs.put("DeliveryMode", msg.getDeliveryMode());
+        hdrs.put("Expiration", msg.getExpiration());
+        hdrs.put("Priority", msg.getPriority());
+        hdrs.put("Timestamp", msg.getTimestamp());
+        hdrs.put("Type", msg.getType());
+        return hdrs;
+    }
+
     /**
      * Returns the header contents of the messages stored in this queue in tabular form.
      */
@@ -301,8 +319,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         {
             AMQMessage msg = list.get(i - 1);
             // Create header attributes list
-            FieldTable headers = msg.getHeadersTable();
-            Set<String> names = headers.keys();
+            Map headers = getHeaders(msg);
+            Set<String> names = headers.keySet();
             String[] values = new String[names.size()];
             int index = 0;
             for (String name : names) {
