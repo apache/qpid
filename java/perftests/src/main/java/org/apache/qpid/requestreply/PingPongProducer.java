@@ -145,7 +145,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
     private PingPongProducer(String brokerDetails, String username, String password, String virtualpath,
                              boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                             boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                             boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                              int batchSize)
             throws Exception
     {
@@ -168,6 +168,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         _failBeforeCommit = beforeCommit;
         _failAfterSend = afterSend;
         _failBeforeSend = beforeSend;
+        _failOnce = failOnce;
         _batchSize = batchSize;
         _sentMessages = 0;
     }
@@ -184,12 +185,12 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     public PingPongProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
                             String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                            boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                            boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                             int batchSize, int queueCount)
             throws Exception
     {
         this(brokerDetails, username, password, virtualpath, transacted, persistent, messageSize, verbose,
-             afterCommit, beforeCommit, afterSend, beforeSend, batchSize);
+             afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize);
 
         if (queueName != null)
         {
@@ -311,16 +312,18 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
         int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
 
+
         boolean afterCommit = false;
         boolean beforeCommit = false;
         boolean afterSend = false;
         boolean beforeSend = false;
+        boolean failOnce = false;
 
         for (String arg : args)
         {
             if (arg.startsWith("failover:"))
             {
-                //failover:<before|after>:<send:commit>
+                //failover:<before|after>:<send:commit> | failover:once
                 String[] parts = arg.split(":");
                 if (parts.length == 3)
                 {
@@ -335,6 +338,10 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                         afterSend = parts[1].equals("after");
                         beforeSend = parts[1].equals("before");
                     }
+                    if (parts[1].equals("once"))
+                    {
+                        failOnce = true;
+                    }
                 }
                 else
                 {
@@ -346,7 +353,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         // Create a ping producer to handle the request/wait/reply cycle.
         _pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
                                              persistent, messageSize, verbose,
-                                             afterCommit, beforeCommit, afterSend, beforeSend,
+                                             afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                              batchSize, 0);
 
         _pingProducer.getConnection().start();
@@ -381,8 +388,6 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             Message first = getTestMessage(_replyQueue, 0, false);
 
             sendMessage(first);
-
-            commitTx();
 
             try
             {
@@ -482,10 +487,6 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             }
         }
 
-        // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
-        // this method, as the message will not be sent until the transaction is committed.
-        commitTx();
-
         // Keep the messageId to correlate with the reply.
         //String messageId = message.getJMSMessageID();
         if (_verbose)
@@ -556,9 +557,6 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                 _logger.info(timestampFormatter.format(new Date()) + ": Pinged at.");
             }
         }
-
-        // Commit the transaction if running in transactional mode, to force the send now.
-        commitTx();
     }
 
     /**
