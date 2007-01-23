@@ -148,6 +148,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             throws AMQException
     {
         AMQShortString owner = body.exclusive ? session.getContextKey() : null;
-        return new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
+        return new AMQQueue(body.queue, body.durable, owner, body.autoDelete || (!body.durable && body.exclusive), registry);
     }
 }
