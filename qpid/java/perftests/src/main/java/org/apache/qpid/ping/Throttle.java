@@ -61,6 +61,7 @@ public class Throttle
         }
 
         // Keep the time of the last call to this method to calculate the next cycle.
-        lastTimeNanos = currentTimeNanos;
+        //lastTimeNanos = currentTimeNanos;
+        lastTimeNanos = System.nanoTime();
     }
 }

@@ -109,16 +109,18 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
      */
     private static final long TIMEOUT = 15000;
 
-    // Sets up the test parameters with defaults.
-    static
-    {
-        setSystemPropertyIfNull(MESSAGE_SIZE_PROPNAME, Integer.toString(MESSAGE_SIZE_DEFAULT));
-        setSystemPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
-        setSystemPropertyIfNull(PERSISTENT_MODE_PROPNAME, Boolean.toString(PERSISTENT_MODE_DEFAULT));
-        setSystemPropertyIfNull(TRANSACTED_PROPNAME, Boolean.toString(TRANSACTED_DEFAULT));
-        setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
-        setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
-    }
+    /** Holds the name of the property to get the message rate from. */
+    private static final String RATE_PROPNAME = "rate";
+
+    /** Holds the default rate. A value of zero means infinity, only values of 1 or greater are meaningfull. */
+    private static final int RATE_DEFAULT = 0;
+
+    private static final String FAIL_AFTER_COMMIT = "FailAfterCommit";
+    private static final String FAIL_BEFORE_COMMIT = "FailBeforeCommit";
+    private static final String FAIL_AFTER_SEND = "FailAfterSend";
+    private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
+    private static final String BATCH_SIZE = "BatchSize";
+    private static final String FAIL_ONCE = "FailOnce";
 
     /**
      * Thread local to hold the per-thread test setup fields.
@@ -131,17 +133,18 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     private Properties testParameters = System.getProperties();
     //private Properties testParameters = new ContextualProperties(System.getProperties());
 
-    private static final String FAIL_AFTER_COMMIT = "FailAfterCommit";
-    private static final String FAIL_BEFORE_COMMIT = "FailBeforeCommit";
-    private static final String FAIL_AFTER_SEND = "FailAfterSend";
-    private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
-    private static final String BATCH_SIZE = "BatchSize";
-    private static final String FAIL_ONCE = "FailOnce";
-
-
     public PingPongTestPerf(String name)
     {
         super(name);
+
+        // Sets up the test parameters with defaults.
+        setSystemPropertyIfNull(MESSAGE_SIZE_PROPNAME, Integer.toString(MESSAGE_SIZE_DEFAULT));
+        setSystemPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
+        setSystemPropertyIfNull(PERSISTENT_MODE_PROPNAME, Boolean.toString(PERSISTENT_MODE_DEFAULT));
+        setSystemPropertyIfNull(TRANSACTED_PROPNAME, Boolean.toString(TRANSACTED_DEFAULT));
+        setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
+        setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
+        setSystemPropertyIfNull(RATE_PROPNAME, Integer.toString(RATE_DEFAULT));
     }
 
     /**
@@ -173,11 +176,11 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-                perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyQueue(),
-                                                                Integer.parseInt(testParameters.getProperty(
-                                                                        MESSAGE_SIZE_PROPNAME)),
-                                                                Boolean.parseBoolean(testParameters.getProperty(
-                                                                        PERSISTENT_MODE_PROPNAME)));
+            perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyQueue(),
+                                                            Integer.parseInt(testParameters.getProperty(
+                                                                                 MESSAGE_SIZE_PROPNAME)),
+                                                            Boolean.parseBoolean(testParameters.getProperty(
+                                                                                     PERSISTENT_MODE_PROPNAME)));
 
         // Use the test timing controller to reset the test timer now and obtain the current time.
         // This can be used to remove the message creation time from the test.
@@ -216,6 +219,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             String selector = null;
             boolean verbose = false;
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
+            int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
 
             boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
             boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
@@ -234,9 +238,8 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             // Establish a ping-pong client on the ping queue to send the pings with.
             perThreadSetup._testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath,
                                                                     queueName, selector, transacted, persistent, messageSize,
-                                                                    verbose,
-                                                                    afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                                    batchSize, 0);
+                                                                    verbose, afterCommit, beforeCommit, afterSend,
+                                                                    beforeSend, failOnce, batchSize, 0, rate);
 
             perThreadSetup._testPingProducer.getConnection().start();
 
@@ -253,7 +256,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
              {
              _testPingBouncer.getConnection().close();
              }
-
+            
              if ((_testPingProducer != null) && (_testPingProducer.getConnection() != null))
              {
              _testPingProducer.getConnection().close();

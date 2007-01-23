@@ -38,6 +38,7 @@ import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingProducer;
+import org.apache.qpid.ping.Throttle;
 
 /**
  * PingPongProducer is a client that sends pings to a queue and waits for pongs to be bounced back by a bounce back
@@ -108,6 +109,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     private static AtomicLong idGenerator = new AtomicLong(0L);
 
     /**
+     * Holds a map from message ids to latches on which threads wait for replies.
+     */
+    private static Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
+
+    /**
      * Holds the queue to send the ping replies to.
      */
     private Queue _replyQueue;
@@ -128,22 +134,25 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     protected int _messageSize;
 
     /**
-     * Holds a map from message ids to latches on which threads wait for replies.
-     */
-    private static Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
-
-    /**
      * Used to indicate that the ping loop should print out whenever it pings.
      */
     protected boolean _verbose = false;
 
     protected Session _consumerSession;
 
-    private PingPongProducer(String brokerDetails, String username, String password, String virtualpath,
-                             boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                             boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                             int batchSize)
-            throws Exception
+    /** Used to restrict the sending rate to a specified limit. */
+    private Throttle rateLimiter = null;
+
+    /**
+     * The throttler can only reliably restrict to a few hundred cycles per second, so a throttling batch size is used
+     * to group sends together into batches large enough that the throttler runs slower than that.
+     */
+    int _throttleBatchSize;
+
+    private PingPongProducer(String brokerDetails, String username, String password, String virtualpath, boolean transacted,
+                             boolean persistent, int messageSize, boolean verbose, boolean afterCommit, boolean beforeCommit,
+                             boolean afterSend, boolean beforeSend, boolean failOnce, int batchSize, int rate)
+                      throws Exception
     {
         // Create a connection to the broker.
         InetAddress address = InetAddress.getLocalHost();
@@ -165,8 +174,31 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         _failAfterSend = afterSend;
         _failBeforeSend = beforeSend;
         _failOnce = failOnce;
-        _batchSize = batchSize;
-        _sentMessages = 0;
+        _txBatchSize = batchSize;
+
+        // Calculate a throttling batch size and rate such that the throttle runs slower than 100 cycles per second
+        // and batched sends within each cycle multiply up to give the desired rate.
+        //
+        // total rate = throttle rate * batch size.
+        // 1 < throttle rate < 100
+        // 1 < total rate < 20000
+        if (rate > 0)
+        {
+            // Log base 10 over 2 is used here to get a feel for what power of 100 the total rate is.
+            // As the total rate goes up the powers of 100 the batch size goes up by powers of 100 to keep the
+            // throttle rate back into the range 1 to 100.
+            int x = (int) (Math.log10(rate) / 2);
+            _throttleBatchSize = (int) Math.pow(100, x);
+            int throttleRate = rate / _throttleBatchSize;
+
+            _logger.info("rate = " + rate);
+            _logger.info("x = " + x);
+            _logger.info("_throttleBatchSize = " + _throttleBatchSize);
+            _logger.info("throttleRate = " + throttleRate);
+
+            rateLimiter = new Throttle();
+            rateLimiter.setRate(throttleRate);
+        }
     }
 
     /**
@@ -181,12 +213,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     public PingPongProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
                             String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                            boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                            int batchSize, int queueCount)
-            throws Exception
+                            boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                            boolean failOnce, int batchSize, int queueCount, int rate) throws Exception
     {
-        this(brokerDetails, username, password, virtualpath, transacted, persistent, messageSize, verbose,
-             afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize);
+        this(brokerDetails, username, password, virtualpath, transacted, persistent, messageSize, verbose, afterCommit,
+             beforeCommit, afterSend, beforeSend, failOnce, batchSize, rate);
 
         _queueCount = queueCount;
         if (queueCount <= 1)
@@ -204,6 +235,100 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                 throw new IllegalArgumentException("Queue Name is not specified");
             }
         }
+    }
+
+    /**
+     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs
+     * to be started to bounce the pings back again.
+     * <p/>
+     * <p/>The command line takes from 2 to 4 arguments:
+     * <p/><table>
+     * <tr><td>brokerDetails <td> The broker connection string.
+     * <tr><td>virtualPath   <td> The virtual path.
+     * <tr><td>transacted    <td> A boolean flag, telling this client whether or not to use transactions.
+     * <tr><td>size          <td> The size of ping messages to use, in bytes.
+     * </table>
+     *
+     * @param args The command line arguments as defined above.
+     */
+    public static void main(String[] args) throws Exception
+    {
+        // Extract the command line.
+        if (args.length < 2)
+        {
+            System.err.println(
+                "Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] "
+                + "[transacted (true/false)] [persistent (true/false)] [message size in bytes] [batchsize] [rate]");
+            System.exit(0);
+        }
+
+        String brokerDetails = args[0];
+        String virtualpath = args[1];
+        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
+        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
+        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
+        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
+        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
+        int rate = (args.length >= 8) ? Integer.parseInt(args[7]) : 0;
+
+        boolean afterCommit = false;
+        boolean beforeCommit = false;
+        boolean afterSend = false;
+        boolean beforeSend = false;
+        boolean failOnce = false;
+
+        for (String arg : args)
+        {
+            if (arg.startsWith("failover:"))
+            {
+                //failover:<before|after>:<send:commit> | failover:once
+                String[] parts = arg.split(":");
+                if (parts.length == 3)
+                {
+                    if (parts[2].equals("commit"))
+                    {
+                        afterCommit = parts[1].equals("after");
+                        beforeCommit = parts[1].equals("before");
+                    }
+
+                    if (parts[2].equals("send"))
+                    {
+                        afterSend = parts[1].equals("after");
+                        beforeSend = parts[1].equals("before");
+                    }
+
+                    if (parts[1].equals("once"))
+                    {
+                        failOnce = true;
+                    }
+                }
+                else
+                {
+                    System.out.println("Unrecognized failover request:" + arg);
+                }
+            }
+        }
+
+        // Create a ping producer to handle the request/wait/reply cycle.
+        PingPongProducer pingProducer =
+            new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted, persistent,
+                                 messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
+                                 0, rate);
+
+        pingProducer.getConnection().start();
+
+        // Run a few priming pings to remove warm up time from test results.
+        pingProducer.prime(PRIMING_LOOPS);
+        // Create a shutdown hook to terminate the ping-pong producer.
+        Runtime.getRuntime().addShutdownHook(pingProducer.getShutdownHook());
+
+        // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
+        pingProducer.getConnection().setExceptionListener(pingProducer);
+
+        // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
+        Thread pingThread = new Thread(pingProducer);
+        pingThread.run();
+        pingThread.join();
     }
 
     /**
@@ -226,6 +351,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             _producer = (MessageProducer) getProducerSession().createProducer(_pingQueue);
 
         }
+
         _producer.setDisableMessageTimestamp(true);
         _producer.setDeliveryMode(_persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
     }
@@ -256,116 +382,15 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     {
         for (int i = 0; i < getQueueCount(); i++)
         {
-            MessageConsumer consumer = getConsumerSession().createConsumer(getQueue(i), PREFETCH, false, EXCLUSIVE, selector);
+            MessageConsumer consumer =
+                getConsumerSession().createConsumer(getQueue(i), PREFETCH, false, EXCLUSIVE, selector);
             consumer.setMessageListener(this);
         }
-    }
-
-    protected Session getConsumerSession()
-    {
-        return _consumerSession;
     }
 
     public Queue getPingQueue()
     {
         return _pingQueue;
-    }
-
-    protected void setPingQueue(Queue queue)
-    {
-        _pingQueue = queue;
-    }
-
-    /**
-     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs
-     * to be started to bounce the pings back again.
-     * <p/>
-     * <p/>The command line takes from 2 to 4 arguments:
-     * <p/><table>
-     * <tr><td>brokerDetails <td> The broker connection string.
-     * <tr><td>virtualPath   <td> The virtual path.
-     * <tr><td>transacted    <td> A boolean flag, telling this client whether or not to use transactions.
-     * <tr><td>size          <td> The size of ping messages to use, in bytes.
-     * </table>
-     *
-     * @param args The command line arguments as defined above.
-     */
-    public static void main(String[] args) throws Exception
-    {
-        // Extract the command line.
-        if (args.length < 2)
-        {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
-                               "[transacted (true/false)] [persistent (true/false)] [message size in bytes]");
-            System.exit(0);
-        }
-
-        String brokerDetails = args[0];
-        String virtualpath = args[1];
-        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
-        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
-        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
-        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
-        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
-
-
-        boolean afterCommit = false;
-        boolean beforeCommit = false;
-        boolean afterSend = false;
-        boolean beforeSend = false;
-        boolean failOnce = false;
-
-        for (String arg : args)
-        {
-            if (arg.startsWith("failover:"))
-            {
-                //failover:<before|after>:<send:commit> | failover:once
-                String[] parts = arg.split(":");
-                if (parts.length == 3)
-                {
-                    if (parts[2].equals("commit"))
-                    {
-                        afterCommit = parts[1].equals("after");
-                        beforeCommit = parts[1].equals("before");
-                    }
-
-                    if (parts[2].equals("send"))
-                    {
-                        afterSend = parts[1].equals("after");
-                        beforeSend = parts[1].equals("before");
-                    }
-                    if (parts[1].equals("once"))
-                    {
-                        failOnce = true;
-                    }
-                }
-                else
-                {
-                    System.out.println("Unrecognized failover request:" + arg);
-                }
-            }
-        }
-
-        // Create a ping producer to handle the request/wait/reply cycle.
-        PingPongProducer pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
-                                             persistent, messageSize, verbose,
-                                             afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                             batchSize, 0);
-
-        pingProducer.getConnection().start();
-
-        // Run a few priming pings to remove warm up time from test results.
-        pingProducer.prime(PRIMING_LOOPS);
-        // Create a shutdown hook to terminate the ping-pong producer.
-        Runtime.getRuntime().addShutdownHook(pingProducer.getShutdownHook());
-
-        // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
-        pingProducer.getConnection().setExceptionListener(pingProducer);
-
-        // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
-        Thread pingThread = new Thread(pingProducer);
-        pingThread.run();
-        pingThread.join();
     }
 
     /**
@@ -390,8 +415,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                 Thread.sleep(100);
             }
             catch (InterruptedException ignore)
-            {
-            }
+            { }
         }
     }
 
@@ -452,8 +476,10 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      * @param message  The message to send.
      * @param numPings The number of ping messages to send.
      * @param timeout  The timeout in milliseconds.
+     *
      * @return The number of replies received. This may be less than the number sent if the timeout terminated the
      *         wait for all prematurely.
+     *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
     public int pingAndWaitForReply(Message message, int numPings, long timeout) throws JMSException, InterruptedException
@@ -467,24 +493,52 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         CountDownLatch trafficLight = new CountDownLatch(numPings);
         trafficLights.put(messageCorrelationId, trafficLight);
 
-        if (getQueueCount() > 1)
+        // Set up a committed flag to detect uncommitted message at the end of the send loop. This may occurr if the
+        // transaction batch size is not a factor of the number of pings. In which case an extra commit at the end is
+        // needed.
+        boolean committed = false;
+
+        // Send all of the ping messages.
+        for (int i = 0; i < numPings; i++)
         {
-            // If test is with multiple queues
-            pingMultipleQueues(message, numPings);
-        }
-        else
-        {
-            // If test is with one Queue only
-            for (int i = 0; i < numPings; i++)
+            // Reset the committed flag to indicate that there are uncommitted message.
+            committed = false;
+
+            // Re-timestamp the message.
+            message.setLongProperty("timestamp", System.currentTimeMillis());
+
+            // Check if the test is with multiple queues, in which case round robin the queues as the messages are sent.
+            if (getQueueCount() > 1)
             {
-                // Re-timestamp the message.
-                message.setLongProperty("timestamp", System.currentTimeMillis());
+                sendMessage(getQueue(i % getQueueCount()), message);
+            }
+            else
+            {
                 sendMessage(message);
+            }
+
+            // Apply message rate throttling if a rate limit has been set up and the throttling batch limit has been
+            // reached. See the comment on the throttle batch size for information about the use of batches here.
+            if ((rateLimiter != null) && ((i % _throttleBatchSize) == 0))
+            {
+                rateLimiter.throttle();
+            }
+
+            // Call commit every time the commit batch size is reached.
+            if ((i % _txBatchSize) == 0)
+            {
+                commitTx();
+                committed = true;
             }
         }
 
-        // Keep the messageId to correlate with the reply.
-        //String messageId = message.getJMSMessageID();
+        // Call commit if the send loop finished before reaching a batch size boundary so there may still be uncommitted messages.
+        if (!committed)
+        {
+            commitTx();
+        }
+
+        // Spew out per message timings only in verbose mode.
         if (_verbose)
         {
             _logger.info(timestampFormatter.format(new Date()) + ": Pinged at with correlation id, " + messageCorrelationId);
@@ -498,7 +552,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
         if ((numReplies < numPings) && _verbose)
         {
-            _logger.info("Timed out (" + timeout  + " ms) before all replies received on id, " + messageCorrelationId);
+            _logger.info("Timed out (" + timeout + " ms) before all replies received on id, " + messageCorrelationId);
         }
         else if (_verbose)
         {
@@ -508,33 +562,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         return numReplies;
     }
 
-    /**
-     * When the test is being performed with multiple queues, then this method will be used, which has a loop to
-     * pick up the next queue from the queues list and sends message to it.
-     *
-     * @param message
-     * @param numPings
-     * @throws JMSException
-     */
-    private void pingMultipleQueues(Message message, int numPings) throws JMSException
-    {
-        int queueIndex = 0;
-        for (int i = 0; i < numPings; i++)
-        {
-            // Re-timestamp the message.
-            message.setLongProperty("timestamp", System.currentTimeMillis());
-
-            sendMessage(getQueue(queueIndex++), message);
-
-            // reset the counter to get the first queue
-            if (queueIndex == getQueueCount() - 1)
-            {
-                queueIndex = 0;
-            }
-        }
-    }
-
-    /**
+    /*
      * Sends the specified ping message but does not wait for a correlating reply.
      *
      * @param message  The message to send.
@@ -542,7 +570,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      * @return The reply, or null if no reply arrives before the timeout.
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
-    public void pingNoWaitForReply(Message message, int numPings) throws JMSException, InterruptedException
+    /*public void pingNoWaitForReply(Message message, int numPings) throws JMSException, InterruptedException
     {
         for (int i = 0; i < numPings; i++)
         {
@@ -553,7 +581,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
                 _logger.info(timestampFormatter.format(new Date()) + ": Pinged at.");
             }
         }
-    }
+    }*/
 
     /**
      * The ping loop implementation. This send out pings of the configured size, persistence and transactionality, and
@@ -590,10 +618,46 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         return _replyQueue;
     }
 
+    protected Session getConsumerSession()
+    {
+        return _consumerSession;
+    }
+
+    protected void setPingQueue(Queue queue)
+    {
+        _pingQueue = queue;
+    }
+
     protected void setReplyQueue(Queue queue)
     {
         _replyQueue = queue;
     }
+
+    /*
+     * When the test is being performed with multiple queues, then this method will be used, which has a loop to
+     * pick up the next queue from the queues list and sends message to it.
+     *
+     * @param message
+     * @param numPings
+     * @throws JMSException
+     */
+    /*private void pingMultipleQueues(Message message, int numPings) throws JMSException
+    {
+        int queueIndex = 0;
+        for (int i = 0; i < numPings; i++)
+        {
+            // Re-timestamp the message.
+            message.setLongProperty("timestamp", System.currentTimeMillis());
+
+            sendMessage(getQueue(queueIndex++), message);
+
+            // reset the counter to get the first queue
+            if (queueIndex == (getQueueCount() - 1))
+            {
+                queueIndex = 0;
+            }
+        }
+    }*/
 
     /**
      * A connection listener that logs out any failover complete events. Could do more interesting things with this
@@ -602,12 +666,10 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     public static class FailoverNotifier implements ConnectionListener
     {
         public void bytesSent(long count)
-        {
-        }
+        { }
 
         public void bytesReceived(long count)
-        {
-        }
+        { }
 
         public boolean preFailover(boolean redirect)
         {
