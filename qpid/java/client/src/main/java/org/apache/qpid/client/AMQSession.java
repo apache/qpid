@@ -67,6 +67,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private int _defaultPrefetchHighMark = DEFAULT_PREFETCH_HIGH_MARK;
     private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
 
+    private MessageListener _messageListener = null;
+
     /**
      * Used to reference durable subscribers so they requests for unsubscribe can be handled
      * correctly.  Note this only keeps a record of subscriptions which have been created
@@ -852,13 +854,37 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public MessageListener getMessageListener() throws JMSException
     {
         checkNotClosed();
-        throw new java.lang.UnsupportedOperationException("MessageListener interface not supported");
+        return _messageListener;
     }
 
     public void setMessageListener(MessageListener listener) throws JMSException
     {
         checkNotClosed();
-        throw new java.lang.UnsupportedOperationException("MessageListener interface not supported");
+
+        if (!isStopped())
+        {
+            throw new javax.jms.IllegalStateException("Attempt to set listener while session is started.");
+        }
+
+        // We are stopped         
+        for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
+        {
+            BasicMessageConsumer consumer = i.next();
+
+            if (consumer.isReceiving())
+            {
+                throw new javax.jms.IllegalStateException("Another thread is already receiving synchronously.");
+            }
+        }
+
+        _messageListener = listener;
+        
+        for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
+        {
+            i.next().setMessageListener(_messageListener);
+        }
+
+
     }
 
     public void run()
@@ -1067,6 +1093,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkTemporaryDestination(destination);
 
+
         return (org.apache.qpid.jms.MessageConsumer) new FailoverSupport()
         {
             public Object operation() throws JMSException
@@ -1088,6 +1115,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                          _messageFactoryRegistry, AMQSession.this,
                                                                          protocolHandler, ft, prefetchHigh, prefetchLow, exclusive,
                                                                          _acknowledgeMode, noConsume, autoClose);
+
+                if (_messageListener != null)
+                {
+                    consumer.setMessageListener(_messageListener);
+                }
 
                 try
                 {
@@ -1736,19 +1768,21 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     void deregisterConsumer(BasicMessageConsumer consumer)
     {
-        _consumers.remove(consumer.getConsumerTag());
-        String subscriptionName = _reverseSubscriptionMap.remove(consumer);
-        if (subscriptionName != null)
+        if (_consumers.remove(consumer.getConsumerTag()) != null)
         {
-            _subscriptions.remove(subscriptionName);
-        }
-
-        Destination dest = consumer.getDestination();
-        synchronized (dest)
-        {
-            if (_destinationConsumerCount.get(dest).decrementAndGet() == 0)
+            String subscriptionName = _reverseSubscriptionMap.remove(consumer);
+            if (subscriptionName != null)
             {
-                _destinationConsumerCount.remove(dest);
+                _subscriptions.remove(subscriptionName);
+            }
+
+            Destination dest = consumer.getDestination();
+            synchronized (dest)
+            {
+                if (_destinationConsumerCount.get(dest).decrementAndGet() == 0)
+                {
+                    _destinationConsumerCount.remove(dest);
+                }
             }
         }
     }
