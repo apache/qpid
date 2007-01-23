@@ -61,7 +61,6 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
     }
 
     public AMQChannel getChannel(int channelId)
-        throws AMQException
     {
         AMQChannel channel = super.getChannel(channelId);
         if (isPeerSession() && channel == null)
@@ -102,21 +101,19 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
      */
     private class OneUseChannel extends AMQChannel
     {
-        public OneUseChannel(int channelId, AMQProtocolWriter protocolWriter,
+        public OneUseChannel(int channelId, AMQProtocolSession session,
             AMQMethodListener methodListener)
-            throws AMQException
         {
-            this(channelId, ApplicationRegistry.getInstance(), protocolWriter, methodListener);
+            this(channelId, session, ApplicationRegistry.getInstance(), methodListener);
         }
 
-        public OneUseChannel(int channelId, IApplicationRegistry registry,
-            AMQProtocolWriter protocolWriter, AMQMethodListener methodListener)
-            throws AMQException
+        public OneUseChannel(int channelId, AMQProtocolSession session, IApplicationRegistry registry,
+                             AMQMethodListener methodListener)
         {
             super(channelId,
+                  session,
                   registry.getMessageStore(),
                   registry.getExchangeRegistry(),
-                  protocolWriter,
                   methodListener);
         }
 

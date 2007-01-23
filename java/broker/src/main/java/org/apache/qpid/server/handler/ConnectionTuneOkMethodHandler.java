@@ -52,5 +52,6 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         }
         protocolSession.getStateManager().changeState(AMQState.CONNECTION_NOT_OPENED);
         protocolSession.initHeartbeats(body.heartbeat);
+        protocolSession.setFrameMax(body.getFrameMax());
     }
 }

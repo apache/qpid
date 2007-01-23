@@ -46,6 +46,7 @@ import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.RequestManager;
+import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -314,25 +315,26 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     
     public long writeRequest(int channelNum, AMQMethodBody methodBody,
                              AMQMethodListener methodListener)
-        throws AMQException
     {
         RequestManager requestManager = (RequestManager)_channelId2RequestMgrMap.get(channelNum);
         if (requestManager == null)
-            throw new AMQException("Unable to find RequestManager for channel " + channelNum);
+            throw new IllegalArgumentException("Unable to find RequestManager for channel " + channelNum);
         return requestManager.sendRequest(methodBody, methodListener);
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
-        throws AMQException
     {
         ResponseManager responseManager = (ResponseManager)_channelId2ResponseMgrMap.get(channelNum);
         if (responseManager == null)
-            throw new AMQException("Unable to find ResponseManager for channel " + channelNum);
-        responseManager.sendResponse(requestId, methodBody);
+            throw new IllegalArgumentException("Unable to find ResponseManager for channel " + channelNum);
+        try {
+            responseManager.sendResponse(requestId, methodBody);
+        } catch (RequestResponseMappingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void writeResponse(AMQMethodEvent evt, AMQMethodBody response)
-        throws AMQException
     {
         writeResponse(evt.getChannelId(), evt.getRequestId(), response);
     }
