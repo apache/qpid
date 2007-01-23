@@ -6,7 +6,7 @@ sudo cp /usr/share/aclocal/pkg.m4 `aclocal --print-ac-dir`
 == Prerequisites ==
 
 If you have taken the sources from SVN you will need the following
-packages (or later) 
+packages (or later)
 
 We prefer to avoid spending time accommodating older versions of these
 packages, so please make sure that you have the latest stable version.
@@ -15,7 +15,7 @@ packages, so please make sure that you have the latest stable version.
  * GNU make   <http://www.gnu.org/software/make/>
  * autoconf   <http://www.gnu.org/software/autoconf/>
  * automake   <http://www.gnu.org/software/automake/>
- * cppunit    <http://cppunit.sourceforge.net> 
+ * cppunit    <http://cppunit.sourceforge.net>
  * help2man   <http://www.gnu.org/software/help2man/>
  * libtool    <http://www.gnu.org/software/libtool/>
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (aka pkg-config)
@@ -105,13 +105,30 @@ for the most common development tasks will be scripted and/or
 simplified and this README will be updated accordingly.
 
 Before building a fresh checkout do:
- ./bootstrap
- ./configure
+
+  ./bootstrap
+  ./configure
 
 This generates config, makefiles and the like - check the script for
 details. You only need to do this once, "make" will keep everything up
 to date thereafter (including re-generating configuration & Makefiles
 if the automake templates change etc.)
+
+If you are developing code yourself, or if you want to help
+us keep the code as tight and robust as possible, consider enabling
+the use of valgrind.  If you configure like this:
+
+  ./configure --enable-valgrind
+
+that will arrange (assuming you have valgrind installed) for "make check"
+to run tests via valgrind.  That makes the tests run more slowly, but
+helps detect certain types of bugs, as well as memory leaks.  If you run
+"make check" and valgrind detects a leak that is not listed as being
+"ignorable-for-now", the test script in question will fail.  However,
+recording whether a leak is ignorable is not easy, when the stack
+signature, libraries, compiler, O/S, architecture, etc., may all vary,
+so if you see a new leak, try to figure out if it's one you can fix
+before adding it to the list.
 
 To build and test everything:
   make
