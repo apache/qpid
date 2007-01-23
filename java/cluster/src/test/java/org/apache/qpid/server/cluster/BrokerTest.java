@@ -154,7 +154,7 @@ public class BrokerTest extends TestCase
             this.id = id;
         }
 
-        protected int getBodySize()
+        public int getBodySize()
         {
             return 0;
         }
