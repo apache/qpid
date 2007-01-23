@@ -108,6 +108,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
+    // XXX: is this spec or should this be set to the configurable default?
+    private long _maxFrameSize = 65536;
 
     /* AMQP Version for this session */
     private byte _major;
@@ -180,8 +182,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private AMQChannel createChannel(int id) throws AMQException
     {
         IApplicationRegistry registry = ApplicationRegistry.getInstance();
-        AMQChannel channel = new AMQChannel(id, registry.getMessageStore(),
-                                            _exchangeRegistry, this, _stateManager);
+        AMQChannel channel = new AMQChannel(id, this, registry.getMessageStore(),
+                                            _exchangeRegistry, _stateManager);
         addChannel(channel);
         return channel;
     }
@@ -302,10 +304,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     public long writeRequest(int channelNum, AMQMethodBody methodBody, AMQMethodListener methodListener)
-        throws AMQException
     {
-        if (!checkMethodBodyVersion(methodBody))
-            throw new AMQProtocolVersionException("MethodBody version did not match version of current session.");
+        checkMethodBodyVersion(methodBody);
         AMQChannel channel = getChannel(channelNum);
         RequestManager requestManager = channel.getRequestManager();
         return requestManager.sendRequest(methodBody, methodListener);
@@ -313,23 +313,23 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     // This version uses this session's instance of AMQStateManager as the listener
     public long writeRequest(int channelNum, AMQMethodBody methodBody)
-        throws AMQException
     {
         return writeRequest(channelNum, methodBody, _stateManager);
     }
 
     public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
-        throws AMQException
     {
-        if (!checkMethodBodyVersion(methodBody))
-            throw new AMQProtocolVersionException("MethodBody version did not match version of current session.");
+        checkMethodBodyVersion(methodBody);
         AMQChannel channel = getChannel(channelNum);
         ResponseManager responseManager = channel.getResponseManager();
-        responseManager.sendResponse(requestId, methodBody);
+        try {
+            responseManager.sendResponse(requestId, methodBody);
+        } catch (RequestResponseMappingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void writeResponse(AMQMethodEvent evt, AMQMethodBody response)
-        throws AMQException
     {
         writeResponse(evt.getChannelId(), evt.getRequestId(), response);
     }
@@ -361,16 +361,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return new ArrayList<AMQChannel>(_channelMap.values());
     }
 
-    public AMQChannel getChannel(int channelId) throws AMQException
+    public AMQChannel getChannel(int channelId)
     {
         return _channelMap.get(channelId);
     }
 
-    public void addChannel(AMQChannel channel) throws AMQException
+    public void addChannel(AMQChannel channel)
     {
         if (_closed)
         {
-            throw new AMQException("Session is closed");    
+            throw new IllegalStateException("Session is closed");
         }
 
         _channelMap.put(channel.getChannelId(), channel);
@@ -538,6 +538,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     /**
+     * Set the negotiated maximum frame size for this connection.
+     * @param size the size in bytes
+     */
+    public void setFrameMax(long size) {
+        _maxFrameSize = size;
+    }
+
+    /**
+     * Gets the negotiaed maximum frame size for this connection.
+     * @return the size in bytes
+     */
+    public long getFrameMax() {
+        return _maxFrameSize;
+    }
+
+    /**
      * Closes all channels that were opened by this protocol session. This frees up all resources
      * used by the channel.
      *
@@ -649,9 +665,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         return _major == major && _minor == minor;
     }
-    
-    public boolean checkMethodBodyVersion(AMQMethodBody methodBody)
-    {
-        return versionEquals(methodBody.getMajor(), methodBody.getMinor());
+
+    public void checkMethodBodyVersion(AMQMethodBody methodBody) {
+        if (!versionEquals(methodBody.getMajor(), methodBody.getMinor())) {
+            throw new RuntimeException("MethodBody version did not match version of current session.");
+        }
     }
 }

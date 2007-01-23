@@ -208,13 +208,28 @@ public class SubscriptionImpl implements Subscription
     {
         if (msg != null)
         {
-            if (_isBrowser)
-            {
-                sendToBrowser(msg, queue);
-            }
-            else
-            {
-                sendToConsumer(msg, queue);
+            try {
+                if (!_isBrowser && !_acks) {
+                    queue.dequeue(msg);
+                }
+
+                synchronized(channel) {
+                    long deliveryTag = channel.getNextDeliveryTag();
+
+                    if (_acks) {
+                        if (_isBrowser) {
+                            channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
+                        } else {
+                            channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                        }
+                    }
+
+                    channel.deliver(msg, consumerTag, deliveryTag);
+                }
+            } finally {
+                if (!_isBrowser) {
+                    msg.setDeliveredToConsumer();
+                }
             }
         }
         else
@@ -223,7 +238,8 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    // XXX
+    /*    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
     {
         // We don't decrement the reference here as we don't want to consume the message
         // but we do want to send it to the client.
@@ -241,9 +257,7 @@ public class SubscriptionImpl implements Subscription
             ByteBuffer deliver = null;
             if (true) throw new Error("XXX");
             //createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-            AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
-
-            protocolSession.writeFrame(frame);
+            channel.deliver(msg, consumerTag, null);
         }
     }
 
@@ -273,33 +287,25 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                // XXX: references
-                MessageTransferBody mtb = msg.getTransferBody().copy();
-                mtb.destination = consumerTag;
-                try {
-                    protocolSession.writeRequest
-                        (channel.getChannelId(),
-                         mtb, new AMQMethodListener() {
-                             public boolean methodReceived(AMQMethodEvent evt) throws AMQException {
-                                 if (_logger.isDebugEnabled()) {
-                                     _logger.debug("Ack received on channel " + evt.getChannelId());
-                                 }
-                                 // XXX: multiple
-                                 channel.acknowledgeMessage(deliveryTag, false);
-                                 return true;
-                             }
-                             public void error(Exception e) {}
-                         });
-                } catch (AMQException e) {
-                    throw new RuntimeException(e);
-                }
+                channel.deliver(msg, consumerTag, new AMQMethodListener() {
+                    public boolean methodReceived(AMQMethodEvent evt) throws AMQException {
+                        if (_logger.isDebugEnabled()) {
+                            _logger.debug("Ack received on channel " + evt.getChannelId());
+                        }
+                        // XXX: reject?
+                        // XXX: multiple
+                        channel.acknowledgeMessage(deliveryTag, false);
+                        return true;
+                    }
+                    public void error(Exception e) {}
+                });
             }
         }
         finally
         {
             msg.setDeliveredToConsumer();
         }
-    }
+        }*/
 
     public boolean isSuspended()
     {

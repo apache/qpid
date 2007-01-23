@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.qpid.framing.Content;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessageAppendBody;
@@ -47,6 +51,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -74,6 +79,7 @@ public class AMQChannel
 
     private RequestManager _requestManager;
     private ResponseManager _responseManager;
+    private AMQProtocolSession _session;
 
     /**
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
@@ -94,16 +100,9 @@ public class AMQChannel
     private int _consumerTag;
 
     /**
-     * The set of current messages - which may be partial in the sense that not all frames have been received yet -
-     * which has been received by this channel. As the frames are received the references get updated and once all
-     * frames have been received the message can then be routed.
-     */
-    private Map<String, List<AMQMessage>> _messages = new LinkedHashMap();
-
-    /**
      * The set of open references on this channel.
      */
-    private Map<String, List<MessageAppendBody>> _references = new LinkedHashMap();
+    private Map<String, Reference> _references = new LinkedHashMap();
 
     /**
      * Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue.
@@ -129,16 +128,17 @@ public class AMQChannel
     private final List<AMQDataBlock> _returns = new LinkedList<AMQDataBlock>();
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
-    public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges, AMQProtocolWriter protocolWriter, AMQMethodListener methodListener)
-            throws AMQException
+    // XXX: clean up arguments
+    public AMQChannel(int channelId, AMQProtocolSession session, MessageStore messageStore, MessageRouter exchanges, AMQMethodListener methodListener)
     {
         _channelId = channelId;
+        _session = session;
         _prefetch_HighWaterMark = DEFAULT_PREFETCH;
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
-        _requestManager = new RequestManager(channelId, protocolWriter, true);
-    	_responseManager = new ResponseManager(channelId, methodListener, protocolWriter, true);
+        _requestManager = new RequestManager(channelId, _session, true);
+        _responseManager = new ResponseManager(channelId, methodListener, _session, true);
         _txnBuffer = new TxnBuffer(_messageStore);
     }
 
@@ -189,51 +189,54 @@ public class AMQChannel
 
     public void addMessageTransfer(MessageTransferBody transferBody, AMQProtocolSession publisher) throws AMQException
     {
-        AMQMessage message = new AMQMessage(_messageStore, transferBody);
-        message.setPublisher(publisher);
         Content body = transferBody.getBody();
+        AMQMessage message;
         switch (body.getContentType()) {
         case INLINE_T:
+            message = new AMQMessage(_messageStore, transferBody,
+                                                Collections.singletonList(body.getContent()));
+            message.setPublisher(publisher);
             route(message);
             break;
         case REF_T:
-            getMessages(body.getContentAsByteArray()).add(message);
+            Reference ref = getReference(body.getContentAsByteArray());
+            message = new AMQMessage(_messageStore, transferBody, ref.contents);
+            message.setPublisher(publisher);
+            ref.messages.add(message);
             break;
         }
     }
 
-    private List<AMQMessage> getMessages(byte[] reference) {
-        String key = new String(reference);
-        List<AMQMessage> result = _messages.get(key);
-        if (result == null) {
-            throw new IllegalArgumentException(key);
-        }
-        return result;
+    private static String key(byte[] id) {
+        return new String(id);
     }
 
-    private List<MessageAppendBody> getReference(byte[] reference) {
-        String key = new String(reference);
-        List<MessageAppendBody> result = _references.get(key);
-        if (result == null) {
+    private Reference getReference(byte[] id) {
+        String key = key(id);
+        Reference ref = _references.get(key);
+        if (ref == null) {
             throw new IllegalArgumentException(key);
         }
-        return result;
+        return ref;
     }
 
-    private void createReference(byte[] reference) {
-        String key = new String(reference);
+    private Reference createReference(byte[] id) {
+        String key = key(id);
         if (_references.containsKey(key)) {
             throw new IllegalArgumentException(key);
-        } else {
-            _references.put(key, new LinkedList());
-            _messages.put(key, new LinkedList());
         }
+        Reference ref = new Reference();
+        _references.put(key, ref);
+        return ref;
     }
 
-    private void clearReference(byte[] reference) {
-        String key = new String(reference);
-        _references.remove(key);
-        _messages.remove(key);
+    private Reference removeReference(byte[] id) {
+        String key = key(id);
+        Reference ref = _references.remove(key);
+        if (ref == null) {
+            throw new IllegalArgumentException(key);
+        }
+        return ref;
     }
 
     public void addMessageOpen(MessageOpenBody open) {
@@ -241,18 +244,48 @@ public class AMQChannel
     }
 
     public void addMessageAppend(MessageAppendBody append) {
-        getReference(append.reference).add(append);
+        Reference ref = getReference(append.reference);
+        ref.contents.add(ByteBuffer.wrap(append.bytes));
     }
 
     public void addMessageClose(MessageCloseBody close) throws AMQException {
-        List<AMQMessage> messages = getMessages(close.reference);
-        try {
-            for (AMQMessage msg : messages) {
-                route(msg);
-            }
-        } finally {
-            clearReference(close.reference);
+        Reference ref = removeReference(close.reference);
+        for (AMQMessage msg : ref.messages) {
+            route(msg);
         }
+    }
+
+    public void deliver(AMQMessage msg, String destination, final long deliveryTag) {
+        deliver(msg, destination, new AMQMethodListener() {
+            public boolean methodReceived(AMQMethodEvent evt) throws AMQException {
+                AMQMethodBody method = evt.getMethod();
+                if (_log.isDebugEnabled()) {
+                    _log.debug(method + " received on channel " + _channelId);
+                }
+                // XXX: multiple?
+                if (method instanceof MessageOkBody) {
+                    acknowledgeMessage(deliveryTag, false);
+                    return true;
+                } else {
+                    // TODO: implement reject
+                    return false;
+                }
+            }
+            public void error(Exception e) {}
+        });
+    }
+
+    public void deliver(AMQMessage msg, String destination, AMQMethodListener listener) {
+        // XXX: should reframe if necessary to conform to max frame size
+        MessageTransferBody mtb = msg.getTransferBody().copy();
+        mtb.destination = destination;
+        ByteBuffer buf = ByteBuffer.allocate((int)msg.getBodySize());
+        for (ByteBuffer bb : msg.getContents()) {
+            buf.put(bb);
+        }
+        buf.flip();
+        mtb.body = new Content(Content.TypeEnum.INLINE_T, buf);
+        _session.writeRequest(_channelId, mtb, listener);
     }
 
     protected void route(AMQMessage msg) throws AMQException
@@ -452,7 +485,7 @@ public class AMQChannel
                 String consumerTag = entry.getValue().consumerTag;
                 AMQMessage msg = entry.getValue().message;
                 msg.setRedelivered(true);
-                session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+                deliver(msg, consumerTag, deliveryTag);
             }
         }
     }
@@ -865,6 +898,13 @@ public class AMQChannel
         public void rollback()
         {
         }
+    }
+
+    private static class Reference {
+
+        public List<AMQMessage> messages = new LinkedList();
+        public List<ByteBuffer> contents = new LinkedList();
+
     }
 
 }

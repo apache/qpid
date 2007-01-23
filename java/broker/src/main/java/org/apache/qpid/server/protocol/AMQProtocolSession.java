@@ -82,8 +82,7 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     
     void closeSessionResponse(long requestId) throws AMQException;
     
-    void closeSession() throws AMQException;
-    
+
     /**
      * Remove a channel from the session but do not close it.
      * @param channelId
@@ -95,6 +94,24 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      * @param delay delay in seconds (not ms)
      */
     void initHeartbeats(int delay);
+
+    /**
+     * Set the maximum frame size for this client.
+     * @param size the size in bytes
+     */
+    void setFrameMax(long size);
+
+    /**
+     * Get the maximum frame size for this client.
+     * @return the size in bytes
+     */
+    long getFrameMax();
+
+    /**
+     * This must be called when the session is _closed in order to free up any resources
+     * managed by the session.
+     */
+    void closeSession() throws AMQException;
 
     /**
      * @return a key that uniquely identifies this session
@@ -131,5 +148,5 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     byte getMajor();
     byte getMinor();
     boolean versionEquals(byte major, byte minor);
-    boolean checkMethodBodyVersion(AMQMethodBody methodBody);
+    void checkMethodBodyVersion(AMQMethodBody methodBody);
 }

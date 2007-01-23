@@ -35,12 +35,9 @@ public interface AMQProtocolWriter
     public void writeFrame(AMQDataBlock frame);
 
     public long writeRequest(int channelNum, AMQMethodBody methodBody,
-                             AMQMethodListener methodListener)
-        throws AMQException;
+                             AMQMethodListener methodListener);
 
-    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody)
-        throws AMQException;
+    public void writeResponse(int channelNum, long requestId, AMQMethodBody methodBody);
 
-    public void writeResponse(AMQMethodEvent evt, AMQMethodBody response)
-        throws AMQException;
+    public void writeResponse(AMQMethodEvent evt, AMQMethodBody response);
 }
