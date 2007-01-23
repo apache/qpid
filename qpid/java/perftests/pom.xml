@@ -35,6 +35,7 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
+	<log4j.perftests>perftests.log4j</log4j.perftests>	
     </properties>
 
     <dependencies>
@@ -91,7 +92,7 @@
 
 		 To generate the scripts do:
 
-		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:scripts
+		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
 
 		 Then to run the scripts do (after doing assembly:assembly goal):
 
@@ -99,7 +100,7 @@
 
 		 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
 		 -->	
-	    <!--
+            <!--
             <plugin>
               <groupId>uk.co.thebadgerset</groupId>
               <artifactId>junit-toolkit-maven-plugin</artifactId> 
@@ -108,10 +109,20 @@
               <configuration>
 	        <scriptOutDirectory>target</scriptOutDirectory>
 	        <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
+
+		<systemproperties>
+                  <property>
+                    <name>log4j.configuration</name>
+                    <value>${log4j.perftests}</value>
+                  </property>
+                </systemproperties>
+
                 <commands>
                   <!## Run the ping pong test once. This is just to check toolkit test runner is working. Real tests follow. ##>
                   <PingOnce>-n PingOnce -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</PingOnce>
-		  <ThrottleTest>-n ThrottleTest -s [10,10000],samples=8,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
+
+		  <!## Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. ##>
+		  <ThrottleTest>-n ThrottleTest -r 5 -s [10,10000],samples=100,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
 
 		  <!##
 		     Skim Tests.
@@ -123,7 +134,7 @@
 		  <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Many>
 		  <Skim-Queues>-n Skim-Queues -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf numQueues=10</Skim-Queues>
 		  <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Duration>
-		  <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf numQueues=10 rate=100</Skim-Rate>
+		  <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf rate=100</Skim-Rate>
 
 		  <!## P2P Volume Tests. ##>
 		  <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</VQ-Qpid-1>
@@ -149,8 +160,8 @@
 		  <PQ-Qpid-14>-n PQ-Qpid-14 -s [15000] -c[1000] -D1M -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</PQ-Qpid-14>
 
 		  <!## Increasing Message Payload Tests. ##>
-		  <LT-Qpid-3-521b>-n LT-Qpid-3-521b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-3-521b>
-		  <LT-Qpid-4-521b>-n LT-Qpid-4-521b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-4-521b>
+		  <LT-Qpid-3-512b>-n LT-Qpid-3-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-3-512b>
+		  <LT-Qpid-4-512b>-n LT-Qpid-4-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-4-512b>
 		  <LT-Qpid-3-1K>-n LT-Qpid-3-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</LT-Qpid-3-1K>
 		  <LT-Qpid-4-1K>-n LT-Qpid-4-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</LT-Qpid-4-1K>
 		  <LT-Qpid-3-5K>-n LT-Qpid-3-5K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=5120 transacted=true</LT-Qpid-3-5K>
@@ -214,8 +225,8 @@
 
         </plugins>
 
-        <!-- Include source files in built jar -->
         <resources>
+	    <!-- Include source files in built jar -->
             <resource>
                 <targetPath>src/</targetPath>
                 <filtering>false</filtering>
@@ -224,8 +235,9 @@
                     <include>**/*.java</include>
                 </includes>
             </resource>
+	    <!-- Include a log4j configuration in the jar at the root level (don't name this log4j.properties though as won't be able to override it). -->
             <resource>
-                <targetPath>src/</targetPath>
+                <targetPath>/</targetPath>
                 <filtering>false</filtering>
                 <directory>src/main/java</directory>
                 <includes>
