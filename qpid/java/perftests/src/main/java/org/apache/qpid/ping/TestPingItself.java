@@ -17,22 +17,13 @@
  */
 package org.apache.qpid.ping;
 
-import org.apache.qpid.requestreply.PingPongProducer;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.jms.MessageProducer;
 import org.apache.log4j.Logger;
+import org.apache.qpid.requestreply.PingPongProducer;
+import org.apache.qpid.topic.Config;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.ObjectMessage;
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.Queue;
-import java.net.InetAddress;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * This class is used to test sending and receiving messages to (pingQueue) and from a queue (replyQueue).
@@ -44,6 +35,26 @@ public class TestPingItself extends PingPongProducer
 {
     private static final Logger _logger = Logger.getLogger(TestPingItself.class);
 
+    /**
+     * This creates a client for pinging to a Queue. There will be one producer and one consumer instance. Consumer
+     * listening to the same Queue, producer is sending to
+     * @param brokerDetails
+     * @param username
+     * @param password
+     * @param virtualpath
+     * @param queueName
+     * @param selector
+     * @param transacted
+     * @param persistent
+     * @param messageSize
+     * @param verbose
+     * @param afterCommit
+     * @param beforeCommit
+     * @param afterSend
+     * @param beforeSend
+     * @param batchSize
+     * @throws Exception
+     */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                           boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
@@ -54,6 +65,26 @@ public class TestPingItself extends PingPongProducer
               verbose, afterCommit, beforeCommit, afterSend, beforeSend, batchSize, 0);
     }
 
+    /**
+     * This creats a client for tests with multiple queues. Creates as many consumer instances as there are queues,
+     * each listening to a Queue. A producer is created which picks up a queue from the list of queues to send message.
+     * @param brokerDetails
+     * @param username
+     * @param password
+     * @param virtualpath
+     * @param selector
+     * @param transacted
+     * @param persistent
+     * @param messageSize
+     * @param verbose
+     * @param afterCommit
+     * @param beforeCommit
+     * @param afterSend
+     * @param beforeSend
+     * @param batchSize
+     * @param queueCount
+     * @throws Exception
+     */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                           boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
@@ -73,10 +104,10 @@ public class TestPingItself extends PingPongProducer
         createProducer();
     }
 
-    @Override
     /**
-     * Sets the replyQueue to be the same as ping queue. 
+     * Sets the replyQueue to be the same as ping queue.
      */
+    @Override
     public void createConsumer(String selector) throws JMSException
     {
         // Create a message consumer to get the replies with and register this to be called back by it.
@@ -86,36 +117,24 @@ public class TestPingItself extends PingPongProducer
     }
 
     /**
-     * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs
-     * to be started to bounce the pings back again.
-     * <p/>
-     * <p/>The command line takes from 2 to 4 arguments:
-     * <p/><table>
-     * <tr><td>brokerDetails <td> The broker connection string.
-     * <tr><td>virtualPath   <td> The virtual path.
-     * <tr><td>transacted    <td> A boolean flag, telling this client whether or not to use transactions.
-     * <tr><td>size          <td> The size of ping messages to use, in bytes.
-     * </table>
-     *
+     * Starts a ping-pong loop running from the command line. 
      * @param args The command line arguments as defined above.
      */
     public static void main(String[] args) throws Exception
     {
         // Extract the command line.
-        if (args.length < 2)
-        {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
-                               "[transacted (true/false)] [persistent (true/false)] [message size in bytes]");
-            System.exit(0);
-        }
+        Config config = new Config();
+        config.setOptions(args);
 
-        String brokerDetails = args[0];
-        String virtualpath = args[1];
-        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
-        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
-        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
-        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
-        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
+        String brokerDetails = config.getHost() + ":" + config.getPort();
+        String virtualpath = "/test";
+        boolean verbose = false;
+        boolean transacted = config.isTransacted();
+        boolean persistent = config.usePersistentMessages();
+        int messageSize = config.getPayload() != 0 ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
+        int messageCount = config.getMessages();
+        int queueCount = config.getQueueCount();
+        int batchSize = config.getBatchSize() != 0 ? config.getBatchSize() : BATCH_SIZE;
 
         String queue = "ping_" + System.currentTimeMillis();
         _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent +
@@ -154,24 +173,65 @@ public class TestPingItself extends PingPongProducer
             }
         }
 
+        TestPingItself pingItself = null;
         // Create a ping producer to handle the request/wait/reply cycle.
-        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                                       transacted, persistent, messageSize, verbose,
-                                                       afterCommit, beforeCommit, afterSend, beforeSend,
-                                                       batchSize);
+        if (queueCount > 1)
+        {
+            pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, null,
+                                               transacted, persistent, messageSize, verbose,
+                                               afterCommit, beforeCommit, afterSend, beforeSend,
+                                               batchSize, queueCount);
+        }
+        else
+        {
+            pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
+                                               transacted, persistent, messageSize, verbose,
+                                               afterCommit, beforeCommit, afterSend, beforeSend,
+                                               batchSize);
+        }
+        
         pingItself.getConnection().start();
 
-        // Run a few priming pings to remove warm up time from test results.
-        pingItself.prime(PRIMING_LOOPS);
         // Create a shutdown hook to terminate the ping-pong producer.
         Runtime.getRuntime().addShutdownHook(pingItself.getShutdownHook());
 
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
         pingItself.getConnection().setExceptionListener(pingItself);
 
-        // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
-        Thread pingThread = new Thread(pingItself);
-        pingThread.run();
-        pingThread.join();
+        if ((queueCount > 1) || (messageCount > 0))
+        {
+            ObjectMessage msg = pingItself.getTestMessage(null, messageSize, persistent);
+
+            // Send the message and wait for a reply.
+            int numReplies = pingItself.pingAndWaitForReply(msg, messageCount, TIMEOUT);
+
+            _logger.info(("Messages Sent = " + messageCount + ", MessagesReceived = " + numReplies));
+        }
+        else
+        {
+            // set the message count to 0 to run this loop
+            // Run a few priming pings to remove warm up time from test results.
+            pingItself.prime(PRIMING_LOOPS);
+
+            _logger.info("Running the infinite loop and pinging the broker...");
+            // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
+            Thread pingThread = new Thread(pingItself);
+            pingThread.run();
+            pingThread.join();
+        }
+        pingItself.getConnection().close();
+    }
+
+    private static void usage()
+    {
+        System.err.println("Usage: TestPingPublisher \n" +
+                "-host : broker host" +
+                "-port : broker port" +
+                "-transacted : (true/false). Default is false" +
+                "-persistent : (true/false). Default is false" +
+                "-payload    : paylaod size. Default is 0" +
+                "-queues     : no of queues" +
+                "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
+        System.exit(0);
     }
 }
