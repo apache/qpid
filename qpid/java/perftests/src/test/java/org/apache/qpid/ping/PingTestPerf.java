@@ -122,7 +122,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     private static final String FAIL_AFTER_SEND = "FailAfterSend";
     private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
     private static final String BATCH_SIZE = "BatchSize";
-
+    private static final String FAIL_ONCE = "FailOnce";
 
 
     /**
@@ -147,6 +147,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(FAIL_BEFORE_COMMIT, "false");
         setSystemPropertyIfNull(FAIL_AFTER_SEND, "false");
         setSystemPropertyIfNull(FAIL_BEFORE_SEND, "false");
+        setSystemPropertyIfNull(FAIL_ONCE, "true");
 
         setSystemPropertyIfNull(BATCH_SIZE, Integer.toString(BATCH_SIZE_DEFAULT));
         setSystemPropertyIfNull(MESSAGE_SIZE_PROPNAME, Integer.toString(MESSAGE_SIZE_DEFAULT));
@@ -156,7 +157,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
         setSystemPropertyIfNull(TIMEOUT_PROPNAME, Long.toString(TIMEOUT_DEFAULT));
-        setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));         
+        setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));
     }
 
     /**
@@ -246,6 +247,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
             boolean afterSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_SEND));
             boolean beforeSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_SEND));
+            boolean failOnce = Boolean.parseBoolean(testParameters.getProperty(FAIL_ONCE));
 
             int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
 
@@ -256,7 +258,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
                 perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
                                                                       selector, transacted, persistent,
                                                                       messageSize, verbose,
-                                                                      afterCommit, beforeCommit, afterSend, beforeSend,
+                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                                                       batchSize, queueCount);
             }
             else
@@ -265,7 +267,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
                 perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
                                                                       queueName, selector, transacted, persistent,
                                                                       messageSize, verbose,
-                                                                      afterCommit, beforeCommit, afterSend, beforeSend,
+                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                                                       batchSize);
             }
 
