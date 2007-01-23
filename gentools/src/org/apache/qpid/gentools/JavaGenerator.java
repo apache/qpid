@@ -1057,7 +1057,8 @@ public class JavaGenerator extends Generator
         if (domain.compareTo("longstr") == 0)
         {
 		    sb.append(Utils.createSpaces(indentSize) +
-			    "buf.append(\"  " + fieldName + ": \" + new String(" + fieldName + "));" + cr);		
+			    "buf.append(\"  " + fieldName + ": \" + (" + fieldName +
+                " == null ? \"<null>\" : new String(" + fieldName + ")));" + cr);		
         }
         else
         {
