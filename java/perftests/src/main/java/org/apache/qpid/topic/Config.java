@@ -22,14 +22,12 @@ package org.apache.qpid.topic;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.config.ConnectorConfig;
-import org.apache.qpid.config.ConnectionFactoryInitialiser;
 import org.apache.qpid.config.Connector;
 import org.apache.qpid.config.AbstractConfig;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 
-class Config extends AbstractConfig implements ConnectorConfig
+public class Config extends AbstractConfig implements ConnectorConfig
 {
 
     private String host = "localhost";
@@ -46,22 +44,25 @@ class Config extends AbstractConfig implements ConnectorConfig
     private String clientId;
     private String subscriptionId;
     private boolean persistent;
+    private boolean transacted;
+    private int noOfQueues;
+    private int batchSize;
 
     public Config()
     {
     }
 
-    int getAckMode()
+    public int getAckMode()
     {
         return ackMode;
     }
 
-    void setPayload(int payload)
+    public void setPayload(int payload)
     {
         this.payload = payload;
     }
 
-    int getPayload()
+    public int getPayload()
     {
         return payload;
     }
@@ -81,9 +82,19 @@ class Config extends AbstractConfig implements ConnectorConfig
         this.messages = messages;
     }
 
-    int getMessages()
+    public int getMessages()
     {
         return messages;
+    }
+
+    public int getBatchSize()
+    {
+        return batchSize;
+    }
+
+    public int getQueueCount()
+    {
+        return noOfQueues;
     }
 
     public String getHost()
@@ -141,19 +152,24 @@ class Config extends AbstractConfig implements ConnectorConfig
         this.delay = delay;
     }
 
-    String getClientId()
+    public String getClientId()
     {
         return clientId;
     }
 
-    String getSubscriptionId()
+    public String getSubscriptionId()
     {
         return subscriptionId;
     }
 
-    boolean usePersistentMessages()
+    public boolean usePersistentMessages()
     {
         return persistent;
+    }
+
+    public boolean isTransacted()
+    {
+        return transacted;
     }
 
     public void setOption(String key, String value)
@@ -216,6 +232,18 @@ class Config extends AbstractConfig implements ConnectorConfig
         else if("-persistent".equalsIgnoreCase(key))
         {
             persistent = "true".equalsIgnoreCase(value);
+        }
+        else if("-transacted".equalsIgnoreCase(key))
+        {
+            transacted = "true".equalsIgnoreCase(value);
+        }
+        else if ("-queues".equalsIgnoreCase(key))
+        {
+            noOfQueues = parseInt("Bad queues count", value);
+        }
+        else if ("-batchsize".equalsIgnoreCase(key))
+        {
+            batchSize = parseInt("Bad batch size", value);
         }
         else
         {
