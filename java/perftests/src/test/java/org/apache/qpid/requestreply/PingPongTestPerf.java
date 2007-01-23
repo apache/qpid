@@ -136,6 +136,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     private static final String FAIL_AFTER_SEND = "FailAfterSend";
     private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
     private static final String BATCH_SIZE = "BatchSize";
+    private static final String FAIL_ONCE = "FailOnce";
 
 
     public PingPongTestPerf(String name)
@@ -221,6 +222,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             boolean afterSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_SEND));
             boolean beforeSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_SEND));
             int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
+            Boolean failOnce = Boolean.parseBoolean(testParameters.getProperty(FAIL_ONCE));
 
             // Establish a bounce back client on the ping queue to bounce back the pings.
             perThreadSetup._testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName,
@@ -233,7 +235,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             perThreadSetup._testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath,
                                                                     queueName, selector, transacted, persistent, messageSize,
                                                                     verbose,
-                                                                    afterCommit, beforeCommit, afterSend, beforeSend,
+                                                                    afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                                                     batchSize, 0);
 
             perThreadSetup._testPingProducer.getConnection().start();

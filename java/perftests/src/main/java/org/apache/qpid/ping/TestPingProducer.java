@@ -88,7 +88,8 @@ class TestPingProducer extends AbstractPingProducer
 
     public TestPingProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
                             boolean transacted, boolean persistent, int messageSize, boolean verbose, boolean afterCommit,
-                            boolean beforeCommit, boolean afterSend, boolean beforeSend,int batchSize) throws Exception
+                            boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
+                            int batchSize) throws Exception
     {
         // Create a connection to the broker.
         InetAddress address = InetAddress.getLocalHost();
@@ -115,6 +116,7 @@ class TestPingProducer extends AbstractPingProducer
         _failBeforeSend = beforeSend;
         _sentMessages = 0;
         _batchSize = batchSize;
+        _failOnce = failOnce;
     }
 
     /**
@@ -129,7 +131,7 @@ class TestPingProducer extends AbstractPingProducer
         if (args.length < 2)
         {
             System.err.println(
-                    "Usage: TestPingPublisher <brokerDetails> <virtual path> "+
+                    "Usage: TestPingPublisher <brokerDetails> <virtual path> " +
                     "[<verbose(true|false)> <transacted(true|false))> <persistent(true|false)> <message size in bytes> <batchsize>");
             System.exit(0);
         }
@@ -147,6 +149,7 @@ class TestPingProducer extends AbstractPingProducer
         boolean beforeCommit = false;
         boolean afterSend = false;
         boolean beforeSend = false;
+        boolean failOnce = false;
 
         for (String arg : args)
         {
@@ -167,6 +170,10 @@ class TestPingProducer extends AbstractPingProducer
                         afterSend = parts[1].equals("after");
                         beforeSend = parts[1].equals("before");
                     }
+                    if (parts[1].equals("once"))
+                    {
+                        failOnce = true;
+                    }
                 }
                 else
                 {
@@ -178,7 +185,7 @@ class TestPingProducer extends AbstractPingProducer
         // Create a ping producer to generate the pings.
         _pingProducer = new TestPingProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME,
                                              transacted, persistent, messageSize, verbose,
-                                             afterCommit, beforeCommit, afterSend, beforeSend,
+                                             afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                              batchSize);
 
         // Start the connection running.

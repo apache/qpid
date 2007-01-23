@@ -78,6 +78,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     protected boolean _failAfterCommit = false;
     protected boolean _failBeforeSend = false;
     protected boolean _failAfterSend = false;
+    protected boolean _failOnce = true;
 
     protected int _sentMessages = 0;
     protected int _batchSize = 1;
@@ -257,12 +258,28 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     {
         if ((++_sentMessages % _batchSize) == 0)
         {
+            _logger.trace("Batch time reached");
+            if (_failAfterSend)
+            {
+                if (_failOnce)
+                {
+                    _failAfterSend = false;
+                }
+                _logger.trace("Failing After Send");
+                doFailover();
+            }
+
+
             if (session.getTransacted())
             {
                 try
                 {
                     if (_failBeforeCommit)
                     {
+                        if (_failOnce)
+                        {
+                            _failBeforeCommit = false;
+                        }
                         _logger.trace("Failing Before Commit");
                         doFailover();
                     }
@@ -271,6 +288,10 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 
                     if (_failAfterCommit)
                     {
+                        if (_failOnce)
+                        {
+                            _failAfterCommit = false;
+                        }
                         _logger.trace("Failing After Commit");
                         doFailover();
                     }
@@ -312,6 +333,10 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     {
         if (_failBeforeSend)
         {
+            if (_failOnce)
+            {
+                _failBeforeSend = false;
+            }
             _logger.trace("Failing Before Send");
             doFailover();
         }
@@ -325,11 +350,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
             _producer.send(q, message);
         }
 
-        if (_failAfterSend)
-        {
-            _logger.trace("Failing After Send");
-            doFailover();
-        }
+        commitTx();
     }
 
     protected void doFailover(String broker)

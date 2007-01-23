@@ -165,6 +165,12 @@
 		  <!## Failover Tests. ##>
 		  <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true failover=true</FT-Qpid-1>
 		  <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true failover=true</FT-Qpid-2>
+		  <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterCommit=true</FT-Qpid-3>
+
+		  <FT-Qpid-4>-n FT-Qpid-4 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailBeforeSend=true</FT-Qpid-4>
+		  <FT-Qpid-5>-n FT-Qpid-5 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterSend=true</FT-Qpid-5>
+		  <FT-Qpid-6>-n FT-Qpid-6 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterCommit=true</FT-Qpid-6>
+
 
                 </commands>
               </configuration>
