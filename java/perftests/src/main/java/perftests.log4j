@@ -28,7 +28,7 @@ log4j.logger.org.apache.qpid.topic=${amqj.test.logging.level}
 
 
 log4j.logger.uk.co.thebadgerset.junit.extensions=info, console
-log4j.additivity.uk.co.thebadgerset.junit.extensions=fals
+log4j.additivity.uk.co.thebadgerset.junit.extensions=false
 log4j.logger.uk.co.thebadgerset.junit.extensions=info
 
 log4j.appender.console=org.apache.log4j.ConsoleAppender
