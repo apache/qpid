@@ -93,10 +93,6 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     protected static final int BATCH_SIZE = 100;
 
-    /**
-     * Keeps track of the ping producer instance used in the run loop.
-     */
-    private static PingPongProducer _pingProducer;
     protected static final int PREFETCH = 100;
     protected static final boolean NO_LOCAL = true;
     protected static final boolean EXCLUSIVE = false;
@@ -109,7 +105,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     /**
      * A source for providing sequential unique correlation ids.
      */
-    private AtomicLong idGenerator = new AtomicLong(0L);
+    private static AtomicLong idGenerator = new AtomicLong(0L);
 
     /**
      * Holds the queue to send the ping replies to.
@@ -134,7 +130,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     /**
      * Holds a map from message ids to latches on which threads wait for replies.
      */
-    private Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
+    private static Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
 
     /**
      * Used to indicate that the ping loop should print out whenever it pings.
@@ -192,21 +188,21 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         this(brokerDetails, username, password, virtualpath, transacted, persistent, messageSize, verbose,
              afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize);
 
-        if (queueName != null)
+        _queueCount = queueCount;
+        if (queueCount <= 1)
         {
-            _pingQueue = new AMQQueue(queueName);
-            // Create producer and the consumer
-            createProducer();
-            createConsumer(selector);
-        }
-        else if (queueCount > 0)
-        {
-            _queueCount = queueCount;
-        }
-        else
-        {
-            _logger.error("Queue Count is zero and no queueName specified. One must be set.");
-            throw new IllegalArgumentException("Queue Count is zero and no queueName specified. One must be set.");
+            if (queueName != null)
+            {
+                _pingQueue = new AMQQueue(queueName);
+                // Create producer and the consumer
+                createProducer();
+                createConsumer(selector);
+            }
+            else
+            {
+                _logger.error("Queue Name is not specified");
+                throw new IllegalArgumentException("Queue Name is not specified");
+            }
         }
     }
 
@@ -351,23 +347,23 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         }
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        _pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
+        PingPongProducer pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
                                              persistent, messageSize, verbose,
                                              afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
                                              batchSize, 0);
 
-        _pingProducer.getConnection().start();
+        pingProducer.getConnection().start();
 
         // Run a few priming pings to remove warm up time from test results.
-        _pingProducer.prime(PRIMING_LOOPS);
+        pingProducer.prime(PRIMING_LOOPS);
         // Create a shutdown hook to terminate the ping-pong producer.
-        Runtime.getRuntime().addShutdownHook(_pingProducer.getShutdownHook());
+        Runtime.getRuntime().addShutdownHook(pingProducer.getShutdownHook());
 
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
-        _pingProducer.getConnection().setExceptionListener(_pingProducer);
+        pingProducer.getConnection().setExceptionListener(pingProducer);
 
         // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
-        Thread pingThread = new Thread(_pingProducer);
+        Thread pingThread = new Thread(pingProducer);
         pingThread.run();
         pingThread.join();
     }
@@ -502,7 +498,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
         if ((numReplies < numPings) && _verbose)
         {
-            _logger.info("Timed out before all replies received on id, " + messageCorrelationId);
+            _logger.info("Timed out (" + timeout  + " ms) before all replies received on id, " + messageCorrelationId);
         }
         else if (_verbose)
         {
