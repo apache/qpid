@@ -80,6 +80,8 @@ public class RequestManager
             logger.debug((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel +
                 " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
         }
+        //System.out.println((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel +
+        //        " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
         return requestId;
     }
 
@@ -93,6 +95,8 @@ public class RequestManager
             logger.debug((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel +
                 " " + responseBody + "; " + responseBody.getMethodPayload());
         }
+        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel +
+        //        " " + responseBody + "; " + responseBody.getMethodPayload());
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
             AMQMethodListener methodListener = requestSentMap.get(requestId);

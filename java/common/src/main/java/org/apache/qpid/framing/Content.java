@@ -24,38 +24,38 @@ import org.apache.mina.common.ByteBuffer;
 
 public class Content
 {
-	public enum ContentTypeEnum
+	public enum TypeEnum
     {
-    	CONTENT_TYPE_INLINE((byte)0), CONTENT_TYPE_REFERENCE((byte)1);
+    	INLINE_T((byte)0), REF_T((byte)1);
         private byte type;
-        ContentTypeEnum(byte type) { this.type = type; }
+        TypeEnum(byte type) { this.type = type; }
         public byte toByte() { return type; }
-        public static ContentTypeEnum toContentEnum(byte b)
+        public static TypeEnum toContentEnum(byte b)
         {
         	switch (b)
             {
-            	case 0: return CONTENT_TYPE_INLINE;
-            	case 1: return CONTENT_TYPE_REFERENCE;
+            	case 0: return INLINE_T;
+            	case 1: return REF_T;
                 default: throw new IllegalArgumentException("Illegal value " + b +
-                	", not represented in ContentTypeEnum.");
+                	", not represented in TypeEnum.");
             }
         }
     }
     
-    public ContentTypeEnum contentType;
+    public TypeEnum contentType;
     public ByteBuffer content;
     
     // Constructors
     
     public Content()
     {
-    	contentType = ContentTypeEnum.CONTENT_TYPE_INLINE; // default
+    	contentType = TypeEnum.INLINE_T; // default
         content = null;
     }
     
-    public Content(ContentTypeEnum contentType, byte[] content)
+    public Content(TypeEnum contentType, byte[] content)
     {
-    	if (contentType == ContentTypeEnum.CONTENT_TYPE_REFERENCE)
+    	if (contentType == TypeEnum.REF_T)
         {
         	if (content == null)
             	throw new IllegalArgumentException("Content cannot be null for a ref type.");
@@ -67,14 +67,14 @@ public class Content
         this.content.put(content);
     }
     
-    public Content(ContentTypeEnum contentType, String contentStr)
+    public Content(TypeEnum contentType, String contentStr)
     {
         this(contentType, contentStr.getBytes());
     }
     
-    public Content(ContentTypeEnum contentType, ByteBuffer content)
+    public Content(TypeEnum contentType, ByteBuffer content)
     {
-    	if (contentType == ContentTypeEnum.CONTENT_TYPE_REFERENCE)
+    	if (contentType == TypeEnum.REF_T)
         {
         	if (content == null)
             	throw new IllegalArgumentException("Content cannot be null for a ref type.");
@@ -87,13 +87,21 @@ public class Content
     
     // Get functions
     
-    public ContentTypeEnum getContentType() { return contentType; }
-    public ByteBuffer getContent() { return content; }
+    public TypeEnum getContentType()
+    {
+        return contentType;
+    }
+    
+    public ByteBuffer getContent()
+    {
+        return content.duplicate();
+    }
     
     public byte[] getContentAsByteArray()
     {
-        byte[] ba = new byte[content.remaining()];
-        content.get(ba);
+        ByteBuffer dup = content.duplicate().rewind();
+        byte[] ba = new byte[dup.remaining()];
+        dup.get(ba);
         return ba;
     }
     
@@ -122,7 +130,7 @@ public class Content
     
     public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException
     {
-        contentType = ContentTypeEnum.toContentEnum(buffer.get());
+        contentType = TypeEnum.toContentEnum(buffer.get());
         int length = buffer.getInt();
         content = buffer.slice();
         buffer.skip(length);
@@ -131,11 +139,6 @@ public class Content
     
     public synchronized String toString()
     {
-    	int position = content.position();
-    	content.flip();
-        String tmp = content.toString();
-        content.position(position);
-        
-        return tmp;
+        return getContent().rewind().toString();
     }
 }
