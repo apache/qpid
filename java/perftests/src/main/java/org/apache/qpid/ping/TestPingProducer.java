@@ -37,12 +37,12 @@ import org.apache.qpid.jms.Session;
  * PingProducer is a client that sends timestamped pings to a queue. It is designed to be run from the command line
  * as a stand alone test tool, but it may also be fairly easily instantiated by other code by supplying a session and
  * configured message producer.
- *
+ * <p/>
  * <p/>This implements the Runnable interface with a run method that implements an infinite ping loop. The ping loop
  * does all its work through helper methods, so that code wishing to run a ping cycle is not forced to do so
  * by starting a new thread. The command line invocation does take advantage of this ping loop. A shutdown hook is
  * also registered to terminate the ping loop cleanly.
- *
+ * <p/>
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Provide a ping cycle.
@@ -53,31 +53,42 @@ class TestPingProducer extends AbstractPingProducer
 {
     private static final Logger _logger = Logger.getLogger(TestPingProducer.class);
 
-    /** Used to set up a default message size. */
+    /**
+     * Used to set up a default message size.
+     */
     private static final int DEFAULT_MESSAGE_SIZE = 0;
 
-    /** Used to define how long to wait between pings. */
+    /**
+     * Used to define how long to wait between pings.
+     */
     private static final long SLEEP_TIME = 250;
 
-    /** Holds the name of the queue to send pings on. */
+    /**
+     * Holds the name of the queue to send pings on.
+     */
     private static final String PING_QUEUE_NAME = "ping";
 
     private static TestPingProducer _pingProducer;
 
-    /** Holds the message producer to send the pings through. */
-    private MessageProducer _producer;
-
-    /** Determines whether this producer sends persistent messages from the run method. */
+    /**
+     * Determines whether this producer sends persistent messages from the run method.
+     */
     private boolean _persistent = false;
 
-    /** Holds the message size to send, from the run method. */
+    /**
+     * Holds the message size to send, from the run method.
+     */
     private int _messageSize = DEFAULT_MESSAGE_SIZE;
 
-    /** Used to indicate that the ping loop should print out whenever it pings. */
+    /**
+     * Used to indicate that the ping loop should print out whenever it pings.
+     */
     private boolean _verbose = false;
 
+
     public TestPingProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
-                            boolean transacted, boolean persistent, int messageSize, boolean verbose) throws Exception
+                            boolean transacted, boolean persistent, int messageSize, boolean verbose, boolean afterCommit,
+                            boolean beforeCommit, boolean afterSend, boolean beforeSend,int batchSize) throws Exception
     {
         // Create a connection to the broker.
         InetAddress address = InetAddress.getLocalHost();
@@ -96,6 +107,14 @@ class TestPingProducer extends AbstractPingProducer
         _messageSize = messageSize;
 
         _verbose = verbose;
+
+        // Set failover interrupts
+        _failAfterCommit = afterCommit;
+        _failBeforeCommit = beforeCommit;
+        _failAfterSend = afterSend;
+        _failBeforeSend = beforeSend;
+        _sentMessages = 0;
+        _batchSize = batchSize;
     }
 
     /**
@@ -110,7 +129,8 @@ class TestPingProducer extends AbstractPingProducer
         if (args.length < 2)
         {
             System.err.println(
-                "Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose] [transacted] [persistent] [message size in bytes]");
+                    "Usage: TestPingPublisher <brokerDetails> <virtual path> "+
+                    "[<verbose(true|false)> <transacted(true|false))> <persistent(true|false)> <message size in bytes> <batchsize>");
             System.exit(0);
         }
 
@@ -120,10 +140,46 @@ class TestPingProducer extends AbstractPingProducer
         boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
         boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
         int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
+        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
+
+
+        boolean afterCommit = false;
+        boolean beforeCommit = false;
+        boolean afterSend = false;
+        boolean beforeSend = false;
+
+        for (String arg : args)
+        {
+            if (arg.startsWith("failover:"))
+            {
+                //failover:<before|after>:<send:commit>
+                String[] parts = arg.split(":");
+                if (parts.length == 3)
+                {
+                    if (parts[2].equals("commit"))
+                    {
+                        afterCommit = parts[1].equals("after");
+                        beforeCommit = parts[1].equals("before");
+                    }
+
+                    if (parts[2].equals("send"))
+                    {
+                        afterSend = parts[1].equals("after");
+                        beforeSend = parts[1].equals("before");
+                    }
+                }
+                else
+                {
+                    System.out.println("Unrecognized failover request:" + arg);
+                }
+            }
+        }
 
         // Create a ping producer to generate the pings.
-        _pingProducer = new TestPingProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, transacted,
-                                             persistent, messageSize, verbose);
+        _pingProducer = new TestPingProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME,
+                                             transacted, persistent, messageSize, verbose,
+                                             afterCommit, beforeCommit, afterSend, beforeSend,
+                                             batchSize);
 
         // Start the connection running.
         _pingProducer.getConnection().start();
@@ -144,19 +200,18 @@ class TestPingProducer extends AbstractPingProducer
      * Sends the specified ping message.
      *
      * @param message The message to send.
-     *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
     public void ping(Message message) throws JMSException
     {
-        _producer.send(message);
+        sendMessage(message);
 
         // Keep the messageId to correlate with the reply.
         String messageId = message.getJMSMessageID();
 
         // Commit the transaction if running in transactional mode. This must happen now, rather than at the end of
-        // this method, as the message will not be sent until the transaction is committed.
-        commitTx(getProducerSession());
+        // this method, as the message will not be sent until the transaction is committed.        
+        commitTx();
     }
 
     /**
