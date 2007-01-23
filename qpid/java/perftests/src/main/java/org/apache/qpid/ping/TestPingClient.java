@@ -34,11 +34,11 @@ import org.apache.qpid.jms.Session;
  * PingClient is a message listener that received time stamped ping messages. It can work out how long a ping took,
  * provided that its clokc is synchronized to that of the ping producer, or by running it on the same machine (or jvm)
  * as the ping producer.
- *
+ * <p/>
  * <p/>There is a verbose mode flag which causes information about each ping to be output to the console
  * (info level logging, so usually console). This can be helpfull to check the bounce backs are happening but should
  * be disabled for real timing tests as writing to the console will slow things down.
- *
+ * <p/>
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Provide command line invocation to start the ping consumer on a configurable broker url.
@@ -50,10 +50,14 @@ class TestPingClient extends AbstractPingClient implements MessageListener
 {
     private static final Logger _logger = Logger.getLogger(TestPingClient.class);
 
-    /** Used to indicate that the reply generator should log timing info to the console (logger info level). */
+    /**
+     * Used to indicate that the reply generator should log timing info to the console (logger info level).
+     */
     private boolean _verbose = false;
 
-    /** The producer session. */
+    /**
+     * The producer session.
+     */
     private Session _consumerSession;
 
     /**
@@ -67,11 +71,11 @@ class TestPingClient extends AbstractPingClient implements MessageListener
      * @param transacted
      * @param selector
      * @param verbose
-     *
-     * @throws Exception All underlying exceptions allowed to fall through. This is only test code...
+     * @param afterCommit
+     *@param beforeCommit @throws Exception All underlying exceptions allowed to fall through. This is only test code...
      */
     public TestPingClient(String brokerDetails, String username, String password, String queueName, String virtualpath,
-                          boolean transacted, String selector, boolean verbose) throws Exception
+                          boolean transacted, String selector, boolean verbose, boolean afterCommit, boolean beforeCommit) throws Exception
     {
         // Create a connection to the broker.
         InetAddress address = InetAddress.getLocalHost();
@@ -85,10 +89,15 @@ class TestPingClient extends AbstractPingClient implements MessageListener
         // Connect a consumer to the ping queue and register this to be called back by it.
         Queue q = new AMQQueue(queueName);
         MessageConsumer consumer = _consumerSession.createConsumer(q, 1, false, false, selector);
+        
         consumer.setMessageListener(this);
 
         // Hang on to the verbose flag setting.
         _verbose = verbose;
+
+        // Set failover interrupts
+        _failAfterCommit = afterCommit;
+        _failBeforeCommit = beforeCommit;
     }
 
     /**
@@ -104,7 +113,7 @@ class TestPingClient extends AbstractPingClient implements MessageListener
         if (args.length < 4)
         {
             System.out.println(
-                "Usage: brokerdetails username password virtual-path [queueName] [verbose] [transacted] [selector]");
+                    "Usage: brokerdetails username password virtual-path [queueName] [verbose] [transacted] [selector] [failover:<before|after>:commit]");
             System.exit(1);
         }
 
@@ -118,14 +127,38 @@ class TestPingClient extends AbstractPingClient implements MessageListener
         boolean transacted = (args.length >= 7) ? Boolean.parseBoolean(args[6]) : false;
         String selector = (args.length == 8) ? args[7] : null;
 
+        boolean afterCommit = false;
+        boolean beforeCommit = false;
+
+        for (String arg : args)
+        {
+            if (arg.startsWith("failover:"))
+            {
+                //failover:<before|after>:<send:commit>
+                String[] parts = arg.split(":");
+                if (parts.length == 3)
+                {
+                    if (parts[2].equals("commit"))
+                    {
+                        afterCommit = parts[1].equals("after");
+                        beforeCommit = parts[1].equals("before");
+                    }
+                }
+                else
+                {
+                    System.out.println("Unrecognized failover request:" + arg);
+                }
+            }
+        }
+
         // Create the test ping client and set it running.
         TestPingClient pingClient =
-            new TestPingClient(brokerDetails, username, password, queueName, virtualpath, transacted, selector, verbose);
+                new TestPingClient(brokerDetails, username, password, queueName, virtualpath, transacted, selector, verbose, afterCommit, beforeCommit);
+
         pingClient.getConnection().start();
 
         System.out.println("Waiting...");
     }
-
     /**
      * This is a callback method that is notified of all messages for which this has been registered as a message
      * listener on a message consumer.

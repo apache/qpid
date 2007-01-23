@@ -2,17 +2,23 @@ package org.apache.qpid.ping;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQNoConsumersException;
+import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.message.TestMessageFactory;
+import org.apache.qpid.jms.*;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -20,7 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
  * This abstract class captures functionality that is common to all ping producers. It provides functionality to
  * manage a session, and a convenience method to commit a transaction on the session. It also provides a framework
  * for running a ping loop, and terminating that loop on exceptions or a shutdown handler.
- *
+ * <p/>
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Manage the connection.
@@ -35,23 +41,47 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 {
     private static final Logger _logger = Logger.getLogger(AbstractPingProducer.class);
 
-    /** Used to format time stamping output. */
+    /**
+     * Used to format time stamping output.
+     */
     protected static final DateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
 
-    /** Used to tell the ping loop when to terminate, it only runs while this is true. */
+    /**
+     * Used to tell the ping loop when to terminate, it only runs while this is true.
+     */
     protected boolean _publish = true;
 
-    /** Holds the connection handle to the broker. */
+    /**
+     * Holds the connection handle to the broker.
+     */
     private Connection _connection;
 
-    /** Holds the producer session, need to create test messages. */
+    /**
+     * Holds the producer session, need to create test messages.
+     */
     private Session _producerSession;
 
 
-    /** holds the no of queues the tests will be using to send messages. By default it will be 1 */
-    private int _queueCount;
+    /**
+     * holds the no of queues the tests will be using to send messages. By default it will be 1
+     */
+    protected int _queueCount;
     private static AtomicInteger _queueSequenceID = new AtomicInteger();
     private List<Queue> _queues = new ArrayList<Queue>();
+
+    /**
+     * Holds the message producer to send the pings through.
+     */
+    protected org.apache.qpid.jms.MessageProducer _producer;
+
+    protected boolean _failBeforeCommit = false;
+    protected boolean _failAfterCommit = false;
+    protected boolean _failBeforeSend = false;
+    protected boolean _failAfterSend = false;
+
+    protected int _sentMessages = 0;
+    protected int _batchSize = 1;
+
 
     /**
      * Convenience method for a short pause.
@@ -67,7 +97,8 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
                 Thread.sleep(sleepTime);
             }
             catch (InterruptedException ie)
-            { }
+            {
+            }
         }
     }
 
@@ -78,9 +109,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
      *
      * @param replyQueue  The reply-to destination for the message.
      * @param messageSize The desired size of the message in bytes.
-     *
      * @return A freshly generated test message.
-     *
      * @throws javax.jms.JMSException All underlying JMSException are allowed to fall through.
      */
     public ObjectMessage getTestMessage(Queue replyQueue, int messageSize, boolean persistent) throws JMSException
@@ -153,12 +182,12 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     public Thread getShutdownHook()
     {
         return new Thread(new Runnable()
+        {
+            public void run()
             {
-                public void run()
-                {
-                    stop();
-                }
-            });
+                stop();
+            }
+        });
     }
 
     public Connection getConnection()
@@ -181,6 +210,12 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         this._producerSession = session;
     }
 
+
+    protected void commitTx() throws JMSException
+    {
+        commitTx(getProducerSession());
+    }
+
     public int getQueueCount()
     {
         return _queueCount;
@@ -194,6 +229,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     /**
      * Creates queues dynamically and adds to the queues list.  This is when the test is being done with
      * multiple queues.
+     *
      * @param queueCount
      */
     protected void createQueues(int queueCount)
@@ -202,7 +238,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         {
             AMQShortString name = new AMQShortString("Queue_" + _queueSequenceID.incrementAndGet() + "_" + System.currentTimeMillis());
             AMQQueue queue = new AMQQueue(name, name, false, false, false);
-            
+
             _queues.add(queue);
         }
     }
@@ -219,36 +255,107 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
      */
     protected void commitTx(Session session) throws JMSException
     {
-        if (session.getTransacted())
+        if ((++_sentMessages % _batchSize) == 0)
         {
-            try
+            if (session.getTransacted())
             {
-                session.commit();
-                _logger.trace("Session Commited.");
-            }
-            catch (JMSException e)
-            {
-                _logger.trace("JMSException on commit:" + e.getMessage(), e);
-
-                // Warn that the bounce back client is not available.
-                if (e.getLinkedException() instanceof AMQNoConsumersException)
-                {
-                    _logger.debug("No consumers on queue.");
-                }
-
                 try
                 {
-                    session.rollback();
-                    _logger.trace("Message rolled back.");
-                }
-                catch (JMSException jmse)
-                {
-                    _logger.trace("JMSE on rollback:" + jmse.getMessage(), jmse);
+                    if (_failBeforeCommit)
+                    {
+                        _logger.trace("Failing Before Commit");
+                        doFailover();
+                    }
 
-                    // Both commit and rollback failed. Throw the rollback exception.
-                    throw jmse;
+                    session.commit();
+
+                    if (_failAfterCommit)
+                    {
+                        _logger.trace("Failing After Commit");
+                        doFailover();
+                    }
+                    _logger.trace("Session Commited.");
+                }
+                catch (JMSException e)
+                {
+                    _logger.trace("JMSException on commit:" + e.getMessage(), e);
+
+                    // Warn that the bounce back client is not available.
+                    if (e.getLinkedException() instanceof AMQNoConsumersException)
+                    {
+                        _logger.debug("No consumers on queue.");
+                    }
+
+                    try
+                    {
+                        session.rollback();
+                        _logger.trace("Message rolled back.");
+                    }
+                    catch (JMSException jmse)
+                    {
+                        _logger.trace("JMSE on rollback:" + jmse.getMessage(), jmse);
+
+                        // Both commit and rollback failed. Throw the rollback exception.
+                        throw jmse;
+                    }
                 }
             }
         }
+    }
+
+    protected void sendMessage(Message message) throws JMSException
+    {
+        sendMessage(null, message);
+    }
+
+    protected void sendMessage(Queue q, Message message) throws JMSException
+    {
+        if (_failBeforeSend)
+        {
+            _logger.trace("Failing Before Send");
+            doFailover();
+        }
+
+        if (q == null)
+        {
+            _producer.send(message);
+        }
+        else
+        {
+            _producer.send(q, message);
+        }
+
+        if (_failAfterSend)
+        {
+            _logger.trace("Failing After Send");
+            doFailover();
+        }
+    }
+
+    protected void doFailover(String broker)
+    {
+        System.out.println("Kill Broker " + broker + " now then press return");
+        try
+        {
+            System.in.read();
+        }
+        catch (IOException e)
+        {
+        }
+        System.out.println("Continuing.");
+    }
+
+    protected void doFailover()
+    {
+        System.out.println("Kill Broker now then press return");
+        try
+        {
+            System.in.read();
+        }
+        catch (IOException e)
+        {
+        }
+        System.out.println("Continuing.");
+
     }
 }

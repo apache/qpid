@@ -74,6 +74,13 @@
           <include>**/*.log4j</include>
       </includes>
     </fileSet>
+	<fileSet>
+      <directory>../src/test</directory>
+      <outputDirectory>qpid-${qpid.version}/src</outputDirectory>
+      <includes>
+          <include>**/*.java</include>          
+      </includes>
+    </fileSet>
 
     <!-- Metadata Jar -->
     <fileSet>

@@ -45,18 +45,24 @@ public class TestPingItself extends PingPongProducer
     private static final Logger _logger = Logger.getLogger(TestPingItself.class);
 
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
-                          String selector, boolean transacted, boolean persistent,  int messageSize, boolean verbose)
+                          String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
+                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                          int batchSize)
             throws Exception
     {
-        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize, verbose);
+        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
+              verbose, afterCommit, beforeCommit, afterSend, beforeSend, batchSize, 0);
     }
 
-    public TestPingItself(String brokerDetails, String username, String password, String virtualpath, int queueCount,
-                          String selector, boolean transacted, boolean persistent,  int messageSize, boolean verbose)
+    public TestPingItself(String brokerDetails, String username, String password, String virtualpath,
+                          String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
+                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                          int batchSize, int queueCount)
             throws Exception
     {
-        super(brokerDetails, username, password, virtualpath, transacted);
-        setQueueCount(queueCount);
+        super(brokerDetails, username, password, virtualpath, null, null, transacted, persistent, messageSize,
+              verbose, afterCommit, beforeCommit, afterSend, beforeSend, batchSize, queueCount);
+
         createQueues(queueCount);
 
         _persistent = persistent;
@@ -82,7 +88,7 @@ public class TestPingItself extends PingPongProducer
     /**
      * Starts a ping-pong loop running from the command line. The bounce back client {@link org.apache.qpid.requestreply.PingPongBouncer} also needs
      * to be started to bounce the pings back again.
-     *
+     * <p/>
      * <p/>The command line takes from 2 to 4 arguments:
      * <p/><table>
      * <tr><td>brokerDetails <td> The broker connection string.
@@ -99,7 +105,7 @@ public class TestPingItself extends PingPongProducer
         if (args.length < 2)
         {
             System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
-                    "[transacted (true/false)] [persistent (true/false)] [message size in bytes]");
+                               "[transacted (true/false)] [persistent (true/false)] [message size in bytes]");
             System.exit(0);
         }
 
@@ -109,14 +115,50 @@ public class TestPingItself extends PingPongProducer
         boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
         boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
         int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
+        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
 
-        String queue = "ping_"+ System.currentTimeMillis();
-        _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:"+ persistent +
+        String queue = "ping_" + System.currentTimeMillis();
+        _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent +
                      ",MessageSize:" + messageSize + " bytes");
+
+
+        boolean afterCommit = false;
+        boolean beforeCommit = false;
+        boolean afterSend = false;
+        boolean beforeSend = false;
+
+        for (String arg : args)
+        {
+            if (arg.startsWith("failover:"))
+            {
+                //failover:<before|after>:<send:commit>
+                String[] parts = arg.split(":");
+                if (parts.length == 3)
+                {
+                    if (parts[2].equals("commit"))
+                    {
+                        afterCommit = parts[1].equals("after");
+                        beforeCommit = parts[1].equals("before");
+                    }
+
+                    if (parts[2].equals("send"))
+                    {
+                        afterSend = parts[1].equals("after");
+                        beforeSend = parts[1].equals("before");
+                    }
+                }
+                else
+                {
+                    System.out.println("Unrecognized failover request:" + arg);
+                }
+            }
+        }
 
         // Create a ping producer to handle the request/wait/reply cycle.
         TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                        transacted, persistent, messageSize, verbose);
+                                                       transacted, persistent, messageSize, verbose,
+                                                       afterCommit, beforeCommit, afterSend, beforeSend,
+                                                       batchSize);
         pingItself.getConnection().start();
 
         // Run a few priming pings to remove warm up time from test results.
