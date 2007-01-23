@@ -124,11 +124,9 @@ public class Content
     
     public void writePayload(ByteBuffer buffer)
     {
-        System.out.println("Before: " + content);
     	EncodingUtils.writeUnsignedByte(buffer, contentType.toByte());
     	EncodingUtils.writeUnsignedInteger(buffer, content.remaining());
         buffer.put(content);
-        System.out.println("After: " + content);
     }
     
     public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException
