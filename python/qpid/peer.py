@@ -71,7 +71,7 @@ class Peer:
         try:
           frame = self.conn.read()
         except EOF, e:
-          self.close(e)
+          self.work.close()
           break
         ch = self.channel(frame.channel)
         ch.dispatch(frame, self.work)
@@ -100,6 +100,8 @@ class Peer:
     try:
       while True:
         self.dispatch(self.work.get())
+    except QueueClosed, e:
+      self.close(e)
     except:
       self.fatal()
 
@@ -127,22 +129,14 @@ class Channel:
     self.queue = None
     self.closed = False
     self.reason = None
-    #lock used to synchronise calls to close
-    self.lock = thread.allocate_lock()
 
   def close(self, reason):
-    self.lock.acquire()
-    try:
-      if isinstance(reason, Message):
-        self.reason = reason
-      if self.closed:
-        return
-      self.closed = True
-      self.reason = reason
-      self.incoming.close()
-      self.responses.close()
-    finally:
-      self.lock.release()
+    if self.closed:
+      return
+    self.closed = True
+    self.reason = reason
+    self.incoming.close()
+    self.responses.close()
 
   def dispatch(self, frame, work):
     payload = frame.payload
