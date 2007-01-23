@@ -47,6 +47,7 @@ public class Config extends AbstractConfig implements ConnectorConfig
     private boolean transacted;
     private int noOfQueues;
     private int batchSize;
+    private int rate;
 
     public Config()
     {
@@ -90,6 +91,11 @@ public class Config extends AbstractConfig implements ConnectorConfig
     public int getBatchSize()
     {
         return batchSize;
+    }
+
+    public int getRate()
+    {
+        return rate;
     }
 
     public int getQueueCount()
@@ -244,6 +250,10 @@ public class Config extends AbstractConfig implements ConnectorConfig
         else if ("-batchsize".equalsIgnoreCase(key))
         {
             batchSize = parseInt("Bad batch size", value);
+        }
+        else if ("-rate".equalsIgnoreCase(key))
+        {
+            rate = parseInt("MEssage rate", value);
         }
         else
         {
