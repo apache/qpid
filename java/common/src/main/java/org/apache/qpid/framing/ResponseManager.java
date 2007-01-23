@@ -122,11 +122,14 @@ public class ResponseManager
             logger.debug((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
                 " " + requestBody + "; " + requestBody.getMethodPayload());
         }
+        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
+        //        " " + requestBody + "; " + requestBody.getMethodPayload());
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
         lastReceivedRequestId = requestId;
         responseMap.put(requestId, new ResponseStatus(requestId));
-        AMQMethodEvent methodEvent = new AMQMethodEvent(channel, requestBody.getMethodPayload(), requestId);
+        AMQMethodEvent methodEvent = new AMQMethodEvent(channel,
+            requestBody.getMethodPayload(), requestId);
         methodListener.methodReceived(methodEvent);
     }
 
@@ -138,6 +141,8 @@ public class ResponseManager
             logger.debug((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel +
                 " Res[# " + requestId + "]; " + responseMethodBody);
         }
+        //System.out.println((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel +
+        //        " Res[# " + requestId + "]; " + responseMethodBody);
         ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
             throw new RequestResponseMappingException(requestId,

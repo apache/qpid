@@ -193,10 +193,10 @@ public class AMQChannel
         message.setPublisher(publisher);
         Content body = transferBody.getBody();
         switch (body.getContentType()) {
-        case CONTENT_TYPE_INLINE:
+        case INLINE_T:
             route(message);
             break;
-        case CONTENT_TYPE_REFERENCE:
+        case REF_T:
             getMessages(body.getContentAsByteArray()).add(message);
             break;
         }

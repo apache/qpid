@@ -577,7 +577,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         	// Inline message case
         	_logger.debug("Inline case, sending data inline with the transfer method");
 
-        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_INLINE,payload);
+        	Content data = new Content(Content.TypeEnum.INLINE_T, payload);
 
         	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
         } else {
@@ -598,7 +598,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         	doMessageOpen(referenceId);
         	
         	// Message.Transfer
-        	Content data = new Content(Content.ContentTypeEnum.CONTENT_TYPE_REFERENCE,referenceId.getBytes()); 
+        	Content data = new Content(Content.TypeEnum.REF_T, referenceId.getBytes()); 
         	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
         	
         	//Message.Append

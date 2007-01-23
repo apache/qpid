@@ -139,7 +139,7 @@ public class AMQMessage
         int size = _transferBody.getBodySize();
         Content body = _transferBody.getBody();
         switch (body.getContentType()) {
-        case CONTENT_TYPE_INLINE:
+        case INLINE_T:
             size -= _transferBody.getBody().getEncodedSize();
             break;
         }
@@ -149,9 +149,9 @@ public class AMQMessage
     public long getBodySize() {
         Content body = _transferBody.getBody();
         switch (body.getContentType()) {
-        case CONTENT_TYPE_INLINE:
+        case INLINE_T:
             return _transferBody.getBody().getContent().limit();
-        case CONTENT_TYPE_REFERENCE:
+        case REF_T:
             return getReferenceSize();
         default:
             throw new IllegalStateException("unrecognized type: " + body.getContentType());
