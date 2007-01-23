@@ -1,15 +1,35 @@
-#!/bin/sh
+#!/bin/bash
 
-set -e
-log=`pwd`/qpidd.log
+if test "$VERBOSE" = yes; then
+  set -x
+  qpidd --version
+fi
+
+. $srcdir/setup
+
+fail=0
+pid=0
+
 # Start the daemon, recording its PID.
-../src/qpidd > $log 2>&1 & pid=$!
+$vg $abs_builddir/../src/qpidd > log 2>&1 & pid=$!
 
-# Arrange to kill the daemon upon any type of termination.
-trap 'status=$?; kill $pid; exit $status' 0
-trap '(exit $?); exit $?' 1 2 13 15
+# FIXME: remove this sleep kludge once qpidd provides a way
+sleep 4
 
 # Run the tests.
-cd ../../python && ./run-tests -v -I cpp_failing.txt
+( cd $abs_srcdir/../../python \
+    && python ./run-tests -v -I cpp_failing.txt || fail=1 )
 
-rm -f $log
+kill $pid || { echo FAIL: process already died; cat log; fail=1; }
+
+wait $pid
+# FIXME: when we have a way to make qpidd shutdown gracefully
+# (i.e. with expected exit status of 0), replace the above with this:
+# wait $pid || fail=1
+
+vg_check log || fail=1
+
+# Tell the exit trap not to kill any process.
+pid=0
+
+(exit $fail); exit $fail
