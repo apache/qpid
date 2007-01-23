@@ -11,6 +11,8 @@ INCLUDES =				\
 
 # FIXME: have e.g., topicall, run as part of "make check"?
 EXTRA_DIST =		\
+  .vg-supp		\
+  setup			\
   env			\
   broker		\
   topicall		\
@@ -63,6 +65,12 @@ unit_tests =		\
 
 
 noinst_PROGRAMS = $(client_tests)
+
+TESTS_ENVIRONMENT =			\
+  VALGRIND=$(VALGRIND)			\
+  abs_builddir='$(abs_builddir)'	\
+  PATH="$(abs_builddir)/../src$(PATH_SEPARATOR)$$PATH" \
+  abs_srcdir='$(abs_srcdir)'
 
 TESTS = run-unit-tests run-python-tests
 EXTRA_DIST += $(TESTS)
