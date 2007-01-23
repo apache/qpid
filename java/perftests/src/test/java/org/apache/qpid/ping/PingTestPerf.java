@@ -75,9 +75,12 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     private static final String VIRTUAL_PATH_PROPNAME = "virtualPath";
 
     /**
-     * Holds the waiting timeout for response messages
+     * Holds the name of the property to get the waiting timeout for response messages.
      */
     private static final String TIMEOUT_PROPNAME = "timeout";
+
+    /** Holds the name of the property to get the message rate from. */
+    private static final String RATE_PROPNAME = "rate";
 
     private static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
 
@@ -118,6 +121,8 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
      */
     private static final long TIMEOUT_DEFAULT = 3000;
 
+    /** Holds the default rate. A value of zero means infinity, only values of 1 or greater are meaningfull. */
+    private static final int RATE_DEFAULT = 0;
 
     private static final String FAIL_AFTER_COMMIT = "FailAfterCommit";
     private static final String FAIL_BEFORE_COMMIT = "FailBeforeCommit";
@@ -125,7 +130,6 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     private static final String FAIL_BEFORE_SEND = "FailBeforeSend";
     private static final String BATCH_SIZE = "BatchSize";
     private static final String FAIL_ONCE = "FailOnce";
-
 
     /**
      * Thread local to hold the per-thread test setup fields.
@@ -138,12 +142,10 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     private Properties testParameters = System.getProperties();
     //private Properties testParameters = new ContextualProperties(System.getProperties());
 
-
     public PingTestPerf(String name)
     {
         super(name);
         // Sets up the test parameters with defaults.
-
 
         setSystemPropertyIfNull(FAIL_AFTER_COMMIT, "false");
         setSystemPropertyIfNull(FAIL_BEFORE_COMMIT, "false");
@@ -161,6 +163,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(TIMEOUT_PROPNAME, Long.toString(TIMEOUT_DEFAULT));
         setSystemPropertyIfNull(PING_QUEUE_COUNT_PROPNAME, Integer.toString(1));
         setSystemPropertyIfNull(VERBOSE_OUTPUT_PROPNAME, Boolean.toString(false));
+        setSystemPropertyIfNull(RATE_PROPNAME, Integer.toString(RATE_DEFAULT));
     }
 
     /**
@@ -175,7 +178,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         suite.addTest(new PingTestPerf("testPingOk"));
 
         return suite;
-        //return new junit.framework.TestSuite(PingTestPerf.class);
+               //return new junit.framework.TestSuite(PingTestPerf.class);
     }
 
     private static void setSystemPropertyIfNull(String propName, String propValue)
@@ -202,11 +205,11 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-                perThreadSetup._pingItselfClient.getTestMessage(null,
-                                                                Integer.parseInt(testParameters.getProperty(
-                                                                        MESSAGE_SIZE_PROPNAME)),
-                                                                Boolean.parseBoolean(testParameters.getProperty(
-                                                                        PERSISTENT_MODE_PROPNAME)));
+            perThreadSetup._pingItselfClient.getTestMessage(null,
+                                                            Integer.parseInt(testParameters.getProperty(
+                                                                                 MESSAGE_SIZE_PROPNAME)),
+                                                            Boolean.parseBoolean(testParameters.getProperty(
+                                                                                     PERSISTENT_MODE_PROPNAME)));
 
         // start the test
         long timeout = Long.parseLong(testParameters.getProperty(TIMEOUT_PROPNAME));
@@ -215,7 +218,8 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
         {
-            Assert.fail("The ping timed out after "+ timeout  + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
+            Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = "
+                        + numReplies);
         }
     }
 
@@ -243,6 +247,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
             String selector = null;
             boolean verbose = Boolean.parseBoolean(testParameters.getProperty(VERBOSE_OUTPUT_PROPNAME));
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
+            int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
 
             boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
             boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
@@ -254,14 +259,14 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
 
             // This is synchronized because there is a race condition, which causes one connection to sleep if
             // all threads try to create connection concurrently
-            synchronized(this)
+            synchronized (this)
             {
                 // Establish a client to ping a Queue and listen the reply back from same Queue
                 perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
                                                                       queueName, selector, transacted, persistent,
-                                                                      messageSize, verbose,
-                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                                      batchSize, queueCount);
+                                                                      messageSize, verbose, afterCommit, beforeCommit,
+                                                                      afterSend, beforeSend, failOnce, batchSize, queueCount,
+                                                                      rate);
             }
             // Start the client connection
             perThreadSetup._pingItselfClient.getConnection().start();

@@ -17,13 +17,14 @@
  */
 package org.apache.qpid.ping;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.requestreply.PingPongProducer;
-import org.apache.qpid.topic.Config;
-
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.ObjectMessage;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.requestreply.PingPongProducer;
+import org.apache.qpid.topic.Config;
 
 /**
  * This class is used to test sending and receiving messages to (pingQueue) and from a queue (replyQueue).
@@ -62,11 +63,10 @@ public class TestPingItself extends PingPongProducer
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                           boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                          int batchSize, int queueCount)
-            throws Exception
+                          int batchSize, int queueCount, int rate) throws Exception
     {
         super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, queueCount);
+              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, queueCount, rate);
 
         if (queueCount > 1)
         {
@@ -79,18 +79,6 @@ public class TestPingItself extends PingPongProducer
             createConsumers(selector);
             createProducer();
         }
-    }
-
-    /**
-     * Sets the replyQueue to be the same as ping queue.
-     */
-    @Override
-    public void createConsumer(String selector) throws JMSException
-    {
-        // Create a message consumer to get the replies with and register this to be called back by it.
-        setReplyQueue(getPingQueue());
-        MessageConsumer consumer = getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
-        consumer.setMessageListener(this);
     }
 
     /**
@@ -109,15 +97,15 @@ public class TestPingItself extends PingPongProducer
         boolean verbose = false;
         boolean transacted = config.isTransacted();
         boolean persistent = config.usePersistentMessages();
-        int messageSize = config.getPayload() != 0 ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
+        int messageSize = (config.getPayload() != 0) ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
         int messageCount = config.getMessages();
-        int queueCount = config.getQueueCount() != 0 ? config.getQueueCount() : 1;
-        int batchSize = config.getBatchSize() != 0 ? config.getBatchSize() : BATCH_SIZE;
+        int queueCount = (config.getQueueCount() != 0) ? config.getQueueCount() : 1;
+        int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : BATCH_SIZE;
+        int rate = (config.getRate() != 0) ? config.getRate() : 0;
 
         String queue = "ping_" + System.currentTimeMillis();
-        _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent +
-                     ",MessageSize:" + messageSize + " bytes");
-
+        _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent + ",MessageSize:"
+                     + messageSize + " bytes");
 
         boolean afterCommit = false;
         boolean beforeCommit = false;
@@ -144,6 +132,7 @@ public class TestPingItself extends PingPongProducer
                         afterSend = parts[1].equals("after");
                         beforeSend = parts[1].equals("before");
                     }
+
                     if (parts[1].equals("once"))
                     {
                         failOnce = true;
@@ -158,10 +147,10 @@ public class TestPingItself extends PingPongProducer
         }
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                                    transacted, persistent, messageSize, verbose,
-                                                    afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                    batchSize, queueCount);
+        TestPingItself pingItself =
+            new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null, transacted, persistent,
+                               messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
+                               queueCount, rate);
 
         pingItself.getConnection().start();
 
@@ -192,19 +181,29 @@ public class TestPingItself extends PingPongProducer
             pingThread.run();
             pingThread.join();
         }
+
         pingItself.getConnection().close();
     }
 
     private static void usage()
     {
-        System.err.println("Usage: TestPingPublisher \n" +
-                           "-host : broker host" +
-                           "-port : broker port" +
-                           "-transacted : (true/false). Default is false" +
-                           "-persistent : (true/false). Default is false" +
-                           "-payload    : paylaod size. Default is 0" +
-                           "-queues     : no of queues" +
-                           "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
+        System.err.println("Usage: TestPingPublisher \n" + "-host : broker host" + "-port : broker port"
+                           + "-transacted : (true/false). Default is false" + "-persistent : (true/false). Default is false"
+                           + "-payload    : paylaod size. Default is 0" + "-queues     : no of queues"
+                           + "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
         System.exit(0);
+    }
+
+    /**
+     * Sets the replyQueue to be the same as ping queue.
+     */
+    @Override
+    public void createConsumer(String selector) throws JMSException
+    {
+        // Create a message consumer to get the replies with and register this to be called back by it.
+        setReplyQueue(getPingQueue());
+        MessageConsumer consumer =
+            getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
+        consumer.setMessageListener(this);
     }
 }
