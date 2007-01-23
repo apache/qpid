@@ -265,6 +265,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         _logger.trace("Batch time reached");
         if (_failAfterSend)
         {
+            _logger.trace("Batch size reached");
             if (_failOnce)
             {
                 _failAfterSend = false;
