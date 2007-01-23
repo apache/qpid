@@ -38,6 +38,7 @@ public class TestPingItself extends PingPongProducer
     /**
      * This creates a client for pinging to a Queue. There will be one producer and one consumer instance. Consumer
      * listening to the same Queue, producer is sending to
+     *
      * @param brokerDetails
      * @param username
      * @param password
@@ -57,17 +58,18 @@ public class TestPingItself extends PingPongProducer
      */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                           int batchSize)
             throws Exception
     {
         super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, batchSize, 0);
+              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, 0);
     }
 
     /**
      * This creats a client for tests with multiple queues. Creates as many consumer instances as there are queues,
      * each listening to a Queue. A producer is created which picks up a queue from the list of queues to send message.
+     *
      * @param brokerDetails
      * @param username
      * @param password
@@ -87,12 +89,12 @@ public class TestPingItself extends PingPongProducer
      */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
+                          boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                           int batchSize, int queueCount)
             throws Exception
     {
         super(brokerDetails, username, password, virtualpath, null, null, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, batchSize, queueCount);
+              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, queueCount);
 
         createQueues(queueCount);
 
@@ -117,7 +119,8 @@ public class TestPingItself extends PingPongProducer
     }
 
     /**
-     * Starts a ping-pong loop running from the command line. 
+     * Starts a ping-pong loop running from the command line.
+     *
      * @param args The command line arguments as defined above.
      */
     public static void main(String[] args) throws Exception
@@ -145,6 +148,7 @@ public class TestPingItself extends PingPongProducer
         boolean beforeCommit = false;
         boolean afterSend = false;
         boolean beforeSend = false;
+        boolean failOnce = false;
 
         for (String arg : args)
         {
@@ -165,6 +169,11 @@ public class TestPingItself extends PingPongProducer
                         afterSend = parts[1].equals("after");
                         beforeSend = parts[1].equals("before");
                     }
+                    if (parts[1].equals("once"))
+                    {
+                        failOnce = true;
+                    }
+
                 }
                 else
                 {
@@ -178,18 +187,18 @@ public class TestPingItself extends PingPongProducer
         if (queueCount > 1)
         {
             pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, null,
-                                               transacted, persistent, messageSize, verbose,
-                                               afterCommit, beforeCommit, afterSend, beforeSend,
-                                               batchSize, queueCount);
+                                            transacted, persistent, messageSize, verbose,
+                                            afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
+                                            batchSize, queueCount);
         }
         else
         {
             pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                               transacted, persistent, messageSize, verbose,
-                                               afterCommit, beforeCommit, afterSend, beforeSend,
-                                               batchSize);
+                                            transacted, persistent, messageSize, verbose,
+                                            afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
+                                            batchSize);
         }
-        
+
         pingItself.getConnection().start();
 
         // Create a shutdown hook to terminate the ping-pong producer.
@@ -225,13 +234,13 @@ public class TestPingItself extends PingPongProducer
     private static void usage()
     {
         System.err.println("Usage: TestPingPublisher \n" +
-                "-host : broker host" +
-                "-port : broker port" +
-                "-transacted : (true/false). Default is false" +
-                "-persistent : (true/false). Default is false" +
-                "-payload    : paylaod size. Default is 0" +
-                "-queues     : no of queues" +
-                "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
+                           "-host : broker host" +
+                           "-port : broker port" +
+                           "-transacted : (true/false). Default is false" +
+                           "-persistent : (true/false). Default is false" +
+                           "-payload    : paylaod size. Default is 0" +
+                           "-queues     : no of queues" +
+                           "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
         System.exit(0);
     }
 }
