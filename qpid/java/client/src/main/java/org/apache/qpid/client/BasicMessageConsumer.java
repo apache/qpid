@@ -221,7 +221,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if (_session.isStopped())
         {
             _messageListener.set(messageListener);
-            _logger.debug("Session stopped : Message listener set for destination " + _destination);
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination " + _destination);
+            }
         }
         else
         {
@@ -258,10 +261,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                             // Set Message Listener
                             _logger.debug("Set Message Listener");
-                            _messageListener.set(messageListener);                            
+                            _messageListener.set(messageListener);
                         }
                     }
-                    );                    
+                    );
                 }
             }
         }
@@ -328,6 +331,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public boolean isExclusive()
     {
         return _exclusive;
+    }
+
+    public boolean isReceiving()
+    {
+        return _receiving.get();
     }
 
     public Message receive() throws JMSException
