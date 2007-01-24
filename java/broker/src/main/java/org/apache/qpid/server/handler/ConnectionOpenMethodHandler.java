@@ -58,7 +58,16 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         AMQProtocolSession session = stateManager.getProtocolSession();
         ConnectionOpenBody body = evt.getMethod();
 
-        String virtualHostName = String.valueOf(body.virtualHost);
+        //ignore leading '/'
+        String virtualHostName;
+        if((body.virtualHost != null) && body.virtualHost.charAt(0) == '/')
+        {
+            virtualHostName = new StringBuilder(body.virtualHost.subSequence(1,body.virtualHost.length())).toString();
+        }
+        else
+        {
+            virtualHostName = String.valueOf(body.virtualHost);
+        }
 
         VirtualHost virtualHost = stateManager.getVirtualHostRegistry().getVirtualHost(virtualHostName);
 
