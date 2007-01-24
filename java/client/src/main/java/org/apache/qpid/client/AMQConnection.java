@@ -202,7 +202,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _clientName = connectionURL.getClientName();
         _username = connectionURL.getUsername();
         _password = connectionURL.getPassword();
-        _virtualHost = connectionURL.getVirtualHost();
+        setVirtualHost(connectionURL.getVirtualHost());
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
 
@@ -313,6 +313,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _clientName = clientName;
         _username = username;
         _password = password;
+        setVirtualHost(virtualHost);
+    }
+
+    private void setVirtualHost(String virtualHost)
+    {
+        if(virtualHost.startsWith("/"))
+        {
+            virtualHost = virtualHost.substring(1);
+        }
         _virtualHost = virtualHost;
     }
 
