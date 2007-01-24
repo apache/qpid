@@ -17,15 +17,19 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.ArrayList;
+
+import javax.management.JMException;
+
 import junit.framework.TestCase;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.client.message.MessageHeaders;
+import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
-
-import javax.management.JMException;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -61,11 +65,11 @@ public class AMQQueueMBeanTest extends TestCase
         SubscriptionManager mgr = _queue.getSubscribers();
         assertFalse(mgr.hasActiveSubscribers());
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
-
-        _channel = new AMQChannel(1, _messageStore, null);
-        _protocolSession = new MockProtocolSession(_messageStore);
+        
+        _protocolSession = new MockProtocolSession(_messageStore);        
+        _channel = new AMQChannel(1,_protocolSession, _messageStore, null,null);
         _protocolSession.addChannel(_channel);
-
+        
         _queue.registerProtocolSession(_protocolSession, 1, "test", false, null);
         assertTrue(_queueMBean.getActiveConsumerCount() == 1);
 
@@ -150,11 +154,35 @@ public class AMQQueueMBeanTest extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)0, (byte)9);
-        publish.immediate = immediate;
-        ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.bodySize = 1000;   // in bytes       
-        return new AMQMessage(_messageStore, publish, contentHeaderBody, null);
+                
+        MessageHeaders messageHeaders = new MessageHeaders();
+    	
+    	MessageTransferBody methodBody = MessageTransferBody.createMethodBody(
+            (byte)0, (byte)9,               // AMQP version (major, minor)
+            messageHeaders.getAppId(),      // String appId
+            messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
+            new Content(),                        // Content body
+            messageHeaders.getEncoding(),   // String contentEncoding
+            messageHeaders.getContentType(), // String contentType
+            messageHeaders.getCorrelationId(), // String correlationId
+            (short)1,  // short deliveryMode
+            "someExchange",                  // String destination
+            "someExchange",                  // String exchange
+            messageHeaders.getExpiration(), // long expiration
+            immediate,                          // boolean immediate
+            "",                         // String messageId
+            (short)0,                       // short priority
+            false,                          // boolean redelivered
+            messageHeaders.getReplyTo(),    // String replyTo
+            "rk",                           // String routingKey
+            new String("abc123").getBytes(), // byte[] securityToken
+            0,                              // int ticket
+            messageHeaders.getTimestamp(),  // long timestamp
+            messageHeaders.getTransactionId(), // String transactionId
+            0,                              // long ttl
+            messageHeaders.getUserId());    // String userId
+    	
+    	return new AMQMessage(_messageStore, methodBody, new ArrayList()); 
     }
 
     @Override

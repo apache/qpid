@@ -31,6 +31,7 @@ import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.AMQException;
 
 import javax.management.JMException;
+import javax.management.openmbean.OpenDataException;
 
 /**
  * Test class to test MBean operations for AMQMinaProtocolSession.
@@ -50,7 +51,7 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         // check the channel count is correct
         int channelCount = _mbean.channels().size();
         assertTrue(channelCount == 1);
-        _protocolSession.addChannel(new AMQChannel(2, _messageStore, null));
+        _protocolSession.addChannel(new AMQChannel(2,_protocolSession, _messageStore, null,null));
         channelCount = _mbean.channels().size();
         assertTrue(channelCount == 2);
 
@@ -59,7 +60,7 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         assertTrue(_mbean.getMaximumNumberOfChannels() == 1000L);
 
         // check APIs
-        AMQChannel channel3 = new AMQChannel(3, _messageStore, null);
+        AMQChannel channel3 = new AMQChannel(3,_protocolSession, _messageStore, null,null);
         channel3.setTransactional(true);
         _protocolSession.addChannel(channel3);
         _mbean.rollbackTransactions(2);
@@ -79,17 +80,17 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         }
 
         // check if closing of session works
-        _protocolSession.addChannel(new AMQChannel(5, _messageStore, null));
+        _protocolSession.addChannel(new AMQChannel(5,_protocolSession, _messageStore, null,null));
         _mbean.closeConnection();
         try
         {
-            channelCount = _mbean.channels().size();
-            assertTrue(channelCount == 0);
-            // session is now closed so adding another channel should throw an exception
-            _protocolSession.addChannel(new AMQChannel(6, _messageStore, null));
-            fail();
+        	channelCount = _mbean.channels().size();
+			assertTrue(channelCount == 0);
+			// session is now closed so adding another channel should throw an exception
+			_protocolSession.addChannel(new AMQChannel(6,_protocolSession, _messageStore, null,null));
+			fail();
         }
-        catch(AMQException ex)
+        catch(OpenDataException ex)
         {
             System.out.println("expected exception is thrown :" + ex.getMessage());
         }
@@ -98,12 +99,12 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
     @Override
     protected void setUp() throws Exception
     {
-        super.setUp();
-        _channel = new AMQChannel(1, _messageStore, null);
+        super.setUp();        
         _queueRegistry = new DefaultQueueRegistry();
         _exchangeRegistry = new DefaultExchangeRegistry(new DefaultExchangeFactory());
         _mockIOSession = new MockIoSession();
         _protocolSession = new AMQMinaProtocolSession(_mockIOSession, _queueRegistry, _exchangeRegistry, new AMQCodecFactory(true));
+        _channel = new AMQChannel(1,_protocolSession, _messageStore, null,null);
         _protocolSession.addChannel(_channel);
         _mbean = (AMQProtocolSessionMBean)_protocolSession.getManagedObject();
     }

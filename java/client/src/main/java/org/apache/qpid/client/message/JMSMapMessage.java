@@ -135,7 +135,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public short getShort(String propName) throws JMSException
     {
-        Object value = _map.get(propName);
+        Object value = _map.get(propName);       
 
         if(value instanceof Short)
         {

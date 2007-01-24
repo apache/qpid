@@ -23,7 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.framing.BasicPublishBody;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
@@ -54,16 +53,16 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 
         Message m7 = new Message("Message7", "XXXXX");
 
-        BasicPublishBody pb7 = m7.getPublishBody();
-        pb7.mandatory = true;
+        // I couldn't find mandatory or the equivalent of mandatory in the transfer method
+        
+        //BasicPublishBody pb7 = m7.getPublishBody();
+        //pb7.mandatory = true;
         routeAndTest(m7,true);
 
         Message m8 = new Message("Message8", "F0000");
-        BasicPublishBody pb8 = m8.getPublishBody();
-        pb8.mandatory = true;
+        //BasicPublishBody pb8 = m8.getPublishBody();
+        //pb8.mandatory = true;
         routeAndTest(m8,false,q1);
-
-
     }
 
     public void testAny() throws AMQException
@@ -87,10 +86,10 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         bindDefault("F0000");
         Message m1 = new Message("Message1", "XXXXX");
         Message m2 = new Message("Message2", "F0000");
-        BasicPublishBody pb1 = m1.getPublishBody();
-        pb1.mandatory = true;
-        BasicPublishBody pb2 = m2.getPublishBody();
-        pb2.mandatory = true;
+        //BasicPublishBody pb1 = m1.getPublishBody();
+        //pb1.mandatory = true;
+        //BasicPublishBody pb2 = m2.getPublishBody();
+        //pb2.mandatory = true;
         routeAndTest(m1,true);
     }
 
