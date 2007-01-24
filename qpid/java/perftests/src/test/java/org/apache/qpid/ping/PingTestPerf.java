@@ -42,17 +42,17 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     /**
      * Holds the name of the property to get the test message size from.
      */
-    private static final String MESSAGE_SIZE_PROPNAME = "messagesize";
+    protected static final String MESSAGE_SIZE_PROPNAME = "messagesize";
 
     /**
      * Holds the name of the property to get the ping queue name from.
      */
-    private static final String PING_DESTINATION_NAME_PROPNAME = "destinationname";
+    protected static final String PING_DESTINATION_NAME_PROPNAME = "destinationname";
 
     /**
      * holds the queue count, if the test is being performed with multiple queues
      */
-    private static final String PING_DESTINATION_COUNT_PROPNAME = "destinationscount";
+    protected static final String PING_DESTINATION_COUNT_PROPNAME = "destinationscount";
 
     /**
      * Holds the name of the property to get the test delivery mode from.
@@ -85,7 +85,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     protected static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
 
     /** Holds the true or false depending on wether it is P2P test or PubSub */
-    private static final String IS_PUBSUB_PROPNAME = "pubsub";
+    protected static final String IS_PUBSUB_PROPNAME = "pubsub";
     /**
      * Holds the size of message body to attach to the ping messages.
      */
@@ -168,7 +168,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
         setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
         setSystemPropertyIfNull(TIMEOUT_PROPNAME, Long.toString(TIMEOUT_DEFAULT));
-        setSystemPropertyIfNull(PING_DESTINATION_COUNT_PROPNAME, Integer.toString(1));
+        setSystemPropertyIfNull(PING_DESTINATION_COUNT_PROPNAME, Integer.toString(0));
         setSystemPropertyIfNull(VERBOSE_OUTPUT_PROPNAME, Boolean.toString(false));
         setSystemPropertyIfNull(RATE_PROPNAME, Integer.toString(RATE_DEFAULT));
         setSystemPropertyIfNull(IS_PUBSUB_PROPNAME, Boolean.toString(false));
