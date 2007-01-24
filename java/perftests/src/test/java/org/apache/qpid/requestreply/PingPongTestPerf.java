@@ -1,6 +1,5 @@
 package org.apache.qpid.requestreply;
 
-import java.net.InetAddress;
 import java.util.Properties;
 
 import javax.jms.*;
@@ -10,7 +9,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 
@@ -47,12 +45,12 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     /**
      * Holds the name of the property to get the test message size from.
      */
-    private static final String MESSAGE_SIZE_PROPNAME = "messageSize";
+    private static final String MESSAGE_SIZE_PROPNAME = "messagesize";
 
     /**
      * Holds the name of the property to get the ping queue name from.
      */
-    private static final String PING_QUEUE_NAME_PROPNAME = "pingQueue";
+    private static final String PING_QUEUE_NAME_PROPNAME = "destinationname";
 
     /**
      * Holds the name of the property to get the test delivery mode from.
@@ -78,6 +76,8 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
      * Holds the size of message body to attach to the ping messages.
      */
     private static final int MESSAGE_SIZE_DEFAULT = 0;
+
+    private static final int BATCH_SIZE_DEFAULT = 2;
 
     /**
      * Holds the name of the queue to which pings are sent.
@@ -112,6 +112,11 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
     /** Holds the name of the property to get the message rate from. */
     private static final String RATE_PROPNAME = "rate";
 
+    private static final String VERBOSE_OUTPUT_PROPNAME = "verbose";
+    
+    /** Holds the true or false depending on wether it is P2P test or PubSub */
+    private static final String IS_PUBSUB_PROPNAME = "pubsub";
+
     /** Holds the default rate. A value of zero means infinity, only values of 1 or greater are meaningfull. */
     private static final int RATE_DEFAULT = 0;
 
@@ -126,6 +131,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
      * Thread local to hold the per-thread test setup fields.
      */
     ThreadLocal<PerThreadSetup> threadSetup = new ThreadLocal<PerThreadSetup>();
+    Object _lock = new Object();
 
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
@@ -138,13 +144,16 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
         super(name);
 
         // Sets up the test parameters with defaults.
+        setSystemPropertyIfNull(BATCH_SIZE, Integer.toString(BATCH_SIZE_DEFAULT));
         setSystemPropertyIfNull(MESSAGE_SIZE_PROPNAME, Integer.toString(MESSAGE_SIZE_DEFAULT));
         setSystemPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
         setSystemPropertyIfNull(PERSISTENT_MODE_PROPNAME, Boolean.toString(PERSISTENT_MODE_DEFAULT));
         setSystemPropertyIfNull(TRANSACTED_PROPNAME, Boolean.toString(TRANSACTED_DEFAULT));
         setSystemPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
         setSystemPropertyIfNull(VIRTUAL_PATH_PROPNAME, VIRTUAL_PATH_DEFAULT);
+        setSystemPropertyIfNull(VERBOSE_OUTPUT_PROPNAME, Boolean.toString(false));
         setSystemPropertyIfNull(RATE_PROPNAME, Integer.toString(RATE_DEFAULT));
+        setSystemPropertyIfNull(IS_PUBSUB_PROPNAME, Boolean.toString(false));
     }
 
     /**
@@ -176,7 +185,7 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-            perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyQueue(),
+            perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyDestination(),
                                                             Integer.parseInt(testParameters.getProperty(
                                                                                  MESSAGE_SIZE_PROPNAME)),
                                                             Boolean.parseBoolean(testParameters.getProperty(
@@ -217,9 +226,10 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             boolean persistent = Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME));
             boolean transacted = Boolean.parseBoolean(testParameters.getProperty(TRANSACTED_PROPNAME));
             String selector = null;
-            boolean verbose = false;
+            boolean verbose = Boolean.parseBoolean(testParameters.getProperty(VERBOSE_OUTPUT_PROPNAME));
             int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
             int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
+            boolean pubsub = Boolean.parseBoolean(testParameters.getProperty(IS_PUBSUB_PROPNAME));
 
             boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
             boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
@@ -228,20 +238,23 @@ public class PingPongTestPerf extends AsymptoticTestCase //implements TimingCont
             int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
             Boolean failOnce = Boolean.parseBoolean(testParameters.getProperty(FAIL_ONCE));
 
-            // Establish a bounce back client on the ping queue to bounce back the pings.
-            perThreadSetup._testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName,
-                                                                  persistent, transacted, selector, verbose);
+            synchronized(_lock)
+            {
+                // Establish a bounce back client on the ping queue to bounce back the pings.
+                perThreadSetup._testPingBouncer = new PingPongBouncer(brokerDetails, username, password, virtualpath,
+                                                          queueName, persistent, transacted, selector, verbose, pubsub);
 
-            // Start the connections for client and producer running.
-            perThreadSetup._testPingBouncer.getConnection().start();
+                // Start the connections for client and producer running.
+                perThreadSetup._testPingBouncer.getConnection().start();
 
-            // Establish a ping-pong client on the ping queue to send the pings with.
-            perThreadSetup._testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath,
+                // Establish a ping-pong client on the ping queue to send the pings with.
+
+                perThreadSetup._testPingProducer = new PingPongProducer(brokerDetails, username, password, virtualpath,
                                                                     queueName, selector, transacted, persistent, messageSize,
                                                                     verbose, afterCommit, beforeCommit, afterSend,
-                                                                    beforeSend, failOnce, batchSize, 0, rate);
-
-            perThreadSetup._testPingProducer.getConnection().start();
+                                                                    beforeSend, failOnce, batchSize, 0, rate, pubsub);
+                perThreadSetup._testPingProducer.getConnection().start();
+            }
 
             // Attach the per-thread set to the thread.
             threadSetup.set(perThreadSetup);
