@@ -172,7 +172,7 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         }
 
         // Extract all command line parameters.
-        String brokerDetails = args[0];
+        String brokerDetails = args[0];                                                                                
         String username = args[1];
         String password = args[2];
         String virtualpath = args[3];
