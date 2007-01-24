@@ -56,7 +56,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
+        getContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
     }
 
     /**

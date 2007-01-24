@@ -55,7 +55,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     AbstractBytesMessage(ByteBuffer data)
     {
         super(data); // this instanties a content header
-        getJmsContentHeaderProperties().setContentType(getMimeTypeAsShortString());
+        getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
 
         if (_data == null)
         {
@@ -74,7 +74,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
-        getJmsContentHeaderProperties().setContentType(getMimeTypeAsShortString());
+        getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
     }
 
     public void clearBodyImpl() throws JMSException
