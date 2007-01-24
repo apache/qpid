@@ -3,19 +3,18 @@
 #
 %define daemon qpidd
 
-Name:           qpidc
-Version:        0.1
+Name:           @PACKAGE@
+Version:        @VERSION@
 Release:        1%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
-URL:            http://people.apache.org/dist/incubator/qpid/M1-incubating/cpp/qpidc-0.1.tar.gz
+URL:            http://people.apache.org/dist/incubator/qpid/M1-incubating/cpp/
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtool
 BuildRequires: boost-devel
-BuildRequires: cppunit
 BuildRequires: cppunit-devel
 BuildRequires: doxygen
 BuildRequires: graphviz
@@ -62,7 +61,7 @@ the open AMQP messaging protocol.
 %setup -q
 
 %build
-%configure
+%configure --disable-static
 make %{?_smp_mflags}
 # Remove this generated perl file, we don't need it and it upsets rpmlint.
 rm docs/api/html/installdox
