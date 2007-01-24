@@ -88,7 +88,7 @@ public class AMQMessage
      */
     private boolean _deliveredToConsumer;
     private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
-    private AtomicBoolean _taken;
+    private AtomicBoolean _taken = new AtomicBoolean(false);
 
 
     public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody)
@@ -104,7 +104,6 @@ public class AMQMessage
         _contents = new LinkedList();
         _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _storeWhenComplete = storeWhenComplete;
-        _taken = new AtomicBoolean(false);
     }
 
     public AMQMessage(MessageStore store, long messageId, MessageTransferBody transferBody,
