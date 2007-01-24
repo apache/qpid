@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageRecoverBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -31,6 +34,8 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 
 public class MessageRecoverHandler implements StateAwareMethodListener<MessageRecoverBody>
 {
+    private static final Logger _logger = Logger.getLogger(MessageRecoverHandler.class);
+
     private static MessageRecoverHandler _instance = new MessageRecoverHandler();
 
     public static MessageRecoverHandler getInstance()
@@ -39,13 +44,23 @@ public class MessageRecoverHandler implements StateAwareMethodListener<MessageRe
     }
 
     private MessageRecoverHandler() {}
-    
-    
+
     public void methodReceived (AMQProtocolSession protocolSession,
                                	AMQMethodEvent<MessageRecoverBody> evt)
                                 throws AMQException
     {
-		// TODO
+        _logger.debug("Recover received on protocol session " + protocolSession + " and channel " + evt.getChannelId());
+        AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        if (channel == null)
+        {
+            throw new AMQException("Unknown channel " + evt.getChannelId());
+        }
+        MessageRecoverBody body = evt.getMethod();
+        if (body.requeue) {
+            channel.requeue();
+        } else {
+            channel.resend(protocolSession);
+        }
     }
 }
 
