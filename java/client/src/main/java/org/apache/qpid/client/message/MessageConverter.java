@@ -67,6 +67,7 @@ public class MessageConverter {
         }
 
         _newMessage = nativeMsg;
+        setMessageProperties(message);
     }
 
     public MessageConverter(MapMessage message) throws JMSException
@@ -80,6 +81,7 @@ public class MessageConverter {
             nativeMessage.setObject(name, message.getObject(name));
         }
         _newMessage = (AbstractJMSMessage) nativeMessage;
+        setMessageProperties(message);
     }
 
     public MessageConverter(ObjectMessage message) throws JMSException
@@ -90,6 +92,7 @@ public class MessageConverter {
         nativeMessage.setObject(origMessage.getObject());
 
         _newMessage = (AbstractJMSMessage) nativeMessage;
+        setMessageProperties(message);
 
     }
 
@@ -100,6 +103,7 @@ public class MessageConverter {
         nativeMessage.setText(message.getText());
 
         _newMessage = (AbstractJMSMessage) nativeMessage;
+        setMessageProperties(message);
     }
 
     public MessageConverter(StreamMessage message) throws JMSException
@@ -119,7 +123,7 @@ public class MessageConverter {
             //we're at the end so don't mind the exception
         }
         _newMessage = (AbstractJMSMessage) nativeMessage;
-
+        setMessageProperties(message);
     }
 
     public AbstractJMSMessage getConvertedMessage()
@@ -141,17 +145,17 @@ public class MessageConverter {
      */
     protected void setNonJMSProperties(Message message) throws JMSException
     {
-          Enumeration propertyNames = message.getPropertyNames();
-            while (propertyNames.hasMoreElements())
+        Enumeration propertyNames = message.getPropertyNames();
+        while (propertyNames.hasMoreElements())
+        {
+            String propertyName = String.valueOf(propertyNames.nextElement());
+            //TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() returns them
+            if (!propertyName.startsWith("JMSX_"))
             {
-                String propertyName = String.valueOf(propertyNames.nextElement());
-                //TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() returns them
-                if (!propertyName.startsWith("JMSX_"))
-                {
-                    Object value = message.getObjectProperty(propertyName);
-                    _newMessage.setObjectProperty(propertyName, value);
-                }
+                Object value = message.getObjectProperty(propertyName);
+                _newMessage.setObjectProperty(propertyName, value);
             }
+        }
     }
 
     /**
