@@ -522,7 +522,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
-        message.getJmsContentHeaderProperties().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.
+        message.getJmsHeaders().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.
                                                          getShortStringName(), destination.toByteEncoding());
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -539,7 +539,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         message.prepareForSending();
         ByteBuffer payload = message.getData();
-        BasicContentHeaderProperties contentHeaderProperties = message.getJmsContentHeaderProperties();
+        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
 
         if (!_disableTimestamps)
         {

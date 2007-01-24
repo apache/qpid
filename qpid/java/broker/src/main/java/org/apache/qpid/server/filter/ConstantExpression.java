@@ -20,13 +20,10 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.AMQMessage;
 
 import java.math.BigDecimal;
-
-import javax.jms.JMSException;
 
 /**
  * Represents a constant expression

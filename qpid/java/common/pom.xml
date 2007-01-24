@@ -97,11 +97,6 @@
         </dependency>
 
         <dependency>
-           <groupId>org.apache.geronimo.specs</groupId>
-           <artifactId>geronimo-jms_1.1_spec</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>

@@ -52,8 +52,8 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     JMSTextMessage(ByteBuffer data, String encoding) throws JMSException
     {
         super(data); // this instantiates a content header
-        getJmsContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
-        getJmsContentHeaderProperties().setEncoding(encoding);
+        getContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
+        getContentHeaderProperties().setEncoding(encoding);
     }
 
     JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
@@ -113,7 +113,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 _data.limit(text.length()) ;
                 //_data.sweep();
                 _data.setAutoExpand(true);
-                final String encoding = getJmsContentHeaderProperties().getEncoding();
+                final String encoding = getContentHeaderProperties().getEncoding();
                 if (encoding == null)
                 {
                     _data.put(text.getBytes());
@@ -152,11 +152,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 return null;
             }
-            if (getJmsContentHeaderProperties().getEncoding() != null)
+            if (getContentHeaderProperties().getEncoding() != null)
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.forName(getJmsContentHeaderProperties().getEncoding()).newDecoder());
+                    _decodedValue = _data.getString(Charset.forName(getContentHeaderProperties().getEncoding()).newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {
