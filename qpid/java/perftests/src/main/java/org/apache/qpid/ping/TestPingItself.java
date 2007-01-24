@@ -75,7 +75,6 @@ public class TestPingItself extends PingPongProducer
         if (noOfDestinations > 0)
         {
             createDestinations(noOfDestinations);
-
             _persistent = persistent;
             _messageSize = messageSize;
             _verbose = verbose;
@@ -108,22 +107,38 @@ public class TestPingItself extends PingPongProducer
         // Extract the command line.
         Config config = new Config();
         config.setOptions(args);
+        if (args.length == 0)
+        {
+            _logger.info("Running test with default values...");
+        }
 
         String brokerDetails = config.getHost() + ":" + config.getPort();
         String virtualpath = "/test";
-        boolean verbose = false;
+        boolean verbose = true;
         boolean transacted = config.isTransacted();
         boolean persistent = config.usePersistentMessages();
         int messageSize = (config.getPayload() != 0) ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
         int messageCount = config.getMessages();
-        int queueCount = (config.getQueueCount() != 0) ? config.getQueueCount() : 1;
+        int destCount = (config.getDestinationsCount() != 0) ? config.getDestinationsCount() : 1;
         int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : BATCH_SIZE;
         int rate = (config.getRate() != 0) ? config.getRate() : 0;
         boolean pubsub = config.isPubSub();
 
-        String queue = "ping_" + System.currentTimeMillis();
-        _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent + ",MessageSize:"
-                     + messageSize + " bytes");
+        String destName = config.getDestination();
+        if (destName == null)
+        {
+            destName = PING_DESTINATION_NAME;
+        }
+        if (destCount > 1)
+        {
+            _logger.info("Destination Count:" + destCount + ", Transacted:" + transacted + ", persistent:" +
+                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
+        }
+        else
+        {
+            _logger.info("Destination:" + destName + ", Transacted:" + transacted + ", persistent:" +
+                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
+        }
 
         boolean afterCommit = false;
         boolean beforeCommit = false;
@@ -165,10 +180,10 @@ public class TestPingItself extends PingPongProducer
         }
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
+        TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, destName, null,
                                                     transacted, persistent, messageSize, verbose, afterCommit,
                                                     beforeCommit, afterSend, beforeSend, failOnce, batchSize,
-                                                    queueCount, rate, pubsub);
+                                                    destCount, rate, pubsub);
 
         pingItself.getConnection().start();
 
@@ -178,7 +193,7 @@ public class TestPingItself extends PingPongProducer
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
         pingItself.getConnection().setExceptionListener(pingItself);
 
-        if ((queueCount > 1) || (messageCount > 0))
+        if ((destCount > 1) || (messageCount > 0))
         {
             ObjectMessage msg = pingItself.getTestMessage(null, messageSize, persistent);
 
@@ -205,10 +220,17 @@ public class TestPingItself extends PingPongProducer
 
     private static void usage()
     {
-        System.err.println("Usage: TestPingPublisher \n" + "-host : broker host" + "-port : broker port"
-                           + "-transacted : (true/false). Default is false" + "-persistent : (true/false). Default is false"
-                           + "-payload    : paylaod size. Default is 0" + "-queues     : no of queues"
-                           + "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
+        System.err.println("Usage: TestPingPublisher \n" + "-host : broker host" + "-port : broker port" +
+                           "-destinationname : queue/topic name\n" +
+                           "-transacted : (true/false). Default is false\n" +
+                           "-persistent : (true/false). Default is false\n" +
+                           "-pubsub     : (true/false). Default is false\n" +
+                           "-selector   : selector string\n" +
+                           "-payload    : paylaod size. Default is 0\n" +
+                           "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)\n" +
+                           "-destinationscount : no of destinations for multi-destinations test\n" +
+                           "-batchsize  : batch size\n" +
+                           "-rate : thruput rate\n");
         System.exit(0);
     }
 }
