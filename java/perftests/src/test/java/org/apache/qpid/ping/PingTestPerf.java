@@ -91,7 +91,8 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
      */
     protected static final int MESSAGE_SIZE_DEFAULT = 0;
 
-    protected static final int BATCH_SIZE_DEFAULT = 2;
+    protected static final int BATCH_SIZE_DEFAULT = 1000;
+
     protected static final int COMMIT_BATCH_SIZE_DEFAULT = BATCH_SIZE_DEFAULT;
 
     /**
