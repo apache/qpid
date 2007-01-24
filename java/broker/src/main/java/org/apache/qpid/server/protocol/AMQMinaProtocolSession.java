@@ -35,10 +35,10 @@ import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 
@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                ProtocolVersionList,
@@ -65,15 +66,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private AMQShortString _contextKey;
 
+    private VirtualHost _virtualHost;
+
     private final Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
     private final CopyOnWriteArraySet<AMQMethodListener> _frameListeners = new CopyOnWriteArraySet<AMQMethodListener>();
 
     private final AMQStateManager _stateManager;
-
-    private final QueueRegistry _queueRegistry;
-
-    private final ExchangeRegistry _exchangeRegistry;
 
     private AMQCodecFactory _codecFactory;
 
@@ -93,6 +92,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private byte _major;
     private byte _minor;
     private FieldTable _clientProperties;
+    private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
+
 
     public ManagedObject getManagedObject()
     {
@@ -100,23 +101,23 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
 
-    public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
+    public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry,
                                   AMQCodecFactory codecFactory)
             throws AMQException
     {
-        _stateManager = new AMQStateManager(queueRegistry, exchangeRegistry, this);
+        _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _minaProtocolSession = session;
         session.setAttachment(this);
         
-        _queueRegistry = queueRegistry;
-        _exchangeRegistry = exchangeRegistry;
+
+
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
 //        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
-     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
+     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry,
                                   AMQCodecFactory codecFactory, AMQStateManager stateManager)
             throws AMQException
     {
@@ -124,8 +125,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _minaProtocolSession = session;
         session.setAttachment(this);
         
-        _queueRegistry = queueRegistry;
-        _exchangeRegistry = exchangeRegistry;
+
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
@@ -461,6 +461,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             {
                 _managedObject.unregister();
             }
+            for(Task task : _taskList)
+            {
+                task.doTask(this);
+            }
         }
     }
 
@@ -556,4 +560,27 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         return _minaProtocolSession.getRemoteAddress();    
     }
+
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public void setVirtualHost(VirtualHost virtualHost)
+    {
+        _virtualHost = virtualHost;
+    }
+
+    public void addSessionCloseTask(Task task)
+    {
+        _taskList.add(task);
+    }
+
+    public void removeSessionCloseTask(Task task)
+    {
+        _taskList.remove(task);
+    }
+
+
 }

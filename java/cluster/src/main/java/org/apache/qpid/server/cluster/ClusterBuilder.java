@@ -46,7 +46,7 @@ class ClusterBuilder
 
     ServerHandlerRegistry getHandlerRegistry()
     {
-        return new ServerHandlerRegistry(getHandlerFactory(), null, null, null);
+        return new ServerHandlerRegistry(getHandlerFactory(), null, null);
     }
 
     private MethodHandlerFactory getHandlerFactory()

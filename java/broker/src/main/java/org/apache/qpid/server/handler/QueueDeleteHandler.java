@@ -24,18 +24,14 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQChannelException;
-import org.apache.qpid.protocol.AMQConstant;
 
 public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -47,7 +43,6 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
     }
 
     private final boolean _failIfNotFound;
-    private final MessageStore _store;
 
     public QueueDeleteHandler()
     {
@@ -57,12 +52,16 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
     public QueueDeleteHandler(boolean failIfNotFound)
     {
         _failIfNotFound = failIfNotFound;
-        _store = ApplicationRegistry.getInstance().getMessageStore();
 
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager,  AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        MessageStore store = virtualHost.getMessageStore();
+
         QueueDeleteBody body = evt.getMethod();
         AMQQueue queue;
         if(body.queue == null)
@@ -71,7 +70,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         }
         else
         {
-            queue = queues.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.queue);
         }
 
         if(queue == null)
@@ -96,7 +95,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
             else
             {
                 int purged = queue.delete(body.ifUnused, body.ifEmpty);
-                _store.removeQueue(queue.getName());
+                store.removeQueue(queue.getName());
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.

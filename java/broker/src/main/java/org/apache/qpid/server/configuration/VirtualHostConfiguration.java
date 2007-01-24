@@ -28,6 +28,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.log4j.Logger;
@@ -113,6 +114,7 @@ public class VirtualHostConfiguration
         }
 
         _logger.info("VirtualHost:'" + prop + "'");
+        String virtualHost = prop.toString();
 
         prop = _config.getProperty(path + "." + XML_BIND);
         if (prop instanceof Collection)
@@ -121,16 +123,16 @@ public class VirtualHostConfiguration
             _logger.debug("Number of Bindings: " + bindings);
             for (int dest = 0; dest < bindings; dest++)
             {
-                loadBinding(path, dest);
+                loadBinding(virtualHost, path, dest);
             }
         }
         else
         {
-            loadBinding(path, -1);
+            loadBinding(virtualHost,path, -1);
         }
     }
 
-    private void loadBinding(String rootpath, int index) throws AMQException, ConfigurationException, URLSyntaxException
+    private void loadBinding(String virtualHost, String rootpath, int index) throws AMQException, ConfigurationException, URLSyntaxException
     {
         String path = rootpath + "." + XML_BIND;
         if (index != -1)
@@ -146,7 +148,7 @@ public class VirtualHostConfiguration
 
         try
         {
-            bind(binding);
+            bind(virtualHost, binding);
         }
         catch (AMQException amqe)
         {
@@ -155,7 +157,7 @@ public class VirtualHostConfiguration
         }
     }
 
-    private void bind(AMQBindingURL binding) throws AMQException, ConfigurationException
+    private void bind(String virtualHostName, AMQBindingURL binding) throws AMQException, ConfigurationException
     {
 
         AMQShortString queueName = binding.getQueueName();
@@ -169,9 +171,10 @@ public class VirtualHostConfiguration
         }
 
         //Get references to Broker Registries
-        QueueRegistry queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
-        MessageStore messageStore = ApplicationRegistry.getInstance().getMessageStore();
-        ExchangeRegistry exchangeRegistry = ApplicationRegistry.getInstance().getExchangeRegistry();
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(virtualHostName);
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        MessageStore messageStore = virtualHost.getMessageStore();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
 
         synchronized (queueRegistry)
         {
@@ -184,7 +187,7 @@ public class VirtualHostConfiguration
                 queue = new AMQQueue(queueName,
                         Boolean.parseBoolean(binding.getOption(AMQBindingURL.OPTION_DURABLE)),
                         null /* These queues will have no owner */,
-                        false /* Therefore autodelete makes no sence */, queueRegistry);
+                        false /* Therefore autodelete makes no sence */, virtualHost);
 
                 if (queue.isDurable())
                 {

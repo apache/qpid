@@ -32,18 +32,20 @@ import org.apache.qpid.AMQException;
 
 public abstract class ClusterMethodHandler<A extends AMQMethodBody> implements StateAwareMethodListener<A>
 {
-    public final void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    public final void methodReceived(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException
     {
+        AMQProtocolSession session = stateMgr.getProtocolSession();
+
         if (ClusteredProtocolSession.isPeerSession(session))
         {
-            peer(stateMgr, queues, exchanges, session, evt);
+            peer(stateMgr, evt);
         }
         else
         {
-            client(stateMgr, queues, exchanges, session, evt);
+            client(stateMgr,  evt);
         }
     }
 
-    protected abstract void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException;
-    protected abstract void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException;
+    protected abstract void peer(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException;
+    protected abstract void client(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException;
 }

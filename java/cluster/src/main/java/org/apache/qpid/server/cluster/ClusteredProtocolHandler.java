@@ -38,6 +38,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.net.InetSocketAddress;
 
@@ -55,13 +56,8 @@ public class ClusteredProtocolHandler extends AMQPFastProtocolHandler implements
     }
 
     public ClusteredProtocolHandler(IApplicationRegistry registry, InetSocketAddress address)
-    {
-        this(registry.getQueueRegistry(), registry.getExchangeRegistry(), address);
-    }
-
-    public ClusteredProtocolHandler(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, InetSocketAddress address)
-    {
-        super(queueRegistry, exchangeRegistry);
+    {        
+        super(registry);
         ClusterBuilder builder = new ClusterBuilder(address);
         _groupMgr = builder.getGroupManager();
         _handlers = builder.getHandlerRegistry();
@@ -74,9 +70,9 @@ public class ClusteredProtocolHandler extends AMQPFastProtocolHandler implements
         _handlers = handler._handlers;
     }
 
-    protected void createSession(IoSession session, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession protocolSession, AMQCodecFactory codec) throws AMQException
+    protected void createSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession, AMQCodecFactory codec) throws AMQException
     {
-        new ClusteredProtocolSession(session, queues, exchanges, codec, new ServerHandlerRegistry(_handlers, queues, exchanges, protocolSession));
+        new ClusteredProtocolSession(session, virtualHostRegistry, codec, new ServerHandlerRegistry(_handlers, virtualHostRegistry, protocolSession));
     }
 
     void connect(String join) throws Exception

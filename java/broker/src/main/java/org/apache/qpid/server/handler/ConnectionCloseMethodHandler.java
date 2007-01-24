@@ -47,16 +47,15 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionCloseBody body = evt.getMethod();
         _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
-                     body.replyText +  " for " + protocolSession);
+                     body.replyText +  " for " + session);
         try
         {
-            protocolSession.closeSession();
+            session.closeSession();
         }
         catch (Exception e)
         {
@@ -66,6 +65,6 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-        protocolSession.writeFrame(response);
+        session.writeFrame(response);
     }
 }

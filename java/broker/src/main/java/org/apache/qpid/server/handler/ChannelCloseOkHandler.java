@@ -28,6 +28,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.log4j.Logger;
 
 public class ChannelCloseOkHandler implements StateAwareMethodListener<ChannelCloseOkBody>
@@ -45,9 +46,7 @@ public class ChannelCloseOkHandler implements StateAwareMethodListener<ChannelCl
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelCloseOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelCloseOkBody> evt) throws AMQException
     {
         _logger.info("Received channel-close-ok for channel-id " + evt.getChannelId());
     }

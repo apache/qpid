@@ -48,7 +48,7 @@ public class TopicPublisherTest extends TestCase
     public void testUnidentifiedProducer() throws Exception
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(null);
         MessageConsumer consumer1 = session1.createConsumer(topic);

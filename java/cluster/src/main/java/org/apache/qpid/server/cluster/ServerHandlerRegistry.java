@@ -30,6 +30,7 @@ import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,23 +44,20 @@ class ServerHandlerRegistry extends AMQStateManager
     private final Logger _logger = Logger.getLogger(ServerHandlerRegistry.class);
     private final Map<AMQState, MethodHandlerRegistry> _handlers = new HashMap<AMQState, MethodHandlerRegistry>();
 
-    ServerHandlerRegistry(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
-        AMQProtocolSession protocolSession)
+    ServerHandlerRegistry(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        super(AMQState.CONNECTION_NOT_STARTED, false, queueRegistry, exchangeRegistry, protocolSession);
+        super(AMQState.CONNECTION_NOT_STARTED, false, virtualHostRegistry, protocolSession);
     }
 
-    ServerHandlerRegistry(ServerHandlerRegistry s, QueueRegistry queueRegistry,
-        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+    ServerHandlerRegistry(ServerHandlerRegistry s, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        this(queueRegistry, exchangeRegistry, protocolSession);
+        this(virtualHostRegistry, protocolSession);
         _handlers.putAll(s._handlers);
     }
 
-    ServerHandlerRegistry(MethodHandlerFactory factory, QueueRegistry queueRegistry,
-        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+    ServerHandlerRegistry(MethodHandlerFactory factory, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        this(queueRegistry, exchangeRegistry, protocolSession);
+        this(virtualHostRegistry, protocolSession);
         init(factory);
     }
 

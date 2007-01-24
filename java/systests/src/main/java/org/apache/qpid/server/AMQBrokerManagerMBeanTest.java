@@ -23,6 +23,7 @@ import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.AMQShortString;
 
 public class AMQBrokerManagerMBeanTest extends TestCase
@@ -40,7 +41,9 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) == null);
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean();
+        VirtualHost vHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean)vHost.getManagedObject());
         mbean.createNewExchange(exchange1,"direct",false, false);
         mbean.createNewExchange(exchange2,"topic",false, false);
         mbean.createNewExchange(exchange3,"headers",false, false);
@@ -61,7 +64,9 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     public void testQueueOperations() throws Exception
     {
         String queueName = "testQueue_" + System.currentTimeMillis();
-        ManagedBroker mbean = new AMQBrokerManagerMBean();
+        VirtualHost vHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean)vHost.getManagedObject());
 
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
                 
@@ -77,7 +82,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     {
         super.setUp();
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _queueRegistry    = appRegistry.getQueueRegistry();
-        _exchangeRegistry = appRegistry.getExchangeRegistry();
+        _queueRegistry    = appRegistry.getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry();
+        _exchangeRegistry = appRegistry.getVirtualHostRegistry().getVirtualHost("test").getExchangeRegistry();
     }
 }

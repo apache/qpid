@@ -50,7 +50,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         TransportConnection.createVMBroker(1);
         try
         {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
         }
         catch (Exception e)
         {

@@ -49,7 +49,7 @@ public class CloseWithBlockingReceiveTest extends TestCase
     public void testReceiveReturnsNull() throws Exception
     {
         final Connection connection = new AMQConnection("vm://:1", "guest", "guest",
-                                                  "fred", "/test");
+                                                  "fred", "test");
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageConsumer consumer = session.createConsumer(new AMQTopic("banana"));
         connection.start();

@@ -87,7 +87,7 @@ public class Client implements MessageListener
 
     static AMQConnection connect(String broker) throws Exception
     {
-        return new AMQConnection(broker, "guest", "guest", "Client" + System.currentTimeMillis(), "/test_path");
+        return new AMQConnection(broker, "guest", "guest", "Client" + System.currentTimeMillis(), "test");
     }
 
     public static void main(String[] argv) throws Exception

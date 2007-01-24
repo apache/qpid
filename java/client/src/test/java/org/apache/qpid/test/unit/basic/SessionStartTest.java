@@ -43,7 +43,7 @@ public class SessionStartTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
     }
 
     protected void tearDown() throws Exception

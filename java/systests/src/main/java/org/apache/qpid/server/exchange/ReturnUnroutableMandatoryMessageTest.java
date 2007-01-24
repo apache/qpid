@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.client.*;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.AMQBindingURL;
@@ -38,7 +39,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
-        ApplicationRegistry.initialise(new TestApplicationRegistry(), 1);
+        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
     }
 
     protected void tearDown() throws Exception

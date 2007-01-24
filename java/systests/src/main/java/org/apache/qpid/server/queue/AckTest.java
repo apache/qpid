@@ -37,6 +37,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.NullApplicationRegistry;
 
 import java.util.LinkedList;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class AckTest extends TestCase
 
     public AckTest() throws Exception
     {
-        ApplicationRegistry.initialise(new TestApplicationRegistry());
+        ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
     protected void setUp() throws Exception
@@ -78,7 +79,7 @@ public class AckTest extends TestCase
         _protocolSession = new MockProtocolSession(_messageStore);
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
-        _queue = new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, new DefaultQueueRegistry(), _subscriptionManager);
+        _queue = new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"), _subscriptionManager);
     }
 
     private void publishMessages(int count) throws AMQException

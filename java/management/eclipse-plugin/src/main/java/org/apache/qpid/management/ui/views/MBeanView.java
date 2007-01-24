@@ -74,9 +74,12 @@ public class MBeanView extends ViewPart
     
     // TabFolder to list all the mbeans for a given mbeantype(eg Connection, Queue, Exchange)
     private TabFolder typeTabFolder = null;
+    private static String _virtualHostName;
+
+
     /*
-     * Listener for the selection events in the navigation view
-     */ 
+    * Listener for the selection events in the navigation view
+    */
     private class SelectionListenerImpl implements ISelectionListener
     {
         public void selectionChanged(IWorkbenchPart part, ISelection sel)
@@ -102,11 +105,11 @@ public class MBeanView extends ViewPart
             setServer();
             try
             {
-                if (Constants.TYPE.equals(_selectedNode.getType()))
+                if (Constants.NODE_TYPE_MBEANTYPE.equals(_selectedNode.getType()))
                 {
                     refreshTypeTabFolder(_selectedNode.getName());
                 }
-                else if (Constants.DOMAIN.equals(_selectedNode.getType()))
+                else if (Constants.NODE_TYPE_VIRTUAL_HOST.equals(_selectedNode.getType()))
                 {
                     refreshTypeTabFolder(typeTabFolder.getItem(0));
                 }
@@ -146,6 +149,19 @@ public class MBeanView extends ViewPart
             if (parent != null && parent.getType().equals(Constants.SERVER))
                 _server = (ManagedServer)parent.getManagedObject();
         }
+
+        TreeObject parent = _selectedNode;
+        while (parent != null && !parent.getType().equals(Constants.NODE_TYPE_VIRTUAL_HOST))
+        {
+            parent = parent.getParent();
+        }
+
+        if (parent != null)
+        {
+            _virtualHostName = parent.getName().substring(1, parent.getName().length()-1);
+        }        
+
+
     }
     
     public static ManagedServer getServer()
@@ -427,15 +443,15 @@ public class MBeanView extends ViewPart
         typeTabFolder.setData("CONTROLLER", controller);
         
         TabItem tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.CONNECTION);       
+        tab.setText(Constants.TAB_LABEL_CONNECTIONS);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.EXCHANGE);       
+        tab.setText(Constants.TAB_LABEL_EXCHANGES);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.QUEUE);       
+        tab.setText(Constants.TAB_LABEL_QUEUES);
         tab.setControl(controller.getControl());
         
         typeTabFolder.addListener(SWT.Selection, new Listener()
@@ -469,21 +485,30 @@ public class MBeanView extends ViewPart
         }
         typeTabFolder.setSelection(tab);
         MBeanTypeTabControl controller = (MBeanTypeTabControl)typeTabFolder.getData("CONTROLLER");
-        controller.refresh(tab.getText());
+        String nodeType = Constants.NODE_LABEL_CONNECTIONS;
+        if(tab.getText().equals(Constants.TAB_LABEL_QUEUES))
+        {
+            nodeType = Constants.NODE_LABEL_QUEUES;
+        }
+        else if(tab.getText().equals(Constants.TAB_LABEL_EXCHANGES))
+        {
+            nodeType = Constants.NODE_LABEL_EXCHANGES;
+        }
+        controller.refresh(nodeType);
         typeTabFolder.setVisible(true);
     }
     
-    private void refreshTypeTabFolder(String type) throws Exception
+    private void refreshTypeTabFolder(String name) throws Exception
     {
-        if (Constants.CONNECTION.equals(type))
+        if (Constants.NODE_LABEL_CONNECTIONS.equals(name))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(0));
         }
-        else if (Constants.EXCHANGE.equals(type))
+        else if (Constants.NODE_LABEL_EXCHANGES.equals(name))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(1));
         }
-        else if (Constants.QUEUE.equals(type))
+        else if (Constants.NODE_LABEL_QUEUES.equals(name))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(2));
         }
@@ -515,6 +540,12 @@ public class MBeanView extends ViewPart
         {
             typeTabFolder.setVisible(false);
         }
+    }
+
+    public static String getVirtualHostName()
+    {
+        return _virtualHostName;
+
     }
     
 }

@@ -79,6 +79,37 @@
             </mechanisms>
         </sasl>
     </security>
+	<virtualhosts>
+		<virtualhost>
+			<name>localhost</name>
+			<localhost>
+			    <store>
+					<!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>  -->
+					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
+					<environment-path>localhost-store</environment-path>
+			    </store>		
+			</localhost>
+		</virtualhost>
+		
+		<virtualhost>
+			<name>development</name>
+			<development>
+			    <store>
+					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
+			    </store>			
+			</development>
+		</virtualhost>
+		
+		<virtualhost>
+			<name>test</name>
+			<test>
+			    <store>
+					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
+			    </store>			
+			</test>
+		</virtualhost>
+		
+	</virtualhosts>
     <heartbeat>
         <delay>0</delay>
         <timeoutFactor>2.0</timeoutFactor>
@@ -86,8 +117,6 @@
     <queue>
         <auto_register>true</auto_register>
     </queue>
-    <store>
-        <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-    </store>
+
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>

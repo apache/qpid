@@ -30,11 +30,14 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AMQQueue implements Managable, Comparable
 {
+
 
     public static final class ExistingExclusiveSubscription extends AMQException
     {
@@ -95,16 +99,17 @@ public class AMQQueue implements Managable, Comparable
 
     private final AtomicBoolean _isExclusive = new AtomicBoolean();
 
+    private final AtomicBoolean _deleted = new AtomicBoolean(false);
+
+
+
+    private List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
+
 
     /**
      * Manages message delivery.
      */
     private final DeliveryManager _deliveryMgr;
-
-    /**
-     * The queue registry with which this queue is registered.
-     */
-    private final QueueRegistry _queueRegistry;
 
     /**
      * Used to track bindings to exchanges so that on deletion they can easily
@@ -118,6 +123,9 @@ public class AMQQueue implements Managable, Comparable
     private final Executor _asyncDelivery;
 
     private final AMQQueueMBean _managedObject;
+
+    private final VirtualHost _virtualHost;
+
 
     /**
      * max allowed size(KB) of a single message
@@ -145,59 +153,26 @@ public class AMQQueue implements Managable, Comparable
     }
 
     public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                    boolean autoDelete, QueueRegistry queueRegistry)
+                    boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionImpl.Factory());
+        this(name, durable, owner, autoDelete, virtualHost,
+             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionSet(), new SubscriptionImpl.Factory());
     }
 
-    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscriptionFactory);
-    }
 
-    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery,
-                    SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
-
-        this(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new SubscriptionSet(), subscriptionFactory);
-    }
-
-    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-
-        this(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new SubscriptionSet(),
-             new SubscriptionImpl.Factory());
-    }
 
     protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
-                       SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, subscriptionFactory);
-    }
-
-    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
+                       boolean autoDelete, VirtualHost virtualHost,
                        SubscriptionSet subscribers)
             throws AMQException
     {
-        this(name, durable, owner, autoDelete, queueRegistry,
+        this(name, durable, owner, autoDelete, virtualHost,
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, new SubscriptionImpl.Factory());
     }
 
     protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
+                       boolean autoDelete, VirtualHost virtualHost,
                        Executor asyncDelivery, SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
             throws AMQException
     {
@@ -205,18 +180,20 @@ public class AMQQueue implements Managable, Comparable
         {
             throw new IllegalArgumentException("Queue name must not be null");
         }
-        if (queueRegistry == null)
+        if (virtualHost == null)
         {
-            throw new IllegalArgumentException("Queue registry must not be null");
+            throw new IllegalArgumentException("Virtual Host must not be null");
         }
         _name = name;
         _durable = durable;
         _owner = owner;
         _autoDelete = autoDelete;
-        _queueRegistry = queueRegistry;
+        _virtualHost = virtualHost;
         _asyncDelivery = asyncDelivery;
+
         _managedObject = createMBean();
         _managedObject.register();
+
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
 		_deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
@@ -492,10 +469,18 @@ public class AMQQueue implements Managable, Comparable
 
     public void delete() throws AMQException
     {
-        _subscribers.queueDeleted(this);
-        _bindings.deregister();
-        _queueRegistry.unregisterQueue(_name);
-        _managedObject.unregister();
+        if(!_deleted.getAndSet(true))
+        {
+            _subscribers.queueDeleted(this);
+            _bindings.deregister();
+            _virtualHost.getQueueRegistry().unregisterQueue(_name);
+            _managedObject.unregister();
+            for(Task task : _deleteTaskList)
+            {
+                task.doTask(this);
+            }
+            _deleteTaskList.clear();
+        }
     }
 
     protected void autodelete() throws AMQException
@@ -620,6 +605,24 @@ public class AMQQueue implements Managable, Comparable
         return _deliveryMgr.performGet(session, channel, acks);
     }
 
-    
+    public QueueRegistry getQueueRegistry()
+    {
+        return _virtualHost.getQueueRegistry();
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public static interface Task
+    {
+        public void doTask(AMQQueue queue) throws AMQException;        
+    }
+
+    public void addQueueDeleteTask(Task task)
+    {
+        _deleteTaskList.add(task);
+    }
 
 }

@@ -34,6 +34,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 {
@@ -50,15 +51,19 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<QueueBindBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueueBindBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        
+
         final QueueBindBody body = evt.getMethod();
         final AMQQueue queue;
         if (body.queue == null)
         {
-            queue = protocolSession.getChannel(evt.getChannelId()).getDefaultQueue();
+            queue = session.getChannel(evt.getChannelId()).getDefaultQueue();
             if (queue == null)
             {
                 throw new AMQException("No default queue defined on channel and queue was null");
@@ -94,7 +99,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             final AMQFrame response = QueueBindOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-            protocolSession.writeFrame(response);
+            session.writeFrame(response);
         }
     }
 }

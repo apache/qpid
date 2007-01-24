@@ -30,6 +30,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.AMQException;
 
 public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicCancelBody>
@@ -45,10 +46,10 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<BasicCancelBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicCancelBody> evt) throws AMQException
     {
+        AMQProtocolSession protocolSession = stateManager.getProtocolSession();
+
         final AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
         final BasicCancelBody body = evt.getMethod();
         channel.unsubscribeConsumer(protocolSession, body.consumerTag);

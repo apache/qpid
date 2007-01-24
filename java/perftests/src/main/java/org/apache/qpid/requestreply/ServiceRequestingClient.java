@@ -104,7 +104,7 @@ public class ServiceRequestingClient implements ExceptionListener
                 m.getPropertyNames();
                 if (m.propertyExists("timeSent"))
                 {
-                    long timeSent = Long.parseLong(m.getStringProperty("timeSent"));
+                    long timeSent = m.getLongProperty("timeSent");
                     if (_averageLatency == 0)
                     {
                         _averageLatency = _messageReceivedTime - timeSent;
