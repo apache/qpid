@@ -29,6 +29,8 @@ public abstract class AbstractPingClient
 
     private static final Logger _logger = Logger.getLogger(TestPingClient.class);
     private AMQConnection _connection;
+    /** tells if the test is being done for pubsub or p2p */
+    private boolean _isPubSub = false;
 
     protected boolean _failBeforeCommit = false;
     protected boolean _failAfterCommit = false;
@@ -41,6 +43,16 @@ public abstract class AbstractPingClient
     public void setConnection(AMQConnection _connection)
     {
         this._connection = _connection;
+    }
+
+    public void setPubSub(boolean pubsub)
+    {
+        _isPubSub = pubsub;
+    }
+
+    public boolean isPubSub()
+    {
+        return _isPubSub;
     }
 
     /**

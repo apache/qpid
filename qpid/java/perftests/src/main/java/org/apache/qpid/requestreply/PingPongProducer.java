@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
@@ -85,9 +86,9 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     protected static final long TIMEOUT = 9000;
 
     /**
-     * Holds the name of the queue to send pings on.
+     * Holds the name of the destination to send pings on.
      */
-    protected static final String PING_QUEUE_NAME = "ping";
+    protected static final String PING_DESTINATION_NAME = "ping";
 
     /**
      * The batch size.
@@ -114,14 +115,14 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     private static Map<String, CountDownLatch> trafficLights = new HashMap<String, CountDownLatch>();
 
     /**
-     * Holds the queue to send the ping replies to.
+     * Destination where the responses messages will arrive
      */
-    private Queue _replyQueue;
+    private Destination _replyDestination;
 
     /**
-     * Hold the known Queue where the producer will be sending message to
+     * Destination where the producer will be sending message to
      */
-    private Queue _pingQueue;
+    private Destination _pingDestination;
 
     /**
      * Determines whether this producer sends persistent messages from the run method.
@@ -213,20 +214,23 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      * @param transacted
      * @throws Exception All allowed to fall through. This is only test code...
      */
-    public PingPongProducer(String brokerDetails, String username, String password, String virtualpath, String queueName,
-                            String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                            boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend,
-                            boolean failOnce, int batchSize, int queueCount, int rate) throws Exception
+    public PingPongProducer(String brokerDetails, String username, String password, String virtualpath,
+                            String destinationName, String selector, boolean transacted, boolean persistent,
+                            int messageSize, boolean verbose, boolean afterCommit, boolean beforeCommit,
+                            boolean afterSend, boolean beforeSend, boolean failOnce, int batchSize,
+                            int noOfDestinations, int rate, boolean pubsub) throws Exception
     {
         this(brokerDetails, username, password, virtualpath, transacted, persistent, messageSize, verbose, afterCommit,
              beforeCommit, afterSend, beforeSend, failOnce, batchSize, rate);
 
-        _queueCount = queueCount;
-        if (queueCount <= 1)
+        _destinationCount = noOfDestinations;
+        setPubSub(pubsub);
+        
+        if (noOfDestinations <= 1)
         {
-            if (queueName != null)
+            if (destinationName != null)
             {
-                _pingQueue = new AMQQueue(queueName);
+                createPingDestination(destinationName);
                 // Create producer and the consumer
                 createProducer();
                 createConsumer(selector);
@@ -239,57 +243,76 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         }
     }
 
+    private void createPingDestination(String name)
+    {
+        if (isPubSub())
+        {
+            _pingDestination = new AMQTopic(name);
+        }
+        else
+        {
+            _pingDestination = new AMQQueue(name);
+        }
+    }
+
     /**
-     * Creates the producer to send the pings on.  If the tests are with nultiple queues, then producer
+     * Creates the producer to send the pings on.  If the tests are with nultiple-destinations, then producer
      * is created with null destination, so that any destination can be specified while sending
-     *
      * @throws JMSException
      */
     public void createProducer() throws JMSException
     {
-        if (getQueueCount() > 1)
+        if (getDestinationsCount() > 1)
         {
-            // create producer with initial destination as null for test with multiple queues
+            // create producer with initial destination as null for test with multiple-destinations
             // In this case, a different destination will be used while sending the message
             _producer = (MessageProducer) getProducerSession().createProducer(null);
         }
         else
         {
-            // Create a queue and producer to send the pings on.
-            _producer = (MessageProducer) getProducerSession().createProducer(_pingQueue);
+            // Create a producer with known destination to send the pings on.
+            _producer = (MessageProducer) getProducerSession().createProducer(_pingDestination);
 
         }
+
         _producer.setDisableMessageTimestamp(true);
         _producer.setDeliveryMode(_persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
     }
 
     /**
-     * Creates the temporary queue to listen to the responses
-     *
+     * Creates the temporary destination to listen to the responses
      * @param selector
      * @throws JMSException
      */
     public void createConsumer(String selector) throws JMSException
     {
-        // Create a temporary queue to get the pongs on.
-        _replyQueue = _consumerSession.createTemporaryQueue();
+        // Create a temporary destination to get the pongs on.
+        if (isPubSub())
+        {
+            _replyDestination = _consumerSession.createTemporaryTopic();
+        }
+        else
+        {
+            _replyDestination = _consumerSession.createTemporaryQueue();
+        }
 
         // Create a message consumer to get the replies with and register this to be called back by it.
-        MessageConsumer consumer = _consumerSession.createConsumer(_replyQueue, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
+        MessageConsumer consumer = _consumerSession.createConsumer(_replyDestination, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
         consumer.setMessageListener(this);
     }
 
     /**
-     * Creates consumer instances for each queue. This is used when test is being done with multiple queues.
-     *
+     * Creates consumer instances for each destination. This is used when test is being done with multiple destinations.
+     * 
      * @param selector
      * @throws JMSException
      */
     public void createConsumers(String selector) throws JMSException
     {
-        for (int i = 0; i < getQueueCount(); i++)
+        for (int i = 0; i < getDestinationsCount(); i++)
         {
-            MessageConsumer consumer = getConsumerSession().createConsumer(getQueue(i), PREFETCH, false, EXCLUSIVE, selector);
+            MessageConsumer consumer =
+                getConsumerSession().createConsumer(getDestination(i), PREFETCH, false, EXCLUSIVE, selector);
             consumer.setMessageListener(this);
         }
     }
@@ -300,14 +323,14 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         return _consumerSession;
     }
 
-    public Queue getPingQueue()
+    public Destination getPingDestination()
     {
-        return _pingQueue;
+        return _pingDestination;
     }
 
-    protected void setPingQueue(Queue queue)
+    protected void setPingDestination(Destination destination)
     {
-        _pingQueue = queue;
+        _pingDestination = destination;
     }
 
     /**
@@ -329,9 +352,9 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         // Extract the command line.
         if (args.length < 2)
         {
-            System.err.println(
-                    "Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] "
-                    + "[transacted (true/false)] [persistent (true/false)] [message size in bytes] [batchsize] [rate]");
+            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
+                "[transacted (true/false)] [persistent (true/false)] [message size in bytes] [batchsize]" +
+                " [rate] [pubsub(true/false)]");
             System.exit(0);
         }
 
@@ -343,6 +366,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
         int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
         int rate = (args.length >= 8) ? Integer.parseInt(args[7]) : 0;
+        boolean ispubsub = (args.length >= 9) ?  Boolean.parseBoolean(args[8]) : false;
 
         boolean afterCommit = false;
         boolean beforeCommit = false;
@@ -383,33 +407,26 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         }
 
         // Create a ping producer to handle the request/wait/reply cycle.
-        PingPongProducer pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath, PING_QUEUE_NAME, null, transacted,
-                                                             persistent, messageSize, verbose,
-                                                             afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                             batchSize, 0, rate);
+        PingPongProducer pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath,
+                                            PING_DESTINATION_NAME, null, transacted, persistent, messageSize, verbose,
+                                            afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
+                                            0, rate, ispubsub);
 
         pingProducer.getConnection().start();
 
         // Run a few priming pings to remove warm up time from test results.
-        pingProducer.prime(PRIMING_LOOPS);
+        //pingProducer.prime(PRIMING_LOOPS);
         // Create a shutdown hook to terminate the ping-pong producer.
         Runtime.getRuntime().addShutdownHook(pingProducer.getShutdownHook());
 
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
         pingProducer.getConnection().setExceptionListener(pingProducer);
-
+        
         // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
         Thread pingThread = new Thread(pingProducer);
         pingThread.run();
         pingThread.join();
     }
-
-    /**
-     * Creates consumer instances for each queue. This is used when test is being done with multiple queues.
-     *
-     * @param selector
-     * @throws JMSException
-     */
 
     /**
      * Primes the test loop by sending a few messages, then introduces a short wait. This allows the bounce back client
@@ -424,8 +441,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         for (int i = 0; i < x; i++)
         {
             // Create and send a small message.
-            Message first = getTestMessage(_replyQueue, 0, false);
-
+            Message first = getTestMessage(_replyDestination, 0, false);
             sendMessage(first);
 
             try
@@ -434,6 +450,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             }
             catch (InterruptedException ignore)
             {
+                
             }
         }
     }
@@ -524,10 +541,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             // Re-timestamp the message.
             message.setLongProperty("timestamp", System.currentTimeMillis());
 
-            // Check if the test is with multiple queues, in which case round robin the queues as the messages are sent.
-            if (getQueueCount() > 1)
+            // Check if the test is with multiple-destinations, in which case round robin the destinations
+            // as the messages are sent.
+            if (getDestinationsCount() > 1)
             {
-                sendMessage(getQueue(i % getQueueCount()), message);
+                sendMessage(getDestination(i % getDestinationsCount()), message);
             }
             else
             {
@@ -609,7 +627,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         try
         {
             // Generate a sample message and time stamp it.
-            ObjectMessage msg = getTestMessage(_replyQueue, _messageSize, _persistent);
+            ObjectMessage msg = getTestMessage(_replyDestination, _messageSize, _persistent);
             msg.setLongProperty("timestamp", System.currentTimeMillis());
 
             // Send the message and wait for a reply.
@@ -630,15 +648,14 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         }
     }
 
-    public Queue getReplyQueue()
+    public Destination getReplyDestination()
     {
-        return _replyQueue;
+        return _replyDestination;
     }
 
-
-    protected void setReplyQueue(Queue queue)
+    protected void setReplyDestination(Destination destination)
     {
-        _replyQueue = queue;
+        _replyDestination = destination;
     }
 
     /*
@@ -657,10 +674,10 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             // Re-timestamp the message.
             message.setLongProperty("timestamp", System.currentTimeMillis());
 
-            sendMessage(getQueue(queueIndex++), message);
+            sendMessage(getDestination(queueIndex++), message);
 
             // reset the counter to get the first queue
-            if (queueIndex == (getQueueCount() - 1))
+            if (queueIndex == (getDestinationsCount() - 1))
             {
                 queueIndex = 0;
             }

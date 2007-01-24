@@ -38,8 +38,8 @@ public class TestPingItself extends PingPongProducer
     private static final Logger _logger = Logger.getLogger(TestPingItself.class);
 
     /**
-     * If queueCount is <= 1 : There will be one Queue and one consumer instance for the test
-     * If queueCount is > 1 : This creats a client for tests with multiple queues. Creates as many consumer instances
+     * If noOfDestinations is <= 1 : There will be one Queue and one consumer instance for the test
+     * If noOfDestinations is > 1 : This creats a client for tests with multiple queues. Creates as many consumer instances
      * as there are queues, each listening to a Queue. A producer is created which picks up a queue from
      * the list of queues to send message
      *
@@ -59,20 +59,21 @@ public class TestPingItself extends PingPongProducer
      * @param beforeSend
      * @param failOnce
      * @param batchSize
-     * @param queueCount
+     * @param noOfDestinations
      * @throws Exception
      */
     public TestPingItself(String brokerDetails, String username, String password, String virtualpath, String queueName,
                           String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                           boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                          int batchSize, int queueCount, int rate) throws Exception
+                          int batchSize, int noOfDestinations, int rate, boolean pubsub) throws Exception
     {
-        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize, queueCount, rate);
+        super(brokerDetails, username, password, virtualpath, queueName, selector, transacted, persistent,
+              messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
+              noOfDestinations, rate, pubsub);
 
-        if (queueCount > 1)
+        if (noOfDestinations > 1)
         {
-            createQueues(queueCount);
+            createDestinations(noOfDestinations);
 
             _persistent = persistent;
             _messageSize = messageSize;
@@ -83,17 +84,16 @@ public class TestPingItself extends PingPongProducer
         }
     }
 
-
-    /**
+     /**
      * Sets the replyQueue to be the same as ping queue.
      */
     @Override
     public void createConsumer(String selector) throws JMSException
     {
         // Create a message consumer to get the replies with and register this to be called back by it.
-        setReplyQueue(getPingQueue());
+        setReplyDestination(getPingDestination());
         MessageConsumer consumer =
-                getConsumerSession().createConsumer(getReplyQueue(), PREFETCH, false, EXCLUSIVE, selector);
+            getConsumerSession().createConsumer(getReplyDestination(), PREFETCH, false, EXCLUSIVE, selector);
         consumer.setMessageListener(this);
     }
 
@@ -123,6 +123,7 @@ public class TestPingItself extends PingPongProducer
         int queueCount = (config.getQueueCount() != 0) ? config.getQueueCount() : 1;
         int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : BATCH_SIZE;
         int rate = (config.getRate() != 0) ? config.getRate() : 0;
+        boolean pubsub = config.isPubSub();
 
         String queue = "ping_" + System.currentTimeMillis();
         _logger.info("Queue:" + queue + ", Transacted:" + transacted + ", persistent:" + persistent + ",MessageSize:"
@@ -169,9 +170,9 @@ public class TestPingItself extends PingPongProducer
 
         // Create a ping producer to handle the request/wait/reply cycle.
         TestPingItself pingItself = new TestPingItself(brokerDetails, "guest", "guest", virtualpath, queue, null,
-                                                       transacted, persistent, messageSize, verbose,
-                                                       afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-                                                       batchSize, queueCount, rate);
+                                                    transacted, persistent, messageSize, verbose, afterCommit,
+                                                    beforeCommit, afterSend, beforeSend, failOnce, batchSize,
+                                                    queueCount, rate, pubsub);
 
         pingItself.getConnection().start();
 
@@ -214,6 +215,4 @@ public class TestPingItself extends PingPongProducer
                            + "-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)");
         System.exit(0);
     }
-
-
 }

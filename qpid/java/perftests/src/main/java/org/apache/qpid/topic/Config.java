@@ -48,6 +48,7 @@ public class Config extends AbstractConfig implements ConnectorConfig
     private int noOfQueues;
     private int batchSize;
     private int rate;
+    private boolean ispubsub;
 
     public Config()
     {
@@ -178,6 +179,11 @@ public class Config extends AbstractConfig implements ConnectorConfig
         return transacted;
     }
 
+    public boolean isPubSub()
+    {
+        return ispubsub;
+    }
+
     public void setOption(String key, String value)
     {
         if("-host".equalsIgnoreCase(key))
@@ -254,6 +260,10 @@ public class Config extends AbstractConfig implements ConnectorConfig
         else if ("-rate".equalsIgnoreCase(key))
         {
             rate = parseInt("MEssage rate", value);
+        }
+        else if("-pubsub".equalsIgnoreCase(key))
+        {
+            ispubsub = "true".equalsIgnoreCase(value);
         }
         else
         {

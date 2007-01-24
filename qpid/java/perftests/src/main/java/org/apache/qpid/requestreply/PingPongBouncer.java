@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingClient;
@@ -75,6 +76,8 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
     /** Determines whether this bounce back client bounces back messages persistently. */
     private boolean _persistent = false;
 
+    private Destination _consumerDestination;
+
     /** Keeps track of the response destination of the previous message for the last reply to producer cache. */
     private Destination _lastResponseDest;
 
@@ -91,24 +94,28 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
      * Creates a PingPongBouncer on the specified producer and consumer sessions.
      *
      * @param brokerDetails The addresses of the brokers to connect to.
-     * @param username      The broker username.
-     * @param password      The broker password.
-     * @param virtualpath   The virtual host name within the broker.
-     * @param queueName     The name of the queue to receive pings on (or root of the queue name where many queues are generated).
-     * @param persistent    A flag to indicate that persistent message should be used.
-     * @param transacted    A flag to indicate that pings should be sent within transactions.
-     * @param selector      A message selector to filter received pings with.
-     * @param verbose       A flag to indicate that message timings should be sent to the console.
+     * @param username        The broker username.
+     * @param password        The broker password.
+     * @param virtualpath     The virtual host name within the broker.
+     * @param destinationName The name of the queue to receive pings on
+     *                        (or root of the queue name where many queues are generated).
+     * @param persistent      A flag to indicate that persistent message should be used.
+     * @param transacted      A flag to indicate that pings should be sent within transactions.
+     * @param selector        A message selector to filter received pings with.
+     * @param verbose         A flag to indicate that message timings should be sent to the console.
      *
      * @throws Exception All underlying exceptions allowed to fall through. This is only test code...
      */
-    public PingPongBouncer(String brokerDetails, String username, String password, String virtualpath, String queueName,
-                           boolean persistent, boolean transacted, String selector, boolean verbose) throws Exception
+    public PingPongBouncer(String brokerDetails, String username, String password, String virtualpath,
+                           String destinationName, boolean persistent, boolean transacted, String selector,
+                           boolean verbose, boolean pubsub) throws Exception
     {
         // Create a client id to uniquely identify this client.
         InetAddress address = InetAddress.getLocalHost();
         String clientId = address.getHostName() + System.currentTimeMillis();
-
+        _verbose = verbose;
+        _persistent = persistent;
+        setPubSub(pubsub);
         // Connect to the broker.
         setConnection(new AMQConnection(brokerDetails, username, password, clientId, virtualpath));
         _logger.info("Connected with URL:" + getConnection().toURL());
@@ -122,19 +129,28 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         _producerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
 
         // Create the queue to listen for message on.
-        Queue q = new AMQQueue(queueName);
-        MessageConsumer consumer = _consumerSession.createConsumer(q, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
+        createConsumerDestination(destinationName);
+        MessageConsumer consumer = _consumerSession.createConsumer(_consumerDestination, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
 
         // Create a producer for the replies, without a default destination.
         _replyProducer = _producerSession.createProducer(null);
         _replyProducer.setDisableMessageTimestamp(true);
         _replyProducer.setDeliveryMode(_persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
 
-        _verbose = verbose;
-        _persistent = persistent;
-
         // Set this up to listen for messages on the queue.
         consumer.setMessageListener(this);
+    }
+
+    private void createConsumerDestination(String name)
+    {
+        if (isPubSub())
+        {
+            _consumerDestination = new AMQTopic(name);
+        }
+        else
+        {
+            _consumerDestination = new AMQQueue(name);
+        }
     }
 
     /**
@@ -149,8 +165,9 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         // Display help on the command line.
         if (args.length < 5)
         {
-            System.err.println("Usage: <brokerdetails> <username> <password> <virtual-path> <serviceQueue> "
-                               + "[<P[ersistent]|N[onPersistent]> <T[ransacted]|N<onTransacted]>] [selector]");
+            System.err.println("Usage: <brokerdetails> <username> <password> <virtual-path> <serviceQueue> " +
+                               "[<P[ersistent]|N[onPersistent]> <T[ransacted]|N<onTransacted]>] " +
+                               "[selector] [pubsub(true/false)]");
             System.exit(1);
         }
 
@@ -160,14 +177,15 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         String password = args[2];
         String virtualpath = args[3];
         String queueName = args[4];
-        boolean persistent = ((args.length >= 6) && (args[5].toUpperCase().charAt(0) == 'P'));
-        boolean transacted = ((args.length >= 7) && (args[6].toUpperCase().charAt(0) == 'T'));
-        String selector = (args.length == 8) ? args[5] : null;
+        boolean persistent = ((args.length > 5) && (args[5].toUpperCase().charAt(0) == 'P'));
+        boolean transacted = ((args.length > 6) && (args[6].toUpperCase().charAt(0) == 'T'));
+        String selector = (args.length > 7) ? args[7] : null;
+        boolean pubsub = (args.length > 8) ? Boolean.parseBoolean(args[8]) : false;
 
         // Instantiate the ping pong client with the command line options and start it running.
         PingPongBouncer pingBouncer =
-            new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName, persistent, transacted, selector,
-                                true);
+            new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName, persistent, transacted,
+                                selector, true, pubsub);
         pingBouncer.getConnection().start();
 
         System.out.println("Waiting...");
@@ -185,7 +203,6 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         try
         {
             String messageCorrelationId = message.getJMSCorrelationID();
-
             if (_verbose)
             {
                 _logger.info(timestampFormatter.format(new Date()) + ": Got ping with correlation id, "
