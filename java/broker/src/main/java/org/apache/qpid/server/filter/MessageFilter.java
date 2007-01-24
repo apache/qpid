@@ -21,10 +21,9 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.qpid.server.queue.AMQMessage;
-
-import javax.jms.JMSException;
+import org.apache.qpid.AMQException;
 
 public interface MessageFilter
 {
-    boolean matches(AMQMessage message) throws JMSException;
+    boolean matches(AMQMessage message) throws AMQException;
 }
