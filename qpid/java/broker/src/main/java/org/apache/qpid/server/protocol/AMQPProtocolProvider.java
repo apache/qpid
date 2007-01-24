@@ -42,8 +42,7 @@ public class AMQPProtocolProvider
     public AMQPProtocolProvider()
     {
         IApplicationRegistry registry = ApplicationRegistry.getInstance();
-        _handler = new AMQPFastProtocolHandler(registry.getQueueRegistry(),
-                                               registry.getExchangeRegistry());
+        _handler = new AMQPFastProtocolHandler(registry);
     }
 
     public AMQPFastProtocolHandler getHandler()

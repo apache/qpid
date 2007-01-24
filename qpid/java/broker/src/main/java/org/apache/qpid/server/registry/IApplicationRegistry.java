@@ -26,7 +26,11 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.commons.configuration.Configuration;
+
+import java.util.Collection;
 
 public interface IApplicationRegistry
 {
@@ -35,7 +39,9 @@ public interface IApplicationRegistry
      * that need access to the application registry itself for initialisation are able to use it. Attempting to
      * initialise in the constructor will lead to failures since the registry reference will not have been set.
      */
-    void initialise() throws Exception;    
+    void initialise() throws Exception;
+
+    void close() throws Exception;
 
     /**
      * This gets access to a "configured object". A configured object has fields populated from a the configuration
@@ -54,15 +60,11 @@ public interface IApplicationRegistry
      */
     Configuration getConfiguration();
 
-    QueueRegistry getQueueRegistry();
-
-    ExchangeRegistry getExchangeRegistry();
-
-    ExchangeFactory getExchangeFactory();
-
     ManagedObjectRegistry getManagedObjectRegistry();
 
     AuthenticationManager getAuthenticationManager();
 
-    MessageStore getMessageStore();
+    Collection<String> getVirtualHostNames();
+
+    VirtualHostRegistry getVirtualHostRegistry();
 }

@@ -39,4 +39,10 @@ public class ExchangeDefaults
     public final static AMQShortString FANOUT_EXCHANGE_NAME = new AMQShortString("amq.fanout");
 
     public final static AMQShortString FANOUT_EXCHANGE_CLASS = new AMQShortString("fanout");
+
+
+    public final static AMQShortString SYSTEM_MANAGEMENT_EXCHANGE_NAME = new AMQShortString("qpid.sysmgmt");
+
+    public final static AMQShortString SYSTEM_MANAGEMENT_CLASS = new AMQShortString("sysmmgmt");
+
 }

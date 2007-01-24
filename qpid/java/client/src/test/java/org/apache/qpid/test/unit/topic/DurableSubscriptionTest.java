@@ -55,7 +55,7 @@ public class DurableSubscriptionTest extends TestCase
     public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);
@@ -96,7 +96,7 @@ public class DurableSubscriptionTest extends TestCase
     public void testDurability() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);

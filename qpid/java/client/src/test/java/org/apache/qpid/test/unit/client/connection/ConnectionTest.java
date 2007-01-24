@@ -55,7 +55,7 @@ public class ConnectionTest extends TestCase
     {
         try
         {
-            new AMQConnection(_broker, "guest", "guest", "fred", "/test");
+            new AMQConnection(_broker, "guest", "guest", "fred", "test");
         }
         catch (Exception e)
         {
@@ -115,7 +115,7 @@ public class ConnectionTest extends TestCase
     public void testClientIdCannotBeChanged() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
-                                                  "fred", "/test");
+                                                  "fred", "test");
         try
         {
             connection.setClientID("someClientId");
@@ -130,7 +130,7 @@ public class ConnectionTest extends TestCase
     public void testClientIdIsPopulatedAutomatically() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
-                                                  null, "/test");
+                                                  null, "test");
         assertNotNull(connection.getClientID());
     }
 

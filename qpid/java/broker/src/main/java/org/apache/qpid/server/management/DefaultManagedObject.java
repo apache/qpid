@@ -67,7 +67,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         try
         {
-            ApplicationRegistry.getInstance().getManagedObjectRegistry().registerObject(this);
+            getManagedObjectRegistry().registerObject(this);
         }
         catch (JMException e)
         {
@@ -75,11 +75,16 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         }
     }
 
+    protected ManagedObjectRegistry getManagedObjectRegistry()
+    {
+        return ApplicationRegistry.getInstance().getManagedObjectRegistry();
+    }
+
     public void unregister() throws AMQException
     {
         try
         {
-            ApplicationRegistry.getInstance().getManagedObjectRegistry().unregisterObject(this);
+            getManagedObjectRegistry().unregisterObject(this);
         }
         catch (JMException e)
         {
@@ -91,6 +96,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         return getObjectInstanceName() + "[" + getType() + "]";
     }
+    
 
     /**
      * Created the ObjectName as per the JMX Specs

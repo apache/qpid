@@ -20,7 +20,9 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.Main;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -28,11 +30,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.openmbean.*;
-import javax.management.JMException;
-import javax.management.Notification;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.OperationsException;
+import javax.management.*;
 import javax.management.monitor.MonitorNotification;
 import java.util.List;
 import java.util.ArrayList;
@@ -71,6 +69,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
         _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
+    }
+
+
+    public ManagedObject getParentObject()
+    {
+        return _queue.getVirtualHost().getManagedObject();
     }
 
     static
@@ -373,6 +377,14 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
 
         return _messageList;
     }
+//
+//    public ObjectName getObjectName() throws MalformedObjectNameException
+//    {
+//        String objNameString = super.getObjectName().toString();
+//
+//        return new ObjectName(objNameString);
+//    }
+
 
     /**
      * returns Notifications sent by this MBean.

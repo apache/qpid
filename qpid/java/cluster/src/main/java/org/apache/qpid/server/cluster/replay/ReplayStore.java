@@ -32,6 +32,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,8 +74,11 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _localRecorders.put(ExchangeDeleteBody.class, new ExchangeDeleteRecorder());
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+
         _logger.debug(new LogMessage("Replay store received {0}", evt.getMethod()));
         AMQMethodBody request = evt.getMethod();
 

@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.ClusteredQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * Handles consume requests from other cluster members.
@@ -42,9 +43,13 @@ public class RemoteConsumeHandler implements StateAwareMethodListener<BasicConsu
 {
     private final Logger _logger = Logger.getLogger(RemoteConsumeHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
     {
-        AMQQueue queue = queues.getQueue(evt.getMethod().queue);
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+        AMQQueue queue = queueRegistry.getQueue(evt.getMethod().queue);
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).addRemoteSubcriber(ClusteredProtocolSession.getSessionPeer(session));

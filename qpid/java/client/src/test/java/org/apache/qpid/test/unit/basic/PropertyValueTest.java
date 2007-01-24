@@ -53,7 +53,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
         }
         catch (Exception e)
         {

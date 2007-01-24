@@ -24,6 +24,9 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.store.MessageStore;
@@ -50,6 +53,7 @@ public class AMQQueueMBeanTest extends TestCase
                                                                                      new HashSet<Long>());
     private MockProtocolSession _protocolSession;
     private AMQChannel _channel;
+    private VirtualHost _virtualHost;
 
     public void testMessageCount() throws Exception
     {
@@ -180,8 +184,10 @@ public class AMQQueueMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queueRegistry = new DefaultQueueRegistry();
-        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _queueRegistry);
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
+        _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
+        _queueRegistry = _virtualHost.getQueueRegistry();
+        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost);
         _queueMBean = new AMQQueueMBean(_queue);
     }
 

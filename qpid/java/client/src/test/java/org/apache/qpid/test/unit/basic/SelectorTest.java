@@ -51,7 +51,7 @@ public class SelectorTest extends TestCase implements MessageListener
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
     }
 
     protected void tearDown() throws Exception

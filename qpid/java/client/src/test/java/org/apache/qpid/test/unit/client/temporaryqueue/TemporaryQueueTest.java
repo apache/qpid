@@ -28,7 +28,7 @@ public class TemporaryQueueTest extends TestCase
     protected Connection createConnection() throws AMQException, URLSyntaxException
     {
         return new AMQConnection(_broker, "guest", "guest",
-                                                      "fred", "/test");
+                                                      "fred", "test");
     }
 
     public void testTempoaryQueue() throws Exception

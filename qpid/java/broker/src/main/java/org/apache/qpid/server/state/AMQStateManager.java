@@ -31,6 +31,7 @@ import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -46,8 +47,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
-    private final QueueRegistry _queueRegistry;
-    private final ExchangeRegistry _exchangeRegistry;
+
+    private final VirtualHostRegistry _virtualHostRegistry;
     private final AMQProtocolSession _protocolSession;
     /**
      * The current state
@@ -63,15 +64,15 @@ public class AMQStateManager implements AMQMethodListener
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
-    public AMQStateManager(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+
+    public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        this(AMQState.CONNECTION_NOT_STARTED, true, queueRegistry, exchangeRegistry, protocolSession);
+        this(AMQState.CONNECTION_NOT_STARTED, true, virtualHostRegistry, protocolSession);
     }
 
-    protected AMQStateManager(AMQState initial, boolean register, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+    protected AMQStateManager(AMQState initial, boolean register, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        _queueRegistry = queueRegistry;
-        _exchangeRegistry = exchangeRegistry;
+        _virtualHostRegistry = virtualHostRegistry;
         _protocolSession = protocolSession;
         _currentState = initial;
         if (register)
@@ -176,7 +177,7 @@ public class AMQStateManager implements AMQMethodListener
 
             checkChannel(evt, _protocolSession);
 
-            handler.methodReceived(this, _queueRegistry, _exchangeRegistry, _protocolSession, evt);
+            handler.methodReceived(this,  evt);
             return true;
         }
         return false;
@@ -240,5 +241,15 @@ public class AMQStateManager implements AMQMethodListener
     public void removeStateListener(StateListener listener)
     {
         _stateListeners.remove(listener);
+    }
+
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return _virtualHostRegistry;
+    }
+
+    public AMQProtocolSession getProtocolSession()
+    {
+        return _protocolSession;
     }
 }

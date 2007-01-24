@@ -21,7 +21,17 @@
  -->
 <virtualhosts>
     <virtualhost>
-        <path>/development</path>
+        <path>localhost</path>
+        <bind>direct://amq.direct//queue</bind>
+        <bind>direct://amq.direct//ping</bind>
+    </virtualhost>
+	<virtualhost>
+        <path>development</path>
+        <bind>direct://amq.direct//queue</bind>
+        <bind>direct://amq.direct//ping</bind>
+    </virtualhost>
+		<virtualhost>
+        <path>test</path>
         <bind>direct://amq.direct//queue</bind>
         <bind>direct://amq.direct//ping</bind>
     </virtualhost>

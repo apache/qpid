@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxCommitOkBody;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -47,10 +48,9 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<TxCommitBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxCommitBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();        
 
         try
         {
@@ -58,13 +58,13 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
             {
                 _log.debug("Commit received on channel " + evt.getChannelId());
             }
-            AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+            AMQChannel channel = session.getChannel(evt.getChannelId());
             channel.commit();
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(TxCommitOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0));
-            channel.processReturns(protocolSession);
+            session.writeFrame(TxCommitOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0));
+            channel.processReturns(session);
         }
         catch(AMQException e)
         {

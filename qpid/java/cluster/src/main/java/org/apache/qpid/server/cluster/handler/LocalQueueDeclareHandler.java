@@ -35,6 +35,7 @@ import org.apache.qpid.server.queue.ClusteredQueue;
 import org.apache.qpid.server.queue.PrivateQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.RemoteQueueProxy;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class LocalQueueDeclareHandler extends QueueDeclareHandler
 {
@@ -51,7 +52,7 @@ public class LocalQueueDeclareHandler extends QueueDeclareHandler
         return new AMQShortString(super.createName().toString() + "@" + _groupMgr.getLocal().getDetails());
     }
 
-    protected AMQQueue createQueue(QueueDeclareBody body, QueueRegistry registry, AMQProtocolSession session) throws AMQException
+    protected AMQQueue createQueue(QueueDeclareBody body, VirtualHost virtualHost, AMQProtocolSession session) throws AMQException
     {
         //is it private or shared:
         if (body.exclusive)
@@ -61,18 +62,18 @@ public class LocalQueueDeclareHandler extends QueueDeclareHandler
                 //need to get peer from the session...
                 MemberHandle peer = ClusteredProtocolSession.getSessionPeer(session);
                 _logger.debug(new LogMessage("Creating proxied queue {0} on behalf of {1}", body.queue, peer));
-                return new RemoteQueueProxy(peer, _groupMgr, body.queue, body.durable, new AMQShortString(peer.getDetails()), body.autoDelete, registry);
+                return new RemoteQueueProxy(peer, _groupMgr, body.queue, body.durable, new AMQShortString(peer.getDetails()), body.autoDelete, virtualHost);
             }
             else
             {
                 _logger.debug(new LogMessage("Creating local private queue {0}", body.queue));
-                return new PrivateQueue(_groupMgr, body.queue, body.durable, session.getContextKey(), body.autoDelete, registry);
+                return new PrivateQueue(_groupMgr, body.queue, body.durable, session.getContextKey(), body.autoDelete, virtualHost);
             }
         }
         else
         {
             _logger.debug(new LogMessage("Creating local shared queue {0}", body.queue));
-            return new ClusteredQueue(_groupMgr, body.queue, body.durable, null, body.autoDelete, registry);
+            return new ClusteredQueue(_groupMgr, body.queue, body.durable, null, body.autoDelete, virtualHost);
         }
     }
 }

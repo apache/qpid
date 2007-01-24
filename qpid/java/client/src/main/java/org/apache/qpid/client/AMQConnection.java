@@ -156,7 +156,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
                                   username + ":" + password + "@" +
-                                  (clientName == null ? "" : clientName) +
+                                  (clientName == null ? "" : clientName) + "/" +
                                   virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"));
     }
 

@@ -29,6 +29,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.log4j.Logger;
 
 public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckBody>
@@ -46,10 +47,10 @@ public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<BasicAckBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicAckBody> evt) throws AMQException
     {
+        AMQProtocolSession protocolSession = stateManager.getProtocolSession();
+        
         if (_log.isDebugEnabled())
         {
             _log.debug("Ack received on channel " + evt.getChannelId());

@@ -9,6 +9,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -34,8 +35,12 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         _failIfNotFound = failIfNotFound;
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueuePurgeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueuePurgeBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
         QueuePurgeBody body = evt.getMethod();
         AMQQueue queue;
         if(body.queue == null)
@@ -52,7 +57,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
-            queue = queues.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.queue);
         }
 
         if(queue == null)
