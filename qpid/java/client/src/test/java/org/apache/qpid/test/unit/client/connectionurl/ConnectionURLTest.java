@@ -40,7 +40,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals("bob"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 2);
 
@@ -67,7 +67,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals("bob"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 1);
 
@@ -87,7 +87,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals(""));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 1);
 
@@ -125,7 +125,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
         assertTrue(connectionurl.getBrokerCount() == 1);
@@ -148,7 +148,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
         assertTrue(connectionurl.getClientName().equals("clientname"));
 
 
@@ -171,7 +171,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
         assertTrue(connectionurl.getBrokerCount() == 1);
@@ -194,7 +194,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
         assertTrue(connectionurl.getBrokerCount() == 1);
@@ -216,7 +216,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
         assertTrue(connectionurl.getBrokerCount() == 1);
@@ -238,7 +238,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
 
         assertTrue(connectionurl.getBrokerCount() == 1);
@@ -283,7 +283,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 1);
 
@@ -308,7 +308,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod() == null);
         assertTrue(connectionurl.getUsername().equals("guest"));
         assertTrue(connectionurl.getPassword().equals("guest"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 1);
 
@@ -329,7 +329,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals("bob"));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 2);
 
@@ -369,7 +369,7 @@ public class ConnectionURLTest extends TestCase
 
         assertTrue(connectionurl.getUsername().equals("user"));
         assertTrue(connectionurl.getPassword().equals(""));
-        assertTrue(connectionurl.getVirtualHost().equals("test"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
 
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
@@ -428,7 +428,7 @@ public class ConnectionURLTest extends TestCase
         String url = "amqp://guest:guest@/t.-_+!=:?brokerlist='tcp://localhost:5672'";
 
         AMQConnectionURL connection = new AMQConnectionURL(url);
-        assertTrue(connection.getVirtualHost().equals("t.-_+!=:"));
+        assertTrue(connection.getVirtualHost().equals("/t.-_+!=:"));
     }
 
     public void testCheckDefaultPort() throws URLSyntaxException
