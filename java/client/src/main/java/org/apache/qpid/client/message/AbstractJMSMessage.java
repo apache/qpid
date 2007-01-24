@@ -263,44 +263,98 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-
-        return getMessageHeaders().getJMSHeaders().getBoolean(propertyName);
+        Boolean b = getMessageHeaders().getJMSHeaders().getBoolean(propertyName);
+        if (b != null)
+            return b;
+        return false;
+//        return getMessageHeaders().getJMSHeaders().getBoolean(propertyName);
     }
 
     public byte getByteProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getMessageHeaders().getJMSHeaders().getByte(propertyName);
+        Byte b = getMessageHeaders().getJMSHeaders().getByte(propertyName);
+        if (b == null)
+            throw new NumberFormatException("Byte value null");
+        return b;
+//        return getMessageHeaders().getJMSHeaders().getByte(propertyName);
     }
 
     public short getShortProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getMessageHeaders().getJMSHeaders().getShort(propertyName);
+        Short s = getMessageHeaders().getJMSHeaders().getShort(propertyName);
+        if (s != null)
+            return s;
+        // try Byte
+        Byte b = getMessageHeaders().getJMSHeaders().getByte(propertyName);
+        if (b == null)
+            throw new NumberFormatException("Short value null");
+        return (short)b;
+//        return getMessageHeaders().getJMSHeaders().getShort(propertyName);
     }
 
     public int getIntProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getMessageHeaders().getJMSHeaders().getInteger(propertyName);
+        Integer i = getMessageHeaders().getJMSHeaders().getInteger(propertyName);
+        if (i != null)
+            return i;
+        // try Short
+        Short s = getMessageHeaders().getJMSHeaders().getShort(propertyName);
+        if (s != null)
+            return s;
+        // try Byte
+        Byte b = getMessageHeaders().getJMSHeaders().getByte(propertyName);
+        if (b == null)
+            throw new NumberFormatException("Int value null");
+        return (short)b;
+//        return getMessageHeaders().getJMSHeaders().getInteger(propertyName);
     }
 
     public long getLongProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getMessageHeaders().getJMSHeaders().getLong(propertyName);
+        Long l = getMessageHeaders().getJMSHeaders().getLong(propertyName);
+        if (l != null)
+            return l;
+        Integer i = getMessageHeaders().getJMSHeaders().getInteger(propertyName);
+        if (i != null)
+            return i;
+        // try Short
+        Short s = getMessageHeaders().getJMSHeaders().getShort(propertyName);
+        if (s != null)
+            return s;
+        // try Byte
+        Byte b = getMessageHeaders().getJMSHeaders().getByte(propertyName);
+        if (b == null)
+            throw new NumberFormatException("Long value null");
+        return (short)b;
+//        return getMessageHeaders().getJMSHeaders().getLong(propertyName);
     }
 
     public float getFloatProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+//         Float f = getMessageHeaders().getJMSHeaders().getFloat(propertyName);
+//         if (f == null)
+//             throw new NumberFormatException("Float value null");
+//         return f;
         return getMessageHeaders().getJMSHeaders().getFloat(propertyName);
     }
 
     public double getDoubleProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
-        return getMessageHeaders().getJMSHeaders().getDouble(propertyName);
+        Double d = getMessageHeaders().getJMSHeaders().getDouble(propertyName);
+        if (d != null)
+            return d;
+        // try Float
+        Float f = getMessageHeaders().getJMSHeaders().getFloat(propertyName);
+//         if (f == null)
+//             throw new NumberFormatException("Double value null");
+        return (double)f;
+//        return getMessageHeaders().getJMSHeaders().getDouble(propertyName);
     }
 
     public String getStringProperty(String propertyName) throws JMSException
