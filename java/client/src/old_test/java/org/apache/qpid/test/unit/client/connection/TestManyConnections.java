@@ -46,7 +46,7 @@ public class TestManyConnections extends TestCase
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < count; i++)
         {
-            createConnection(i, "vm://:1", "myClient" + i, "guest", "guest", "/test");
+            createConnection(i, "vm://:1", "myClient" + i, "guest", "guest", "test");
         }
         long endTime = System.currentTimeMillis();
         _log.info("Time to create " + count + " connections: " + (endTime - startTime) +

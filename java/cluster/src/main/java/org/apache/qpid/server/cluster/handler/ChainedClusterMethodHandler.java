@@ -24,6 +24,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -54,19 +55,19 @@ public class ChainedClusterMethodHandler <A extends AMQMethodBody> extends Clust
         }
     }
 
-    protected final void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected final void peer(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException
     {
         for(ClusterMethodHandler<A> handler : _handlers)
         {
-            handler.peer(stateMgr, queues, exchanges, session, evt);
+            handler.peer(stateMgr, evt);
         }
     }
 
-    protected final void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected final void client(AMQStateManager stateMgr,  AMQMethodEvent<A> evt) throws AMQException
     {
         for(ClusterMethodHandler<A> handler : _handlers)
         {
-            handler.client(stateMgr, queues, exchanges, session, evt);
+            handler.client(stateMgr, evt);
         }
     }
 }

@@ -10,6 +10,8 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -31,12 +33,13 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
-                               AMQMethodEvent<BasicGetBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicGetBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+
         BasicGetBody body = evt.getMethod();
         final int channelId = evt.getChannelId();
+        VirtualHost vHost = session.getVirtualHost();
 
         AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
@@ -46,7 +49,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         }
         else
         {
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : queueRegistry.getQueue(body.queue);
+            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
 
             if (queue == null)
             {

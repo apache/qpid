@@ -29,14 +29,18 @@ import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.NullAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 
 import java.util.HashMap;
+import java.util.Collection;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
@@ -51,6 +55,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     private AuthenticationManager _authenticationManager;
 
     private MessageStore _messageStore;
+    private VirtualHost _vHost;
 
     public TestApplicationRegistry()
     {
@@ -59,10 +64,12 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
-        _managedObjectRegistry = new NoopManagedObjectRegistry();
-        _queueRegistry = new DefaultQueueRegistry();
-        _exchangeFactory = new DefaultExchangeFactory();
-        _exchangeRegistry = new DefaultExchangeRegistry(_exchangeFactory);
+        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+        _managedObjectRegistry = appRegistry.getManagedObjectRegistry();
+        _vHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
+        _queueRegistry = _vHost.getQueueRegistry();
+        _exchangeFactory = _vHost.getExchangeFactory();
+        _exchangeRegistry = _vHost.getExchangeRegistry();
         _authenticationManager = new NullAuthenticationManager();
         _messageStore = new TestableMemoryMessageStore();
 
@@ -97,6 +104,16 @@ public class TestApplicationRegistry extends ApplicationRegistry
     public AuthenticationManager getAuthenticationManager()
     {
         return _authenticationManager;
+    }
+
+    public Collection<String> getVirtualHostNames()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public MessageStore getMessageStore()

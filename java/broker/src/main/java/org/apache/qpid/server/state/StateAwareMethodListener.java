@@ -25,6 +25,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
 
 /**
@@ -34,7 +35,5 @@ import org.apache.qpid.framing.AMQMethodBody;
  */
 public interface StateAwareMethodListener <B extends AMQMethodBody>
 {
-    void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                        ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                        AMQMethodEvent<B> evt) throws AMQException;
+    void methodReceived(AMQStateManager stateManager,  AMQMethodEvent<B> evt) throws AMQException;
 }

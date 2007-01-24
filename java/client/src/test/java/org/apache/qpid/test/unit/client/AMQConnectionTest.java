@@ -42,7 +42,7 @@ public class AMQConnectionTest extends TestCase
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
-        _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "/test");
+        _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "test");
         _topic = new AMQTopic("mytopic");
         _queue = new AMQQueue("myqueue");
     }

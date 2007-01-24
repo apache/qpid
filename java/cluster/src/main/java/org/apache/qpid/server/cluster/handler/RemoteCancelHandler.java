@@ -32,15 +32,21 @@ import org.apache.qpid.server.queue.ClusteredQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class RemoteCancelHandler implements StateAwareMethodListener<BasicCancelBody>
 {
     private final Logger _logger = Logger.getLogger(RemoteCancelHandler.class);
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicCancelBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicCancelBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+
         //By convention, consumers setup between brokers use the queue name as the consumer tag:
-        AMQQueue queue = queues.getQueue(evt.getMethod().consumerTag);
+        AMQQueue queue = queueRegistry.getQueue(evt.getMethod().consumerTag);
         if (queue instanceof ClusteredQueue)
         {
             ((ClusteredQueue) queue).removeRemoteSubscriber(ClusteredProtocolSession.getSessionPeer(session));

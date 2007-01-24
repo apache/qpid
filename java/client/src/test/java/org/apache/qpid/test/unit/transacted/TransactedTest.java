@@ -61,7 +61,7 @@ public class TransactedTest extends TestCase
         queue1 = new AMQQueue("Q1", false);
         queue2 = new AMQQueue("Q2", false);
 
-        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
         session = con.createSession(true, 0);
         consumer1 = session.createConsumer(queue1);
         //Dummy just to create the queue. 
@@ -70,7 +70,7 @@ public class TransactedTest extends TestCase
         producer2 = session.createProducer(queue2);
         con.start();
 
-        prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "/test");
+        prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "test");
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
@@ -81,7 +81,7 @@ public class TransactedTest extends TestCase
         prepProducer1.send(prepSession.createTextMessage("B"));
         prepProducer1.send(prepSession.createTextMessage("C"));
 
-        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
@@ -142,7 +142,7 @@ public class TransactedTest extends TestCase
 
     public void testResendsMsgsAfterSessionClose() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue3 = new AMQQueue("Q3", false);
@@ -150,7 +150,7 @@ public class TransactedTest extends TestCase
         //force synch to ensure the consumer has resulted in a bound queue
         ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(true, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue3);
 

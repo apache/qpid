@@ -62,7 +62,7 @@ import java.util.StringTokenizer;
  * Main entry point for AMQPD.
  *
  */
-public class Main implements ProtocolVersionList, Managable
+public class Main implements ProtocolVersionList
 {
     private static final Logger _logger = Logger.getLogger(Main.class);
 
@@ -70,7 +70,8 @@ public class Main implements ProtocolVersionList, Managable
 
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
 
-    private AMQBrokerManagerMBean _mbean = null;
+    
+    private static Main _instance;
 
     protected static class InitException extends Exception
     {
@@ -265,7 +266,6 @@ public class Main implements ProtocolVersionList, Managable
         }
         bind(port, connectorConfig);
 
-        createAndRegisterBrokerMBean();
     }
 
     protected void setupVirtualHosts(String configFileParent, String configFilePath) throws ConfigurationException, AMQException, URLSyntaxException
@@ -368,7 +368,7 @@ public class Main implements ProtocolVersionList, Managable
     public static void main(String[] args)
     {
 
-        new Main(args);
+        _instance = new Main(args);
     }
 
     private byte[] parseIP(String address) throws Exception
@@ -430,21 +430,4 @@ public class Main implements ProtocolVersionList, Managable
         }
     }
 
-    private void createAndRegisterBrokerMBean() throws AMQException
-    {
-        try
-        {
-            _mbean = new AMQBrokerManagerMBean();
-            _mbean.register();
-        }
-        catch (JMException ex)
-        {
-            throw new AMQException("Exception occured in creating AMQBrokerManager MBean");    
-        }
-    }
-
-    public ManagedObject getManagedObject()
-    {
-        return _mbean;
-    }    
 }

@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.framing.BasicPublishBody;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
@@ -30,7 +31,7 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
     protected void setUp() throws Exception
     {
         super.setUp();
-        ApplicationRegistry.initialise(new TestApplicationRegistry());
+        ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
     public void testSimple() throws AMQException

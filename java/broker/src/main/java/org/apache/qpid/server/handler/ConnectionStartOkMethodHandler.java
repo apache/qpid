@@ -60,10 +60,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ConnectionStartOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionStartOkBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionStartOkBody body = evt.getMethod();
         _logger.info("SASL Mechanism selected: " + body.mechanism);
         _logger.info("Locale selected: " + body.locale);
@@ -73,15 +72,15 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         SaslServer ss = null;
         try
         {
-            ss = authMgr.createSaslServer(String.valueOf(body.mechanism), protocolSession.getLocalFQDN());
-            protocolSession.setSaslServer(ss);
+            ss = authMgr.createSaslServer(String.valueOf(body.mechanism), session.getLocalFQDN());
+            session.setSaslServer(ss);
 
             AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
 
             //save clientProperties
-            if (protocolSession.getClientProperties() == null)
+            if (session.getClientProperties() == null)
             {
-                protocolSession.setClientProperties(body.clientProperties);
+                session.setClientProperties(body.clientProperties);
             }
 
             switch (authResult.status)
@@ -100,7 +99,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                         Integer.MAX_VALUE,	// channelMax
                         getConfiguredFrameSize(),	// frameMax
                         HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                    protocolSession.writeFrame(tune);
+                    session.writeFrame(tune);
                     break;
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
@@ -110,12 +109,12 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
                         (byte)8, (byte)0,	// AMQP version (major, minor)
                         authResult.challenge);	// challenge
-                    protocolSession.writeFrame(challenge);
+                    session.writeFrame(challenge);
             }
         }
         catch (SaslException e)
         {
-            disposeSaslServer(protocolSession);
+            disposeSaslServer(session);
             throw new AMQException("SASL error: " + e, e);
         }
     }

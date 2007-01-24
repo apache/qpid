@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -36,9 +37,11 @@ public class DefaultExchangeFactory implements ExchangeFactory
     private static final Logger _logger = Logger.getLogger(DefaultExchangeFactory.class);
 
     private Map<AMQShortString, Class<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, Class<? extends Exchange>>();
+    private final VirtualHost _host;
 
-    public DefaultExchangeFactory()
+    public DefaultExchangeFactory(VirtualHost host)
     {
+        _host = host;
         _exchangeClassMap.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestNameExchange.class);
         _exchangeClassMap.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestWildExchange.class);
         _exchangeClassMap.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, org.apache.qpid.server.exchange.HeadersExchange.class);
@@ -59,7 +62,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         try
         {
             Exchange e = exchClass.newInstance();
-            e.initialise(exchange, durable, ticket, autoDelete);
+            e.initialise(_host, exchange, durable, ticket, autoDelete);
             return e;
         }
         catch (InstantiationException e)

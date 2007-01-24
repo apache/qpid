@@ -109,7 +109,7 @@ public class DestNameExchange extends AbstractExchange
 
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(new AMQShortString(queueName));
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");

@@ -29,6 +29,7 @@ import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -46,22 +47,14 @@ public class ClusteredQueue extends AMQQueue
     private final GroupManager _groupMgr;
     private final NestedSubscriptionManager _subscriptions;
 
-    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, queueRegistry, new ClusteredSubscriptionManager());
+        super(name, durable, owner, autoDelete, virtualHost, new ClusteredSubscriptionManager());
         _groupMgr = groupMgr;
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-        super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new ClusteredSubscriptionManager(),
-              new SubscriptionImpl.Factory());
-        _groupMgr = groupMgr;
-        _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
-    }
 
     public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {

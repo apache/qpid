@@ -26,6 +26,7 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.ManagedObject;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -91,6 +92,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public String getRemoteAddress()
     {
         return _session.getIOSession().getRemoteAddress().toString();
+    }
+
+    public ManagedObject getParentObject()
+    {
+        return _session.getVirtualHost().getManagedObject();
     }
 
     public Long getWrittenBytes()

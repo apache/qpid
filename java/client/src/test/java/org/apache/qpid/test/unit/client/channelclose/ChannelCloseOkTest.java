@@ -65,7 +65,7 @@ public class ChannelCloseOkTest extends TestCase
         super.setUp();
 
         TransportConnection.createVMBroker(1);
-        _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path");
+        _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test");
 
         _destination1 = new AMQQueue("q1", true);
         _destination2 = new AMQQueue("q2", true);

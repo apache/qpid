@@ -31,6 +31,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class ChannelCloseHandler implements StateAwareMethodListener<ChannelCloseBody>
 {
@@ -47,18 +48,17 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         ChannelCloseBody body = evt.getMethod();
         _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " + body.classId +
                      " and method " + body.methodId);
-        protocolSession.closeChannel(evt.getChannelId());
+        session.closeChannel(evt.getChannelId());
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame response = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-        protocolSession.writeFrame(response);
+        session.writeFrame(response);
     }
 }

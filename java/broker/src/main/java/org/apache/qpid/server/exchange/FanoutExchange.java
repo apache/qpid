@@ -44,7 +44,7 @@ public class FanoutExchange extends AbstractExchange
         private TabularType _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
-        @MBeanConstructor("Creates an MBean for AMQ direct exchange")
+        @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
         public FanoutExchangeMBean()  throws JMException
         {
             super();
@@ -86,7 +86,7 @@ public class FanoutExchange extends AbstractExchange
 
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(new AMQShortString(queueName));
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");

@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,9 +43,10 @@ public class SkeletonMessageStore implements MessageStore
     public void configure(String base, Configuration config) throws Exception
     {
     }
-
-    public void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception
+    
+    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
     {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void close() throws Exception

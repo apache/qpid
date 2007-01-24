@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
 
@@ -35,13 +36,13 @@ public interface MessageStore
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
-     * @param queueRegistry the registry of queues to be used by this store
+     * @param virtualHost the virtual host using by this store
      * @param base the base element identifier from which all configuration items are relative. For example, if the base
      * element is "store", the all elements used by concrete classes will be "store.foo" etc.
      * @param config the apache commons configuration object
      * @throws Exception if an error occurs that means the store is unable to configure itself
      */
-    void configure(QueueRegistry queueRegistry, String base, Configuration config) throws Exception;
+    void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.

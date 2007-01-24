@@ -277,7 +277,6 @@ public class ViewUtility
 
         // Set the index being shown.
         compositeHolder.setData(INDEX, index);
-        System.out.println("index :" + index);
 
         return (CompositeData)((Map.Entry)objectData.get(index)).getValue();
     }
@@ -320,7 +319,6 @@ public class ViewUtility
                 if (itemType.isArray())
                 {
                     OpenType type = ((ArrayType)itemType).getElementOpenType();
-                    System.out.println("Array Element type = " + type.getClassName());
                     //  If Byte array and mimetype is text, convert to text string
                     if (type.getClassName().equals(Byte.class.getName()))
                     {
@@ -390,7 +388,6 @@ public class ViewUtility
         try
         {
             String textMessage = new String(byteArray, encoding);
-            System.out.println("\nMessage : \n" + textMessage + "\n");
 
             Text valueText = toolkit.createText(compositeHolder, textMessage, SWT.READ_ONLY | SWT.BORDER |
                     SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
