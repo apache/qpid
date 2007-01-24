@@ -33,6 +33,7 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingClient;
+import org.apache.qpid.topic.Config;
 
 /**
  * PingPongBouncer is a message listener the bounces back messages to their reply to destination. This is used to return
@@ -66,6 +67,8 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
 
     /** The default no local flag for the message consumer. */
     private static final boolean NO_LOCAL = true;
+
+    private static final String DEFAULT_DESTINATION_NAME = "ping";
 
     /** The default exclusive flag for the message consumer. */
     private static final boolean EXCLUSIVE = false;
@@ -163,29 +166,34 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         System.out.println("Starting...");
 
         // Display help on the command line.
-        if (args.length < 5)
+        if (args.length == 0)
         {
-            System.err.println("Usage: <brokerdetails> <username> <password> <virtual-path> <serviceQueue> " +
-                               "[<P[ersistent]|N[onPersistent]> <T[ransacted]|N<onTransacted]>] " +
-                               "[selector] [pubsub(true/false)]");
-            System.exit(1);
+            _logger.info("Running test with default values...");
+            //usage();
+            //System.exit(0);
         }
 
         // Extract all command line parameters.
-        String brokerDetails = args[0];                                                                                
-        String username = args[1];
-        String password = args[2];
-        String virtualpath = args[3];
-        String queueName = args[4];
-        boolean persistent = ((args.length > 5) && (args[5].toUpperCase().charAt(0) == 'P'));
-        boolean transacted = ((args.length > 6) && (args[6].toUpperCase().charAt(0) == 'T'));
-        String selector = (args.length > 7) ? args[7] : null;
-        boolean pubsub = (args.length > 8) ? Boolean.parseBoolean(args[8]) : false;
+        Config config = new Config();
+        config.setOptions(args);
+        String brokerDetails = config.getHost() + ":" + config.getPort();
+        String virtualpath = "/test";        
+        String destinationName = config.getDestination();
+        if (destinationName == null)
+        {
+            destinationName = DEFAULT_DESTINATION_NAME;
+        }
+        String selector = config.getSelector();
+        boolean transacted = config.isTransacted();
+        boolean persistent = config.usePersistentMessages();
+        boolean pubsub = config.isPubSub();
+        boolean verbose = true;
+
+        //String selector = null;
 
         // Instantiate the ping pong client with the command line options and start it running.
-        PingPongBouncer pingBouncer =
-            new PingPongBouncer(brokerDetails, username, password, virtualpath, queueName, persistent, transacted,
-                                selector, true, pubsub);
+        PingPongBouncer pingBouncer = new PingPongBouncer(brokerDetails, "guest", "guest", virtualpath,
+                                                destinationName, persistent, transacted, selector, verbose, pubsub);
         pingBouncer.getConnection().start();
 
         System.out.println("Waiting...");
@@ -250,6 +258,16 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         {
             _logger.debug("There was a JMSException: " + e.getMessage(), e);
         }
+    }
+
+    private static void usage()
+    {
+        System.err.println("Usage: PingPongBouncer \n" + "-host : broker host\n" + "-port : broker port\n" +
+                           "-destinationname : queue/topic name\n" +
+                           "-transacted : (true/false). Default is false\n" +
+                           "-persistent : (true/false). Default is false\n" +
+                           "-pubsub     : (true/false). Default is false\n" +
+                           "-selector   : selector string\n");
     }
 
     /**
