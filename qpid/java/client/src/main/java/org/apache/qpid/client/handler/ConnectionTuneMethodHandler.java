@@ -63,7 +63,12 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
         protocolSession.writeFrame(createTuneOkFrame(evt.getChannelId(), params));
-        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), new AMQShortString(protocolSession.getAMQConnection().getVirtualHost()), null, true));
+
+        String host = protocolSession.getAMQConnection().getVirtualHost();
+        AMQShortString virtualHost = new AMQShortString("/" + host);
+
+
+        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), virtualHost, null, true));
     }
 
     protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist)
