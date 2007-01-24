@@ -40,6 +40,7 @@ import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.ping.AbstractPingProducer;
 import org.apache.qpid.ping.Throttle;
+import org.apache.qpid.topic.Config;
 
 /**
  * PingPongProducer is a client that sends pings to a queue and waits for pongs to be bounced back by a bounce back
@@ -75,6 +76,11 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     protected static final int DEFAULT_MESSAGE_SIZE = 0;
 
+    /** This is set and used when the test is for multiple-destinations */
+    protected static final int DEFAULT_DESTINATION_COUNT = 0;
+
+    protected static final int DEFAULT_RATE = 0;
+
     /**
      * Used to define how long to wait between pings.
      */
@@ -93,7 +99,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     /**
      * The batch size.
      */
-    protected static final int BATCH_SIZE = 100;
+    protected static final int DEFAULT_BATCH_SIZE = 100;
 
     protected static final int PREFETCH = 100;
     protected static final boolean NO_LOCAL = true;
@@ -187,7 +193,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         // total rate = throttle rate * batch size.
         // 1 < throttle rate < 100
         // 1 < total rate < 20000
-        if (rate > 0)
+        if (rate > DEFAULT_RATE)
         {
             // Log base 10 over 2 is used here to get a feel for what power of 100 the total rate is.
             // As the total rate goes up the powers of 100 the batch size goes up by powers of 100 to keep the
@@ -228,7 +234,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         _destinationCount = noOfDestinations;
         setPubSub(pubsub);
 
-        if (noOfDestinations == 0)
+        if (noOfDestinations == DEFAULT_DESTINATION_COUNT)
         {
             if (destinationName != null)
             {
@@ -265,7 +271,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     public void createProducer() throws JMSException
     {
-        if (getDestinationsCount() > 1)
+        if (getDestinationsCount() > DEFAULT_DESTINATION_COUNT)
         {
             // create producer with initial destination as null for test with multiple-destinations
             // In this case, a different destination will be used while sending the message
@@ -354,23 +360,33 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
     public static void main(String[] args) throws Exception
     {
         // Extract the command line.
-        if (args.length < 2)
+        Config config = new Config();
+        config.setOptions(args);
+        if (args.length == 0)
         {
-            System.err.println("Usage: TestPingPublisher <brokerDetails> <virtual path> [verbose (true/false)] " +
-                               "[transacted (true/false)] [persistent (true/false)] [message size in bytes] [batchsize]" +
-                               " [rate] [pubsub(true/false)]");
-            System.exit(0);
+            _logger.info("Running test with default values...");
+            //usage();
+            //System.exit(0);
         }
 
-        String brokerDetails = args[0];
-        String virtualpath = args[1];
-        boolean verbose = (args.length >= 3) ? Boolean.parseBoolean(args[2]) : true;
-        boolean transacted = (args.length >= 4) ? Boolean.parseBoolean(args[3]) : false;
-        boolean persistent = (args.length >= 5) ? Boolean.parseBoolean(args[4]) : false;
-        int messageSize = (args.length >= 6) ? Integer.parseInt(args[5]) : DEFAULT_MESSAGE_SIZE;
-        int batchSize = (args.length >= 7) ? Integer.parseInt(args[6]) : 1;
-        int rate = (args.length >= 8) ? Integer.parseInt(args[7]) : 0;
-        boolean ispubsub = (args.length >= 9) ? Boolean.parseBoolean(args[8]) : false;
+        String brokerDetails = config.getHost() + ":" + config.getPort();
+        String virtualpath = "/test";
+        String selector = config.getSelector();
+        boolean verbose = true;
+        boolean transacted = config.isTransacted();
+        boolean persistent = config.usePersistentMessages();
+        int messageSize = (config.getPayload() != 0) ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
+        //int messageCount = config.getMessages();
+        int destCount = (config.getDestinationsCount() != 0) ? config.getDestinationsCount() : DEFAULT_DESTINATION_COUNT;
+        int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : DEFAULT_BATCH_SIZE;
+        int rate = (config.getRate() != 0) ? config.getRate() : DEFAULT_RATE;
+        boolean pubsub = config.isPubSub();
+
+        String destName = config.getDestination();
+        if (destName == null)
+        {
+            destName = PING_DESTINATION_NAME;
+        }
 
         boolean afterCommit = false;
         boolean beforeCommit = false;
@@ -412,9 +428,9 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
         // Create a ping producer to handle the request/wait/reply cycle.
         PingPongProducer pingProducer = new PingPongProducer(brokerDetails, "guest", "guest", virtualpath,
-                                                             PING_DESTINATION_NAME, null, transacted, persistent, messageSize, verbose,
+                                                             destName, selector, transacted, persistent, messageSize, verbose,
                                                              afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
-                                                             0, rate, ispubsub);
+                                                             destCount, rate, pubsub);
 
         pingProducer.getConnection().start();
 
@@ -430,6 +446,21 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
         Thread pingThread = new Thread(pingProducer);
         pingThread.run();
         pingThread.join();
+    }
+
+    private static void usage()
+    {
+        System.err.println("Usage: TestPingPublisher \n" + "-host : broker host" + "-port : broker port" +
+                           "-destinationname : queue/topic name\n" +
+                           "-transacted : (true/false). Default is false\n" +
+                           "-persistent : (true/false). Default is false\n" +
+                           "-pubsub     : (true/false). Default is false\n" +
+                           "-selector   : selector string\n" +
+                           "-payload    : paylaod size. Default is 0\n" +
+                           //"-messages   : no of messages to be sent (if 0, the ping loop will run indefinitely)\n" +
+                           "-destinationscount : no of destinations for multi-destinations test\n" +
+                           "-batchsize  : batch size\n" +
+                           "-rate : thruput rate\n");
     }
 
     /**
@@ -605,7 +636,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
 
             // Check if the test is with multiple-destinations, in which case round robin the destinations
             // as the messages are sent.
-            if (getDestinationsCount() > 1)
+            if (getDestinationsCount() > DEFAULT_DESTINATION_COUNT)
             {
                 sendMessage(getDestination(i % getDestinationsCount()), message);
             }
@@ -656,7 +687,7 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             msg.setLongProperty("timestamp", System.currentTimeMillis());
 
             // Send the message and wait for a reply.
-            pingAndWaitForReply(msg, BATCH_SIZE, TIMEOUT);
+            pingAndWaitForReply(msg, DEFAULT_BATCH_SIZE, TIMEOUT);
 
             // Introduce a short pause if desired.
             pause(SLEEP_TIME);
