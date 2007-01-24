@@ -42,8 +42,8 @@ public class Content
         }
     }
     
-    public TypeEnum contentType;
-    public ByteBuffer content;
+    private TypeEnum contentType;
+    private ByteBuffer content;
     
     // Constructors
     
@@ -126,7 +126,7 @@ public class Content
     {
     	EncodingUtils.writeUnsignedByte(buffer, contentType.toByte());
     	EncodingUtils.writeUnsignedInteger(buffer, content.remaining());
-        buffer.put(content);
+        buffer.put(content.duplicate());
     }
     
     public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException

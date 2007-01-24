@@ -75,7 +75,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         
         msg.contentHeader = messageHeaders;
         
-        if(transferBody.getBody().contentType == Content.TypeEnum.INLINE_T)
+        if(transferBody.getBody().getContentType() == Content.TypeEnum.INLINE_T)
         {
         	msg.addContent(transferBody.getBody().getContentAsByteArray());
         	protocolSession.deliverMessageToAMQSession(evt.getChannelId(), msg);
