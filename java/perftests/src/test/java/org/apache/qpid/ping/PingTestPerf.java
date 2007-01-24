@@ -89,7 +89,7 @@ public class PingTestPerf extends AsymptoticTestCase //implements TimingControll
     /**
      * Holds the size of message body to attach to the ping messages.
      */
-    protected static final int MESSAGE_SIZE_DEFAULT = 0;
+    protected static final int MESSAGE_SIZE_DEFAULT = 1024;
 
     protected static final int BATCH_SIZE_DEFAULT = 1000;
 
