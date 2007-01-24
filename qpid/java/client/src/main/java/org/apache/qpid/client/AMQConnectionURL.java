@@ -114,6 +114,10 @@ public class AMQConnectionURL implements ConnectionURL
 
             if (virtualHost != null && (!virtualHost.equals("")))
             {
+                if(virtualHost.startsWith("/"))
+                {
+                    virtualHost = virtualHost.substring(1);
+                }
                 setVirtualHost(virtualHost);
             }
             else

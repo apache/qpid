@@ -56,7 +56,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         try
         {
             TransportConnection.createVMBroker(1);
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "/test_path"));
+            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
         }
         catch (Exception e)
         {

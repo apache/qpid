@@ -28,6 +28,8 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -53,10 +55,10 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<BasicPublishBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicPublishBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+
         final BasicPublishBody body = evt.getMethod();
 
         if (_log.isDebugEnabled())
@@ -70,7 +72,8 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             body.exchange = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
 
         }
-        Exchange e = exchangeRegistry.getExchange(body.exchange);
+        VirtualHost vHost = session.getVirtualHost();
+        Exchange e = vHost.getExchangeRegistry().getExchange(body.exchange);
         // if the exchange does not exist we raise a channel exception
         if (e == null)
         {
@@ -82,8 +85,8 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             // The partially populated BasicDeliver frame plus the received route body
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
-            AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
-            channel.setPublishFrame(body, protocolSession);
+            AMQChannel channel = session.getChannel(evt.getChannelId());
+            channel.setPublishFrame(body, session);
         }
     }
 }

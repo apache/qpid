@@ -27,6 +27,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.framing.BasicRecoverBody;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
@@ -42,18 +43,18 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<BasicRecoverBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicRecoverBody> evt) throws AMQException
     {
-        _logger.debug("Recover received on protocol session " + protocolSession + " and channel " + evt.getChannelId());        
-        AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        
+        _logger.debug("Recover received on protocol session " + session + " and channel " + evt.getChannelId());
+        AMQChannel channel = session.getChannel(evt.getChannelId());
         if (channel == null)
         {
             throw new AMQException("Unknown channel " + evt.getChannelId());
         }
         BasicRecoverBody body = evt.getMethod();
-        channel.resend(protocolSession, body.requeue);
+        channel.resend(session, body.requeue);
 
     }
 }

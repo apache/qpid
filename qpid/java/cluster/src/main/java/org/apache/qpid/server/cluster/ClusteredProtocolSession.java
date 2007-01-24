@@ -24,6 +24,8 @@ import org.apache.mina.common.IoSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -37,11 +39,11 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
 {
     private MemberHandle _peer;
 
-    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager) throws AMQException
+    public ClusteredProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager) throws AMQException
 //    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry,
 //        ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory) throws AMQException
     {
-        super(session, queueRegistry, exchangeRegistry, codecFactory, stateManager);
+        super(session, virtualHostRegistry, codecFactory, stateManager);
 //        super(session, queueRegistry, exchangeRegistry, codecFactory);
     }
 
@@ -66,7 +68,7 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
         AMQChannel channel = super.getChannel(channelId);
         if (isPeerSession() && channel == null)
         {
-            channel = new OneUseChannel(channelId);
+            channel = new OneUseChannel(channelId, getVirtualHost());
             addChannel(channel);
         }
         return channel;
@@ -102,18 +104,12 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
      */
     private class OneUseChannel extends AMQChannel
     {
-        public OneUseChannel(int channelId)
-            throws AMQException
-        {
-            this(channelId, ApplicationRegistry.getInstance());
-        }
-
-        public OneUseChannel(int channelId, IApplicationRegistry registry)
+        public OneUseChannel(int channelId, VirtualHost virtualHost)
             throws AMQException
         {
             super(channelId,
-                  registry.getMessageStore(),
-                  registry.getExchangeRegistry());
+                  virtualHost.getMessageStore(),
+                  virtualHost.getExchangeRegistry());
         }
 
         protected void routeCurrentMessage() throws AMQException

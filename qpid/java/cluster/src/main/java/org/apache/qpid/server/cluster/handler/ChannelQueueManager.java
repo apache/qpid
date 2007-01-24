@@ -27,6 +27,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.log4j.Logger;
@@ -79,22 +80,22 @@ class ChannelQueueManager
 
     private class QueueDeclareHandler extends ClusterMethodHandler<QueueDeclareBody>
     {
-        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
         {
             set(evt.getChannelId(), evt.getMethod().queue);
         }
     }
     private class QueueBindHandler extends ClusterMethodHandler<QueueBindBody>
     {
-        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueBindBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueBindBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueBindBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueBindBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {
@@ -104,11 +105,11 @@ class ChannelQueueManager
     }
     private class QueueDeleteHandler extends ClusterMethodHandler<QueueDeleteBody>
     {
-        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {
@@ -119,11 +120,11 @@ class ChannelQueueManager
 
     private class BasicConsumeHandler extends ClusterMethodHandler<BasicConsumeBody>
     {
-        protected void peer(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr,  AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges, AMQProtocolSession session, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {

@@ -25,6 +25,7 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -47,18 +48,18 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
-    {        
-        IApplicationRegistry registry = ApplicationRegistry.getInstance();
-        final AMQChannel channel = new AMQChannel(evt.getChannelId(), registry.getMessageStore(),
-                                                  exchangeRegistry);
-        protocolSession.addChannel(channel);
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
+    {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+
+        final AMQChannel channel = new AMQChannel(evt.getChannelId(), virtualHost.getMessageStore(),
+                                                  virtualHost.getExchangeRegistry());
+        session.addChannel(channel);
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame response = ChannelOpenOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-        protocolSession.writeFrame(response);
+        session.writeFrame(response);
     }
 }

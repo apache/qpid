@@ -28,6 +28,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -53,14 +55,15 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession session,
-                               AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicConsumeBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+
         BasicConsumeBody body = evt.getMethod();
         final int channelId = evt.getChannelId();
 
         AMQChannel channel = session.getChannel(channelId);
+        VirtualHost vHost = session.getVirtualHost();
         if (channel == null)
         {
             _log.error("Channel " + channelId + " not found");
@@ -69,7 +72,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         else
         {
 
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : queueRegistry.getQueue(body.queue);
+            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
 
             if (queue == null)
             {

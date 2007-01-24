@@ -37,14 +37,15 @@ public class Configurator
 {
     private static final Logger _logger = Logger.getLogger(Configurator.class);
 
+
     /**
-     * Configure a given instance using the application configuration. Note that superclasses are <b>not</b>
+     * Configure a given instance using the supplied configuration. Note that superclasses are <b>not</b>
      * currently configured but this could easily be added if required.
      * @param instance the instance to configure
+     * @param config the configuration to use to configure the object
      */
-    public static void configure(Object instance)
+    public static void configure(Object instance, Configuration config)
     {
-        final Configuration config = ApplicationRegistry.getInstance().getConfiguration();
 
         for (Field f : instance.getClass().getDeclaredFields())
         {
@@ -54,6 +55,18 @@ public class Configurator
                 setValueInField(f, instance, config, annotation);
             }
         }
+    }
+
+
+
+    /**
+     * Configure a given instance using the application configuration. Note that superclasses are <b>not</b>
+     * currently configured but this could easily be added if required.
+     * @param instance the instance to configure
+     */
+    public static void configure(Object instance)
+    {
+        configure(instance, ApplicationRegistry.getInstance().getConfiguration());
     }
 
     private static void setValueInField(Field f, Object instance, Configuration config, Configured annotation)

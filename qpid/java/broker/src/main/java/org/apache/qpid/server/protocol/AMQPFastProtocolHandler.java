@@ -53,41 +53,26 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
 {
     private static final Logger _logger = Logger.getLogger(AMQPFastProtocolHandler.class);
 
-    /**
-     * The registry of all queues. This is passed to frame listeners when frame
-     * events occur.
-     */
-    private final QueueRegistry _queueRegistry;
+    private final IApplicationRegistry _applicationRegistry;
 
-    /**
-     * The registry of all exchanges. This is passed to frame listeners when frame
-     * events occur.
-     */
-    private final ExchangeRegistry _exchangeRegistry;
 
     private boolean _useSSL;
 
     public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
     {
-        IApplicationRegistry registry = ApplicationRegistry.getInstance(applicationRegistryInstance);
-
-        _queueRegistry = registry.getQueueRegistry();
-        _exchangeRegistry = registry.getExchangeRegistry();
-        _logger.debug("AMQPFastProtocolHandler created");
+        this(ApplicationRegistry.getInstance(applicationRegistryInstance));
     }
 
-    public AMQPFastProtocolHandler(QueueRegistry queueRegistry,
-                                   ExchangeRegistry exchangeRegistry)
+    public AMQPFastProtocolHandler(IApplicationRegistry applicationRegistry)
     {
-        _queueRegistry = queueRegistry;
-        _exchangeRegistry = exchangeRegistry;
+        _applicationRegistry = applicationRegistry;
 
         _logger.debug("AMQPFastProtocolHandler created");
     }
 
     protected AMQPFastProtocolHandler(AMQPFastProtocolHandler handler)
     {
-        this(handler._queueRegistry, handler._exchangeRegistry);
+        this(handler._applicationRegistry);
     }
 
     public void sessionCreated(IoSession protocolSession) throws Exception
@@ -95,7 +80,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         SessionUtil.initialize(protocolSession);
         final AMQCodecFactory codecFactory = new AMQCodecFactory(true);
 
-        createSession(protocolSession, _queueRegistry, _exchangeRegistry, codecFactory);
+        createSession(protocolSession, _applicationRegistry, codecFactory);
         _logger.info("Protocol session created");
 
         final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
@@ -120,9 +105,9 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
     /**
      * Separated into its own, protected, method to allow easier reuse
      */
-    protected void createSession(IoSession session, QueueRegistry queues, ExchangeRegistry exchanges, AMQCodecFactory codec) throws AMQException
+    protected void createSession(IoSession session, IApplicationRegistry applicationRegistry, AMQCodecFactory codec) throws AMQException
     {
-        new AMQMinaProtocolSession(session, queues, exchanges, codec);
+        new AMQMinaProtocolSession(session, applicationRegistry.getVirtualHostRegistry(), codec);
     }
 
     public void sessionOpened(IoSession protocolSession) throws Exception

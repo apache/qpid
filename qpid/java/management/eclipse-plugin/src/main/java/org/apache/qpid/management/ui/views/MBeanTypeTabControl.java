@@ -91,7 +91,7 @@ public class MBeanTypeTabControl
                 for (int i = 0; i < selectedItems.length; i++)
                 {
                     String name = selectedItems[i];;
-                    if (Constants.QUEUE.equals(_type))
+                    if (Constants.MBEAN_TYPE_QUEUE.equals(_type))
                     {
                         int endIndex = name.lastIndexOf("(");
                         name = name.substring(0, endIndex -1);
@@ -231,21 +231,21 @@ public class MBeanTypeTabControl
         java.util.List<ManagedBean> list = null;
         
         // populate the map and list with appropriate mbeans
-        if (_type.equals(Constants.QUEUE))
+        if (_type.equals(Constants.MBEAN_TYPE_QUEUE)  || _type.equals(Constants.NODE_LABEL_QUEUES))
         {
-            list = serverRegistry.getQueues();
+            list = serverRegistry.getQueues(MBeanView.getVirtualHostName());
             items = getQueueItems(list);
             _sortBySizeButton.setVisible(true);
         }
-        else if (_type.equals(Constants.EXCHANGE))
+        else if (_type.equals(Constants.MBEAN_TYPE_EXCHANGE) || _type.equals(Constants.NODE_LABEL_EXCHANGES))
         {
-            list = serverRegistry.getExchanges();
+            list = serverRegistry.getExchanges(MBeanView.getVirtualHostName());
             items = getItems(list);
             _sortBySizeButton.setVisible(false);
         }
-        else if (_type.equals(Constants.CONNECTION))
+        else if (_type.equals(Constants.MBEAN_TYPE_CONNECTION) || _type.equals(Constants.NODE_LABEL_CONNECTIONS))
         {
-            list = serverRegistry.getConnections();
+            list = serverRegistry.getConnections(MBeanView.getVirtualHostName());
             items = getItems(list);
             _sortBySizeButton.setVisible(false);
         }

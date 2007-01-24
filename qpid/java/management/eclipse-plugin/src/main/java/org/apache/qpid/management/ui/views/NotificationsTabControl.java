@@ -326,7 +326,6 @@ public class NotificationsTabControl extends TabControl
                 Shell   shell = null;
                 public void doubleClick(DoubleClickEvent event)
                 {
-                    System.out.println("DoubleClickEvent" + event);
                     display = Display.getCurrent();
                     shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN |
                             SWT.MAX | SWT.RESIZE);

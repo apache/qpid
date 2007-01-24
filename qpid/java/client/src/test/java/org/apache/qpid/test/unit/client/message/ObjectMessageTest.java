@@ -54,7 +54,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "/test_path");
+        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "test");
         destination = new AMQQueue(randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 

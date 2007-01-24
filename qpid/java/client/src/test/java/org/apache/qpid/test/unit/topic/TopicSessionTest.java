@@ -51,7 +51,7 @@ public class TopicSessionTest extends TestCase
     public void testTopicSubscriptionUnsubscription() throws Exception
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic,"subscription0");
         TopicPublisher publisher = session1.createPublisher(topic);
@@ -97,7 +97,7 @@ public class TopicSessionTest extends TestCase
     {
         AMQTopic topic = new AMQTopic("MyTopic1" + String.valueOf(shutdown));
         AMQTopic topic2 = new AMQTopic("MyOtherTopic1" + String.valueOf(shutdown));
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
         TopicPublisher publisher = session1.createPublisher(null);
@@ -112,7 +112,7 @@ public class TopicSessionTest extends TestCase
         {
             session1.close();
             con.close();
-            con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+            con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
             con.start();
             session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
             publisher = session1.createPublisher(null);
@@ -134,11 +134,11 @@ public class TopicSessionTest extends TestCase
     public void testUnsubscriptionAfterConnectionClose() throws Exception
     {
         AMQTopic topic = new AMQTopic("MyTopic3");
-        AMQConnection con1 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection con1 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session1 = con1.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
 
-        AMQConnection con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "/test");
+        AMQConnection con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "test");
         TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session2.createDurableSubscriber(topic, "subscription0");
 
@@ -149,7 +149,7 @@ public class TopicSessionTest extends TestCase
         assertNotNull(tm);
         con2.close();
         publisher.publish(session1.createTextMessage("Hello2"));
-        con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "/test");
+        con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "test");
         session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         sub = session2.createDurableSubscriber(topic, "subscription0");
         con2.start();
@@ -163,7 +163,7 @@ public class TopicSessionTest extends TestCase
     public void testTextMessageCreation() throws Exception
     {
         AMQTopic topic = new AMQTopic("MyTopic4");
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
         MessageConsumer consumer1 = session1.createConsumer(topic);
@@ -202,7 +202,7 @@ public class TopicSessionTest extends TestCase
 
     public void testSendingSameMessage() throws Exception
     {
-        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryTopic topic = session.createTemporaryTopic();
         assertNotNull(topic);
@@ -224,7 +224,7 @@ public class TopicSessionTest extends TestCase
 
     public void testTemporaryTopic() throws Exception
     {
-        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "/test");
+        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
         TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryTopic topic = session.createTemporaryTopic();
         assertNotNull(topic);

@@ -21,7 +21,9 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -36,6 +38,7 @@ public class ExchangeMBeanTest  extends TestCase
 {
     private AMQQueue _queue;
     private QueueRegistry _queueRegistry;
+    private VirtualHost _virtualHost;
 
     /**
      * Test for direct exchange mbean
@@ -45,7 +48,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testDirectExchangeMBean() throws Exception
     {
         DestNameExchange exchange = new DestNameExchange();
-        exchange.initialise(ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -72,7 +75,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testTopicExchangeMBean() throws Exception
     {
         DestWildExchange exchange = new DestWildExchange();
-        exchange.initialise(ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -99,7 +102,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -122,8 +125,11 @@ public class ExchangeMBeanTest  extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
-        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _queueRegistry);
+
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
+        _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
+        _queueRegistry = _virtualHost.getQueueRegistry();
+        _queue = new AMQQueue(new AMQShortString("testQueue"), false, new AMQShortString("ExchangeMBeanTest"), false, _virtualHost);
         _queueRegistry.registerQueue(_queue);
     }
 }

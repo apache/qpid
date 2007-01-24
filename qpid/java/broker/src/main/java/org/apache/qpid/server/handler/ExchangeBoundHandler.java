@@ -30,6 +30,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * @author Apache Software Foundation
@@ -61,10 +62,12 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueRegistry queueRegistry,
-                               ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         byte major = (byte)8;
@@ -79,7 +82,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         {
             throw new AMQException("Exchange exchange must not be null");
         }
-        Exchange exchange = exchangeRegistry.getExchange(exchangeName);
+        Exchange exchange = virtualHost.getExchangeRegistry().getExchange(exchangeName);
         AMQFrame response;
         if (exchange == null)
         {
@@ -112,6 +115,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             }
             else
             {
+
                 AMQQueue queue = queueRegistry.getQueue(queueName);
                 if (queue == null)
                 {
@@ -194,6 +198,6 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                     " to exchange " + exchangeName));	// replyText
             }
         }
-        protocolSession.writeFrame(response);
+        session.writeFrame(response);
     }
 }

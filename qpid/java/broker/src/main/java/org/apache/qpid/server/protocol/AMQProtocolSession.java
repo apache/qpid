@@ -25,6 +25,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
 
 import javax.security.sasl.SaslServer;
@@ -32,6 +33,13 @@ import javax.security.sasl.SaslServer;
 
 public interface AMQProtocolSession extends AMQProtocolWriter
 {
+
+
+    public static interface Task
+    {
+        public void doTask(AMQProtocolSession session) throws AMQException;
+    }
+
     /**
      * Called when a protocol data block is received
      * @param message the data block that has been received
@@ -126,4 +134,13 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     void setClientProperties(FieldTable clientProperties);
 
     Object getClientIdentifier();
+
+    VirtualHost getVirtualHost();
+
+    void setVirtualHost(VirtualHost virtualHost);
+
+    void addSessionCloseTask(Task task);
+
+    void removeSessionCloseTask(Task task);
+
 }

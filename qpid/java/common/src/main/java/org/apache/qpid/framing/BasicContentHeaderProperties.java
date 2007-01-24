@@ -531,6 +531,13 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         return _replyTo == null ? null : _replyTo.toString();
     }
 
+    public AMQShortString getReplyToAsShortString()
+    {
+        decodeIfNecessary();
+        return _replyTo;
+    }
+
+
     public void setReplyTo(String replyTo)
     {
         setReplyTo(replyTo == null ? null : new AMQShortString(replyTo));

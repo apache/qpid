@@ -38,22 +38,26 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.SASLAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.mina.common.ByteBuffer;
 
 import java.io.File;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
-    private QueueRegistry _queueRegistry;
-
-    private ExchangeRegistry _exchangeRegistry;
-
-    private ExchangeFactory _exchangeFactory;
 
     private ManagedObjectRegistry _managedObjectRegistry;
 
     private AuthenticationManager _authenticationManager;
 
-    private MessageStore _messageStore;
+    private VirtualHostRegistry _virtualHostRegistry;
+
+
+    private final Map<String, VirtualHost> _virtualHosts = new ConcurrentHashMap<String, VirtualHost>();
+
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
@@ -91,11 +95,19 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     public void initialise() throws Exception
     {
         initialiseManagedObjectRegistry();
-        _queueRegistry = new DefaultQueueRegistry();
-        _exchangeFactory = new DefaultExchangeFactory();
-        _exchangeRegistry = new DefaultExchangeRegistry(_exchangeFactory);
+        _virtualHostRegistry = new VirtualHostRegistry();
         _authenticationManager = new SASLAuthenticationManager();
-        initialiseMessageStore();
+
+        initialiseVirtualHosts();
+    }
+
+    private void initialiseVirtualHosts() throws Exception
+    {
+        for(String name : getVirtualHostNames())
+        {
+           
+            _virtualHostRegistry.registerVirtualHost(new VirtualHost(name,getConfiguration().subset("virtualhosts.virtualhost."+name)));
+        }
     }
 
     private void initialiseManagedObjectRegistry()
@@ -111,34 +123,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-    private void initialiseMessageStore() throws Exception
-    {
-        String messageStoreClass = _configuration.getString("store.class");
-        Class clazz = Class.forName(messageStoreClass);
-        Object o = clazz.newInstance();
 
-        if (!(o instanceof MessageStore))
-        {
-            throw new Exception("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                " does not.");
-        }
-        _messageStore = (MessageStore) o;
-        _messageStore.configure(getQueueRegistry(), "store", _configuration);
-    }
-
-    public QueueRegistry getQueueRegistry()
+    public VirtualHostRegistry getVirtualHostRegistry()
     {
-        return _queueRegistry;
-    }
-
-    public ExchangeRegistry getExchangeRegistry()
-    {
-        return _exchangeRegistry;
-    }
-
-    public ExchangeFactory getExchangeFactory()
-    {
-        return _exchangeFactory;
+        return _virtualHostRegistry;
     }
 
     public ManagedObjectRegistry getManagedObjectRegistry()
@@ -151,8 +139,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         return _authenticationManager;
     }
 
-    public MessageStore getMessageStore()
+    public Collection<String> getVirtualHostNames()
     {
-        return _messageStore;
-    }    
+        return  getConfiguration().getList("virtualhosts.virtualhost.name");
+    }
 }

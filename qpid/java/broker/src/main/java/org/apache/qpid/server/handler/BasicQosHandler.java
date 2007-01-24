@@ -28,6 +28,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.AMQException;
 
@@ -40,9 +41,9 @@ public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateMgr, QueueRegistry queues, ExchangeRegistry exchanges,
-                               AMQProtocolSession session, AMQMethodEvent<BasicQosBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicQosBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         session.getChannel(evt.getChannelId()).setPrefetchCount(evt.getMethod().prefetchCount);
         session.getChannel(evt.getChannelId()).setPrefetchSize(evt.getMethod().prefetchSize);
 

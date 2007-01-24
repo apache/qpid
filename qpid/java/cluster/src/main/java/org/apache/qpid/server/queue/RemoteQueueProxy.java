@@ -29,6 +29,7 @@ import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.MemberHandle;
 import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.concurrent.Executor;
 
@@ -43,23 +44,15 @@ public class RemoteQueueProxy extends AMQQueue
     private final MemberHandle _target;
     private final GroupManager _groupMgr;
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, queueRegistry);
+        super(name, durable, owner, autoDelete, virtualHost);
         _target = target;
         _groupMgr = groupMgr;
         _groupMgr.addMemberhipChangeListener(new ProxiedQueueCleanup(target, this));
     }
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-        super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery);
-        _target = target;
-        _groupMgr = groupMgr;
-        _groupMgr.addMemberhipChangeListener(new ProxiedQueueCleanup(target, this));
-    }
 
     public void deliver(AMQMessage msg) throws NoConsumersException
     {

@@ -216,7 +216,7 @@ public class OperationTabControl extends TabControl
         }
         
         // Customised parameter widgets        
-        if (_mbean.getType().equals(Constants.EXCHANGE) &&
+        if (_mbean.getType().equals(Constants.MBEAN_TYPE_EXCHANGE) &&
             "headers".equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase("createNewBinding"))
         {                                  
@@ -241,10 +241,10 @@ public class OperationTabControl extends TabControl
             formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter);
             formData.left = new FormAttachment(label, 5);
             formData.right = new FormAttachment(valueNumerator);
-            if (param.getName().equals(Constants.QUEUE))
+            if (param.getName().equals(Constants.MBEAN_TYPE_QUEUE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames();
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_mbean.getProperty("VirtualHost"));
                 combo.setItems(items);
                 combo.add("Select Queue", 0); 
                 combo.select(0);
@@ -253,10 +253,10 @@ public class OperationTabControl extends TabControl
                 combo.addSelectionListener(parameterSelectionListener);
                 valueInCombo = true;
             }
-            else if (param.getName().equals(Constants.EXCHANGE))
+            else if (param.getName().equals(Constants.MBEAN_TYPE_EXCHANGE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames();
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_mbean.getProperty("VirtualHost"));
                 combo.setItems(items);
                 combo.add("Select Exchange", 0);
                 combo.select(0);
@@ -358,7 +358,7 @@ public class OperationTabControl extends TabControl
         formData.right = new FormAttachment(valueNumerator);
 
         Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
-        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames();
+        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_mbean.getProperty("VirtualHost"));
         combo.setItems(items);
         combo.add("Select Queue", 0); 
         combo.select(0);
