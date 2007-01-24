@@ -20,13 +20,11 @@ package org.apache.qpid.ping;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.ObjectMessage;
-import javax.jms.MessageListener;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
 import org.apache.qpid.topic.Config;
-import org.apache.qpid.util.concurrent.BooleanLatch;
 
 /**
  * This class is used to test sending and receiving messages to (pingQueue) and from a queue (replyQueue).
@@ -72,7 +70,7 @@ public class TestPingItself extends PingPongProducer
               messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
               noOfDestinations, rate, pubsub);
 
-        if (noOfDestinations > 0)
+        if (noOfDestinations > DEFAULT_DESTINATION_COUNT)
         {
             createDestinations(noOfDestinations);
             _persistent = persistent;
@@ -119,25 +117,15 @@ public class TestPingItself extends PingPongProducer
         boolean persistent = config.usePersistentMessages();
         int messageSize = (config.getPayload() != 0) ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
         int messageCount = config.getMessages();
-        int destCount = (config.getDestinationsCount() != 0) ? config.getDestinationsCount() : 1;
-        int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : BATCH_SIZE;
-        int rate = (config.getRate() != 0) ? config.getRate() : 0;
+        int destCount = (config.getDestinationsCount() != 0) ? config.getDestinationsCount() : DEFAULT_DESTINATION_COUNT;
+        int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : DEFAULT_BATCH_SIZE;
+        int rate = (config.getRate() != 0) ? config.getRate() : DEFAULT_RATE;
         boolean pubsub = config.isPubSub();
 
         String destName = config.getDestination();
         if (destName == null)
         {
             destName = PING_DESTINATION_NAME;
-        }
-        if (destCount > 1)
-        {
-            _logger.info("Destination Count:" + destCount + ", Transacted:" + transacted + ", persistent:" +
-                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
-        }
-        else
-        {
-            _logger.info("Destination:" + destName + ", Transacted:" + transacted + ", persistent:" +
-                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
         }
 
         boolean afterCommit = false;
@@ -193,17 +181,16 @@ public class TestPingItself extends PingPongProducer
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
         pingItself.getConnection().setExceptionListener(pingItself);
 
-        if ((destCount > 1) || (messageCount > 0))
+        if ((destCount > DEFAULT_DESTINATION_COUNT) || (messageCount > 0))
         {
-            ObjectMessage msg = pingItself.getTestMessage(null, messageSize, persistent);
-
-            // Send the message and wait for a reply.
-            int numReplies = pingItself.pingAndWaitForReply(msg, messageCount, TIMEOUT);
-
-            _logger.info(("Messages Sent = " + messageCount + ", MessagesReceived = " + numReplies));
+            _logger.info("Destinations Count:" + destCount + ", Transacted:" + transacted + ", persistent:" +
+                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
+            pingItself.pingLoop();
         }
         else
         {
+            _logger.info("Destination:" + destName + ", Transacted:" + transacted + ", persistent:" +
+                          persistent + ",Message Size:" + messageSize + " bytes, pubsub:" + pubsub);
             // set the message count to 0 to run this loop
             // Run a few priming pings to remove warm up time from test results.
             pingItself.prime(PRIMING_LOOPS);
