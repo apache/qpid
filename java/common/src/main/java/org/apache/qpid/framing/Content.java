@@ -125,8 +125,12 @@ public class Content
     public void writePayload(ByteBuffer buffer)
     {
     	EncodingUtils.writeUnsignedByte(buffer, contentType.toByte());
-    	EncodingUtils.writeUnsignedInteger(buffer, content.remaining());
-        buffer.put(content.duplicate());
+        if (content == null) {
+            EncodingUtils.writeUnsignedInteger(buffer, 0);
+        } else {
+            EncodingUtils.writeUnsignedInteger(buffer, content.remaining());
+            buffer.put(content.duplicate());
+        }
     }
     
     public void populateFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException
