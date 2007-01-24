@@ -10,16 +10,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.jms.*;
 import javax.jms.Connection;
 import javax.jms.Message;
-import javax.jms.MessageProducer;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.BasicMessageProducer;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.*;
 import org.apache.qpid.jms.Session;
 
 /**
@@ -41,6 +39,8 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
 {
     private static final Logger _logger = Logger.getLogger(AbstractPingProducer.class);
 
+    /** tells if the test is being done for pubsub or p2p */
+    private boolean _isPubSub = false;
     /**
      * Used to format time stamping output.
      */
@@ -65,11 +65,12 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     private Session _producerSession;
 
     /**
-     * Holds the number of queues the tests will be using to send messages. By default it will be 1
+     * Holds the number of destinations for multiple-destination test. By default it will be 1
      */
-    protected int _queueCount = 1;
+    protected int _destinationCount = 1;
 
-    private List<Queue> _queues = new ArrayList<Queue>();
+    /** list of all the destinations for multiple-destinations test */
+    private List<Destination> _destinations = new ArrayList<Destination>();
 
     /**
      * Holds the message producer to send the pings through.
@@ -85,6 +86,19 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     /** Holds the number of sends that should be performed in every transaction when using transactions. */
     protected int _txBatchSize = 1;
 
+    /**
+     * Sets the test for pubsub or p2p.
+     * @param value
+     */
+    public void setPubSub(boolean value)
+    {
+        _isPubSub = value;
+    }
+
+    public boolean isPubSub()
+    {
+        return _isPubSub;
+    }
     /**
      * Convenience method for a short pause.
      *
@@ -119,31 +133,11 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
      *
      * @throws JMSException All underlying JMSException are allowed to fall through.
      */
-    public ObjectMessage getTestMessage(Queue replyQueue, int messageSize, boolean persistent) throws JMSException
+    public ObjectMessage getTestMessage(Destination replyQueue, int messageSize, boolean persistent) throws JMSException
     {
-        ObjectMessage msg;
-
-        if (messageSize != 0)
-        {
-            msg = TestMessageFactory.newObjectMessage(_producerSession, messageSize);
-        }
-        else
-        {
-            msg = _producerSession.createObjectMessage();
-        }
-
-        // Set the messages persistent delivery flag.
-        msg.setJMSDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-
+        ObjectMessage msg = TestMessageFactory.newObjectMessage(_producerSession, replyQueue, messageSize, persistent);
         // Timestamp the message.
         msg.setLongProperty("timestamp", System.currentTimeMillis());
-
-        // Ensure that the temporary reply queue is set as the reply to destination for the message.
-        if (replyQueue != null)
-        {
-            msg.setJMSReplyTo(replyQueue);
-        }
-
         return msg;
     }
 
@@ -217,14 +211,14 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         this._producerSession = session;
     }
 
-    public int getQueueCount()
+    public int getDestinationsCount()
     {
-        return _queueCount;
+        return _destinationCount;
     }
 
-    public void setQueueCount(int queueCount)
+    public void setDestinationsCount(int count)
     {
-        this._queueCount = queueCount;
+        this._destinationCount = count;
     }
 
     protected void commitTx() throws JMSException
@@ -233,31 +227,57 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
     }
 
     /**
-     * Creates queues dynamically and adds to the queues list.  This is when the test is being done with
-     * multiple queues.
-     *
-     * @param queueCount
+     * Creates destinations dynamically and adds to the destinations list for multiple-destinations test
+     * @param count
      */
-    protected void createQueues(int queueCount)
+    protected void createDestinations(int count)
     {
-        for (int i = 0; i < queueCount; i++)
+        if (isPubSub())
         {
-            AMQShortString name =
-                new AMQShortString("Queue_" + _queueSequenceID.incrementAndGet() + "_" + System.currentTimeMillis());
-            AMQQueue queue = new AMQQueue(name, name, false, false, false);
-
-            _queues.add(queue);
+            createTopics(count);
+        }
+        else
+        {
+            createQueues(count);
         }
     }
 
-    protected Queue getQueue(int index)
+    private void createQueues(int count)
     {
-        return _queues.get(index);
+        for (int i = 0; i < count; i++)
+        {
+            AMQShortString name =
+                new AMQShortString("AMQQueue_" + _queueSequenceID.incrementAndGet() + "_" + System.currentTimeMillis());
+            AMQQueue queue = new AMQQueue(name, name, false, false, false);
+
+            _destinations.add(queue);
+        }
+    }
+
+    private void createTopics(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            AMQShortString name =
+                new AMQShortString("AMQTopic_" + _queueSequenceID.incrementAndGet() + "_" + System.currentTimeMillis());
+            AMQTopic topic = new AMQTopic(name);
+
+            _destinations.add(topic);
+        }
+    }
+
+    /**
+     * Returns the destination from the destinations list with given index. This is for multiple-destinations test
+     * @param index
+     * @return Destination with given index
+     */
+    protected Destination getDestination(int index)
+    {
+        return _destinations.get(index);
     }
 
     /**
      * Convenience method to commit the transaction on the session associated with this pinger.
-     *
      * @throws javax.jms.JMSException If the commit fails and then the rollback fails.
      */
     protected void commitTx(Session session) throws JMSException
@@ -336,7 +356,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         sendMessage(null, message);
     }
 
-    protected void sendMessage(Queue q, Message message) throws JMSException
+    protected void sendMessage(Destination destination, Message message) throws JMSException
     {
         if (_failBeforeSend)
         {
@@ -349,13 +369,13 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
             doFailover();
         }
 
-        if (q == null)
+        if (destination == null)
         {
             _producer.send(message);
         }
         else
         {
-            _producer.send(q, message);
+            _producer.send(destination, message);
         }
 
         commitTx();
