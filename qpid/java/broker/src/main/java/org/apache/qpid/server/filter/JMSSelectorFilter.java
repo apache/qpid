@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.server.filter;
 
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.filter.jms.selector.SelectorParser;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.filter.jms.selector.SelectorParser;
+import org.apache.qpid.server.queue.AMQMessage;
 
 
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
 
 public class JMSSelectorFilter implements MessageFilter
 {
@@ -43,16 +41,8 @@ public class JMSSelectorFilter implements MessageFilter
         _logger.info("Created JMSSelectorFilter with selector:" + _selector);
 
 
-        try
-        {
-            _matcher = new SelectorParser().parse(selector);
-        }
-        catch (InvalidSelectorException e)
-        {
-            // fixme
-            // Is this the correct way of throwing exception
-            throw new AMQInvalidSelectorException(e.getMessage());
-        }
+        _matcher = new SelectorParser().parse(selector);
+
 
     }
 

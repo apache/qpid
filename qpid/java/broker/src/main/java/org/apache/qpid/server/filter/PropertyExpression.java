@@ -20,23 +20,15 @@ package org.apache.qpid.server.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
-         
-import java.io.IOException;
-import java.util.HashMap;
 
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
-
-//import org.apache.activemq.command.ActiveMQDestination;
-//import org.apache.activemq.command.Message;
-//import org.apache.activemq.command.TransactionId;
-//import org.apache.activemq.util.JMSExceptionSupport;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.message.jms.JMSMessage;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.queue.AMQMessage;
+
+
+
+import java.util.HashMap;
 
 /**
  * Represents a property  expression
@@ -45,8 +37,10 @@ import org.apache.log4j.Logger;
  */
 public class PropertyExpression implements Expression
 {
-
-
+    // Constants - defined the same as JMS
+    private static final int NON_PERSISTENT = 1;
+    private static final int PERSISTENT = 2;
+    private static final int DEFAULT_PRIORITY = 4;
 
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
 
@@ -111,7 +105,7 @@ public class PropertyExpression implements Expression
                     {
                         try
                         {
-                            int mode = message.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+                            int mode = message.isPersistent() ? PERSISTENT : NON_PERSISTENT;
                             if(_logger.isDebugEnabled())
                             {
                                 _logger.debug("JMSDeliveryMode is :" + mode);
@@ -123,7 +117,7 @@ public class PropertyExpression implements Expression
                             _logger.warn(e);
                         }
 
-                        return DeliveryMode.NON_PERSISTENT;
+                        return NON_PERSISTENT;
                     }
                 });
 
@@ -141,7 +135,7 @@ public class PropertyExpression implements Expression
                         {
                             _logger.warn(e);
                         }
-                        return Message.DEFAULT_PRIORITY;
+                        return DEFAULT_PRIORITY;
                     }
                 }
         );

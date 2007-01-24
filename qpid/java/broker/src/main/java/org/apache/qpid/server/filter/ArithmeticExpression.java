@@ -21,10 +21,8 @@ package org.apache.qpid.server.filter;
 //
 
 
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.AMQException;
-
-import javax.jms.JMSException;
+import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * An expression which performs an operation on two expression values
