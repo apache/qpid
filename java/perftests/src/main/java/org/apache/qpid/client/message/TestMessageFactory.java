@@ -26,6 +26,9 @@ import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.BytesMessage;
 import javax.jms.TextMessage;
+import javax.jms.Queue;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 
 public class TestMessageFactory
 {
@@ -61,7 +64,39 @@ public class TestMessageFactory
 
     public static ObjectMessage newObjectMessage(Session session, int size) throws JMSException
     {
-        return session.createObjectMessage(createMessagePayload(size));
+        if (size == 0)
+        {
+            return session.createObjectMessage();
+        }
+        else
+        {
+            return session.createObjectMessage(createMessagePayload(size));
+        }
+    }
+
+    /**
+     * Creates an ObjectMessage with given size and sets the JMS properties (JMSReplyTo and DeliveryMode)
+     * @param session
+     * @param replyDestination
+     * @param size
+     * @param persistent
+     * @return the new ObjectMessage
+     * @throws JMSException
+     */
+    public static ObjectMessage newObjectMessage(Session session, Destination replyDestination, int size, boolean persistent) throws JMSException
+    {
+        ObjectMessage msg = newObjectMessage(session, size);
+
+        // Set the messages persistent delivery flag.
+        msg.setJMSDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+
+        // Ensure that the temporary reply queue is set as the reply to destination for the message.
+        if (replyDestination != null)
+        {
+            msg.setJMSReplyTo(replyDestination);
+        }
+
+        return msg;
     }
 
     public static String createMessagePayload(int size)
