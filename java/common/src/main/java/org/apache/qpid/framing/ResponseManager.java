@@ -44,25 +44,8 @@ public class ResponseManager
      */
     private boolean serverFlag;
 
-    /**
-     * Determines the batch behaviour of the manager.
-     *
-     * Responses are sent to the RequestResponseManager through sendResponse().
-     * These may be internally stored/accumulated for batching purposes, depending
-     * on the batching strategy/mode of the RequestResponseManager.
-     *
-     * The following modes are possibe:
-     *
-     * NONE: Each request results in an immediate single response, no batching
-     *     takes place.
-     * DELAY_FIXED: Waits until a fixed period has passed to batch
-     *     accumulated responses. An optional fixed threshold may be set, which
-     *     if reached or exceeded within the delay period will trigger the batch. (TODO)
-     * MANUAL: No response is sent until it is explicitly released by calling
-     *     function xxxx(). (TODO)
-     */
-    public enum batchResponseModeEnum { NONE }
-    private batchResponseModeEnum batchResponseMode = batchResponseModeEnum.NONE;
+    private int maxAccumulatedResponses = 20; // Default
+//    private Class currentResponseMethodBodyClass;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -109,6 +92,7 @@ public class ResponseManager
         this.serverFlag = serverFlag;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
+//        currentResponseMethodBodyClass = null;
         responseMap = new ConcurrentHashMap<Long, ResponseStatus>();
     }
 
@@ -122,7 +106,7 @@ public class ResponseManager
             logger.debug((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
                 " " + requestBody + "; " + requestBody.getMethodPayload());
         }
-        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
+        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel + 
         //        " " + requestBody + "; " + requestBody.getMethodPayload());
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
@@ -150,26 +134,79 @@ public class ResponseManager
         if (responseStatus.responseMethodBody != null)
             throw new RequestResponseMappingException(requestId, "RequestId " +
                 requestId + " already has a response in responseMap.");
+                
         responseStatus.responseMethodBody = responseMethodBody;
         doBatches();
+        
+//         if (currentResponseMethodBodyClass == null)
+//         {
+//             currentResponseMethodBodyClass = responseMethodBody.getClass();
+//             responseStatus.responseMethodBody = responseMethodBody;
+//         }
+//         else if (currentResponseMethodBodyClass.equals(responseMethodBody.getClass()))
+//         {
+//             doBatches();
+//             currentResponseMethodBodyClass = responseMethodBody.getClass();
+//             responseStatus.responseMethodBody = responseMethodBody;
+//         }
+//         else
+//         {
+//             responseStatus.responseMethodBody = responseMethodBody;
+//             if (batchedResponses() >= maxAccumulatedResponses)
+//                 doBatches();
+//         }
     }
 
     // *** Management functions ***
 
-    public batchResponseModeEnum getBatchResponseMode()
+    /**
+     * Sends batched responses - i.e. all those members of responseMap that have
+     * received a response.
+     */
+    public synchronized void doBatches()
     {
-        return batchResponseMode;
-    }
-
-    public void setBatchResponseMode(batchResponseModeEnum batchResponseMode)
-    {
-        if (this.batchResponseMode != batchResponseMode)
+        long startRequestId = 0;
+        int numAdditionalRequestIds = 0;
+        Class responseMethodBodyClass = null;
+        Iterator<Long> lItr = responseMap.keySet().iterator();
+        while (lItr.hasNext())
         {
-            this.batchResponseMode = batchResponseMode;
-            doBatches();
+            long requestId = lItr.next();
+            ResponseStatus responseStatus = responseMap.get(requestId);
+            if (responseStatus.responseMethodBody != null)
+            {
+//                 if (startRequestId == 0 || responseMethodBodyClass == null)
+//                 {
+//                     startRequestId = requestId;
+//                     responseMethodBodyClass = responseStatus.responseMethodBody.getClass();
+//                     lItr.remove();
+//                 }
+//                 else if (responseMethodBodyClass.equals(responseStatus.responseMethodBody.getClass()))
+//                 {
+//                     numAdditionalRequestIds++;
+//                     lItr.remove();
+//                 }
+//                 else
+//                 {
+//                     sendResponseBatchFrame(startRequestId, numAdditionalRequestIds,
+//                         responseStatus.responseMethodBody);
+//                     numAdditionalRequestIds = 0;
+//                     startRequestId = requestId;
+//                     responseMethodBodyClass = responseStatus.responseMethodBody.getClass();
+//                     lItr.remove();
+//                 }
+               sendResponseBatchFrame(requestId, 0, responseStatus.responseMethodBody);
+               lItr.remove();
+            }
         }
     }
 
+    /**
+     * Total number of entries in the responseMap - including both those that
+     * are outstanding (i.e. no response has been received) and those that are
+     * batched (those for which responses have been received but have not yet
+     * been collected together and sent).
+     */
     public int responsesMapSize()
     {
         return responseMap.size();
@@ -216,31 +253,7 @@ public class ResponseManager
         return responseIdCount++;
     }
 
-    private synchronized void doBatches()
-    {
-        switch (batchResponseMode)
-        {
-            case NONE:
-                Iterator<Long> lItr = responseMap.keySet().iterator();
-                while (lItr.hasNext())
-                {
-                    long requestId = lItr.next();
-                    ResponseStatus responseStatus = responseMap.get(requestId);
-                    if (responseStatus.responseMethodBody != null)
-                    {
-                        sendResponseBatch(requestId, 0, responseStatus.responseMethodBody);
-                        lItr.remove();
-                    }
-                }
-                break;
-
-            // TODO: Add additional batch mode handlers here...
-            // case DELAY_FIXED:
-            // case MANUAL:
-        }
-    }
-
-    private void sendResponseBatch(long firstRequestId, int numAdditionalRequests,
+    private void sendResponseBatchFrame(long firstRequestId, int numAdditionalRequests,
         AMQMethodBody responseMethodBody)
     {
         long responseId = getNextResponseId(); // Get new response ID

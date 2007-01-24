@@ -34,6 +34,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.BasicMessageConsumer;
+import org.apache.qpid.client.CustomJMXProperty;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
@@ -205,12 +206,18 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getJMSType() throws JMSException
     {
-        return getMessageHeaders().getType();
+        // Since the type field is not a part of message.transport and is used only for
+        // JMS messages, this change to JMS Headers solves the problem.
+        // return getMessageHeaders().getType();
+        return getStringProperty(CustomJMXProperty.JMSXType.toString());
     }
 
     public void setJMSType(String string) throws JMSException
     {
-        getMessageHeaders().setType(string);
+        // Since the type field is not a part of message.transport and is used only for
+        // JMS messages, this change to JMS Headers solves the problem.
+        // getMessageHeaders().setType(string);
+        setStringProperty(CustomJMXProperty.JMSXType.toString(), string);
     }
 
     public long getJMSExpiration() throws JMSException

@@ -26,7 +26,8 @@ public enum CustomJMXProperty
 {
     JMSX_QPID_JMSDESTINATIONURL,
     JMSXGroupID,
-    JMSXGroupSeq;
+    JMSXGroupSeq,
+    JMSXType;
 
     private static Enumeration _names;
     
