@@ -85,7 +85,23 @@ public class VirtualHost
         } // End of MBean class
 
 
+    public VirtualHost(String name, MessageStore store) throws Exception
+    {
+        _name = name;
 
+        _virtualHostMBean = new VirtualHostMBean();
+        _virtualHostMBean.register();
+
+        _queueRegistry = new DefaultQueueRegistry(this);
+        _exchangeFactory = new DefaultExchangeFactory(this);
+        _exchangeRegistry = new DefaultExchangeRegistry(_exchangeFactory);
+
+        _messageStore = store;
+
+        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
+        _brokerMBean.register();
+
+    }
     public VirtualHost(String name, Configuration hostConfig) throws Exception
     {
         _name = name;
