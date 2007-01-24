@@ -112,8 +112,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
 
         _codecFactory = codecFactory;
-        _managedObject = createMBean();
-        _managedObject.register();
+
+
 //        this(session, queueRegistry, exchangeRegistry, codecFactory, new AMQStateManager());
     }
 
@@ -127,8 +127,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         
 
         _codecFactory = codecFactory;
-        _managedObject = createMBean();
-        _managedObject.register();
+
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -567,9 +566,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHost virtualHost)
+    public void setVirtualHost(VirtualHost virtualHost) throws AMQException
     {
         _virtualHost = virtualHost;
+        _managedObject = createMBean();
+        _managedObject.register();
     }
 
     public void addSessionCloseTask(Task task)
