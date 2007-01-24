@@ -376,9 +376,7 @@ public abstract class AbstractPingProducer implements Runnable, ExceptionListene
         else
         {
             _producer.send(destination, message);
-        }
-
-        commitTx();
+        }        
     }
 
     protected void doFailover(String broker)

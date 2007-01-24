@@ -37,13 +37,11 @@ import java.util.concurrent.CountDownLatch;
 
 public class PingAsyncTestPerf extends PingTestPerf //implements TimingControllerAware
 {
-    private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
+//    private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
 
 //    private TimingController _timingController;
-//
-//    private final CountDownLatch _completedLock = new CountDownLatch(1);
-//
-//   private AsyncMessageListener _listener;
+
+//    private AsyncMessageListener _listener;
 
     private volatile boolean _done = false;
 
@@ -51,7 +49,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
     {
         super(name);
     }
-//
+
 //    /**
 //     * Compile all the tests into a test suite.
 //     */
@@ -79,13 +77,16 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            String username = "guest";
 //            String password = "guest";
 //            String virtualpath = testParameters.getProperty(VIRTUAL_PATH_PROPNAME);
-//            int queueCount = Integer.parseInt(testParameters.getProperty(PING_QUEUE_COUNT_PROPNAME));
-//            String queueName = testParameters.getProperty(PING_QUEUE_NAME_PROPNAME);
+//            int destinationscount = Integer.parseInt(testParameters.getProperty(PING_DESTINATION_COUNT_PROPNAME));
+//            String destinationname = testParameters.getProperty(PING_DESTINATION_NAME_PROPNAME);
 //            boolean persistent = Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME));
 //            boolean transacted = Boolean.parseBoolean(testParameters.getProperty(TRANSACTED_PROPNAME));
 //            String selector = null;
 //            boolean verbose = Boolean.parseBoolean(testParameters.getProperty(VERBOSE_OUTPUT_PROPNAME));
 //            int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
+//            int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
+//            boolean pubsub = Boolean.parseBoolean(testParameters.getProperty(IS_PUBSUB_PROPNAME));
+//
 //
 //            boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
 //            boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
@@ -96,18 +97,16 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
 //            int commitbatchSize = Integer.parseInt(testParameters.getProperty(COMMIT_BATCH_SIZE));
 //
-//            int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
-//
 //            // This is synchronized because there is a race condition, which causes one connection to sleep if
 //            // all threads try to create connection concurrently
 //            synchronized (this)
 //            {
 //                // Establish a client to ping a Queue and listen the reply back from same Queue
 //                perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
-//                                                                      queueName, selector, transacted, persistent,
+//                                                                      destinationname, selector, transacted, persistent,
 //                                                                      messageSize, verbose,
 //                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-//                                                                      commitbatchSize, queueCount, rate);
+//                                                                      commitbatchSize, destinationscount, rate, pubsub);
 //
 //
 //                _listener = new AsyncMessageListener(batchSize);
@@ -154,9 +153,11 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        // start the test
 //        long timeout = Long.parseLong(testParameters.getProperty(TIMEOUT_PROPNAME));
 //
+//        String correlationID = Long.toString(perThreadSetup._pingItselfClient.getNewID());
+//
 //        try
 //        {
-//            perThreadSetup._pingItselfClient.pingNoWaitForReply(msg, numPings);
+//            perThreadSetup._pingItselfClient.pingNoWaitForReply(msg, numPings, correlationID);
 //        }
 //        catch (JMSException e)
 //        {
@@ -174,7 +175,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            {
 //                _logger.info("awating test finish");
 //
-//                _completedLock.await();
+//                perThreadSetup._pingItselfClient.getEndLock(correlationID).await();
 //            }
 //            catch (InterruptedException e)
 //            {
@@ -193,7 +194,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
 //            try
 //            {
-//                _timingController.completeTest(false);
+//                _timingController.completeTest(false, numPings - numReplies);
 //            }
 //            catch (InterruptedException e)
 //            {
@@ -201,7 +202,6 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            }
 //        }
 //    }
-//
 //
 //    public void setTimingController(TimingController timingController)
 //    {
@@ -216,7 +216,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //    private class AsyncMessageListener implements MessageListener
 //    {
-//        private int _messageRecevied;
+//        private int _messageReceived;
 //        private int _totalMessages;
 //        private int _batchSize;
 //
@@ -224,14 +224,14 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        {
 //            _batchSize = batchSize;
 //            _totalMessages = totalMessages;
-//            _messageRecevied = 0;
+//            _messageReceived = 0;
 //        }
 //
 //        public AsyncMessageListener(int batchSize)
 //        {
 //            _batchSize = batchSize;
 //            _totalMessages = -1;
-//            _messageRecevied = 0;
+//            _messageReceived = 0;
 //        }
 //
 //        public void setTotalMessages(int newTotal)
@@ -242,14 +242,16 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        public void onMessage(Message message)
 //        {
 //            _logger.info("Message Recevied");
+//
+//            _messageReceived++;
+//
 //            try
 //            {
-//                _messageRecevied++;
-//                if (_messageRecevied == _batchSize)
+//                if (_messageReceived == _batchSize)
 //                {
 //                    if (_timingController != null)
 //                    {
-//                        _timingController.completeTest(true);
+//                        _timingController.completeTest(true, _batchSize);
 //                    }
 //                }
 //            }
@@ -258,7 +260,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //                doDone();
 //            }
 //
-//            if (_totalMessages == -1 || _messageRecevied == _totalMessages)
+//            if (_totalMessages == -1 || _messageReceived == _totalMessages)
 //            {
 //                _logger.info("Test Completed.. signalling");
 //                doDone();
@@ -268,10 +270,9 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        private void doDone()
 //        {
 //            _done = true;
-//            _completedLock.countDown();
 //            try
 //            {
-//                _timingController.completeTest(true);
+//                _timingController.completeTest(true, _totalMessages - _messageReceived);
 //            }
 //            catch (InterruptedException e)
 //            {
@@ -281,8 +282,9 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //        public int getReplyCount()
 //        {
-//            return _messageRecevied;
+//            return _messageReceived;
 //        }
+//
 //    }
 
 }

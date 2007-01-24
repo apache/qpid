@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
 import org.apache.qpid.topic.Config;
+import org.apache.qpid.util.concurrent.BooleanLatch;
 
 /**
  * This class is used to test sending and receiving messages to (pingQueue) and from a queue (replyQueue).
@@ -71,7 +72,7 @@ public class TestPingItself extends PingPongProducer
               messageSize, verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, batchSize,
               noOfDestinations, rate, pubsub);
 
-        if (noOfDestinations > 1)
+        if (noOfDestinations > 0)
         {
             createDestinations(noOfDestinations);
 
@@ -84,7 +85,7 @@ public class TestPingItself extends PingPongProducer
         }
     }
 
-     /**
+    /**
      * Sets the replyQueue to be the same as ping queue.
      */
     @Override
@@ -95,11 +96,6 @@ public class TestPingItself extends PingPongProducer
         MessageConsumer consumer =
             getConsumerSession().createConsumer(getReplyDestination(), PREFETCH, false, EXCLUSIVE, selector);
         consumer.setMessageListener(this);
-    }
-
-    public void setMessageListener(MessageListener messageListener) throws JMSException
-    {
-        getConsumerSession().setMessageListener(messageListener);
     }
 
     /**
