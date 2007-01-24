@@ -137,7 +137,7 @@ public interface AMQProtocolSession extends AMQProtocolWriter
 
     VirtualHost getVirtualHost();
 
-    void setVirtualHost(VirtualHost virtualHost);
+    void setVirtualHost(VirtualHost virtualHost) throws AMQException;
 
     void addSessionCloseTask(Task task);
 
