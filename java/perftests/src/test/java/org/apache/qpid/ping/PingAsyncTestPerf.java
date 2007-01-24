@@ -33,7 +33,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.CountDownLatch;
+
 
 public class PingAsyncTestPerf extends PingTestPerf //implements TimingControllerAware
 {
@@ -157,7 +157,11 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //        try
 //        {
+//            _logger.debug("Sending messages");
+//
 //            perThreadSetup._pingItselfClient.pingNoWaitForReply(msg, numPings, correlationID);
+//
+//            _logger.debug("All sent");
 //        }
 //        catch (JMSException e)
 //        {
@@ -173,9 +177,11 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        {
 //            try
 //            {
-//                _logger.info("awating test finish");
+//                _logger.debug("Awating test finish");
 //
 //                perThreadSetup._pingItselfClient.getEndLock(correlationID).await();
+//
+//
 //            }
 //            catch (InterruptedException e)
 //            {
@@ -189,9 +195,16 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        _logger.info("Test Finished");
 //
 //        if (numReplies != numPings)
-//
 //        {
-//            Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
+//
+//            try
+//            {
+//                perThreadSetup._pingItselfClient.commitTx(perThreadSetup._pingItselfClient.getConsumerSession());
+//            }
+//            catch (JMSException e)
+//            {
+//                _logger.error("Error commiting recevied messages", e);
+//            }
 //            try
 //            {
 //                _timingController.completeTest(false, numPings - numReplies);
@@ -200,6 +213,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            {
 //                //ignore
 //            }
+//            Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
 //        }
 //    }
 //
@@ -241,13 +255,13 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //        public void onMessage(Message message)
 //        {
-//            _logger.info("Message Recevied");
+//            _logger.trace("Message Recevied");
 //
 //            _messageReceived++;
 //
 //            try
 //            {
-//                if (_messageReceived == _batchSize)
+//                if (_messageReceived % _batchSize == 0)
 //                {
 //                    if (_timingController != null)
 //                    {
@@ -257,7 +271,8 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            }
 //            catch (InterruptedException e)
 //            {
-//                doDone();
+////                _logger.error("Interupted");
+////                doDone();
 //            }
 //
 //            if (_totalMessages == -1 || _messageReceived == _totalMessages)
@@ -270,6 +285,10 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        private void doDone()
 //        {
 //            _done = true;
+//
+//            _logger.error("Messages received:" + _messageReceived);
+//            _logger.error("Total Messages :" + _totalMessages);
+//
 //            try
 //            {
 //                _timingController.completeTest(true, _totalMessages - _messageReceived);
