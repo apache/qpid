@@ -20,15 +20,18 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.AMQException;
+import java.util.ArrayList;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.MessageHeaders;
+import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 
 class MessageTestHelper extends TestCase
 {
@@ -48,9 +51,34 @@ class MessageTestHelper extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)0, (byte)9);
-        publish.immediate = immediate;
-        return new AMQMessage(_messageStore, publish, new ContentHeaderBody(), null);
+    	MessageHeaders messageHeaders = new MessageHeaders();
+    	
+    	MessageTransferBody methodBody = MessageTransferBody.createMethodBody(
+            (byte)0, (byte)9,               // AMQP version (major, minor)
+            messageHeaders.getAppId(),      // String appId
+            messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
+            new Content(),                        // Content body
+            messageHeaders.getEncoding(),   // String contentEncoding
+            messageHeaders.getContentType(), // String contentType
+            messageHeaders.getCorrelationId(), // String correlationId
+            (short)1,  // short deliveryMode
+            "someExchange",                  // String destination
+            "someExchange",                  // String exchange
+            messageHeaders.getExpiration(), // long expiration
+            immediate,                          // boolean immediate
+            "",                         // String messageId
+            (short)0,                       // short priority
+            false,                          // boolean redelivered
+            messageHeaders.getReplyTo(),    // String replyTo
+            "rk",                           // String routingKey
+            new String("abc123").getBytes(), // byte[] securityToken
+            0,                              // int ticket
+            messageHeaders.getTimestamp(),  // long timestamp
+            messageHeaders.getTransactionId(), // String transactionId
+            0,                              // long ttl
+            messageHeaders.getUserId());    // String userId
+    	
+    	return new AMQMessage(_messageStore, methodBody, new ArrayList()); 
     }
 
 }

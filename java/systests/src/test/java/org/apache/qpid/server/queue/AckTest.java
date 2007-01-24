@@ -20,21 +20,22 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+
+import junit.framework.TestCase;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.client.message.MessageHeaders;
+import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-
-import java.util.Iterator;
-import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -63,11 +64,11 @@ public class AckTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _messageStore = new TestableMemoryMessageStore();
-        _channel = new AMQChannel(5, _messageStore, null/*dont need exchange registry*/);
+        _messageStore = new TestableMemoryMessageStore();        
         _protocolSession = new MockProtocolSession(_messageStore);
+        _channel = new AMQChannel(5,_protocolSession, _messageStore, null/*dont need exchange registry*/,null);
         _protocolSession.addChannel(_channel);
-        _subscriptionManager = new SubscriptionSet();
+        _subscriptionManager = new SubscriptionSet();                
         _queue = new AMQQueue("myQ", false, "guest", true, new DefaultQueueRegistry(), _subscriptionManager);
     }
 
@@ -82,23 +83,36 @@ public class AckTest extends TestCase
         {
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Establish some way to determine the version for the test.
-            BasicPublishBody publishBody = new BasicPublishBody((byte)0, (byte)9);
-            publishBody.routingKey = "rk";
-            publishBody.exchange = "someExchange";
-            AMQMessage msg = new AMQMessage(_messageStore, publishBody);
-            if (persistent)
-            {
-                BasicContentHeaderProperties b = new BasicContentHeaderProperties();
-                //This is DeliveryMode.PERSISTENT
-                b.setDeliveryMode((byte) 2);
-                ContentHeaderBody cb = new ContentHeaderBody();
-                cb.properties = b;
-                msg.setContentHeaderBody(cb);
-            }
-            else
-            {
-                msg.setContentHeaderBody(new ContentHeaderBody());
-            }
+        	//AMQMessage(MessageStore store, MessageTransferBody transferBody, List<ByteBuffer> contents)
+        	
+        	MessageHeaders messageHeaders = new MessageHeaders();
+        	
+        	MessageTransferBody methodBody = MessageTransferBody.createMethodBody(
+                (byte)0, (byte)9,               // AMQP version (major, minor)
+                messageHeaders.getAppId(),      // String appId
+                messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
+                new Content(),                        // Content body
+                messageHeaders.getEncoding(),   // String contentEncoding
+                messageHeaders.getContentType(), // String contentType
+                messageHeaders.getCorrelationId(), // String correlationId
+                persistent ? (short)2: (short)1,  // short deliveryMode
+                "someExchange",                  // String destination
+                "someExchange",                  // String exchange
+                messageHeaders.getExpiration(), // long expiration
+                false,                          // boolean immediate
+                "" + i,                         // String messageId
+                (short)0,                       // short priority
+                false,                          // boolean redelivered
+                messageHeaders.getReplyTo(),    // String replyTo
+                "rk",                           // String routingKey
+                new String("abc123").getBytes(), // byte[] securityToken
+                0,                              // int ticket
+                messageHeaders.getTimestamp(),  // long timestamp
+                messageHeaders.getTransactionId(), // String transactionId
+                0,                              // long ttl
+                messageHeaders.getUserId());    // String userId
+        	
+            AMQMessage msg = new AMQMessage(_messageStore, methodBody, new ArrayList());            
             _subscription.send(msg, _queue);
         }
     }

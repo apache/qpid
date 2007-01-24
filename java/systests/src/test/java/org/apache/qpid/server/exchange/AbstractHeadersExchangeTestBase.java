@@ -21,7 +21,10 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
+
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.MessageHeaders;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -133,29 +136,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         return headers;
     }
 
-    static BasicPublishBody getPublishRequest(String id)
-    {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody request = new BasicPublishBody((byte)0, (byte)9);
-        request.routingKey = id;
-        return request;
-    }
-
-    static ContentHeaderBody getContentHeader(FieldTable headers)
-    {
-        ContentHeaderBody header = new ContentHeaderBody();
-        header.properties = getProperties(headers);
-        return header;
-    }
-
-    static BasicContentHeaderProperties getProperties(FieldTable headers)
-    {
-        BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
-        properties.setHeaders(headers);
-        return properties;
-    }
-
     static class TestQueue extends AMQQueue
     {
         final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
@@ -185,12 +165,42 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         Message(String id, FieldTable headers) throws AMQException
         {
-            this(getPublishRequest(id), getContentHeader(headers), null);
+        	this(_messageStore, getMessageTransferBody(id,headers), new ArrayList());
         }
-
-        private Message(BasicPublishBody publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
+        
+        private static MessageTransferBody getMessageTransferBody(String id,FieldTable headers){
+        	MessageHeaders messageHeaders = new MessageHeaders();
+        	MessageTransferBody methodBody = MessageTransferBody.createMethodBody(
+                    (byte)0, (byte)9,               // AMQP version (major, minor)
+                    messageHeaders.getAppId(),      // String appId
+                    headers, // FieldTable applicationHeaders
+                    new Content(),                        // Content body
+                    messageHeaders.getEncoding(),   // String contentEncoding
+                    messageHeaders.getContentType(), // String contentType
+                    messageHeaders.getCorrelationId(), // String correlationId
+                    (short)1,  // short deliveryMode
+                    "someExchange",                  // String destination
+                    "someExchange",                  // String exchange
+                    messageHeaders.getExpiration(), // long expiration
+                    false,                          // boolean immediate
+                    id,                         // String messageId
+                    (short)0,                       // short priority
+                    false,                          // boolean redelivered
+                    messageHeaders.getReplyTo(),    // String replyTo
+                    "rk",                           // String routingKey
+                    new String("abc123").getBytes(), // byte[] securityToken
+                    0,                              // int ticket
+                    messageHeaders.getTimestamp(),  // long timestamp
+                    messageHeaders.getTransactionId(), // String transactionId
+                    0,                              // long ttl
+                    messageHeaders.getUserId());    // String userId
+        	
+        	return methodBody;
+        }
+        
+        Message(MessageStore store, MessageTransferBody transferBody, List<ByteBuffer> contents) throws AMQException
         {
-            super(_messageStore, publish, header, bodies);
+            super(_messageStore, transferBody, contents);
         }
 
         private Message(AMQMessage msg) throws AMQException
@@ -230,7 +240,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private Object getKey()
         {
-            return getPublishBody().routingKey;
+            return this.getTransferBody().getRoutingKey();
         }
     }
 }
