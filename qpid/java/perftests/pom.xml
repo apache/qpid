@@ -35,7 +35,7 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-	<log4j.perftests>perftests.log4j</log4j.perftests>	
+    <log4j.perftests>perftests.log4j</log4j.perftests>  
     </properties>
 
     <dependencies>
@@ -79,27 +79,27 @@
 
             <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository. It will take a day or two from 16/1/2007.
 
-	         Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
+             Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
                  scripts.
 
-		 To run from maven:
+         To run from maven:
 
-		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
+         mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
 
-		 To run from the command line (after doing assembly:assembly goal):
+         To run from the command line (after doing assembly:assembly goal):
 
-		 java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 -o target org.apache.qpid.requestreply.PingPongTestPerf
+         java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 -o target org.apache.qpid.requestreply.PingPongTestPerf
 
-		 To generate the scripts do:
+         To generate the scripts do:
 
-		 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
+         mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
 
-		 Then to run the scripts do (after doing assembly:assembly goal):
+         Then to run the scripts do (after doing assembly:assembly goal):
 
-		 ./bin/script_name or ./bin/script_name.bat
+         ./bin/script_name or ./bin/script_name.bat
 
-		 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
-		 -->	
+         These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
+         -->    
             <!--
             <plugin>
               <groupId>uk.co.thebadgerset</groupId>
@@ -107,10 +107,10 @@
               <version>0.3</version>
 
               <configuration>
-	        <scriptOutDirectory>target</scriptOutDirectory>
-	        <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
+            <scriptOutDirectory>target</scriptOutDirectory>
+            <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
 
-		<systemproperties>
+        <systemproperties>
                   <property>
                     <name>log4j.configuration</name>
                     <value>${log4j.perftests}</value>
@@ -121,66 +121,66 @@
                   <!## Run the ping pong test once. This is just to check toolkit test runner is working. Real tests follow. ##>
                   <PingOnce>-n PingOnce -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</PingOnce>
 
-		  <!## Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. ##>
-		  <ThrottleTest>-n ThrottleTest -r 5 -s [10,10000],samples=100,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
+          <!## Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. ##>
+          <ThrottleTest>-n ThrottleTest -r 5 -s [10,10000],samples=100,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
 
-		  <!##
-		     Skim Tests.
-		     These are not part of the performance suite. They run quick tests to check that the different combinations of
-		     options that the performance suite uses are going to work. 
-		    ##>
-		  <Skim-Tx>-n Skim-Tx -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf transacted=true</Skim-Tx>
-		  <Skim-Size>-n Skim-Size -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=51200</Skim-Size>
-		  <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Many>
-		  <Skim-Queues>-n Skim-Queues -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf numQueues=10</Skim-Queues>
-		  <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Duration>
-		  <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf rate=100</Skim-Rate>
+          <!##
+             Skim Tests.
+             These are not part of the performance suite. They run quick tests to check that the different combinations of
+             options that the performance suite uses are going to work. 
+            ##>
+          <Skim-Tx>-n Skim-Tx -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf transacted=true</Skim-Tx>
+          <Skim-Size>-n Skim-Size -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=51200</Skim-Size>
+          <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Many>
+          <Skim-Queues>-n Skim-Queues -s [1000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf destinationscount=10</Skim-Queues>
+          <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf</Skim-Duration>
+          <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testPingOk org.apache.qpid.ping.PingTestPerf rate=100</Skim-Rate>
 
-		  <!## P2P Volume Tests. ##>
-		  <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</VQ-Qpid-1>
-		  <VQ-Qpid-2>-n VQ-Qpid-2 -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</VQ-Qpid-2>
-		  <VQ-Qpid-3>-n VQ-Qpid-3 -s [10000] -D24H -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 rate=10000 transacted=true</VQ-Qpid-3>
-		  <VQ-Qpid-4>-n VQ-Qpid-4 -s [10000] -D24H -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 rate=10000</VQ-Qpid-4>
+          <!## P2P Volume Tests. ##>
+          <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</VQ-Qpid-1>
+          <VQ-Qpid-2>-n VQ-Qpid-2 -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024</VQ-Qpid-2>
+          <VQ-Qpid-3>-n VQ-Qpid-3 -s [10000] -D24H -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 rate=10000 transacted=true</VQ-Qpid-3>
+          <VQ-Qpid-4>-n VQ-Qpid-4 -s [10000] -D24H -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 rate=10000</VQ-Qpid-4>
 
-		  <!## P2P Scalability Tests. ##>
-		  <PQ-Qpid-1>-n PQ-Qpid-1 -s [15000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</PQ-Qpid-1>
-		  <PQ-Qpid-2>-n PQ-Qpid-2 -s [15000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</PQ-Qpid-2>
+          <!## P2P Scalability Tests. ##>
+          <PQ-Qpid-1>-n PQ-Qpid-1 -s [15000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</PQ-Qpid-1>
+          <PQ-Qpid-2>-n PQ-Qpid-2 -s [15000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024</PQ-Qpid-2>
 
-		  <!## 3 & 4 Need 10 pub/client but 1 queue... ##>
+          <!## 3 & 4 Need 10 pub/client but 1 queue... ##>
 
-		  <PQ-Qpid-5>-n PQ-Qpid-5 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</PQ-Qpid-5>
-		  <PQ-Qpid-6>-n PQ-Qpid-6 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</PQ-Qpid-6>
-		  <PQ-Qpid-7>-n PQ-Qpid-7 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true numQueues=10</PQ-Qpid-7>
-		  <PQ-Qpid-8>-n PQ-Qpid-8 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 numQueue=10</PQ-Qpid-8>
-		  <PQ-Qpid-9>-n PQ-Qpid-9 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</PQ-Qpid-9>
-		  <PQ-Qpid-10>-n PQ-Qpid-10 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</PQ-Qpid-10>
-		  <PQ-Qpid-11>-n PQ-Qpid-11 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true numQueues=10</PQ-Qpid-11>
-		  <PQ-Qpid-12>-n PQ-Qpid-12 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 numQueues=10</PQ-Qpid-12>
-		  <PQ-Qpid-13>-n PQ-Qpid-13 -s [15000] -c[1000] -D1M -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</PQ-Qpid-13>
-		  <PQ-Qpid-14>-n PQ-Qpid-14 -s [15000] -c[1000] -D1M -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024</PQ-Qpid-14>
+          <PQ-Qpid-5>-n PQ-Qpid-5 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</PQ-Qpid-5>
+          <PQ-Qpid-6>-n PQ-Qpid-6 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024</PQ-Qpid-6>
+          <PQ-Qpid-7>-n PQ-Qpid-7 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true destinationscount=10</PQ-Qpid-7>
+          <PQ-Qpid-8>-n PQ-Qpid-8 -s [15000] -c[10] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 destinationscount=10</PQ-Qpid-8>
+          <PQ-Qpid-9>-n PQ-Qpid-9 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</PQ-Qpid-9>
+          <PQ-Qpid-10>-n PQ-Qpid-10 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024</PQ-Qpid-10>
+          <PQ-Qpid-11>-n PQ-Qpid-11 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true destinationscount=10</PQ-Qpid-11>
+          <PQ-Qpid-12>-n PQ-Qpid-12 -s [15000] -c[100] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 destinationscount=10</PQ-Qpid-12>
+          <PQ-Qpid-13>-n PQ-Qpid-13 -s [15000] -c[1000] -D1M -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</PQ-Qpid-13>
+          <PQ-Qpid-14>-n PQ-Qpid-14 -s [15000] -c[1000] -D1M -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024</PQ-Qpid-14>
 
-		  <!## Increasing Message Payload Tests. ##>
-		  <LT-Qpid-3-512b>-n LT-Qpid-3-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-3-512b>
-		  <LT-Qpid-4-512b>-n LT-Qpid-4-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=512 transacted=true</LT-Qpid-4-512b>
-		  <LT-Qpid-3-1K>-n LT-Qpid-3-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</LT-Qpid-3-1K>
-		  <LT-Qpid-4-1K>-n LT-Qpid-4-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true</LT-Qpid-4-1K>
-		  <LT-Qpid-3-5K>-n LT-Qpid-3-5K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=5120 transacted=true</LT-Qpid-3-5K>
-		  <LT-Qpid-4-5K>-n LT-Qpid-4-5K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=5120 transacted=true</LT-Qpid-4-5K>
-		  <LT-Qpid-3-10K>-n LT-Qpid-3-10K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=10240 transacted=true</LT-Qpid-3-10K>
-		  <LT-Qpid-4-10K>-n LT-Qpid-4-10K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=10240 transacted=true</LT-Qpid-4-10K>
-		  <LT-Qpid-3-50K>-n LT-Qpid-3-50K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=51200 transacted=true</LT-Qpid-3-50K>
-		  <LT-Qpid-4-50K>-n LT-Qpid-4-50K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=51200 transacted=true</LT-Qpid-4-50K>
-		  <LT-Qpid-3-1M>-n LT-Qpid-3-1M -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1048576 transacted=true</LT-Qpid-3-1M>
-		  <LT-Qpid-4-1M>-n LT-Qpid-4-1M -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1048576 transacted=true</LT-Qpid-4-1M>
+          <!## Increasing Message Payload Tests. ##>
+          <LT-Qpid-3-512b>-n LT-Qpid-3-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=512 transacted=true</LT-Qpid-3-512b>
+          <LT-Qpid-4-512b>-n LT-Qpid-4-512b -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=512 transacted=true</LT-Qpid-4-512b>
+          <LT-Qpid-3-1K>-n LT-Qpid-3-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</LT-Qpid-3-1K>
+          <LT-Qpid-4-1K>-n LT-Qpid-4-1K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true</LT-Qpid-4-1K>
+          <LT-Qpid-3-5K>-n LT-Qpid-3-5K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=5120 transacted=true</LT-Qpid-3-5K>
+          <LT-Qpid-4-5K>-n LT-Qpid-4-5K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=5120 transacted=true</LT-Qpid-4-5K>
+          <LT-Qpid-3-10K>-n LT-Qpid-3-10K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=10240 transacted=true</LT-Qpid-3-10K>
+          <LT-Qpid-4-10K>-n LT-Qpid-4-10K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=10240 transacted=true</LT-Qpid-4-10K>
+          <LT-Qpid-3-50K>-n LT-Qpid-3-50K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=51200 transacted=true</LT-Qpid-3-50K>
+          <LT-Qpid-4-50K>-n LT-Qpid-4-50K -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=51200 transacted=true</LT-Qpid-4-50K>
+          <LT-Qpid-3-1M>-n LT-Qpid-3-1M -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1048576 transacted=true</LT-Qpid-3-1M>
+          <LT-Qpid-4-1M>-n LT-Qpid-4-1M -s [900000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1048576 transacted=true</LT-Qpid-4-1M>
 
-		  <!## Failover Tests. ##>
-		  <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true failover=true</FT-Qpid-1>
-		  <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 transacted=true failover=true</FT-Qpid-2>
-		  <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterCommit=true</FT-Qpid-3>
+          <!## Failover Tests. ##>
+          <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true failover=true</FT-Qpid-1>
+          <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 transacted=true failover=true</FT-Qpid-2>
+          <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterCommit=true</FT-Qpid-3>
 
-		  <FT-Qpid-4>-n FT-Qpid-4 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailBeforeSend=true</FT-Qpid-4>
-		  <FT-Qpid-5>-n FT-Qpid-5 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterSend=true</FT-Qpid-5>
-		  <FT-Qpid-6>-n FT-Qpid-6 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messageSize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterCommit=true</FT-Qpid-6>
+          <FT-Qpid-4>-n FT-Qpid-4 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailBeforeSend=true</FT-Qpid-4>
+          <FT-Qpid-5>-n FT-Qpid-5 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterSend=true</FT-Qpid-5>
+          <FT-Qpid-6>-n FT-Qpid-6 -s [250000] -o . -t testPingOk org.apache.qpid.ping.PingTestPerf messagesize=1024 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterCommit=true</FT-Qpid-6>
 
 
                 </commands>
@@ -195,7 +195,7 @@
                 </execution>
               </executions>
             </plugin>
-	    -->
+        -->
 
             <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
 
@@ -226,7 +226,7 @@
         </plugins>
 
         <resources>
-	    <!-- Include source files in built jar -->
+        <!-- Include source files in built jar -->
             <resource>
                 <targetPath>src/</targetPath>
                 <filtering>false</filtering>
@@ -235,7 +235,7 @@
                     <include>**/*.java</include>
                 </includes>
             </resource>
-	    <!-- Include a log4j configuration in the jar at the root level (don't name this log4j.properties though as won't be able to override it). -->
+        <!-- Include a log4j configuration in the jar at the root level (don't name this log4j.properties though as won't be able to override it). -->
             <resource>
                 <targetPath>/</targetPath>
                 <filtering>false</filtering>
