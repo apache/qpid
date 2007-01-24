@@ -516,10 +516,10 @@ void BrokerAdapter::handleMethodInContext(
     try{
         method->invoke(*serverOps, context);
     }catch(ChannelException& e){
-        connection.closeChannel(getId());
         connection.client->getChannel().close(
             context, e.code, e.toString(),
             method->amqpClassId(), method->amqpMethodId());
+        connection.closeChannel(getId());
     }catch(ConnectionException& e){
         connection.client->getConnection().close(
             context, e.code, e.toString(),
