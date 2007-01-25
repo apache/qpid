@@ -22,6 +22,7 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQConnectionException;
 
 public abstract class AMQMethodBody extends AMQBody
 {
@@ -102,5 +103,17 @@ public abstract class AMQMethodBody extends AMQBody
     public AMQChannelException getChannelException(int code, String message, Throwable cause)
     {
         return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, cause);
+    }
+
+    public AMQConnectionException getConnectionException(int code, String message)
+    {
+        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor);
+    }
+
+
+
+    public AMQConnectionException getConnectionException(int code, String message, Throwable cause)
+    {
+        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, cause);
     }
 }

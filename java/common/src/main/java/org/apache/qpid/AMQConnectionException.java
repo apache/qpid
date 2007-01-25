@@ -21,10 +21,46 @@
 
 package org.apache.qpid;
 
+import org.apache.qpid.framing.ConnectionCloseBody;
+
 public class AMQConnectionException extends AMQException
 {
-    public AMQConnectionException(String message)
+    private final int _classId;
+    private final int _methodId;
+    /* AMQP version for which exception ocurred */
+    private final byte major;
+    private final byte minor;
+
+    public AMQConnectionException(int errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
     {
-        super(message);
+        super(errorCode, msg, t);
+        _classId = classId;
+        _methodId = methodId;
+        this.major = major;
+        this.minor = minor;
     }
+
+    public AMQConnectionException(int errorCode, String msg, int classId, int methodId, byte major, byte minor)
+    {
+        super(errorCode, msg);
+        _classId = classId;
+        _methodId = methodId;
+        this.major = major;
+        this.minor = minor;
+    }
+
+    public ConnectionCloseBody getCloseMethodBody()
+    {
+        return ConnectionCloseBody.createMethodBody(major, minor, _classId, _methodId, getErrorCode(), getMessage());
+    }
+
+    public int getClassId()
+    {
+        return _classId;
+    }
+
+    public int getMethodId(){
+        return _methodId;
+    }
+
 }
