@@ -15,7 +15,7 @@ clean-local:
 # Build source and binary RPMs.
 rpm: dist
 	rpmbuild $(RPMOPTS) $(RPMEXTRAOPTS) -ba $(SPEC)
-	rpmlint RPMS/*.rpm	
+	rpmlint RPMS/*/*.rpm	
 
 # Build source RPM only.
 srpm: dist
