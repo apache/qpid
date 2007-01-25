@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
-  README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 README.txt \
+  README-dev DESIGN LICENSE NOTICE README.rhel3 README \
   etc/qpidd \
   $(PACKAGE).spec \
   $(PACKAGE).spec.in
