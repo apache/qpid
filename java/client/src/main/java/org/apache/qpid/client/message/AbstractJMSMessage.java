@@ -471,6 +471,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             StringBuffer buf = new StringBuffer("Body:\n");
             buf.append(toBodyString());
+            buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
             buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
             buf.append("\nJMS expiration: ").append(getJMSExpiration());
             buf.append("\nJMS priority: ").append(getJMSPriority());

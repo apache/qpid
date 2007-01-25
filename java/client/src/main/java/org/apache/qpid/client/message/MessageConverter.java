@@ -37,17 +37,9 @@ public class MessageConverter {
      */
     private AbstractJMSMessage _newMessage;
 
-    /*
-    * Message instance is not one of the Qpid implementations
-    */
-    public MessageConverter(Message message)
+    public MessageConverter(AbstractJMSMessage message) throws JMSException
     {
-        _newMessage = new JMSBytesMessage();
-    }
-
-    public MessageConverter(AbstractJMSMessage message)
-    {
-
+        _newMessage = message;
     }
 
     public MessageConverter(BytesMessage message) throws JMSException
@@ -149,7 +141,7 @@ public class MessageConverter {
         while (propertyNames.hasMoreElements())
         {
             String propertyName = String.valueOf(propertyNames.nextElement());
-            //TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() returns them
+            //TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() should return them
             if (!propertyName.startsWith("JMSX_"))
             {
                 Object value = message.getObjectProperty(propertyName);
