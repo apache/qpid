@@ -162,7 +162,8 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
-            	(byte)8, (byte)0,	// AMQP version (major, minor)
+            	session.getProtocolMajorVersion(),
+                session.getProtocolMinorVersion(),	// AMQP version (major, minor)
             	0,	// classId
                 0,	// methodId
                 200,	// replyCode
