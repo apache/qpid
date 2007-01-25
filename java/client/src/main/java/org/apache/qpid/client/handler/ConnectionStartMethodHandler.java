@@ -60,82 +60,117 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     {
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
-        try
+        byte major = (byte) body.versionMajor;
+        byte minor = (byte) body.versionMinor;
+
+        if(checkVersionOK(major, minor))
         {
-            // the mechanism we are going to use
-            String mechanism;
-            if (body.mechanisms == null)
-            {
-                throw new AMQException("mechanism not specified in ConnectionStart method frame");
-            }
-            else
-            {
-                mechanism = chooseMechanism(body.mechanisms);
-            }
 
-            if (mechanism == null)
-            {
-                throw new AMQException("No supported security mechanism found, passed: " + new String(body.mechanisms));
-            }
+            protocolSession.setProtocolVersion(major, minor);
 
-            byte[] saslResponse;
+
             try
             {
-                SaslClient sc = Sasl.createSaslClient(new String[]{mechanism},
-                                                      null, "AMQP", "localhost",
-                                                      null,createCallbackHandler(mechanism, protocolSession));
-                if (sc == null)
+                // the mechanism we are going to use
+                String mechanism;
+                if (body.mechanisms == null)
                 {
-                    throw new AMQException("Client SASL configuration error: no SaslClient could be created for mechanism " +
-                                           mechanism + ". Please ensure all factories are registered. See DynamicSaslRegistrar for " +
-                                           " details of how to register non-standard SASL client providers.");
+                    throw new AMQException("mechanism not specified in ConnectionStart method frame");
                 }
-                protocolSession.setSaslClient(sc);
-                saslResponse = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
-            }
-            catch (SaslException e)
-            {
-                protocolSession.setSaslClient(null);
-                throw new AMQException("Unable to create SASL client: " + e, e);
-            }
+                else
+                {
+                    mechanism = chooseMechanism(body.mechanisms);
+                }
 
-            if (body.locales == null)
-            {
-                throw new AMQException("Locales is not defined in Connection Start method");
-            }
-            final String locales = new String(body.locales, "utf8");
-            final StringTokenizer tokenizer = new StringTokenizer(locales, " ");
-            String selectedLocale = null;
-            if (tokenizer.hasMoreTokens())
-            {
-                selectedLocale = tokenizer.nextToken();
-            }
-            else
-            {
-                throw new AMQException("No locales sent from server, passed: " + locales);
-            }
+                if (mechanism == null)
+                {
+                    throw new AMQException("No supported security mechanism found, passed: " + new String(body.mechanisms));
+                }
 
-            stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-            FieldTable clientProperties = FieldTableFactory.newFieldTable();
-            
-            clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
-            clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
-            clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
-            clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
-                clientProperties,	// clientProperties
-                new AMQShortString(selectedLocale),	// locale
-                new AMQShortString(mechanism),	// mechanism
-                saslResponse));	// response
+                byte[] saslResponse;
+                try
+                {
+                    SaslClient sc = Sasl.createSaslClient(new String[]{mechanism},
+                                                          null, "AMQP", "localhost",
+                                                          null,createCallbackHandler(mechanism, protocolSession));
+                    if (sc == null)
+                    {
+                        throw new AMQException("Client SASL configuration error: no SaslClient could be created for mechanism " +
+                                               mechanism + ". Please ensure all factories are registered. See DynamicSaslRegistrar for " +
+                                               " details of how to register non-standard SASL client providers.");
+                    }
+                    protocolSession.setSaslClient(sc);
+                    saslResponse = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
+                }
+                catch (SaslException e)
+                {
+                    protocolSession.setSaslClient(null);
+                    throw new AMQException("Unable to create SASL client: " + e, e);
+                }
+
+                if (body.locales == null)
+                {
+                    throw new AMQException("Locales is not defined in Connection Start method");
+                }
+                final String locales = new String(body.locales, "utf8");
+                final StringTokenizer tokenizer = new StringTokenizer(locales, " ");
+                String selectedLocale = null;
+                if (tokenizer.hasMoreTokens())
+                {
+                    selectedLocale = tokenizer.nextToken();
+                }
+                else
+                {
+                    throw new AMQException("No locales sent from server, passed: " + locales);
+                }
+
+                stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
+                FieldTable clientProperties = FieldTableFactory.newFieldTable();
+
+                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
+                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
+                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
+                clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
+                    protocolSession.getProtocolMajorVersion(),
+                    protocolSession.getProtocolMinorVersion(),	
+                    clientProperties,	// clientProperties
+                    new AMQShortString(selectedLocale),	// locale
+                    new AMQShortString(mechanism),	// mechanism
+                    saslResponse));	// response
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                throw new AMQException(_log, "Unable to decode data: " + e, e);
+            }
         }
-        catch (UnsupportedEncodingException e)
+        else
         {
-            throw new AMQException(_log, "Unable to decode data: " + e, e);
+            _log.error("Broker requested Protocol ["
+                        + body.versionMajor
+                        + "-"
+                        + body.versionMinor
+                        + "] which is not supported by this version of the client library");
+
+            protocolSession.closeProtocolSession();
         }
+    }
+
+    private boolean checkVersionOK(byte versionMajor, byte versionMinor)
+    {
+        byte[][] supportedVersions = ProtocolVersionList.pv;
+        boolean supported = false;
+        int i = supportedVersions.length;
+        while(i-- != 0 && !supported)
+        {
+            supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
+                        && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
+        }
+
+        return supported;
     }
 
     private String getFullSystemInfo()

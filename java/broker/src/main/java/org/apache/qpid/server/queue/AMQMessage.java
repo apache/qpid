@@ -541,7 +541,7 @@ public class AMQMessage
     public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        ByteBuffer deliver = createEncodedDeliverFrame(channelId, deliveryTag, consumerTag);
+        ByteBuffer deliver = createEncodedDeliverFrame(protocolSession, channelId, deliveryTag, consumerTag);
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       getContentHeaderBody());
 
@@ -585,7 +585,7 @@ public class AMQMessage
 
     public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
-        ByteBuffer deliver = createEncodedGetOkFrame(channelId, deliveryTag, queueSize);
+        ByteBuffer deliver = createEncodedGetOkFrame(protocolSession, channelId, deliveryTag, queueSize);
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       getContentHeaderBody());
 
@@ -627,11 +627,11 @@ public class AMQMessage
     }
 
 
-    private ByteBuffer createEncodedDeliverFrame(int channelId, long deliveryTag, AMQShortString consumerTag)
+    private ByteBuffer createEncodedDeliverFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
         BasicPublishBody pb = getPublishBody();
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, (byte) 8, (byte) 0, consumerTag,
+        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, protocolSession.getProtocolMajorVersion(), (byte) 0, consumerTag,
                                                                 deliveryTag, pb.exchange, _messageHandle.isRedelivered(),
                                                                 pb.routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
@@ -640,11 +640,13 @@ public class AMQMessage
         return buf;
     }
 
-    private ByteBuffer createEncodedGetOkFrame(int channelId, long deliveryTag, int queueSize)
+    private ByteBuffer createEncodedGetOkFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
         BasicPublishBody pb = getPublishBody();
-        AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId, (byte) 8, (byte) 0,
+        AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId,
+                                                            protocolSession.getProtocolMajorVersion(),
+                                                            protocolSession.getProtocolMinorVersion(),
                                                                 deliveryTag, pb.exchange,
                                                                 queueSize,
                                                                 _messageHandle.isRedelivered(),
@@ -655,9 +657,12 @@ public class AMQMessage
         return buf;
     }
 
-    private ByteBuffer createEncodedReturnFrame(int channelId, int replyCode, AMQShortString replyText) throws AMQException
+    private ByteBuffer createEncodedReturnFrame(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
-        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId, (byte) 8, (byte) 0, getPublishBody().exchange,
+        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId,
+                                                              protocolSession.getProtocolMajorVersion(),
+                                                              protocolSession.getProtocolMinorVersion(), 
+                                                              getPublishBody().exchange,
                                                               replyCode, replyText,
                                                               getPublishBody().routingKey);
         ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
@@ -669,7 +674,7 @@ public class AMQMessage
     public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText)
             throws AMQException
     {
-        ByteBuffer returnFrame = createEncodedReturnFrame(channelId, replyCode, replyText);
+        ByteBuffer returnFrame = createEncodedReturnFrame(protocolSession, channelId, replyCode, replyText);
 
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       getContentHeaderBody());
