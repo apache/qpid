@@ -90,7 +90,8 @@ public class VirtualHost
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
-        _virtualHostMBean.register();
+        // This isn't needed to be registered
+        //_virtualHostMBean.register();
 
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
@@ -107,7 +108,8 @@ public class VirtualHost
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
-        _virtualHostMBean.register();
+        // This isn't needed to be registered
+        //_virtualHostMBean.register();
         
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);

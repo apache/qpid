@@ -120,8 +120,7 @@ public class JMXServerRegistry extends ServerRegistry
         }
         catch (ListenerNotFoundException ex)
         {
-            System.err.println(ex);
-            ex.printStackTrace();
+            System.out.println(ex.toString());
         }
     }
     
@@ -132,15 +131,15 @@ public class JMXServerRegistry extends ServerRegistry
     
     public void addManagedObject(ManagedBean mbean)
     {
-        if (Constants.MBEAN_TYPE_QUEUE.equals(mbean.getType()) && !mbean.getName().startsWith("tmp_"))
+        if (mbean.getType().endsWith(Constants.QUEUE) && !mbean.getName().startsWith("tmp_"))
         {
             addQueueMBean(mbean);
         }
-        else if (Constants.MBEAN_TYPE_EXCHANGE.equals(mbean.getType()))
+        else if (mbean.getType().endsWith(Constants.EXCHANGE))
         {
             addExchangeMBean(mbean);
         }
-        else if (Constants.MBEAN_TYPE_CONNECTION.equals(mbean.getType()))
+        else if (mbean.getType().endsWith(Constants.CONNECTION))
         {
             addConnectionMBean(mbean);
         }
@@ -150,11 +149,11 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
-        if (Constants.MBEAN_TYPE_QUEUE.equals(mbean.getType()))
+        if (mbean.getType().endsWith(Constants.QUEUE))
             removeQueueMBean(mbean);
-        else if (Constants.MBEAN_TYPE_EXCHANGE.equals(mbean.getType()))
+        else if (mbean.getType().endsWith(Constants.EXCHANGE))
             removeExchangeMBean(mbean);
-        else if (Constants.MBEAN_TYPE_CONNECTION.equals(mbean.getType()))
+        else if (mbean.getType().endsWith(Constants.CONNECTION))
             removeConnectionMBean(mbean);
         
         _mbeansMap.remove(mbean.getUniqueName());
@@ -248,6 +247,7 @@ public class JMXServerRegistry extends ServerRegistry
             list.add(type);
         }
 
+        System.out.println("Subscribed for notification :" + mbean.getUniqueName());
     }
     
     public boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type)
@@ -268,6 +268,7 @@ public class JMXServerRegistry extends ServerRegistry
     
     public void removeNotificationListener(ManagedBean mbean, String name, String type) throws Exception
     {
+        System.out.println("Removed notification listener :" + mbean.getUniqueName() + name +type);
         if (_subscribedNotificationMap.containsKey(mbean.getUniqueName()))
         {            
             HashMap<String, List<String>> map = _subscribedNotificationMap.get(mbean.getUniqueName());
@@ -334,40 +335,49 @@ public class JMXServerRegistry extends ServerRegistry
         return _operationModelMap.get(mbean.getUniqueName());
     }
     
-    public String[] getQueueNames(String virtualHost)
+    public String[] getQueueNames(String virtualHostName)
     {
-        List<ManagedBean> queues = _queues.get(virtualHost);
-        String[] queueNames = new String[queues.size()];
+        List<ManagedBean> list = getQueues(virtualHostName);
+        if (list == null)
+            return null;
+        
+        String[] queues = new String[list.size()];
         int i = 0;
-        for (ManagedBean mbean : queues)
+        for (ManagedBean mbean : list)
         {
-            queueNames[i++] = mbean.getName();
+            queues[i++] = mbean.getName();
         }
-        return queueNames;
+        return queues;
     }
     
-    public String[] getExchangeNames(String virtualHost)
+    public String[] getExchangeNames(String virtualHostName)
     {
-        List<ManagedBean> exchanges = _exchanges.get(virtualHost);
-        String[] exchangeNames = new String[exchanges.size()];
+        List<ManagedBean> list = getExchanges(virtualHostName);
+        if (list == null)
+            return null;
+        
+        String[] exchanges = new String[list.size()];
         int i = 0;
-        for (ManagedBean mbean : exchanges)
+        for (ManagedBean mbean : list)
         {
-            exchangeNames[i++] = mbean.getName();
+            exchanges[i++] = mbean.getName();
         }
-        return exchangeNames;
+        return exchanges;
     }
     
-    public String[] getConnectionNames(String virtualHost)
+    public String[] getConnectionNames(String virtualHostName)
     {
-        List<ManagedBean> connections = _connections.get(virtualHost);
-        String[] connectionNames = new String[connections.size()];
+        List<ManagedBean> list = getExchanges(virtualHostName);
+        if (list == null)
+            return null;
+        
+        String[] connections = new String[list.size()];
         int i = 0;
-        for (ManagedBean mbean : connections)
+        for (ManagedBean mbean : list)
         {
-            connectionNames[i++] = mbean.getName();
+            connections[i++] = mbean.getName();
         }
-        return connectionNames;
+        return connections;
     }
 
     public ClientNotificationListener getNotificationListener()

@@ -89,6 +89,7 @@ public class OperationTabControl extends TabControl
     
     // for customized method in header exchange
     private HashMap<Text, Text> headerBindingHashMap = null;
+    private String _virtualHostName = null;
     
     public OperationTabControl(TabFolder tabFolder)
     {
@@ -152,6 +153,7 @@ public class OperationTabControl extends TabControl
     {
         _mbean = mbean;
         _opData = opData;
+        _virtualHostName = _mbean.getProperty(Constants.VIRTUAL_HOST);
         
         // Setting the form to be invisible. Just in case the mbean server connection
         // is done and it takes time in getting the response, then the ui should be blank
@@ -216,8 +218,8 @@ public class OperationTabControl extends TabControl
         }
         
         // Customised parameter widgets        
-        if (_mbean.getType().equals(Constants.MBEAN_TYPE_EXCHANGE) &&
-            "headers".equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
+        if (_mbean.getType().endsWith(Constants.EXCHANGE) &&
+            Constants.EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase("createNewBinding"))
         {                                  
             customCreateNewBinding(); 
@@ -241,10 +243,10 @@ public class OperationTabControl extends TabControl
             formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter);
             formData.left = new FormAttachment(label, 5);
             formData.right = new FormAttachment(valueNumerator);
-            if (param.getName().equals(Constants.MBEAN_TYPE_QUEUE))
+            if (param.getName().equals(Constants.QUEUE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_mbean.getProperty("VirtualHost"));
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
                 combo.setItems(items);
                 combo.add("Select Queue", 0); 
                 combo.select(0);
@@ -253,10 +255,10 @@ public class OperationTabControl extends TabControl
                 combo.addSelectionListener(parameterSelectionListener);
                 valueInCombo = true;
             }
-            else if (param.getName().equals(Constants.MBEAN_TYPE_EXCHANGE))
+            else if (param.getName().equals(Constants.EXCHANGE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_mbean.getProperty("VirtualHost"));
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_virtualHostName);
                 combo.setItems(items);
                 combo.add("Select Exchange", 0);
                 combo.select(0);
@@ -357,8 +359,8 @@ public class OperationTabControl extends TabControl
         formData.left = new FormAttachment(label, 5);
         formData.right = new FormAttachment(valueNumerator);
 
-        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
-        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_mbean.getProperty("VirtualHost"));
+        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);        
+        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
         combo.setItems(items);
         combo.add("Select Queue", 0); 
         combo.select(0);
