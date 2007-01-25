@@ -192,25 +192,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void closeConnection() throws JMException
     {
-        
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQMethodBody request = ConnectionCloseBody.createMethodBody
-            ((byte)0, (byte)9,	// AMQP version (major, minor)
-             0,	// classId
-             0,	// methodId
-             AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-             "Broker Management Console has closing the connection."	// replyText
-             );
-        try
-        {
-            if (true) throw new Error("XXX");
-            _session.writeRequest(0, request, null /*XXX*/);
-            _session.closeSession();
-        }
-        catch (AMQException ex)
-        {
+        try {
+            _session.closeSessionRequest
+                (AMQConstant.REPLY_SUCCESS.getCode(), // XXX: Success???
+                 "Broker Management Console has closing the connection.");
+        } catch (AMQException ex) {
             throw new MBeanException(ex, ex.toString());
         }
     }
