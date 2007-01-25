@@ -206,7 +206,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame response = ConnectionCloseBody.createAMQFrame(0,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            _session.getProtocolMajorVersion(),
+            _session.getProtocolMinorVersion(),	// AMQP version (major, minor)
             0,	// classId
             0,	// methodId
         	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode

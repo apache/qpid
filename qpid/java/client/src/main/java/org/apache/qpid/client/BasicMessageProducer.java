@@ -134,11 +134,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     {
         // Declare the exchange
         // Note that the durable and internal arguments are ignored since passive is set to false
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
+        // TODO: Be aware of possible changes to parameter order as versions change.
         AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            _protocolHandler.getProtocolMajorVersion(),
+            _protocolHandler.getProtocolMinorVersion(),
             null,	// arguments
             false,	// autoDelete
             false,	// durable
@@ -528,7 +527,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            _protocolHandler.getProtocolMajorVersion(),
+            _protocolHandler.getProtocolMinorVersion(),	
             destination.getExchangeName(),	// exchange
             immediate,	// immediate
             mandatory,	// mandatory
@@ -575,9 +575,13 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // weight argument of zero indicates no child content headers, just bodies
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte)8, (byte)0), 0,
-                                                                       contentHeaderProperties,
-                                                                       size);
+        AMQFrame contentHeaderFrame =
+                ContentHeaderBody.createAMQFrame(_channelId,
+                                                 BasicConsumeBody.getClazz(_protocolHandler.getProtocolMajorVersion(),
+                                                                           _protocolHandler.getProtocolMinorVersion()), 
+                                                 0,
+                                                 contentHeaderProperties,
+                                                 size);
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending content header frame to " + destination);

@@ -399,7 +399,8 @@ public class SubscriptionImpl implements Subscription
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
-        		(byte)8, (byte)0,	// AMQP version (major, minor)
+        		protocolSession.getProtocolMajorVersion(),
+                protocolSession.getProtocolMinorVersion(),
             	consumerTag	// consumerTag
                 ));
             _closed = true;
@@ -417,22 +418,4 @@ public class SubscriptionImpl implements Subscription
     }
 
 
-    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, AMQShortString routingKey, AMQShortString exchange)
-    {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channel.getChannelId(),
-        	(byte)8, (byte)0,	// AMQP version (major, minor)
-            consumerTag,	// consumerTag
-        	deliveryTag,	// deliveryTag
-            exchange,	// exchange
-            false,	// redelivered
-            routingKey	// routingKey
-            );
-        ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
-        deliverFrame.writePayload(buf);
-        buf.flip();
-        return buf;
-    }
 }
