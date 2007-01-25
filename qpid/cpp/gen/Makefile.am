@@ -6,7 +6,7 @@ pkginclude_HEADERS=$(generated_headers)
 # Distribute the generated sources, at least for now, since
 # the generator code is in java.
 EXTRA_DIST = $(BUILT_SOURCES)
-MAINTAINERCLEANFILES = $(BUILT_SOURCES)
+DISTCLEANFILES = $(BUILT_SOURCES) timestamp gen-src.mk
 
 # Don't attempt to run the code generator unless configure has set
 # CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
@@ -26,26 +26,7 @@ $(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
 	        -c -o . -t $(gentools_dir)/templ.cpp $(spec)
 	touch timestamp
 
-DISTCLEANFILES = gen-src.mk
 gen-src.mk: timestamp
-	( echo 'generated_sources = '\\				\
-	  && ls *.cpp | sort -u | sed 's/.*/  & \\/;$$s/ \\//';	\
-	  echo 'generated_headers = '\\				\
-	  && ls *.h | sort -u | sed 's/.*/  & \\/;$$s/ \\//';	\
-	) > $@-t
-	( echo if CAN_GENERATE_CODE;					\
-	  echo 'java_sources = '\\					\
-	    && find $(gentools_srcdir) -name '*.java'			\
-		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
-	  echo 'cxx_templates = '\\					\
-	    && find $(gentools_dir)/templ.cpp -name '*.tmpl'		\
-		| sort -u | sed 's/.*/  & \\/;$$s/ \\//';		\
-	  echo '# Empty rules, in case any of these files is removed,';	\
-	  echo '# renamed, or no longer generated.';			\
-	  echo '$$(spec):';						\
-	  echo '$$(java_sources):';					\
-	  echo '$$(cxx_templates):';					\
-	  echo endif							\
-	) >> $@-t
+	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) >> $@-t
 	mv $@-t $@
 endif
