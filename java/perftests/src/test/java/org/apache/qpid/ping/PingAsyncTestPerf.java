@@ -168,7 +168,7 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        catch (JMSException e)
 //        {
 //            e.printStackTrace();
-//            Assert.fail("JMS Exception Recevied" + e);
+//            Assert.fail("JMS Exception Received" + e);
 //        }
 //        catch (InterruptedException e)
 //        {
@@ -207,11 +207,15 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //            }
 //            catch (JMSException e)
 //            {
-//                _logger.error("Error commiting recevied messages", e);
+//                _logger.error("Error commiting received messages", e);
 //            }
 //            try
 //            {
-//                _timingController.completeTest(false, numPings - numReplies);
+//                if (_timingController != null)
+//                {
+//                    _logger.trace("Logging missing message count");
+//                    _timingController.completeTest(false, numPings - numReplies);
+//                }
 //            }
 //            catch (InterruptedException e)
 //            {
@@ -259,35 +263,22 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //        {
 //            try
 //            {
-//                _logger.trace("Message Recevied");
+//                _logger.trace("Message Received");
 //
 //                CountDownLatch count = _perThreadSetup._pingItselfClient.getEndLock(message.getJMSCorrelationID());
 //
-//                int messagesLeft = (int) count.getCount();
+//                int messagesLeft = (int) count.getCount() - 1;// minus one as we haven't yet counted the current message
 //
-//                int messagesReceived = _totalMessages - messagesLeft;
-//
-//                try
+//                if ((messagesLeft % _batchSize) == 0)
 //                {
-//                    if (messagesReceived % _batchSize == 0)
-//                    {
-//                        if (_timingController != null)
-//                        {
-//                            _timingController.completeTest(true, _batchSize);
-//                        }
-//                    }
-//                    else if (messagesReceived == _totalMessages)
-//                    {
-//                        _logger.info("Test Completed.. signalling");
-//                        doDone(messagesReceived);
-//                    }
-//
+//                    doDone(_batchSize);
 //                }
-//                catch (InterruptedException e)
+//                else if (messagesLeft == 0)
 //                {
-//                    _logger.error("Interupted Test");
-////                doDone(messagesReceived);
+//                    doDone(_totalMessages % _batchSize);
 //                }
+//
+//
 //            }
 //            catch (JMSException e)
 //            {
@@ -303,7 +294,10 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //            try
 //            {
-//                _timingController.completeTest(true, messageCount);
+//                if (_timingController != null)
+//                {
+//                    _timingController.completeTest(true, messageCount);
+//                }
 //            }
 //            catch (InterruptedException e)
 //            {
