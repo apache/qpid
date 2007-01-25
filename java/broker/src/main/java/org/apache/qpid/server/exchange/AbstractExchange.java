@@ -100,12 +100,13 @@ public abstract class AbstractExchange implements Exchange, Managable
             return _autoDelete;
         }
 
-//        public ObjectName getObjectName() throws MalformedObjectNameException
-//        {
-//            String objNameString = super.getObjectName().toString();
-//            objNameString = objNameString + ",VirtualHost="+ _virtualHost.getName() +",ExchangeType=" + _exchangeType;
-//            return new ObjectName(objNameString);
-//        }
+        // Added exchangetype in the object name lets maangement apps to do any customization required
+        public ObjectName getObjectName() throws MalformedObjectNameException
+        {
+            String objNameString = super.getObjectName().toString();
+            objNameString = objNameString + ",ExchangeType=" + _exchangeType;
+            return new ObjectName(objNameString);
+        }
 
         protected ManagedObjectRegistry getManagedObjectRegistry()
         {

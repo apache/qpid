@@ -202,12 +202,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         return _virtualHostMBean;
     }
 
-//    public ObjectName getObjectName() throws MalformedObjectNameException
-//    {
-//        StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
-//        objectName.append(".").append(getVirtualHost().getName());
-//        objectName.append(":type=").append(getType());
-//
-//        return new ObjectName(objectName.toString());
-//    }
+    // This will have a single instance for a virtual host, so not having the name property in the ObjectName
+    public ObjectName getObjectName() throws MalformedObjectNameException
+    {        
+        return getObjectNameForSingleInstanceMBean();
+    }
 } // End of MBean class
