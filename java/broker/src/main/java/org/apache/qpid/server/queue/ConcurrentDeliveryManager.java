@@ -142,8 +142,13 @@ public class ConcurrentDeliveryManager implements DeliveryManager
 
     private boolean addMessageToQueue(AMQMessage msg)
     {
+        // XXX: I don't think this will have an effect anymore because
+        // we don't allocate anymore space than we need. Also this
+        // seems like an odd place to do this. Why wouldn't we want to
+        // do this from a more central location on receiving the
+        // message?
+
         // Shrink the ContentBodies to their actual size to save memory.
-        if (true) throw new Error("XXX");
         /*if (compressBufferOnQueue)
         {
             Iterator it = msg.getContentBodies().iterator();
