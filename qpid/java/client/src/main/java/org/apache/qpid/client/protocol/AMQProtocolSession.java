@@ -93,6 +93,12 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
 
+    private byte _protocolMinorVersion;
+    private byte _protocolMajorVersion;
+
+
+
+
     /**
      * No-arg constructor for use by test subclass - has to initialise final vars
      * NOT intended for use other then for test
@@ -458,4 +464,22 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
         session.confirmConsumerCancelled(consumerTag);
     }
+
+    public void setProtocolVersion(byte versionMajor, byte versionMinor)
+    {
+        _protocolMajorVersion = versionMajor;
+        _protocolMinorVersion = versionMinor;
+
+    }
+
+    public byte getProtocolMinorVersion()
+    {
+        return _protocolMinorVersion;
+    }
+
+    public byte getProtocolMajorVersion()
+    {
+        return _protocolMajorVersion;
+    }
+
 }

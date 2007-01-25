@@ -35,6 +35,7 @@ public interface AMQProtocolSession extends AMQProtocolWriter
 {
 
 
+
     public static interface Task
     {
         public void doTask(AMQProtocolSession session) throws AMQException;
@@ -142,5 +143,9 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     void addSessionCloseTask(Task task);
 
     void removeSessionCloseTask(Task task);
+
+    byte getProtocolMajorVersion();
+
+    byte getProtocolMinorVersion();
 
 }
