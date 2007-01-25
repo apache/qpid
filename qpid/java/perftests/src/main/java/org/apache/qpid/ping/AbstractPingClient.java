@@ -31,11 +31,11 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.Session;
 
 /**
- * Provides common functionality that ping clients can use. This base class keeps track of the connection used to send
- * pings, provides a convenience method to commit a transaction only when a session to commit on is transactional, keeps
- * track of whether the ping client is pinging to a queue or a topic, provides prompts to the console to terminate brokers
- * before and after commits, in order to test failover functionality, and provides a convience formatter for outputing
- * readable timestamps for pings.
+ * Provides common functionality that ping clients (the recipients of ping messages) can use. This base class keeps
+ * track of the connection used to send pings, provides a convenience method to commit a transaction only when a session
+ * to commit on is transactional, keeps track of whether the ping client is pinging to a queue or a topic, provides
+ * prompts to the console to terminate brokers before and after commits, in order to test failover functionality, and
+ * provides a convience formatter for outputing readable timestamps for pings.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
@@ -44,6 +44,9 @@ import org.apache.qpid.jms.Session;
  * <tr><td> Keep track the connection.
  * <tr><td> Keep track of p2p or topic ping type.
  * </table>
+ *
+ * @todo This base class does not seem particularly usefull and some methods are duplicated in {@link AbstractPingProducer},
+ *       consider merging it into that class.
  */
 public abstract class AbstractPingClient
 {
