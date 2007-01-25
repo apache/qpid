@@ -25,6 +25,7 @@ import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQProtocolVersionException;
@@ -246,7 +247,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                     throw new AMQException("Incoming request frame on connection which is pending close.");
                 AMQRequestBody requestBody = (AMQRequestBody)frame.bodyFrame;
                 if (!(requestBody.getMethodPayload() instanceof ConnectionCloseOkBody))
-                    throw new AMQException("Incoming frame on unopened channel is not a Connection.Open method.");         
+                    throw new AMQException("Incoming frame on closing connection is not a Connection.CloseOk method.");
             }
             else if (channel == null)
             {
@@ -259,8 +260,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 if(!(frame.bodyFrame instanceof AMQRequestBody))
                     throw new AMQException("Incoming frame on unopened channel is not a request.");
                 AMQRequestBody requestBody = (AMQRequestBody)frame.bodyFrame;
-                if (!(requestBody.getMethodPayload() instanceof ChannelOpenBody))
-                    throw new AMQException("Incoming frame on unopened channel is not a Channel.Open method.");
+                if (!(requestBody.getMethodPayload() instanceof ChannelOpenBody)) {
+                    closeSessionRequest(
+                        requestBody.getMethodPayload().getConnectionException(
+                            504, "Incoming frame on unopened channel is not a Connection.Open method."
+                        )
+                    ); 
+                }
                 if (requestBody.getRequestId() != 1)
                     throw new AMQException("Incoming Channel.Open frame on unopened channel does not have a request id = 1.");
                 channel = createChannel(frame.channel);
@@ -283,13 +289,29 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     
     private void requestFrameReceived(int channelNum, AMQRequestBody requestBody) throws Exception
     {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Request frame received: " + requestBody);
+        try{
+            if (_logger.isDebugEnabled())
+            {
+                    _logger.debug("Request frame received: " + requestBody);
+            }
+            AMQChannel channel = getChannel(channelNum);
+            ResponseManager responseManager = channel.getResponseManager();
+            responseManager.requestReceived(requestBody);
         }
-        AMQChannel channel = getChannel(channelNum);
-        ResponseManager responseManager = channel.getResponseManager();
-        responseManager.requestReceived(requestBody);
+        catch (AMQChannelException e)
+        {
+            _logger.error("Closing channel due to: " + e.getMessage());
+            writeRequest(channelNum, e.getCloseMethodBody());
+            AMQChannel channel = _channelMap.remove(channelNum);
+            if (channel != null) {
+                channel.close(this);
+            }
+        }
+        catch (AMQConnectionException e)
+        {
+            _logger.error("Closing connection due to: " + e.getMessage());
+            closeSessionRequest(e);
+        }
     }
     
     private void responseFrameReceived(int channelNum, AMQResponseBody responseBody) throws Exception
@@ -490,6 +512,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         closeSessionRequest(replyCode, replyText, 0, 0);
     }
+
+
+    public void closeSessionRequest(AMQConnectionException e) throws AMQException
+    {
+        closeSessionRequest(e.getErrorCode(), e.getMessage(), e.getClassId(), e.getMethodId());
+    }
+
     
     // Used to close a connection as a response to a client close request
     public void closeSessionResponse(long requestId) throws AMQException
