@@ -59,7 +59,7 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             AMQFrame responseFrame = ConnectionSecureOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
+                body.getMajor(), body.getMinor(),
                 response);	// response
             protocolSession.writeFrame(responseFrame);
         }

@@ -62,34 +62,30 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
         protocolSession.setConnectionTuneParameters(params);
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        protocolSession.writeFrame(createTuneOkFrame(evt.getChannelId(), params));
+        protocolSession.writeFrame(createTuneOkFrame(evt.getChannelId(), params,frame.getMajor(), frame.getMinor()));
 
         String host = protocolSession.getAMQConnection().getVirtualHost();
         AMQShortString virtualHost = new AMQShortString("/" + host);
 
 
-        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), virtualHost, null, true));
+        protocolSession.writeFrame(createConnectionOpenFrame(evt.getChannelId(), virtualHost, null, true,frame.getMajor(), frame.getMinor()));
     }
 
-    protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist)
+    protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist, byte major, byte minor)
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         return ConnectionOpenBody.createAMQFrame(channel,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            major, minor,	// AMQP version (major, minor)
             capabilities,	// capabilities
             insist,	// insist
             path);	// virtualHost
     }
 
-    protected AMQFrame createTuneOkFrame(int channel, ConnectionTuneParameters params)
+    protected AMQFrame createTuneOkFrame(int channel, ConnectionTuneParameters params, byte major, byte minor)
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         return ConnectionTuneOkBody.createAMQFrame(channel,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
+            major, minor,
             params.getChannelMax(),	// channelMax
             params.getFrameMax(),	// frameMax
             params.getHeartbeat());	// heartbeat
