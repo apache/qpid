@@ -130,6 +130,9 @@ fi
 
 %changelog
 
+* Thu Jan 25 2007 Alan Conway <aconway@redhat.com> - 0.1-3
+- Applied Jim Meyereings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/%3c87hcugzmyp.fsf@rho.meyering.net%3e
+
 * Mon Dec 22 2006 Alan Conway <aconway@redhat.com> - 0.1-1
 - Fixed all rpmlint complaints (with help from David Lutterkort)
 - Added qpidd --daemon behaviour, fix init.rc scripts
@@ -138,5 +141,3 @@ fi
 - Initial version based on Jim Meyering's sketch and discussions with Alan
   Conway
 
-* Thu Jan 25 Alan Conway <aconway@redhat.com> - 0.1-3
-- Applied Jim Meyereings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/%3c87hcugzmyp.fsf@rho.meyering.net%3e
