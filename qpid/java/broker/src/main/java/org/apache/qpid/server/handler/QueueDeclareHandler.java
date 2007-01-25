@@ -106,10 +106,10 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             AMQFrame response = QueueDeclareOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
-                0L, // consumerCount
-                0L, // messageCount
-                body.queue); // queue
+                                                                  (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                  0L, // consumerCount
+                                                                  0L, // messageCount
+                                                                  body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
             protocolSession.writeFrame(response);
         }
@@ -128,7 +128,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     protected AMQQueue createQueue(QueueDeclareBody body, QueueRegistry registry, AMQProtocolSession session)
             throws AMQException
     {
-        String owner = body.exclusive ? session.getContextKey() : null;
-        return new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
+        String owner = body.exclusive ? session.getContextKey() : null;        
+        return new AMQQueue(body.queue, body.durable, owner, body.autoDelete || (!body.durable && body.exclusive), registry);
     }
 }
