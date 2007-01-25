@@ -90,7 +90,7 @@ public class ConnectionTest extends TestCase
         {
             if (!(amqe instanceof AMQConnectionFailureException))
             {
-                fail("Correct exception not thrown. Excpected 'AMQConnectionException' got: " + amqe);
+                fail("Correct exception not thrown. Excpected 'AMQConnectionFailureException' got: " + amqe);
             }
         }
     }
