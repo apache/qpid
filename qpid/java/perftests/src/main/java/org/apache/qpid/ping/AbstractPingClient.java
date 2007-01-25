@@ -45,8 +45,8 @@ import org.apache.qpid.jms.Session;
  * <tr><td> Keep track of p2p or topic ping type.
  * </table>
  *
- * @todo This base class does not seem particularly usefull and some methods are duplicated in {@link AbstractPingProducer},
- *       consider merging it into that class.
+ * @todo This base class does not seem particularly usefull and all functionality is duplicated in {@link AbstractPingProducer}.
+ *       Merge it into that class.
  */
 public abstract class AbstractPingClient
 {
@@ -175,11 +175,11 @@ public abstract class AbstractPingClient
     /**
      * Sets the connection that this ping client is using.
      *
-     * @param _connection The ping connection.
+     * @param connection The ping connection.
      */
-    public void setConnection(AMQConnection _connection)
+    public void setConnection(AMQConnection connection)
     {
-        this._connection = _connection;
+        this._connection = connection;
     }
 
     /**
