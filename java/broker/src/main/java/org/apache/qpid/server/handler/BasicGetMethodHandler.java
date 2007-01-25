@@ -72,7 +72,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
 
                     // TODO - set clusterId
-                    session.writeFrame(BasicGetEmptyBody.createAMQFrame(channelId, (byte) 8, (byte) 0, null));
+                    session.writeFrame(BasicGetEmptyBody.createAMQFrame(channelId, body.getMajor(), body.getMinor(), null));
                 }
             }
         }
