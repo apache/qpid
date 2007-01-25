@@ -21,7 +21,7 @@
 package org.apache.qpid.client;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQUnresolvedAddressException;
@@ -274,8 +274,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 message = "Unable to Connect";
             }
 
-            AMQException e = new AMQConnectionException(message);
-
+            AMQException e = new AMQConnectionFailureException(message);
+            
             if (lastException != null)
             {
                 if (lastException instanceof UnresolvedAddressException)

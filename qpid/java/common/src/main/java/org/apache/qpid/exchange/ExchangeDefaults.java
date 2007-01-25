@@ -33,4 +33,8 @@ public class ExchangeDefaults
     public final static String HEADERS_EXCHANGE_NAME = "amq.match";
 
     public final static String HEADERS_EXCHANGE_CLASS = "headers";
+
+    public final static String FANOUT_EXCHANGE_NAME = "amq.fanout";
+
+    public final static String FANOUT_EXCHANGE_CLASS = "fanout";
 }

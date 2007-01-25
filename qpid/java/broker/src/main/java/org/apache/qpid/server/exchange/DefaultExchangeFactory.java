@@ -22,6 +22,10 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,9 +38,10 @@ public class DefaultExchangeFactory implements ExchangeFactory
 
     public DefaultExchangeFactory()
     {
-        _exchangeClassMap.put("direct", org.apache.qpid.server.exchange.DestNameExchange.class);
-        _exchangeClassMap.put("topic", org.apache.qpid.server.exchange.DestWildExchange.class);
-        _exchangeClassMap.put("headers", org.apache.qpid.server.exchange.HeadersExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestNameExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestWildExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, org.apache.qpid.server.exchange.HeadersExchange.class);
+        _exchangeClassMap.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.FanoutExchange.class);
     }
 
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete,
@@ -46,7 +51,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         Class<? extends Exchange> exchClass = _exchangeClassMap.get(type);
         if (exchClass == null)
         {
-            throw new AMQException(_logger, "Unknown exchange type: " + type);
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type);
         }
         try
         {
