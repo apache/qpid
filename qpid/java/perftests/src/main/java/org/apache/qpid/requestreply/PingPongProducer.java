@@ -505,8 +505,10 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
      */
     public void onMessage(Message message)
     {
+
         try
         {
+
             // Store the reply, if it has a correlation id that is expected.
             String correlationID = message.getJMSCorrelationID();
 
@@ -523,11 +525,18 @@ public class PingPongProducer extends AbstractPingProducer implements Runnable, 
             {
                 if (_messageListener != null)
                 {
-                    _messageListener.onMessage(message);
+                    synchronized (trafficLight)
+                    {
+                        _messageListener.onMessage(message);
+                        trafficLight.countDown();
+                    }
+                }
+                else
+                {
+                    trafficLight.countDown();
                 }
 
                 _logger.trace("Reply was expected, decrementing the latch for the id.");
-                trafficLight.countDown();
 
                 long remainingCount = trafficLight.getCount();
 
