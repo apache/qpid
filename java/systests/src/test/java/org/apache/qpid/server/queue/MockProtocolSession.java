@@ -35,6 +35,7 @@ import org.apache.qpid.server.store.MessageStore;
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A protocol session that can be used for testing purposes.
@@ -45,8 +46,13 @@ public class MockProtocolSession implements AMQProtocolSession
 
     private Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
+    // Keeps a tally of connections for logging and debugging
+    private static AtomicInteger _ConnectionId;    
+    static { _ConnectionId = new AtomicInteger(0); }
+
     public MockProtocolSession(MessageStore messageStore)
     {
+        _ConnectionId.incrementAndGet();
         _messageStore = messageStore;
     }
 
@@ -221,4 +227,9 @@ public class MockProtocolSession implements AMQProtocolSession
 		// TODO Auto-generated method stub
 		
 	}
+    
+    public int getConnectionId()
+    {
+        return _ConnectionId.get();
+    }
 }

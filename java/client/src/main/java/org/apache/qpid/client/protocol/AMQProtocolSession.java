@@ -106,6 +106,8 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      */
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
+    
+    protected int _ConnectionId;
 
     /**
      * No-arg constructor for use by test subclass - has to initialise final vars
@@ -118,8 +120,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _stateManager = new AMQStateManager(this);
 
         // Add channel 0 request and response managers, since they will not be added through the usual mechanism
-        _channelId2RequestMgrMap.put(0, new RequestManager(0, this, false));
-        _channelId2ResponseMgrMap.put(0, new ResponseManager(0, _stateManager, this, false));
+        _ConnectionId = 0;
+        _channelId2RequestMgrMap.put(0, new RequestManager(_ConnectionId, 0, this, false));
+        _channelId2ResponseMgrMap.put(0, new ResponseManager(_ConnectionId, 0, _stateManager, this, false));
     }
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
@@ -131,8 +134,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _stateManager = new AMQStateManager(this);
 
         // Add channel 0 request and response managers, since they will not be added through the usual mechanism
-        _channelId2RequestMgrMap.put(0, new RequestManager(0, this, false));
-        _channelId2ResponseMgrMap.put(0, new ResponseManager(0, _stateManager, this, false));
+        _ConnectionId = _protocolHandler == null ? 0 : _protocolHandler.getConnectionId();
+        _channelId2RequestMgrMap.put(0, new RequestManager(_ConnectionId, 0, this, false));
+        _channelId2ResponseMgrMap.put(0, new ResponseManager(_ConnectionId, 0, _stateManager, this, false));
     }
  
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection, AMQStateManager stateManager)
@@ -146,8 +150,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _stateManager.setProtocolSession(this);
                 
         // Add channel 0 request and response managers, since they will not be added through the usual mechanism
-        _channelId2RequestMgrMap.put(0, new RequestManager(0, this, false));
-        _channelId2ResponseMgrMap.put(0, new ResponseManager(0, _stateManager, this, false));
+        _ConnectionId = _protocolHandler == null ? 0 : _protocolHandler.getConnectionId();
+        _channelId2RequestMgrMap.put(0, new RequestManager(_ConnectionId, 0, this, false));
+        _channelId2ResponseMgrMap.put(0, new ResponseManager(_ConnectionId, 0, _stateManager, this, false));
     }
 
     public void init()
@@ -379,12 +384,11 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         // Add request and response handlers, one per channel, if they do not already exist
         if (_channelId2RequestMgrMap.get(channelId) == null)
         {
-            _channelId2RequestMgrMap.put(channelId, new RequestManager(channelId, this, false));
+            _channelId2RequestMgrMap.put(channelId, new RequestManager(_ConnectionId, channelId, this, false));
         }
         if (_channelId2ResponseMgrMap.get(channelId) == null)
         {
-            
-            _channelId2ResponseMgrMap.put(channelId, new ResponseManager(channelId, _stateManager, this, false));
+            _channelId2ResponseMgrMap.put(channelId, new ResponseManager(_ConnectionId, channelId, _stateManager, this, false));
         }
     }
 

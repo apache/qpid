@@ -149,4 +149,5 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     byte getMinor();
     boolean versionEquals(byte major, byte minor);
     void checkMethodBodyVersion(AMQMethodBody methodBody);
+    int getConnectionId();
 }
