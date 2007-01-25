@@ -426,7 +426,7 @@ public class JMSPropertyFieldTable
         return _fieldtable.propertyExists(propertyName);
     }
 
-    public Object put(Object key, Object value)
+    public Object put(String key, Object value)
     {
         return _fieldtable.put(key, value);
     }
