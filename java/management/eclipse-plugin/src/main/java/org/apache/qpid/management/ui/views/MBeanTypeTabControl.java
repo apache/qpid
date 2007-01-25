@@ -91,7 +91,7 @@ public class MBeanTypeTabControl
                 for (int i = 0; i < selectedItems.length; i++)
                 {
                     String name = selectedItems[i];;
-                    if (Constants.MBEAN_TYPE_QUEUE.equals(_type))
+                    if (Constants.QUEUE.equals(_type))
                     {
                         int endIndex = name.lastIndexOf("(");
                         name = name.substring(0, endIndex -1);
@@ -231,21 +231,21 @@ public class MBeanTypeTabControl
         java.util.List<ManagedBean> list = null;
         
         // populate the map and list with appropriate mbeans
-        if (_type.equals(Constants.MBEAN_TYPE_QUEUE)  || _type.equals(Constants.NODE_LABEL_QUEUES))
+        if (_type.equals(Constants.QUEUE))
         {
-            list = serverRegistry.getQueues(MBeanView.getVirtualHostName());
+            list = serverRegistry.getQueues(MBeanView.getVirtualHost());
             items = getQueueItems(list);
             _sortBySizeButton.setVisible(true);
         }
-        else if (_type.equals(Constants.MBEAN_TYPE_EXCHANGE) || _type.equals(Constants.NODE_LABEL_EXCHANGES))
+        else if (_type.equals(Constants.EXCHANGE))
         {
-            list = serverRegistry.getExchanges(MBeanView.getVirtualHostName());
+            list = serverRegistry.getExchanges(MBeanView.getVirtualHost());
             items = getItems(list);
             _sortBySizeButton.setVisible(false);
         }
-        else if (_type.equals(Constants.MBEAN_TYPE_CONNECTION) || _type.equals(Constants.NODE_LABEL_CONNECTIONS))
+        else if (_type.equals(Constants.CONNECTION))
         {
-            list = serverRegistry.getConnections(MBeanView.getVirtualHostName());
+            list = serverRegistry.getConnections(MBeanView.getVirtualHost());
             items = getItems(list);
             _sortBySizeButton.setVisible(false);
         }
@@ -255,11 +255,15 @@ public class MBeanTypeTabControl
         }
         
         _list.setItems(items);
+            
     }
     
     // sets the map with appropriate mbean and name
     private String[] getItems(java.util.List<ManagedBean> list)
     {
+        if (list == null)
+            return new String[0];
+        
         Collections.sort(list, _sorterByName);
         String[] items = new String[list.size()];
         int i = 0;
@@ -273,6 +277,9 @@ public class MBeanTypeTabControl
     
     private String[] getQueueItems(java.util.List<ManagedBean> list) throws Exception
     {
+        if (list == null)
+            return new String[0];
+        
         // Sort the list. It will keep the mbeans in sorted order in the _queueMap, which is required for
         // sorting the queue according to size etc
         Collections.sort(list, _sorterByName);

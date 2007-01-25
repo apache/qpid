@@ -33,11 +33,14 @@ public class Constants
     public final static String SERVER     = "server";
     public final static String DOMAIN     = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
+    // currently used only for virtual host instances, but will work as general also
+    public final static String TYPE_INSTANCE = "mbeantype_instance";
     public final static String MBEAN      = "mbean";
     public final static String ATTRIBUTE = "Attribute";
     public final static String ATTRIBUTES = "Attributes";
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
+    public final static String VIRTUAL_HOST = "VirtualHost";
     
     public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth"; 
     
@@ -45,14 +48,13 @@ public class Constants
     
     public final static String NAVIGATION_ROOT = "Qpid Connections";
     public final static String DESCRIPTION = " Description";
-
-    public final static String VIRTUAL_HOST = "VirtualHost";
-    public final static String MBEAN_TYPE_BROKER_MANAGER = "VirtualHost.BrokerManager";
-    public final static String MBEAN_TYPE_QUEUE = "VirtualHost.Queue";
-    public final static String MBEAN_TYPE_EXCHANGE = "VirtualHost.Exchange";
+    
+    public final static String BROKER_MANAGER = "Broker_Manager";
+    public final static String QUEUE  = "Queue";
+    public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
-    public final static String MBEAN_TYPE_CONNECTION ="Connection";
+    public final static String CONNECTION ="Connection";
     
     public final static String ACTION_ADDSERVER = "New Connection";
     
@@ -88,13 +90,4 @@ public class Constants
     public final static int OPERATION_IMPACT_ACTION  = 1;
     public final static int OPERATION_IMPACT_ACTIONINFO  = 2;
     public final static int OPERATION_IMPACT_UNKNOWN = 3;
-    public static final String NODE_TYPE_VIRTUAL_HOST = "virtualhost";
-    public static final String NODE_LABEL_QUEUES = "queues";
-    public static final String NODE_LABEL_EXCHANGES = "exchanges";
-    public static final String NODE_LABEL_CONNECTIONS = "connections";
-
-    public static final String NODE_LABEL_VIRTUAL_HOSTS = "virtual hosts";
-    public static final String TAB_LABEL_QUEUES = "queues";
-    public static final String TAB_LABEL_EXCHANGES = "exchanges";
-    public static final String TAB_LABEL_CONNECTIONS = "connections";
 }
