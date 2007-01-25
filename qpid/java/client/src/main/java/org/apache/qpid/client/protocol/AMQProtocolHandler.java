@@ -95,21 +95,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public AMQProtocolHandler(AMQConnection con)
     {
         _connection = con;
-
-        // We add a proxy for the state manager so that we can substitute the state manager easily in this class.
-        // We substitute the state manager when performing failover
-/*        _frameListeners.add(new AMQMethodListener()
-        {
-            public boolean methodReceived(AMQMethodEvent evt) throws AMQException
-            {
-                return _stateManager.methodReceived(evt);
-            }
-
-            public void error(Exception e)
-            {
-                _stateManager.error(e);
-            }
-        });*/
     }
 
     public boolean isUseSSL()
@@ -152,7 +137,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void sessionOpened(IoSession session) throws Exception
     {
-        System.setProperty("foo", "bar");
+        //System.setProperty("foo", "bar");
     }
 
     /**
@@ -526,7 +511,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame frame = ConnectionCloseBody.createAMQFrame(0,
-                                                                  (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                  _protocolSession.getProtocolMajorVersion(),
+                                                                  _protocolSession.getProtocolMinorVersion(),    // AMQP version (major, minor)
                                                                   0,    // classId
                                                                   0,    // methodId
                                                                   AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
@@ -621,5 +607,16 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public void setFailoverState(FailoverState failoverState)
     {
         _failoverState = failoverState;
+    }
+
+    public byte getProtocolMajorVersion()
+    {
+        return _protocolSession.getProtocolMajorVersion();
+    }
+
+
+    public byte getProtocolMinorVersion()
+    {
+        return _protocolSession.getProtocolMinorVersion();
     }
 }

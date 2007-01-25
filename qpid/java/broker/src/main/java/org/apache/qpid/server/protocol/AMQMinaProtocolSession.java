@@ -539,17 +539,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
      * NOTE: Both major and minor will be set to 0 prior to protocol initiation.
      */
 
-    public byte getAmqpMajor()
+    public byte getProtocolMajorVersion()
     {
         return _major;
     }
 
-    public byte getAmqpMinor()
+    public byte getProtocolMinorVersion()
     {
         return _minor;
     }
 
-    public boolean amqpVersionEquals(byte major, byte minor)
+    public boolean isProtocolVersion(byte major, byte minor)
     {
         return _major == major && _minor == minor;
     }

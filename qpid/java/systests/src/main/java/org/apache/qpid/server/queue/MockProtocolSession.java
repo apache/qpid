@@ -158,4 +158,14 @@ public class MockProtocolSession implements AMQProtocolSession
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    public byte getProtocolMajorVersion()
+    {
+        return 8;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public byte getProtocolMinorVersion()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }
