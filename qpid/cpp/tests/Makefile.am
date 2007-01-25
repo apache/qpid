@@ -75,6 +75,9 @@ TESTS_ENVIRONMENT =			\
 TESTS = run-unit-tests run-python-tests
 EXTRA_DIST += $(TESTS)
 
+CLEANFILES=qpidd.log
+DISTCLEANFILES=gen.mk
+
 include gen.mk
 
 abs_builddir = @abs_builddir@
