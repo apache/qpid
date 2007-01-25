@@ -32,6 +32,7 @@ public class TreeObject
     private String _name;
     private String _type;
     private String _url;
+    private String _virtualHost;
     private TreeObject _parent;
     private List<TreeObject> _children = new ArrayList<TreeObject>();
     private ManagedObject _object;
@@ -47,7 +48,8 @@ public class TreeObject
         _name = obj.getName();
         if (_name == null && (obj instanceof ManagedBean))
         {
-            _name = ((ManagedBean)obj).getType();
+            String[] types = ((ManagedBean)obj).getType().split("\\.");
+            _name = types[types.length - 1];
         }
         this._type = Constants.MBEAN;
         this._object = obj;
@@ -95,6 +97,16 @@ public class TreeObject
     public void setUrl(String url)
     {
         this._url = url;
+    }
+    
+    public String getVirtualHost()
+    {
+        return _virtualHost;
+    }
+    
+    public void setVirtualHost(String vHost)
+    {
+        _virtualHost = vHost;
     }
 
     public ManagedObject getManagedObject()

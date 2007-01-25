@@ -29,18 +29,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedObject;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IFontProvider;
@@ -268,7 +267,6 @@ public class NavigationView extends ViewPart
         catch(Exception ex)
         {
             System.out.println("\nError in connecting to Qpid broker ");
-            System.out.println("\n" + ex);
             ex.printStackTrace();
         }
     }
@@ -283,88 +281,65 @@ public class NavigationView extends ViewPart
     private void populateDomain(TreeObject domain) throws IOException, Exception
     {
         ManagedServer server = (ManagedServer)domain.getParent().getManagedObject();
-        
+        /*
         // Add these three types - Connection, Exchange, Queue
         // By adding these, these will always be available, even if there are no mbeans under thse types
         // This is required because, the mbeans will be added from mbeanview, by selecting from the list
-
-
-        TreeObject virtualhosts = new TreeObject(Constants.NODE_LABEL_VIRTUAL_HOSTS, Constants.NODE_TYPE_MBEANTYPE);
-        virtualhosts.setParent(domain);
-
-        Map<String, TreeObject> virtualHostMap = new HashMap<String, TreeObject>();
-
+        TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.TYPE);
+        typeChild.setParent(domain);
+        typeChild = new TreeObject(Constants.EXCHANGE, Constants.TYPE);
+        typeChild.setParent(domain);
+        typeChild = new TreeObject(Constants.QUEUE, Constants.TYPE);
+        typeChild.setParent(domain);
+        */
+        
         // Now populate the mbenas under those types
         List<ManagedBean> mbeans = MBeanUtility.getManagedObjectsForDomain(server, domain.getName());
         for (ManagedBean mbean : mbeans)
         {
-
-            if(mbean.getType().equals(Constants.VIRTUAL_HOST))
-            {
-                TreeObject host = new TreeObject("[" + mbean.getName() + "]", Constants.NODE_TYPE_VIRTUAL_HOST);
-
-                virtualHostMap.put(mbean.getName(), host);
-                host.setParent(virtualhosts);
-
-                TreeObject child = new TreeObject(Constants.NODE_LABEL_CONNECTIONS, Constants.NODE_TYPE_MBEANTYPE);
-
-                child.setParent(host);
-                child = new TreeObject(Constants.NODE_LABEL_EXCHANGES, Constants.NODE_TYPE_MBEANTYPE);
-                child.setParent(host);
-                child = new TreeObject(Constants.NODE_LABEL_QUEUES, Constants.NODE_TYPE_MBEANTYPE);
-                child.setParent(host);
-
-            }
-        }
-        for (ManagedBean mbean : mbeans)
-        {
-
-
             mbean.setServer(server);
-            
             ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(server);
-            serverRegistry.addManagedObject(mbean);
-
-            if (mbean.getType().equals(Constants.MBEAN_TYPE_BROKER_MANAGER))
-            {
-                JMXManagedObject obj = (JMXManagedObject) mbean;
-                String host = obj.getProperty("VirtualHost");
-                TreeObject node = virtualHostMap.get(host);
-                if(node != null)
-                {
-                    TreeObject beanNode = new TreeObject(mbean);
-                    beanNode.setParent(node);
-                }
-            }
-
-
+            serverRegistry.addManagedObject(mbean);     
+            
             // Add all mbeans other than Connections, Exchanges and Queues. Because these will be added
             // manually by selecting from MBeanView
-            if (!(mbean.getType().equals(Constants.MBEAN_TYPE_CONNECTION)
-                    || mbean.getType().equals(Constants.MBEAN_TYPE_EXCHANGE)
-                    || mbean.getType().equals(Constants.MBEAN_TYPE_QUEUE)
-                    || mbean.getType().equals(Constants.VIRTUAL_HOST)
-                    || mbean.getType().equals(Constants.MBEAN_TYPE_BROKER_MANAGER)))
+            
+            if (!(mbean.getType().endsWith(Constants.CONNECTION) ||
+                  mbean.getType().endsWith(Constants.EXCHANGE) ||
+                  mbean.getType().endsWith(Constants.QUEUE)))
             {
-                addManagedBean(domain, mbean, virtualHostMap);
+                addManagedBean(domain, mbean);
             }
         }
+    }
+    
+    private void addDefaultNodes(TreeObject parent)
+    {
+        TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.NODE_TYPE_MBEANTYPE);
+        typeChild.setParent(parent);
+        typeChild.setVirtualHost(parent.getVirtualHost());
+        typeChild = new TreeObject(Constants.EXCHANGE, Constants.NODE_TYPE_MBEANTYPE);
+        typeChild.setParent(parent);
+        typeChild.setVirtualHost(parent.getVirtualHost());
+        typeChild = new TreeObject(Constants.QUEUE, Constants.NODE_TYPE_MBEANTYPE);
+        typeChild.setParent(parent);
+        typeChild.setVirtualHost(parent.getVirtualHost());
     }
     
     /**
      * Checks if a particular mbeantype is already there in the navigation view for a domain.
      * This is used while populating domain with mbeans.
-     * @param domain
+     * @param parent
      * @param typeName
      * @return Node if given mbeantype already exists, otherwise null
      */
-    private TreeObject getMBeanTypeNode(TreeObject domain, String typeName)
+    private TreeObject getMBeanTypeNode(TreeObject parent, String typeName)
     {
-        List<TreeObject> childNodes = domain.getChildren();
-        
+        List<TreeObject> childNodes = parent.getChildren();
         for (TreeObject child : childNodes)
         {
-            if (Constants.NODE_TYPE_MBEANTYPE.equals(child.getType()) && typeName.equals(child.getName()))
+            if ((Constants.NODE_TYPE_MBEANTYPE.equals(child.getType()) || Constants.TYPE_INSTANCE.equals(child.getType())) &&
+                 typeName.equals(child.getName()))
                 return child;
         }
         return null;
@@ -385,78 +360,85 @@ public class NavigationView extends ViewPart
      * Adds the given MBean to the given domain node. Creates Notification node for the MBean.
      * @param domain
      * @param mbean mbean
-     * @param virtualHostMap
      */
-    private void addManagedBean(TreeObject domain, ManagedBean mbean, Map<String, TreeObject> virtualHostMap) throws Exception
+    private void addManagedBean(TreeObject domain, ManagedBean mbean) throws Exception
     {
-        JMXManagedObject obj = (JMXManagedObject) mbean;
-
-
-
-        String type = mbean.getType();
         String name = mbean.getName();
-
-        String virtualHostName = obj.getProperty("VirtualHost");
-
-        TreeObject virtualHostNode = virtualHostMap.get(virtualHostName);
-
-        TreeObject typeNode = getMBeanTypeNode(virtualHostNode, getNodeLabelForType(type));
-        if (typeNode != null && doesMBeanNodeAlreadyExist(typeNode, name))
+        String[] types = mbean.getType().split("\\.");
+        TreeObject typeNode = null;
+        TreeObject parentNode = domain;
+        // Run this loop till all nodes for this mbean are created.
+        for (int i = 0; i < types.length; i++)
+        {
+            String type = types[i];
+            String valueOftype = mbean.getProperty(type);
+            typeNode = getMBeanTypeNode(parentNode, type);
+            
+            if (typeNode == null)
+            {
+                // If the ObjectName doesn't have name property, that means there will be only one instance
+                // of this mbean for given "type". So there will be no type node created for this mbean.
+                if (name == null && (i == types.length -1))
+                {
+                    break;
+                }
+                typeNode = createTypeNode(parentNode, type);
+                typeNode.setVirtualHost(mbean.getVirtualHostName());
+            }
+            parentNode = typeNode;
+            
+            // Create instances node for this type if value exists. For eg, for different virtual hosts, the
+            // nodes with given value will be created.
+            if (valueOftype == null)
+            {
+                break;
+            }            
+            typeNode = getMBeanTypeNode(parentNode, valueOftype);
+            if (typeNode == null)
+            {
+                typeNode = createTypeInstanceNode(parentNode, valueOftype);
+                typeNode.setVirtualHost(mbean.getVirtualHostName());
+                
+                // Create default nodes for VHost instances
+                if (type.equals(Constants.VIRTUAL_HOST))
+                {
+                    addDefaultNodes(typeNode);
+                }
+            }
+            parentNode = typeNode;
+        }
+        
+        if (typeNode == null)
+        {
+            typeNode = parentNode;
+        }
+        
+        if (doesMBeanNodeAlreadyExist(typeNode, name))
             return;
         
-        TreeObject mbeanNode = null;
-        if (typeNode != null) // type node already exists
-        {
-            if (name == null)
-            {
-                throw new ManagementConsoleException("Two mbeans can't exist without a name and with same type");
-            }
-            mbeanNode = new TreeObject(mbean);
-            mbeanNode.setParent(typeNode);
-        }
-        else
-        {
-            // type node does not exist. Now check if node to be created as mbeantype or MBean
-            if (name != null)  // A managedObject with type and name
-            {
-                typeNode = new TreeObject(type, Constants.NODE_TYPE_MBEANTYPE);
-                typeNode.setParent(virtualHostNode);
-                mbeanNode = new TreeObject(mbean);
-                mbeanNode.setParent(typeNode);               
-            }
-            else              // A managedObject with only type
-            {
-                mbeanNode = new TreeObject(mbean);
-                mbeanNode.setParent(domain);
-            }
-        }
+        TreeObject mbeanNode = new TreeObject(mbean);
+        mbeanNode.setParent(typeNode);
         
         // Add notification node
         // TODO: show this only if the mbean sends any notification
         TreeObject notificationNode = new TreeObject(Constants.NOTIFICATION, Constants.NOTIFICATION);
         notificationNode.setParent(mbeanNode);
     }
-
-    private String getNodeLabelForType(String type)
+    
+    private TreeObject createTypeNode(TreeObject parent, String name)
     {
-        if(type.equals(Constants.MBEAN_TYPE_EXCHANGE))
-        {
-            return Constants.NODE_LABEL_EXCHANGES;
-        }
-        else if(type.equals(Constants.MBEAN_TYPE_QUEUE))
-        {
-            return Constants.NODE_LABEL_QUEUES;
-        }
-        else if(type.equals(Constants.MBEAN_TYPE_CONNECTION))
-        {
-            return Constants.NODE_LABEL_CONNECTIONS;
-        }
-        else
-        {
-            return type;
-        }
+        TreeObject typeNode = new TreeObject(name, Constants.NODE_TYPE_MBEANTYPE);
+        typeNode.setParent(parent);
+        return typeNode;
     }
-
+    
+    private TreeObject createTypeInstanceNode(TreeObject parent, String name)
+    {
+        TreeObject typeNode = new TreeObject(name, Constants.TYPE_INSTANCE);
+        typeNode.setParent(parent);
+        return typeNode;
+    }
+    
     /**
      * Removes all the child nodes of the given parent node
      * @param parent
@@ -749,7 +731,14 @@ public class NavigationView extends ViewPart
         public String getText(Object element)
         {
             TreeObject node = (TreeObject)element;
-            return node.getName();
+            if (node.getType().equals(Constants.NODE_TYPE_MBEANTYPE))
+            {
+                return node.getName() + "s";
+            }
+            else
+            {
+                return node.getName();
+            }
         }
         
         public Font getFont(Object element)
@@ -821,26 +810,8 @@ public class NavigationView extends ViewPart
                 break;
             }
         }
-        for (TreeObject child : domain.getChildren())
-        {
-            if (child.getName().equals(Constants.NODE_LABEL_VIRTUAL_HOSTS))
-            {
-                domain = child;
-                break;
-            }
-        }
-        Map<String, TreeObject> hostMap = new HashMap<String,TreeObject>();
-
-        for (TreeObject child: domain.getChildren())
-        {
-
-            if(child.getType().equals(Constants.NODE_TYPE_VIRTUAL_HOST))
-            {
-                hostMap.put(child.getName().substring(1,child.getName().length()-1), child);
-            }
-        }
         
-        addManagedBean(domain, mbean, hostMap);
+        addManagedBean(domain, mbean);
         _treeViewer.refresh();
     }
     
@@ -862,6 +833,7 @@ public class NavigationView extends ViewPart
                         {
                             for (ManagedBean mbean : removalList)
                             {
+                                System.out.println("removing  " + mbean.getName() + " " + mbean.getType());
                                 TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
                                 List<TreeObject> domains = treeServerObject.getChildren();
                                 TreeObject domain = null;
