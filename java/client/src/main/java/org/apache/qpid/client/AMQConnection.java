@@ -78,7 +78,7 @@ import org.apache.qpid.url.URLSyntaxException;
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
     private static final Logger _logger = Logger.getLogger(AMQConnection.class);
-
+    
     private AtomicInteger _idFactory = new AtomicInteger(0);
 
     /**
@@ -155,6 +155,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private AMQException _lastAMQException = null;
 
 
+    // Keeps a tally of connections for logging and debugging
+    private static AtomicInteger _ConnectionId;    
+    static { _ConnectionId = new AtomicInteger(0); }
+
     /*
      * The connection meta data
      */
@@ -200,7 +204,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public AMQConnection(ConnectionURL connectionURL) throws AMQException
     {
         _logger.info("Connection:" + connectionURL);
-
+        _ConnectionId.incrementAndGet();
         if (connectionURL == null)
         {
             throw new IllegalArgumentException("Connection must be specified");
@@ -1019,5 +1023,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 new StringRefAddr(AMQConnection.class.getName(), toURL()),
                 AMQConnectionFactory.class.getName(),
                 null);          // factory location
+    }
+    
+    public int getConnectionId()
+    {
+        return _ConnectionId.get();
     }
 }

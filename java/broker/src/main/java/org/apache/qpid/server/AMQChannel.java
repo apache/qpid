@@ -137,8 +137,8 @@ public class AMQChannel
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
         _exchanges = exchanges;
-        _requestManager = new RequestManager(channelId, _session, true);
-        _responseManager = new ResponseManager(channelId, methodListener, _session, true);
+        _requestManager = new RequestManager(_session.getConnectionId(), channelId, _session, true);
+        _responseManager = new ResponseManager(_session.getConnectionId(), channelId, methodListener, _session, true);
         _txnBuffer = new TxnBuffer(_messageStore);
     }
 

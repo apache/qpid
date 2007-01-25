@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                ProtocolVersionList,
@@ -117,6 +118,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private byte _minor;
     private FieldTable _clientProperties;
 
+    // Keeps a tally of connections for logging and debugging
+    private static AtomicInteger _ConnectionId;    
+    static { _ConnectionId = new AtomicInteger(0); }
+
     public ManagedObject getManagedObject()
     {
         return _managedObject;
@@ -127,6 +132,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                   AMQCodecFactory codecFactory)
             throws AMQException
     {
+        _ConnectionId.incrementAndGet();
         _stateManager = new AMQStateManager(queueRegistry, exchangeRegistry, this);
         _minaProtocolSession = session;
         session.setAttachment(this);
@@ -144,6 +150,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                   AMQCodecFactory codecFactory, AMQStateManager stateManager)
             throws AMQException
     {
+        _ConnectionId.incrementAndGet();
         _stateManager = stateManager;
         _minaProtocolSession = session;
         session.setAttachment(this);
@@ -699,5 +706,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         if (!versionEquals(methodBody.getMajor(), methodBody.getMinor())) {
             throw new RuntimeException("MethodBody version did not match version of current session.");
         }
+    }
+    
+    public int getConnectionId()
+    {
+        return _ConnectionId.get();
     }
 }

@@ -40,6 +40,7 @@ public class RequestManager
      * to be known.
      */
     private boolean serverFlag;
+    private int connectionId;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -55,11 +56,12 @@ public class RequestManager
 
     private ConcurrentHashMap<Long, AMQMethodListener> requestSentMap;
 
-    public RequestManager(int channel, AMQProtocolWriter protocolWriter, boolean serverFlag)
+    public RequestManager(int connectionId, int channel, AMQProtocolWriter protocolWriter, boolean serverFlag)
     {
         this.channel = channel;
         this.protocolWriter = protocolWriter;
         this.serverFlag = serverFlag;
+        this.connectionId = connectionId;
         requestIdCount = 1L;
         lastProcessedResponseId = 0L;
         requestSentMap = new ConcurrentHashMap<Long, AMQMethodListener>();
@@ -77,11 +79,11 @@ public class RequestManager
         protocolWriter.writeFrame(requestFrame);
         if (logger.isDebugEnabled())
         {
-            logger.debug((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel +
-                " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
+            logger.debug((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
+                "] TX REQ: Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
         }
-        //System.out.println((serverFlag ? "SRV" : "CLI") + " TX REQ: ch=" + channel +
-        //        " Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
+        //System.out.println((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
+        //        "] TX REQ: Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
         return requestId;
     }
 
@@ -92,11 +94,11 @@ public class RequestManager
         long requestIdStop = requestIdStart + responseBody.getBatchOffset();
         if (logger.isDebugEnabled())
         {
-            logger.debug((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel +
-                " " + responseBody + "; " + responseBody.getMethodPayload());
+            logger.debug((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel + "] RX RES: " +
+                responseBody + "; " + responseBody.getMethodPayload());
         }
-        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX RES: ch=" + channel +
-        //        " " + responseBody + "; " + responseBody.getMethodPayload());
+        //System.out.println((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel + "] RX RES: " +
+        //        responseBody + "; " + responseBody.getMethodPayload());
         for (long requestId = requestIdStart; requestId <= requestIdStop; requestId++)
         {
             AMQMethodListener methodListener = requestSentMap.get(requestId);

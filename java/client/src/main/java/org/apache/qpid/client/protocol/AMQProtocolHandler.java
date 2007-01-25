@@ -576,4 +576,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         _failoverState = failoverState;
     }
+    
+    public int getConnectionId()
+    {
+        return _connection.getConnectionId();
+    }
 }

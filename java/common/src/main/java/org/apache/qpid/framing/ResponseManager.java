@@ -43,6 +43,7 @@ public class ResponseManager
      * to be known.
      */
     private boolean serverFlag;
+    private int connectionId;
 
     private int maxAccumulatedResponses = 20; // Default
 //    private Class currentResponseMethodBodyClass;
@@ -83,13 +84,14 @@ public class ResponseManager
 
     private ConcurrentHashMap<Long, ResponseStatus> responseMap;
 
-    public ResponseManager(int channel, AMQMethodListener methodListener,
+    public ResponseManager(int connectionId, int channel, AMQMethodListener methodListener,
         AMQProtocolWriter protocolWriter, boolean serverFlag)
     {
         this.channel = channel;
         this.methodListener = methodListener;
         this.protocolWriter = protocolWriter;
         this.serverFlag = serverFlag;
+        this.connectionId = connectionId;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
 //        currentResponseMethodBodyClass = null;
@@ -103,11 +105,11 @@ public class ResponseManager
         long requestId = requestBody.getRequestId();
         if (logger.isDebugEnabled())
         {
-            logger.debug((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel +
-                " " + requestBody + "; " + requestBody.getMethodPayload());
+            logger.debug((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel + "] RX REQ: " + 
+                requestBody + "; " + requestBody.getMethodPayload());
         }
-        //System.out.println((serverFlag ? "SRV" : "CLI") + " RX REQ: ch=" + channel + 
-        //        " " + requestBody + "; " + requestBody.getMethodPayload());
+        //System.out.println((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel + "] RX REQ: " + 
+        //        requestBody + "; " + requestBody.getMethodPayload());
         // TODO: responseMark is used in HA, but until then, ignore...
         long responseMark = requestBody.getResponseMark();
         lastReceivedRequestId = requestId;
@@ -122,11 +124,11 @@ public class ResponseManager
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel +
-                " Res[# " + requestId + "]; " + responseMethodBody);
+            logger.debug((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
+                "] TX RES: Res[# " + requestId + "]; " + responseMethodBody);
         }
-        //System.out.println((serverFlag ? "SRV" : "CLI") + " TX RES: ch=" + channel +
-        //        " Res[# " + requestId + "]; " + responseMethodBody);
+        //System.out.println((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
+        //        "] TX RES: Res[# " + requestId + "]; " + responseMethodBody);
         ResponseStatus responseStatus = responseMap.get(requestId);
         if (responseStatus == null)
             throw new RequestResponseMappingException(requestId,
