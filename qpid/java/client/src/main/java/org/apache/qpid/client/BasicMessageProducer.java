@@ -25,6 +25,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 
@@ -367,111 +368,30 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
             if (message instanceof BytesMessage)
             {
-                BytesMessage bytesMessage = (BytesMessage) message;
-                bytesMessage.reset();
-
-                JMSBytesMessage nativeMsg = (JMSBytesMessage) _session.createBytesMessage();
-
-
-                byte[] buf = new byte[1024];
-
-                int len;
-
-                while ((len = bytesMessage.readBytes(buf)) != -1)
-                {
-                    nativeMsg.writeBytes(buf, 0, len);
-                }
-
-                newMessage = nativeMsg;
+                newMessage = new MessageConverter((BytesMessage)message).getConvertedMessage();
             }
             else if (message instanceof MapMessage)
             {
-                MapMessage origMessage = (MapMessage) message;
-                MapMessage nativeMessage = _session.createMapMessage();
-
-                Enumeration mapNames = origMessage.getMapNames();
-                while (mapNames.hasMoreElements())
-                {
-                    String name = (String) mapNames.nextElement();
-                    nativeMessage.setObject(name, origMessage.getObject(name));
-                }
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((MapMessage)message).getConvertedMessage();
             }
             else if (message instanceof ObjectMessage)
             {
-                ObjectMessage origMessage = (ObjectMessage) message;
-                ObjectMessage nativeMessage = _session.createObjectMessage();
-
-                nativeMessage.setObject(origMessage.getObject());
-
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((ObjectMessage)message).getConvertedMessage();
             }
             else if (message instanceof TextMessage)
             {
-                TextMessage origMessage = (TextMessage) message;
-                TextMessage nativeMessage = _session.createTextMessage();
-
-                nativeMessage.setText(origMessage.getText());
-
-                newMessage = (AbstractJMSMessage) nativeMessage;
+               newMessage = new MessageConverter((TextMessage)message).getConvertedMessage();
             }
             else if (message instanceof StreamMessage)
             {
-                StreamMessage origMessage = (StreamMessage) message;
-                StreamMessage nativeMessage = _session.createStreamMessage();
-
-
-                try
-                {
-                    origMessage.reset();
-                    while (true)
-                    {
-                        nativeMessage.writeObject(origMessage.readObject());
-                    }
-                }
-                catch (MessageEOFException e)
-                {
-                    ;//
-                }
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((StreamMessage)message).getConvertedMessage();
             }
             else
             {
+                //TODO; Do we really want to create an empty message here ?
                 newMessage = (AbstractJMSMessage) _session.createMessage();
-
+                return new MessageConverter(newMessage).getConvertedMessage();
             }
-
-            Enumeration propertyNames = message.getPropertyNames();
-            while (propertyNames.hasMoreElements())
-            {
-                String propertyName = String.valueOf(propertyNames.nextElement());
-                if (!propertyName.startsWith("JMSX_"))
-                {
-                    Object value = message.getObjectProperty(propertyName);
-                    newMessage.setObjectProperty(propertyName, value);
-                }
-            }
-
-            newMessage.setJMSDeliveryMode(message.getJMSDeliveryMode());
-
-
-            int priority = message.getJMSPriority();
-            if (priority < 0)
-            {
-                priority = 0;
-            }
-            else if (priority > 9)
-            {
-                priority = 9;
-            }
-
-            newMessage.setJMSPriority(priority);
-            if (message.getJMSReplyTo() != null)
-            {
-                newMessage.setJMSReplyTo(message.getJMSReplyTo());
-            }
-            newMessage.setJMSType(message.getJMSType());
-
 
             if (newMessage != null)
             {
