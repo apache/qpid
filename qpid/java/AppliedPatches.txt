@@ -1,0 +1,204 @@
+-Latest Revision-
+499979
+
+-Not Done-
+499874 QPID-319 management console update (QPID-319)
+499851 QPID-318 removed hard coding (New Feature)
+499628 QPID-318 removed hard coding (New Feature)
+499565 QPID-317 (New Feature)
+499564 QPID-317 (New Feature)
+499563 QPID-317 Removed JMS depend. from broker/common(New Feature)
+499493 QPID-50 (New Feature)
+499490 QPID-50 (New Feature)
+499466 QPID-50 (New Feature)
+499446 QPID-50 Virtualhost Implementation (New Feature)
+499165 QIPD-103 MessageListener Support in AMQSession (New Feature)
+498690 QPID-308 logic error on Interrupt Exception (QPID-308)
+498670 MBean modification (ShortString)
+498637 QPID-310/QPID-308 configurable timeouts (New Feature)
+498574 QPID-275 Added missing files (New Feature)
+497770 QPID-275 Python highlighted updates (New Feature)
+497352 Change of String Encodings (n/a ShortString QPID-245)
+496785 QPID-245 FieldTable reverted (ShortString)
+496662 QPID-245 FiledTable interop hack (ShortString)
+496637 QPID-245 FieldTable (ShortString)
+496626 QPID-245 (ShortString)
+496496 QPID-245 C++ interop(ShortString)
+496302 QPID-294 Race condition (related to 495754)
+495754 Created common AMQMethodListener (New Feature)
+495595 QPID 32 Optimisation (Persist)
+495460 QPID-276 AMQChannel race condintion (QPID-32)
+495380 Refactor creat common AMQMethodEvent (New Feature)
+495373 QPID 32 fixed compile prob (Persist)
+495337 QPID 32 fix string propts and timestamps (Persist)
+495314 QPID 32 non-persist fix (Persist)
+495304 QPID 32 trans fixes (Persist)
+495230 Empty MessageStore (QPID-32)
+495189 old_test AMQShortString Update
+495170 QPID 32 AMQShortString Update
+495169 QPID 32 AMQShortString Update
+495020 QPID 32 options to run tests with persist msgs
+494769 QPID-275 Python test fixes (New Feature)
+494765 QPID-273 Unnecessary Map creation (New Feature)
+
+489691
+
+-PARTIAL-
+494650 QPID-268 Improvements to performance of generated code
+
+-Done-
+499979 QPID-315 Test classes to reproduce missing correlation id
+499975 QPID-315 Moved message converstion to MessageConverter.
+499781 Fixed race that caused duplicate date in log file
+499764 documentation
+499757 documentation
+499756 documentation
+499733 Refeactored to use countdownlatch rather than local count
+499716 fixed race condition in AsyncPerfTest
+499532 QPID-315 update and tidied prior class (New Feature)
+499468 chaged default messageSize to 1024
+499461 added some constant values
+499456 default BatchSize=1000
+499429 added commit calls for received messages
+499427 Clean up countdown latch to count expeced messsages.
+499426 performance update.
+499394 perf scripts updated 
+499392 Async test update for signallig complete when there is 1 queue
+499371 pom update
+499356 update to allow topics to be used for ping tests
+499470 removed references to code not yet in mvn repo.
+499166 Updated perftest to include async pinger
+499087 QPID-315 AMQSession convertToNativeMessage (New Feature)
+499083 ability to scale rate of messagese in ping tests
+499043 QPID-302 managment navigationView update.
+499041 QPID-312 QueueDeclareHandler treat non-durables as auto-delete
+499036 Fix for multi threaded testing
+498984 Failover modification option to only fail once per run
+498974 converted main method to use config option
+498970 added test loggers to log4j
+498965 Failover setting code
+498720 Message Rating code
+498687 Ping changes for scalability
+498593 stopped forking test for easier debug
+498589 rolled back assembly plugin
+497878 added pingItself and junit tests
+497872 fixed incorrect file modes
+497813 removed sleep(6000)
+497786 upgraded logging for JMSException to error 
+497784 upgraded logging for JMSException to error
+497781 upgraded logging for JMSException to error
+497776 Fixed file mode changes in mvn assembly
+497766 PingPongProducer update to allow subclassing
+497498 PingPongProducer update
+497482 missing dependency
+497245 restructure ping tests
+496996 update to ServiceRequestingClient
+496991 Callback Handler to wait for message before exiting
+496833 Perf test fix broken build due to missing file.
+496753 Added test code
+496751 Added test directories
+496731 Deleted perftest clean up -pingpong directory
+496682 UPdated to management shell scripts
+496661 BlockingMethodFrameListener change to not wrap FailoverExc
+496658 QPID-299 Messages not correctly requeue on session close
+496649 deleted script file
+496648 added perf test script file.
+496641 QPID-293 setMessageListener after ConnectionStart
+496414 QPID 297 pom updates
+496384 QPID-295 
+496276 mangement xml
+496270 performance xml
+496263 perf test scripts update
+496260 checking for AMQ MsgID
+495652 QPID-279
+495639 QPID-285 MultiClients Script
+495584 QPID-283
+495561 added readme to pom
+495559 updated management readme
+495556 QPID 283 Resource Readme change
+495554 QPID 278 broker distribution
+495550 QPID 279 patch for managment on linux
+495549 QPID 278 broker distribution
+495532 volume tests scripts
+495525 keep management console in main dist
+495517 QPID 282 BrokerDetails default protocol
+495461 assembly:directory issue in dist.pom
+495456 target ignores
+495455 MVN Distribution rework 
+495255 QPID-168 Added QPID_OPTS
+495161 Ignore intelij files
+494907 QPID 277
+494904 amended ping test for variaiation of sizes
+494861 QPID-278 add eprftst into build and dist
+494800 QPID-147 applied
+494797 QPID-277
+494658 QPID-271 fanout impl,
+494655 QPID-270 AMQConnectionException
+494652 QPID-269 Add getType()
+494437 QPID-213
+494355 QPID-266 contains changed to containsKey
+
+Revision: 494092
+Revision: 494042
+Revision: 494018
+Revision: 493060
+Revision: 492956
+Revision: 492902
+Revision: 492756
+492718 FieldTable change to not conflict with spec.
+(JMSPropertyFieldTable changed before this somewhere.)
+Revision: 492514
+Revision: 492280
+Revision: 492184
+Revision: 491839
+Revision: 491801
+Revision: 491879
+Revision: 491673
+Revision: 491577
+Revision: 491120
+Revision: 491072
+Revision: 491031
+Revision: 491029
+Revision: 490985
+Revision: 490872
+Revision: 490734
+Revision: 490709
+490708: MBean created as a separate class
+Revision: 490605
+Revision: 490505
+Revision: 490373
+Revision: 489804
+Revision: 489754
+Revision: 489748
+Revision: 489715
+Revision: 489704
+Revision: 489691
+Revision: 489644
+Revision: 489403
+Revision: 489331
+Revision: 489330
+Revision: 489215
+Revision: 489214
+Revision: 489204
+
+Revision: 489140
+489113 Eclipse Plugin
+Revision: 489106
+Revision: 489083
+Revision: 489082
+Revision: 489078
+Revision: 489070
+Revision: 488726
+Revision: 488715
+Revision: 488713
+Revision: 488712
+Revision: 488711
+Revision: 488705
+Revision: 488701
+Revision: 488624
+Revision: 488596
+488594 Renamed file
+488450 clean up warnings about unsed variables
+
+-Start-
+488382 Copy from trunk
