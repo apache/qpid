@@ -100,7 +100,7 @@
 
 		 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
 		 -->
-            <!--
+<!--
             <plugin>
               <groupId>uk.co.thebadgerset</groupId>
               <artifactId>junit-toolkit-maven-plugin</artifactId>
@@ -142,7 +142,7 @@
 		     options that the performance suite uses are going to work.
             ##>
 		  <Skim-Tx>-n Skim-Tx -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Skim-Tx>
-		  <Skim-Size>-n Skim-Size -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=51200</Skim-Size>
+		  <Skim-Size>-n Skim-Size -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=51200</Skim-Size>
 		  <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Many>
 		  <Skim-Queues>-n Skim-Queues -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=10</Skim-Queues>
 		  <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Duration>
@@ -151,82 +151,123 @@
           <!## P2P Volume Tests. ##>
 		  <VT-Qpid-1>-n VT-Qpid-1 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 CommitBatchSize=20000 transacted=true</VT-Qpid-1>
 		  <VT-Qpid-2>-n VT-Qpid-2 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000</VT-Qpid-2>
-		  <VT-Qpid-3>-n VT-Qpid-3 -s [1000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 rate=10000 transacted=true</VT-Qpid-3>
-		  <VT-Qpid-4>-n VT-Qpid-4 -s [1000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true </VT-Qpid-4>
+          <!## Setting sample to 3,000,000 will result in a log entry every 10 minutes so should have 144 data points for the run. ##>
+          <VT-Qpid-3>-n VT-Qpid-3 -s [3000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true rate=10000 BatchSize=3000000 CommitBatchSize=40000 transacted=true</VT-Qpid-3>
+		  <VT-Qpid-4>-n VT-Qpid-4 -s [3000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true rate=10000 BatchSize=3000000</VT-Qpid-4>
 
           <!## P2P Scalability Tests. ##>
+		  <!## 250,000 Total, 1P-1T-1C ##>
 		  <PT-Qpid-1>-n PT-Qpid-1 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 transacted=true</PT-Qpid-1>
 		  <PT-Qpid-2>-n PT-Qpid-2 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true </PT-Qpid-2>
-		  <PT-Qpid-3>-n PT-Qpid-3 -s [250000] -c[10] -o .-t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 transacted=true destinationname=ping</PT-Qpid-3>
-		  <PT-Qpid-4>-n PT-Qpid-4 -s [250000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationname=ping</PT-Qpid-4>
-		  <PT-Qpid-5>-n PT-Qpid-5 -s [250000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</PT-Qpid-5>
-		  <PT-Qpid-6>-n PT-Qpid-6 -s [250000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</PT-Qpid-6>
-		  <PT-Qpid-7>-n PT-Qpid-7 -s [250000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true destinationcount=10</PT-Qpid-7>
-		  <PT-Qpid-8>-n PT-Qpid-8 -s [250000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=10</PT-Qpid-8>
-		  <PT-Qpid-9>-n PT-Qpid-9 -s [250000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</PT-Qpid-9>
-		  <PT-Qpid-10>-n PT-Qpid-10 -s [250000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</PT-Qpid-10>
-		  <PT-Qpid-11>-n PT-Qpid-11 -s [250000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true destinationcount=10</PT-Qpid-11>
-		  <PT-Qpid-12>-n PT-Qpid-12 -s [250000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=10</PT-Qpid-12>
-		  <PT-Qpid-13>-n PT-Qpid-13 -s [250000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</PT-Qpid-13>
-		  <PT-Qpid-14>-n PT-Qpid-14 -s [250000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</PT-Qpid-14>
+
+		  <!## 25000 Msgs * 10 Brokers = 250,000 Total, 10P-1Q-10C ##>
+		  <PT-Qpid-3>-n PT-Qpid-3 -s [25000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true CommitBatchSize=20000</PT-Qpid-3>
+		  <PT-Qpid-4>-n PT-Qpid-4 -s [25000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true </PT-Qpid-4>
+
+	      <!## 25000 Msgs * 10 Brokers = 250,000 Tota,l 10P-10T-10C 10*(1P-1Q-1C) ##>
+		  <PT-Qpid-5>-n PT-Qpid-5 -s [25000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=1 transacted=true</PT-Qpid-5>
+		  <PT-Qpid-6>-n PT-Qpid-6 -s [25000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=1</PT-Qpid-6>
+
+	      <!## 2500 Msgs * 10 Brokers * 10 Topics/Clients = 250,000 Total, 10P-100T-10C 10*(1P-10T-1C) ##>
+		  <PT-Qpid-7>-n PT-Qpid-7 -s [2500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=10 transacted=true</PT-Qpid-7>
+		  <PT-Qpid-8>-n PT-Qpid-8 -s [2500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=10</PT-Qpid-8>
+
+		  <!## 2500 Msgs * 100 Brokers = 250,000 Total, 100P-100T-100C 100*(1P-1T-1C) ##>		  
+		  <PT-Qpid-9>-n PT-Qpid-9 -s [2500] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=1 transacted=true CommitBatchSize=500</PT-Qpid-9>
+		  <PT-Qpid-10>-n PT-Qpid-10 -s [2500] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=1</PT-Qpid-10> 
+
+		  <!## 250 Msgs * 100 Brokers * 10 Clients = 250,000 Total, 100P-1000T-100C 100*(1P-10T-1C)  ##>		  
+		  <PT-Qpid-11>-n PT-Qpid-11 -s [250] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=10 transacted=true CommitBatchSize=50</PT-Qpid-11>
+		  <PT-Qpid-12>-n PT-Qpid-12 -s [250] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=10</PT-Qpid-12>
+
+		  <!## 250 Msgs * 1000 Brokers = 250,000 Total, 1000P-1000T-1000C 1000*(1P-1T-1C) ##>
+		  <PT-Qpid-13>-n PT-Qpid-13 -s [250] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=1 transacted=true CommitBatchSize=50</PT-Qpid-13>
+		  <PT-Qpid-14>-n PT-Qpid-14 -s [250] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=250 destinationcount=1</PT-Qpid-14>
 
 		  <!## P2P Volume Tests. ##>
-		  <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</VQ-Qpid-1>
-		  <VQ-Qpid-2>-n VQ-Qpid-2 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</VQ-Qpid-2>
-		  <VQ-Qpid-3>-n VQ-Qpid-3 -s [10000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000 transacted=true</VQ-Qpid-3>
-		  <VQ-Qpid-4>-n VQ-Qpid-4 -s [10000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000</VQ-Qpid-4>
+		  <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 transacted=true CommitBatchSize=40000</VQ-Qpid-1>
+		  <VQ-Qpid-2>-n VQ-Qpid-2 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000</VQ-Qpid-2>
+          <!## Setting sample to 3,000,000 will result in a log entry every 10 minutes so should have 144 data points for the run. ##>
+		  <VQ-Qpid-3>-n VQ-Qpid-3 -s [3000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000 BatchSize=3000000 transacted=true CommitBatchSize=40000</VQ-Qpid-3>
+		  <VQ-Qpid-4>-n VQ-Qpid-4 -s [3000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000 BatchSize=3000000 </VQ-Qpid-4>
 
 		  <!## P2P Scalability Tests. ##>
+ 		  <!## 15,000 Total, 1P-1Q-1C ##>
 		  <PQ-Qpid-1>-n PQ-Qpid-1 -s [15000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-1>
 		  <PQ-Qpid-2>-n PQ-Qpid-2 -s [15000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-2>
-		  <PQ-Qpid-3>-n PQ-Qpid-3 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true destinationname=ping</PQ-Qpid-3>
-		  <PQ-Qpid-4>-n PQ-Qpid-4 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationname=ping</PQ-Qpid-4>
-		  <PQ-Qpid-5>-n PQ-Qpid-5 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-5>
-		  <PQ-Qpid-6>-n PQ-Qpid-6 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-6>
-		  <PQ-Qpid-7>-n PQ-Qpid-7 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true destinationcount=10</PQ-Qpid-7>
-		  <PQ-Qpid-8>-n PQ-Qpid-8 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=10</PQ-Qpid-8>
-		  <PQ-Qpid-9>-n PQ-Qpid-9 -s [15000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-9>
-		  <PQ-Qpid-10>-n PQ-Qpid-10 -s [15000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-10>
-		  <PQ-Qpid-11>-n PQ-Qpid-11 -s [15000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true destinationcount=10</PQ-Qpid-11>
-		  <PQ-Qpid-12>-n PQ-Qpid-12 -s [15000] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=10</PQ-Qpid-12>
-		  <PQ-Qpid-13>-n PQ-Qpid-13 -s [15000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-13>
-		  <PQ-Qpid-14>-n PQ-Qpid-14 -s [15000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-14>
+
+		  <!## 1500 Messages * 10 Brokers = 15,000 Total, 10P-1Q-10C ##>
+		  <PQ-Qpid-3>-n PQ-Qpid-3 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationname=ping transacted=true CommitBatchSize=500</PQ-Qpid-3>
+		  <PQ-Qpid-4>-n PQ-Qpid-4 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationname=ping</PQ-Qpid-4>
+
+		  <!## 1500 Messages * 10 Brokers = 15,000 Total, 10P-10Q-10C 10*(1P-1Q-1C) ##>
+		  <PQ-Qpid-5>-n PQ-Qpid-5 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=1 transacted=true CommitBatchSize=500</PQ-Qpid-5>
+		  <PQ-Qpid-6>-n PQ-Qpid-6 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=1</PQ-Qpid-6>
+	
+		  <!## 1500 Messages * 10 Brokers = 15,000 Total, 10P-100Q-10C 10*(1P-10Q-1C) ##>
+		  <PQ-Qpid-7>-n PQ-Qpid-7 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=10 transacted=true CommitBatchSize=500</PQ-Qpid-7>
+		  <PQ-Qpid-8>-n PQ-Qpid-8 -s [1500] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=10</PQ-Qpid-8>
+
+		  <!## 150 Messages * 100 Brokers = 15,000 Total, 100P-100Q-100C 100*(1P-1Q-1C) ##>
+		  <PQ-Qpid-9>-n PQ-Qpid-9 -s [150] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=50 destinationcount=1 transacted=true CommitBatchSize=50</PQ-Qpid-9>
+		  <PQ-Qpid-10>-n PQ-Qpid-10 -s [150] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=50 destinationcount=1 </PQ-Qpid-10>
+
+		  <!## 150 Messages * 100 Brokers = 15,000 Total, 100P-1000Q-100C 100*(1P-10Q-1C) ##>
+		  <PQ-Qpid-11>-n PQ-Qpid-11 -s [150] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=10 transacted=true CommitBatchSize=50</PQ-Qpid-11>
+		  <PQ-Qpid-12>-n PQ-Qpid-12 -s [150] -c[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=100 destinationcount=10</PQ-Qpid-12>
+		  
+		  <!## 15 Messages * 1000 Brokers = 15,000 Total, 1000P-1000Q-1000C 1000*(1P-1Q-1C) ##>
+		  <PQ-Qpid-13>-n PQ-Qpid-13 -s [15] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=15 transacted=true CommitBatchSize=15</PQ-Qpid-13>
+		  <PQ-Qpid-14>-n PQ-Qpid-14 -s [15] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=15 </PQ-Qpid-14>
 
           <!## Increasing Message Payload Tests. ##>
-		  <LT-Qpid-1-512b>-n LT-Qpid-1-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=512 transacted=true</LT-Qpid-1-512b>
-		  <LT-Qpid-2-512b>-n LT-Qpid-2-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=512</LT-Qpid-2-512b>
-		  <LT-Qpid-1-1K>-n LT-Qpid-1-1K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</LT-Qpid-1-1K>
-		  <LT-Qpid-2-1K>-n LT-Qpid-2-1K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</LT-Qpid-2-1K>
-		  <LT-Qpid-1-5K>-n LT-Qpid-1-5K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=5120 transacted=true</LT-Qpid-1-5K>
-		  <LT-Qpid-2-5K>-n LT-Qpid-2-5K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=5120</LT-Qpid-2-5K>
-		  <LT-Qpid-1-10K>-n LT-Qpid-1-10K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=10240 transacted=true</LT-Qpid-1-10K>
-		  <LT-Qpid-2-10K>-n LT-Qpid-2-10K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=10240</LT-Qpid-2-10K>
-		  <LT-Qpid-1-50K>-n LT-Qpid-1-50K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=51200 transacted=true</LT-Qpid-1-50K>
-		  <LT-Qpid-2-50K>-n LT-Qpid-2-50K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=51200</LT-Qpid-2-50K>
-		  <LT-Qpid-1-1M>-n LT-Qpid-1-1M -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=1048576 transacted=true</LT-Qpid-1-1M>
-		  <LT-Qpid-2-1M>-n LT-Qpid-2-1M -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=1048476</LT-Qpid-2-1M>
+		  <!## Queue Testing ##>
+		  <LT-Qpid-1-512b>-n LT-Qpid-1-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=512 transacted=true CommitBatchSize=10000</LT-Qpid-1-512b>
+		  <LT-Qpid-2-512b>-n LT-Qpid-2-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=512</LT-Qpid-2-512b>
 
+		  <LT-Qpid-1-1K>-n LT-Qpid-1-1K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 transacted=true CommitBatchSize=10000</LT-Qpid-1-1K>
+		  <LT-Qpid-2-1K>-n LT-Qpid-2-1K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000</LT-Qpid-2-1K>
 
-		  <LT-Qpid-3-512b>-n LT-Qpid-3-512b -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=512 transacted=true</LT-Qpid-3-512b>
-		  <LT-Qpid-4-512b>-n LT-Qpid-4-512b -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=512</LT-Qpid-4-512b>
-		  <LT-Qpid-3-1K>-n LT-Qpid-3-1K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</LT-Qpid-3-1K>
-		  <LT-Qpid-4-1K>-n LT-Qpid-4-1K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf </LT-Qpid-4-1K>
-		  <LT-Qpid-3-5K>-n LT-Qpid-3-5K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=5120 transacted=true</LT-Qpid-3-5K>
-		  <LT-Qpid-4-5K>-n LT-Qpid-4-5K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=5120</LT-Qpid-4-5K>
-		  <LT-Qpid-3-10K>-n LT-Qpid-3-10K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=10240 transacted=true</LT-Qpid-3-10K>
-		  <LT-Qpid-4-10K>-n LT-Qpid-4-10K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=10240</LT-Qpid-4-10K>
-		  <LT-Qpid-3-50K>-n LT-Qpid-3-50K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=51200 transacted=true</LT-Qpid-3-50K>
-		  <LT-Qpid-4-50K>-n LT-Qpid-4-50K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=51200</LT-Qpid-4-50K>
-		  <LT-Qpid-3-1M>-n LT-Qpid-3-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=1048576 transacted=true</LT-Qpid-3-1M>
-		  <LT-Qpid-4-1M>-n LT-Qpid-4-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=1048576</LT-Qpid-4-1M>
+		  <LT-Qpid-1-5K>-n LT-Qpid-1-5K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=5120 transacted=true CommitBatchSize=10000</LT-Qpid-1-5K>
+		  <LT-Qpid-2-5K>-n LT-Qpid-2-5K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=5120</LT-Qpid-2-5K>
+
+		  <LT-Qpid-1-10K>-n LT-Qpid-1-10K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=10240 transacted=true CommitBatchSize=10000</LT-Qpid-1-10K>
+		  <LT-Qpid-2-10K>-n LT-Qpid-2-10K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=10240 </LT-Qpid-2-10K>
+
+		  <LT-Qpid-1-50K>-n LT-Qpid-1-50K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=51200 transacted=true CommitBatchSize=10000</LT-Qpid-1-50K>
+		  <LT-Qpid-2-50K>-n LT-Qpid-2-50K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=51200</LT-Qpid-2-50K>
+
+		  <LT-Qpid-1-1M>-n LT-Qpid-1-1M -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=1048576 transacted=true CommitBatchSize=10000</LT-Qpid-1-1M>
+		  <LT-Qpid-2-1M>-n LT-Qpid-2-1M -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 messagesize=1048476</LT-Qpid-2-1M>
+
+		  <!## Topic Testing ##>
+		  <LT-Qpid-3-512b>-n LT-Qpid-3-512b -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=512 transacted=true CommitBatchSize=10000</LT-Qpid-3-512b>
+		  <LT-Qpid-4-512b>-n LT-Qpid-4-512b -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=512</LT-Qpid-4-512b>
+
+		  <LT-Qpid-3-1K>-n LT-Qpid-3-1K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 transacted=true CommitBatchSize=10000</LT-Qpid-3-1K>
+		  <LT-Qpid-4-1K>-n LT-Qpid-4-1K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000</LT-Qpid-4-1K>
+
+		  <LT-Qpid-3-5K>-n LT-Qpid-3-5K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=5120 transacted=true CommitBatchSize=10000</LT-Qpid-3-5K>
+		  <LT-Qpid-4-5K>-n LT-Qpid-4-5K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=5120</LT-Qpid-4-5K>
+
+		  <LT-Qpid-3-10K>-n LT-Qpid-3-10K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=10240 transacted=true CommitBatchSize=10000</LT-Qpid-3-10K>
+		  <LT-Qpid-4-10K>-n LT-Qpid-4-10K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=10240</LT-Qpid-4-10K>
+
+		  <LT-Qpid-3-50K>-n LT-Qpid-3-50K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=51200 transacted=true CommitBatchSize=10000</LT-Qpid-3-50K>
+		  <LT-Qpid-4-50K>-n LT-Qpid-4-50K -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=51200</LT-Qpid-4-50K>
+
+		  <LT-Qpid-3-1M>-n LT-Qpid-3-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=1048576 transacted=true CommitBatchSize=10000</LT-Qpid-3-1M>
+		  <LT-Qpid-4-1M>-n LT-Qpid-4-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 messagesize=1048576 </LT-Qpid-4-1M>
 
 		  <!## Failover Tests. ##>
-		  <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailBeforeSend=true</FT-Qpid-1>
-		  <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterSend=true</FT-Qpid-2>
-		  <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterCommit=true</FT-Qpid-3>
+		  <!## Transactional ##>
+		  <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 transacted=true CommitBatchSize=10000 broker="tcp://localhost:5001;tcp://localhost:5002" FailBeforeSend=true</FT-Qpid-1>
+		  <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 transacted=true CommitBatchSize=10000 broker="tcp://localhost:5001;tcp://localhost:5002" FailAfterSend=true</FT-Qpid-2>
+		  <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 transacted=true CommitBatchSize=10000 broker="tcp://localhost:5001;tcp://localhost:5002" FailAfterCommit=true</FT-Qpid-3>
 
-		  <FT-Qpid-4>-n FT-Qpid-4 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailBeforeSend=true</FT-Qpid-4>
-		  <FT-Qpid-5>-n FT-Qpid-5 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterSend=true</FT-Qpid-5>
+		  <!## Non Transactional ##>
+		  <FT-Qpid-4>-n FT-Qpid-4 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailBeforeSend=true</FT-Qpid-4>
+		  <FT-Qpid-5>-n FT-Qpid-5 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=false FailAfterSend=true</FT-Qpid-5>
 
 
                 </commands>
@@ -241,8 +282,7 @@
                 </execution>
               </executions>
             </plugin>
-        -->
-
+-->
             <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
 
                  Usefull when bundling system, integration or performance tests into a convenient
