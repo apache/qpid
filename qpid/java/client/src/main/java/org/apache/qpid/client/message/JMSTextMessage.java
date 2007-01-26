@@ -40,7 +40,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
      */
     private static final String PAYLOAD_NULL_PROPERTY = "JMS_QPID_NULL";
 
-    JMSTextMessage() throws JMSException
+    public JMSTextMessage() throws JMSException
     {
         this(null, null);
     }

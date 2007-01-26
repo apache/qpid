@@ -38,9 +38,9 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public static final String MIME_TYPE = "jms/map-message";
 
-    private Map<String,Object> _map = new HashMap<String, Object>();
+    private Map<String, Object> _map = new HashMap<String, Object>();
 
-    JMSMapMessage() throws JMSException
+    public JMSMapMessage() throws JMSException
     {
         this(null);
     }
@@ -59,11 +59,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         try
         {
             populateMapFromData();
-        }                                                        
+        }
         catch (JMSException je)
         {
             throw new AMQException("Error populating MapMessage from ByteBuffer", je);
-            
+
         }
 
     }
@@ -88,7 +88,6 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     }
 
 
-
     @Override
     public void clearBodyImpl() throws JMSException
     {
@@ -100,13 +99,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Boolean)
+        if (value instanceof Boolean)
         {
-            return ((Boolean)value).booleanValue();
+            return ((Boolean) value).booleanValue();
         }
-        else if((value instanceof String) || (value == null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Boolean.valueOf((String)value);
+            return Boolean.valueOf((String) value);
         }
         else
         {
@@ -120,13 +119,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Byte)
+        if (value instanceof Byte)
         {
-            return ((Byte)value).byteValue();
+            return ((Byte) value).byteValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Byte.valueOf((String)value).byteValue();
+            return Byte.valueOf((String) value).byteValue();
         }
         else
         {
@@ -139,17 +138,17 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Short)
+        if (value instanceof Short)
         {
-            return ((Short)value).shortValue();
+            return ((Short) value).shortValue();
         }
-        else if(value instanceof Byte)
+        else if (value instanceof Byte)
         {
-            return ((Byte)value).shortValue();
+            return ((Byte) value).shortValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Short.valueOf((String)value).shortValue();
+            return Short.valueOf((String) value).shortValue();
         }
         else
         {
@@ -164,21 +163,21 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Integer)
+        if (value instanceof Integer)
         {
-            return ((Integer)value).intValue();
+            return ((Integer) value).intValue();
         }
-        else if(value instanceof Short)
+        else if (value instanceof Short)
         {
-            return ((Short)value).intValue();
+            return ((Short) value).intValue();
         }
-        else if(value instanceof Byte)
+        else if (value instanceof Byte)
         {
-            return ((Byte)value).intValue();
+            return ((Byte) value).intValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Integer.valueOf((String)value).intValue();
+            return Integer.valueOf((String) value).intValue();
         }
         else
         {
@@ -192,25 +191,25 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Long)
+        if (value instanceof Long)
         {
-            return ((Long)value).longValue();
+            return ((Long) value).longValue();
         }
-        else if(value instanceof Integer)
+        else if (value instanceof Integer)
         {
-            return ((Integer)value).longValue();
+            return ((Integer) value).longValue();
         }
-        if(value instanceof Short)
+        if (value instanceof Short)
         {
-            return ((Short)value).longValue();
+            return ((Short) value).longValue();
         }
-        if(value instanceof Byte)
+        if (value instanceof Byte)
         {
-            return ((Byte)value).longValue();
+            return ((Byte) value).longValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Long.valueOf((String)value).longValue();
+            return Long.valueOf((String) value).longValue();
         }
         else
         {
@@ -224,13 +223,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(!_map.containsKey(propName))
+        if (!_map.containsKey(propName))
         {
             throw new MessageFormatException("Property " + propName + " not present");
         }
-        else if(value instanceof Character)
+        else if (value instanceof Character)
         {
-            return ((Character)value).charValue();
+            return ((Character) value).charValue();
         }
         else if (value == null)
         {
@@ -246,18 +245,17 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     }
 
 
-
     public float getFloat(String propName) throws JMSException
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Float)
+        if (value instanceof Float)
         {
-            return ((Float)value).floatValue();
+            return ((Float) value).floatValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Float.valueOf((String)value).floatValue();
+            return Float.valueOf((String) value).floatValue();
         }
         else
         {
@@ -270,17 +268,17 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Double)
+        if (value instanceof Double)
         {
-            return ((Double)value).doubleValue();
+            return ((Double) value).doubleValue();
         }
-        else if(value instanceof Float)
+        else if (value instanceof Float)
         {
-            return ((Float)value).doubleValue();
+            return ((Float) value).doubleValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Double.valueOf((String)value).doubleValue();
+            return Double.valueOf((String) value).doubleValue();
         }
         else
         {
@@ -293,11 +291,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if((value instanceof String) || (value == null))
+        if ((value instanceof String) || (value == null))
         {
             return (String) value;
         }
-        else if(value instanceof byte[])
+        else if (value instanceof byte[])
         {
             throw new MessageFormatException("Property " + propName + " of type byte[] " +
                                              "cannot be converted to String.");
@@ -313,13 +311,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(!_map.containsKey(propName))
+        if (!_map.containsKey(propName))
         {
-            throw new MessageFormatException("Property " + propName + " not present");                        
+            throw new MessageFormatException("Property " + propName + " not present");
         }
-        else if((value instanceof byte[]) || (value == null))
+        else if ((value instanceof byte[]) || (value == null))
         {
-            return (byte[])value;
+            return (byte[]) value;
         }
         else
         {
@@ -411,33 +409,33 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public void setBytes(String propName, byte[] bytes, int offset, int length) throws JMSException
     {
-        if((offset == 0) && (length == bytes.length))
+        if ((offset == 0) && (length == bytes.length))
         {
-            setBytes(propName,bytes);
+            setBytes(propName, bytes);
         }
         else
         {
             byte[] newBytes = new byte[length];
-            System.arraycopy(bytes,offset,newBytes,0,length);
-            setBytes(propName,newBytes);
+            System.arraycopy(bytes, offset, newBytes, 0, length);
+            setBytes(propName, newBytes);
         }
     }
 
     public void setObject(String propName, Object value) throws JMSException
-    {                                                                                       
+    {
         checkWritable();
         checkPropertyName(propName);
-        if(value instanceof Boolean
-                || value instanceof Byte
-                || value instanceof Short
-                || value instanceof Integer
-                || value instanceof Long
-                || value instanceof Character
-                || value instanceof Float
-                || value instanceof Double
-                || value instanceof String
-                || value instanceof byte[]                
-                || value == null)
+        if (value instanceof Boolean
+            || value instanceof Byte
+            || value instanceof Short
+            || value instanceof Integer
+            || value instanceof Long
+            || value instanceof Character
+            || value instanceof Float
+            || value instanceof Double
+            || value instanceof String
+            || value instanceof byte[]
+            || value == null)
         {
             _map.put(propName, value);
         }
@@ -450,7 +448,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     private void checkPropertyName(String propName)
     {
-        if(propName == null || propName.equals(""))
+        if (propName == null || propName.equals(""))
         {
             throw new IllegalArgumentException("Property name cannot be null, or the empty String.");
         }
@@ -464,16 +462,16 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     private void populateMapFromData() throws JMSException
     {
-        if(_data != null)
+        if (_data != null)
         {
             _data.rewind();
 
             final int entries = readIntImpl();
-            for(int i = 0; i < entries; i++)
+            for (int i = 0; i < entries; i++)
             {
                 String propName = readStringImpl();
                 Object value = readObject();
-                _map.put(propName,value);
+                _map.put(propName, value);
             }
         }
         else
@@ -487,7 +485,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         allocateInitialBuffer();
         final int size = _map.size();
         writeIntImpl(size);
-        for(Map.Entry<String, Object> entry : _map.entrySet())
+        for (Map.Entry<String, Object> entry : _map.entrySet())
         {
             try
             {
@@ -495,7 +493,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
             }
             catch (CharacterCodingException e)
             {
-                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(),e);
+                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(), e);
 
 
             }
@@ -507,13 +505,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
             {
                 Object value = entry.getValue();
                 throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey() +
-                        " value : " + value + " (type: " + value.getClass().getName() + ").",e);
+                                                   " value : " + value + " (type: " + value.getClass().getName() + ").", e);
             }
         }
 
     }
-
-
 
 
 }

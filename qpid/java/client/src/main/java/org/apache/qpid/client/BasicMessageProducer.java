@@ -25,6 +25,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 
@@ -138,16 +139,16 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
-            null,	// arguments
-            false,	// autoDelete
-            false,	// durable
-            destination.getExchangeName(),	// exchange
-            false,	// internal
-            true,	// nowait
-            false,	// passive
-            0,	// ticket
-            destination.getExchangeClass());	// type
+                                                              (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                              null,    // arguments
+                                                              false,    // autoDelete
+                                                              false,    // durable
+                                                              destination.getExchangeName(),    // exchange
+                                                              false,    // internal
+                                                              true,    // nowait
+                                                              false,    // passive
+                                                              0,    // ticket
+                                                              destination.getExchangeClass());    // type
         _protocolHandler.writeFrame(declare);
     }
 
@@ -183,7 +184,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if (i != DeliveryMode.NON_PERSISTENT && i != DeliveryMode.PERSISTENT)
         {
             throw new JMSException("DeliveryMode must be either NON_PERSISTENT or PERSISTENT. Value of " + i +
-                    " is illegal");
+                                   " is illegal");
         }
         _deliveryMode = i;
     }
@@ -368,111 +369,30 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
             if (message instanceof BytesMessage)
             {
-                BytesMessage bytesMessage = (BytesMessage) message;
-                bytesMessage.reset();
-
-                JMSBytesMessage nativeMsg = (JMSBytesMessage) _session.createBytesMessage();
-
-
-                byte[] buf = new byte[1024];
-
-                int len;
-
-                while ((len = bytesMessage.readBytes(buf)) != -1)
-                {
-                    nativeMsg.writeBytes(buf, 0, len);
-                }
-
-                newMessage = nativeMsg;
+                newMessage = new MessageConverter((BytesMessage) message).getConvertedMessage();
             }
             else if (message instanceof MapMessage)
             {
-                MapMessage origMessage = (MapMessage) message;
-                MapMessage nativeMessage = _session.createMapMessage();
-
-                Enumeration mapNames = origMessage.getMapNames();
-                while (mapNames.hasMoreElements())
-                {
-                    String name = (String) mapNames.nextElement();
-                    nativeMessage.setObject(name, origMessage.getObject(name));
-                }
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((MapMessage) message).getConvertedMessage();
             }
             else if (message instanceof ObjectMessage)
             {
-                ObjectMessage origMessage = (ObjectMessage) message;
-                ObjectMessage nativeMessage = _session.createObjectMessage();
-
-                nativeMessage.setObject(origMessage.getObject());
-
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((ObjectMessage) message).getConvertedMessage();
             }
             else if (message instanceof TextMessage)
             {
-                TextMessage origMessage = (TextMessage) message;
-                TextMessage nativeMessage = _session.createTextMessage();
-
-                nativeMessage.setText(origMessage.getText());
-
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((TextMessage) message).getConvertedMessage();
             }
             else if (message instanceof StreamMessage)
             {
-                StreamMessage origMessage = (StreamMessage) message;
-                StreamMessage nativeMessage = _session.createStreamMessage();
-
-
-                try
-                {
-                    origMessage.reset();
-                    while (true)
-                    {
-                        nativeMessage.writeObject(origMessage.readObject());
-                    }
-                }
-                catch (MessageEOFException e)
-                {
-                    ;//
-                }
-                newMessage = (AbstractJMSMessage) nativeMessage;
+                newMessage = new MessageConverter((StreamMessage) message).getConvertedMessage();
             }
             else
             {
+                //TODO; Do we really want to create an empty message here ?
                 newMessage = (AbstractJMSMessage) _session.createMessage();
-
+                return new MessageConverter(newMessage).getConvertedMessage();
             }
-
-            Enumeration propertyNames = message.getPropertyNames();
-            while (propertyNames.hasMoreElements())
-            {
-                String propertyName = String.valueOf(propertyNames.nextElement());
-                if (!propertyName.startsWith("JMSX_"))
-                {
-                    Object value = message.getObjectProperty(propertyName);
-                    newMessage.setObjectProperty(propertyName, value);
-                }
-            }
-
-            newMessage.setJMSDeliveryMode(message.getJMSDeliveryMode());
-
-
-            int priority = message.getJMSPriority();
-            if (priority < 0)
-            {
-                priority = 0;
-            }
-            else if (priority > 9)
-            {
-                priority = 9;
-            }
-
-            newMessage.setJMSPriority(priority);
-            if (message.getJMSReplyTo() != null)
-            {
-                newMessage.setJMSReplyTo(message.getJMSReplyTo());
-            }
-            newMessage.setJMSType(message.getJMSType());
-
 
             if (newMessage != null)
             {
@@ -491,7 +411,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if (!(destination instanceof AMQDestination))
         {
             throw new JMSException("Unsupported destination class: " +
-                    (destination != null ? destination.getClass() : null));
+                                   (destination != null ? destination.getClass() : null));
         }
         declareDestination((AMQDestination) destination);
     }
@@ -520,19 +440,19 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
 
-        
+
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
         message.getJmsContentHeaderProperties().getJMSHeaders().setString(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString(), destination.toURL());
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame publishFrame = BasicPublishBody.createAMQFrame(_channelId,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
-            destination.getExchangeName(),	// exchange
-            immediate,	// immediate
-            mandatory,	// mandatory
-            destination.getRoutingKey(),	// routingKey
-            0);	// ticket
+                                                                (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                destination.getExchangeName(),    // exchange
+                                                                immediate,    // immediate
+                                                                mandatory,    // mandatory
+                                                                destination.getRoutingKey(),    // routingKey
+                                                                0);    // ticket
 
         long currentTime = 0;
         if (!_disableTimestamps)
@@ -576,7 +496,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // weight argument of zero indicates no child content headers, just bodies
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte)8, (byte)0), 0,
+        AMQFrame contentHeaderFrame = ContentHeaderBody.createAMQFrame(_channelId, BasicConsumeBody.getClazz((byte) 8, (byte) 0), 0,
                                                                        contentHeaderProperties,
                                                                        size);
         if (_logger.isDebugEnabled())
@@ -603,16 +523,16 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {
-        if(destination instanceof TemporaryDestination)
+        if (destination instanceof TemporaryDestination)
         {
             _logger.debug("destination is temporary destination");
             TemporaryDestination tempDest = (TemporaryDestination) destination;
-            if(tempDest.getSession().isClosed())
+            if (tempDest.getSession().isClosed())
             {
                 _logger.debug("session is closed");
                 throw new JMSException("Session for temporary destination has been closed");
             }
-            if(tempDest.isDeleted())
+            if (tempDest.isDeleted())
             {
                 _logger.debug("destination is deleted");
                 throw new JMSException("Cannot send to a deleted temporary destination");
