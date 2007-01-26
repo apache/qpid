@@ -718,19 +718,21 @@ public class NavigationView extends ViewPart
         {
             while(true)
             {
-                if (_managedServerMap.isEmpty())
-                    continue;
+                if (!_managedServerMap.isEmpty())
+                {
+                    refreshRemovedObjects();                               
+                    refreshClosedServerConnections();
+                }
                 
                 try
                 {
-                    Thread.sleep(2000);
+                    Thread.sleep(3000);
                 }
                 catch(Exception ex)
                 {
 
                 }                          
-                refreshRemovedObjects();                               
-                refreshClosedServerConnections();                                
+                                                
             }// end of while loop
         }// end of run method.        
     }// end of Worker class

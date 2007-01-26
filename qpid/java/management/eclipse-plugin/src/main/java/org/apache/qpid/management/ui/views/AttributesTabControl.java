@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import javax.management.openmbean.TabularDataSupport;
-
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
@@ -421,7 +419,7 @@ public class AttributesTabControl extends TabControl
     {
         int width = 500;
         int height = 250;
-        if (data.getValue() instanceof TabularDataSupport)
+        if (!isSimpleType(data.getValue()))
         {
             width = 650;
             height = 450;
@@ -516,12 +514,12 @@ public class AttributesTabControl extends TabControl
         }
         else
         {
-            if (attribute.getValue() instanceof TabularDataSupport)
+            if (!isSimpleType(attribute.getValue()))
             {
                 Composite composite = new Composite(parent, SWT.BORDER);
                 composite.setLayout(new GridLayout());
                 composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-                ViewUtility.createTabularDataHolder(_toolkit, composite,(TabularDataSupport)attribute.getValue());
+                ViewUtility.populateCompositeWithData(_toolkit, composite, attribute.getValue());
             }
             else
             {
