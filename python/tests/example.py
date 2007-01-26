@@ -68,18 +68,18 @@ class ExampleTest (TestBase):
         # has fields corresponding to the reply method fields, plus a content
         # field that is filled if the reply includes content. In this case the
         # interesting field is the consumer_tag.
-        reply = channel.basic_consume(queue="test-queue")
+        channel.message_consume(queue="test-queue", destination="consumer_tag")
 
         # We can use the Client.queue(...) method to access the queue
         # corresponding to our consumer_tag.
-        queue = self.client.queue(reply.consumer_tag)
+        queue = self.client.queue("consumer_tag")
 
         # Now lets publish a message and see if our consumer gets it. To do
         # this we need to import the Content class.
         body = "Hello World!"
-        channel.basic_publish(exchange="test",
-                              routing_key="key",
-                              content=Content(body))
+        channel.message_transfer(destination="test",
+                                 routing_key="key",
+                                 body = body)
 
         # Now we'll wait for the message to arrive. We can use the timeout
         # argument in case the server hangs. By default queue.get() will wait
@@ -87,8 +87,8 @@ class ExampleTest (TestBase):
         msg = queue.get(timeout=10)
 
         # And check that we got the right response with assertEqual
-        self.assertEqual(body, msg.content.body)
+        self.assertEqual(body, msg.body)
 
         # Now acknowledge the message.
-        channel.basic_ack(msg.delivery_tag, True)
+        msg.ok()
 

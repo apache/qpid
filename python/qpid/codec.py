@@ -157,14 +157,15 @@ class Codec:
   def encode_table(self, tbl):
     enc = StringIO()
     codec = Codec(enc)
-    for key, value in tbl.items():
-      codec.encode_shortstr(key)
-      if isinstance(value, basestring):
-        codec.write("S")
-        codec.encode_longstr(value)
-      else:
-        codec.write("I")
-        codec.encode_long(value)
+    if tbl:
+      for key, value in tbl.items():
+        codec.encode_shortstr(key)
+        if isinstance(value, basestring):
+          codec.write("S")
+          codec.encode_longstr(value)
+        else:
+          codec.write("I")
+          codec.encode_long(value)
     s = enc.getvalue()
     self.encode_long(len(s))
     self.write(s)
