@@ -2,7 +2,7 @@
 499979
 
 -Not Done-
-499874 QPID-319 management console update (QPID-319)
+499874 QPID-319 management console update (QPID-50)
 499851 QPID-318 removed hard coding (New Feature)
 499628 QPID-318 removed hard coding (New Feature)
 499565 QPID-317 (New Feature)
