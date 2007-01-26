@@ -100,7 +100,7 @@
 
 		 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
 		 -->
-           
+           <!--
             <plugin>
               <groupId>uk.co.thebadgerset</groupId>
               <artifactId>junit-toolkit-maven-plugin</artifactId>
@@ -130,17 +130,17 @@
           </systemproperties>
 
                 <commands>
-                  <!-- Run the ping pong test once. This is just to check toolkit test runner is working. Real tests follow. -->
+                  <!## Run the ping pong test once. This is just to check toolkit test runner is working. Real tests follow. ##>
                   <PingOnce>-n PingOnce -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</PingOnce>
 
-          <!-- Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. -->
+          <!## Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. ##>
 		  <ThrottleTest>-n ThrottleTest -r 5 -s [10,10000],samples=100,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
 
-          <!--
+          <!##
 		     Skim Tests.
 		     These are not part of the performance suite. They run quick tests to check that the different combinations of
 		     options that the performance suite uses are going to work.
-            -->
+            ##>
 		  <Skim-Tx>-n Skim-Tx -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Skim-Tx>
 		  <Skim-Size>-n Skim-Size -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=51200</Skim-Size>
 		  <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Many>
@@ -148,13 +148,13 @@
 		  <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Duration>
 		  <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=100</Skim-Rate>
 
-          <!-- P2P Volume Tests. -->
+          <!## P2P Volume Tests. ##>
 		  <VT-Qpid-1>-n VT-Qpid-1 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 CommitBatchSize=20000 transacted=true</VT-Qpid-1>
 		  <VT-Qpid-2>-n VT-Qpid-2 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000</VT-Qpid-2>
 		  <VT-Qpid-3>-n VT-Qpid-3 -s [1000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 rate=10000 transacted=true</VT-Qpid-3>
 		  <VT-Qpid-4>-n VT-Qpid-4 -s [1000000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true </VT-Qpid-4>
 
-          <!-- P2P Scalability Tests. -->
+          <!## P2P Scalability Tests. ##>
 		  <PT-Qpid-1>-n PT-Qpid-1 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 transacted=true</PT-Qpid-1>
 		  <PT-Qpid-2>-n PT-Qpid-2 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true </PT-Qpid-2>
 		  <PT-Qpid-3>-n PT-Qpid-3 -s [250000] -c[10] -o .-t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true CommitBatchSize=20000 transacted=true destinationname=ping</PT-Qpid-3>
@@ -170,13 +170,13 @@
 		  <PT-Qpid-13>-n PT-Qpid-13 -s [250000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</PT-Qpid-13>
 		  <PT-Qpid-14>-n PT-Qpid-14 -s [250000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</PT-Qpid-14>
 
-		  <!-- P2P Volume Tests. -->
+		  <!## P2P Volume Tests. ##>
 		  <VQ-Qpid-1>-n VQ-Qpid-1 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</VQ-Qpid-1>
 		  <VQ-Qpid-2>-n VQ-Qpid-2 -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</VQ-Qpid-2>
 		  <VQ-Qpid-3>-n VQ-Qpid-3 -s [10000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000 transacted=true</VQ-Qpid-3>
 		  <VQ-Qpid-4>-n VQ-Qpid-4 -s [10000] -d 24H -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=10000</VQ-Qpid-4>
 
-		  <!-- P2P Scalability Tests. -->
+		  <!## P2P Scalability Tests. ##>
 		  <PQ-Qpid-1>-n PQ-Qpid-1 -s [15000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-1>
 		  <PQ-Qpid-2>-n PQ-Qpid-2 -s [15000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-2>
 		  <PQ-Qpid-3>-n PQ-Qpid-3 -s [15000] -c[10] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true destinationname=ping</PQ-Qpid-3>
@@ -192,7 +192,7 @@
 		  <PQ-Qpid-13>-n PQ-Qpid-13 -s [15000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</PQ-Qpid-13>
 		  <PQ-Qpid-14>-n PQ-Qpid-14 -s [15000] -c[1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</PQ-Qpid-14>
 
-          <!-- Increasing Message Payload Tests. -->
+          <!## Increasing Message Payload Tests. ##>
 		  <LT-Qpid-1-512b>-n LT-Qpid-1-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=512 transacted=true</LT-Qpid-1-512b>
 		  <LT-Qpid-2-512b>-n LT-Qpid-2-512b -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true messageSize=512</LT-Qpid-2-512b>
 		  <LT-Qpid-1-1K>-n LT-Qpid-1-1K -s [1000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true transacted=true</LT-Qpid-1-1K>
@@ -220,7 +220,7 @@
 		  <LT-Qpid-3-1M>-n LT-Qpid-3-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=1048576 transacted=true</LT-Qpid-3-1M>
 		  <LT-Qpid-4-1M>-n LT-Qpid-4-1M -s [900000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=1048576</LT-Qpid-4-1M>
 
-		  <!-- Failover Tests. -->
+		  <!## Failover Tests. ##>
 		  <FT-Qpid-1>-n FT-Qpid-1 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailBeforeSend=true</FT-Qpid-1>
 		  <FT-Qpid-2>-n FT-Qpid-2 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterSend=true</FT-Qpid-2>
 		  <FT-Qpid-3>-n FT-Qpid-3 -s [250000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=125000 broker="tcp://localhost:5001;tcp://localhost:5002" transacted=true FailAfterCommit=true</FT-Qpid-3>
@@ -235,13 +235,13 @@
               <executions>
                 <execution>
                   <phase>test</phase>
-                  <!--<goals>
+                  <!##<goals>
                     <goal>tktest</goal>
-                  </goals>-->
+                  </goals>##>
                 </execution>
               </executions>
             </plugin>
-        
+        -->
 
             <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
 
