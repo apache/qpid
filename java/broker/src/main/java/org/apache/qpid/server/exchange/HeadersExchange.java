@@ -28,6 +28,7 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 import javax.management.JMException;
 import javax.management.openmbean.*;
@@ -284,5 +285,10 @@ public class HeadersExchange extends AbstractExchange
         {
             return o instanceof Registration && ((Registration) o).queue.equals(queue);
         }
+    }
+
+    public String getType()
+    {
+        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
     }
 }

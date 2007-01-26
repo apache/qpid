@@ -29,6 +29,7 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -240,5 +241,11 @@ public class DestWildExchange extends AbstractExchange
             _logger.error("Exception occured in creating the topic exchenge mbean", ex);
             throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
         }
+    }
+
+
+    public String getType()
+    {
+        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
     }
 }
