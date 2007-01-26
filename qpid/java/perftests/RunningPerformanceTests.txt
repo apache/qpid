@@ -1,0 +1,112 @@
+Running Performance Tests
+-------------------------
+
+This performance test suite contains a number of tests.
+
+- Service request-reply
+- Ping-Pong 
+- Topic
+
+Service request-reply
+---------------------
+
+Description:
+This is the simplest test to ensure everything is working. This involves 
+one client that is known as a "service provider" and it listens on a 
+well-known queue for requests. Another client, known as the "service requester"
+creates a private (temporary) response queue, creates a message with the 
+private response queue set as the "reply to" field and then publishes the 
+message to the well known service queue. The test allows you to time how long 
+it takes to send messages and receive the response back. It also allows varying 
+of the message size.
+
+Quick Run:
+
+./serviceRequestReply-QuickTest.sh <brokerdetails> <number of messages>
+
+This provides a quick test to run everything against a running broker. Simply specify broker and number of messages to run.
+
+
+Detailed Run:
+
+You must start the service provider first:
+
+serviceProvidingClient.sh <brokerdetails> [<P[ersistent]|N[onPersistent]> <T[ransacted]|N[onTransacted]>] [selector]
+
+where Brokerdetails is the connection information to the broker you are running on; e.g. localhost or localhost:5670 or tcp://10.10.10.10:5677.
+By default Non Persistent, Non Transaction messages are used in the response. A selector may also be specified.
+
+
+To run the service requester:
+
+serviceRequestingClient.sh <Brokerdetails> <Number of Messages> [<Message Size>] [<P[ersistent]|N[onPersistent]> <T[ransacted]|N[onTransacted]>]
+
+This requests the <number of messages> of a <Message Size (default 4096 bytes>. By default the connection is Non Persistent and Non Transactional.
+
+After receiving all the messages the client outputs the rate it achieved.
+
+
+Ping-Pong
+---------
+
+Description:
+Quick Run:
+Detailed Run:
+
+Topic
+-------
+
+Description:
+A more realistic test is the topic test, which tests the
+performance of the topic exchange to a configurable number of clients (e.g. 50). 
+A publisher sends batches of of messages to a topic that a number of clients are 
+subscribed to. The clients recevie each all the messages and then send a response.
+
+The time taken to send all messages and receive a response from all clients is displayed.
+
+Quick Run:
+
+./topic-QuickTest.sh <host> <port> <messages> <clients> <batches>
+
+This provides a quick test to run everything against a running broker. Simply specify host, port, the number of messages, number of clients and number of batches to run this quick test.
+
+Detailed Run:
+
+You must run the listener processes first:
+
+run_many.sh 10 topic "topicListener.sh [-host <host> -port <port>]"
+
+In this command, the first argument means start 10 processes, the
+second is just a name use in the log files generated and the third
+argument is the command to run the specified number of times.
+
+The topicListener by default connects to localhost:5672 this can be changed using the above flags.
+
+Then run the publisher process:
+
+headersPublisher.sh [-host <host> -port <port> -messages <number> -clients <number> -batch <number>]
+
+The default is to connect to localhost:5672 and send 1 batch of 1000 messages expecting 1 client to respond.
+
+Note that before starting the publisher you should wait about 30
+seconds to ensure all the clients are registered with the broker (you
+can see this from the broker output). Otherwise the numbers will be
+slightly skewed.
+
+
+Additional parameters to scripts
+
+Publisher
+-payload <int>             : specify the payload size (256b Default)
+-delay <long>              : Number of seconds to send between batches (0 Default)
+-warmup <int>              : Number of messages to send as a warm up (0 Default)
+-ack <int>                 : Acknowledgement mode 
+                                - 1   : Auto
+                                - 2   : Client 
+                                - 3   : Dups_OK
+                                - 257 : No (Default)
+                                - 258 : Pre
+-factory <string>          : ConnectionFactoryInitialiser class 
+-persistent <"true"|other> : User persistent messages if string equals "true" (false Default)
+-clientId <string>         : Set client id 
+-subscriptionId <string>   : set subscription id

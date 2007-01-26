@@ -22,4 +22,5 @@
 # XXX -Xmx512m -Xms512m -XX:NewSize=150m
 . ./setupclasspath.sh
 echo $CP
-$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="INFO" org.apache.qpid.topic.Listener $*
+
+$JAVA_HOME/bin/java -cp $CP -Damqj.logging.level="warn" -Damqj.test.logging.level="info" -Dlog4j.configuration=src/perftests.log4j org.apache.qpid.topic.Listener $@

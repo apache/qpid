@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,11 +21,11 @@
 package org.apache.qpid.requestreply;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.jms.Session;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.Session;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
@@ -42,12 +42,22 @@ public class ServiceProvidingClient
 
     private AMQConnection _connection;
 
+    private Session _session;
+    private Session _producerSession;
+
+    private boolean _isTransactional;
+
     public ServiceProvidingClient(String brokerDetails, String username, String password,
-                                  String clientName, String virtualPath, String serviceName)
+                                  String clientName, String virtualPath, String serviceName,
+                                  final int deliveryMode, boolean transactedMode, String selector)
             throws AMQException, JMSException, URLSyntaxException
     {
-        _connection = new AMQConnection(brokerDetails, username, password,
-                                        clientName, virtualPath);
+        _isTransactional = transactedMode;
+
+        _logger.info("Delivery Mode: " + (deliveryMode == DeliveryMode.NON_PERSISTENT ? "Non Persistent" : "Persistent")
+                     + "\t isTransactional: " + _isTransactional);
+
+        _connection = new AMQConnection(brokerDetails, username, password, clientName, virtualPath);
         _connection.setConnectionListener(new ConnectionListener()
         {
 
@@ -74,14 +84,15 @@ public class ServiceProvidingClient
                 _logger.info("App got failover complete callback");
             }
         });
-        final Session session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
+        _producerSession = (Session) _connection.createSession(_isTransactional, Session.AUTO_ACKNOWLEDGE);
 
         _logger.info("Service (queue) name is '" + serviceName + "'...");
 
         AMQQueue destination = new AMQQueue(serviceName);
 
-        MessageConsumer consumer = session.createConsumer(destination,
-                                                          100, true, false, null);
+        MessageConsumer consumer = _session.createConsumer(destination,
+                                                           100, true, false, selector);
 
         consumer.setMessageListener(new MessageListener()
         {
@@ -90,9 +101,7 @@ public class ServiceProvidingClient
             public void onMessage(Message message)
             {
                 //_logger.info("Got message '" + message + "'");
-
                 TextMessage tm = (TextMessage) message;
-
                 try
                 {
                     Destination responseDest = tm.getJMSReplyTo();
@@ -107,9 +116,9 @@ public class ServiceProvidingClient
                         _responseDest = responseDest;
 
                         _logger.info("About to create a producer");
-                        _destinationProducer = session.createProducer(responseDest);
+                        _destinationProducer = _producerSession.createProducer(responseDest);
                         _destinationProducer.setDisableMessageTimestamp(true);
-                        _destinationProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                        _destinationProducer.setDeliveryMode(deliveryMode);
                         _logger.info("After create a producer");
                     }
                 }
@@ -127,14 +136,25 @@ public class ServiceProvidingClient
                 try
                 {
                     String payload = "This is a response: sing together: 'Mahnah mahnah...'" + tm.getText();
-                    TextMessage msg = session.createTextMessage(payload);
+                    TextMessage msg = _producerSession.createTextMessage(payload);
                     if (tm.propertyExists("timeSent"))
                     {
                         _logger.info("timeSent property set on message");
-                        _logger.info("timeSent value is: " + tm.getLongProperty("timeSent"));
-                        msg.setStringProperty("timeSent", tm.getStringProperty("timeSent"));
+                        long timesent = tm.getLongProperty("timeSent");
+                        _logger.info("timeSent value is: " + timesent);
+                        msg.setLongProperty("timeSent", timesent);
                     }
+                    
                     _destinationProducer.send(msg);
+
+                    if (_isTransactional)
+                    {
+                        _producerSession.commit();
+                    }
+                    if (_isTransactional)
+                    {
+                        _session.commit();
+                    }
                     if (_messageCount % 1000 == 0)
                     {
                         _logger.info("Sent response to '" + _responseDest + "'");
@@ -160,7 +180,7 @@ public class ServiceProvidingClient
 
         if (args.length < 5)
         {
-            System.out.println("Usage: brokerDetails username password virtual-path serviceQueue [selector]");
+            System.out.println("Usage: serviceProvidingClient <brokerDetails> <username> <password> <virtual-path> <serviceQueue> [<P[ersistent]|N[onPersistent]> <T[ransacted]|N[onTransacted]>] [selector]");
             System.exit(1);
         }
         String clientId = null;
@@ -174,10 +194,28 @@ public class ServiceProvidingClient
             _logger.error("Error: " + e, e);
         }
 
+        int deliveryMode = DeliveryMode.NON_PERSISTENT;
+        boolean transactedMode = false;
+
+        if (args.length > 7)
+        {
+            deliveryMode = args[args.length - 2].toUpperCase().charAt(0) == 'P' ? DeliveryMode.PERSISTENT
+                           : DeliveryMode.NON_PERSISTENT;
+
+            transactedMode = args[args.length - 1].toUpperCase().charAt(0) == 'T' ? true : false;
+        }
+
+        String selector = null;
+        if ((args.length == 8) || (args.length == 7))
+        {
+            selector = args[args.length - 1];
+        }
+
         try
         {
             ServiceProvidingClient client = new ServiceProvidingClient(args[0], args[1], args[2],
-                                                                       clientId, args[3], args[4]);
+                                                                       clientId, args[3], args[4],
+                                                                       deliveryMode, transactedMode, selector);
             client.run();
         }
         catch (JMSException e)
@@ -192,10 +230,6 @@ public class ServiceProvidingClient
         {
             _logger.error("Error: " + e, e);
         }
-
-
-
     }
-
 }
 

@@ -22,14 +22,12 @@ package org.apache.qpid.topic;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.config.ConnectorConfig;
-import org.apache.qpid.config.ConnectionFactoryInitialiser;
 import org.apache.qpid.config.Connector;
 import org.apache.qpid.config.AbstractConfig;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 
-class Config extends AbstractConfig implements ConnectorConfig
+public class Config extends AbstractConfig implements ConnectorConfig
 {
 
     private String host = "localhost";
@@ -45,23 +43,30 @@ class Config extends AbstractConfig implements ConnectorConfig
     private int ackMode= AMQSession.NO_ACKNOWLEDGE;
     private String clientId;
     private String subscriptionId;
+    private String selector;
+    private String destinationName;
     private boolean persistent;
+    private boolean transacted;
+    private int destinationsCount;
+    private int batchSize;
+    private int rate;
+    private boolean ispubsub;
 
     public Config()
     {
     }
 
-    int getAckMode()
+    public int getAckMode()
     {
         return ackMode;
     }
 
-    void setPayload(int payload)
+    public void setPayload(int payload)
     {
         this.payload = payload;
     }
 
-    int getPayload()
+    public int getPayload()
     {
         return payload;
     }
@@ -81,9 +86,24 @@ class Config extends AbstractConfig implements ConnectorConfig
         this.messages = messages;
     }
 
-    int getMessages()
+    public int getMessages()
     {
         return messages;
+    }
+
+    public int getBatchSize()
+    {
+        return batchSize;
+    }
+
+    public int getRate()
+    {
+        return rate;
+    }
+
+    public int getDestinationsCount()
+    {
+        return destinationsCount;
     }
 
     public String getHost()
@@ -141,19 +161,39 @@ class Config extends AbstractConfig implements ConnectorConfig
         this.delay = delay;
     }
 
-    String getClientId()
+    public String getClientId()
     {
         return clientId;
     }
 
-    String getSubscriptionId()
+    public String getSubscriptionId()
     {
         return subscriptionId;
     }
 
-    boolean usePersistentMessages()
+    public String getSelector()
+    {
+        return selector;
+    }
+
+    public String getDestination()
+    {
+        return destinationName;
+    }
+
+    public boolean usePersistentMessages()
     {
         return persistent;
+    }
+
+    public boolean isTransacted()
+    {
+        return transacted;
+    }
+
+    public boolean isPubSub()
+    {
+        return ispubsub;
     }
 
     public void setOption(String key, String value)
@@ -216,6 +256,34 @@ class Config extends AbstractConfig implements ConnectorConfig
         else if("-persistent".equalsIgnoreCase(key))
         {
             persistent = "true".equalsIgnoreCase(value);
+        }
+        else if("-transacted".equalsIgnoreCase(key))
+        {
+            transacted = "true".equalsIgnoreCase(value);
+        }
+        else if ("-destinationscount".equalsIgnoreCase(key))
+        {
+            destinationsCount = parseInt("Bad destinations count", value);
+        }
+        else if ("-batchsize".equalsIgnoreCase(key))
+        {
+            batchSize = parseInt("Bad batch size", value);
+        }
+        else if ("-rate".equalsIgnoreCase(key))
+        {
+            rate = parseInt("MEssage rate", value);
+        }
+        else if("-pubsub".equalsIgnoreCase(key))
+        {
+            ispubsub = "true".equalsIgnoreCase(value);
+        }
+        else if("-selector".equalsIgnoreCase(key))
+        {
+            selector = value;
+        }
+        else if("-destinationname".equalsIgnoreCase(key))
+        {
+            destinationName = value;
         }
         else
         {
