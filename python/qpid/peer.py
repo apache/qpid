@@ -237,6 +237,8 @@ class Channel:
     frame = Method(type, type.arguments(*args, **kwargs))
     if self.reliable:
       self.request(frame, self.queue_response, content)
+      if not frame.method.responses:
+        return None
       try:
         resp = self.responses.get()
         return Message(self, resp)

@@ -61,10 +61,10 @@ class StandardExchangeVerifier:
         self.assertPublishGet(q, ex, "a.x.b.x")
         self.assertPublishGet(q, ex, "a.x.x.b.x")
         # Shouldn't match
-        self.channel.basic_publish(exchange=ex, routing_key="a.b")        
-        self.channel.basic_publish(exchange=ex, routing_key="a.b.x.y")        
-        self.channel.basic_publish(exchange=ex, routing_key="x.a.b.x")        
-        self.channel.basic_publish(exchange=ex, routing_key="a.b")
+        self.channel.message_transfer(destination=ex, routing_key="a.b")        
+        self.channel.message_transfer(destination=ex, routing_key="a.b.x.y")        
+        self.channel.message_transfer(destination=ex, routing_key="x.a.b.x")        
+        self.channel.message_transfer(destination=ex, routing_key="a.b")
         self.assert_(q.empty())
 
     def verifyHeadersExchange(self, ex):
@@ -73,8 +73,8 @@ class StandardExchangeVerifier:
         self.channel.queue_bind(queue="q", exchange=ex, arguments={ "x-match":"all", "name":"fred" , "age":3} )
         q = self.consume("q")
         headers = {"name":"fred", "age":3}
-        self.assertPublishGet(q, exchange=ex, properties={'headers':headers})
-        self.channel.basic_publish(exchange=ex) # No headers, won't deliver
+        self.assertPublishGet(q, exchange=ex, properties=headers)
+        self.channel.message_transfer(destination=ex, body="") # No headers, won't deliver
         self.assertEmpty(q);                 
         
 
@@ -272,10 +272,10 @@ class HeadersExchangeTests(TestBase):
         self.q = self.consume("q")
 
     def myAssertPublishGet(self, headers):
-        self.assertPublishGet(self.q, exchange="amq.match", properties={'headers':headers})
+        self.assertPublishGet(self.q, exchange="amq.match", properties=headers)
 
     def myBasicPublish(self, headers):
-        self.channel.basic_publish(exchange="amq.match", content=Content("foobar", properties={'headers':headers}))
+        self.channel.message_transfer(destination="amq.match", body="foobar", application_headers=headers)
         
     def testMatchAll(self):
         self.channel.queue_bind(queue="q", exchange="amq.match", arguments={ 'x-match':'all', "name":"fred", "age":3})
