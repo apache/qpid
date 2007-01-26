@@ -76,7 +76,6 @@ public class TransactedTest extends TestCase
 
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
         testCon.start();
     }
@@ -107,6 +106,7 @@ public class TransactedTest extends TestCase
         expect("Y", testConsumer2.receive(1000));
         expect("Z", testConsumer2.receive(1000));
 
+        testConsumer1 = testSession.createConsumer(queue1);
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
     }
@@ -128,6 +128,7 @@ public class TransactedTest extends TestCase
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
 
+        testConsumer1 = testSession.createConsumer(queue1);
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
     }
