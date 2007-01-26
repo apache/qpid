@@ -144,6 +144,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _managedObject.register();
         _closePending = false;
         _closed = false;
+        createChannel(0);
     }
 
     public AMQMinaProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry,
@@ -162,6 +163,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _managedObject.register();
         _closePending = false;
         _closed = false;
+        createChannel(0);
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -215,7 +217,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
                 String locales = "en_US";
                 // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-                createChannel(0);
                 AMQMethodBody connectionStartBody = ConnectionStartBody.createMethodBody
                     ((byte)_major, (byte)_minor,	// AMQP version (major, minor)
                      locales.getBytes(),	// locales

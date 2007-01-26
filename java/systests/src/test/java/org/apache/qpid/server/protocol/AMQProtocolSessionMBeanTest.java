@@ -50,10 +50,10 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
     {
         // check the channel count is correct
         int channelCount = _mbean.channels().size();
-        assertTrue(channelCount == 1);
+        assertTrue(channelCount == 2);
         _protocolSession.addChannel(new AMQChannel(2,_protocolSession, _messageStore, null,null));
         channelCount = _mbean.channels().size();
-        assertTrue(channelCount == 2);
+        assertTrue(channelCount == 3);
 
         // general properties test
         _mbean.setMaximumNumberOfChannels(1000L);
@@ -82,15 +82,15 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         // check if closing of session works
         _protocolSession.addChannel(new AMQChannel(5,_protocolSession, _messageStore, null,null));
         _mbean.closeConnection();
+        channelCount = _mbean.channels().size();
+        assertTrue(channelCount == 0);
         try
         {
-        	channelCount = _mbean.channels().size();
-			assertTrue(channelCount == 0);
-			// session is now closed so adding another channel should throw an exception
-			_protocolSession.addChannel(new AMQChannel(6,_protocolSession, _messageStore, null,null));
-			fail();
+            // session is now closed so adding another channel should throw an exception
+            _protocolSession.addChannel(new AMQChannel(6,_protocolSession, _messageStore, null,null));
+            fail();
         }
-        catch(OpenDataException ex)
+        catch(IllegalStateException ex)
         {
             System.out.println("expected exception is thrown :" + ex.getMessage());
         }
