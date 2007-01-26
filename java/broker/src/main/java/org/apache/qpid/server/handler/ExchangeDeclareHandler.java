@@ -22,9 +22,12 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -68,9 +71,28 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
             if (exchange == null)
             {
-                exchange = exchangeFactory.createExchange(body.exchange, body.type, body.durable,
-                                                          body.passive, body.ticket);
-                exchangeRegistry.registerExchange(exchange);
+                if(body.passive && ((body.type == null) || body.type.length() ==0))
+                {
+                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), "Unknown exchange: " + body.exchange);                    
+                }
+                else
+                {
+                    try
+                    {
+                        exchange = exchangeFactory.createExchange(body.exchange, body.type, body.durable,
+                                                                  body.passive, body.ticket);
+                        exchangeRegistry.registerExchange(exchange);
+                    }
+                    catch(AMQUnknownExchangeType e)
+                    {
+                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID.getCode(), "Unknown exchange type: " + body.type,e);
+                    }
+                }
+            }
+            else if (!exchange.getType().equals(body.type))
+            {
+
+                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED.getCode(), "Attempt to redeclare exchange: " + body.exchange + " of type " + exchange.getType() + " to " + body.type +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor());    
             }
         }
         if(!body.nowait)

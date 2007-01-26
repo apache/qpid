@@ -1,71 +1,53 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageTransferBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 
+import javax.management.openmbean.*;
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.openmbean.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
-public class DestNameExchange extends AbstractExchange
+public class FanoutExchange extends AbstractExchange
 {
-    private static final Logger _logger = Logger.getLogger(DestNameExchange.class);
+    private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
 
     /**
      * Maps from queue name to queue instances
      */
-    private final Index _index = new Index();
+    private final CopyOnWriteArraySet<AMQQueue> _queues = new CopyOnWriteArraySet<AMQQueue>();
 
     /**
      * MBean class implementing the management interfaces.
      */
-    @MBeanDescription("Management Bean for Direct Exchange")
-    private final class DestNameExchangeMBean extends ExchangeMBean
+    @MBeanDescription("Management Bean for Fanout Exchange")
+    private final class FanoutExchangeMBean extends ExchangeMBean
     {
         // open mbean data types for representing exchange bindings
         private String[]   _bindingItemNames = {"Routing Key", "Queue Names"};
         private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
         private OpenType[] _bindingItemTypes = new OpenType[2];
-        private CompositeType      _bindingDataType = null;
-        private TabularType        _bindinglistDataType = null;
+        private CompositeType _bindingDataType = null;
+        private TabularType _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
-        @MBeanConstructor("Creates an MBean for AMQ direct exchange")
-        public DestNameExchangeMBean()  throws JMException
+        @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
+        public FanoutExchangeMBean()  throws JMException
         {
             super();
-            _exchangeType = "direct";
+            _exchangeType = "fanout";
             init();
         }
 
@@ -84,21 +66,16 @@ public class DestNameExchange extends AbstractExchange
 
         public TabularData bindings() throws OpenDataException
         {
-            Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
+
             _bindingList = new TabularDataSupport(_bindinglistDataType);
 
-            for (Map.Entry<String, List<AMQQueue>> entry : bindings.entrySet())
+            for (AMQQueue queue : _queues)
             {
-                String key = entry.getKey();
-                List<String> queueList = new ArrayList<String>();
+                String queueName = queue.getName().toString();
 
-                List<AMQQueue> queues = entry.getValue();
-                for (AMQQueue q : queues)
-                {
-                    queueList.add(q.getName());
-                }
 
-                Object[] bindingItemValues = {key, queueList.toArray(new String[0])};
+
+                Object[] bindingItemValues = {queueName, new String[] {queueName}};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -117,7 +94,7 @@ public class DestNameExchange extends AbstractExchange
             try
             {
                 registerQueue(binding, queue, null);
-                queue.bind(binding, DestNameExchange.this);
+                queue.bind(binding, FanoutExchange.this);
             }
             catch (AMQException ex)
             {
@@ -132,7 +109,7 @@ public class DestNameExchange extends AbstractExchange
     {
         try
         {
-            return new DestNameExchangeMBean();
+            return new FanoutExchange.FanoutExchangeMBean();
         }
         catch (JMException ex)
         {
@@ -141,16 +118,22 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
+    public String getType()
+    {
+        return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+    }
+
     public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
-        assert routingKey != null;
-        if (!_index.add(routingKey, queue))
+
+        if (_queues.contains(queue))
         {
-            _logger.debug("Queue " + queue + " is already registered with routing key " + routingKey);
+            _logger.debug("Queue " + queue + " is already registered");
         }
         else
         {
+            _queues.add(queue);
             _logger.debug("Binding queue " + queue + " with routing key " + routingKey + " to exchange " + this);
         }
     }
@@ -160,24 +143,21 @@ public class DestNameExchange extends AbstractExchange
         assert queue != null;
         assert routingKey != null;
 
-        if (!_index.remove(routingKey, queue))
+        if (!_queues.remove(queue))
         {
             throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key");
+                                   ". ");
         }
     }
 
     public void route(AMQMessage payload) throws AMQException
     {
         MessageTransferBody transferBody = payload.getTransferBody();
-
-        final String routingKey = transferBody.routingKey;
-        final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
-        if (queues == null || queues.isEmpty())
+        if (_queues == null || _queues.isEmpty())
         {
-            String msg = "Routing key " + routingKey + " is not known to " + this;
+            String msg = "No queues bound to " + this;
             // XXX
-            /*if (transferBody.mandatory)
+            /*if (publishBody.mandatory)
             {
                 throw new NoRouteException(msg, payload);
             }
@@ -190,10 +170,10 @@ public class DestNameExchange extends AbstractExchange
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Publishing message to queue " + queues);
+                _logger.debug("Publishing message to queue " + _queues);
             }
 
-            for (AMQQueue q : queues)
+            for (AMQQueue q : _queues)
             {
                 q.deliver(payload);
             }
@@ -202,36 +182,24 @@ public class DestNameExchange extends AbstractExchange
 
     public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
     {
-        final List<AMQQueue> queues = _index.get(routingKey);
-        return queues != null && queues.contains(queue);
+        return _queues.contains(queue);
     }
 
     public boolean isBound(String routingKey) throws AMQException
     {
-        final List<AMQQueue> queues = _index.get(routingKey);
-        return queues != null && !queues.isEmpty();
+
+        return _queues != null && !_queues.isEmpty();
     }
 
     public boolean isBound(AMQQueue queue) throws AMQException
     {
-        Map<String, List<AMQQueue>> bindings = _index.getBindingsMap();
-        for (List<AMQQueue> queues : bindings.values())
-        {
-            if (queues.contains(queue))
-            {
-                return true;
-            }
-        }
-        return false;
+
+
+        return _queues.contains(queue);
     }
 
     public boolean hasBindings() throws AMQException
     {
-        return !_index.getBindingsMap().isEmpty();
-    }
-
-    public String getType()
-    {
-        return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+        return !_queues.isEmpty();
     }
 }

@@ -62,7 +62,7 @@ class ExchangeBindings
 
         public int hashCode()
         {
-            return exchange.hashCode() + routingKey.hashCode();
+            return (exchange == null ? 0 : exchange.hashCode()) + (routingKey == null ? 0 : routingKey.hashCode());
         }
 
         public boolean equals(Object o)

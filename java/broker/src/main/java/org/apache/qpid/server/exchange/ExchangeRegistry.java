@@ -37,4 +37,6 @@ public interface ExchangeRegistry extends MessageRouter
     void unregisterExchange(String name, boolean inUse) throws ExchangeInUseException, AMQException;
 
     Exchange getExchange(String name);
+
+    void setDefaultExchange(Exchange exchange);
 }

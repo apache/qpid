@@ -199,7 +199,7 @@ public class EncodingUtils
     }
 
 
-    public static long unsignedIntegerLength()
+    public static int unsignedIntegerLength()
     {
         return 4;
     }
@@ -627,4 +627,16 @@ public class EncodingUtils
         writeByte(buffer, (byte) character);
     }
 
+    public static long readUnsignedInteger(ByteBuffer buffer)
+    {
+        long l = 0xFF & buffer.get();
+        l <<=8;
+        l = l | (0xFF & buffer.get());
+        l <<=8;
+        l = l | (0xFF & buffer.get());
+        l <<=8;
+        l = l | (0xFF & buffer.get());
+
+        return l;
+    }
 }
