@@ -33,7 +33,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CountDownLatch;
 
@@ -267,17 +266,19 @@ public class PingAsyncTestPerf extends PingTestPerf //implements TimingControlle
 //
 //                CountDownLatch count = _perThreadSetup._pingItselfClient.getEndLock(message.getJMSCorrelationID());
 //
-//                int messagesLeft = (int) count.getCount() - 1;// minus one as we haven't yet counted the current message
-//
-//                if ((messagesLeft % _batchSize) == 0)
+//                if (count != null)
 //                {
-//                    doDone(_batchSize);
-//                }
-//                else if (messagesLeft == 0)
-//                {
-//                    doDone(_totalMessages % _batchSize);
-//                }
+//                    int messagesLeft = (int) count.getCount() - 1;// minus one as we haven't yet counted the current message
 //
+//                    if ((messagesLeft % _batchSize) == 0)
+//                    {
+//                        doDone(_batchSize);
+//                    }
+//                    else if (messagesLeft == 0)
+//                    {
+//                        doDone(_totalMessages % _batchSize);
+//                    }
+//                }
 //
 //            }
 //            catch (JMSException e)
