@@ -58,7 +58,7 @@ public class TransactedTest extends TestCase
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
-        queue1 = new AMQQueue("Q1", false);
+        queue1 = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
         queue2 = new AMQQueue("Q2", false);
 
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
