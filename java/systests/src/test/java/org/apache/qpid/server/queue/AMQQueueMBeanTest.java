@@ -17,12 +17,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.management.JMException;
 
 import junit.framework.TestCase;
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.MessageHeaders;
 import org.apache.qpid.framing.Content;
@@ -49,7 +50,8 @@ public class AMQQueueMBeanTest extends TestCase
         sendMessages(messageCount);
         assertTrue(_queueMBean.getMessageCount() == messageCount);
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
-        assertTrue(_queueMBean.getQueueDepth() == 10);
+        // each message is 1K
+        assertTrue(_queueMBean.getQueueDepth() == messageCount);
 
         _queueMBean.deleteMessageFromTop();
         assertTrue(_queueMBean.getMessageCount() == messageCount - 1);
@@ -154,14 +156,16 @@ public class AMQQueueMBeanTest extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Establish some way to determine the version for the test.
-                
+
         MessageHeaders messageHeaders = new MessageHeaders();
-    	
+
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[1000]);
+        Content body = new Content(Content.TypeEnum.INLINE_T, buffer);
     	MessageTransferBody methodBody = MessageTransferBody.createMethodBody(
             (byte)0, (byte)9,               // AMQP version (major, minor)
             messageHeaders.getAppId(),      // String appId
             messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
-            new Content(),                        // Content body
+            body,                           // Content body
             messageHeaders.getEncoding(),   // String contentEncoding
             messageHeaders.getContentType(), // String contentType
             messageHeaders.getCorrelationId(), // String correlationId
@@ -181,8 +185,8 @@ public class AMQQueueMBeanTest extends TestCase
             messageHeaders.getTransactionId(), // String transactionId
             0,                              // long ttl
             messageHeaders.getUserId());    // String userId
-    	
-    	return new AMQMessage(_messageStore, methodBody, new ArrayList()); 
+
+    	return new AMQMessage(_messageStore, methodBody, Collections.singletonList(buffer));
     }
 
     @Override
