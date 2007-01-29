@@ -70,7 +70,7 @@ interface DeliveryManager
 
     void removeAMessageFromTop() throws AMQException;
 
-    void clearAllMessages() throws AMQException;
+    long clearAllMessages() throws AMQException;
 
     List<AMQMessage> getMessages();
 

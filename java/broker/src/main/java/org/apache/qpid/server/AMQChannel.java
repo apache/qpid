@@ -375,7 +375,7 @@ public class AMQChannel
      * @throws AMQException                  if something goes wrong
      */
     public String subscribeToQueue(String tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
-                                   FieldTable filters, boolean noLocal) throws AMQException, ConsumerTagNotUniqueException
+                                   FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
@@ -386,7 +386,7 @@ public class AMQChannel
             throw new ConsumerTagNotUniqueException();
         }
 
-        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal);
+        queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;
     }

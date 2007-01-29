@@ -84,7 +84,7 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
                 try
                 {
                     /*AMQShort*/String destination = channel.subscribeToQueue
-                        (body.destination, queue, session, !body.noAck, /*XXX*/null, body.noLocal);
+                        (body.destination, queue, session, !body.noAck, /*XXX*/null, body.noLocal, body.exclusive);
                     // Be aware of possible changes to parameter order as versions change.
                     session.writeResponse(evt, MessageOkBody.createMethodBody(
                         session.getMajor(), // AMQP major version

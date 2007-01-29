@@ -217,7 +217,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized long clearAllMessages() throws AMQException
     {
         AMQMessage msg = poll();
         while (msg != null)
@@ -225,6 +225,7 @@ public class ConcurrentDeliveryManager implements DeliveryManager
             msg.dequeue(_queue);
             msg = poll();
         }
+        return 0;
     }
 
     /**
