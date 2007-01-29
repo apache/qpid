@@ -105,6 +105,21 @@ public class MessageConsumeHandler implements StateAwareMethodListener<MessageCo
                     session.closeSessionRequest(AMQConstant.NOT_ALLOWED.getCode(),
                         "Non-unique consumer tag, '" + body.destination + "'", body.getClazz(), body.getMethod());
                 }
+                catch (AMQQueue.ExistingExclusiveSubscription e)
+                {
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                                                  "Cannot subscribe to queue "
+                                                          + queue.getName()
+                                                          + " as it already has an existing exclusive consumer");
+                }
+                catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
+                {
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                                                   "Cannot subscribe to queue "
+                                                   + queue.getName()
+                                                   + " exclusively as it already has a consumer");
+                }
+
             }
         }
     }

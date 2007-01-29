@@ -159,6 +159,8 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     void checkMethodBodyVersion(AMQMethodBody methodBody);
     int getConnectionId();
 
+    Object getClientIdentifier();
+
     void addSessionCloseTask(Task task);
 
     void removeSessionCloseTask(Task task);

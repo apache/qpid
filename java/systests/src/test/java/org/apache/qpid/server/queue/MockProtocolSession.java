@@ -143,6 +143,12 @@ public class MockProtocolSession implements AMQProtocolSession
     {
     }
 
+	
+	public Object getClientIdentifier()
+	{
+		return null;
+	}
+
 	public void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException {
 		// TODO Auto-generated method stub
 		

@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageRecoverBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -61,6 +62,8 @@ public class MessageRecoverHandler implements StateAwareMethodListener<MessageRe
         } else {
             channel.resend(protocolSession);
         }
+        MessageOkBody response = MessageOkBody.createMethodBody(protocolSession.getMajor(), protocolSession.getMinor());
+        protocolSession.writeResponse(evt, response);
     }
 }
 
