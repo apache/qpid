@@ -99,6 +99,8 @@ public class AckTest extends TestCase
             // TODO: Establish some way to determine the version for the test.
             BasicPublishBody publishBody = new BasicPublishBody((byte)8,
                                                                 (byte)0,
+                                                                BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                                BasicPublishBody.getMethod((byte)8,(byte)0),
                                                                 new AMQShortString("someExchange"),
                                                                 false,
                                                                 false,

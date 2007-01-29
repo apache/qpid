@@ -30,13 +30,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Holds events for a session that will be processed asynchronously by
  * the thread pool in PoolingFilter.
  */
-class Job implements Runnable
+public class Job implements Runnable
 {
     private final int _maxEvents;
     private final IoSession _session;
     private final java.util.Queue<Event> _eventQueue = new ConcurrentLinkedQueue<Event>();
     private final AtomicBoolean _active = new AtomicBoolean();
-    private final AtomicInteger _refCount = new AtomicInteger();
+    //private final AtomicInteger _refCount = new AtomicInteger();
     private final JobCompletionHandler _completionHandler;
 
     Job(IoSession session, JobCompletionHandler completionHandler, int maxEvents)
@@ -45,21 +45,21 @@ class Job implements Runnable
         _completionHandler = completionHandler;
         _maxEvents = maxEvents;
     }
-
-    void acquire()
-    {
-        _refCount.incrementAndGet();
-    }
-
-    void release()
-    {
-        _refCount.decrementAndGet();
-    }
-
-    boolean isReferenced()
-    {
-        return _refCount.get() > 0;
-    }
+//
+//    void acquire()
+//    {
+//        _refCount.incrementAndGet();
+//    }
+//
+//    void release()
+//    {
+//        _refCount.decrementAndGet();
+//    }
+//
+//    boolean isReferenced()
+//    {
+//        return _refCount.get() > 0;
+//    }
 
     void add(Event evt)
     {

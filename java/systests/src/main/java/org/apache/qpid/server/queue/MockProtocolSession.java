@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -167,5 +168,10 @@ public class MockProtocolSession implements AMQProtocolSession
     public byte getProtocolMinorVersion()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public VersionSpecificRegistry getRegistry()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

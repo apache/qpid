@@ -71,7 +71,7 @@ public class SocketTransportConnection implements ITransportConnection
         boolean readWriteThreading = Boolean.getBoolean("amqj.shared_read_write_pool");
         if (readWriteThreading)
         {
-            cfg.setThreadModel(new ReadWriteThreadModel());
+            cfg.setThreadModel(ReadWriteThreadModel.getInstance());
         }
 
         SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();

@@ -53,6 +53,8 @@ public class TestReferenceCounting extends TestCase
         // TODO: fix hardcoded protocol version data
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
                                                                                            (byte)0,
+                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
                                                                                            null,
                                                                                            false,
                                                                                            false,
@@ -82,6 +84,8 @@ public class TestReferenceCounting extends TestCase
         // TODO: fix hardcoded protocol version data
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
                                                                                            (byte)0,
+                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
                                                                                            null,
                                                                                            false,
                                                                                            false,
