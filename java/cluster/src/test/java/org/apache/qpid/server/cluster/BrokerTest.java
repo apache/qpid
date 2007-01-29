@@ -54,7 +54,7 @@ public class BrokerTest extends TestCase
 
         for (RecordingBroker b : brokers)
         {
-            b.handleResponse(((AMQFrame) b.getMessages().get(0)).channel, new TestMethod("response"));
+            b.handleResponse(((AMQFrame) b.getMessages().get(0)).getChannel(), new TestMethod("response"));
         }
 
         assertTrue("Handler did not receive response", handler.isCompleted());
@@ -80,7 +80,7 @@ public class BrokerTest extends TestCase
 
         for (RecordingBroker broker : succeeded)
         {
-            broker.handleResponse(((AMQFrame) broker.getMessages().get(0)).channel, new TestMethod("response"));
+            broker.handleResponse(((AMQFrame) broker.getMessages().get(0)).getChannel(), new TestMethod("response"));
         }
         b.remove();
 
@@ -106,7 +106,7 @@ public class BrokerTest extends TestCase
         for (int i = 0; i < msgs.length; i++)
         {
             assertTrue(sent.get(i) instanceof AMQFrame);
-            assertEquals(msgs[i], ((AMQFrame) sent.get(i)).bodyFrame);
+            assertEquals(msgs[i], ((AMQFrame) sent.get(i)).getBodyFrame());
         }
     }
 
@@ -119,9 +119,9 @@ public class BrokerTest extends TestCase
         List<AMQDataBlock> sent = broker.getMessages();
         assertEquals(1, sent.size());
         assertTrue(sent.get(0) instanceof AMQFrame);
-        assertEquals(new TestMethod("A"), ((AMQFrame) sent.get(0)).bodyFrame);
+        assertEquals(new TestMethod("A"), ((AMQFrame) sent.get(0)).getBodyFrame());
 
-        broker.handleResponse(((AMQFrame) sent.get(0)).channel, new TestMethod("B"));
+        broker.handleResponse(((AMQFrame) sent.get(0)).getChannel(), new TestMethod("B"));
 
         assertEquals(new TestMethod("B"), handler.getResponse());
     }
@@ -135,7 +135,7 @@ public class BrokerTest extends TestCase
         List<AMQDataBlock> sent = broker.getMessages();
         assertEquals(1, sent.size());
         assertTrue(sent.get(0) instanceof AMQFrame);
-        assertEquals(new TestMethod("A"), ((AMQFrame) sent.get(0)).bodyFrame);
+        assertEquals(new TestMethod("A"), ((AMQFrame) sent.get(0)).getBodyFrame());
         broker.remove();
         assertEquals(null, handler.getResponse());
         assertTrue(handler.isCompleted());

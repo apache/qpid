@@ -200,10 +200,10 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
 
     private void handleFrame(AMQFrame frame) throws AMQException
     {
-        AMQBody body = frame.bodyFrame;
+        AMQBody body = frame.getBodyFrame();
         if (body instanceof AMQMethodBody)
         {
-            handleMethod(frame.channel, (AMQMethodBody) body);
+            handleMethod(frame.getChannel(), (AMQMethodBody) body);
         }
         else
         {
