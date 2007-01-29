@@ -58,6 +58,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     private static final int IS_EXCLUSIVE_MASK = 0x2;
     private static final int IS_AUTODELETE_MASK = 0x4;
 
+    public static final byte QUEUE_TYPE = 1;
+    public static final byte TOPIC_TYPE = 2;
+    public static final byte UNKNOWN_TYPE = 3;
+
     protected AMQDestination(String url) throws URLSyntaxException
     {
         this(new AMQBindingURL(url));
@@ -344,7 +348,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return false;
         }
-        if (_isExclusive != that._isExclusive)
+  /*      if (_isExclusive != that._isExclusive)
         {
             return false;
         }
@@ -352,6 +356,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return false;
         }
+        */
         return true;
     }
 
@@ -365,8 +370,8 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             result = 29 * result + _queueName.hashCode();
         }
-        result = result * (_isExclusive ? 13 : 7);
-        result = result * (_isAutoDelete ? 13 : 7);
+//        result = result * (_isExclusive ? 13 : 7);
+//        result = result * (_isAutoDelete ? 13 : 7);
         return result;
     }
 
