@@ -70,7 +70,7 @@ public class TransportConnection
 
         IoServiceConfig config = _acceptor.getDefaultConfig();
 
-        config.setThreadModel(new ReadWriteThreadModel());
+        config.setThreadModel(ReadWriteThreadModel.getInstance());
     }
 
     public static ITransportConnection getInstance() throws AMQTransportConnectionException

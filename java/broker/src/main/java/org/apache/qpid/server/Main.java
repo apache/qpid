@@ -324,7 +324,7 @@ public class Main implements ProtocolVersionList
             // implementation provided by MINA
             if (connectorConfig.enableExecutorPool)
             {
-                sconfig.setThreadModel(new ReadWriteThreadModel());
+                sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
             }
 
             if (connectorConfig.enableNonSSL)
