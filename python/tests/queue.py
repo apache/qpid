@@ -48,11 +48,11 @@ class QueueTests(TestBase):
         self.assertEqual(0, reply.message_count)
 
         #send a further message and consume it, ensuring that the other messages are really gone
-        channel.message_transfer(destination="test-exchange", routing_key="key", content=Content("four"))
+        channel.message_transfer(destination="test-exchange", routing_key="key", body="four")
         channel.message_consume(queue="test-queue", destination="tag", no_ack=True)
         queue = self.client.queue("tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("four", msg.content.body)
+        self.assertEqual("four", msg.body)
 
         #check error conditions (use new channels): 
         channel = self.client.channel(2)
@@ -74,7 +74,8 @@ class QueueTests(TestBase):
             self.assertConnectionException(530, e.args[0])
 
         #cleanup    
-        channel = self.client.channel(4)
+        other = self.connect()
+        channel = other.channel(1)
         channel.channel_open()
         channel.exchange_delete(exchange="test-exchange")
 
@@ -207,7 +208,7 @@ class QueueTests(TestBase):
         channel.message_consume(destination="consumer_tag", queue="delete-me-2", no_ack=True)
         queue = self.client.queue("consumer_tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("message", msg.content.body)
+        self.assertEqual("message", msg.body)
         channel.message_cancel(destination="consumer_tag")
 
         #retry deletion on empty queue:

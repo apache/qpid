@@ -316,9 +316,9 @@ class MiscellaneousErrorsTests(TestBase):
         self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
         try:
             self.channel.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
-            self.fail("Expected 507 for redeclaration of exchange with different type.")
+            self.fail("Expected 530 for redeclaration of exchange with different type.")
         except Closed, e:
-            self.assertConnectionException(507, e.args[0])
+            self.assertConnectionException(530, e.args[0])
         #cleanup    
         other = self.connect()
         c2 = other.channel(1)
