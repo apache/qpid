@@ -144,13 +144,29 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     }
 
-    void waitFor(int count) throws InterruptedException
+    void waitFor(int count) throws Exception
     {
+        long waitTime = 30000L;
+        long waitUntilTime = System.currentTimeMillis() + 30000L;
+
+
         synchronized(received)
         {
-            while (received.size() < count)
+            while(received.size() < count && waitTime>0)
             {
-                received.wait();
+                if (received.size() < count)
+                {
+                    received.wait(waitTime);
+                }
+
+                if (received.size() < count)
+                {
+                    waitTime = waitUntilTime - System.currentTimeMillis();
+                }
+            }
+            if (received.size() < count)
+            {
+                throw new Exception("Timed-out.  Waiting for " + count + " only got " + received.size());
             }
         }
     }

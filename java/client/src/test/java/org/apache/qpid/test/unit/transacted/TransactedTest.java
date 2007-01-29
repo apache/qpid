@@ -84,7 +84,7 @@ public class TransactedTest extends TestCase
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer2 = testSession.createConsumer(queue2);
-        testCon.start();
+
     }
 
     protected void tearDown() throws Exception
@@ -108,7 +108,7 @@ public class TransactedTest extends TestCase
 
         //commit
         session.commit();
-
+        testCon.start();
         //ensure sent messages can be received and received messages are gone
         expect("X", testConsumer2.receive(1000));
         expect("Y", testConsumer2.receive(1000));
@@ -135,7 +135,7 @@ public class TransactedTest extends TestCase
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
-
+        testCon.start();
         testConsumer1 = testSession.createConsumer(queue1);
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));

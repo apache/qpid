@@ -29,21 +29,28 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.exchange.ExchangeDefaults;
 
 import javax.jms.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RecoverTest extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(RecoverTest.class);
 
+    private Exception _error;
+    private AtomicInteger count;
+
     protected void setUp() throws Exception
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
+        _error = null;
+        count = new AtomicInteger();
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
         TransportConnection.killAllVMBrokers();
+        count = null;
     }
 
 
@@ -212,38 +219,93 @@ public class RecoverTest extends TestCase
         Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         final Session consumerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
+        Queue queue = new AMQQueue(new AMQShortString("Q3"), new AMQShortString("Q3"), false, true);
+        MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageProducer producer = consumerSession.createProducer(queue);
         producer.send(consumerSession.createTextMessage("hello"));
-        MessageConsumer consumer = consumerSession.createConsumer(queue);
+
+
+        final Object lock = new Object();
+
         consumer.setMessageListener(new MessageListener()
         {
-            private int count = 0;
+
+
 
             public void onMessage(Message message)
             {
                 try
                 {
-                    if (count++ == 0)
+                    count.incrementAndGet();
+                    if (count.get() == 1)
                     {
-                        assertFalse(message.getJMSRedelivered());
+                        if(message.getJMSRedelivered())
+                        {
+                            setError(new Exception("Message marked as redilvered on what should be first delivery attempt"));
+                        }
                         consumerSession.recover();
                     }
-                    else if (count++ == 1)
+                    else if (count.get() == 2)
                     {
-                        assertTrue(message.getJMSRedelivered());
+                        if(!message.getJMSRedelivered())
+                        {
+                            setError(new Exception("Message not marked as redilvered on what should be second delivery attempt"));
+                        }
                     }
                     else
                     {
-                        fail("Message delivered too many times!");
+                        System.err.println(message);
+                        fail("Message delivered too many times!: " + count);
                     }
                 }
                 catch (JMSException e)
                 {
                     _logger.error("Error recovering session: " + e, e);
+                    setError(e);
+                }
+                synchronized(lock)
+                {
+                    lock.notify();
                 }
             }
         });
+
+        con.start();
+
+        long waitTime = 300000L;
+        long waitUntilTime = System.currentTimeMillis() + waitTime;
+
+        synchronized(lock)
+        {
+            while((count.get() <= 1) && (waitTime > 0))
+            {
+                lock.wait(waitTime);
+                if(count.get() <= 1)
+                {
+                    waitTime = waitUntilTime - System.currentTimeMillis();
+                }
+            }
+        }
+
+        Thread.sleep(1000);
+
+        if(count.get() != 2)
+        {
+            System.err.println("Count != 2 : " + count);
+        }
+            assertTrue(count.get() == 2);
+
+        con.close();
+
+        if(_error != null)
+        {
+            throw _error;
+        }
+    }
+
+    private void setError(Exception e)
+    {
+        _error = e;
     }
 
     public static junit.framework.Test suite()

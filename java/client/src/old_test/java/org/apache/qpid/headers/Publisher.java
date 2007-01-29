@@ -22,13 +22,13 @@ package org.apache.qpid.headers;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.Config;
+//import org.apache.qpid.testutil.Config;
 
 import javax.jms.*;
 
-public class Publisher implements MessageListener
+public class Publisher // implements MessageListener
 {
-    private final Object _lock = new Object();
+/*   private final Object _lock = new Object();
     private final AMQConnection _connection;
     private final AMQSession _session;
     private final Destination _exchange;
@@ -129,5 +129,5 @@ public class Publisher implements MessageListener
             new Publisher(config).test(msgCount, consumerCount);
         }
 
-    }
+    }*/
 }
