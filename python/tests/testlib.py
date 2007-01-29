@@ -57,7 +57,7 @@ class TestBaseTest(TestBase):
 
     def testMessageProperties(self):
         """Verify properties are passed with message"""
-        props={"headers":{"x":1, "y":2}}
+        props={"x":1, "y":2}
         self.queue_declare(queue="q")
         q = self.consume("q")
         self.assertPublishGet(q, routing_key="q", properties=props)
