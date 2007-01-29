@@ -219,6 +219,7 @@ public class TopicSessionTest extends TestCase
         assertNotNull(receivedMessage);
         assertEquals(sentMessage.getText(),receivedMessage.getText());
 
+        conn.close();
 
     }
 

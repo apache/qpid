@@ -240,10 +240,7 @@ public class BasicDeliverTest
 
     static AMQFrame wrapBody(AMQBody body)
     {
-        AMQFrame frame = new AMQFrame();
-        frame.bodyFrame = body;
-        frame.channel = 1;
-
+        AMQFrame frame = new AMQFrame(1, body);
         return frame;
     }
 
@@ -269,7 +266,10 @@ public class BasicDeliverTest
 
     static BasicDeliverBody createBasicDeliverBody()
     {
-        BasicDeliverBody body = new BasicDeliverBody((byte) 8, (byte) 0, new AMQShortString("myConsumerTag"), 1,
+        BasicDeliverBody body = new BasicDeliverBody((byte) 8, (byte) 0,
+                                                     BasicDeliverBody.getClazz((byte) 8, (byte) 0),
+                                                     BasicDeliverBody.getMethod((byte) 8, (byte) 0),                                                     
+                                                     new AMQShortString("myConsumerTag"), 1,
                                                      new AMQShortString("myExchange"), false,
                                                      new AMQShortString("myRoutingKey"));
         return body;

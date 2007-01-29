@@ -101,6 +101,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             fail("This Test should succeed but failed due to: " + e);
         }
         finally
@@ -236,7 +237,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        received++;
+
         try
         {
             if (message instanceof ObjectMessage)
@@ -255,13 +256,11 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             items.add(e);
         }
 
-        if (waiting)
-        {
             synchronized(this)
             {
+                received++;
                 notify();
             }
-        }
     }
 
 
