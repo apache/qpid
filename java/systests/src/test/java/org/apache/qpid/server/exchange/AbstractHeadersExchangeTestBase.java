@@ -183,11 +183,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     "someExchange",                  // String exchange
                     messageHeaders.getExpiration(), // long expiration
                     false,                          // boolean immediate
-                    id,                         // String messageId
+                    null,                         // String messageId
                     (short)0,                       // short priority
                     false,                          // boolean redelivered
                     messageHeaders.getReplyTo(),    // String replyTo
-                    "rk",                           // String routingKey
+                    id,                           // String routingKey
                     new String("abc123").getBytes(), // byte[] securityToken
                     0,                              // int ticket
                     messageHeaders.getTimestamp(),  // long timestamp
