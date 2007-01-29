@@ -316,9 +316,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.error("Closing channel due to: " + e.getMessage());
             writeRequest(channelNum, e.getCloseMethodBody());
-            AMQChannel channel = _channelMap.remove(channelNum);
+            AMQChannel channel = _channelMap.get(channelNum);//can't remove it yet as close requires it
             if (channel != null) {
                 channel.close(this);
+                _channelMap.remove(channelNum);
             }
         }
         catch (AMQConnectionException e)
@@ -726,6 +727,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public int getConnectionId()
     {
         return _ConnectionId.get();
+    }
+
+    public Object getClientIdentifier()
+    {
+        return _minaProtocolSession.getRemoteAddress();    
     }
 
     public void addSessionCloseTask(Task task)
