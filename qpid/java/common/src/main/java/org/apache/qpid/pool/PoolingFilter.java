@@ -48,7 +48,7 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     void fireAsynchEvent(IoSession session, Event event)
     {
         Job job = getJobForSession(session);
-        job.acquire(); //prevents this job being removed from _jobs
+ //       job.acquire(); //prevents this job being removed from _jobs
         job.add(event);
 
         //Additional checks on pool to check that it hasn't shutdown.
@@ -60,10 +60,25 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
 
     }
 
+    public void createNewJobForSession(IoSession session)
+    {
+        Job job = new Job(session, this, _maxEvents);
+        session.setAttribute(_name, job);
+    }
+
     private Job getJobForSession(IoSession session)
     {
-        Job job = _jobs.get(session);
-        return job == null ? createJobForSession(session) : job;
+        return (Job) session.getAttribute(_name);
+
+/*        if(job == null)
+        {
+            System.err.println("Error in " + _name);
+            Thread.dumpStack();
+        }
+
+
+        job = _jobs.get(session);
+        return job == null ? createJobForSession(session) : job;*/
     }
 
     private Job createJobForSession(IoSession session)
@@ -81,15 +96,16 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     //Job.JobCompletionHandler
     public void completed(IoSession session, Job job)
     {
-        if (job.isComplete())
-        {
-            job.release();
-            if (!job.isReferenced())
-            {
-                _jobs.remove(session);
-            }
-        }
-        else
+//        if (job.isComplete())
+//        {
+//            job.release();
+//            if (!job.isReferenced())
+//            {
+//                _jobs.remove(session);
+//            }
+//        }
+//        else
+        if(!job.isComplete())
         {
             // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
             //                       Can the pool be shutdown at this point?

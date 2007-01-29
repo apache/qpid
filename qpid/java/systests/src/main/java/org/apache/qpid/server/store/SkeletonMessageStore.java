@@ -52,7 +52,7 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
-    public void removeMessage(StoreContext s, long messageId)
+    public void removeMessage(StoreContext s, Long messageId)
     {
     }
 
@@ -82,27 +82,27 @@ public class SkeletonMessageStore implements MessageStore
         return null;
     }
 
-    public long getNewMessageId()
+    public Long getNewMessageId()
     {
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext sc, long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException
+    public void storeContentBodyChunk(StoreContext sc, Long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException
     {
 
     }
 
-    public void storeMessageMetaData(StoreContext sc, long messageId, MessageMetaData messageMetaData) throws AMQException
+    public void storeMessageMetaData(StoreContext sc, Long messageId, MessageMetaData messageMetaData) throws AMQException
     {
 
     }
 
-    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
         return null;
     }
 
-    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    public ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException
     {
         return null;
     }
@@ -112,12 +112,12 @@ public class SkeletonMessageStore implements MessageStore
 
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
     {
 
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
     {
 
     }

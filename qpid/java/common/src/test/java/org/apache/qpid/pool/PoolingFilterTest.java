@@ -36,25 +36,32 @@ public class PoolingFilterTest extends TestCase
 
     public void setUp()
     {
+
         //Create Pool
         _executorService = ReferenceCountingExecutorService.getInstance();
         _executorService.acquireExecutorService();
-        _pool = PoolingFilter.createAynschWritePoolingFilter(_executorService, 
+        _pool = PoolingFilter.createAynschWritePoolingFilter(_executorService,
                                   "AsynchronousWriteFilter");
 
     }
 
     public void testRejectedExecution() throws Exception
     {
-        _pool.filterWrite(new NoOpFilter(), new TestSession(), new IoFilter.WriteRequest("Message"));
+
+        TestSession testSession = new TestSession();
+        _pool.createNewJobForSession(testSession);
+        _pool.filterWrite(new NoOpFilter(), testSession, new IoFilter.WriteRequest("Message"));
 
         //Shutdown the pool
         _executorService.getPool().shutdownNow();
 
         try
         {
+
+            testSession = new TestSession();
+            _pool.createNewJobForSession(testSession);
             //prior to fix for QPID-172 this would throw RejectedExecutionException
-            _pool.filterWrite(null, new TestSession(), null);
+            _pool.filterWrite(null, testSession, null);
         }
         catch (RejectedExecutionException rje)
         {

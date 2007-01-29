@@ -106,6 +106,8 @@ public class TxAckTest extends TestCase
                 // TODO: fix hardcoded protocol version data
                 TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody((byte)8,
                                                                                            (byte)0,
+                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
                                                                                            null,
                                                                                            false,
                                                                                            false,

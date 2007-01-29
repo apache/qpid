@@ -153,7 +153,10 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody request = new BasicPublishBody((byte)8, (byte)0,null,false,false,new AMQShortString(id),0);
+        BasicPublishBody request = new BasicPublishBody((byte)8, (byte)0,
+                                                       BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                       BasicPublishBody.getMethod((byte)8,(byte)0),
+                                                       null,false,false,new AMQShortString(id),0);
         
         return request;
     }

@@ -82,7 +82,7 @@ public class AcceptorTest extends TestCase
         sc.setSendBufferSize(32768);
         sc.setReceiveBufferSize(32768);
 
-        config.setThreadModel(new ReadWriteThreadModel());
+        config.setThreadModel(ReadWriteThreadModel.getInstance());
 
         acceptor.bind(new InetSocketAddress(PORT),
                       new TestHandler());
