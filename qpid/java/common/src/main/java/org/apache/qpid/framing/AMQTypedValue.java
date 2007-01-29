@@ -51,4 +51,9 @@ public class AMQTypedValue
         AMQType type = AMQTypeMap.getType(buffer.get());
         return new AMQTypedValue(type, buffer);
     }
+
+    public String toString()
+    {
+        return "["+getType()+": "+getValue()+"]";
+    }
 }

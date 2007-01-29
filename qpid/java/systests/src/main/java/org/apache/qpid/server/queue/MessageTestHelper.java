@@ -63,6 +63,8 @@ class MessageTestHelper extends TestCase
         // TODO: Establish some way to determine the version for the test.
         BasicPublishBody publish = new BasicPublishBody((byte)8,
                                                         (byte)0,
+                                                        BasicPublishBody.getClazz((byte)8,(byte)0),
+                                                        BasicPublishBody.getMethod((byte)8,(byte)0),
                                                         null,
                                                         immediate,
                                                         false,
