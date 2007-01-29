@@ -74,6 +74,8 @@ public class ClusteredQueue extends AMQQueue
         	// TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             QueueDeleteBody request = new QueueDeleteBody((byte)8,
                                                           (byte)0,
+                                                          QueueDeleteBody.getClazz((byte)8,(byte)0),
+                                                          QueueDeleteBody.getMethod((byte)8,(byte)0),
                                                           false,
                                                           false,
                                                           false,
@@ -94,6 +96,8 @@ public class ClusteredQueue extends AMQQueue
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         BasicCancelBody request = new BasicCancelBody((byte)8,
                                                       (byte)0,
+                                                      BasicCancelBody.getClazz((byte)8, (byte)0),
+                                                      BasicCancelBody.getMethod((byte)8, (byte)0),
                                                       getName(),
                                                       false);
         

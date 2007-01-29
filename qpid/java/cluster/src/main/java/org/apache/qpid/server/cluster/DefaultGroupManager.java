@@ -110,6 +110,8 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         ClusterPingBody ping = new ClusterPingBody((byte)8,
                                                    (byte)0,
+                                                   ClusterPingBody.getClazz((byte)8, (byte)0),
+                                                   ClusterPingBody.getMethod((byte)8, (byte)0),
                                                    _group.getLocal().getDetails(),
                                                    _loadTable.getLocalLoad(),
                                                    true);
@@ -159,6 +161,8 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         ClusterJoinBody join = new ClusterJoinBody((byte)8,
                                                    (byte)0,
+                                                   ClusterJoinBody.getClazz((byte)8, (byte)0),
+                                                   ClusterJoinBody.getMethod((byte)8, (byte)0),
                                                    _group.getLocal().getDetails());
 
         send(leader, new SimpleBodySendable(join));
@@ -182,6 +186,8 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         ClusterLeaveBody leave = new ClusterLeaveBody((byte)8,
                                                       (byte)0,
+                                                      ClusterLeaveBody.getClazz((byte)8, (byte)0),
+                                                      ClusterLeaveBody.getMethod((byte)8, (byte)0),
                                                       _group.getLocal().getDetails());
 
         send(getLeader(), new SimpleBodySendable(leave));
@@ -207,6 +213,8 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             ClusterSuspectBody suspect = new ClusterSuspectBody((byte)8,
                                                                 (byte)0,
+                                                                ClusterSuspectBody.getClazz((byte)8, (byte)0),
+                                                                ClusterSuspectBody.getMethod((byte)8, (byte)0),
                                                                 broker.getDetails());
 
             send(getLeader(), new SimpleBodySendable(suspect));
@@ -231,7 +239,10 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             //pass request on to leader:
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            ClusterJoinBody request = new ClusterJoinBody((byte)8, (byte)0, member.getDetails());
+            ClusterJoinBody request = new ClusterJoinBody((byte)8, (byte)0,
+                                                          ClusterJoinBody.getClazz((byte)8, (byte)0),
+                                                          ClusterJoinBody.getMethod((byte)8, (byte)0),
+                                                          member.getDetails());
             
             Broker leader = getLeader();
             send(leader, new SimpleBodySendable(request));
@@ -278,7 +289,10 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        ClusterMembershipBody announce = new ClusterMembershipBody((byte)8, (byte)0, membership.getBytes());
+        ClusterMembershipBody announce = new ClusterMembershipBody((byte)8, (byte)0,
+                                                                   ClusterMembershipBody.getClazz((byte)8, (byte)0),
+                                                                   ClusterMembershipBody.getMethod((byte)8, (byte)0),
+                                                                   membership.getBytes());
 
         
         return announce;
