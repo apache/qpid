@@ -29,7 +29,7 @@
 namespace qpid {
 namespace framing {
 
-class ProtocolInitiation : virtual public AMQDataBlock
+class ProtocolInitiation : public AMQDataBlock
 {
 private:
     ProtocolVersion version;

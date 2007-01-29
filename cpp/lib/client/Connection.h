@@ -1,3 +1,6 @@
+#ifndef _Connection_
+#define _Connection_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,15 +23,15 @@
  */
 #include <map>
 #include <string>
+#include <boost/shared_ptr.hpp>
 
-#ifndef _Connection_
-#define _Connection_
-
+#include "amqp_types.h"
 #include <QpidError.h>
 #include <Connector.h>
 #include <sys/ShutdownHandler.h>
 #include <sys/TimeoutHandler.h>
 
+#include "framing/amqp_types.h"
 #include <framing/amqp_framing.h>
 #include <ClientExchange.h>
 #include <IncomingMessage.h>
@@ -37,150 +40,152 @@
 #include <ClientQueue.h>
 #include <ResponseHandler.h>
 #include <AMQP_HighestVersion.h>
-#include "Requester.h"
-#include "Responder.h"
+#include "ClientChannel.h"
 
 namespace qpid {
 
-    /**
-     * The client namespace contains all classes that make up a client
-     * implementation of the AMQP protocol. The key classes that form
-     * the basis of the client API to be used by applications are
-     * Connection and Channel.
-     */
+/**
+ * The client namespace contains all classes that make up a client
+ * implementation of the AMQP protocol. The key classes that form
+ * the basis of the client API to be used by applications are
+ * Connection and Channel.
+ */
 namespace client {
 
-    class Channel;
+class Channel;
 
-    /**
-     * \defgroup clientapi Application API for an AMQP client
-     */
+/**
+ * \internal provide access to selected private channel functions
+ * for the Connection without making it a friend of the entire channel.
+ */
+class ConnectionForChannel :
+        public framing::InputHandler,
+        public framing::OutputHandler,
+        public sys::TimeoutHandler, 
+        public sys::ShutdownHandler
+        
+{
+  private:
+  friend class Channel;
+    virtual void erase(framing::ChannelId) = 0;
+};
 
+
+/**
+ * \defgroup clientapi Application API for an AMQP client
+ */
+
+/**
+ * Represents a connection to an AMQP broker. All communication is
+ * initiated by establishing a connection, then opening one or
+ * more Channels over that connection.
+ * 
+ * \ingroup clientapi
+ */
+class Connection : public ConnectionForChannel
+{
+    typedef std::map<framing::ChannelId, Channel*> ChannelMap;
+
+    static framing::ChannelId channelIdCounter;
+    static const std::string OK;
+        
+    std::string host;
+    int port;
+    const u_int32_t max_frame_size;
+    ChannelMap channels; 
+    Connector* connector;
+    framing::OutputHandler* out;
+    volatile bool closed;
+    framing::ProtocolVersion version;
+        
+    void erase(framing::ChannelId);
+    void channelException(
+        Channel&, framing::AMQMethodBody*, const QpidError&);
+    Channel channel0;
+
+    // TODO aconway 2007-01-26: too many friendships, untagle these classes.
+  friend class Channel;
+    
+  public:
+    const framing::ProtocolVersion& getVersion() const { return version; }
+        
     /**
-     * Represents a connection to an AMQP broker. All communication is
-     * initiated by establishing a connection, then opening one or
-     * more Channels over that connection.
+     * Creates a connection object, but does not open the
+     * connection.  
      * 
-     * \ingroup clientapi
+     * @param _version the version of the protocol to connect with
+     *
+     * @param debug turns on tracing for the connection
+     * (i.e. prints details of the frames sent and received to std
+     * out). Optional and defaults to false.
+     * 
+     * @param max_frame_size the maximum frame size that the
+     * client will accept. Optional and defaults to 65536.
      */
-    class Connection : public virtual qpid::framing::InputHandler, 
-        public virtual qpid::sys::TimeoutHandler, 
-        public virtual qpid::sys::ShutdownHandler, 
-        private virtual qpid::framing::BodyHandler
-    {
+    Connection(
+        bool debug = false, u_int32_t max_frame_size = 65536, 
+        const framing::ProtocolVersion& = framing::highestProtocolVersion);
+    ~Connection();
 
-        typedef std::map<int, Channel*>::iterator iterator;
+    /**
+     * Opens a connection to a broker.
+     * 
+     * @param host the host on which the broker is running
+     * 
+     * @param port the port on the which the broker is listening
+     * 
+     * @param uid the userid to connect with
+     * 
+     * @param pwd the password to connect with (currently SASL
+     * PLAIN is the only authentication method supported so this
+     * is sent in clear text)
+     * 
+     * @param virtualhost the AMQP virtual host to use (virtual
+     * hosts, where implemented(!), provide namespace partitioning
+     * within a single broker).
+     */
+    void open(const std::string& host, int port = 5672, 
+              const std::string& uid = "guest", const std::string& pwd = "guest", 
+              const std::string& virtualhost = "/");
 
-	static u_int16_t channelIdCounter;
 
-	std::string host;
-	int port;
-	const u_int32_t max_frame_size;
-	std::map<int, Channel*> channels; 
-	Connector* connector;
-	qpid::framing::OutputHandler* out;
-	ResponseHandler responses;
-        volatile bool closed;
-        framing::ProtocolVersion version;
-        framing::Requester requester;
-        framing::Responder responder;
+    /**
+     * Close the connection with optional error information for the peer.
+     *
+     * Any further use of this connection (without reopening it) will
+     * not succeed.
+     */
+    void close(framing::ReplyCode=200, const std::string& msg=OK,
+               framing::ClassId = 0, framing::MethodId = 0);
 
-        void channelException(Channel* channel, framing::AMQMethodBody* body, QpidError& e);
-        void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
-        void closeChannel(Channel* channel, u_int16_t code, std::string& text, u_int16_t classId = 0, u_int16_t methodId = 0);
-	void sendAndReceive(framing::AMQFrame* frame, const framing::AMQMethodBody& body);
+    /**
+     * Associate a Channel with this connection and open it for use.
+     *
+     * In AMQP channels are like multi-plexed 'sessions' of work over
+     * a connection. Almost all the interaction with AMQP is done over
+     * a channel.
+     * 
+     * @param connection the connection object to be associated with
+     * the channel. Call Channel::close() to close the channel.
+     */
+    void openChannel(Channel&);
 
-        // FIXME aconway 2007-01-19: Use channel(0) not connection
-        // to handle channel 0 requests. Remove handler methods.
-        //
-        void handleRequest(framing::AMQRequestBody::shared_ptr);
-        void handleResponse(framing::AMQResponseBody::shared_ptr);
-        void handleMethod(framing::AMQMethodBody::shared_ptr);
-	void handleHeader(framing::AMQHeaderBody::shared_ptr);
-	void handleContent(framing::AMQContentBody::shared_ptr);
-	void handleHeartbeat(framing::AMQHeartbeatBody::shared_ptr);
-        void handleFrame(framing::AMQFrame* frame);
 
-    public:
-        /**
-         * Creates a connection object, but does not open the
-         * connection.  
-         * 
-         * @param _version the version of the protocol to connect with
-	 *
-         * @param debug turns on tracing for the connection
-         * (i.e. prints details of the frames sent and received to std
-         * out). Optional and defaults to false.
-         * 
-         * @param max_frame_size the maximum frame size that the
-         * client will accept. Optional and defaults to 65536.
-         */
-	Connection( bool debug = false, u_int32_t max_frame_size = 65536, 
-			framing::ProtocolVersion* _version = &(framing::highestProtocolVersion));
-	~Connection();
+    // TODO aconway 2007-01-26: can these be private?
+    void send(framing::AMQFrame*);
+    void received(framing::AMQFrame*);
+    void idleOut();
+    void idleIn();
+    void shutdown();
 
-        /**
-         * Opens a connection to a broker.
-         * 
-         * @param host the host on which the broker is running
-         * 
-         * @param port the port on the which the broker is listening
-         * 
-         * @param uid the userid to connect with
-         * 
-         * @param pwd the password to connect with (currently SASL
-         * PLAIN is the only authentication method supported so this
-         * is sent in clear text)
-         * 
-         * @param virtualhost the AMQP virtual host to use (virtual
-         * hosts, where implemented(!), provide namespace partitioning
-         * within a single broker).
-         */
-        void open(const std::string& host, int port = 5672, 
-                  const std::string& uid = "guest", const std::string& pwd = "guest", 
-                  const std::string& virtualhost = "/");
-        /**
-         * Closes the connection. Any further use of this connection
-         * (without reopening it) will not succeed.
-         */
-        void close();
-        /**
-         * Opens a Channel. In AMQP channels are like multi-plexed
-         * 'sessions' of work over a connection. Almost all the
-         * interaction with AMQP is done over a channel.
-         * 
-         * @param channel a pointer to a channel instance that will be
-         * used to represent the new channel.
-         */
-	void openChannel(Channel* channel);
-	/*
-         * Requests that the server close this channel, then removes
-         * the association to the channel from this connection
-         *
-         * @param channel a pointer to the channel instance to close
-         */
-	void closeChannel(Channel* channel);
-	/*
-         * Removes the channel from association with this connection,
-	 * without sending a close request to the server.
-         *
-         * @param channel a pointer to the channel instance to
-         * disassociate
-         */
-	void removeChannel(Channel* channel);
+    /**
+     * @return the maximum frame size in use on this connection
+     */
+    inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
 
-	virtual void received(framing::AMQFrame* frame);
-
-	virtual void idleOut();
-	virtual void idleIn();
-
-	virtual void shutdown();
-
-        /**
-         * @return the maximum frame size in use on this connection
-         */
-	inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
-    };
+    /** @return protocol version in use on this connection. */ 
+    const framing::ProtocolVersion& getVersion() { return version; }
+};
 
 }
 }

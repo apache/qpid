@@ -46,12 +46,16 @@ ${version_namespace_start}
  
 class ${CLASS}${METHOD}Body : public ${mb_base_class}
 {
-	// Method field declarations
+
+        // Method field declarations
 
 %{FLIST} ${mb_field_declaration}
      
 
 public:
+    static const ClassId CLASS_ID= ${CLASS_ID_INIT};
+    static const MethodId METHOD_ID = ${METHOD_ID_INIT};
+
     typedef boost::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
 
 	// Constructors and destructors
@@ -74,15 +78,8 @@ ${mb_constructor_with_initializers}
 %{FLIST} ${mb_field_print}
     }
 
-    inline u_int16_t amqpClassId() const
-    {
-    	return ${CLASS_ID_INIT};
-    }
-    
-    inline u_int16_t amqpMethodId() const
-    {
-    	return ${METHOD_ID_INIT};
-    }
+    inline ClassId amqpClassId() const { return CLASS_ID; }
+    inline MethodId amqpMethodId() const { return METHOD_ID; }
 
     u_int32_t size() const
     {

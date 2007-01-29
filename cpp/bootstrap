@@ -31,7 +31,8 @@ automake
 autoconf
 
 if [ "$1" = "-build" ] ; then
-    ./configure
+    shift
+    ./configure "$@"
     make
     make check
 fi

@@ -35,13 +35,6 @@
 
 namespace qpid {
 
-namespace framing {
-
-class Requester;
-class Responder;
-
-} // namespace framing
-
 namespace client {
 
 class Connector : public qpid::framing::OutputHandler, 
@@ -74,9 +67,6 @@ class Connector : public qpid::framing::OutputHandler,
 
     qpid::sys::Socket socket;
 
-    qpid::framing::Requester& requester;
-    qpid::framing::Responder& responder;
-        
     void checkIdle(ssize_t status);
     void writeBlock(qpid::framing::AMQDataBlock* data);
     void writeToSocket(char* data, size_t available);
@@ -85,13 +75,13 @@ class Connector : public qpid::framing::OutputHandler,
     void run();
     void handleClosed();
 
+  friend class Channel;
   public:
     Connector(const qpid::framing::ProtocolVersion& pVersion,
-              qpid::framing::Requester& req, qpid::framing::Responder& resp,
               bool debug = false, u_int32_t buffer_size = 1024);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);
-    virtual void init(qpid::framing::ProtocolInitiation* header);
+    virtual void init();
     virtual void close();
     virtual void setInputHandler(qpid::framing::InputHandler* handler);
     virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);

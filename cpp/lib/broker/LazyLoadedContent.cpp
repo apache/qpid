@@ -37,7 +37,7 @@ u_int32_t LazyLoadedContent::size()
     return 0;//all content is written as soon as it is added
 }
 
-void LazyLoadedContent::send(qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
+void LazyLoadedContent::send(const qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
 {
     if (expectedSize > framesize) {        
         for (u_int64_t offset = 0; offset < expectedSize; offset += framesize) {            

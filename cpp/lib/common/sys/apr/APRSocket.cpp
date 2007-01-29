@@ -59,7 +59,7 @@ void APRSocket::close(){
     }
 }
 
-bool APRSocket::isOpen(){
+bool APRSocket::isOpen() const {
     return !closed;
 }
 

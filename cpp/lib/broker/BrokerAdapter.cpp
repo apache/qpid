@@ -212,22 +212,21 @@ void BrokerAdapter::ServerOps::ConnectionHandlerImpl::closeOk(const MethodContex
               
 void BrokerAdapter::ServerOps::ChannelHandlerImpl::open(
     const MethodContext& context, const string& /*outOfBand*/){
-    // FIXME aconway 2007-01-17: Assertions on all channel methods,
-    assertChannelNonZero(channel.getId());
-    if (channel.isOpen())
-        throw ConnectionException(504, "Channel already open");
     channel.open();
-    // FIXME aconway 2007-01-04: provide valid channel Id as per ampq 0-9
+    // FIXME aconway 2007-01-04: provide valid ID as per ampq 0-9
     connection.client->getChannel().openOk(context, std::string()/* ID */);
 } 
         
 void BrokerAdapter::ServerOps::ChannelHandlerImpl::flow(const MethodContext&, bool /*active*/){}         
 void BrokerAdapter::ServerOps::ChannelHandlerImpl::flowOk(const MethodContext&, bool /*active*/){} 
         
-void BrokerAdapter::ServerOps::ChannelHandlerImpl::close(const MethodContext& context, u_int16_t /*replyCode*/, const string& /*replyText*/, 
-                                                         u_int16_t /*classId*/, u_int16_t /*methodId*/){
+void BrokerAdapter::ServerOps::ChannelHandlerImpl::close(
+    const MethodContext& context, u_int16_t /*replyCode*/,
+    const string& /*replyText*/,
+    u_int16_t /*classId*/, u_int16_t /*methodId*/)
+{
     connection.client->getChannel().closeOk(context);
-    // FIXME aconway 2007-01-18: Following line destroys this. Ugly.
+    // FIXME aconway 2007-01-18: Following line will "delete this". Ugly.
     connection.closeChannel(channel.getId()); 
 } 
         
@@ -499,13 +498,12 @@ BrokerAdapter::ServerOps::ChannelHandlerImpl::resume(
 BrokerAdapter::BrokerAdapter(
     Channel* ch, Connection& c, Broker& b
 ) :
-    ChannelAdapter(c.getOutput(), ch->getId()),
     channel(ch),
     connection(c),
     broker(b),
     serverOps(new ServerOps(*ch,c,b))
 {
-    assert(ch);
+    init(ch->getId(), c.getOutput(), ch->getVersion());
 }
 
 void BrokerAdapter::handleMethodInContext(
@@ -544,6 +542,9 @@ void BrokerAdapter::handleHeartbeat(AMQHeartbeatBody::shared_ptr) {
 }
 
 
+bool BrokerAdapter::isOpen() const {
+    return channel->isOpen();
+}
 
 }} // namespace qpid::broker
 

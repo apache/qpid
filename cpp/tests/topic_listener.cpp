@@ -105,7 +105,7 @@ int main(int argc, char** argv){
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
             Channel channel(args.getTransactional(), args.getPrefetch());
-            connection.openChannel(&channel);
+            connection.openChannel(channel);
         
             //declare exchange, queue and bind them:
             Queue response("response");

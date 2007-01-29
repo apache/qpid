@@ -103,7 +103,7 @@ int main(int argc, char** argv){
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
             Channel channel;
-            connection.openChannel(&channel);
+            connection.openChannel(channel);
         
             //Setup: declare the private 'response' queue and bind it
             //to the direct exchange by its name which will be
@@ -147,7 +147,7 @@ int main(int argc, char** argv){
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
             Channel channel;
-            connection.openChannel(&channel);
+            connection.openChannel(channel);
         
             //Setup: declare the 'request' queue and bind it to the direct exchange with a 'well known' name
             Queue request("request");

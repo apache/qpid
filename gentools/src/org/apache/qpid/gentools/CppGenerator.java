@@ -1425,7 +1425,7 @@ public class CppGenerator extends Generator
         StringBuffer sb = new StringBuffer();
         if (method.fieldMap.size() > 0)
             {
-                sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion& version," + cr);
+                sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(const ProtocolVersion& version," + cr);
                 sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
                 sb.append(indent + tab + ") :" + cr);
                 sb.append(indent + tab + baseClass(method) + "(version)," + cr);

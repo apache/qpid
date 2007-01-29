@@ -48,11 +48,16 @@ class AMQMethodBody : public AMQBody
     virtual ~AMQMethodBody() {}
     void decode(Buffer&, u_int32_t);
 
-    virtual u_int16_t amqpMethodId() const = 0;
-    virtual u_int16_t amqpClassId() const = 0;
+    virtual MethodId amqpMethodId() const = 0;
+    virtual ClassId  amqpClassId() const = 0;
+    
     virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
-    bool match(AMQMethodBody* other) const;
 
+    // FIXME aconway 2007-01-24: remove match, use isA
+    bool match(AMQMethodBody* other) const;
+    template <class T> bool isA() {
+        return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
+    }
 
     /**
      * Wrap this method in a frame and send using the current context.
@@ -63,7 +68,7 @@ class AMQMethodBody : public AMQBody
   protected:
     static u_int32_t baseSize() { return 4; }
 
-    struct MethodId {
+    struct ClassMethodId {
         u_int16_t classId;
         u_int16_t methodId;
         void decode(Buffer& b);
@@ -73,6 +78,7 @@ class AMQMethodBody : public AMQBody
     virtual void encodeContent(Buffer& buffer) const = 0;
     virtual void decodeContent(Buffer& buffer) = 0;
 };
+
 
 }} // namespace qpid::framing
 

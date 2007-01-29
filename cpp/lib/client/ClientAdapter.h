@@ -1,5 +1,5 @@
-#ifndef _broker_BrokerAdapter_h
-#define _broker_BrokerAdapter_h
+#ifndef _client_ClientAdapter_h
+#define _client_ClientAdapter_h
 
 /*
  *
@@ -19,57 +19,48 @@
  *
  */
 
-#include "AMQP_ServerOperations.h"
-#include "BodyHandler.h"
-#include "BrokerChannel.h"
-#include "amqp_types.h"
+#include "ChannelAdapter.h"
+#include "ClientChannel.h"
 
 namespace qpid {
-namespace broker {
+namespace client {
 
 class AMQMethodBody;
 class Connection;
-class Broker;
-
-// FIXME aconway 2007-01-17: Rename to ChannelAdapter.
 
 /**
  * Per-channel protocol adapter.
  *
  * Translates protocol bodies into calls on the core Channel,
- * Connection and Broker objects.
+ * Connection and Client objects.
  *
- * Owns a channel, has references to Connection and Broker.
+ * Owns a channel, has references to Connection and Client.
  */
-class BrokerAdapter : public qpid::framing::ChannelAdapter
+class ClientAdapter : public framing::ChannelAdapter
 {
   public:
-    // FIXME aconway 2007-01-18: takes ownership, should pass auto_ptr<Channel>
-    BrokerAdapter(Channel* ch, Connection&, Broker&);
+    ClientAdapter(std::auto_ptr<Channel> ch, Connection&, Client&);
     Channel& getChannel() { return *channel; }
 
     void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
 
-    bool isOpen() const;
-    
   private:
     void handleMethodInContext(
         boost::shared_ptr<qpid::framing::AMQMethodBody> method,
         const framing::MethodContext& context);
     
-    class ServerOps;
+    class ClientOps;
 
     std::auto_ptr<Channel> channel;
     Connection& connection;
-    Broker& broker;
-    boost::shared_ptr<ServerOps> serverOps;
+    Client& client;
+    boost::shared_ptr<ClientOps> clientOps;
 };
-  
 
-}} // namespace qpid::broker
-
+}} // namespace qpid::client
 
 
-#endif  /*!_broker_BrokerAdapter_h*/
+
+#endif  /*!_client_ClientAdapter_h*/

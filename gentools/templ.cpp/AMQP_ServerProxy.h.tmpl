@@ -46,7 +46,7 @@ private:
 
 public:
     AMQP_ServerProxy(OutputHandler* out, u_int8_t major, u_int8_t minor);
-    ProtocolVersion& getProtocolVersion() {return version;}
+    const ProtocolVersion& getProtocolVersion() {return version;}
     virtual ~AMQP_ServerProxy() {}
 
 	// Get methods for handlers
