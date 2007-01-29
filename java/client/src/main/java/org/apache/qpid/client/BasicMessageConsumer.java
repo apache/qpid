@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.jms.Destination;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -221,6 +220,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if (_session.isStopped())
         {
             _messageListener.set(messageListener);
+            _session.setHasMessageListeners();
+            _session.startDistpatcherIfNecessary();
+
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination " + _destination);
@@ -246,25 +248,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 synchronized (_session)
                 {
-                    //Pause Dispatcher
-                    _session.doDispatcherTask(new DispatcherCallback(this)
-                    {
-                        public void whilePaused(Queue<MessageConsumerPair> reprocessQueue)
-                        {
-                            // Prepend messages in _synchronousQueue to dispatcher queue
-                            _logger.debug("ReprocessQueue current size:" + reprocessQueue.size());
-                            for (Object item : _synchronousQueue)
-                            {
-                                reprocessQueue.offer(new MessageConsumerPair(_consumer, item));
-                            }
-                            _logger.debug("Added items to reprocessQueue:" + reprocessQueue.size());
-
-                            // Set Message Listener
-                            _logger.debug("Set Message Listener");
-                            _messageListener.set(messageListener);
-                        }
-                    }
-                    );
+                    
+                    _messageListener.set(messageListener);
+                    _session.setHasMessageListeners();
+                    _session.startDistpatcherIfNecessary();
                 }
             }
         }
@@ -272,9 +259,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-        byte[] url = jmsMsg.getBytesProperty(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.getShortStringName());
-        Destination dest = AMQDestination.createDestination(url);
-        jmsMsg.setJMSDestination(dest);
 
         if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
@@ -345,6 +329,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
+        _session.startDistpatcherIfNecessary();
+
         checkPreConditions();
 
         acquireReceiving();
@@ -399,6 +385,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
+        _session.startDistpatcherIfNecessary();
+
         checkPreConditions();
 
         acquireReceiving();
@@ -520,14 +508,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         if (debug)
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.deliverBody.deliveryTag);
+            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().deliveryTag);
         }
         try
         {
-            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.deliverBody.deliveryTag,
-                                                                          messageFrame.deliverBody.redelivered,
-                                                                          messageFrame.contentHeader,
-                                                                          messageFrame.bodies);
+            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
+                                                                          messageFrame.getDeliverBody().redelivered,
+                                                                          messageFrame.getDeliverBody().exchange,
+                                                                          messageFrame.getDeliverBody().routingKey,
+                                                                          messageFrame.getContentHeader(),
+                                                                          messageFrame.getBodies());
 
             if (debug)
             {
