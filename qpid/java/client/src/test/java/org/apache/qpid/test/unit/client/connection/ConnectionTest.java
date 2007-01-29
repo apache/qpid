@@ -48,14 +48,15 @@ public class ConnectionTest extends TestCase
 
     protected void tearDown() throws Exception
     {
-        TransportConnection.killAllVMBrokers();
+        TransportConnection.killVMBroker(1);
     }
 
     public void testSimpleConnection()
     {
         try
         {
-            new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            AMQConnection conn  = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            conn.close();
         }
         catch (Exception e)
         {
@@ -94,6 +95,7 @@ public class ConnectionTest extends TestCase
                 fail("Correct exception not thrown. Excpected 'AMQConnectionException' got: " + amqe);
             }
         }
+
     }
 
     public void testUnresolvedHostFailure() throws Exception

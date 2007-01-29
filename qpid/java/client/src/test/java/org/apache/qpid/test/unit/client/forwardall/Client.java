@@ -65,23 +65,29 @@ public class Client implements MessageListener
         _connection.close();
     }
 
-    public void onMessage(Message response)
+    public synchronized void onMessage(Message response)
     {
+       
         System.out.println("Received " + (++_count) + " of " + _expected  + " responses.");
         if(_count == _expected)
         {
-            synchronized(this)
-            {
-                notifyAll();
-            }
+
+            notifyAll();
         }
+
+
     }
 
-    synchronized void waitUntilComplete() throws InterruptedException
+    synchronized void waitUntilComplete() throws Exception
     {
-        while(_count < _expected)
+
+        if(_count < _expected)
         {
-            wait();
+            wait(10000L);
+        }
+        if(_count < _expected)
+        {
+            throw new Exception("Didn't receive all messages... got " + _count + " expected " + _expected);    
         }
     }
 

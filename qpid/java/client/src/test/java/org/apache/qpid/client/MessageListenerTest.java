@@ -126,7 +126,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
         for (int msg = 0; msg < MSG_COUNT; msg++)
         {
-            assertTrue(_consumer.receive() != null);
+            assertTrue(_consumer.receive(2000) != null);
         }
     }
 
