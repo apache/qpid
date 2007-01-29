@@ -49,7 +49,7 @@ public class ContentBody extends AMQBody
         this.payload = payload;
     }
 
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }
@@ -98,9 +98,7 @@ public class ContentBody extends AMQBody
 
     public static AMQFrame createAMQFrame(int channelId, ContentBody body)
     {
-        final AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
-        frame.bodyFrame = body;
+        final AMQFrame frame = new AMQFrame(channelId, body);
         return frame;
     }
 }

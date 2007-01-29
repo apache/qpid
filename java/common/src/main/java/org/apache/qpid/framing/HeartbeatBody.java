@@ -41,7 +41,7 @@ public class HeartbeatBody extends AMQBody
         }
     }
 
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }

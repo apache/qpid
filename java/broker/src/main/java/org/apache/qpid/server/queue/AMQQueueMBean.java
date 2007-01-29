@@ -191,25 +191,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
      */
     public Long getQueueDepth() throws JMException
     {
-        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
-        if (list.size() == 0)
-        {
-            return 0l;
-        }
+        return getQueueDepthKb();
+    }
 
-        long queueDepth = 0;
-        try
-        {
-            for (AMQMessage message : list)
-            {
-                queueDepth = queueDepth + getMessageSize(message);
-            }
-        }
-        catch (AMQException e)
-        {
-            throw new JMException("Unable to get message size: " + e);
-        }
-        return (long) Math.round(queueDepth / 1000);
+    public long getQueueDepthKb()
+    {
+        long queueBytesSize = _queue.getQueueDepth();
+        return queueBytesSize >> 10 ;
     }
 
     /**
@@ -245,7 +233,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         }
 
         // Check for threshold queue depth in bytes
-        long queueDepth = getQueueDepth();
+        long queueDepth = getQueueDepthKb();
         if (queueDepth >= _queue.getMaximumQueueDepth())
         {
             notifyClients("Queue depth(" + queueDepth + "), Queue size has reached the threshold high value");
