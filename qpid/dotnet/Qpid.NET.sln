@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Common", "Qpid.Common\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Client.Tests", "Qpid.Client.Tests\Qpid.Client.Tests.csproj", "{BA1B0032-4CE6-40DD-A2DC-119F0FFA0A1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Sasl", "Qpid.Sasl\Qpid.Sasl.csproj", "{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Sasl.Tests", "Qpid.Sasl.Tests\Qpid.Sasl.Tests.csproj", "{587B3520-EBB9-41ED-B019-E96116B651CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +52,14 @@ Global
 		{BA1B0032-4CE6-40DD-A2DC-119F0FFA0A1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA1B0032-4CE6-40DD-A2DC-119F0FFA0A1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA1B0032-4CE6-40DD-A2DC-119F0FFA0A1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{587B3520-EBB9-41ED-B019-E96116B651CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{587B3520-EBB9-41ED-B019-E96116B651CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{587B3520-EBB9-41ED-B019-E96116B651CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{587B3520-EBB9-41ED-B019-E96116B651CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

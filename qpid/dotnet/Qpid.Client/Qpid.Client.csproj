@@ -42,6 +42,8 @@
     <Compile Include="Client\AMQConnectionException.cs" />
     <Compile Include="Client\AMQDestination.cs" />
     <Compile Include="Client\AmqChannel.cs" />
+    <Compile Include="Client\AMQAuthenticationException.cs" />
+    <Compile Include="Client\Configuration\AuthenticationConfigurationSectionHandler.cs" />
     <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />
     <Compile Include="Client\BasicMessageConsumer.cs" />
@@ -81,6 +83,9 @@
     <Compile Include="Client\Protocol\IConnectionCloser.cs" />
     <Compile Include="Client\Protocol\ProtocolWriter.cs" />
     <Compile Include="Client\Protocol\IProtocolListener.cs" />
+    <Compile Include="Client\Security\CallbackHandlerRegistry.cs" />
+    <Compile Include="Client\Security\IAMQCallbackHandler.cs" />
+    <Compile Include="Client\Security\UsernamePasswordCallbackHandler.cs" />
     <Compile Include="Client\State\AMQState.cs" />
     <Compile Include="Client\State\AMQStateChangedEvent.cs" />
     <Compile Include="Client\State\AMQStateManager.cs" />
@@ -125,6 +130,10 @@
     <ProjectReference Include="..\Qpid.Common\Qpid.Common.csproj">
       <Project>{77064C42-24D2-4CEB-9EA2-0EF481A43205}</Project>
       <Name>Qpid.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qpid.Sasl\Qpid.Sasl.csproj">
+      <Project>{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}</Project>
+      <Name>Qpid.Sasl</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

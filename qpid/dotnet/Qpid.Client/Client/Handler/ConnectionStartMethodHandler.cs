@@ -19,11 +19,15 @@
  *
  */
 using System;
+using System.Collections;
 using System.Text;
 using log4net;
 using Qpid.Client.Protocol;
+using Qpid.Client.Security;
 using Qpid.Client.State;
 using Qpid.Framing;
+using Qpid.Sasl;
+
 
 namespace Qpid.Client.Handler
 {
@@ -35,36 +39,22 @@ namespace Qpid.Client.Handler
         {
             ConnectionStartBody body = (ConnectionStartBody) evt.Method;
             AMQProtocolSession ps = evt.ProtocolSession;
-            string username = ps.Username;
-            string password = ps.Password;
 
             try
             {
-                if (body.Mechanisms == null)
+                if ( body.Mechanisms == null )
                 {
                     throw new AMQException("mechanism not specified in ConnectionStart method frame");
                 }
-                string allMechanisms = Encoding.ASCII.GetString(body.Mechanisms);
-                string[] mechanisms = allMechanisms.Split(' ');
-                string selectedMechanism = null;
-                foreach (string mechanism in mechanisms)
-                {
-                    if (mechanism.Equals("PLAIN"))
-                    {
-                        selectedMechanism = mechanism;
-                        break;
-                    }
-                }
-        
-                if (selectedMechanism == null)
+                string mechanisms = Encoding.UTF8.GetString(body.Mechanisms);
+                string selectedMechanism = ChooseMechanism(mechanisms);
+                if ( selectedMechanism == null )
                 {
                     throw new AMQException("No supported security mechanism found, passed: " + mechanisms);
                 }
+               
+                byte[] saslResponse = DoAuthentication(selectedMechanism, ps);
 
-                // we always write out a null authzid which we don't currently use
-                byte[] plainData = new byte[1 + ps.Username.Length + 1 + ps.Password.Length];
-                Encoding.UTF8.GetBytes(username, 0, username.Length, plainData, 1);
-                Encoding.UTF8.GetBytes(password, 0, password.Length, plainData, username.Length + 2);
                 if (body.Locales == null)
                 {
                     throw new AMQException("Locales is not defined in Connection Start method");
@@ -86,8 +76,9 @@ namespace Qpid.Client.Handler
                 clientProperties["product"] = "Qpid.NET";
                 clientProperties["version"] = "1.0";
                 clientProperties["platform"] = GetFullSystemInfo();
-                AMQFrame frame = ConnectionStartOkBody.CreateAMQFrame(evt.ChannelId, clientProperties, selectedMechanism,
-                                                                      plainData, selectedLocale);
+                AMQFrame frame = ConnectionStartOkBody.CreateAMQFrame(
+                   evt.ChannelId, clientProperties, selectedMechanism,
+                  saslResponse, selectedLocale);
                 ps.WriteFrame(frame);
             }
             catch (Exception e)
@@ -109,5 +100,51 @@ namespace Qpid.Client.Handler
             // TODO: add in details here
             return ".NET 1.1 Client";
         }
+
+       private string ChooseMechanism(string mechanisms)
+       {
+           foreach ( string mech in mechanisms.Split(' ') )
+           {
+               if ( CallbackHandlerRegistry.Instance.IsSupportedMechanism(mech) )
+               {
+                   return mech;
+               }
+           }
+           return null;
+       }
+
+       private byte[] DoAuthentication(string selectedMechanism, AMQProtocolSession ps)
+       {
+           ISaslClient saslClient = Sasl.Sasl.CreateClient(
+               new string[] { selectedMechanism }, null, "AMQP", "localhost",
+               new Hashtable(), CreateCallbackHandler(selectedMechanism, ps)
+           );
+           if ( saslClient == null )
+           {
+               throw new AMQException("Client SASL configuration error: no SaslClient could be created for mechanism " +
+                                      selectedMechanism);
+           }
+           ps.SaslClient = saslClient;
+           try
+           {
+               return saslClient.HasInitialResponse ?
+                  saslClient.EvaluateChallenge(new byte[0]) : null;
+           } catch ( Exception ex )
+           {
+               ps.SaslClient = null;
+               throw new AMQException("Unable to create SASL client", ex);
+           }
+       }
+
+       private IAMQCallbackHandler CreateCallbackHandler(string mechanism, AMQProtocolSession session)
+       {
+           Type type = CallbackHandlerRegistry.Instance.GetCallbackHandler(mechanism);
+           IAMQCallbackHandler handler = 
+               (IAMQCallbackHandler)Activator.CreateInstance(type);
+           if ( handler == null )
+               throw new AMQException("Unable to create callback handler: " + mechanism);
+           handler.Initialize(session);
+           return handler;
+       }
     }
 }
