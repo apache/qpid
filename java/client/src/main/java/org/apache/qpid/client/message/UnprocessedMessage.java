@@ -24,6 +24,8 @@ import org.apache.qpid.framing.*;
 
 import java.util.List;
 import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the
@@ -38,27 +40,93 @@ public class UnprocessedMessage
 {
     private long _bytesReceived = 0;
 
-    public BasicDeliverBody deliverBody;
-    public BasicReturnBody bounceBody; // TODO: check change (gustavo)
-    public int channelId;
-    public ContentHeaderBody contentHeader;
+    private final BasicDeliverBody _deliverBody;
+    private final BasicReturnBody _bounceBody; // TODO: check change (gustavo)
+    private final int _channelId;
+    private ContentHeaderBody _contentHeader;
 
     /**
      * List of ContentBody instances. Due to fragmentation you don't know how big this will be in general
      */
-    public List bodies = new LinkedList();
+    private List<ContentBody> _bodies;
+
+    public UnprocessedMessage(int channelId, BasicDeliverBody deliverBody)
+    {
+        _deliverBody = deliverBody;
+        _channelId = channelId;
+        _bounceBody = null;
+    }
+
+
+    public UnprocessedMessage(int channelId, BasicReturnBody bounceBody)
+    {
+        _deliverBody = null;
+        _channelId = channelId;
+        _bounceBody = bounceBody;
+    }
 
     public void receiveBody(ContentBody body) throws UnexpectedBodyReceivedException
     {
-        bodies.add(body);
+
         if (body.payload != null)
         {
-            _bytesReceived += body.payload.remaining();
+            final long payloadSize = body.payload.remaining();
+
+            if(_bodies == null)
+            {
+                if(payloadSize == getContentHeader().bodySize)
+                {
+                    _bodies = Collections.singletonList(body);
+                }
+                else
+                {
+                    _bodies = new ArrayList<ContentBody>();
+                }
+
+            }
+            else
+            {
+                _bodies.add(body);
+            }
+            _bytesReceived += payloadSize;
         }
     }
 
     public boolean isAllBodyDataReceived()
     {
-        return _bytesReceived == contentHeader.bodySize;
+        return _bytesReceived == getContentHeader().bodySize;
     }
+
+    public BasicDeliverBody getDeliverBody()
+    {
+        return _deliverBody;
+    }
+
+    public BasicReturnBody getBounceBody()
+    {
+        return _bounceBody;
+    }
+
+
+    public int getChannelId()
+    {
+        return _channelId;
+    }
+
+
+    public ContentHeaderBody getContentHeader()
+    {
+        return _contentHeader;
+    }
+
+    public void setContentHeader(ContentHeaderBody contentHeader)
+    {
+        this._contentHeader = contentHeader;
+    }
+
+    public List<ContentBody> getBodies()
+    {
+        return _bodies;
+    }
+
 }

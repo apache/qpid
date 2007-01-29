@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
@@ -36,10 +37,12 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
 
     protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data,
-                                                                ContentHeaderBody contentHeader) throws AMQException;
+                                                        AMQShortString exchange, AMQShortString routingKey,
+                                                        ContentHeaderBody contentHeader) throws AMQException;
 
     protected AbstractJMSMessage createMessageWithBody(long messageNbr,
                                                        ContentHeaderBody contentHeader,
+                                                       AMQShortString exchange, AMQShortString routingKey,
                                                        List bodies) throws AMQException
     {
         ByteBuffer data;
@@ -54,7 +57,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             }
             data = ((ContentBody)bodies.get(0)).payload;
         }
-        else
+        else if (bodies != null)
         {
             if(debug)
             {
@@ -70,19 +73,24 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             }
             data.flip();
         }
+        else // bodies == null
+        {
+            data = ByteBuffer.allocate(0);
+        }
         if(debug)
         {
             _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
         }
 
-        return createMessage(messageNbr, data, contentHeader);
+        return createMessage(messageNbr, data, exchange, routingKey, contentHeader);
     }
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered,
                                             ContentHeaderBody contentHeader,
+                                            AMQShortString exchange, AMQShortString routingKey,
                                             List bodies) throws JMSException, AMQException
     {
-        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, bodies);
+        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
         msg.setJMSRedelivered(redelivered);
         return msg;
     }

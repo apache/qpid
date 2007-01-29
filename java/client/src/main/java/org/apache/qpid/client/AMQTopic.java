@@ -44,6 +44,12 @@ public class AMQTopic extends AMQDestination implements Topic
         this(new AMQShortString(name));
     }
 
+    public AMQTopic(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)
+    {
+        super(exchange, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, routingKey, true, true, queueName, false);
+    }
+
+
     public AMQTopic(AMQShortString name)
     {
         this(name, true, null, false);

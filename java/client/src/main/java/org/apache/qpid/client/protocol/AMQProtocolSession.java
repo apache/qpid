@@ -32,7 +32,7 @@ import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.commons.lang.StringUtils;
 
@@ -47,7 +47,7 @@ import java.util.concurrent.ConcurrentMap;
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
-public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionList
+public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareProtocolSession
 {
 
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
@@ -95,8 +95,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     private byte _protocolMinorVersion;
     private byte _protocolMajorVersion;
-
-
+    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length-1][PROTOCOL_MAJOR],pv[pv.length-1][PROTOCOL_MINOR]);
 
 
     /**
@@ -125,6 +124,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
+        _minaProtocolSession.setAttachment(this);
         // properties of the connection are made available to the event handlers
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
         //fixme - real value needed
@@ -239,7 +239,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      */
     public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
     {
-        _channelId2UnprocessedMsgMap.put(message.channelId, message);
+        _channelId2UnprocessedMsgMap.put(message.getChannelId(), message);
     }
 
     public void messageContentHeaderReceived(int channelId, ContentHeaderBody contentHeader)
@@ -250,11 +250,11 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         {
             throw new AMQException("Error: received content header without having received a BasicDeliver frame first");
         }
-        if (msg.contentHeader != null)
+        if (msg.getContentHeader() != null)
         {
             throw new AMQException("Error: received duplicate content header or did not receive correct number of content body frames");
         }
-        msg.contentHeader = contentHeader;
+        msg.setContentHeader(contentHeader);
         if (contentHeader.bodySize == 0)
         {
             deliverMessageToAMQSession(channelId, msg);
@@ -268,7 +268,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         {
             throw new AMQException("Error: received content body without having received a JMSDeliver frame first");
         }
-        if (msg.contentHeader == null)
+        if (msg.getContentHeader() == null)
         {
             _channelId2UnprocessedMsgMap.remove(channelId);
             throw new AMQException("Error: received content body without having received a ContentHeader frame first");
@@ -465,11 +465,11 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         session.confirmConsumerCancelled(consumerTag);
     }
 
-    public void setProtocolVersion(byte versionMajor, byte versionMinor)
+    public void setProtocolVersion(final byte versionMajor, final byte versionMinor)
     {
         _protocolMajorVersion = versionMajor;
         _protocolMinorVersion = versionMinor;
-
+        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);        
     }
 
     public byte getProtocolMinorVersion()
@@ -480,6 +480,11 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     public byte getProtocolMajorVersion()
     {
         return _protocolMajorVersion;
+    }
+
+    public VersionSpecificRegistry getRegistry()
+    {
+        return _registry;
     }
 
 }
