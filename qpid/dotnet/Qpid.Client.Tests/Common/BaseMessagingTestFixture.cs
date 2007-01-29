@@ -22,7 +22,7 @@ using System;
 using log4net;
 using NUnit.Framework;
 using Qpid.Messaging;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 
 namespace Qpid.Client.Tests
 {
@@ -54,7 +54,7 @@ namespace Qpid.Client.Tests
 
             try
             {
-                ConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
+                IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
                 _connection = new AMQConnection(connectionInfo);
                 _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 1);
             }

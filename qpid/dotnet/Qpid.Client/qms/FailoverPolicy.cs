@@ -21,9 +21,9 @@
 using System;
 using System.Text;
 using log4net;
-using Qpid.Client.qms.failover;
+using Qpid.Client.Qms.Failover;
 
-namespace Qpid.Client.qms
+namespace Qpid.Client.Qms
 {
     public class FailoverPolicy
     {
@@ -34,7 +34,7 @@ namespace Qpid.Client.qms
         private const long DEFAULT_METHOD_TIMEOUT = 1 * MINUTE;
         private const long DEFAULT_FAILOVER_TIMEOUT = 4 * MINUTE;
 
-        private FailoverMethod[] _methods = new FailoverMethod[1];
+        private IFailoverMethod[] _methods = new IFailoverMethod[1];
 
         private int _currentMethod;
 
@@ -47,18 +47,18 @@ namespace Qpid.Client.qms
         private long _lastMethodTime;
         private long _lastFailTime;
 
-        public FailoverPolicy(ConnectionInfo connectionInfo)
+        public FailoverPolicy(IConnectionInfo connectionInfo)
         {
-            FailoverMethod method;
+            IFailoverMethod method;
 
             //todo This should be integrated in to the connection url when it supports
             // multiple strategies.
 
             _methodsRetries = 0;
 
-            if (connectionInfo.GetFailoverMethod() == null)
+            if (connectionInfo.FailoverMethod == null)
             {
-                if (connectionInfo.GetBrokerCount() > 1)
+                if (connectionInfo.BrokerCount > 1)
                 {
                     method = new FailoverRoundRobin(connectionInfo);
                 }
@@ -69,7 +69,7 @@ namespace Qpid.Client.qms
             }
             else
             {
-                string failoverMethod = connectionInfo.GetFailoverMethod();
+                string failoverMethod = connectionInfo.FailoverMethod;
 
     /*
                 if (failoverMethod.equals(FailoverMethod.RANDOM))
@@ -110,11 +110,11 @@ namespace Qpid.Client.qms
             _methods[_currentMethod] = method;
         }
 
-        public FailoverPolicy(FailoverMethod method) : this(method, 0)
+        public FailoverPolicy(IFailoverMethod method) : this(method, 0)
         {
         }
 
-        public FailoverPolicy(FailoverMethod method, int retries)
+        public FailoverPolicy(IFailoverMethod method, int retries)
         {
             _methodsRetries = retries;
 
@@ -169,7 +169,7 @@ namespace Qpid.Client.qms
             }
 
 
-            if (_methods[_currentMethod].failoverAllowed())
+            if (_methods[_currentMethod].FailoverAllowed())
             {
                 failoverAllowed = true;
             }
@@ -178,7 +178,7 @@ namespace Qpid.Client.qms
                 if (_currentMethod < (_methods.Length - 1))
                 {
                     nextMethod();
-                    _logger.Info("Changing method to " + _methods[_currentMethod].methodName());
+                    _logger.Info("Changing method to " + _methods[_currentMethod].MethodName);
                     return FailoverAllowed();
                 }
                 else
@@ -200,7 +200,7 @@ namespace Qpid.Client.qms
             if (_currentMethod < (_methods.Length - 1))
             {
                 _currentMethod++;
-                _methods[_currentMethod].reset();
+                _methods[_currentMethod].Reset();
                 return true;
             }
             else
@@ -217,8 +217,8 @@ namespace Qpid.Client.qms
 
                 _currentMethod = 0;
 
-                _logger.Info("Retrying methods starting with " + _methods[_currentMethod].methodName());
-                _methods[_currentMethod].reset();
+                _logger.Info("Retrying methods starting with " + _methods[_currentMethod].MethodName);
+                _methods[_currentMethod].Reset();
                 return FailoverAllowed();
             }
             else
@@ -235,30 +235,30 @@ namespace Qpid.Client.qms
         {
             _currentRetry = 0;
 
-            _methods[_currentMethod].attainedConnection();
+            _methods[_currentMethod].AttainedConnection();
 
             _timing = false;
         }
 
-        public BrokerInfo GetCurrentBrokerInfo()
+        public IBrokerInfo GetCurrentBrokerInfo()
         {
             return _methods[_currentMethod].GetCurrentBrokerInfo();
         }
 
-        public BrokerInfo GetNextBrokerInfo()
+        public IBrokerInfo GetNextBrokerInfo()
         {
-            return _methods[_currentMethod].getNextBrokerDetails();
+            return _methods[_currentMethod].GetNextBrokerDetails();
         }
 
-        public void setBroker(BrokerInfo broker)
+        public void setBroker(IBrokerInfo broker)
         {
-            _methods[_currentMethod].setBroker(broker);
+            _methods[_currentMethod].SetBroker(broker);
         }
 
-        public void addMethod(FailoverMethod method)
+        public void addMethod(IFailoverMethod method)
         {
             int len = _methods.Length + 1;
-            FailoverMethod[] newMethods = new FailoverMethod[len];
+            IFailoverMethod[] newMethods = new IFailoverMethod[len];
             _methods.CopyTo(newMethods, 0);
 //            System.arraycopy(_methods, 0, newMethods, 0, _methods.length);
             int index = len - 1;
@@ -271,7 +271,7 @@ namespace Qpid.Client.qms
             _methodsRetries = retries;
         }
 
-        public FailoverMethod getCurrentMethod()
+        public IFailoverMethod getCurrentMethod()
         {
             if (_currentMethod >= 0 && _currentMethod < (_methods.Length - 1))
             {

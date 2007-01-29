@@ -21,7 +21,7 @@
 using System;
 using System.Net;
 using NUnit.Framework;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 
 namespace Qpid.Client.Tests.url
 {
@@ -34,26 +34,26 @@ namespace Qpid.Client.Tests.url
             //String url = "amqp://ritchiem:bob@/temp?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
             String url = "amqp://ritchiem:bob@default/temp?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.AreEqual("roundrobin", connectionurl.GetFailoverMethod());
-            Assert.IsTrue(connectionurl.GetUsername().Equals("ritchiem"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("bob"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.AreEqual("roundrobin", connectionurl.FailoverMethod);
+            Assert.IsTrue(connectionurl.Username.Equals("ritchiem"));
+            Assert.IsTrue(connectionurl.Password.Equals("bob"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 2);
+            Assert.IsTrue(connectionurl.BrokerCount == 2);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
 
             service = connectionurl.GetBrokerInfo(1);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("fancyserver"));
-            Assert.IsTrue(service.getPort() == 3000);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("fancyserver"));
+            Assert.IsTrue(service.Port == 3000);
 
         }
 
@@ -62,20 +62,20 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://ritchiem:bob@default/temp?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("ritchiem"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("bob"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("ritchiem"));
+            Assert.IsTrue(connectionurl.Password.Equals("bob"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
         }
 
         [Test]
@@ -83,20 +83,20 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://ritchiem:@default/temp?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("ritchiem"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals(""));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("ritchiem"));
+            Assert.IsTrue(connectionurl.Password.Equals(""));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
         }
 
         [Test]
@@ -121,23 +121,23 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/test"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/test"));
 
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
         }
 
         [Test]
@@ -145,24 +145,24 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@clientname/temp?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
-            Assert.IsTrue(connectionurl.GetClientName().Equals("clientname"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
+            Assert.IsTrue(connectionurl.ClientName.Equals("clientname"));
 
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Transport.Equals("tcp"));
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
         }
 
         [Test]
@@ -170,22 +170,22 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/temp?brokerlist='tcp://localhost:5672',routingkey='jim'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
+            Assert.IsTrue(service.Transport.Equals("tcp"));
 
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
             Assert.IsTrue(connectionurl.GetOption("routingkey").Equals("jim"));
         }
 
@@ -194,22 +194,22 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/temp?brokerlist='localhost:'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
+            Assert.IsTrue(service.Transport.Equals("tcp"));
 
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
         }
 
         [Test]
@@ -217,21 +217,21 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/temp?brokerlist='tcp://localhost:5672',routingkey='jim',timeout='200',immediatedelivery='true'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("tcp"));
+            Assert.IsTrue(service.Transport.Equals("tcp"));
 
-            Assert.IsTrue(service.getHost().Equals("localhost"));
-            Assert.IsTrue(service.getPort() == 5672);
+            Assert.IsTrue(service.Host.Equals("localhost"));
+            Assert.IsTrue(service.Port == 5672);
 
             Assert.IsTrue(connectionurl.GetOption("routingkey").Equals("jim"));
             Assert.IsTrue(connectionurl.GetOption("timeout").Equals("200"));
@@ -243,20 +243,20 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/messages?brokerlist='vm://default:2'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod() == null);
-            Assert.IsTrue(connectionurl.GetUsername().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("guest"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/messages"));
+            Assert.IsTrue(connectionurl.FailoverMethod == null);
+            Assert.IsTrue(connectionurl.Username.Equals("guest"));
+            Assert.IsTrue(connectionurl.Password.Equals("guest"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/messages"));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("vm"));
-            Assert.AreEqual("localhost", service.getHost());
-            Assert.AreEqual(2, service.getPort());
+            Assert.IsTrue(service.Transport.Equals("vm"));
+            Assert.AreEqual("localhost", service.Host);
+            Assert.AreEqual(2, service.Port);
         }
 
         [Test]
@@ -264,25 +264,25 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://ritchiem:bob@default/temp?brokerlist='vm://default:2;vm://default:3',failover='roundrobin'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetFailoverMethod().Equals("roundrobin"));
-            Assert.IsTrue(connectionurl.GetUsername().Equals("ritchiem"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals("bob"));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/temp"));
+            Assert.IsTrue(connectionurl.FailoverMethod.Equals("roundrobin"));
+            Assert.IsTrue(connectionurl.Username.Equals("ritchiem"));
+            Assert.IsTrue(connectionurl.Password.Equals("bob"));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/temp"));
 
-            Assert.AreEqual(2, connectionurl.GetBrokerCount());
+            Assert.AreEqual(2, connectionurl.BrokerCount);
 
-            BrokerInfo service = connectionurl.GetBrokerInfo(0);
+            IBrokerInfo service = connectionurl.GetBrokerInfo(0);
 
-            Assert.IsTrue(service.getTransport().Equals("vm"));
-            Assert.AreEqual("localhost", service.getHost());
-            Assert.IsTrue(service.getPort() == 2);
+            Assert.IsTrue(service.Transport.Equals("vm"));
+            Assert.AreEqual("localhost", service.Host);
+            Assert.IsTrue(service.Port == 2);
 
             service = connectionurl.GetBrokerInfo(1);
-            Assert.IsTrue(service.getTransport().Equals("vm"));
-            Assert.AreEqual("localhost", service.getHost());
-            Assert.IsTrue(service.getPort() == 3);
+            Assert.IsTrue(service.Transport.Equals("vm"));
+            Assert.AreEqual("localhost", service.Host);
+            Assert.IsTrue(service.Port == 3);
         }
 
         [Test]
@@ -306,14 +306,14 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://user:@default/test?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionurl = QpidConnectionInfo.FromUrl(url);
 
-            Assert.IsTrue(connectionurl.GetUsername().Equals("user"));
-            Assert.IsTrue(connectionurl.GetPassword().Equals(""));
-            Assert.IsTrue(connectionurl.GetVirtualHost().Equals("/test"));
-            Assert.IsTrue(connectionurl.GetClientName().StartsWith(Dns.GetHostName()));
+            Assert.IsTrue(connectionurl.Username.Equals("user"));
+            Assert.IsTrue(connectionurl.Password.Equals(""));
+            Assert.IsTrue(connectionurl.VirtualHost.Equals("/test"));
+            Assert.IsTrue(connectionurl.ClientName.StartsWith(Dns.GetHostName()));
 
-            Assert.IsTrue(connectionurl.GetBrokerCount() == 1);
+            Assert.IsTrue(connectionurl.BrokerCount == 1);
         }
 
         [Test]
@@ -372,8 +372,8 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/t.-_+!=:?brokerlist='tcp://localhost:5672'";
 
-            ConnectionInfo connection = QpidConnectionInfo.FromUrl(url);
-            Assert.IsTrue(connection.GetVirtualHost().Equals("/t.-_+!=:"));
+            IConnectionInfo connection = QpidConnectionInfo.FromUrl(url);
+            Assert.IsTrue(connection.VirtualHost.Equals("/t.-_+!=:"));
         }
 
         [Test]
@@ -381,10 +381,10 @@ namespace Qpid.Client.Tests.url
         {
             String url = "amqp://guest:guest@default/test=:?brokerlist='tcp://localhost'";
 
-            ConnectionInfo connection = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connection = QpidConnectionInfo.FromUrl(url);
 
-            BrokerInfo broker = connection.GetBrokerInfo(0);
-            Assert.IsTrue(broker.getPort() == BrokerInfoConstants.DEFAULT_PORT);
+            IBrokerInfo broker = connection.GetBrokerInfo(0);
+            Assert.IsTrue(broker.Port == BrokerInfoConstants.DEFAULT_PORT);
 
         }
 
