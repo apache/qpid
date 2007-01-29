@@ -26,7 +26,7 @@ using System.Threading;
 using log4net;
 using Qpid.Client.Failover;
 using Qpid.Client.Protocol;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 using Qpid.Client.State;
 using Qpid.Client.Transport;
 using Qpid.Client.Transport.Socket.Blocking;
@@ -40,7 +40,7 @@ namespace Qpid.Client
     {
         private static readonly ILog _log = LogManager.GetLogger(typeof(AMQConnection));
         
-        ConnectionInfo _connectionInfo;
+        IConnectionInfo _connectionInfo;
         private int _nextChannelId = 0;
 
         // _Connected should be refactored with a suitable wait object.
@@ -121,7 +121,7 @@ namespace Qpid.Client
             get { return _protocolWriter; }
         }
 
-        public AMQConnection(ConnectionInfo connectionInfo)
+        public AMQConnection(IConnectionInfo connectionInfo)
         {
             if (connectionInfo == null)
             {
@@ -129,7 +129,7 @@ namespace Qpid.Client
             }
             _log.Info("ConnectionInfo: " + connectionInfo);
             _connectionInfo = connectionInfo;
-            _log.Info("password = " + _connectionInfo.GetPassword());
+            _log.Info("password = " + _connectionInfo.Password);
             _failoverPolicy = new FailoverPolicy(connectionInfo);
 
             // We are not currently connected.
@@ -140,7 +140,7 @@ namespace Qpid.Client
             {
                 try
                 {
-                    BrokerInfo brokerInfo = _failoverPolicy.GetNextBrokerInfo();
+                    IBrokerInfo brokerInfo = _failoverPolicy.GetNextBrokerInfo();
                     _log.Info("Connecting to " + brokerInfo);
                     MakeBrokerConnection(brokerInfo);
                     break;
@@ -220,12 +220,12 @@ namespace Qpid.Client
             get
             {
                 CheckNotClosed();
-                return _connectionInfo.GetClientName();
+                return _connectionInfo.ClientName;
             }
             set
             {
                 CheckNotClosed();
-                _connectionInfo.SetClientName(value);
+                _connectionInfo.ClientName = value;
             }
         }
 
@@ -505,7 +505,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _failoverPolicy.GetCurrentBrokerInfo().getHost();
+                return _failoverPolicy.GetCurrentBrokerInfo().Host;
             }
         }
 
@@ -513,7 +513,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _failoverPolicy.GetCurrentBrokerInfo().getPort();
+                return _failoverPolicy.GetCurrentBrokerInfo().Port;
             }
         }
 
@@ -521,7 +521,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.GetUsername();
+                return _connectionInfo.Username;
             }
         }
 
@@ -529,7 +529,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.GetPassword();
+                return _connectionInfo.Password;
             }
         }
 
@@ -537,7 +537,7 @@ namespace Qpid.Client
         {
             get
             {
-                return _connectionInfo.GetVirtualHost();
+                return _connectionInfo.VirtualHost;
             }
         }
 
@@ -674,7 +674,7 @@ namespace Qpid.Client
 
         public bool AttemptReconnection(String host, int port, bool useSSL)
         {
-            BrokerInfo bd = new AmqBrokerInfo("amqp", host, port, useSSL);
+            IBrokerInfo bd = new AmqBrokerInfo("amqp", host, port, useSSL);
 
             _failoverPolicy.setBroker(bd);
 
@@ -691,7 +691,7 @@ namespace Qpid.Client
             return false;
         }
 
-        private void MakeBrokerConnection(BrokerInfo brokerDetail)
+        private void MakeBrokerConnection(IBrokerInfo brokerDetail)
         {
             try
             {
@@ -708,7 +708,7 @@ namespace Qpid.Client
                 _transport = LoadTransportFromAssembly(brokerDetail.getHost(), brokerDetail.getPort(), assemblyName, transportType);
                 */
 
-                _transport = new BlockingSocketTransport(brokerDetail.getHost(), brokerDetail.getPort(), this);
+                _transport = new BlockingSocketTransport(brokerDetail.Host, brokerDetail.Port, this);
                 
                 // Connect.
                 _transport.Open();                

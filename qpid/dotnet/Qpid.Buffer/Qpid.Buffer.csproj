@@ -41,11 +41,11 @@
     <Compile Include="BufferOverflowException.cs" />
     <Compile Include="BufferUnderflowException.cs" />
     <Compile Include="ByteBuffer.cs" />
-    <Compile Include="ByteBufferAllocator.cs" />
     <Compile Include="ByteBufferHexDumper.cs" />
     <Compile Include="ByteBufferProxy.cs" />
     <Compile Include="FixedByteBuffer.cs" />
     <Compile Include="HeapByteBuffer.cs" />
+    <Compile Include="IByteBufferAllocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SimpleByteBufferAllocator.cs" />
   </ItemGroup>

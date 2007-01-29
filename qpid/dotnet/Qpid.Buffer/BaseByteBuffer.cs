@@ -33,23 +33,21 @@
 
 namespace Qpid.Buffer
 {
-    /**
-     * A base implementation of {@link ByteBuffer}.  This implementation
-     * assumes that {@link ByteBuffer#buf()} always returns a correct NIO
-     * {@link FixedByteBuffer} instance.  Most implementations could
-     * extend this class and implement their own buffer management mechanism.
-     *
-     * @noinspection StaticNonFinalField
-     * @see ByteBufferAllocator
-     */
+    /// <summary>
+    /// A base implementation of <see cref="ByteBuffer"/>.  This implementation
+    /// assumes that <see cref="ByteBuffer.Buf"/> always returns a correct NIO
+    /// <see cref="FixedByteBuffer"/> instance.  Most implementations could
+    /// extend this class and implement their own buffer management mechanism.
+    /// </summary>
+    /// <seealso cref="ByteBufferAllocator"/> 
     public abstract class BaseByteBuffer : ByteBuffer
     {
         private bool _autoExpand;
         
-        /**
-         * We don't have any access to Buffer.markValue(), so we need to track it down,
-         * which will cause small extra overhead.
-         */
+        /// <summary>
+        /// We don't have any access to Buffer.markValue(), 
+        /// so we need to track it down, which will cause small extra overhead.
+        /// </summary>
         private int _mark = -1;
 
         protected BaseByteBuffer()
@@ -94,10 +92,11 @@ namespace Qpid.Buffer
             return this;
         }
         
-        /**
-         * Implement this method to increase the capacity of this buffer.
-         * <tt>newCapacity</tt> is always greater than the current capacity.
-         */
+        
+        /// <summary>
+        /// Implement this method to increase the capacity of this buffer.
+        /// </summary>
+        /// <param name="newCapacity">is always greater than the current capacity.</param>
         protected abstract void capacity0( int newCapacity );
 
         public override bool isAutoExpand()

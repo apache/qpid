@@ -20,9 +20,9 @@
  */
 using System;
 
-namespace Qpid.Client.qms.failover
+namespace Qpid.Client.Qms.Failover
 {
-    public class FailoverSingleServer : FailoverMethod
+    public class FailoverSingleServer : IFailoverMethod
     {
         /** The default number of times to rety a conection to this server */
         public const int DEFAULT_SERVER_RETRIES = 1;
@@ -30,7 +30,7 @@ namespace Qpid.Client.qms.failover
         /**
          * The details of the Single Server
          */
-        private BrokerInfo _brokerDetail;
+        private IBrokerInfo _brokerDetail;
 
         /**
          * The number of times to retry connecting to the sever
@@ -43,11 +43,11 @@ namespace Qpid.Client.qms.failover
         private int _currentRetries;
 
 
-        public FailoverSingleServer(ConnectionInfo connectionDetails)
+        public FailoverSingleServer(IConnectionInfo connectionDetails)
         {
-            if (connectionDetails.GetBrokerCount() > 0)
+            if (connectionDetails.BrokerCount > 0)
             {
-                setBroker(connectionDetails.GetBrokerInfo(0));
+                SetBroker(connectionDetails.GetBrokerInfo(0));
             }
             else
             {
@@ -55,32 +55,32 @@ namespace Qpid.Client.qms.failover
             }
         }
 
-        public FailoverSingleServer(BrokerInfo brokerDetail)
+        public FailoverSingleServer(IBrokerInfo brokerDetail)
         {
-            setBroker(brokerDetail);
+            SetBroker(brokerDetail);
         }
 
-        public void reset()
+        public void Reset()
         {
             _currentRetries = -1;
         }
 
-        public bool failoverAllowed()
+        public bool FailoverAllowed()
         {
             return _currentRetries < _retries;
         }
 
-        public void attainedConnection()
+        public void AttainedConnection()
         {
-            reset();
+            Reset();
         }
 
-        public BrokerInfo GetCurrentBrokerInfo()
+        public IBrokerInfo GetCurrentBrokerInfo()
         {
            return _brokerDetail;
         }
 
-        public BrokerInfo getNextBrokerDetails()
+        public IBrokerInfo GetNextBrokerDetails()
         {
             if (_currentRetries == _retries)
             {
@@ -97,7 +97,7 @@ namespace Qpid.Client.qms.failover
             }
         }
 
-        public void setBroker(BrokerInfo broker)
+        public void SetBroker(IBrokerInfo broker)
         {
             if (broker == null)
             {
@@ -105,7 +105,7 @@ namespace Qpid.Client.qms.failover
             }
             _brokerDetail = broker;
 
-            String retries = broker.getOption(BrokerInfoConstants.OPTIONS_RETRY);
+            String retries = broker.GetOption(BrokerInfoConstants.OPTIONS_RETRY);
             if (retries != null)
             {
                 try
@@ -122,17 +122,17 @@ namespace Qpid.Client.qms.failover
                 _retries = DEFAULT_SERVER_RETRIES;
             }
 
-            reset();
+            Reset();
         }
 
-        public void setRetries(int retries)
+        public void SetRetries(int retries)
         {
             _retries = retries;
         }
 
-        public String methodName()
+        public String MethodName
         {
-            return "Single Server";
+            get { return "Single Server"; }
         }
 
         public String toString()

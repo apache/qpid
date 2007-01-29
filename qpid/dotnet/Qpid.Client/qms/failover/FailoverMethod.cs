@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.qms.failover
+namespace Qpid.Client.Qms.Failover
 {
     public class FailoverMethodConstants
     {
@@ -28,52 +28,51 @@ namespace Qpid.Client.qms.failover
         public const String RANDOM = "random";
     }
 
-    public interface FailoverMethod
+    public interface IFailoverMethod
     {
-        /**
-         * Reset the Failover to initial conditions
-         */
-        void reset();
+        /// <summary>
+        /// The name of this method for display purposes.
+        /// </summary>
+        String MethodName { get; }
+        
+        /// <summary>
+        /// Reset the Failover to initial conditions
+        /// </summary>
+        void Reset();
 
-        /**
-         *  Check if failover is possible for this method
-         *
-         * @return true if failover is allowed
-         */
-        bool failoverAllowed();
+        /// <summary>
+        /// Check if failover is possible for this method
+        /// </summary>
+        /// <returns>true if failover is allowed</returns>
+        bool FailoverAllowed();
 
-        /**
-         * Notification to the Failover method that a connection has been attained.
-         */
-        void attainedConnection();
+        /// <summary>
+        /// Notification to the Failover method that a connection has been attained.
+        /// </summary>
+        void AttainedConnection();
 
-        /**
-         * If there is no current BrokerInfo the null will be returned.
-         * @return The current BrokerDetail value to use
-         */
-        BrokerInfo GetCurrentBrokerInfo();
+        /// <summary>
+        /// If there is no current BrokerInfo the null will be returned.
+        /// </summary>
+        /// <returns>The current BrokerDetail value to use</returns>
+        IBrokerInfo GetCurrentBrokerInfo();
 
-        /**
-         *  Move to the next BrokerInfo if one is available.
-         * @return the next BrokerDetail or null if there is none.
-         */
-        BrokerInfo getNextBrokerDetails();
+        /// <summary>
+        /// Move to the next BrokerInfo if one is available.
+        /// </summary>
+        /// <returns>the next BrokerDetail or null if there is none.</returns>
+        IBrokerInfo GetNextBrokerDetails();
 
-        /**
-         * Set the currently active broker to be the new value.
-         * @param broker The new BrokerDetail value
-         */
-        void setBroker(BrokerInfo broker);
+        /// <summary>
+        /// Set the currently active broker to be the new value.
+        /// </summary>
+        /// <param name="broker">The new BrokerDetail value</param>
+        void SetBroker(IBrokerInfo broker);
 
-        /**
-         * Set the retries for this method
-         * @param maxRetries the maximum number of time to retry this Method
-         */
-        void setRetries(int maxRetries);
-
-        /**
-         * @return The name of this method for display purposes.
-         */
-        String methodName();
+        /// <summary>
+        /// Set the retries for this method
+        /// </summary>
+        /// <param name="maxRetries">the maximum number of time to retry this Method</param>
+        void SetRetries(int maxRetries);
     }
 }

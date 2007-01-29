@@ -21,11 +21,11 @@
 using System;
 using System.Collections;
 using System.Text;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 
 namespace Qpid.Client
 {
-    public class AmqBrokerInfo : BrokerInfo
+    public class AmqBrokerInfo : IBrokerInfo
     {
         public readonly string URL_FORMAT_EXAMPLE =
             "<transport>://<hostname>[:<port Default=\""+BrokerInfoConstants.DEFAULT_PORT+"\">][?<option>='<value>'[,<option>='<value>']]";
@@ -90,10 +90,10 @@ namespace Qpid.Client
                                              " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
                 }
 
-                setTransport(transport);
+                Transport = transport;
 
                 String host = connection.Host;
-                if (!host.Equals("default")) setHost(host);
+                if (!host.Equals("default")) Host = host;
 
                 int port = connection.Port;
 
@@ -130,7 +130,7 @@ namespace Qpid.Client
                         }
                         if (found)
                         {
-                            setPort(int.Parse(auth.Substring(start, end-start+1)));
+                            Port = int.Parse(auth.Substring(start, end-start+1));
                         }
                         else
                         {
@@ -140,12 +140,12 @@ namespace Qpid.Client
                     }
                     else
                     {
-                        setPort(BrokerInfoConstants.DEFAULT_PORT);
+                        Port = BrokerInfoConstants.DEFAULT_PORT;
                     }
                 }
                 else
                 {
-                    setPort(port);
+                    Port = port;
                 }
 
                 String queryString = connection.Query;
@@ -178,70 +178,58 @@ namespace Qpid.Client
 
             if (useSSL)
             {
-                setOption(BrokerInfoConstants.OPTIONS_SSL, "true");
+                SetOption(BrokerInfoConstants.OPTIONS_SSL, "true");
             }
         }
 
-        public string getHost()
+        public string Host
         {
-            return _host;
+            get { return _host; }
+            set { _host = value; }
         }
 
-        public void setHost(string _host)
+        public int Port
         {
-            this._host = _host;
+            get { return _port; }
+            set { _port = value; }
         }
 
-        public int getPort()
+        public string Transport
         {
-            return _port;
+            get { return _transport; }
+            set { _transport = value; }
         }
 
-        public void setPort(int _port)
-        {
-            this._port = _port;
-        }
-
-        public string getTransport()
-        {
-            return _transport;
-        }
-
-        public void setTransport(string _transport)
-        {
-            this._transport = _transport;
-        }
-
-        public string getOption(string key)
+        public string GetOption(string key)
         {
             return (string)_options[key];
         }
 
-        public void setOption(string key, string value)
+        public void SetOption(string key, string value)
         {
             _options[key] = value;
         }
 
-        public long getTimeout()
+        public long Timeout
         {
-            if (_options.ContainsKey(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT))
+            get
             {
-                try
+                if ( _options.ContainsKey(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT) )
                 {
-                    return long.Parse((string)_options[BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT]);
+                    try
+                    {
+                        return long.Parse(GetOption(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT));
+                    } catch ( FormatException )
+                    {
+                        //Do nothing as we will use the default below.
+                    }
                 }
-                catch (FormatException)
-                {
-                    //Do nothing as we will use the default below.
-                }
+                return BrokerInfoConstants.DEFAULT_CONNECT_TIMEOUT;
             }
-
-            return BrokerInfoConstants.DEFAULT_CONNECT_TIMEOUT;
-        }
-
-        public void setTimeout(long timeout)
-        {
-            setOption(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT, timeout.ToString());
+            set
+            {
+                SetOption(BrokerInfoConstants.OPTIONS_CONNECT_TIMEOUT, value.ToString());
+            }
         }
 
         public override string ToString()
@@ -267,15 +255,15 @@ namespace Qpid.Client
         
 		public override bool Equals(object obj)
 		{
-	        if (!(obj is BrokerInfo))
+	        if (!(obj is IBrokerInfo))
 	        {
 	            return false;
 	        }
 	
-	        BrokerInfo bd = (BrokerInfo) obj;
-	        return StringEqualsIgnoreCase(_host, bd.getHost()) &&
-	        	_port == bd.getPort() &&
-                _transport == bd.getTransport();
+	        IBrokerInfo bd = (IBrokerInfo) obj;
+	        return StringEqualsIgnoreCase(_host, bd.Host) &&
+	        	_port == bd.Port &&
+                _transport == bd.Transport;
         }
     	
 		public override int GetHashCode()
@@ -318,23 +306,25 @@ namespace Qpid.Client
 //            return optionsURL.tostring();
 //        }
 
-        public bool useSSL()
+        public bool UseSSL
         {
-            // To be friendly to users we should be case insensitive.
-            // or simply force users to conform to OPTIONS_SSL
-            // todo make case insensitive by trying ssl Ssl sSl ssL SSl SsL sSL SSL
-
-            if (_options.ContainsKey(BrokerInfoConstants.OPTIONS_SSL))
+            get
             {
-                return StringEqualsIgnoreCase((string)_options[BrokerInfoConstants.OPTIONS_SSL], "true");
+                // To be friendly to users we should be case insensitive.
+                // or simply force users to conform to OPTIONS_SSL
+                // todo make case insensitive by trying ssl Ssl sSl ssL SSl SsL sSL SSL
+
+                if ( _options.ContainsKey(BrokerInfoConstants.OPTIONS_SSL) )
+                {
+                    return StringEqualsIgnoreCase(GetOption(BrokerInfoConstants.OPTIONS_SSL), "true");
+                }
+
+                return false;
             }
-
-            return false;
-        }
-
-        public void useSSL(bool ssl)
-        {
-            setOption(BrokerInfoConstants.OPTIONS_SSL, ssl.ToString());
+            set
+            {
+                SetOption(BrokerInfoConstants.OPTIONS_SSL, value.ToString());
+            }
         }
     }
 }
