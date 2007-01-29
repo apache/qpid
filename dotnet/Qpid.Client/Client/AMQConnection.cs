@@ -730,7 +730,7 @@ namespace Qpid.Client
             catch (AMQException e)
             {
                 _lastAMQException = e;
-                throw e;
+                throw; // rethrow
             }
         }
 

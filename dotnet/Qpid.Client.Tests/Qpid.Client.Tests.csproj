@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,6 +54,7 @@
     <Compile Include="Common\BaseMessagingTestFixture.cs" />
     <Compile Include="requestreply1\ServiceProvidingClient.cs" />
     <Compile Include="requestreply1\ServiceRequestingClient.cs" />
+    <Compile Include="Security\CallbackHandlerRegistryTests.cs" />
     <Compile Include="undeliverable\UndeliverableTest.cs" />
     <Compile Include="url\ConnectionUrlTest.cs" />
   </ItemGroup>
@@ -69,6 +71,10 @@
       <Project>{77064C42-24D2-4CEB-9EA2-0EF481A43205}</Project>
       <Name>Qpid.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Qpid.Sasl\Qpid.Sasl.csproj">
+      <Project>{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}</Project>
+      <Name>Qpid.Sasl</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="log4net.config">
@@ -76,6 +82,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="Qpid.Common.DLL.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
