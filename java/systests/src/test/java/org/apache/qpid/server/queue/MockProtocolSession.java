@@ -232,4 +232,14 @@ public class MockProtocolSession implements AMQProtocolSession
     {
         return _ConnectionId.get();
     }
+
+    public void addSessionCloseTask(Task task)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void removeSessionCloseTask(Task task)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

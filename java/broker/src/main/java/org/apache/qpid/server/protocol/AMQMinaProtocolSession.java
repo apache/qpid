@@ -75,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
@@ -120,6 +121,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private byte _major;
     private byte _minor;
     private FieldTable _clientProperties;
+
+    private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
     // Keeps a tally of connections for logging and debugging
     private static AtomicInteger _ConnectionId;    
@@ -550,6 +553,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             {
                 _managedObject.unregister();
             }        
+            for(Task task : _taskList)
+            {
+                task.doTask(this);
+            }
         }
     }
 
@@ -719,5 +726,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public int getConnectionId()
     {
         return _ConnectionId.get();
+    }
+
+    public void addSessionCloseTask(Task task)
+    {
+        _taskList.add(task);
+    }
+
+    public void removeSessionCloseTask(Task task)
+    {
+        _taskList.remove(task);
     }
 }
