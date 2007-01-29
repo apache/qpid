@@ -48,6 +48,12 @@ public class AMQQueue extends AMQDestination implements Queue
         this(name, false);
     }
 
+    public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName)
+    {
+        super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, routingKey, false,
+              false, queueName, false);    }
+
+
     /**
      * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
      * @param name the name of the queue

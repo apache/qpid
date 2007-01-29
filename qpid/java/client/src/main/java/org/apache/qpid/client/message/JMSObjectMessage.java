@@ -62,9 +62,10 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
     /**
      * Creates read only message for delivery to consumers
      */
-    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data) throws AMQException
+    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                     AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
+        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, exchange, routingKey, data);
     }
 
     public void clearBodyImpl() throws JMSException

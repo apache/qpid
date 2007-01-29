@@ -63,6 +63,8 @@ public class MessageFactoryRegistry
      * @throws JMSException
      */
     public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
+                                            AMQShortString exchange,
+                                            AMQShortString routingKey,
                                             ContentHeaderBody contentHeader,
                                             List bodies) throws AMQException, JMSException
     {
@@ -74,7 +76,7 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, bodies);
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
         }
     }
 

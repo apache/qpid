@@ -441,8 +441,24 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
-        message.getJmsHeaders().setBytes(CustomJMSXProperty.JMSX_QPID_JMSDESTINATIONURL.
-                                                         getShortStringName(), destination.toByteEncoding());
+
+        byte type;
+        if(destination instanceof Topic)
+        {
+            type = AMQDestination.TOPIC_TYPE;
+        }
+        else if(destination instanceof Queue)
+        {
+            type = AMQDestination.QUEUE_TYPE;
+        }
+        else
+        {
+            type = AMQDestination.UNKNOWN_TYPE;
+        }
+
+        message.getJmsHeaders().setByte(CustomJMSXProperty.JMSZ_QPID_DESTTYPE.getShortStringName(),
+                                               type);
+
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.

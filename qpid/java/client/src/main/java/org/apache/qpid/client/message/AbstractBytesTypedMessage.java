@@ -2,6 +2,7 @@ package org.apache.qpid.client.message;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 
 import javax.jms.*;
@@ -59,10 +60,10 @@ public abstract class AbstractBytesTypedMessage extends AbstractBytesMessage
     }
 
 
-    AbstractBytesTypedMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
+    AbstractBytesTypedMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                              AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, data);
+        super(messageNbr, contentHeader, exchange, routingKey, data);
     }
 
 

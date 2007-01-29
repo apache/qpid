@@ -22,6 +22,7 @@ package org.apache.qpid.client.message;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 import java.util.List;
@@ -31,6 +32,7 @@ public interface MessageFactory
 {
     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                      ContentHeaderBody contentHeader,
+                                     AMQShortString exchange, AMQShortString routingKey,
                                      List bodies)
         throws JMSException, AMQException;
 

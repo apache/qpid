@@ -24,6 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
@@ -69,11 +70,11 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         _data.setAutoExpand(true);
     }
 
-    AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
+    AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                         AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, data);
+        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, exchange, routingKey, data);
         getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
     }
 

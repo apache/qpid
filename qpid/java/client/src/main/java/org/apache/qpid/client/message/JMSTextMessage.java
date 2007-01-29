@@ -42,7 +42,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
      * This constant represents the name of a property that is set when the message payload is null.
      */
     private static final AMQShortString PAYLOAD_NULL_PROPERTY = new AMQShortString("JMS_QPID_NULL");
-    private static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
+    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     public JMSTextMessage() throws JMSException
     {
@@ -56,10 +56,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         getContentHeaderProperties().setEncoding(encoding);
     }
 
-    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
+    JMSTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
+                   AMQShortString routingKey, ByteBuffer data)
             throws AMQException
     {
-        super(deliveryTag, contentHeader, data);
+        super(deliveryTag, contentHeader, exchange, routingKey, data);
         contentHeader.setContentType(MIME_TYPE_SHORT_STRING);
         _data = data;
     }
