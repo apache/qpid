@@ -604,7 +604,7 @@ namespace Qpid.Buffer
     public abstract class ByteBuffer : IComparable
     {
         //private static ByteBufferAllocator allocator = new PooledByteBufferAllocator();
-        private static ByteBufferAllocator allocator = new SimpleByteBufferAllocator();
+        private static IByteBufferAllocator allocator = new SimpleByteBufferAllocator();
 
         private static bool _useDirectBuffers = false;
 
@@ -619,7 +619,7 @@ namespace Qpid.Buffer
         /**
          * Returns the current allocator which manages the allocated buffers.
          */
-        public static ByteBufferAllocator getAllocator()
+        public static IByteBufferAllocator getAllocator()
         {
             return allocator;
         }
@@ -628,20 +628,20 @@ namespace Qpid.Buffer
          * Changes the current allocator with the specified one to manage
          * the allocated buffers from now.
          */
-        public static void setAllocator( ByteBufferAllocator newAllocator )
+        public static void setAllocator( IByteBufferAllocator newAllocator )
         {
             if( newAllocator == null )
             {
                 throw new NullReferenceException("allocator cannot be null");
             }
 
-            ByteBufferAllocator oldAllocator = allocator;
+            IByteBufferAllocator oldAllocator = allocator;
 
             allocator = newAllocator;
 
             if( null != oldAllocator )
             {
-                oldAllocator.dispose();
+                oldAllocator.Dispose();
             }
         }
 
@@ -690,7 +690,7 @@ namespace Qpid.Buffer
          */
         public static ByteBuffer allocate( int capacity, bool direct )
         {
-            return allocator.allocate( capacity, direct );
+            return allocator.Allocate( capacity, direct );
         }
 
         /**
@@ -698,7 +698,7 @@ namespace Qpid.Buffer
          */
         public static ByteBuffer wrap( FixedByteBuffer nioBuffer )
         {
-            return allocator.wrap( nioBuffer );
+            return allocator.Wrap( nioBuffer );
         }
 
         /**

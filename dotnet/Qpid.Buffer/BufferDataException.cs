@@ -23,10 +23,10 @@ using System.Runtime.Serialization;
 
 namespace Qpid.Buffer
 {
-    /**
-     * A {@link RuntimeException} which is thrown when the data the {@link ByteBuffer}
-     * contains is corrupt.
-     */
+    /// <summary>
+    /// An exception thrown when the data the <see cref="ByteBuffer"/> 
+    /// contains is corrupt
+    /// </summary>
     [Serializable]
     public class BufferDataException : Exception
     {

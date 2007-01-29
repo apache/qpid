@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.qms
+namespace Qpid.Client.Qms
 {
     /// <summary>
     /// Know URL option names.
@@ -40,24 +40,15 @@ namespace Qpid.Client.qms
         public const long DEFAULT_CONNECT_TIMEOUT = 30000L;
     }
     
-    public interface BrokerInfo
+    public interface IBrokerInfo
     {
-        String getHost();
-        void setHost(string host);
-
-        int getPort();
-        void setPort(int port);
-
-        String getTransport();
-        void setTransport(string transport);
-
-        bool useSSL();
-        void useSSL(bool ssl);
-
-        String getOption(string key);
-        void setOption(string key, string value);
-
-        long getTimeout();
-        void setTimeout(long timeout);
+        string Host { get; set; }
+        int Port { get; set; }
+        string Transport { get; set; }
+        bool UseSSL { get; set; }
+        long Timeout { get; set; }
+        
+        String GetOption(string key);
+        void SetOption(string key, string value);
     }
 }

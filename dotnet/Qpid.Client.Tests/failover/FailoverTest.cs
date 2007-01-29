@@ -22,7 +22,7 @@ using System;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 using Qpid.Messaging;
 
 namespace Qpid.Client.Tests.failover
@@ -39,7 +39,7 @@ namespace Qpid.Client.Tests.failover
 
         private IMessageConsumer _consumerOfResponse;
 
-        void DoFailoverTest(ConnectionInfo info)
+        void DoFailoverTest(IConnectionInfo info)
         {
             DoFailoverTest(new AMQConnection(info));
         }

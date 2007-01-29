@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 using Qpid.Messaging;
 
 namespace Qpid.Client.Tests.failover
@@ -97,7 +97,7 @@ namespace Qpid.Client.Tests.failover
             }
         }
 
-        void DoFailoverTxTest(ConnectionInfo connectionInfo)
+        void DoFailoverTxTest(IConnectionInfo connectionInfo)
         {
             _connection = new AMQConnection(connectionInfo);
             _connection.ConnectionListener = this;
@@ -237,7 +237,7 @@ namespace Qpid.Client.Tests.failover
 
             _log.Info("url = [" + defaultUrl + "]");
 
-            ConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(defaultUrl);
+            IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(defaultUrl);
 
             _log.Info("connection url = [" + connectionInfo + "]");
 
