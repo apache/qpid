@@ -274,8 +274,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         {
             throw new OperationsException("AMQMessage with message id = " + msgId + " is not in the " + _queueName);
         }
+
         // get message content
-        byte[] msgContent = msg.getMessageBytes();
+        byte[] bytes = msg.getMessageBytes();
+        Byte[] msgContent = new Byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            msgContent[i] = Byte.valueOf(bytes[i]);
+        }
 
         // Create header attributes list
         String mimeType = msg.getContentType();
