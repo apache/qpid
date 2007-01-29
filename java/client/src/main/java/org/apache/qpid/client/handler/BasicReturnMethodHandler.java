@@ -43,10 +43,7 @@ public class BasicReturnMethodHandler implements StateAwareMethodListener
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("New JmsBounce method received");
-        final UnprocessedMessage msg = new UnprocessedMessage();
-        msg.deliverBody = null;
-        msg.bounceBody = (BasicReturnBody) evt.getMethod();
-        msg.channelId = evt.getChannelId();
+        final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(),(BasicReturnBody)evt.getMethod());
 
         protocolSession.unprocessedMessageReceived(msg);
     }

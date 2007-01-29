@@ -24,6 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 
@@ -35,8 +36,11 @@ public class JMSTextMessageFactory extends AbstractJMSMessageFactory
         return new JMSTextMessage();
     }
 
-    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader) throws AMQException
+    protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data,
+                                               AMQShortString exchange, AMQShortString routingKey, 
+                                               ContentHeaderBody contentHeader) throws AMQException
     {
-        return new JMSTextMessage(deliveryTag, (BasicContentHeaderProperties) contentHeader.properties, data);
+        return new JMSTextMessage(deliveryTag, (BasicContentHeaderProperties) contentHeader.properties, 
+                                  exchange, routingKey, data);
     }
 }

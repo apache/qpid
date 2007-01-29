@@ -61,10 +61,10 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     }
 
 
-    JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
+    JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                     AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, data);
+        super(messageNbr, contentHeader, exchange, routingKey, data);
     }
 
     public void reset()

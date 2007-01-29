@@ -26,8 +26,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.BasicMessageConsumer;
+import org.apache.qpid.client.AMQUndefinedDestination;
+import org.apache.qpid.client.*;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
@@ -66,9 +66,33 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties)_contentHeaderProperties).getHeaders());
     }
 
-    protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data) throws AMQException
+    protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
+                                 AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         this(contentHeader, deliveryTag);
+
+
+        byte type = contentHeader.getHeaders().getByte(CustomJMSXProperty.JMSZ_QPID_DESTTYPE.getShortStringName());
+
+        AMQDestination dest;
+
+        switch(type)
+        {
+            case AMQDestination.QUEUE_TYPE:
+                dest = new AMQQueue(exchange, routingKey, routingKey);
+                break;
+            case AMQDestination.TOPIC_TYPE:
+                dest = new AMQTopic(exchange, routingKey, null);
+                break;
+            default:
+                dest = new AMQUndefinedDestination(exchange, routingKey, null);
+                break;
+        }
+        //Destination dest = AMQDestination.createDestination(url);
+        setJMSDestination(dest);
+
+
+
         _data = data;
         if (_data != null)
         {
@@ -181,7 +205,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         return _destination;
     }
 
-    public void setJMSDestination(Destination destination) throws JMSException
+    public void setJMSDestination(Destination destination)
     {
         _destination = destination;
     }

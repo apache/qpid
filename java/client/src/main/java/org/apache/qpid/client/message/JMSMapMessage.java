@@ -54,10 +54,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     }
 
 
-    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
+    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                  AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, data);
+        super(messageNbr, contentHeader, exchange, routingKey, data);
         try
         {
             populateMapFromData();

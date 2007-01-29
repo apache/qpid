@@ -56,10 +56,10 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         super(data); // this instanties a content header
     }
 
-    JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, ByteBuffer data)
-            throws AMQException
+    JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+                    AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
-        super(messageNbr, contentHeader, data);
+        super(messageNbr, contentHeader, exchange, routingKey, data);
     }
 
     public void reset()
