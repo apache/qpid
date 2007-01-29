@@ -172,12 +172,12 @@ public class ClusteredProtocolHandler extends AMQPFastProtocolHandler implements
 
     private boolean isMembershipAnnouncement(Object msg)
     {
-        return msg instanceof AMQFrame && (((AMQFrame) msg).bodyFrame instanceof ClusterMembershipBody);
+        return msg instanceof AMQFrame && (((AMQFrame) msg).getBodyFrame() instanceof ClusterMembershipBody);
     }
 
     private boolean isBufferable(Object msg)
     {
-        return msg instanceof AMQFrame && isBuffereable(((AMQFrame) msg).bodyFrame);
+        return msg instanceof AMQFrame && isBuffereable(((AMQFrame) msg).getBodyFrame());
     }
 
     private boolean isBuffereable(AMQBody body)

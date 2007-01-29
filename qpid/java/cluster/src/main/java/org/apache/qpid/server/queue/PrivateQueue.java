@@ -54,7 +54,10 @@ public class PrivateQueue extends AMQQueue
         //send delete request to peers:
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0, false,false,false,null,0);
+        QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0,
+                                                      QueueDeleteBody.getClazz((byte)8, (byte)0),
+                                                      QueueDeleteBody.getMethod((byte)8, (byte)0),
+                                                      false,false,false,null,0);
         request.queue = getName();
         _groupMgr.broadcast(new SimpleBodySendable(request));
     }
