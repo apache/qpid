@@ -134,6 +134,7 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(QueueBindBody.class, QueueBindHandler.getInstance());
         frame2handlerMap.put(QueueDeclareBody.class, QueueDeclareHandler.getInstance());
         frame2handlerMap.put(QueueDeleteBody.class, QueueDeleteHandler.getInstance());
+        frame2handlerMap.put(QueuePurgeBody.class, QueuePurgeHandler.getInstance());
         frame2handlerMap.put(ChannelFlowBody.class, ChannelFlowHandler.getInstance());
         frame2handlerMap.put(TxSelectBody.class, TxSelectHandler.getInstance());
         frame2handlerMap.put(TxCommitBody.class, TxCommitHandler.getInstance());

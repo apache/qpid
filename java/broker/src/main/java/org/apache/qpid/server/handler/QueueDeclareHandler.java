@@ -26,6 +26,7 @@ import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
@@ -77,25 +78,44 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         }
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
+        AMQQueue queue = null;
         QueueRegistry queueRegistry = protocolSession.getQueueRegistry();
         synchronized (queueRegistry)
         {
-            AMQQueue queue;
             if ((queue = queueRegistry.getQueue(body.queue)) == null)
             {
-                queue = createQueue(body, queueRegistry, protocolSession);
-                if (queue.isDurable() && !queue.isAutoDelete())
+                if(body.passive)
                 {
-                    _store.createQueue(queue);
+                    String msg = "Queue: " + body.queue + " not found.";
+                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(),msg );
+
                 }
-                queueRegistry.registerQueue(queue);
-                if (autoRegister)
+                else
                 {
-                    Exchange defaultExchange = protocolSession.getExchangeRegistry().getExchange("amq.direct");
-                    defaultExchange.registerQueue(body.queue, queue, null);
-                    queue.bind(body.queue, defaultExchange);
-                    _log.info("Queue " + body.queue + " bound to default exchange");
+                    queue = createQueue(body, queueRegistry, protocolSession);
+                    if (queue.isDurable() && !queue.isAutoDelete())
+                    {
+                        _store.createQueue(queue);
+                    }
+                    queueRegistry.registerQueue(queue);
+                    if (autoRegister)
+                    {
+                        Exchange defaultExchange = protocolSession.getExchangeRegistry().getExchange("amq.direct");
+                        defaultExchange.registerQueue(body.queue, queue, null);
+                        queue.bind(body.queue, defaultExchange);
+                        _log.info("Queue " + body.queue + " bound to default exchange");
+                    }
                 }
+            }
+            else if(queue.getOwner() != null && !protocolSession.getContextKey().equals(queue.getOwner()))
+            {
+                // todo - constant
+                throw body.getChannelException(405, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
+
+            }
+            else
+            {
+                _log.info("Queue " + body.queue + " exists and is accesible to this connection [owner=" + queue.getOwner() +"]");
             }
             //set this as the default queue on the channel:
             protocolSession.getChannel(evt.getChannelId()).setDefaultQueue(queue);
@@ -106,8 +126,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             AMQMethodBody response = QueueDeclareOkBody.createMethodBody(
                 protocolSession.getMajor(), // AMQP major version
                 protocolSession.getMinor(), // AMQP minor version
-                0L, // consumerCount
-                0L, // messageCount
+                queue.getConsumerCount(), // consumerCount
+                queue.getMessageCount(), // messageCount
                 body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
             protocolSession.writeResponse(evt, response);
@@ -128,6 +148,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             throws AMQException
     {
         String owner = body.exclusive ? session.getContextKey() : null;
+        if (owner != null) _log.info("Queue " + body.queue + " is owned by " + owner);
         return new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
     }
 }

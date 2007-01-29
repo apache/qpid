@@ -49,6 +49,7 @@ import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -81,6 +82,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                Managable
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+
+    private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
     private final IoSession _minaProtocolSession;
 
@@ -666,6 +669,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public void setClientProperties(FieldTable clientProperties)
     {
         _clientProperties = clientProperties;
+        if((_clientProperties != null) && (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null))
+        {
+            setContextKey(_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE));
+        }
     }
     
     public QueueRegistry getQueueRegistry()

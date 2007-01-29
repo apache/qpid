@@ -79,13 +79,26 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         }
         else
         {
-            int purged = queue.delete(body.ifUnused, body.ifEmpty);
-            _store.removeQueue(queue.getName());
-            // Be aware of possible changes to parameter order as versions change.
-            session.writeResponse(evt, QueueDeleteOkBody.createMethodBody(
-                session.getMajor(), // AMQP major version
-                session.getMinor(), // AMQP minor version
-                purged));	// messageCount
+            if(body.ifEmpty && !queue.isEmpty())
+            {
+                throw body.getChannelException(406, "Queue: " + body.queue + " is not empty." );
+            }
+            else if(body.ifUnused && !queue.isUnused())
+            {                
+                // TODO - Error code
+                throw body.getChannelException(406, "Queue: " + body.queue + " is still used." );
+
+            }
+            else
+            {
+                int purged = queue.delete(body.ifUnused, body.ifEmpty);
+                _store.removeQueue(queue.getName());
+                // Be aware of possible changes to parameter order as versions change.
+                session.writeResponse(evt, QueueDeleteOkBody.createMethodBody(
+                                                session.getMajor(), // AMQP major version
+                                                session.getMinor(), // AMQP minor version
+                                                purged));	// messageCount
+            }
         }
     }
 }

@@ -54,20 +54,18 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
                                AMQMethodEvent<ConnectionOpenBody> evt) throws AMQException
     {
         ConnectionOpenBody body = evt.getMethod();
-        String contextKey = body.virtualHost;
 
         //todo //FIXME The virtual host must be validated by the server for the connection to open-ok
         // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
-        if (contextKey == null)
+        if (protocolSession.getContextKey() == null)
         {
-            contextKey = generateClientID();
+            protocolSession.setContextKey(generateClientID());
         }
-        protocolSession.setContextKey(contextKey);
         // Be aware of possible changes to parameter order as versions change.
         AMQMethodBody response = ConnectionOpenOkBody.createMethodBody(
             protocolSession.getMajor(), // AMQP major version
             protocolSession.getMinor(), // AMQP minor version
-            contextKey);	// knownHosts
+            body.virtualHost);	// knownHosts
         protocolSession.getStateManager().changeState(AMQState.CONNECTION_OPEN);
         protocolSession.writeResponse(evt, response);
     }

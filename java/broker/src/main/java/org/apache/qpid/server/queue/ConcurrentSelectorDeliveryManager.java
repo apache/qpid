@@ -176,14 +176,17 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void clearAllMessages() throws AMQException
+    public synchronized long clearAllMessages() throws AMQException
     {
+        long count = 0;
         AMQMessage msg = poll();
         while (msg != null)
         {
             msg.dequeue(_queue);
+            count++;
             msg = poll();
         }
+        return count;
     }
 
 
