@@ -24,6 +24,7 @@ using log4net;
 using Qpid.Client.Message;
 using Qpid.Client.Transport;
 using Qpid.Framing;
+using Qpid.Sasl;
 
 namespace Qpid.Client.Protocol
 {
@@ -103,6 +104,13 @@ namespace Qpid.Client.Protocol
                 con.SetMaximumChannelCount(value.ChannelMax);
                 con.MaximumFrameSize = value.FrameMax;
             }
+        }
+
+        private ISaslClient _saslClient;
+        public ISaslClient SaslClient
+        {
+            get { return _saslClient; }
+            set { _saslClient = value; }
         }
         
         /// <summary>

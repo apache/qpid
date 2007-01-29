@@ -21,6 +21,7 @@
 using Qpid.Client.Protocol;
 using Qpid.Client.State;
 using Qpid.Framing;
+using Qpid.Sasl;
 
 namespace Qpid.Client.Handler
 {
@@ -28,9 +29,31 @@ namespace Qpid.Client.Handler
     {
         public void MethodReceived(AMQStateManager stateManager, AMQMethodEvent evt)
         {
-            AMQFrame response = ConnectionSecureOkBody.CreateAMQFrame(evt.ChannelId, null);
-            evt.ProtocolSession.WriteFrame(response);
+            ISaslClient saslClient = evt.ProtocolSession.SaslClient;
+            if ( saslClient == null )
+            {
+               throw new AMQException("No SASL client set up - cannot proceed with authentication");
+            }
+
+
+            ConnectionSecureBody body = (ConnectionSecureBody)evt.Method;
+
+            try
+            {
+                // Evaluate server challenge
+                byte[] response = saslClient.EvaluateChallenge(body.Challenge);
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+                AMQFrame responseFrame = ConnectionSecureOkBody.CreateAMQFrame(
+                    evt.ChannelId, response);
+                evt.ProtocolSession.WriteFrame(responseFrame);
+            } catch ( SaslException e )
+            {
+                throw new AMQException("Error processing SASL challenge: " + e, e);
+            }
         }
     }
 }
+
 

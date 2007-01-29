@@ -23,13 +23,13 @@ using NUnit.Framework;
 using Qpid.Client.qms;
 using Qpid.Messaging;
 
-namespace Qpid.Client.Tests.connection
+namespace Qpid.Client.Tests.Connection
 {
     [TestFixture]
     public class ConnectionTest
     {
         [Test]
-        public void simpleConnection()
+        public void SimpleConnection()
         {
             ConnectionInfo connectionInfo = new QpidConnectionInfo();
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
@@ -40,7 +40,7 @@ namespace Qpid.Client.Tests.connection
         }
 
         [Test]
-        public void passwordFailureConnection()
+        public void PasswordFailureConnection()
         {
             ConnectionInfo connectionInfo = new QpidConnectionInfo();
             connectionInfo.SetPassword("rubbish");
@@ -50,16 +50,17 @@ namespace Qpid.Client.Tests.connection
                 using (IConnection connection = new AMQConnection(connectionInfo))
                 {
                     Console.WriteLine("connection = " + connection);
+                    // wrong
+                    Assert.Fail("Authentication succeeded but should've failed");
                 }
             } 
-            catch (AMQException)
+            catch (AMQException e)
             {
-                Assert.Fail();
-//                if (!(e is AMQAuthenticationException))
-//                {
-//                    Assert.Fail("Expected AMQAuthenticationException!");
-//                }
-            }
+                if (!(e.InnerException is AMQAuthenticationException))
+                {
+                    Assert.Fail("Expected AMQAuthenticationException!");
+                }
+           }
         }
 //
 //        [Test]

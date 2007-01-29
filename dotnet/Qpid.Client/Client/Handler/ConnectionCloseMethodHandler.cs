@@ -19,10 +19,12 @@
  *
  */
 using System;
+using System.Threading;
 using log4net;
 using Qpid.Client.Protocol;
 using Qpid.Client.State;
 using Qpid.Framing;
+using Qpid.Protocol;
 
 namespace Qpid.Client.Handler
 {
@@ -38,16 +40,29 @@ namespace Qpid.Client.Handler
             int errorCode = method.ReplyCode;
             String reason = method.ReplyText;
 
+            // send CloseOK
             evt.ProtocolSession.WriteFrame(ConnectionCloseOkBody.CreateAMQFrame(evt.ChannelId));
-            stateManager.ChangeState(AMQState.CONNECTION_CLOSED);
-            if (errorCode != 200)
+            
+            if ( errorCode != AMQConstant.REPLY_SUCCESS.Code )
             {
-                _logger.Debug("Connection close received with error code " + errorCode);
-                throw new AMQConnectionClosedException(errorCode, "Error: " + reason);
-            }
+               if ( errorCode == AMQConstant.NOT_ALLOWED.Code )
+               {
+                  _logger.Info("Authentication Error: " + Thread.CurrentThread.Name);
+                  evt.ProtocolSession.CloseProtocolSession();
 
+                  //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
+                  stateManager.ChangeState(AMQState.CONNECTION_NOT_STARTED);
+
+                  throw new AMQAuthenticationException(errorCode, reason);
+               } else
+               {
+                  _logger.Info("Connection close received with error code " + errorCode);
+                  throw new AMQConnectionClosedException(errorCode, "Error: " + reason);
+               }
+            }
             // this actually closes the connection in the case where it is not an error.
             evt.ProtocolSession.CloseProtocolSession();
+            stateManager.ChangeState(AMQState.CONNECTION_CLOSED);
         }
     }
 }

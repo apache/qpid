@@ -21,6 +21,7 @@
 using log4net;
 using Qpid.Client.Protocol;
 using Qpid.Client.State;
+using Qpid.Protocol;
 using Qpid.Framing;
 
 namespace Qpid.Client.Handler
@@ -43,9 +44,8 @@ namespace Qpid.Client.Handler
 
             AMQFrame frame = ChannelCloseOkBody.CreateAMQFrame(evt.ChannelId);
             evt.ProtocolSession.WriteFrame(frame);
-            //if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
             // HACK
-            if (errorCode != 200)
+            if ( errorCode != AMQConstant.REPLY_SUCCESS.Code )
             {
                 _logger.Debug("Channel close received with errorCode " + errorCode + ", throwing exception");
                 evt.ProtocolSession.AMQConnection.ExceptionReceived(new AMQChannelClosedException(errorCode, "Error: " + reason));
@@ -54,4 +54,5 @@ namespace Qpid.Client.Handler
         }
     }
 }
+
 
