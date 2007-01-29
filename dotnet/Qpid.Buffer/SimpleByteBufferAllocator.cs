@@ -23,11 +23,11 @@ using System.Runtime.CompilerServices;
 
 namespace Qpid.Buffer
 {
-    /**
-     * A simplistic {@link ByteBufferAllocator} which simply allocates a new
-     * buffer every time.
-     */
-    public class SimpleByteBufferAllocator : ByteBufferAllocator
+    /// <summary>
+    /// A simplistic <see cref="ByteBufferAllocator"/> which simply allocates a new
+    /// buffer every time
+    /// </summary>
+    public class SimpleByteBufferAllocator : IByteBufferAllocator
     {
         private const int MINIMUM_CAPACITY = 1;
 
@@ -35,7 +35,7 @@ namespace Qpid.Buffer
         {
         }
         
-        public ByteBuffer allocate( int capacity, bool direct )
+        public ByteBuffer Allocate( int capacity, bool direct )
         {
             FixedByteBuffer nioBuffer;
             if( direct )
@@ -49,12 +49,12 @@ namespace Qpid.Buffer
             return new SimpleByteBuffer( nioBuffer );
         }
         
-        public ByteBuffer wrap( FixedByteBuffer nioBuffer )
+        public ByteBuffer Wrap( FixedByteBuffer nioBuffer )
         {
             return new SimpleByteBuffer( nioBuffer );
         }
 
-        public void dispose()
+        public void Dispose()
         {
         }
 

@@ -20,7 +20,7 @@
  */
 using System;
 using NUnit.Framework;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 using Qpid.Messaging;
 
 namespace Qpid.Client.Tests.Connection
@@ -31,7 +31,7 @@ namespace Qpid.Client.Tests.Connection
         [Test]
         public void SimpleConnection()
         {
-            ConnectionInfo connectionInfo = new QpidConnectionInfo();
+            IConnectionInfo connectionInfo = new QpidConnectionInfo();
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
             using (IConnection connection = new AMQConnection(connectionInfo))
             {
@@ -42,8 +42,8 @@ namespace Qpid.Client.Tests.Connection
         [Test]
         public void PasswordFailureConnection()
         {
-            ConnectionInfo connectionInfo = new QpidConnectionInfo();
-            connectionInfo.SetPassword("rubbish");
+            IConnectionInfo connectionInfo = new QpidConnectionInfo();
+            connectionInfo.Password = "rubbish";
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo());
             try
             {

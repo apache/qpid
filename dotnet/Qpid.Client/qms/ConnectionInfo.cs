@@ -20,7 +20,7 @@
  */
 using System.Collections;
 
-namespace Qpid.Client.qms
+namespace Qpid.Client.Qms
 {
     class ConnectionUrlConstants 
     {
@@ -31,44 +31,30 @@ namespace Qpid.Client.qms
         public const string OPTIONS_SSL = "ssl";
     }
 
-    /**
-     Connection URL format
-     amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\'&option=\'value\';vm://:3/virtualpath?option=\'value\''&failover='method?option=\'value\'&option='value''"
-     Options are of course optional except for requiring a single broker in the broker list.
-     The option seperator is defined to be either '&' or ','
-      */
-    public interface ConnectionInfo
+    /// <summary>
+    /// Connection URL format
+    /// amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\'&amp;option=\'value\';vm://:3/virtualpath?option=\'value\''&amp;failover='method?option=\'value\'&amp;option='value''"
+    /// Options are of course optional except for requiring a single broker in the broker list.
+    /// The option seperator is defined to be either '&amp;' or ','
+    /// </summary>
+    public interface IConnectionInfo
     {
         string AsUrl();
 
-        string GetFailoverMethod();
-        void SetFailoverMethod(string failoverMethod);
-
+        string FailoverMethod { get; set; }
+        string ClientName { get; set; }
+        string Username { get; set; }
+        string Password { get; set; }
+        string VirtualHost { get; set; }
         string GetFailoverOption(string key);
+        
+        int BrokerCount { get; }
 
-        int GetBrokerCount();
+        IBrokerInfo GetBrokerInfo(int index);
 
-        BrokerInfo GetBrokerInfo(int index);
-
-        void AddBrokerInfo(BrokerInfo broker);
+        void AddBrokerInfo(IBrokerInfo broker);
 
         IList GetAllBrokerInfos();
-
-        string GetClientName();
-
-        void SetClientName(string clientName);
-
-        string GetUsername();
-
-        void setUsername(string username);
-
-        string GetPassword();
-
-        void SetPassword(string password);
-
-        string GetVirtualHost();
-
-        void SetVirtualHost(string virtualHost);
 
         string GetOption(string key);
 

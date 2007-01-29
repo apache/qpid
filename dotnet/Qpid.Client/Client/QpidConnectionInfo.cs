@@ -24,7 +24,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using log4net;
-using Qpid.Client.qms;
+using Qpid.Client.Qms;
 
 namespace Qpid.Client
 {
@@ -192,10 +192,10 @@ namespace Qpid.Client
 
     public class QpidConnectionUrl
     {
-        internal static ConnectionInfo FromUrl(string fullURL)
+        internal static IConnectionInfo FromUrl(string fullURL)
         {
             //_url = fullURL;
-            ConnectionInfo connectionInfo = new QpidConnectionInfo();
+            IConnectionInfo connectionInfo = new QpidConnectionInfo();
 
 
             //            _options = new HashMap<String, String>();
@@ -216,7 +216,7 @@ namespace Qpid.Client
 
                 if (connection.Host != null && connection.Host.Length > 0 && !connection.Host.Equals("default"))
                 {
-                    connectionInfo.SetClientName(connection.Host);
+                    connectionInfo.ClientName = connection.Host;
                 }
 
                 String userInfo = connection.UserInfo;
@@ -231,9 +231,9 @@ namespace Qpid.Client
                 }
                 String virtualHost = connection.AbsolutePath; // XXX: is AbsolutePath corrrect?
 
-                if (virtualHost != null && (!virtualHost.Equals("")))
+                if (virtualHost != null && virtualHost.Length > 0)
                 {
-                    connectionInfo.SetVirtualHost(virtualHost);
+                    connectionInfo.VirtualHost = virtualHost;
                 }
                 else
                 {
@@ -290,7 +290,7 @@ namespace Qpid.Client
             }
         }
 
-        private static void parseUserInfo(String userinfo, string fullUrl, ConnectionInfo connectionInfo)
+        private static void parseUserInfo(String userinfo, string fullUrl, IConnectionInfo connectionInfo)
         {
             //user info = user:pass
 
@@ -303,12 +303,12 @@ namespace Qpid.Client
             }
             else
             {
-                connectionInfo.setUsername(userinfo.Substring(0, colonIndex));
-                connectionInfo.SetPassword(userinfo.Substring(colonIndex + 1));
+                connectionInfo.Username = userinfo.Substring(0, colonIndex);
+                connectionInfo.Password = userinfo.Substring(colonIndex + 1);
             }
         }
 
-        private static void processOptions(ConnectionInfo connectionInfo)
+        private static void processOptions(IConnectionInfo connectionInfo)
         {
             string brokerlist = connectionInfo.GetOption(ConnectionUrlConstants.OPTIONS_BROKERLIST);
             if (brokerlist != null)
@@ -334,14 +334,14 @@ namespace Qpid.Client
 
                 if (methodIndex > -1)
                 {
-                    connectionInfo.SetFailoverMethod(failover.Substring(0, methodIndex));
+                    connectionInfo.FailoverMethod = failover.Substring(0, methodIndex);
                     QpidConnectionInfo qpidConnectionInfo = (QpidConnectionInfo)connectionInfo;
                     URLHelper.parseOptions(qpidConnectionInfo.GetFailoverOptions(),
                         failover.Substring(methodIndex + 1));
                 }
                 else
                 {
-                    connectionInfo.SetFailoverMethod(failover);
+                    connectionInfo.FailoverMethod = failover;
                 }
 
                 connectionInfo.SetOption(ConnectionUrlConstants.OPTIONS_FAILOVER, null);
@@ -349,14 +349,14 @@ namespace Qpid.Client
             }
         }
 
-        internal static ConnectionInfo FromUri(Uri uri)
+        internal static IConnectionInfo FromUri(Uri uri)
         {
             return null; // FIXME
 
         }
     }
 
-    public class QpidConnectionInfo : ConnectionInfo
+    public class QpidConnectionInfo : IConnectionInfo
     {
         string _username = "guest";
         string _password = "guest";
@@ -378,7 +378,7 @@ namespace Qpid.Client
             return _options;
         }
 
-        public static ConnectionInfo FromUrl(String url)
+        public static IConnectionInfo FromUrl(String url)
         {
             return QpidConnectionUrl.FromUrl(url);
         }
@@ -386,7 +386,7 @@ namespace Qpid.Client
         public string AsUrl()
         {
             string result = "amqp://";
-            foreach (BrokerInfo info in _brokerInfos)
+            foreach (IBrokerInfo info in _brokerInfos)
             {
                 result += info.ToString();
             }
@@ -394,14 +394,10 @@ namespace Qpid.Client
 
         }
 
-        public string GetFailoverMethod()
+        public string FailoverMethod
         {
-            return _failoverMethod;
-        }
-
-        public void SetFailoverMethod(string failoverMethod)
-        {
-            _failoverMethod = failoverMethod;
+            get { return _failoverMethod; }
+            set { _failoverMethod = value; }
         }
 
         public string GetFailoverOption(string key)
@@ -409,17 +405,17 @@ namespace Qpid.Client
             return (string)_failoverOptions[key];
         }
 
-        public int GetBrokerCount()
+        public int BrokerCount
         {
-            return _brokerInfos.Count;
+            get { return _brokerInfos.Count; }
         }
 
-        public BrokerInfo GetBrokerInfo(int index)
+        public IBrokerInfo GetBrokerInfo(int index)
         {
-            return (BrokerInfo)_brokerInfos[index];
+            return (IBrokerInfo)_brokerInfos[index];
         }
 
-        public void AddBrokerInfo(BrokerInfo brokerInfo)
+        public void AddBrokerInfo(IBrokerInfo brokerInfo)
         {
             if (!_brokerInfos.Contains(brokerInfo))
             {
@@ -432,44 +428,28 @@ namespace Qpid.Client
             return _brokerInfos;
         }
 
-        public string GetClientName()
+        public string ClientName
         {
-            return _clientName;
+            get { return _clientName; }
+            set { _clientName = value; }
         }
 
-        public void SetClientName(string clientName)
+        public string Username
         {
-            _clientName = clientName;
+            get { return _username; }
+            set { _username = value; }
         }
 
-        public string GetUsername()
+        public string Password
         {
-            return _username;
+            get { return _password; }
+            set { _password = value; }
         }
 
-        public void setUsername(string username)
+        public string VirtualHost
         {
-            _username = username;
-        }
-
-        public string GetPassword()
-        {
-            return _password;
-        }
-
-        public void SetPassword(string password)
-        {
-            _password = password;
-        }
-
-        public string GetVirtualHost()
-        {
-            return _virtualHost;
-        }
-
-        public void SetVirtualHost(string virtualHost)
-        {
-            _virtualHost = virtualHost;
+            get { return _virtualHost; }
+            set { _virtualHost = value; }
         }
 
         public string GetOption(string key)
