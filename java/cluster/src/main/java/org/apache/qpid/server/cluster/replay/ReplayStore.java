@@ -122,7 +122,7 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _consumers.replay(methods);
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        methods.add(new ClusterSynchBody((byte)8, (byte)0));
+        methods.add(new ClusterSynchBody((byte)8, (byte)0, ClusterSynchBody.getClazz((byte)8, (byte)0), ClusterSynchBody.getMethod((byte)8, (byte)0)));
         return methods;
     }
 

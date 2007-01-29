@@ -56,6 +56,8 @@ class ConsumerCounts
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             BasicConsumeBody m = new BasicConsumeBody((byte)8,
                                                       (byte)0,
+                                                      BasicConsumeBody.getClazz((byte)8, (byte)0),
+                                                      BasicConsumeBody.getMethod((byte)8, (byte)0),
                                                       null,
                                                       queue,
                                                       false,
