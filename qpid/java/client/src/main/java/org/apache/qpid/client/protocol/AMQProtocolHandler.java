@@ -283,72 +283,87 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageReceived(IoSession session, Object message) throws Exception
     {
+        final boolean debug = _logger.isDebugEnabled();
         final long msgNumber = ++_messageReceivedCount;
 
-        if (_logger.isDebugEnabled() && (msgNumber % 1000 == 0))
+        if (debug && (msgNumber % 1000 == 0))
         {
             _logger.debug("Received " + _messageReceivedCount + " protocol messages");
         }
 
         AMQFrame frame = (AMQFrame) message;
 
-        HeartbeatDiagnostics.received(frame.bodyFrame instanceof HeartbeatBody);
+        final AMQBody bodyFrame = frame.getBodyFrame();
 
-        if (frame.bodyFrame instanceof AMQMethodBody)
+        HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
+
+        switch(bodyFrame.getFrameType())
         {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Method frame received: " + frame);
-            }
+            case AMQMethodBody.TYPE:
 
-            final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.channel, (AMQMethodBody) frame.bodyFrame);
-
-            try
-            {
-
-                boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                if (!_frameListeners.isEmpty())
+                if (debug)
                 {
-                    Iterator it = _frameListeners.iterator();
-                    while (it.hasNext())
+                    _logger.debug("Method frame received: " + frame);
+                }
+
+                final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
+
+                try
+                {
+
+                    boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
+                    if (!_frameListeners.isEmpty())
                     {
-                        final AMQMethodListener listener = (AMQMethodListener) it.next();
-                        wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                        Iterator it = _frameListeners.iterator();
+                        while (it.hasNext())
+                        {
+                            final AMQMethodListener listener = (AMQMethodListener) it.next();
+                            wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                        }
+                    }
+                    if (!wasAnyoneInterested)
+                    {
+                        throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:" + _frameListeners);
                     }
                 }
-                if (!wasAnyoneInterested)
+                catch (AMQException e)
                 {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:" + _frameListeners);
-                }
-            }
-            catch (AMQException e)
-            {
-                getStateManager().error(e);
-                if (!_frameListeners.isEmpty())
-                {
-                    Iterator it = _frameListeners.iterator();
-                    while (it.hasNext())
+                    getStateManager().error(e);
+                    if (!_frameListeners.isEmpty())
                     {
-                        final AMQMethodListener listener = (AMQMethodListener) it.next();
-                        listener.error(e);
+                        Iterator it = _frameListeners.iterator();
+                        while (it.hasNext())
+                        {
+                            final AMQMethodListener listener = (AMQMethodListener) it.next();
+                            listener.error(e);
+                        }
                     }
+                    exceptionCaught(session, e);
                 }
-                exceptionCaught(session, e);
-            }
-        }
-        else if (frame.bodyFrame instanceof ContentHeaderBody)
-        {
-            _protocolSession.messageContentHeaderReceived(frame.channel,
-                                                          (ContentHeaderBody) frame.bodyFrame);
-        }
-        else if (frame.bodyFrame instanceof ContentBody)
-        {
-            _protocolSession.messageContentBodyReceived(frame.channel,
-                                                        (ContentBody) frame.bodyFrame);
-        }
-        else if (frame.bodyFrame instanceof HeartbeatBody)
-        {
-            _logger.debug("Received heartbeat");
+                break;
+
+            case ContentHeaderBody.TYPE:
+
+                _protocolSession.messageContentHeaderReceived(frame.getChannel(),
+                                                              (ContentHeaderBody) bodyFrame);
+                break;
+
+            case ContentBody.TYPE:
+
+                _protocolSession.messageContentBodyReceived(frame.getChannel(),
+                                                            (ContentBody) bodyFrame);
+                break;
+            
+            case HeartbeatBody.TYPE:
+
+                if(debug)
+                {
+                    _logger.debug("Received heartbeat");
+                }
+                break;
+
+            default:
+
         }
         _connection.bytesReceived(_protocolSession.getIoSession().getReadBytes());
     }
@@ -467,7 +482,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass, long timeout) throws AMQException
     {
         return writeCommandFrameAndWaitForReply(frame,
-                                                new SpecificMethodFrameListener(frame.channel, responseClass), timeout);
+                                                new SpecificMethodFrameListener(frame.getChannel(), responseClass), timeout);
     }
 
     /**

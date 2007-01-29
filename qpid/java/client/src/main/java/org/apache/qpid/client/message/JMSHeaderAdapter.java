@@ -32,7 +32,7 @@ import java.util.Enumeration;
 
 public final class JMSHeaderAdapter
 {
-    FieldTable _headers;
+    private final FieldTable _headers;
 
     public JMSHeaderAdapter(FieldTable headers)
     {
@@ -319,6 +319,13 @@ public final class JMSHeaderAdapter
         getHeaders().setByte(string, b);
     }
 
+    public void setByte(AMQShortString string, byte b) throws JMSException
+    {
+        checkPropertyName(string);
+        getHeaders().setByte(string, b);
+    }
+
+
     public void setShort(String string, short i) throws JMSException
     {
         checkPropertyName(string);
@@ -326,6 +333,12 @@ public final class JMSHeaderAdapter
     }
 
     public void setInteger(String string, int i) throws JMSException
+    {
+        checkPropertyName(string);
+        getHeaders().setInteger(string, i);
+    }
+
+    public void setInteger(AMQShortString string, int i) throws JMSException
     {
         checkPropertyName(string);
         getHeaders().setInteger(string, i);

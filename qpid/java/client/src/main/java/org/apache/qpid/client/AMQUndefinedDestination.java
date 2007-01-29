@@ -22,41 +22,24 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.framing.AMQShortString;
 
-import java.util.*;
-
-public enum CustomJMSXProperty
+public class AMQUndefinedDestination extends AMQDestination
 {
-    JMSZ_QPID_DESTTYPE,    
-    JMSXGroupID,
-    JMSXGroupSeq;
+
+    private static final AMQShortString UNKNOWN_EXCHANGE_CLASS = new AMQShortString("unknown");
 
 
-    private final AMQShortString _nameAsShortString;
-
-    CustomJMSXProperty()
+    public AMQUndefinedDestination(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)
     {
-        _nameAsShortString = new AMQShortString(toString());
+        super(exchange, UNKNOWN_EXCHANGE_CLASS, routingKey, queueName);
     }
 
-    public AMQShortString getShortStringName()
+    public AMQShortString getRoutingKey()
     {
-        return _nameAsShortString;
+        return getDestinationName();  
     }
 
-    private static Enumeration _names;
-    
-    public static synchronized Enumeration asEnumeration()
+    public boolean isNameRequired()
     {
-        if(_names == null)
-        {
-            CustomJMSXProperty[] properties = values();
-            ArrayList<String> nameList = new ArrayList<String>(properties.length);
-            for(CustomJMSXProperty property :  properties)
-            {
-                nameList.add(property.toString());
-            }
-            _names = Collections.enumeration(nameList);
-        }
-        return _names;    
+        return getAMQQueueName() == null;
     }
 }
