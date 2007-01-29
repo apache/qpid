@@ -22,8 +22,6 @@
 #include <QpidError.h>
 #include <sys/Time.h>
 #include "Connector.h"
-#include "Requester.h"
-#include "Responder.h"
 
 using namespace qpid::sys;
 using namespace qpid::client;
@@ -31,7 +29,6 @@ using namespace qpid::framing;
 using qpid::QpidError;
 
 Connector::Connector(const qpid::framing::ProtocolVersion& pVersion,
-                     Requester& req, Responder& resp,
                      bool _debug, u_int32_t buffer_size) :
     debug(_debug),
     receive_buffer_size(buffer_size),
@@ -44,9 +41,7 @@ Connector::Connector(const qpid::framing::ProtocolVersion& pVersion,
     timeoutHandler(0),
     shutdownHandler(0),
     inbuf(receive_buffer_size), 
-    outbuf(send_buffer_size),
-    requester(req),
-    responder(resp)
+    outbuf(send_buffer_size)
 { }
 
 Connector::~Connector(){ }
@@ -58,9 +53,9 @@ void Connector::connect(const std::string& host, int port){
     receiver = Thread(this);
 }
 
-void Connector::init(ProtocolInitiation* header){
-    writeBlock(header);
-    delete header;
+void Connector::init(){
+    ProtocolInitiation init(version);
+    writeBlock(&init);
 }
 
 void Connector::close(){
@@ -81,16 +76,11 @@ OutputHandler* Connector::getOutputHandler(){
     return this; 
 }
 
-void Connector::send(AMQFrame* frame){
+void Connector::send(AMQFrame* f){
+    std::auto_ptr<AMQFrame> frame(f);
     AMQBody::shared_ptr body = frame->getBody();
-    u_int8_t type = body->type();
-    if (type == REQUEST_BODY)
-        requester.sending(AMQRequestBody::getData(body));
-    else if (type == RESPONSE_BODY)
-        responder.sending(AMQResponseBody::getData(body));
-    writeBlock(frame);
+    writeBlock(frame.get());
     if(debug) std::cout << "SENT: " << *frame << std::endl; 
-    delete frame;
 }
 
 void Connector::writeBlock(AMQDataBlock* data){
@@ -185,10 +175,8 @@ void Connector::run(){
                 inbuf.compact();
 	    }
 	}
-    }catch(QpidError error){
-	std::cout << "Error [" << error.code << "] " << error.msg
-                  << " (" << error.location.file << ":" << error.location.line
-                  << ")" << std::endl;
+    } catch (const std::exception& e) {
+	std::cout << e.what() << std::endl;
         handleClosed();
     }
 }

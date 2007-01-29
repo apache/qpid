@@ -38,22 +38,29 @@ class MethodContext;
  * Base class for client and broker channel adapters.
  *
  * As BodyHandler:
- * - Creates MethodContext and dispatches methods+context to derived class.
- * - Updates request/response ID data.
+ * - receives frame bodies from the network.
+ * - Updates request/response data.
+ * - Dispatches requests with a MethodContext for responses.
  *
  * As OutputHandler:
  * - Updates request/resposne ID data.
- * 
+ * - Forwards frame to the peer.
+ *
+ * Thread safety: OBJECT UNSAFE. Instances must not be called
+ * concurrently. AMQP defines channels to be serialized.
  */
 class ChannelAdapter : public BodyHandler, public OutputHandler {
   public:
     /**
      *@param output Processed frames are forwarded to this handler.
      */
-    ChannelAdapter(OutputHandler& output, ChannelId channelId) 
-        : id(channelId), out(output) {}
+    ChannelAdapter() : id(0), out(0) {}
 
-    ChannelId getId() { return id; }
+    /** Initialize the channel adapter. */
+    void init(ChannelId, OutputHandler&, const ProtocolVersion&);
+
+    ChannelId getId() const { return id; }
+    const ProtocolVersion& getVersion() const { return version; }
     
     /**
      * Do request/response-id processing and then forward to
@@ -61,27 +68,37 @@ class ChannelAdapter : public BodyHandler, public OutputHandler {
      * have their request-id set before calling send.
      */
     void send(AMQFrame* frame);
+    /**
+     * Wrap body in a frame and send the frame.
+     * Takes ownership of body.
+     */
+    void send(AMQBody::shared_ptr body);
+    void send(AMQBody* body) { send(AMQBody::shared_ptr(body)); }
 
     void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody>);
     void handleRequest(boost::shared_ptr<qpid::framing::AMQRequestBody>);
     void handleResponse(boost::shared_ptr<qpid::framing::AMQResponseBody>);
 
+    virtual bool isOpen() const = 0;
+    
   protected:
-    /** Throw protocol exception if this is not channel 0. */
-    static void assertChannelZero(u_int16_t id);
-    /** Throw protocol exception if this is channel 0. */
-    static void assertChannelNonZero(u_int16_t id);
+    void assertMethodOk(AMQMethodBody& method) const;
+    void assertChannelOpen() const;
+    void assertChannelNotOpen() const;
 
     virtual void handleMethodInContext(
         boost::shared_ptr<qpid::framing::AMQMethodBody> method,
         const MethodContext& context) = 0;
 
-    ChannelId id;
+    RequestId getRequestInProgress() { return requestInProgress; }
 
   private:
+    ChannelId id;
+    OutputHandler* out;
+    ProtocolVersion version;
     Requester requester;
     Responder responder;
-    OutputHandler& out;
+    RequestId requestInProgress; // TODO aconway 2007-01-24: use it.
 };
 
 }}

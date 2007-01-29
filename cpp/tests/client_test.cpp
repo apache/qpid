@@ -63,7 +63,7 @@ public:
 int main(int argc, char**)
 {
     verbose = argc > 1;
-    try{               
+    try {
         //Use a custom exchange
 	Exchange exchange("MyExchange", Exchange::TOPIC_EXCHANGE);
         //Use a named, temporary queue
@@ -78,7 +78,7 @@ int main(int argc, char**)
         //Create and open a channel on the connection through which
         //most functionality is exposed
 	Channel channel;      
-	con.openChannel(&channel);
+	con.openChannel(channel);
 	if (verbose) std::cout << "Opened channel." << std::endl;	
 
         //'declare' the exchange and the queue, which will create them
@@ -125,17 +125,13 @@ int main(int argc, char**)
         }
         
         //close the channel & connection
-	con.closeChannel(&channel);
+	channel.close();
 	if (verbose) std::cout << "Closed channel." << std::endl;
 	con.close();	
 	if (verbose) std::cout << "Closed connection." << std::endl;
-    }catch(qpid::QpidError error){
-	if (verbose) std::cout
-            << "Error [" << error.code << "] "
-            << error.msg << " ("
-            << error.location.file << ":" << error.location.line
-            << ")" << std::endl;
-	return 1;
-    }
     return 0;
+    } catch(const std::exception& e) {
+	std::cout << e.what() << std::endl;
+    }
+    return 1;
 }

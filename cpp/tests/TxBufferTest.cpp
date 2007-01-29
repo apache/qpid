@@ -143,7 +143,7 @@ class TxBufferTest : public CppUnit::TestCase
             return state == ABORTED;
         }
         
-        bool isOpen(){
+        bool isOpen() const{
             return state == OPEN;
         }
         ~MockTransactionalStore(){}

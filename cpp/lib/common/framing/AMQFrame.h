@@ -38,7 +38,7 @@ namespace qpid {
 namespace framing {
 
 	
-class AMQFrame : virtual public AMQDataBlock
+class AMQFrame : public AMQDataBlock
 {
   public:
     AMQFrame(const qpid::framing::ProtocolVersion& _version = highestProtocolVersion);

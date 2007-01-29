@@ -19,6 +19,8 @@
  * under the License.
  *
  */
+#include <boost/format.hpp>
+
 #include <AMQFrame.h>
 #include <QpidError.h>
 #include "AMQRequestBody.h"
@@ -67,10 +69,10 @@ u_int32_t AMQFrame::size() const{
 
 bool AMQFrame::decode(Buffer& buffer)
 {    
-    if(buffer.available() < 7) return false;
+    if(buffer.available() < 7)
+        return false;
     buffer.record();
     u_int32_t frameSize = decodeHead(buffer);
-    
     if(buffer.available() < frameSize + 1){
         buffer.restore();
         return false;
@@ -110,10 +112,9 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
 	body = AMQBody::shared_ptr(new AMQHeartbeatBody()); 
 	break;
       default:
-        assert(0);
-	string msg("Unknown body type: ");
-	msg += type;
-	THROW_QPID_ERROR(FRAMING_ERROR, msg);
+	THROW_QPID_ERROR(
+            FRAMING_ERROR,
+            (boost::format("Unknown frame type %d")%type).str());
     }
     body->decode(buffer, size);
 }

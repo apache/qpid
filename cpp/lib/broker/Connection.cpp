@@ -77,6 +77,7 @@ void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
         MethodContext(0, &getAdapter(0)),
         header->getMajor(), header->getMinor(),
         properties, mechanisms, locales);
+    getAdapter(0).init(0, *out, client->getProtocolVersion());
 }
 
 void Connection::idleOut(){}

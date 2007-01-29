@@ -45,7 +45,7 @@ AMQRequestBody::create(
     AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
     Buffer& buffer)
 {
-    MethodId id;
+    ClassMethodId id;
     Data data;
     data.decode(buffer);
     id.decode(buffer);

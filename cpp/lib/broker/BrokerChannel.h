@@ -108,6 +108,7 @@ class Channel : private MessageBuilder::CompletionHandler {
         MessageStore* const _store = 0, u_int64_t stagingThreshold = 0);
     ~Channel();
     bool isOpen() const { return opened; }
+    const framing::ProtocolVersion& getVersion() const { return version; }
     void open() { opened = true; }
     u_int16_t getId() const { return id; }
     void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }

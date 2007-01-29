@@ -50,7 +50,7 @@ protected:
 
 public:
     AMQP_ClientOperations(u_int8_t major, u_int8_t minor) : version(major, minor) {}
-    AMQP_ClientOperations(ProtocolVersion& version) : version(version) {}
+    AMQP_ClientOperations(const ProtocolVersion& version) : version(version) {}
     virtual ~AMQP_ClientOperations() {}
 
     inline u_int8_t getMajor() const { return version.getMajor(); }
@@ -60,7 +60,7 @@ public:
     {
         return version.equals(_major, _minor);
     }
-    inline bool isVersion(ProtocolVersion& _version) const
+    inline bool isVersion(const ProtocolVersion& _version) const
     {
         return version.equals(_version);
     }

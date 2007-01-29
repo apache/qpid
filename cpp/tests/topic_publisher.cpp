@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
             Channel channel(args.getTransactional(), args.getPrefetch());
-            connection.openChannel(&channel);
+            connection.openChannel(channel);
 
             //declare queue (relying on default binding):
             Queue response("response");

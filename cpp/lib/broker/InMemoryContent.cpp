@@ -39,7 +39,7 @@ u_int32_t InMemoryContent::size()
     return sum;
 }
 
-void InMemoryContent::send(qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
+void InMemoryContent::send(const qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {
         if ((*i)->size() > framesize) {

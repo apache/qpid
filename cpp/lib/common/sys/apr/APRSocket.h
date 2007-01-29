@@ -36,7 +36,7 @@ namespace sys {
         void read(qpid::framing::Buffer& b);
         void write(qpid::framing::Buffer& b);
         void close();
-        bool isOpen();
+        bool isOpen() const;
         u_int8_t read();
 	~APRSocket();
     };
