@@ -34,6 +34,7 @@ import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -91,6 +92,12 @@ public class AMQQueue implements Managable, Comparable
     private final AtomicInteger _subscriberCount = new AtomicInteger();
 
     private final AtomicBoolean _isExclusive = new AtomicBoolean();
+
+    private final AtomicBoolean _deleted = new AtomicBoolean(false);
+
+
+
+    private List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
 
     /**
      * Manages message delivery.
@@ -509,10 +516,19 @@ public class AMQQueue implements Managable, Comparable
 
     public void delete() throws AMQException
     {
-        _subscribers.queueDeleted(this);
-        _bindings.deregister();
-        _queueRegistry.unregisterQueue(_name);
-        _managedObject.unregister();
+        if(!_deleted.getAndSet(true))
+        {
+            _subscribers.queueDeleted(this);
+            _bindings.deregister();
+            _queueRegistry.unregisterQueue(_name);
+            _managedObject.unregister();
+            for(Task task : _deleteTaskList)
+            {
+                task.doTask(this);
+            }
+            _deleteTaskList.clear();
+        }
+
     }
 
     protected void autodelete() throws AMQException
@@ -667,6 +683,16 @@ public class AMQQueue implements Managable, Comparable
         public void rollback()
         {
         }
+    }
+
+    public static interface Task
+    {
+        public void doTask(AMQQueue queue) throws AMQException;        
+    }
+
+    public void addQueueDeleteTask(Task task)
+    {
+        _deleteTaskList.add(task);
     }
 
 }

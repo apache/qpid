@@ -144,11 +144,42 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return MessageFormat.format("{0,number,0000000000000}", value);
     }
 
-    protected AMQQueue createQueue(QueueDeclareBody body, QueueRegistry registry, AMQProtocolSession session)
+    protected AMQQueue createQueue(QueueDeclareBody body, final QueueRegistry registry, final AMQProtocolSession session)
             throws AMQException
     {
         String owner = body.exclusive ? session.getContextKey() : null;
         if (owner != null) _log.info("Queue " + body.queue + " is owned by " + owner);
-        return new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
+        final AMQQueue queue =  new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
+        final String queueName = queue.getName();
+
+        if(body.exclusive && !body.durable)
+        {
+            final AMQProtocolSession.Task deleteQueueTask =
+                new AMQProtocolSession.Task()
+                {
+
+                    public void doTask(AMQProtocolSession session) throws AMQException
+                    {
+                        if(registry.getQueue(queueName) == queue)
+                        {
+                            queue.delete();
+                        }
+
+                    }
+                };
+
+            session.addSessionCloseTask(deleteQueueTask);
+
+            queue.addQueueDeleteTask(new AMQQueue.Task()
+            {
+                public void doTask(AMQQueue queue)
+                {
+                    session.removeSessionCloseTask(deleteQueueTask);
+                }
+            });
+
+
+        }
+        return queue;
     }
 }

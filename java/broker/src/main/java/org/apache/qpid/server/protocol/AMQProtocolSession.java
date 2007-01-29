@@ -36,6 +36,14 @@ import org.apache.qpid.protocol.AMQProtocolWriter;
 
 public interface AMQProtocolSession extends AMQProtocolWriter
 {
+
+
+
+    public static interface Task
+    {
+        public void doTask(AMQProtocolSession session) throws AMQException;
+    }
+
     /**
      * Called when a protocol data block is received
      * @param message the data block that has been received
@@ -150,4 +158,8 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     boolean versionEquals(byte major, byte minor);
     void checkMethodBodyVersion(AMQMethodBody methodBody);
     int getConnectionId();
+
+    void addSessionCloseTask(Task task);
+
+    void removeSessionCloseTask(Task task);
 }
