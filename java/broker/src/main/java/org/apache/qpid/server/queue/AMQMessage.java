@@ -30,6 +30,7 @@ import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.qpid.AMQException;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
@@ -52,6 +53,23 @@ public class AMQMessage
     private final MessageTransferBody _transferBody;
 
     private List<ByteBuffer> _contents;
+
+    private Iterable<ByteBuffer> _dupContentsIterable = new Iterable() {
+        public Iterator<ByteBuffer> iterator() {
+            return new Iterator() {
+                private Iterator<ByteBuffer> iter = _contents.iterator();
+                public boolean hasNext() {
+                    return iter.hasNext();
+                }
+                public ByteBuffer next() {
+                    return iter.next().duplicate();
+                }
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+    };
 
     private boolean _redelivered;
 
@@ -202,7 +220,7 @@ public class AMQMessage
     }
 
     public String getCorrelationId() {
-        throw new Error("XXX");
+        return _transferBody.getCorrelationId();
     }
 
     public void setPriority(byte priority) {
@@ -210,7 +228,7 @@ public class AMQMessage
     }
 
     public byte getPriority() {
-        throw new Error("XXX");
+        return (byte) _transferBody.getPriority();
     }
 
     public void setExpiration(long l) {
@@ -218,7 +236,7 @@ public class AMQMessage
     }
 
     public long getExpiration() {
-        throw new Error("XXX");
+        return _transferBody.getExpiration();
     }
 
     public void setTimestamp(long l) {
@@ -226,19 +244,24 @@ public class AMQMessage
     }
 
     public long getTimestamp() {
-        throw new Error("XXX");
+        return _transferBody.getTimestamp();
     }
 
     public String getContentType() {
-        throw new Error("XXX");
+        return _transferBody.getContentType();
     }
 
     public String getEncoding() {
-        throw new Error("XXX");
+        return _transferBody.getContentEncoding();
     }
 
     public byte[] getMessageBytes() {
-        throw new Error("XXX");
+        byte[] result = new byte[(int) getBodySize()];
+        int offset = 0;
+        for (ByteBuffer bb : getContents()) {
+            bb.get(result, offset, bb.remaining());
+        }
+        return result;
     }
 
     public void storeMessage() throws AMQException
@@ -254,8 +277,8 @@ public class AMQMessage
         return _transferBody;
     }
 
-    public List<ByteBuffer> getContents() {
-        return _contents;
+    public Iterable<ByteBuffer> getContents() {
+        return _dupContentsIterable;
     }
 
     public List<AMQBody> getPayload() {

@@ -281,7 +281,7 @@ public class AMQChannel
         mtb.destination = destination;
         ByteBuffer buf = ByteBuffer.allocate((int)msg.getBodySize());
         for (ByteBuffer bb : msg.getContents()) {
-            buf.put(bb.duplicate());
+            buf.put(bb);
         }
         buf.flip();
         mtb.body = new Content(Content.TypeEnum.INLINE_T, buf);
