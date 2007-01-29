@@ -47,22 +47,22 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     {
     }
 
-    public ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException
+    public ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException
     {
         return _contentHeaderBody;
     }
 
-    public int getBodyCount(long messageId)
+    public int getBodyCount(Long messageId)
     {
         return _contentBodies.size();
     }
 
-    public long getBodySize(long messageId) throws AMQException
+    public long getBodySize(Long messageId) throws AMQException
     {
         return getContentHeaderBody(messageId).bodySize;
     }
 
-    public ContentBody getContentBody(long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentBody getContentBody(Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -72,13 +72,13 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _contentBodies.get(index);
     }
 
-    public void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody)
+    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody)
             throws AMQException
     {
         _contentBodies.add(contentBody);
     }
 
-    public BasicPublishBody getPublishBody(long messageId) throws AMQException
+    public BasicPublishBody getPublishBody(Long messageId) throws AMQException
     {
         return _publishBody;
     }
@@ -94,7 +94,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(long messageId) throws AMQException
+    public boolean isPersistent(Long messageId) throws AMQException
     {
         //todo remove literal values to a constant file such as AMQConstants in common
         ContentHeaderBody chb = getContentHeaderBody(messageId);
@@ -108,7 +108,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
@@ -116,17 +116,17 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _contentHeaderBody = contentHeaderBody;
     }
 
-    public void removeMessage(StoreContext storeContext, long messageId) throws AMQException
+    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
     {
         // NO OP
     }
 
-    public void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
+    public void enqueue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
     {
         // NO OP
     }
 
-    public void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
     {
         // NO OP
     }

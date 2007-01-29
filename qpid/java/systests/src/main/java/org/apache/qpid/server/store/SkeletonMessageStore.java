@@ -26,7 +26,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
@@ -88,7 +87,7 @@ public class SkeletonMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext sc, long messageId, int index, ContentBody contentBody) throws AMQException
+    public void storeContentBodyChunk(StoreContext sc, long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException
     {
 
     }

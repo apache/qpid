@@ -53,7 +53,7 @@ public class AMQMessage
      */
     private AMQProtocolSession _publisher;
 
-    private final long _messageId;
+    private final Long _messageId;
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
 
@@ -68,6 +68,13 @@ public class AMQMessage
      * messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
+    /**
+     * We need to keep track of whether the message was 'immediate'
+     * as in extreme circumstances, when the checkDelieveredToConsumer
+     * is called, the message may already have been received and acknowledged,
+     * and the body removed from the store.
+     */
+    private boolean _immediate;
 
     private AtomicBoolean _taken = new AtomicBoolean(false);
 
@@ -160,11 +167,12 @@ public class AMQMessage
         }
     }
 
-    public AMQMessage(long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, BasicPublishBody publishBody,
                       TransactionalContext txnContext)
     {
         _messageId = messageId;
         _txnContext = txnContext;
+        _immediate = publishBody.immediate;
         _transientMessageData.setPublishBody(publishBody);
 
         _taken = new AtomicBoolean(false);
@@ -183,7 +191,7 @@ public class AMQMessage
      * @param factory
      * @throws AMQException
      */
-    public AMQMessage(long messageId, MessageStore store, MessageHandleFactory factory) throws AMQException
+    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory) throws AMQException
     {
         _messageId = messageId;
         _messageHandle = factory.createMessageHandle(messageId, store, true);
@@ -198,7 +206,7 @@ public class AMQMessage
      * @param txnContext
      * @param contentHeader
      */
-    public AMQMessage(long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, BasicPublishBody publishBody,
                       TransactionalContext txnContext, ContentHeaderBody contentHeader) throws AMQException
     {
         this(messageId, publishBody, txnContext);
@@ -216,7 +224,7 @@ public class AMQMessage
      * @param contentBodies
      * @throws AMQException
      */
-    public AMQMessage(long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, BasicPublishBody publishBody,
                       TransactionalContext txnContext,
                       ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues,
                       List<ContentBody> contentBodies, MessageStore messageStore, StoreContext storeContext,
@@ -293,8 +301,9 @@ public class AMQMessage
     public boolean addContentBodyFrame(StoreContext storeContext, ContentBody contentBody) throws AMQException
     {
         _transientMessageData.addBodyLength(contentBody.getSize());
-        _messageHandle.addContentBodyFrame(storeContext, _messageId, contentBody);
-        if (isAllContentReceived())
+        final boolean allContentReceived = isAllContentReceived();
+        _messageHandle.addContentBodyFrame(storeContext, _messageId, contentBody, allContentReceived);
+        if (allContentReceived)
         {
             deliver(storeContext);
             return true;
@@ -348,6 +357,7 @@ public class AMQMessage
                 {
                     _log.debug("Ref count on message " + _messageId + " is zero; removing message");
                 }
+
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
                 if (_messageHandle != null)
@@ -371,6 +381,10 @@ public class AMQMessage
                 {
                     Thread.dumpStack();
                 }
+            }
+            if(_referenceCount.get()<0)
+            {
+                throw new MessageCleanupException("Reference count for message id " + _messageId + " has gone below 0.");
             }
         }
     }
@@ -464,8 +478,8 @@ public class AMQMessage
      */
     public void checkDeliveredToConsumer() throws NoConsumersException, AMQException
     {
-        BasicPublishBody pb = getPublishBody();
-        if (pb.immediate && !_deliveredToConsumer)
+
+        if (_immediate && !_deliveredToConsumer)
         {
             throw new NoConsumersException(this);
         }        

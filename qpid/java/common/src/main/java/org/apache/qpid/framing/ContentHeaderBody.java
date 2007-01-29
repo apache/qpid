@@ -65,7 +65,7 @@ public class ContentHeaderBody extends AMQBody
         this.bodySize = bodySize;
     }
 
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }
@@ -113,17 +113,11 @@ public class ContentHeaderBody extends AMQBody
     public static AMQFrame createAMQFrame(int channelId, int classId, int weight, BasicContentHeaderProperties properties,
                                           long bodySize)
     {
-        final AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
-        frame.bodyFrame = new ContentHeaderBody(classId, weight, properties, bodySize);
-        return frame;
+        return new AMQFrame(channelId, new ContentHeaderBody(classId, weight, properties, bodySize));
     }
 
     public static AMQFrame createAMQFrame(int channelId, ContentHeaderBody body)
     {
-        final AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
-        frame.bodyFrame = body;
-        return frame;
+        return new AMQFrame(channelId, body);
     }
 }

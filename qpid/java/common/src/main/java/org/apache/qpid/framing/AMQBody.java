@@ -24,7 +24,7 @@ import org.apache.mina.common.ByteBuffer;
 
 public abstract class AMQBody
 {
-    protected abstract byte getFrameType();
+    public abstract byte getFrameType();
     
     /** 
      * Get the size of the body

@@ -120,7 +120,10 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         _logger.info("Protocol Session closed");
         final AMQProtocolSession amqProtocolSession = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
         //fixme  -- this can be null
-        amqProtocolSession.closeSession();
+        if(amqProtocolSession != null)
+        {
+            amqProtocolSession.closeSession();
+        }
     }
 
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception
