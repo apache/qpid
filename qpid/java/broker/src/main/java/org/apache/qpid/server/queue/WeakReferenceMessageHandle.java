@@ -32,6 +32,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Collections;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)
@@ -48,12 +49,13 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     private final MessageStore _messageStore;
 
+
     public WeakReferenceMessageHandle(MessageStore messageStore)
     {
         _messageStore = messageStore;
     }
 
-    public ContentHeaderBody getContentHeaderBody(long messageId) throws AMQException
+    public ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException
     {
         ContentHeaderBody chb = (_contentHeaderBody != null?_contentHeaderBody.get():null);
         if (chb == null)
@@ -66,7 +68,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return chb;
     }
 
-    public int getBodyCount(long messageId) throws AMQException
+    public int getBodyCount(Long messageId) throws AMQException
     {
         if (_contentBodies == null)
         {
@@ -81,12 +83,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return _contentBodies.size();
     }
 
-    public long getBodySize(long messageId) throws AMQException
+    public long getBodySize(Long messageId) throws AMQException
     {
         return getContentHeaderBody(messageId).bodySize;
     }
 
-    public ContentBody getContentBody(long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentBody getContentBody(Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -108,19 +110,30 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * @param storeContext
      * @param messageId
      * @param contentBody
+     * @param isLastContentBody
      * @throws AMQException
      */
-    public void addContentBodyFrame(StoreContext storeContext, long messageId, ContentBody contentBody) throws AMQException
+    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody) throws AMQException
     {
-        if (_contentBodies == null)
+        if(_contentBodies == null && isLastContentBody)
         {
-            _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+            _contentBodies = Collections.singletonList(new WeakReference<ContentBody>(contentBody));
+
         }
-        _contentBodies.add(new WeakReference<ContentBody>(contentBody));
-        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody);
+        else
+        {
+            if (_contentBodies == null)
+            {
+                _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+            }
+
+
+            _contentBodies.add(new WeakReference<ContentBody>(contentBody));
+        }
+        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody, isLastContentBody);
     }
 
-    public BasicPublishBody getPublishBody(long messageId) throws AMQException
+    public BasicPublishBody getPublishBody(Long messageId) throws AMQException
     {
         BasicPublishBody bpb = (_publishBody != null?_publishBody.get():null);
         if (bpb == null)
@@ -143,7 +156,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(long messageId) throws AMQException
+    public boolean isPersistent(Long messageId) throws AMQException
     {
         //todo remove literal values to a constant file such as AMQConstants in common
         ContentHeaderBody chb = getContentHeaderBody(messageId);
@@ -157,7 +170,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
@@ -173,17 +186,17 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _contentHeaderBody = new WeakReference<ContentHeaderBody>(contentHeaderBody);
     }
 
-    public void removeMessage(StoreContext storeContext, long messageId) throws AMQException
+    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
     {
         _messageStore.removeMessage(storeContext, messageId);
     }
 
-    public void enqueue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
+    public void enqueue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
     {
         _messageStore.enqueueMessage(storeContext, queue.getName(), messageId);
     }
 
-    public void dequeue(StoreContext storeContext, long messageId, AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException
     {
         _messageStore.dequeueMessage(storeContext, queue.getName(), messageId);
     }

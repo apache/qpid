@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.EnumMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -59,8 +60,9 @@ public class AMQStateManager implements AMQMethodListener
      * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
      * The class must be a subclass of AMQFrame.
      */
-    private final Map<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
-            new HashMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>();
+    private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
+            new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(AMQState.class);
+
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
@@ -83,14 +85,7 @@ public class AMQStateManager implements AMQMethodListener
 
     protected void registerListeners()
     {
-        Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap =
-                new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-
-        // we need to register a map for the null (i.e. all state) handlers otherwise you get
-        // a stack overflow in the handler searching code when you present it with a frame for which
-        // no handlers are registered
-        //
-        _state2HandlersMap.put(null, frame2handlerMap);
+        Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap;
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
         frame2handlerMap.put(ConnectionStartOkBody.class, ConnectionStartOkMethodHandler.getInstance());
@@ -205,26 +200,14 @@ public class AMQStateManager implements AMQMethodListener
         final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>
                 classToHandlerMap = _state2HandlersMap.get(currentState);
 
-        if (classToHandlerMap == null)
-        {
-            // if no specialised per state handler is registered look for a
-            // handler registered for "all" states
-            return findStateTransitionHandler(null, frame);
-        }
-        final StateAwareMethodListener<B> handler = (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+        final StateAwareMethodListener<B> handler = classToHandlerMap == null
+                                                          ? null
+                                                          : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+
         if (handler == null)
         {
-            if (currentState == null)
-            {
-                _logger.debug("No state transition handler defined for receiving frame " + frame);
-                return null;
-            }
-            else
-            {
-                // if no specialised per state handler is registered look for a
-                // handler registered for "all" states
-                return findStateTransitionHandler(null, frame);
-            }
+            _logger.debug("No state transition handler defined for receiving frame " + frame);
+            return null;
         }
         else
         {

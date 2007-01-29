@@ -31,7 +31,7 @@ import org.apache.qpid.server.store.MessageStore;
 public class MessageHandleFactory
 {
 
-    public AMQMessageHandle createMessageHandle(long messageId, MessageStore store, boolean persistent)
+    public AMQMessageHandle createMessageHandle(Long messageId, MessageStore store, boolean persistent)
     {
         // just hardcoded for now
         if (persistent)

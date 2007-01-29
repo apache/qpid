@@ -38,6 +38,7 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -83,6 +84,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      * Lock is used to control access to hasQueuedMessages() and over the addition of messages to the queue.
      */
     private ReentrantLock _lock = new ReentrantLock();
+    private AtomicLong _totalMessageSize = new AtomicLong();
 
 
     ConcurrentSelectorDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
@@ -116,6 +118,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         _messages.offer(msg);
 
+        _totalMessageSize.addAndGet(msg.getSize());
+
         return true;
     }
 
@@ -147,6 +151,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     private int getMessageCount()
     {
         return _messages.size();
+    }
+
+
+
+    public long getTotalMessageSize()
+    {
+        return _totalMessageSize.get();
     }
 
 
@@ -213,6 +224,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     }
 
                     msg.writeGetOk(protocolSession, channel.getChannelId(), deliveryTag, _queue.getMessageCount());
+                    _totalMessageSize.addAndGet(-msg.getSize());
                 }
             }
             finally
@@ -224,6 +236,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
+
     public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
@@ -231,6 +244,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             msg.dequeue(storeContext, _queue);
         }
+        _totalMessageSize.getAndAdd(-msg.getSize());
     }
 
     public synchronized long clearAllMessages(StoreContext storeContext) throws AMQException
@@ -241,8 +255,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             msg.dequeue(storeContext, _queue);
             count++;
+            _totalMessageSize.set(0L);
             msg = poll();
+
         }
+
         return count;
     }
 
@@ -292,6 +309,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             //remove sent message from our queue.
             messageQueue.poll();
+            _totalMessageSize.addAndGet(-message.getSize());
         }
         catch (AMQException e)
         {

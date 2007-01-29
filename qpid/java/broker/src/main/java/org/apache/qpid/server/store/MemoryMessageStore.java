@@ -27,11 +27,11 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,7 +87,7 @@ public class MemoryMessageStore implements MessageStore
         }
     }
 
-    public void removeMessage(StoreContext context, long messageId)
+    public void removeMessage(StoreContext context, Long messageId)
     {
         if (_log.isDebugEnabled())
         {
@@ -107,12 +107,12 @@ public class MemoryMessageStore implements MessageStore
         // Not required to do anything
     }
 
-    public void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
     {
         // Not required to do anything
     }
 
-    public void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException
+    public void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException
     {
         // Not required to do anything
     }
@@ -142,36 +142,44 @@ public class MemoryMessageStore implements MessageStore
         return null;
     }
 
-    public long getNewMessageId()
+    public Long getNewMessageId()
     {
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody)
+    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentBody contentBody, boolean lastContentBody)
             throws AMQException
     {
         List<ContentBody> bodyList = _contentBodyMap.get(messageId);
-        if (bodyList == null)
-        {
-            bodyList = new ArrayList<ContentBody>();
-            _contentBodyMap.put(messageId, bodyList);
-        }
 
-        bodyList.add(index, contentBody);
+        if(bodyList == null && lastContentBody)
+        {
+            _contentBodyMap.put(messageId, Collections.singletonList(contentBody));
+        }
+        else
+        {
+            if (bodyList == null)
+            {
+                bodyList = new ArrayList<ContentBody>();
+                _contentBodyMap.put(messageId, bodyList);
+            }
+
+            bodyList.add(index, contentBody);
+        }
     }
 
-    public void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData)
+    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData)
             throws AMQException
     {
         _metaDataMap.put(messageId, messageMetaData);
     }
 
-    public MessageMetaData getMessageMetaData(long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
         return _metaDataMap.get(messageId);
     }
 
-    public ContentBody getContentBodyChunk(long messageId, int index) throws AMQException
+    public ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException
     {
         List<ContentBody> bodyList = _contentBodyMap.get(messageId);
         return bodyList.get(index);

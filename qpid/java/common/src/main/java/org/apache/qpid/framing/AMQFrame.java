@@ -24,59 +24,52 @@ import org.apache.mina.common.ByteBuffer;
 
 public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    public int channel;
+    private final int _channel;
 
-    public AMQBody bodyFrame;
+    private final AMQBody _bodyFrame;
 
-    public AMQFrame()
+
+
+    public AMQFrame(final int channel, final AMQBody bodyFrame)
     {
+        _channel = channel;
+        _bodyFrame = bodyFrame;
     }
 
-    public AMQFrame(int channel, AMQBody bodyFrame)
+    public AMQFrame(final ByteBuffer in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException
     {
-        this.channel = channel;
-        this.bodyFrame = bodyFrame;
-    }
-
-    public AMQFrame(ByteBuffer in, int channel, long bodySize, BodyFactory bodyFactory) throws AMQFrameDecodingException
-    {
-        this.channel = channel;
-        this.bodyFrame = bodyFactory.createBody(in,bodySize);
+        this._channel = channel;
+        this._bodyFrame = bodyFactory.createBody(in,bodySize);
     }
 
     public long getSize()
     {
-        return 1 + 2 + 4 + bodyFrame.getSize() + 1;
+        return 1 + 2 + 4 + _bodyFrame.getSize() + 1;
     }
 
     public void writePayload(ByteBuffer buffer)
     {
-        buffer.put(bodyFrame.getFrameType());
-        // TODO: how does channel get populated
-        EncodingUtils.writeUnsignedShort(buffer, channel);
-        EncodingUtils.writeUnsignedInteger(buffer, bodyFrame.getSize());
-        bodyFrame.writePayload(buffer);
+        buffer.put(_bodyFrame.getFrameType());
+        EncodingUtils.writeUnsignedShort(buffer, _channel);
+        EncodingUtils.writeUnsignedInteger(buffer, _bodyFrame.getSize());
+        _bodyFrame.writePayload(buffer);
         buffer.put((byte) 0xCE);
     }
 
-    /**
-     *
-     * @param buffer
-     * @param channel unsigned short
-     * @param bodySize unsigned integer
-     * @param bodyFactory
-     * @throws AMQFrameDecodingException
-     */
-    public void populateFromBuffer(ByteBuffer buffer, int channel, long bodySize, BodyFactory bodyFactory)
-        throws AMQFrameDecodingException, AMQProtocolVersionException
+    public final int getChannel()
     {
-        this.channel = channel;
-        bodyFrame = bodyFactory.createBody(buffer, bodySize);
-      
+        return _channel;
     }
+
+    public final AMQBody getBodyFrame()
+    {
+        return _bodyFrame;
+    }
+
+
 
     public String toString()
     {
-        return "Frame channelId: " + channel + ", bodyFrame: " + String.valueOf(bodyFrame);
+        return "Frame channelId: " + _channel + ", bodyFrame: " + String.valueOf(_bodyFrame);
     }
 }

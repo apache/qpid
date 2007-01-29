@@ -22,30 +22,21 @@ package org.apache.qpid.framing;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class AMQMethodBodyFactory implements BodyFactory
 {
     private static final Logger _log = Logger.getLogger(AMQMethodBodyFactory.class);
+
+    private final AMQVersionAwareProtocolSession _protocolSession;
     
-    private static final AMQMethodBodyFactory _instance = new AMQMethodBodyFactory();
-    
-    public static AMQMethodBodyFactory getInstance()
+    public AMQMethodBodyFactory(AMQVersionAwareProtocolSession protocolSession)
     {
-        return _instance;
-    }
-    
-    private AMQMethodBodyFactory()
-    {
-        _log.debug("Creating method body factory");
+        _protocolSession = protocolSession;
     }
 
     public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
-        // AMQP version change: MethodBodyDecoderRegistry is obsolete, since all the XML
-        // segments generated together are now handled by MainRegistry. The Cluster class,
-        // if generated together with amqp.xml is a part of MainRegistry.
-        // TODO: Connect with version acquired from ProtocolInitiation class.
-        return MainRegistry.get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(),
-            (byte)8, (byte)0, in, bodySize);
+        return _protocolSession.getRegistry().get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(), in, bodySize);
     }
 }

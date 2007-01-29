@@ -260,24 +260,14 @@ public final class AMQShortString implements CharSequence
 
             final AMQShortString otherString = (AMQShortString) o;
 
-            if(otherString.length() != length())
-            {
-                return false;
-            }
             if((_hashCode != 0) && (otherString._hashCode != 0) && (_hashCode != otherString._hashCode))
             {
                 return false;
             }
-            final int size = length();
-            for(int i = 0; i < size; i++)
-            {
-                if(_data.get(i) != otherString._data.get(i))
-                {
-                    return false;
-                }
-            }
 
-            return true;
+            return _data.equals(otherString._data);
+
+            
 
 
         }

@@ -252,6 +252,12 @@ public class AMQQueue implements Managable, Comparable
         return _deliveryMgr.getMessages();
     }
 
+    public long getQueueDepth()
+    {
+        return _deliveryMgr.getTotalMessageSize();
+    }
+
+
     /**
      * @param messageId
      * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
@@ -315,13 +321,13 @@ public class AMQQueue implements Managable, Comparable
         _maxMessageCount = value;
     }
 
-    public Long getMaximumQueueDepth()
+    public long getMaximumQueueDepth()
     {
         return _maxQueueDepth;
     }
 
     // Sets the queue depth, the max queue size
-    public void setMaximumQueueDepth(Long value)
+    public void setMaximumQueueDepth(long value)
     {
         _maxQueueDepth = value;
     }
@@ -624,5 +630,7 @@ public class AMQQueue implements Managable, Comparable
     {
         _deleteTaskList.add(task);
     }
+
+
 
 }
