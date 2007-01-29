@@ -39,6 +39,7 @@ public class UnacknowledgedMessage
         this.message = message;
         this.consumerTag = consumerTag;
         this.deliveryTag = deliveryTag;
+        message.incrementReference();
     }
 
     public void discard(StoreContext storeContext) throws AMQException
