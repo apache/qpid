@@ -24,6 +24,7 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
@@ -31,7 +32,7 @@ import org.apache.qpid.AMQException;
 import javax.security.sasl.SaslServer;
 
 
-public interface AMQProtocolSession extends AMQProtocolWriter
+public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
 
 
@@ -143,9 +144,5 @@ public interface AMQProtocolSession extends AMQProtocolWriter
     void addSessionCloseTask(Task task);
 
     void removeSessionCloseTask(Task task);
-
-    byte getProtocolMajorVersion();
-
-    byte getProtocolMinorVersion();
 
 }

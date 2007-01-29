@@ -24,24 +24,28 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AMQDataBlockDecoder
 {
-    Logger _logger = Logger.getLogger(AMQDataBlockDecoder.class);
+    private static final String SESSION_METHOD_BODY_FACTORY = "QPID_SESSION_METHOD_BODY_FACTORY";
 
-    private final Map _supportedBodies = new HashMap();
+    private static final BodyFactory[] _bodiesSupported = new BodyFactory[Byte.MAX_VALUE];
 
-    private final static BodyFactory[] _bodiesSupported = new BodyFactory[Byte.MAX_VALUE];
     static
     {
-        _bodiesSupported[AMQMethodBody.TYPE] = AMQMethodBodyFactory.getInstance();
         _bodiesSupported[ContentHeaderBody.TYPE] = ContentHeaderBodyFactory.getInstance();
         _bodiesSupported[ContentBody.TYPE] = ContentBodyFactory.getInstance();
         _bodiesSupported[HeartbeatBody.TYPE] = new HeartbeatBodyFactory();
     }
+
+
+    Logger _logger = Logger.getLogger(AMQDataBlockDecoder.class);
+
+
 
     public AMQDataBlockDecoder()
     {
@@ -55,52 +59,57 @@ public class AMQDataBlockDecoder
         {
             return false;
         }
-
-        final byte type = in.get();
-        final int channel = in.getUnsignedShort();
+        in.skip(1 + 2);
         final long bodySize = in.getUnsignedInt();
 
-        // bodySize can be zero
-        if (type <= 0 || channel < 0 || bodySize < 0)
-        {
-            throw new AMQFrameDecodingException("Undecodable frame: type = " + type + " channel = " + channel +
-                                                " bodySize = " + bodySize);
-        }
+
 
         return (remainingAfterAttributes >= bodySize);
 
     }
 
-    private boolean isSupportedFrameType(byte frameType)
-    {
-        final boolean result = _bodiesSupported[frameType] != null;
 
-        if (!result)
-        {
-        	_logger.warn("AMQDataBlockDecoder does not handle frame type " + frameType);
-        }
-
-        return result;
-    }
-
-    protected Object createAndPopulateFrame(ByteBuffer in)
+    protected Object createAndPopulateFrame(IoSession session, ByteBuffer in)
                     throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         final byte type = in.get();
-        BodyFactory bodyFactory = _bodiesSupported[type];
-        if (!isSupportedFrameType(type))
+
+        BodyFactory bodyFactory;
+        if(type == AMQMethodBody.TYPE)
+        {
+            bodyFactory = (BodyFactory) session.getAttribute(SESSION_METHOD_BODY_FACTORY);
+            if(bodyFactory == null)
+            {
+                AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
+                bodyFactory = new AMQMethodBodyFactory(protocolSession);
+                session.setAttribute(SESSION_METHOD_BODY_FACTORY, bodyFactory);
+
+            }
+
+        }
+        else
+        {
+            bodyFactory = _bodiesSupported[type];
+        }
+
+
+
+
+        if(bodyFactory == null)
         {
             throw new AMQFrameDecodingException("Unsupported frame type: " + type);
         }
+
         final int channel = in.getUnsignedShort();
         final long bodySize = in.getUnsignedInt();
 
-        /*
-        if (bodyFactory == null)
+        // bodySize can be zero
+        if (channel < 0 || bodySize < 0)
         {
-            throw new AMQFrameDecodingException("Unsupported body type: " + type);
+            throw new AMQFrameDecodingException("Undecodable frame: type = " + type + " channel = " + channel +
+                                                " bodySize = " + bodySize);
         }
-        */
+
         AMQFrame frame = new AMQFrame(in, channel, bodySize, bodyFactory);
 
         
@@ -115,6 +124,6 @@ public class AMQDataBlockDecoder
     public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out)
         throws Exception
     {
-        out.write(createAndPopulateFrame(in));
+        out.write(createAndPopulateFrame(session, in));
     }
 }

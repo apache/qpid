@@ -28,17 +28,16 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collections;
 
-public class AMQDataBlockEncoder implements MessageEncoder
+public final class AMQDataBlockEncoder implements MessageEncoder
 {
-	Logger _logger = Logger.getLogger(AMQDataBlockEncoder.class);
+	private static final Logger _logger = Logger.getLogger(AMQDataBlockEncoder.class);
 
-    private Set _messageTypes;
+    private final Set _messageTypes = Collections.singleton(EncodableAMQDataBlock.class);
 
     public AMQDataBlockEncoder()
     {
-        _messageTypes = new HashSet();
-        _messageTypes.add(EncodableAMQDataBlock.class);
     }
 
     public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception

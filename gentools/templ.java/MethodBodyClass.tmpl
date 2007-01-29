@@ -42,6 +42,12 @@ public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQ
         {
             return new ${CLASS}${METHOD}Body(major, minor, in);
         }
+		
+	    public AMQMethodBody newInstance(byte major, byte minor, int clazzID, int methodID, ByteBuffer in, long size) throws AMQFrameDecodingException
+        {
+            return new ${CLASS}${METHOD}Body(major, minor, clazzID, methodID, in);
+        }
+ 
     };
     
     public static AMQMethodBodyInstanceFactory getFactory()
@@ -82,12 +88,18 @@ public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQ
 
     public ${CLASS}${METHOD}Body(byte major, byte minor, ByteBuffer buffer) throws AMQFrameDecodingException
     {
+		this(major, minor, getClazz(major,minor), getMethod(major,minor), buffer);
+	}
+	
+    public ${CLASS}${METHOD}Body(byte major, byte minor, int clazzID, int methodID, ByteBuffer buffer) throws AMQFrameDecodingException
+    {
+
         super(major, minor);
-        _clazz = getClazz(major,minor); 
-        _method = getMethod(major,minor); 
+        _clazz = clazzID; 
+        _method = methodID; 
         %{FLIST}    ${mb_field_decode}
     }
-    public ${CLASS}${METHOD}Body(byte major, byte minor
+    public ${CLASS}${METHOD}Body(byte major, byte minor, int clazzID, int methodID
     %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
@@ -149,7 +161,19 @@ public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQ
 %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
-        ${CLASS}${METHOD}Body body = new ${CLASS}${METHOD}Body(major, minor
+        return createAMQFrame(channelId, major, minor, getClazz(major,minor), getMethod(major,minor)
+%{FLIST}    ${mb_field_passed_parameter_list}
+        );
+
+                 
+        
+    }
+	
+	public static AMQFrame createAMQFrame(int channelId, byte major, byte minor, int clazzID, int methodID
+%{FLIST}    ${mb_field_parameter_list}
+                                         )
+    {
+        ${CLASS}${METHOD}Body body = new ${CLASS}${METHOD}Body(major, minor, clazzID, methodID
 %{FLIST}    ${mb_field_passed_parameter_list}
         );
 
@@ -157,4 +181,5 @@ public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQ
         AMQFrame frame = new AMQFrame(channelId, body);
         return frame;
     }
+
 }

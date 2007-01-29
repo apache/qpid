@@ -81,4 +81,6 @@ interface DeliveryManager
     void populatePreDeliveryQueue(Subscription subscription);
 
     boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException;
+
+    long getTotalMessageSize();
 }

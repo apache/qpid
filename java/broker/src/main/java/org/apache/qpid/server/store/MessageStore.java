@@ -50,15 +50,15 @@ public interface MessageStore
      */
     void close() throws Exception;
 
-    void removeMessage(StoreContext storeContext, long messageId) throws AMQException;
+    void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
 
     void createQueue(AMQQueue queue) throws AMQException;
 
     void removeQueue(AMQShortString name) throws AMQException;
 
-    void enqueueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException;
 
-    void dequeueMessage(StoreContext context, AMQShortString name, long messageId) throws AMQException;
+    void dequeueMessage(StoreContext context, AMQShortString name, Long messageId) throws AMQException;
 
     void beginTran(StoreContext context) throws AMQException;
 
@@ -79,14 +79,14 @@ public interface MessageStore
      * Return a valid, currently unused message id.
      * @return a message id
      */
-    long getNewMessageId();
+    Long getNewMessageId();
 
-    void storeContentBodyChunk(StoreContext context, long messageId, int index, ContentBody contentBody) throws AMQException;
+    void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException;
 
-    void storeMessageMetaData(StoreContext context, long messageId, MessageMetaData messageMetaData) throws AMQException;
+    void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException;
 
-    MessageMetaData getMessageMetaData(long messageId) throws AMQException;
+    MessageMetaData getMessageMetaData(Long messageId) throws AMQException;
 
-    ContentBody getContentBodyChunk(long messageId, int index) throws AMQException;
+    ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException;
 
 }
