@@ -4,7 +4,7 @@
   <artifactId>junit-toolkit-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>junit-toolkit-maven-plugin</name>
-  <version>0.5-20070130.111904-1</version>
+  <version>0.5-20070130.122841-1</version>
   <description>Maven plugin for the JUnit Toolkit to run performance tests with TKTestRunner.</description>
   <url>http://www.thebadgerset.co.uk/projects/junit-toolkit-maven-plugin</url>
   <licenses>
@@ -79,7 +79,7 @@
       <uniqueVersion>false</uniqueVersion>
       <id>release-repo</id>
       <name>The Badger Set Maven2 Repository</name>
-      <url>file://c:/temp</url>
+      <url>ftp://www.thebadgerset.co.uk/htdocs/maven2</url>
     </repository>
     <snapshotRepository>
       <id>snapshot-repo</id>
