@@ -26,6 +26,7 @@ namespace qpid {
 namespace framing {
 
 class BodyHandler;
+class AMQMethodBody;
 
 /**
  * Invocation context for an AMQP method.
@@ -46,8 +47,10 @@ struct MethodContext
      * will automatically construct the MethodContext.
      */
     MethodContext(
+        const AMQMethodBody* method,
         ChannelId channel, OutputHandler* output=0, RequestId request=0)
-        : channelId(channel), out(output), requestId(request){}
+        : channelId(channel), out(output), requestId(request),
+          methodBody(method) {}
 
     /** \internal Channel on which the method is sent. */
     ChannelId channelId;
@@ -60,6 +63,10 @@ struct MethodContext
      */ 
     RequestId requestId;
 
+    /** \internal This is the Method Body itself
+     * It's useful for passing around instead of unpacking all its parameters
+     */
+    const AMQMethodBody* methodBody;
 };
 
 }} // namespace qpid::framing

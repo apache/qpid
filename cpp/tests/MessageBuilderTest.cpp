@@ -74,14 +74,14 @@ class MessageBuilderTest : public CppUnit::TestCase
         // Don't hide overloads.
         using NullMessageStore::destroy;
 
-        void destroy(Message* msg)
+        void destroy(BasicMessage* msg)
         {
             CPPUNIT_ASSERT(msg->getPersistenceId());
         }
 
-        Message::shared_ptr getRestoredMessage()
+        BasicMessage::shared_ptr getRestoredMessage()
         {
-            Message::shared_ptr msg(new Message());
+            BasicMessage::shared_ptr msg(new BasicMessage());
             if (header) {
                 header->flip();
                 msg->decodeHeader(*header);
@@ -116,7 +116,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         DummyHandler handler;
         MessageBuilder builder(&handler);
 
-        Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(0);
         
@@ -133,7 +133,7 @@ class MessageBuilderTest : public CppUnit::TestCase
 
         string data1("abcdefg");
 
-        Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(7);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -154,7 +154,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -183,7 +183,7 @@ class MessageBuilderTest : public CppUnit::TestCase
             string data1("abcdefg");
             string data2("hijklmn");
             
-            Message::shared_ptr message(new Message(0, "test", "my_routing_key", false, false));
+            Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
             AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
             header->setContentSize(14);
             BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());
@@ -200,7 +200,7 @@ class MessageBuilderTest : public CppUnit::TestCase
             CPPUNIT_ASSERT(handler.msg);
             CPPUNIT_ASSERT_EQUAL(message, handler.msg);
             
-            Message::shared_ptr restored = store.getRestoredMessage();
+            BasicMessage::shared_ptr restored = store.getRestoredMessage();
             CPPUNIT_ASSERT_EQUAL(message->getExchange(), restored->getExchange());
             CPPUNIT_ASSERT_EQUAL(message->getRoutingKey(), restored->getRoutingKey());
             CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getMessageId(), restored->getHeaderProperties()->getMessageId());

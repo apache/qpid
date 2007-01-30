@@ -114,7 +114,8 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
                    const std::string& transactionId,
                    const std::string& securityToken,
                    const framing::FieldTable& applicationHeaders,
-                   framing::Content body );
+                   framing::Content body,
+                   bool mandatory );
 };
 
 }} // namespace qpid::broker

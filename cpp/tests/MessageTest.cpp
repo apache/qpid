@@ -52,7 +52,7 @@ class MessageTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        Message::shared_ptr msg = Message::shared_ptr(new Message(0, exchange, routingKey, false, false));
+        Message::shared_ptr msg = Message::shared_ptr(new BasicMessage(0, exchange, routingKey, false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);        
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -69,7 +69,7 @@ class MessageTest : public CppUnit::TestCase
         msg->encode(buffer);
         buffer.flip();
         
-        msg = Message::shared_ptr(new Message(buffer));
+        msg = Message::shared_ptr(new BasicMessage(buffer));
         CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchange());
         CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
         CPPUNIT_ASSERT_EQUAL(messageId, msg->getHeaderProperties()->getMessageId());

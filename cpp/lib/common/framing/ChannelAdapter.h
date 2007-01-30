@@ -54,7 +54,7 @@ class ChannelAdapter : public BodyHandler, public OutputHandler {
     /**
      *@param output Processed frames are forwarded to this handler.
      */
-    ChannelAdapter() : context(0), id(0), out(0) {}
+    ChannelAdapter() : context(0, 0), id(0), out(0) {}
 
     /** Initialize the channel adapter. */
     void init(ChannelId, OutputHandler&, const ProtocolVersion&);

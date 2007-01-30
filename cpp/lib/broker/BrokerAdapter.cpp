@@ -322,7 +322,7 @@ void BrokerAdapter::ServerOps::QueueHandlerImpl::bind(const MethodContext& conte
  
 void 
 BrokerAdapter::ServerOps::QueueHandlerImpl::unbind(
-    const MethodContext&,
+    const MethodContext& context,
     u_int16_t /*ticket*/,
     const string& queueName,
     const string& exchangeName,
@@ -337,7 +337,7 @@ BrokerAdapter::ServerOps::QueueHandlerImpl::unbind(
 
     exchange->unbind(queue, routingKey, &arguments);
 
-    connection.client->getQueue().unbindOk(channel.getId());    
+    connection.client->getQueue().unbindOk(context);    
 }
         
 void BrokerAdapter::ServerOps::QueueHandlerImpl::purge(const MethodContext& context, u_int16_t /*ticket*/, const string& queueName, bool nowait){
@@ -420,7 +420,7 @@ void BrokerAdapter::ServerOps::BasicHandlerImpl::publish(const MethodContext&, u
 
     Exchange::shared_ptr exchange = exchangeName.empty() ? broker.getExchanges().getDefault() : broker.getExchanges().get(exchangeName);
     if(exchange){
-        Message* msg = new Message(&connection, exchangeName, routingKey, mandatory, immediate);
+        BasicMessage* msg = new BasicMessage(&connection, exchangeName, routingKey, mandatory, immediate);
         channel.handlePublish(msg, exchange);
     }else{
         throw ChannelException(
@@ -475,16 +475,16 @@ BrokerAdapter::ServerOps::ChannelHandlerImpl::ok( const MethodContext& )
 }
 
 void
-BrokerAdapter::ServerOps::ChannelHandlerImpl::ping( const MethodContext& )
+BrokerAdapter::ServerOps::ChannelHandlerImpl::ping( const MethodContext& context)
 {
-    connection.client->getChannel().ok(channel.getId());
-    connection.client->getChannel().pong(channel.getId());
+    connection.client->getChannel().ok(context);
+    connection.client->getChannel().pong(context);
 }
 
 void
-BrokerAdapter::ServerOps::ChannelHandlerImpl::pong( const MethodContext& )
+BrokerAdapter::ServerOps::ChannelHandlerImpl::pong( const MethodContext& context)
 {
-    connection.client->getChannel().ok(channel.getId());
+    connection.client->getChannel().ok(context);
 }
 
 void
