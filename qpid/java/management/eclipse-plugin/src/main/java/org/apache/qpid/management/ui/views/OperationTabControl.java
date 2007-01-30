@@ -503,7 +503,7 @@ public class OperationTabControl extends TabControl
      */
     private void clearParameterValues(Composite control)
     {
-        if (control == null)
+        if (control == null || (control.isDisposed()))
             return;
         
         Control[] controls = control.getChildren();
