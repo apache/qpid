@@ -81,6 +81,7 @@ Options:
         # Defaults
         self.setBroker("localhost")
         self.spec = "../specs/amqp.0-9.xml"
+        self.errata = "../specs/amqp-errata.0-9.xml"
         self.verbose = 1
         self.ignore = []
 
@@ -128,14 +129,15 @@ Options:
             print "======================================="
         return result.wasSuccessful()
 
-    def connect(self, host=None, port=None, spec=None, user=None, password=None):
+    def connect(self, host=None, port=None, spec=None, errata=None, user=None, password=None):
         """Connect to the broker, returns a qpid.client.Client"""
         host = host or self.host
         port = port or self.port
         spec = spec or self.spec
+        errata = errata or self.errata
         user = user or self.user
         password = password or self.password
-        client = qpid.client.Client(host, port, qpid.spec.load(spec))
+        client = qpid.client.Client(host, port, qpid.spec.load(spec, errata))
         client.start({"LOGIN": user, "PASSWORD": password})
         return client
 
