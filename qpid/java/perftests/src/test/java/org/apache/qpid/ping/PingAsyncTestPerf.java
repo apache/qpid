@@ -1,311 +1,302 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.ping;
 
-//import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
-//import uk.co.thebadgerset.junit.extensions.TimingController;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
-import javax.jms.MessageListener;
-import javax.jms.ObjectMessage;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 
-import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
+import org.apache.qpid.requestreply.PingPongProducer;
 
+import uk.co.thebadgerset.junit.extensions.TimingController;
+import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
-public class PingAsyncTestPerf extends PingTestPerf //implements TimingControllerAware
+/**
+ * PingAsyncTestPerf is a performance test that outputs multiple timings from its test method, using the timing controller
+ * interface supplied by the test runner from a seperate listener thread. It differs from the {@link PingTestPerf} test
+ * that it extends because it can output timings as replies are received, rather than waiting until all expected replies
+ * are received. This is less 'blocky' than the tests in {@link PingTestPerf}, and provides a truer simulation of sending
+ * and recieving clients working asynchronously.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><td> Responsibilities <th> Collaborations
+ * <tr><td> Send many ping messages and output timings asynchronously on batches received.
+ * </table>
+ */
+public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerAware
 {
-//    private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
+    private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
 
-//    private TimingController _timingController;
+    /** Holds the name of the property to get the test results logging batch size. */
+    public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "BatchSize";
 
-//    private AsyncMessageListener _listener;
+    /** Holds the default test results logging batch size. */
+    public static final int DEFAULT_TEST_RESULTS_BATCH_SIZE = 1000;
 
+    /** Used to hold the timing controller passed from the test runner. */
+    private TimingController _timingController;
+
+    /** Used to generate unique correlation ids for each test run. */
+    private AtomicLong corellationIdGenerator = new AtomicLong();
+
+    /** Holds test specifics by correlation id. This consists of the expected number of messages and the timing controler. */
+    private Map<String, PerCorrelationId> perCorrelationIds =
+        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+
+    /** Holds the batched results listener, that does logging on batch boundaries. */
+    private BatchedResultsListener batchedResultsListener = null;
+
+    /**
+     * Creates a new asynchronous ping performance test with the specified name.
+     *
+     * @param name The test name.
+     */
     public PingAsyncTestPerf(String name)
     {
         super(name);
+
+        // Sets up the test parameters with defaults.
+        ParsedProperties.setSysPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
+                                              Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
     }
 
-//    /**
-//     * Compile all the tests into a test suite.
-//     */
-//    public static Test suite()
-//    {
-//        // Build a new test suite
-//        TestSuite suite = new TestSuite("Ping Performance Tests");
-//
-//        // Run performance tests in read committed mode.
-//        suite.addTest(new PingAsyncTestPerf("testAsyncPingOk"));
-//
-//        return suite;
-//    }
-//
-//    protected void setUp() throws Exception
-//    {
-//        // Create the test setups on a per thread basis, only if they have not already been created.
-//
-//        if (threadSetup.get() == null)
-//        {
-//            PerThreadSetup perThreadSetup = new PerThreadSetup();
-//
-//            // Extract the test set up paramaeters.
-//            String brokerDetails = testParameters.getProperty(BROKER_PROPNAME);
-//            String username = "guest";
-//            String password = "guest";
-//            String virtualpath = testParameters.getProperty(VIRTUAL_PATH_PROPNAME);
-//            int destinationscount = Integer.parseInt(testParameters.getProperty(PING_DESTINATION_COUNT_PROPNAME));
-//            String destinationname = testParameters.getProperty(PING_DESTINATION_NAME_PROPNAME);
-//            boolean persistent = Boolean.parseBoolean(testParameters.getProperty(PERSISTENT_MODE_PROPNAME));
-//            boolean transacted = Boolean.parseBoolean(testParameters.getProperty(TRANSACTED_PROPNAME));
-//            String selector = null;
-//            boolean verbose = Boolean.parseBoolean(testParameters.getProperty(VERBOSE_OUTPUT_PROPNAME));
-//            int messageSize = Integer.parseInt(testParameters.getProperty(MESSAGE_SIZE_PROPNAME));
-//            int rate = Integer.parseInt(testParameters.getProperty(RATE_PROPNAME));
-//            boolean pubsub = Boolean.parseBoolean(testParameters.getProperty(IS_PUBSUB_PROPNAME));
-//
-//
-//            boolean afterCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_COMMIT));
-//            boolean beforeCommit = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_COMMIT));
-//            boolean afterSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_AFTER_SEND));
-//            boolean beforeSend = Boolean.parseBoolean(testParameters.getProperty(FAIL_BEFORE_SEND));
-//            boolean failOnce = Boolean.parseBoolean(testParameters.getProperty(FAIL_ONCE));
-//
-//            int batchSize = Integer.parseInt(testParameters.getProperty(BATCH_SIZE));
-//            int commitbatchSize = Integer.parseInt(testParameters.getProperty(COMMIT_BATCH_SIZE));
-//
-//            // This is synchronized because there is a race condition, which causes one connection to sleep if
-//            // all threads try to create connection concurrently
-//            synchronized (this)
-//            {
-//                // Establish a client to ping a Queue and listen the reply back from same Queue
-//                perThreadSetup._pingItselfClient = new TestPingItself(brokerDetails, username, password, virtualpath,
-//                                                                      destinationname, selector, transacted, persistent,
-//                                                                      messageSize, verbose,
-//                                                                      afterCommit, beforeCommit, afterSend, beforeSend, failOnce,
-//                                                                      commitbatchSize, destinationscount, rate, pubsub);
-//            }
-//
-//            // Attach the per-thread set to the thread.
-//            threadSetup.set(perThreadSetup);
-//
-//            _listener = new AsyncMessageListener(batchSize);
-//
-//            perThreadSetup._pingItselfClient.setMessageListener(_listener);
-//            // Start the client connection
-//            perThreadSetup._pingItselfClient.getConnection().start();
-//
-//        }
-//    }
-//
-//
-//    public void testAsyncPingOk(int numPings)
-//    {
-//        _timingController = this.getTimingController();
-//
-//        _listener.setTotalMessages(numPings);
-//
-//        PerThreadSetup perThreadSetup = threadSetup.get();
-//        if (numPings == 0)
-//        {
-//            _logger.error("Number of pings requested was zero.");
-//            fail("Number of pings requested was zero.");
-//        }
-//
-//        // Generate a sample message. This message is already time stamped and has its reply-to destination set.
-//        ObjectMessage msg = null;
-//
-//        try
-//        {
-//            msg = perThreadSetup._pingItselfClient.getTestMessage(null,
-//                                                                  Integer.parseInt(testParameters.getProperty(
-//                                                                          MESSAGE_SIZE_PROPNAME)),
-//                                                                  Boolean.parseBoolean(testParameters.getProperty(
-//                                                                          PERSISTENT_MODE_PROPNAME)));
-//        }
-//        catch (JMSException e)
-//        {
-//
-//        }
-//
-//        // start the test
-//        long timeout = Long.parseLong(testParameters.getProperty(TIMEOUT_PROPNAME));
-//
-//        String correlationID = Long.toString(perThreadSetup._pingItselfClient.getNewID());
-//
-//        try
-//        {
-//            _logger.debug("Sending messages");
-//
-//            perThreadSetup._pingItselfClient.pingNoWaitForReply(msg, numPings, correlationID);
-//
-//            _logger.debug("All sent");
-//        }
-//        catch (JMSException e)
-//        {
-//            e.printStackTrace();
-//            Assert.fail("JMS Exception Received" + e);
-//        }
-//        catch (InterruptedException e)
-//        {
-//            e.printStackTrace();
-//        }
-//
-//        try
-//        {
-//            _logger.debug("Awating test finish");
-//
-//            perThreadSetup._pingItselfClient.getEndLock(correlationID).await(timeout, TimeUnit.MILLISECONDS);
-//
-//            if (perThreadSetup._pingItselfClient.getEndLock(correlationID).getCount() != 0)
-//            {
-//                _logger.error("Timeout occured");
-//            }
-//            //Allow the time out to exit the loop.
-//        }
-//        catch (InterruptedException e)
-//        {
-//            //ignore
-//            _logger.error("Awaiting test end was interrupted.");
-//
-//        }
-//
-//        // Fail the test if the timeout was exceeded.
-//        int numReplies = numPings - (int) perThreadSetup._pingItselfClient.removeLock(correlationID).getCount();
-//
-//        _logger.info("Test Finished");
-//
-//        if (numReplies != numPings)
-//        {
-//            try
-//            {
-//                perThreadSetup._pingItselfClient.commitTx(perThreadSetup._pingItselfClient.getConsumerSession());
-//            }
-//            catch (JMSException e)
-//            {
-//                _logger.error("Error commiting received messages", e);
-//            }
-//            try
-//            {
-//                if (_timingController != null)
-//                {
-//                    _logger.trace("Logging missing message count");
-//                    _timingController.completeTest(false, numPings - numReplies);
-//                }
-//            }
-//            catch (InterruptedException e)
-//            {
-//                //ignore
-//            }
-//            Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = " + numReplies);
-//        }
-//    }
-//
-//    public void setTimingController(TimingController timingController)
-//    {
-//        _timingController = timingController;
-//    }
-//
-//    public TimingController getTimingController()
-//    {
-//        return _timingController;
-//    }
-//
-//
-//    private class AsyncMessageListener implements MessageListener
-//    {
-//        private volatile int _totalMessages;
-//        private int _batchSize;
-//        PerThreadSetup _perThreadSetup;
-//
-//        public AsyncMessageListener(int batchSize)
-//        {
-//            this(batchSize, -1);
-//        }
-//
-//        public AsyncMessageListener(int batchSize, int totalMessages)
-//        {
-//            _batchSize = batchSize;
-//            _totalMessages = totalMessages;
-//            _perThreadSetup = threadSetup.get();
-//        }
-//
-//        public void setTotalMessages(int newTotal)
-//        {
-//            _totalMessages = newTotal;
-//        }
-//
-//        public void onMessage(Message message)
-//        {
-//            try
-//            {
-//                _logger.trace("Message Received");
-//
-//                CountDownLatch count = _perThreadSetup._pingItselfClient.getEndLock(message.getJMSCorrelationID());
-//
-//                if (count != null)
-//                {
-//                    int messagesLeft = (int) count.getCount() - 1;// minus one as we haven't yet counted the current message
-//
-//                    if ((messagesLeft % _batchSize) == 0)
-//                    {
-//                        doDone(_batchSize);
-//                    }
-//                    else if (messagesLeft == 0)
-//                    {
-//                        doDone(_totalMessages % _batchSize);
-//                    }
-//                }
-//
-//            }
-//            catch (JMSException e)
-//            {
-//                _logger.warn("There was a JMSException", e);
-//            }
-//
-//        }
-//
-//        private void doDone(int messageCount)
-//        {
-//            _logger.trace("Messages received:" + messageCount);
-//            _logger.trace("Total Messages :" + _totalMessages);
-//
-//            try
-//            {
-//                if (_timingController != null)
-//                {
-//                    _timingController.completeTest(true, messageCount);
-//                }
-//            }
-//            catch (InterruptedException e)
-//            {
-//                //ignore
-//            }
-//        }
-//
-//    }
+    /**
+     * Compile all the tests into a test suite.
+     */
+    public static Test suite()
+    {
+        // Build a new test suite
+        TestSuite suite = new TestSuite("Ping Performance Tests");
 
+        // Run performance tests in read committed mode.
+        suite.addTest(new PingAsyncTestPerf("testAsyncPingOk"));
+
+        return suite;
+    }
+
+    /**
+     * Accepts a timing controller from the test runner.
+     *
+     * @param timingController The timing controller to register mutliple timings with.
+     */
+    public void setTimingController(TimingController timingController)
+    {
+        _timingController = timingController;
+    }
+
+    /**
+     * Gets the timing controller passed in by the test runner.
+     *
+     * @return The timing controller passed in by the test runner.
+     */
+    public TimingController getTimingController()
+    {
+        return _timingController;
+    }
+
+    /**
+     * Sends the specified number of pings, asynchronously outputs timings on every batch boundary, and waits until
+     * all replies have been received or a time out occurs before exiting this method.
+     *
+     * @param numPings The number of pings to send.
+     */
+    public void testAsyncPingOk(int numPings) throws Exception
+    {
+        _logger.debug("public void testAsyncPingOk(int numPings): called");
+
+        // Ensure that at least one ping was requeusted.
+        if (numPings == 0)
+        {
+            _logger.error("Number of pings requested was zero.");
+        }
+
+        // Get the per thread test setup to run the test through.
+        PerThreadSetup perThreadSetup = threadSetup.get();
+        PingClient pingClient = perThreadSetup._pingClient;
+
+        // Advance the correlation id of messages to send, to make it unique for this run.
+        String messageCorrelationId = Long.toString(corellationIdGenerator.incrementAndGet());
+        _logger.debug("messageCorrelationId = " + messageCorrelationId);
+
+        // Initialize the count and timing controller for the new correlation id.
+        PerCorrelationId perCorrelationId = new PerCorrelationId();
+        TimingController tc = getTimingController().getControllerForCurrentThread();
+        perCorrelationId._tc = tc;
+        perCorrelationId._expectedCount = numPings;
+        perCorrelationIds.put(messageCorrelationId, perCorrelationId);
+
+        // Attach the chained message listener to the ping producer to listen asynchronously for the replies to these
+        // messages.
+        pingClient.setChainedMessageListener(batchedResultsListener);
+
+        // Generate a sample message of the specified size.
+        ObjectMessage msg =
+            pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                      testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                      testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
+
+        // Send the requested number of messages, and wait until they have all been received.
+        long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
+        int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout);
+
+        // Check that all the replies were received and log a fail if they were not.
+        if (numReplies < numPings)
+        {
+            tc.completeTest(false, 0);
+        }
+
+        // Remove the chained message listener from the ping producer.
+        pingClient.removeChainedMessageListener();
+
+        // Remove the expected count and timing controller for the message correlation id, to ensure they are cleaned up.
+        perCorrelationIds.remove(messageCorrelationId);
+    }
+
+    /**
+     * Performs test fixture creation on a per thread basis. This will only be called once for each test thread.
+     */
+    public void threadSetUp()
+    {
+        _logger.debug("public void threadSetUp(): called");
+
+        try
+        {
+            // Call the set up method in the super class. This creates a PingClient pinger.
+            super.threadSetUp();
+
+            // Create the chained message listener, only if it has not already been created.  This is set up with the
+            // batch size property, to tell it what batch size to output results on. A synchronized block is used to
+            // ensure that only one thread creates this.
+            synchronized (this)
+            {
+                if (batchedResultsListener == null)
+                {
+                    int batchSize = Integer.parseInt(testParameters.getProperty(TEST_RESULTS_BATCH_SIZE_PROPNAME));
+                    batchedResultsListener = new BatchedResultsListener(batchSize);
+                }
+            }
+
+            // Get the set up that the super class created.
+            PerThreadSetup perThreadSetup = threadSetup.get();
+
+            // Register the chained message listener on the pinger to do its asynchronous test timings from.
+            perThreadSetup._pingClient.setChainedMessageListener(batchedResultsListener);
+        }
+        catch (Exception e)
+        {
+            _logger.warn("There was an exception during per thread setup.", e);
+        }
+    }
+
+    /**
+     * BatchedResultsListener is a {@link PingPongProducer.ChainedMessageListener} that can be attached to the
+     * pinger, in order to receive notifications about every message received and the number remaining to be
+     * received. Whenever the number remaining crosses a batch size boundary this results listener outputs
+     * a test timing for the actual number of messages received in the current batch.
+     */
+    private class BatchedResultsListener implements PingPongProducer.ChainedMessageListener
+    {
+        /** The test results logging batch size. */
+        int _batchSize;
+
+        /**
+         * Creates a results listener on the specified batch size.
+         *
+         * @param batchSize The batch size to use.
+         */
+        public BatchedResultsListener(int batchSize)
+        {
+            _batchSize = batchSize;
+        }
+
+        /**
+         * This callback method is called from all of the pingers that this test creates. It uses the correlation id
+         * from the message to identify the timing controller for the test thread that was responsible for sending those
+         * messages.
+         *
+         * @param message        The message.
+         * @param remainingCount The count of messages remaining to be received with a particular correlation id.
+         *
+         * @throws JMSException Any underlying JMSException is allowed to fall through.
+         */
+        public void onMessage(Message message, int remainingCount) throws JMSException
+        {
+            _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount + "): called");
+
+            // Check if a batch boundary has been crossed.
+            if ((remainingCount % _batchSize) == 0)
+            {
+                // Extract the correlation id from the message.
+                String correlationId = message.getJMSCorrelationID();
+
+                // Get the details for the correlation id and check that they are not null. They can become null
+                // if a test times out.
+                PerCorrelationId perCorrelationId = perCorrelationIds.get(correlationId);
+                if (perCorrelationId != null)
+                {
+                    // Get the timing controller and expected count for this correlation id.
+                    TimingController tc = perCorrelationId._tc;
+                    int expected = perCorrelationId._expectedCount;
+
+                    // Calculate how many messages were actually received in the last batch. This will be the batch size
+                    // except where the number expected is not a multiple of the batch size and this is the first remaining
+                    // count to cross a batch size boundary, in which case it will be the number expected modulo the batch
+                    // size.
+                    int receivedInBatch = ((expected - remainingCount) < _batchSize) ? (expected % _batchSize) : _batchSize;
+
+                    // Register a test result for the correlation id.
+                    try
+                    {
+
+                        tc.completeTest(true, receivedInBatch);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        // Ignore this. It means the test runner wants to stop as soon as possible.
+                        _logger.warn("Got InterruptedException.", e);
+                    }
+                }
+                // Else ignore, test timed out. Should log a fail here?
+            }
+        }
+    }
+
+    /**
+     * Holds state specific to each correlation id, needed to output test results. This consists of the count of
+     * the total expected number of messages, and the timing controller for the thread sending those message ids.
+     */
+    private static class PerCorrelationId
+    {
+        public int _expectedCount;
+        public TimingController _tc;
+    }
 }

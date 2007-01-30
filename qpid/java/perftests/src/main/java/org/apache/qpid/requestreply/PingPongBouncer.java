@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.requestreply;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.jms.*;
@@ -32,7 +34,6 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.ping.AbstractPingClient;
 import org.apache.qpid.topic.Config;
 
 /**
@@ -58,7 +59,7 @@ import org.apache.qpid.topic.Config;
  *
  * @todo Make verbose accept a number of messages, only prints to console every X messages.
  */
-public class PingPongBouncer extends AbstractPingClient implements MessageListener
+public class PingPongBouncer implements MessageListener
 {
     private static final Logger _logger = Logger.getLogger(PingPongBouncer.class);
 
@@ -72,6 +73,9 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
 
     /** The default exclusive flag for the message consumer. */
     private static final boolean EXCLUSIVE = false;
+
+    /** A convenient formatter to use when time stamping output. */
+    protected static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
 
     /** Used to indicate that the reply generator should log timing info to the console (logger info level). */
     private boolean _verbose = false;
@@ -93,6 +97,24 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
     /** The producer session. */
     private Session _producerSession;
 
+    /** Holds the connection to the broker. */
+    private AMQConnection _connection;
+
+    /** Flag used to indicate if this is a point to point or pub/sub ping client. */
+    private boolean _isPubSub = false;
+
+    /**
+     * This flag is used to indicate that the user should be prompted to kill a broker, in order to test
+     * failover, immediately before committing a transaction.
+     */
+    protected boolean _failBeforeCommit = false;
+
+    /**
+     * This flag is used to indicate that the user should be prompted to a kill a broker, in order to test
+     * failover, immediate after committing a transaction.
+     */
+    protected boolean _failAfterCommit = false;
+
     /**
      * Creates a PingPongBouncer on the specified producer and consumer sessions.
      *
@@ -110,8 +132,8 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
      * @throws Exception All underlying exceptions allowed to fall through. This is only test code...
      */
     public PingPongBouncer(String brokerDetails, String username, String password, String virtualpath,
-                           String destinationName, boolean persistent, boolean transacted, String selector,
-                           boolean verbose, boolean pubsub) throws Exception
+                           String destinationName, boolean persistent, boolean transacted, String selector, boolean verbose,
+                           boolean pubsub) throws Exception
     {
         // Create a client id to uniquely identify this client.
         InetAddress address = InetAddress.getLocalHost();
@@ -133,7 +155,8 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
 
         // Create the queue to listen for message on.
         createConsumerDestination(destinationName);
-        MessageConsumer consumer = _consumerSession.createConsumer(_consumerDestination, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
+        MessageConsumer consumer =
+            _consumerSession.createConsumer(_consumerDestination, PREFETCH, NO_LOCAL, EXCLUSIVE, selector);
 
         // Create a producer for the replies, without a default destination.
         _replyProducer = _producerSession.createProducer(null);
@@ -142,18 +165,6 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
 
         // Set this up to listen for messages on the queue.
         consumer.setMessageListener(this);
-    }
-
-    private void createConsumerDestination(String name)
-    {
-        if (isPubSub())
-        {
-            _consumerDestination = new AMQTopic(name);
-        }
-        else
-        {
-            _consumerDestination = new AMQQueue(name);
-        }
     }
 
     /**
@@ -177,12 +188,13 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         Config config = new Config();
         config.setOptions(args);
         String brokerDetails = config.getHost() + ":" + config.getPort();
-        String virtualpath = "/test";        
+        String virtualpath = "/test";
         String destinationName = config.getDestination();
         if (destinationName == null)
         {
             destinationName = DEFAULT_DESTINATION_NAME;
         }
+
         String selector = config.getSelector();
         boolean transacted = config.isTransacted();
         boolean persistent = config.usePersistentMessages();
@@ -192,11 +204,20 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         //String selector = null;
 
         // Instantiate the ping pong client with the command line options and start it running.
-        PingPongBouncer pingBouncer = new PingPongBouncer(brokerDetails, "guest", "guest", virtualpath,
-                                                destinationName, persistent, transacted, selector, verbose, pubsub);
+        PingPongBouncer pingBouncer =
+            new PingPongBouncer(brokerDetails, "guest", "guest", virtualpath, destinationName, persistent, transacted,
+                                selector, verbose, pubsub);
         pingBouncer.getConnection().start();
 
         System.out.println("Waiting...");
+    }
+
+    private static void usage()
+    {
+        System.err.println("Usage: PingPongBouncer \n" + "-host : broker host\n" + "-port : broker port\n"
+                           + "-destinationname : queue/topic name\n" + "-transacted : (true/false). Default is false\n"
+                           + "-persistent : (true/false). Default is false\n"
+                           + "-pubsub     : (true/false). Default is false\n" + "-selector   : selector string\n");
     }
 
     /**
@@ -260,14 +281,145 @@ public class PingPongBouncer extends AbstractPingClient implements MessageListen
         }
     }
 
-    private static void usage()
+    /**
+     * Gets the underlying connection that this ping client is running on.
+     *
+     * @return The underlying connection that this ping client is running on.
+     */
+    public AMQConnection getConnection()
     {
-        System.err.println("Usage: PingPongBouncer \n" + "-host : broker host\n" + "-port : broker port\n" +
-                           "-destinationname : queue/topic name\n" +
-                           "-transacted : (true/false). Default is false\n" +
-                           "-persistent : (true/false). Default is false\n" +
-                           "-pubsub     : (true/false). Default is false\n" +
-                           "-selector   : selector string\n");
+        return _connection;
+    }
+
+    /**
+     * Sets the connection that this ping client is using.
+     *
+     * @param connection The ping connection.
+     */
+    public void setConnection(AMQConnection connection)
+    {
+        this._connection = connection;
+    }
+
+    /**
+     * Sets or clears the pub/sub flag to indiciate whether this client is pinging a queue or a topic.
+     *
+     * @param pubsub <tt>true</tt> if this client is pinging a topic, <tt>false</tt> if it is pinging a queue.
+     */
+    public void setPubSub(boolean pubsub)
+    {
+        _isPubSub = pubsub;
+    }
+
+    /**
+     * Checks whether this client is a p2p or pub/sub ping client.
+     *
+     * @return <tt>true</tt> if this client is pinging a topic, <tt>false</tt> if it is pinging a queue.
+     */
+    public boolean isPubSub()
+    {
+        return _isPubSub;
+    }
+
+    /**
+     * Convenience method to commit the transaction on the specified session. If the session to commit on is not
+     * a transactional session, this method does nothing.
+     *
+     * <p/>If the {@link #_failBeforeCommit} flag is set, this will prompt the user to kill the broker before the
+     * commit is applied. If the {@link #_failAfterCommit} flag is set, this will prompt the user to kill the broker
+     * after the commit is applied.
+     *
+     * @throws javax.jms.JMSException If the commit fails and then the rollback fails.
+     */
+    protected void commitTx(Session session) throws JMSException
+    {
+        if (session.getTransacted())
+        {
+            try
+            {
+                if (_failBeforeCommit)
+                {
+                    _logger.trace("Failing Before Commit");
+                    doFailover();
+                }
+
+                session.commit();
+
+                if (_failAfterCommit)
+                {
+                    _logger.trace("Failing After Commit");
+                    doFailover();
+                }
+
+                _logger.trace("Session Commited.");
+            }
+            catch (JMSException e)
+            {
+                _logger.trace("JMSException on commit:" + e.getMessage(), e);
+
+                try
+                {
+                    session.rollback();
+                    _logger.debug("Message rolled back.");
+                }
+                catch (JMSException jmse)
+                {
+                    _logger.trace("JMSE on rollback:" + jmse.getMessage(), jmse);
+
+                    // Both commit and rollback failed. Throw the rollback exception.
+                    throw jmse;
+                }
+            }
+        }
+    }
+
+    /**
+     * Prompts the user to terminate the named broker, in order to test failover functionality. This method will block
+     * until the user supplied some input on the terminal.
+     *
+     * @param broker The name of the broker to terminate.
+     */
+    protected void doFailover(String broker)
+    {
+        System.out.println("Kill Broker " + broker + " now.");
+        try
+        {
+            System.in.read();
+        }
+        catch (IOException e)
+        { }
+
+        System.out.println("Continuing.");
+    }
+
+    /**
+     * Prompts the user to terminate the broker, in order to test failover functionality. This method will block
+     * until the user supplied some input on the terminal.
+     */
+    protected void doFailover()
+    {
+        System.out.println("Kill Broker now.");
+        try
+        {
+            System.in.read();
+        }
+        catch (IOException e)
+        { }
+
+        System.out.println("Continuing.");
+
+    }
+
+    private void createConsumerDestination(String name)
+    {
+        if (isPubSub())
+        {
+            _consumerDestination = new AMQTopic(name);
+        }
+        else
+        {
+            _consumerDestination = new AMQQueue(name);
+        }
     }
 
     /**
