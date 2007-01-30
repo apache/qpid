@@ -212,12 +212,11 @@ public class HeadersExchange extends AbstractExchange
 
             String msg = "Exchange " + getName() + ": message not routable.";
 
-            // XXX
-            /*            if (payload.getTransferBody().mandatory)
+            if (payload.getTransferBody().mandatory)
             {
                 throw new NoRouteException(msg, payload);
             }
-            else*/
+            else
             {
                 _logger.warn(msg);
             }
