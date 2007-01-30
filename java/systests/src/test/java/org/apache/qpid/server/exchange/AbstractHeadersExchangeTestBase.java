@@ -183,6 +183,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     "someExchange",                  // String exchange
                     messageHeaders.getExpiration(), // long expiration
                     false,                          // boolean immediate
+                    false,                          // boolean mandatory
                     null,                         // String messageId
                     (short)0,                       // short priority
                     false,                          // boolean redelivered

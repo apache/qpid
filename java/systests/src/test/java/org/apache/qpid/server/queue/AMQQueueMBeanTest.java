@@ -174,6 +174,7 @@ public class AMQQueueMBeanTest extends TestCase
             "someExchange",                  // String exchange
             messageHeaders.getExpiration(), // long expiration
             immediate,                          // boolean immediate
+            false,                              // boolean mandatory
             "",                         // String messageId
             (short)0,                       // short priority
             false,                          // boolean redelivered
