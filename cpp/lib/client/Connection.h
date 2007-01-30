@@ -1,5 +1,5 @@
-#ifndef _Connection_
-#define _Connection_
+#ifndef _client_Connection_
+#define _client_Connection_
 
 /*
  *
@@ -89,19 +89,19 @@ class Connection : public ConnectionForChannel
     static framing::ChannelId channelIdCounter;
     static const std::string OK;
         
-    std::string host;
-    int port;
+    framing::ProtocolVersion version;
     const u_int32_t max_frame_size;
-    ChannelMap channels; 
+    ChannelMap channels;
+    Connector defaultConnector;
     Connector* connector;
     framing::OutputHandler* out;
-    volatile bool closed;
-    framing::ProtocolVersion version;
+    volatile bool isOpen;
         
     void erase(framing::ChannelId);
     void channelException(
         Channel&, framing::AMQMethodBody*, const QpidError&);
     Channel channel0;
+    bool debug;
 
     // TODO aconway 2007-01-26: too many friendships, untagle these classes.
   friend class Channel;
@@ -145,9 +145,9 @@ class Connection : public ConnectionForChannel
      * within a single broker).
      */
     void open(const std::string& host, int port = 5672, 
-              const std::string& uid = "guest", const std::string& pwd = "guest", 
+              const std::string& uid = "guest",
+              const std::string& pwd = "guest", 
               const std::string& virtualhost = "/");
-
 
     /**
      * Close the connection with optional error information for the peer.
@@ -177,7 +177,10 @@ class Connection : public ConnectionForChannel
     void idleOut();
     void idleIn();
     void shutdown();
-
+    
+    /**\internal used for testing */
+    void setConnector(Connector& connector);
+    
     /**
      * @return the maximum frame size in use on this connection
      */
@@ -187,8 +190,7 @@ class Connection : public ConnectionForChannel
     const framing::ProtocolVersion& getVersion() { return version; }
 };
 
-}
-}
+}} // namespace qpid::client
 
 
 #endif

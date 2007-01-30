@@ -29,6 +29,7 @@ void ChannelAdapter::init(
     id = i;
     out = &o;
     version = v;
+    context = MethodContext(id, this);
 }
 
 void ChannelAdapter::send(AMQFrame* frame) {
@@ -58,19 +59,21 @@ void ChannelAdapter::send(AMQBody::shared_ptr body) {
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     assertMethodOk(*request);
     responder.received(request->getData());
-    MethodContext context(id, this, request->getRequestId());
+    context =MethodContext(id, this, request->getRequestId());
     handleMethodInContext(request, context);
 }
 
 void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
     assertMethodOk(*response);
-    handleMethod(response);
+    // TODO aconway 2007-01-30: Consider a response handled on receipt.
+    // Review - any cases where this is not the case?
     requester.processed(response->getData());
+    handleMethod(response);
 }
 
 void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {
     assertMethodOk(*method);
-    MethodContext context(id, this);
+    context = MethodContext(id, this);
     handleMethodInContext(method, context);
 }
 

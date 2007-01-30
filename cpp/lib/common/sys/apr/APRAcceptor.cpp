@@ -56,10 +56,11 @@ Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads, bo
 // Must define Acceptor virtual dtor.
 Acceptor::~Acceptor() {}
 
-    APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
+APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     port(port_),
     trace(trace_),
-    processor(APRPool::get(), threads, 1000, 5000000)
+    processor(APRPool::get(), threads, 1000, 5000000),
+    running(false)
 {
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, port, APR_IPV4_ADDR_OK, APRPool::get()));

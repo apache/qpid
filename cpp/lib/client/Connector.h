@@ -37,13 +37,13 @@ namespace qpid {
 
 namespace client {
 
-class Connector : public qpid::framing::OutputHandler, 
-                  private qpid::sys::Runnable
+class Connector : public framing::OutputHandler, 
+                  private sys::Runnable
 {
     const bool debug;
     const int receive_buffer_size;
     const int send_buffer_size;
-    qpid::framing::ProtocolVersion version;
+    framing::ProtocolVersion version;
 
     bool closed;
 
@@ -53,22 +53,22 @@ class Connector : public qpid::framing::OutputHandler,
     u_int32_t idleIn;
     u_int32_t idleOut;
 
-    qpid::sys::TimeoutHandler* timeoutHandler;
-    qpid::sys::ShutdownHandler* shutdownHandler;
-    qpid::framing::InputHandler* input;
-    qpid::framing::InitiationHandler* initialiser;
-    qpid::framing::OutputHandler* output;
+    sys::TimeoutHandler* timeoutHandler;
+    sys::ShutdownHandler* shutdownHandler;
+    framing::InputHandler* input;
+    framing::InitiationHandler* initialiser;
+    framing::OutputHandler* output;
 	
-    qpid::framing::Buffer inbuf;
-    qpid::framing::Buffer outbuf;
+    framing::Buffer inbuf;
+    framing::Buffer outbuf;
 
-    qpid::sys::Mutex writeLock;
-    qpid::sys::Thread receiver;
+    sys::Mutex writeLock;
+    sys::Thread receiver;
 
-    qpid::sys::Socket socket;
+    sys::Socket socket;
 
     void checkIdle(ssize_t status);
-    void writeBlock(qpid::framing::AMQDataBlock* data);
+    void writeBlock(framing::AMQDataBlock* data);
     void writeToSocket(char* data, size_t available);
     void setSocketTimeout();
 
@@ -77,23 +77,22 @@ class Connector : public qpid::framing::OutputHandler,
 
   friend class Channel;
   public:
-    Connector(const qpid::framing::ProtocolVersion& pVersion,
+    Connector(const framing::ProtocolVersion& pVersion,
               bool debug = false, u_int32_t buffer_size = 1024);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);
     virtual void init();
     virtual void close();
-    virtual void setInputHandler(qpid::framing::InputHandler* handler);
-    virtual void setTimeoutHandler(qpid::sys::TimeoutHandler* handler);
-    virtual void setShutdownHandler(qpid::sys::ShutdownHandler* handler);
-    virtual qpid::framing::OutputHandler* getOutputHandler();
-    virtual void send(qpid::framing::AMQFrame* frame);
+    virtual void setInputHandler(framing::InputHandler* handler);
+    virtual void setTimeoutHandler(sys::TimeoutHandler* handler);
+    virtual void setShutdownHandler(sys::ShutdownHandler* handler);
+    virtual framing::OutputHandler* getOutputHandler();
+    virtual void send(framing::AMQFrame* frame);
     virtual void setReadTimeout(u_int16_t timeout);
     virtual void setWriteTimeout(u_int16_t timeout);
 };
 
-}
-}
+}}
 
 
 #endif

@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+#include <memory>
+#include <boost/lexical_cast.hpp>
+
 #include <ConnectionRedirectBody.h>
 #include <ProtocolVersion.h>
 #include <amqp_framing.h>
@@ -25,15 +28,20 @@
 #include <qpid_test_plugin.h>
 #include <sstream>
 #include <typeinfo>
+#include <QpidError.h>
 #include <AMQP_HighestVersion.h>
 #include "AMQRequestBody.h"
 #include "AMQResponseBody.h"
 #include "Requester.h"
 #include "Responder.h"
-#include <QpidError.h>
+#include "InProcessBroker.h"
+#include "client/Connection.h"
+#include "client/ClientExchange.h"
+#include "client/ClientQueue.h"
 
+using namespace qpid;
 using namespace qpid::framing;
-using qpid::QpidError;
+using namespace std;
 
 template <class T>
 std::string tostring(const T& x) 
@@ -60,6 +68,7 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testInlineContent);
     CPPUNIT_TEST(testContentReference);
     CPPUNIT_TEST(testContentValidation);
+    CPPUNIT_TEST(testRequestResponseRoundtrip);
     CPPUNIT_TEST_SUITE_END();
 
   private:
@@ -324,7 +333,43 @@ class FramingTest : public CppUnit::TestCase
         // TODO aconway 2007-01-14: Test for batching when supported.
         
     }
-};
+
+    // expect may contain null chars so use string(ptr,size) constructor
+    // Use sizeof(expect)-1 to strip the trailing null.
+#define ASSERT_FRAME(expect, frame) \
+    CPPUNIT_ASSERT_EQUAL(string(expect, sizeof(expect)-1), boost::lexical_cast<string>(frame))
+
+    void testRequestResponseRoundtrip() {
+        broker::InProcessBroker ibroker(version);
+        client::Connection clientConnection;
+        clientConnection.setConnector(ibroker);
+        clientConnection.open("");
+        client::Channel c;
+        clientConnection.openChannel(c);
+
+        client::Exchange exchange(
+            "MyExchange", client::Exchange::TOPIC_EXCHANGE);
+        client::Queue queue("MyQueue", true);
+        c.declareExchange(exchange);
+        c.declareQueue(queue);
+        c.bind(exchange, queue, "MyTopic", framing::FieldTable());
+        broker::InProcessBroker::Conversation::const_iterator i = ibroker.conversation.begin();
+        ASSERT_FRAME("BROKER: Frame[channel=0; request(id=1,mark=0): ConnectionStart: versionMajor=0; versionMinor=9; serverProperties={}; mechanisms=PLAIN; locales=en_US]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=0; response(id=1,request=1,batch=0): ConnectionStartOk: clientProperties={}; mechanism=PLAIN; response=\000guest\000guest; locale=en_US]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=0; request(id=2,mark=1): ConnectionTune: channelMax=100; frameMax=65536; heartbeat=0]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=0; response(id=2,request=2,batch=0): ConnectionTuneOk: channelMax=100; frameMax=65536; heartbeat=0]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=0; request(id=1,mark=0): ConnectionOpen: virtualHost=/; capabilities=; insist=1]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=0; response(id=1,request=1,batch=0): ConnectionOpenOk: knownHosts=]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=1; request(id=1,mark=0): ChannelOpen: outOfBand=]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=1; response(id=1,request=1,batch=0): ChannelOpenOk: channelId=]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=1; request(id=2,mark=1): ExchangeDeclare: ticket=0; exchange=MyExchange; type=topic; passive=0; durable=0; autoDelete=0; internal=0; nowait=0; arguments={}]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=1; response(id=2,request=2,batch=0): ExchangeDeclareOk: ]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=1; request(id=3,mark=2): QueueDeclare: ticket=0; queue=MyQueue; passive=0; durable=0; exclusive=1; autoDelete=1; nowait=0; arguments={}]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=1; response(id=3,request=3,batch=0): QueueDeclareOk: queue=MyQueue; messageCount=0; consumerCount=0]", *i++);
+        ASSERT_FRAME("CLIENT: Frame[channel=1; request(id=4,mark=3): QueueBind: ticket=0; queue=MyQueue; exchange=MyExchange; routingKey=MyTopic; nowait=0; arguments={}]", *i++);
+        ASSERT_FRAME("BROKER: Frame[channel=1; response(id=4,request=4,batch=0): QueueBindOk: ]", *i++);
+    }
+ };
 
 
 // Make this test suite a plugin.
