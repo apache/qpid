@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -135,6 +136,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * This queue is bounded and is used to store messages before being dispatched to the consumer
      */
     private final FlowControllingBlockingQueue _queue;
+
+    private ConcurrentLinkedQueue<Long> _unacknowledged = new ConcurrentLinkedQueue();
 
     private Dispatcher _dispatcher;
 
@@ -772,6 +775,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             consumer.clearUnackedMessages();
         }
+        _unacknowledged.clear();
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
@@ -1596,6 +1600,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
 
         _queue.add(message);
+        _unacknowledged.offer(message.deliveryTag);
     }
 
     /**
@@ -1608,19 +1613,27 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *                    delivery tag
      * @throws AMQException 
      */
-    public void acknowledgeMessage(long requestId, boolean multiple) throws AMQException
+    public synchronized void acknowledgeMessage(long requestId, boolean multiple) throws AMQException
     {
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQMethodBody methodBody = MessageOkBody.createMethodBody((byte)0, (byte)9);	// AMQP version (major, minor)
-            //deliveryTag,	// deliveryTag
-            //multiple);	// multiple
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending ack for request ID " + requestId + " on channel " + _channelId);
         }
-        _connection.getProtocolHandler().writeResponse(_channelId, requestId, methodBody);
+        if (multiple) {
+            for (Iterator<Long> it = _unacknowledged.iterator(); it.hasNext(); ) {
+                long tag = it.next();
+                if (tag > requestId) { break; }
+                _connection.getProtocolHandler().writeResponse(_channelId, tag, methodBody);
+                it.remove();
+            }
+        } else {
+            _connection.getProtocolHandler().writeResponse(_channelId, requestId, methodBody);
+            _unacknowledged.remove(requestId);
+        }
     }
 
     public int getDefaultPrefetch()
