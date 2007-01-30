@@ -550,6 +550,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         checkTransacted();
         try
         {
+            _unacknowledged.clear();
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
@@ -1599,8 +1600,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             _logger.debug("Message received in session with channel id " + _channelId);
         }
 
-        _queue.add(message);
         _unacknowledged.offer(message.deliveryTag);
+        _queue.add(message);
     }
 
     /**

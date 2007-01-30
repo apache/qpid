@@ -24,6 +24,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.log4j.Logger;
 
 import javax.jms.*;
 
@@ -47,11 +49,12 @@ public class TransactedTest extends TestCase
     private Session testSession;
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
+    private static final Logger _logger = Logger.getLogger(TransactedTest.class);
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        queue1 = new AMQQueue("Q1", false);
+        queue1 = new AMQQueue("Q1", "Q1", false, true);
         queue2 = new AMQQueue("Q2", false);
 
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
@@ -67,29 +70,22 @@ public class TransactedTest extends TestCase
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
-
-
-        //add some messages
-        prepProducer1.send(prepSession.createTextMessage("A"));
-        prepProducer1.send(prepSession.createTextMessage("B"));
-        prepProducer1.send(prepSession.createTextMessage("C"));
-
-        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
-        testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        testConsumer2 = testSession.createConsumer(queue2);
-        testCon.start();
     }
 
     protected void tearDown() throws Exception
     {
         con.close();
-        testCon.close();
         prepCon.close();
         super.tearDown();
     }
 
     public void testCommit() throws Exception
     {
+        //add some messages
+        prepProducer1.send(prepSession.createTextMessage("A"));
+        prepProducer1.send(prepSession.createTextMessage("B"));
+        prepProducer1.send(prepSession.createTextMessage("C"));
+        
         //send and receive some messages
         producer2.send(session.createTextMessage("X"));
         producer2.send(session.createTextMessage("Y"));
@@ -102,17 +98,35 @@ public class TransactedTest extends TestCase
         session.commit();
 
         //ensure sent messages can be received and received messages are gone
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+        testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        testConsumer1 = testSession.createConsumer(queue1);
+        testConsumer2 = testSession.createConsumer(queue2);
+        testCon.start();
+        
         expect("X", testConsumer2.receive(1000));
         expect("Y", testConsumer2.receive(1000));
         expect("Z", testConsumer2.receive(1000));
 
-        testConsumer1 = testSession.createConsumer(queue1);
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
+        testCon.close();
+    }
+    
+    // This checks that queue Q1 is in fact empty and does not have any stray
+    // messages left over from the last test (which can affect later tests)...
+    public void testEmpty1() throws Exception
+    {
+        assertTrue(null == consumer1.receive(1000));
     }
 
     public void testRollback() throws Exception
     {
+        //add some messages
+        prepProducer1.send(prepSession.createTextMessage("A"));
+        prepProducer1.send(prepSession.createTextMessage("B"));
+        prepProducer1.send(prepSession.createTextMessage("C"));
+        
         producer2.send(session.createTextMessage("X"));
         producer2.send(session.createTextMessage("Y"));
         producer2.send(session.createTextMessage("Z"));
@@ -128,9 +142,105 @@ public class TransactedTest extends TestCase
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
 
+        //commit
+        session.commit();
+
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+        testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
+        testConsumer2 = testSession.createConsumer(queue2);
+        testCon.start();
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
+        testCon.close();
+    }
+      
+    // This checks that queue Q1 is in fact empty and does not have any stray
+    // messages left over from the last test (which can affect later tests)...
+    public void testEmpty2() throws Exception
+    {
+        assertTrue(null == consumer1.receive(1000));
+    }
+
+    public void testResendsMsgsAfterSessionClose() throws Exception
+    {
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+
+        Session consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        AMQQueue queue3 = new AMQQueue("Q3", false);
+        MessageConsumer consumer = consumerSession.createConsumer(queue3);
+        //force synch to ensure the consumer has resulted in a bound queue
+        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
+
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Session producerSession = con2.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        MessageProducer producer = producerSession.createProducer(queue3);
+
+        _logger.info("Sending four messages");
+        producer.send(producerSession.createTextMessage("msg1"));
+        producer.send(producerSession.createTextMessage("msg2"));
+        producer.send(producerSession.createTextMessage("msg3"));
+        producer.send(producerSession.createTextMessage("msg4"));
+
+        producerSession.commit();
+
+
+        _logger.info("Starting connection");
+        con.start();
+        TextMessage tm = (TextMessage) consumer.receive();
+
+        tm.acknowledge();
+        consumerSession.commit();
+
+        _logger.info("Received and acknowledged first message");
+        tm = (TextMessage) consumer.receive(1000);
+        assertNotNull(tm);
+        tm = (TextMessage) consumer.receive(1000);
+        assertNotNull(tm);
+        tm = (TextMessage) consumer.receive(1000);
+        assertNotNull(tm);
+        _logger.info("Received all four messages. Closing connection with three outstanding messages");
+
+        consumerSession.close();
+
+        consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+
+        consumer = consumerSession.createConsumer(queue3);
+
+        // no ack for last three messages so when I call recover I expect to get three messages back
+
+        tm = (TextMessage) consumer.receive(3000);
+        assertNotNull(tm);
+        assertEquals("msg2", tm.getText());
+
+        tm = (TextMessage) consumer.receive(3000);
+        assertNotNull(tm);
+        assertEquals("msg3", tm.getText());
+
+        tm = (TextMessage) consumer.receive(3000);
+        assertNotNull(tm);
+        assertEquals("msg4", tm.getText());
+
+        _logger.info("Received redelivery of three messages. Acknowledging last message");
+        tm.acknowledge();
+        consumerSession.commit();
+        _logger.info("Calling acknowledge with no outstanding messages");
+        // all acked so no messages to be delivered
+
+
+        tm = (TextMessage) consumer.receiveNoWait();
+        assertNull(tm);
+        _logger.info("No messages redelivered as is expected");
+
+        con.close();
+        con2.close();
+    }
+    
+    // This checks that queue Q1 is in fact empty and does not have any stray
+    // messages left over from the last test (which can affect later tests)...
+    public void testEmpty3() throws Exception
+    {
+        assertTrue(null == consumer1.receive(1000));
     }
 
     private void expect(String text, Message msg) throws JMSException
