@@ -169,8 +169,6 @@
   <constant name = "frame-oob-body"   value = "6" />
   <constant name = "frame-trace"      value = "7" />
   <constant name = "frame-heartbeat"  value = "8" />
-  <constant name = "frame-request"    value = "9" />
-  <constant name = "frame-response"   value = "10" />
 
   <!-- Protocol constants -->
   <constant name = "frame-min-size"   value = "4096" />

@@ -579,7 +579,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         	Content data = new Content(Content.TypeEnum.INLINE_T, payload);
 
-        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
+        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,mandatory,immediate);
         } else {
         	// Reference message case
             // Sequence is as follows 
@@ -599,7 +599,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         	
         	// Message.Transfer
         	Content data = new Content(Content.TypeEnum.REF_T, referenceId.getBytes()); 
-        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,immediate);
+        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,mandatory,immediate);
         	
         	//Message.Append
         	for(Iterator it = content.iterator(); it.hasNext();){
@@ -622,7 +622,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     }
     
     private void doMessageTransfer(MessageHeaders messageHeaders,AMQDestination destination, Content content, AbstractJMSMessage message, int deliveryMode, int priority,
-            long timeToLive, boolean immediate)throws JMSException{
+            long timeToLive, boolean mandatory, boolean immediate)throws JMSException{
     	try
         {
             AMQMethodBody methodBody = MessageTransferBody.createMethodBody(
@@ -638,6 +638,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 destination.getExchangeName(),  // String exchange
                 messageHeaders.getExpiration(), // long expiration
                 immediate,                      // boolean immediate
+                mandatory,                      // boolean mandatory
                 messageHeaders.getMessageId(),  // String messageId
                 (short)priority,                // short priority
                 message.getJMSRedelivered(),    // boolean redelivered
