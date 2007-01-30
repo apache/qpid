@@ -50,7 +50,7 @@ struct MethodContext
         : channelId(channel), out(output), requestId(request){}
 
     /** \internal Channel on which the method is sent. */
-    const ChannelId channelId;
+    ChannelId channelId;
 
     /** Output handler for responses in this context */
     OutputHandler* out;
@@ -58,7 +58,7 @@ struct MethodContext
     /** \internal If we are in the context of processing an incoming request,
      * this is the ID. Otherwise it is 0.
      */ 
-    const RequestId requestId;
+    RequestId requestId;
 
 };
 
