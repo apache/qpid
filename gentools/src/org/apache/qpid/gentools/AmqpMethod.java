@@ -64,7 +64,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 			indexMap.put(index, indexVersionSet);
 		}
 		NodeList nList = methodNode.getChildNodes();
-		int fieldCntr = 0;
+		int fieldCntr = fieldMap.size();
 		isRequest = false; // Assume not a request  unless we find a response node.
 		for (int i=0; i<nList.getLength(); i++)
 		{

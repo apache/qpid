@@ -19,8 +19,8 @@ spec_dir = $(srcdir)/../../specs
 
 # FIXME aconway 2007-01-04: Enabling Basic class until
 # new messaging class is ready to replace it.
-# spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
-spec = $(spec_dir)/amqp.0-9.xml 
+# spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
+spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
 
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 

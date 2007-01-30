@@ -59,7 +59,7 @@ public class AmqpClass implements Printable, NodeAware
 			indexMap.put(index, indexVersionSet);
 		}
 		NodeList nList = classNode.getChildNodes();
-		int fieldCntr = 0;
+		int fieldCntr = fieldMap.size();
 		for (int i=0; i<nList.getLength(); i++)
 		{
 			Node child = nList.item(i);
@@ -82,7 +82,6 @@ public class AmqpClass implements Printable, NodeAware
 					thisField.removeVersion(version);
 					fieldMap.remove(fieldName);
 				}
-				fieldCntr++;
 			}
 			else if (child.getNodeName().compareTo(Utils.ELEMENT_METHOD) == 0)
 			{

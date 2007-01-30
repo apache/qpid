@@ -75,8 +75,6 @@ public class RequestManager
         long requestId = getNextRequestId(); // Get new request ID
         AMQFrame requestFrame = AMQRequestBody.createAMQFrame(channel, requestId,
             lastProcessedResponseId, requestMethodBody);
-        requestSentMap.put(requestId, methodListener);
-        protocolWriter.writeFrame(requestFrame);
         if (logger.isDebugEnabled())
         {
             logger.debug((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
@@ -84,6 +82,8 @@ public class RequestManager
         }
         //System.out.println((serverFlag ? "SRV[" : "CLI[") + connectionId + "," + channel +
         //        "] TX REQ: Req[" + requestId + " " + lastProcessedResponseId + "]; " + requestMethodBody);
+        requestSentMap.put(requestId, methodListener);
+        protocolWriter.writeFrame(requestFrame);
         return requestId;
     }
 
