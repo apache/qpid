@@ -61,9 +61,12 @@ class Connection : public qpid::sys::ConnectionInputHandler,
 
     qpid::sys::ConnectionOutputHandler& getOutput() { return *out; }
 
-    // FIXME aconway 2007-01-16: encapsulate.
-    u_int32_t framemax;
-    u_int16_t heartbeat;
+    u_int32_t getFrameMax() const { return framemax; }
+    u_int16_t getHeartbeat() const { return heartbeat; }
+
+    void setFrameMax(u_int32_t fm) { framemax = fm; }
+    void setHeartbeat(u_int16_t hb) { heartbeat = hb; }
+
     Broker& broker;
     std::auto_ptr<qpid::framing::AMQP_ClientProxy> client;
     Settings settings;
@@ -94,7 +97,8 @@ class Connection : public qpid::sys::ConnectionInputHandler,
     
     AdapterMap adapters;
     qpid::sys::ConnectionOutputHandler* out;
-    
+    u_int32_t framemax;
+    u_int16_t heartbeat;
 };
 
 }}

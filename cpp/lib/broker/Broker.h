@@ -42,8 +42,8 @@ namespace broker {
 /**
  * A broker instance. 
  */
-class Broker : public qpid::sys::Runnable,
-               public qpid::SharedObject<Broker>
+class Broker : public sys::Runnable,
+               public SharedObject<Broker>
 {
   public:
     static const int16_t DEFAULT_PORT;
@@ -67,7 +67,7 @@ class Broker : public qpid::sys::Runnable,
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual int16_t getPort() const { return acceptor->getPort(); }
+    virtual int16_t getPort() const;
             
     /**
      * Run the broker. Implements Runnable::run() so the broker
@@ -86,9 +86,11 @@ class Broker : public qpid::sys::Runnable,
     AutoDelete& getCleaner() { return cleaner; }
     
   private:
-    Broker(const Configuration& config); 
+    Broker(const Configuration& config);
+    sys::Acceptor& getAcceptor() const;
 
-    qpid::sys::Acceptor::shared_ptr acceptor;
+    Configuration config;
+    sys::Acceptor::shared_ptr acceptor;
     std::auto_ptr<MessageStore> store;
     QueueRegistry queues;
     ExchangeRegistry exchanges;

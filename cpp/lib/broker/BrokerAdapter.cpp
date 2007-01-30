@@ -183,14 +183,18 @@ class BrokerAdapter::ServerOps : public AMQP_ServerOperations
 void BrokerAdapter::ServerOps::ConnectionHandlerImpl::startOk(
     const MethodContext& context , const FieldTable& /*clientProperties*/, const string& /*mechanism*/, 
     const string& /*response*/, const string& /*locale*/){
-    connection.client->getConnection().tune(context, 100, connection.framemax, connection.heartbeat);
+    connection.client->getConnection().tune(
+        context, 100, connection.getFrameMax(), connection.getHeartbeat());
 }
         
 void BrokerAdapter::ServerOps::ConnectionHandlerImpl::secureOk(const MethodContext&, const string& /*response*/){}
         
-void BrokerAdapter::ServerOps::ConnectionHandlerImpl::tuneOk(const MethodContext&, u_int16_t /*channelmax*/, u_int32_t framemax, u_int16_t heartbeat){
-    connection.framemax = framemax;
-    connection.heartbeat = heartbeat;
+void BrokerAdapter::ServerOps::ConnectionHandlerImpl::tuneOk(
+    const MethodContext&, u_int16_t /*channelmax*/,
+    u_int32_t framemax, u_int16_t heartbeat)
+{
+    connection.setFrameMax(framemax);
+    connection.setHeartbeat(heartbeat);
 }
         
 void BrokerAdapter::ServerOps::ConnectionHandlerImpl::open(const MethodContext& context, const string& /*virtualHost*/, const string& /*capabilities*/, bool /*insist*/){
@@ -496,14 +500,14 @@ BrokerAdapter::ServerOps::ChannelHandlerImpl::resume(
 }
 
 BrokerAdapter::BrokerAdapter(
-    Channel* ch, Connection& c, Broker& b
+    std::auto_ptr<Channel> ch, Connection& c, Broker& b
 ) :
     channel(ch),
     connection(c),
     broker(b),
-    serverOps(new ServerOps(*ch,c,b))
+    serverOps(new ServerOps(*channel,c,b))
 {
-    init(ch->getId(), c.getOutput(), ch->getVersion());
+    init(channel->getId(), c.getOutput(), channel->getVersion());
 }
 
 void BrokerAdapter::handleMethodInContext(

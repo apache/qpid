@@ -45,11 +45,8 @@ const std::string amq_topic("amq.topic");
 const std::string amq_fanout("amq.fanout");
 const std::string amq_match("amq.match");
 
-Broker::Broker(const Configuration& config) :
-    acceptor(Acceptor::create(config.getPort(),
-                              config.getConnectionBacklog(),
-                              config.getWorkerThreads(),
-                              config.isTrace())),
+Broker::Broker(const Configuration& conf) :
+    config(conf),
     queues(store.get()),
     timeout(30000),
     stagingThreshold(0),
@@ -89,16 +86,29 @@ Broker::shared_ptr Broker::create(const Configuration& config) {
 }    
         
 void Broker::run() {
-    acceptor->run(&factory);
+    getAcceptor().run(&factory);
 }
 
 void Broker::shutdown() {
-    acceptor->shutdown();
+    getAcceptor().shutdown();
 }
 
 Broker::~Broker() {
     shutdown();
 }
+
+int16_t Broker::getPort() const  { return getAcceptor().getPort(); }
+
+Acceptor& Broker::getAcceptor() const {
+    if (!acceptor) 
+        const_cast<Acceptor::shared_ptr&>(acceptor) =
+            Acceptor::create(config.getPort(),
+                             config.getConnectionBacklog(),
+                             config.getWorkerThreads(),
+                             config.isTrace());
+    return *acceptor;
+}
+
 
 const int16_t Broker::DEFAULT_PORT(5672);
 
