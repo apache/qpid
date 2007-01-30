@@ -1,3 +1,6 @@
+-Notes-
+Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r501003
+
 -Latest Revision-
 499979
 
