@@ -124,7 +124,7 @@
                                 <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
                                 <descriptor>src/main/assembly/management-eclipse-plugin-unix.xml</descriptor>
                             </descriptors>
-                            <finalName>qpid-${pom.version}</finalName>
+                            <finalName>qpid-${pom.version}-r500219</finalName>
                         </configuration>
                     </execution>
                 </executions>
@@ -190,7 +190,7 @@
                                 <descriptors>
                                     <descriptor>src/main/assembly/bin-test.xml</descriptor>
                                 </descriptors>
-                                <finalName>qpid-${pom.version}</finalName>
+                                <finalName>qpid-${pom.version}-r500219</finalName>
                             </configuration>
                         </execution>
                         </executions>

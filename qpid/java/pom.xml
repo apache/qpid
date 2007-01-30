@@ -97,7 +97,7 @@
         <java.source.version>1.5</java.source.version>
         <compile.flags>-Xlint:fallthrough,finally</compile.flags>
 
-	<!-- 
+	<!--
           This should always point to a default minimal log4j configuration that all developers are happy with as a useable default. To use your own
           log4j preferences set up an alternative in your settings.xml and avoid corrupting the default with private preferences.
 	  -->
@@ -211,15 +211,15 @@
                               This is done during the 'compile' phase to reflect the version of the currently compiled code and to ensure that
                               these properties are up to date when running from a file system classpath. Consider moving this to, or running a second
                               time, during the 'package' phase to capture the version of any resources added to jar files.
-                              This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules 
+                              This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules
                               at the time of the build.
                               The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module
                               that runs this plugin.
                               The 'qpidversion.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
-                              Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of 
-                              qpidversion.properties and then the client or broker being built against an older version of the common library ending 
-                              up with the wrong version information. This is unlikely to happen because the client or broker should pick up its own 
-                              properties from the classpath first. If this happens it will be obvious because the productName property will be 
+                              Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of
+                              qpidversion.properties and then the client or broker being built against an older version of the common library ending
+                              up with the wrong version information. This is unlikely to happen because the client or broker should pick up its own
+                              properties from the classpath first. If this happens it will be obvious because the productName property will be
                               'Qpid Common Utilities'. If this is a problem then push this ant task down into the client and broker poms and remove it
                               from here.
                          -->
@@ -229,7 +229,7 @@
                              <configuration>
                              <tasks>
 
-                               <exec executable="svnversion" spawn="false" failifexecutionfails="false" 
+                               <exec executable="svnversion" spawn="false" failifexecutionfails="false"
                                      dir="${topDirectoryLocation}" outputproperty="svnversion">
                                  <arg line="."/>
                                </exec>

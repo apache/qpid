@@ -169,7 +169,7 @@ Revision: 490505
 Revision: 490373
 Revision: 489804
 Revision: 489754
-Revision: 489748
+489748 QPID 229 Alter implementation of FieldTable to encapsualte each type in its own enum instance
 Revision: 489715
 Revision: 489704
 Revision: 489691

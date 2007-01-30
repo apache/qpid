@@ -37,10 +37,15 @@
         </layout>
     </appender>
 
-    <!--<category name="org.apache.qpid.server.store">
-        <priority value="debug"/>
-    </category>-->
 
+    <category name="org.apache.qpid.server.Main">
+        <priority value="info"/>
+    </category>
+
+     <category name="org.apache.qpid">
+        <priority value="warn"/>
+    </category>
+    
     <root>
         <priority value="info"/>
         <appender-ref ref="STDOUT"/>

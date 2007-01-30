@@ -179,18 +179,22 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
      */
     public Long getQueueDepth()
     {
-        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
-        if (list.size() == 0)
-        {
-            return 0l;
-        }
+//        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
+//        if (list.size() == 0)
+//        {
+//            return 0l;
+//        }
+//
+//        long queueDepth = 0;
+//        for (AMQMessage message : list)
+//        {
+//            queueDepth = queueDepth + getMessageSize(message);
+//        }
+//        return (long) Math.round(queueDepth / 1000);
 
-        long queueDepth = 0;
-        for (AMQMessage message : list)
-        {
-            queueDepth = queueDepth + getMessageSize(message);
-        }
-        return (long) Math.round(queueDepth / 1000);
+        //fixme delegate to DeliveryManger
+        //return _queue.getTotalSize();
+        return 0L;
     }
 
     /**
