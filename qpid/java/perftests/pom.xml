@@ -38,6 +38,30 @@
 	<log4j.perftests>perftests.log4j</log4j.perftests>
     </properties>
 
+    <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
+    <repositories>
+        <repository>
+          <id>junit-toolkit.snapshots</id>
+          <name>JUnit Toolkit SNAPSHOT Repository</name>
+	  <url>file://${basedir}/../mvn-repo</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+    </repositories>
+
+    <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
+    <pluginRepositories>
+        <pluginRepository>
+          <id>junit-toolkit-plugin.snapshots</id>
+          <name>JUnit Toolkit SNAPSHOT Repository</name>
+	  <url>file://${basedir}/../mvn-repo</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
 
         <dependency>
