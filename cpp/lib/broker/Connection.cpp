@@ -74,7 +74,7 @@ void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
     string locales("en_US");
     // TODO aconway 2007-01-16: Client call, move to adapter.
     client->getConnection().start(
-        MethodContext(0, &getAdapter(0)),
+        MethodContext(0, 0, &getAdapter(0)),
         header->getMajor(), header->getMinor(),
         properties, mechanisms, locales);
     getAdapter(0).init(0, *out, client->getProtocolVersion());

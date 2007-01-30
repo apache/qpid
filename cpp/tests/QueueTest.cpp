@@ -66,9 +66,9 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(u_int32_t(2), queue->getConsumerCount());
         
         //Test basic delivery:
-        Message::shared_ptr msg1 = Message::shared_ptr(new Message(0, "e", "A", true, true));
-        Message::shared_ptr msg2 = Message::shared_ptr(new Message(0, "e", "B", true, true));
-        Message::shared_ptr msg3 = Message::shared_ptr(new Message(0, "e", "C", true, true));
+        Message::shared_ptr msg1 = Message::shared_ptr(new BasicMessage(0, "e", "A", true, true));
+        Message::shared_ptr msg2 = Message::shared_ptr(new BasicMessage(0, "e", "B", true, true));
+        Message::shared_ptr msg3 = Message::shared_ptr(new BasicMessage(0, "e", "C", true, true));
 
         queue->deliver(msg1);
         CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
@@ -123,9 +123,9 @@ class QueueTest : public CppUnit::TestCase
     void testDequeue(){
         Queue::shared_ptr queue(new Queue("my_queue", true));
 
-        Message::shared_ptr msg1 = Message::shared_ptr(new Message(0, "e", "A", true, true));
-        Message::shared_ptr msg2 = Message::shared_ptr(new Message(0, "e", "B", true, true));
-        Message::shared_ptr msg3 = Message::shared_ptr(new Message(0, "e", "C", true, true));
+        Message::shared_ptr msg1 = Message::shared_ptr(new BasicMessage(0, "e", "A", true, true));
+        Message::shared_ptr msg2 = Message::shared_ptr(new BasicMessage(0, "e", "B", true, true));
+        Message::shared_ptr msg3 = Message::shared_ptr(new BasicMessage(0, "e", "C", true, true));
         Message::shared_ptr received;
 
         queue->deliver(msg1);

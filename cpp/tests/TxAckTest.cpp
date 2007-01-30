@@ -69,7 +69,7 @@ public:
     TxAckTest() : queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries, &xid)
     {
         for(int i = 0; i < 10; i++){
-            Message::shared_ptr msg(new Message(0, "exchange", "routing_key", false, false));
+            Message::shared_ptr msg(new BasicMessage(0, "exchange", "routing_key", false, false));
             msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
             msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
             messages.push_back(msg);

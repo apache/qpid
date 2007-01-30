@@ -22,6 +22,7 @@
  *
  */
 
+#include <BrokerMessageBase.h>
 #include <memory>
 #include <boost/shared_ptr.hpp>
 #include <AMQContentBody.h>
@@ -45,7 +46,7 @@ namespace qpid {
          * content bodies and some details about the publication
          * request.
          */
-        class Message{
+        class BasicMessage : public Message{
             const ConnectionToken* const publisher;
             string exchange;
             string routingKey;
@@ -62,14 +63,14 @@ namespace qpid {
                              int channel, u_int32_t framesize, qpid::framing::ProtocolVersion* version);
 
         public:
-            typedef boost::shared_ptr<Message> shared_ptr;
+            typedef boost::shared_ptr<BasicMessage> shared_ptr;
 
-            Message(const ConnectionToken* const publisher, 
+            BasicMessage(const ConnectionToken* const publisher, 
                     const string& exchange, const string& routingKey, 
                     bool mandatory, bool immediate);
-            Message(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
-            Message();
-            ~Message();
+            BasicMessage(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
+            BasicMessage();
+            ~BasicMessage();
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
             void addContent(qpid::framing::AMQContentBody::shared_ptr data);
             bool isComplete();

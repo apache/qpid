@@ -221,7 +221,7 @@ class ChannelTest : public CppUnit::TestCase
         Channel channel(qpid::framing::highestProtocolVersion, &handler, 1, 1000/*framesize*/, &store, 10/*staging threshold*/);
         const string data[] = {"abcde", "fghij", "klmno"};
 
-        Message* msg = new Message(0, "my_exchange", "my_routing_key", false, false);
+        Message* msg = new BasicMessage(0, "my_exchange", "my_routing_key", false, false);
 
         store.expect();
         store.stage(msg);
@@ -309,7 +309,7 @@ class ChannelTest : public CppUnit::TestCase
 
     Message* createMessage(const string& exchange, const string& routingKey, const string& messageId, u_int64_t contentSize)
     {
-        Message* msg = new Message(0, exchange, routingKey, false, false);
+        BasicMessage* msg = new BasicMessage(0, exchange, routingKey, false, false);
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(contentSize);        
         msg->setHeader(header);
