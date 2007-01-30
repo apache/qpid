@@ -49,16 +49,7 @@ framing::AMQFrame copy(framing::AMQFrame& from) {
  *
  * Also allows you to "snoop" on frames exchanged between client & broker.
  * 
- * Use as follows:
- *
- \code
-        broker::InProcessBroker ibroker(version);
-        client::Connection clientConnection;
-        clientConnection.setConnector(ibroker);
-        clientConnection.open("");
-        ... use as normal
- \endcode
- *
+ * see FramingTest::testRequestResponseRoundtrip() for example of use.
  */
 class InProcessBroker : public client::Connector {
   public:

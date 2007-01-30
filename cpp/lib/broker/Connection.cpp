@@ -32,11 +32,11 @@ namespace qpid {
 namespace broker {
 
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
-    framemax(65536), 
-    heartbeat(0),
     broker(broker_),
     settings(broker.getTimeout(), broker.getStagingThreshold()),
-    out(out_)
+    out(out_),
+    framemax(65536), 
+    heartbeat(0)
 {}
 
 Queue::shared_ptr Connection::getQueue(const string& name, u_int16_t channel){
@@ -106,11 +106,12 @@ void Connection::closeChannel(u_int16_t channel) {
 BrokerAdapter& Connection::getAdapter(u_int16_t id) { 
     AdapterMap::iterator i = adapters.find(id);
     if (i == adapters.end()) {
-        Channel* ch=new Channel(
-            client->getProtocolVersion(), out, id,
-            framemax, broker.getQueues().getStore(),
-            settings.stagingThreshold);
-        BrokerAdapter* adapter =  new BrokerAdapter(ch, *this, broker);
+        std::auto_ptr<Channel> ch(
+            new Channel(
+                client->getProtocolVersion(), out, id,
+                framemax, broker.getQueues().getStore(),
+                settings.stagingThreshold));
+        BrokerAdapter* adapter = new BrokerAdapter(ch, *this, broker);
         adapters.insert(id, adapter);
         return *adapter;
     }

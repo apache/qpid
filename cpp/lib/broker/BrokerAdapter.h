@@ -18,6 +18,7 @@
  * limitations under the License.
  *
  */
+#include <memory.h>
 
 #include "AMQP_ServerOperations.h"
 #include "BodyHandler.h"
@@ -31,8 +32,6 @@ class AMQMethodBody;
 class Connection;
 class Broker;
 
-// FIXME aconway 2007-01-17: Rename to ChannelAdapter.
-
 /**
  * Per-channel protocol adapter.
  *
@@ -44,8 +43,7 @@ class Broker;
 class BrokerAdapter : public qpid::framing::ChannelAdapter
 {
   public:
-    // FIXME aconway 2007-01-18: takes ownership, should pass auto_ptr<Channel>
-    BrokerAdapter(Channel* ch, Connection&, Broker&);
+    BrokerAdapter(std::auto_ptr<Channel> ch, Connection&, Broker&);
     Channel& getChannel() { return *channel; }
 
     void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
