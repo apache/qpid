@@ -243,8 +243,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         if (msg != null)
         {
             msg.dequeue(storeContext, _queue);
-        }
-        _totalMessageSize.getAndAdd(-msg.getSize());
+            _totalMessageSize.getAndAdd(-msg.getSize());
+        }        
     }
 
     public synchronized long clearAllMessages(StoreContext storeContext) throws AMQException
