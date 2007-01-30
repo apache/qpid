@@ -212,21 +212,31 @@ public class JMXServerRegistry extends ServerRegistry
             _notificationsMap.get(mbean.getUniqueName()).clear();
     }
     
+    /**
+     * Adds notification name and type to the map. The map contains all the notification names,
+     * subscribed for an mbean.
+     * @param mbean
+     * @param name
+     * @param type
+     */
     public void addNotificationListener(ManagedBean mbean, String name, String type)
     {
-         HashMap<String, List<String>> map = _subscribedNotificationMap.get(mbean.getUniqueName());
+        // Get the subscribed notifications map for given mbean. If map is null then create a new one. 
+        HashMap<String, List<String>> map = _subscribedNotificationMap.get(mbean.getUniqueName());
         if (map == null)
         {
             map = new HashMap<String, List<String>>();
             _subscribedNotificationMap.put(mbean.getUniqueName(),map);
         }
         
+        // Get the list of notification types for given notification name. If null, then create a new list.
         List<String> list = map.get(name);
         if (list == null)
         {
             list = new ArrayList<String>();
             map.put(name, list);
         }
+        // Now add the notification type to the list
         if (Constants.ALL.equals(type))
         {
             List<NotificationInfoModel> infoList = _notificationInfoMap.get(mbean.getUniqueName());
@@ -247,9 +257,12 @@ public class JMXServerRegistry extends ServerRegistry
             list.add(type);
         }
 
-        System.out.println("Subscribed for notification :" + mbean.getUniqueName());
+        //System.out.println("Subscribed for notification :" + mbean.getUniqueName());
     }
     
+    /**
+     * Checks if the given notification name and type are subscribed for the mbean.
+     */
     public boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type)
     {
         if (_subscribedNotificationMap.containsKey(mbean.getUniqueName()))
@@ -266,11 +279,20 @@ public class JMXServerRegistry extends ServerRegistry
         return false;
     }
     
+    /**
+     * Clears the notification name and type information from the subscribed notifications map
+     * and removes the listener from mbeanserver connection
+     * @param mbean
+     * @param name
+     * @param type
+     * @throws Exception
+     */
     public void removeNotificationListener(ManagedBean mbean, String name, String type) throws Exception
     {
-        System.out.println("Removed notification listener :" + mbean.getUniqueName() + name +type);
+        //System.out.println("Removed notification listener :" + mbean.getUniqueName() + name +type);
         if (_subscribedNotificationMap.containsKey(mbean.getUniqueName()))
         {            
+            // get the notifications map. This map contains the notification name mapped with the notification types
             HashMap<String, List<String>> map = _subscribedNotificationMap.get(mbean.getUniqueName());
             if (map.containsKey(name))
             {
@@ -281,7 +303,15 @@ public class JMXServerRegistry extends ServerRegistry
                 else if (type != null)
                 {
                     map.get(name).remove(type);
+                    if (map.get(name).isEmpty())
+                    {
+                        map.remove(name);
+                    }
                 }
+            }
+            if (map.size() == 0)
+            {
+                _subscribedNotificationMap.remove(mbean.getUniqueName());
             }
             
             JMXManagedObject jmxbean = (JMXManagedObject)mbean;
