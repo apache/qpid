@@ -355,13 +355,15 @@ public class CppGenerator extends Generator
         if (token.equals("${hv_latest_minor}"))
             return String.valueOf(globalVersionSet.last().getMinor());
 	if (token.equals("${mb_base_class}")) 
-	    return baseClass(method);
+	    return baseClass(method, version);
             
         throw new AmqpTemplateException("Template token " + token + " unknown.");       
     }
 
-    private String baseClass(AmqpMethod method) {
-	return method.isRequest ? "AMQRequestBody" : "AMQResponseBody";
+    private String baseClass(AmqpMethod method, AmqpVersion version) {
+	boolean isResponse =  (version == null) ? method.isResponseFlagMap.isSet() : method.isResponseFlagMap.isSet(version);
+	String base = isResponse ? "AMQResponseBody":"AMQRequestBody";
+	return base;
     }
     
     @Override
@@ -1428,7 +1430,7 @@ public class CppGenerator extends Generator
                 sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(const ProtocolVersion& version," + cr);
                 sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
                 sb.append(indent + tab + ") :" + cr);
-                sb.append(indent + tab + baseClass(method) + "(version)," + cr);
+                sb.append(indent + tab + baseClass(method, version) + "(version)," + cr);
                 sb.append(generateFieldList(method.fieldMap, version, false, true, 8));
                 sb.append(indent + "{ }" + cr);
             }
