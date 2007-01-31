@@ -156,12 +156,11 @@ public class FanoutExchange extends AbstractExchange
         if (_queues == null || _queues.isEmpty())
         {
             String msg = "No queues bound to " + this;
-            // XXX
-            /*if (publishBody.mandatory)
+            if (transferBody.mandatory)
             {
                 throw new NoRouteException(msg, payload);
             }
-            else*/
+            else
             {
                 _logger.warn(msg);
             }
