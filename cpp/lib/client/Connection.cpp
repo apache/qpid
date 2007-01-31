@@ -32,7 +32,6 @@
 
 using namespace qpid::framing;
 using namespace qpid::sys;
-using namespace qpid::sys;
 
 
 namespace qpid {
@@ -101,7 +100,6 @@ void Connection::close(
     }
 }
 
-// FIXME aconway 2007-01-26: make channels owned and created by connection?
 void Connection::openChannel(Channel& channel) {
     ChannelId id = ++channelIdCounter;
     assert (channels.find(id) == channels.end());
@@ -115,7 +113,6 @@ void Connection::erase(ChannelId id) {
 }
 
 void Connection::received(AMQFrame* frame){
-    // FIXME aconway 2007-01-25: Mutex 
     ChannelId id = frame->getChannel();
     Channel* channel = channels[id];
     // FIXME aconway 2007-01-26: Exception thrown here is hanging the
@@ -149,7 +146,6 @@ void Connection::channelException(
 }
 
 void Connection::idleIn(){
-    std::cout << "Connection timed out due to abscence of heartbeat." << std::endl;
     connector->close();
 }
 

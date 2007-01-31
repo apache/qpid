@@ -88,7 +88,7 @@ class Connection : public ConnectionForChannel
 
     static framing::ChannelId channelIdCounter;
     static const std::string OK;
-        
+
     framing::ProtocolVersion version;
     const u_int32_t max_frame_size;
     ChannelMap channels;
@@ -107,8 +107,6 @@ class Connection : public ConnectionForChannel
   friend class Channel;
     
   public:
-    const framing::ProtocolVersion& getVersion() const { return version; }
-        
     /**
      * Creates a connection object, but does not open the
      * connection.  
@@ -187,7 +185,7 @@ class Connection : public ConnectionForChannel
     inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
 
     /** @return protocol version in use on this connection. */ 
-    const framing::ProtocolVersion& getVersion() { return version; }
+    const framing::ProtocolVersion& getVersion() const { return version; }
 };
 
 }} // namespace qpid::client

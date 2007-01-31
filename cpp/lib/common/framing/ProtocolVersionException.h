@@ -36,16 +36,20 @@ protected:
     ProtocolVersion versionFound;
      
 public:
-    ProtocolVersionException() throw ();
-    ProtocolVersionException(const std::string& str) throw ();
-    ProtocolVersionException(const char* str) throw ();
-	ProtocolVersionException(const ProtocolVersion& versionFound_, const std::string& str) throw ();
-	ProtocolVersionException(const ProtocolVersion& versionFound_, const char* str) throw ();
-    virtual ~ProtocolVersionException() throw ();
-      
-    virtual const char* what() const throw();
-    virtual std::string toString() const throw();
-}; // class ProtocolVersionException
+    ~ProtocolVersionException() throw() {}
+
+    template <class T>
+    ProtocolVersionException(
+        const ProtocolVersion& ver, const T& msg) throw () : versionFound(ver)
+    { init(boost::lexical_cast<std::string>(msg)); }
+
+    template <class T>
+    ProtocolVersionException(const T& msg) throw () 
+    { init(boost::lexical_cast<std::string>(msg)); }
+
+  private:
+    void init(const std::string& msg);
+};
 
 }} // namespace qpid::framing
 

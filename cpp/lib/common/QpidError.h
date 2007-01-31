@@ -23,6 +23,7 @@
 #include <string>
 #include <memory>
 #include <ostream>
+
 #include <Exception.h>
 
 namespace qpid {
@@ -36,17 +37,27 @@ struct SrcLine {
     int line;
 };
     
-class QpidError : public Exception { 
+class QpidError : public Exception
+{
   public:
     const int code;
-    const std::string msg;
-    const SrcLine location;
+    SrcLine loc;
+    std::string msg;
 
     QpidError();
-    QpidError(int _code, const std::string& _msg, const SrcLine& _loc) throw();
+
+    template <class T>
+    QpidError(int code_, const T& msg_, const SrcLine& loc_) throw()
+        : code(code_), loc(loc_), msg(boost::lexical_cast<std::string>(msg_))
+    { init(); }
+        
     ~QpidError() throw();
     Exception* clone() const throw();
     void throwSelf() const;
+
+  private:
+    
+    void init();
 };
 
 

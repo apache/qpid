@@ -114,7 +114,7 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
       default:
 	THROW_QPID_ERROR(
             FRAMING_ERROR,
-            (boost::format("Unknown frame type %d")%type).str());
+            boost::format("Unknown frame type %d") % type);
     }
     body->decode(buffer, size);
 }

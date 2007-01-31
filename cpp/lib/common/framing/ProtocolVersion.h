@@ -32,7 +32,7 @@ class ProtocolVersion
 {
 private:
     u_int8_t major_;
-	u_int8_t minor_;
+    u_int8_t minor_;
     
 public:
     ProtocolVersion();
