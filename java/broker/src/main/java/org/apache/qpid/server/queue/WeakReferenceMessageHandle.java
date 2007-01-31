@@ -57,7 +57,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException
     {
-        ContentHeaderBody chb = (_contentHeaderBody != null?_contentHeaderBody.get():null);
+        ContentHeaderBody chb = (_contentHeaderBody != null ? _contentHeaderBody.get() : null);
         if (chb == null)
         {
             MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
@@ -107,6 +107,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     /**
      * Content bodies are set <i>before</i> the publish and header frames
+     *
      * @param storeContext
      * @param messageId
      * @param contentBody
@@ -115,10 +116,9 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      */
     public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody) throws AMQException
     {
-        if(_contentBodies == null && isLastContentBody)
+        if (_contentBodies == null && isLastContentBody)
         {
-            _contentBodies = Collections.singletonList(new WeakReference<ContentBody>(contentBody));
-
+            _contentBodies = new ArrayList<WeakReference<ContentBody>>(1);
         }
         else
         {
@@ -126,16 +126,14 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
             {
                 _contentBodies = new LinkedList<WeakReference<ContentBody>>();
             }
-
-
-            _contentBodies.add(new WeakReference<ContentBody>(contentBody));
         }
+        _contentBodies.add(new WeakReference<ContentBody>(contentBody));
         _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody, isLastContentBody);
     }
 
     public BasicPublishBody getPublishBody(Long messageId) throws AMQException
     {
-        BasicPublishBody bpb = (_publishBody != null?_publishBody.get():null);
+        BasicPublishBody bpb = (_publishBody != null ? _publishBody.get() : null);
         if (bpb == null)
         {
             MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
@@ -166,6 +164,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     /**
      * This is called when all the content has been received.
+     *
      * @param publishBody
      * @param contentHeaderBody
      * @throws AMQException
