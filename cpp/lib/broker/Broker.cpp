@@ -90,7 +90,8 @@ void Broker::run() {
 }
 
 void Broker::shutdown() {
-    getAcceptor().shutdown();
+    if (acceptor)
+        acceptor->shutdown();
 }
 
 Broker::~Broker() {
