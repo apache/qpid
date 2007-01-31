@@ -31,10 +31,12 @@ import javax.jms.Message;
 import javax.jms.Destination;
 import javax.jms.TextMessage;
 import javax.jms.MapMessage;
+import javax.jms.JMSException;
 import java.util.HashMap;
 
 
-public class MessageConverterTest extends TestCase {
+public class MessageConverterTest extends TestCase
+{
 
     public static final String JMS_CORR_ID = "QPIDID_01";
     public static final int JMS_DELIV_MODE = 1;
@@ -50,53 +52,79 @@ public class MessageConverterTest extends TestCase {
         super.setUp();
         testTextMessage = new JMSTextMessage();
 
-        //Add JMSProperties
-        testTextMessage.setJMSCorrelationID(JMS_CORR_ID);
-        testTextMessage.setJMSDeliveryMode(JMS_DELIV_MODE);
-        testTextMessage.setJMSType(JMS_TYPE);
-        testTextMessage.setJMSReplyTo(JMS_REPLY_TO);
+        //Set Message Text
         testTextMessage.setText("testTextMessage text");
-
-        //Add non-JMS properties
-        testTextMessage.setStringProperty("testProp1","testValue1");
-        testTextMessage.setDoubleProperty("testProp2",Double.MIN_VALUE);
+        setMessageProperties(testTextMessage);
 
         testMapMessage = new JMSMapMessage();
-        testMapMessage.setString("testMapString","testMapStringValue");
-        testMapMessage.setDouble("testMapDouble",Double.MAX_VALUE);
+        testMapMessage.setString("testMapString", "testMapStringValue");
+        testMapMessage.setDouble("testMapDouble", Double.MAX_VALUE);
     }
 
     public void testSetProperties() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((TextMessage)testTextMessage).getConvertedMessage();
-
-        //check JMS prop values on newMessage match
-        assertEquals("JMS Correlation ID mismatch",testTextMessage.getJMSCorrelationID(),newMessage.getJMSCorrelationID());
-        assertEquals("JMS Delivery mode mismatch",testTextMessage.getJMSDeliveryMode(),newMessage.getJMSDeliveryMode());
-        assertEquals("JMS Type mismatch",testTextMessage.getJMSType(),newMessage.getJMSType());
-        assertEquals("JMS Reply To mismatch",testTextMessage.getJMSReplyTo(),newMessage.getJMSReplyTo());
-
-        //check non-JMS standard props ok too
-        assertEquals("Test String prop value mismatch",testTextMessage.getStringProperty("testProp1"),
-                    newMessage.getStringProperty("testProp1"));
-        assertEquals("Test Double prop value mismatch",testTextMessage.getDoubleProperty("testProp2"),
-                    newMessage.getDoubleProperty("testProp2"));
+        AbstractJMSMessage newMessage = new MessageConverter((TextMessage) testTextMessage).getConvertedMessage();
+        mesagePropertiesTest(testTextMessage, newMessage);
     }
 
     public void testJMSTextMessageConversion() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((TextMessage)testTextMessage).getConvertedMessage();
-        assertEquals("Converted message text mismatch",((JMSTextMessage)newMessage).getText(),testTextMessage.getText());
+        AbstractJMSMessage newMessage = new MessageConverter((TextMessage) testTextMessage).getConvertedMessage();
+        assertEquals("Converted message text mismatch", ((JMSTextMessage) newMessage).getText(), testTextMessage.getText());
     }
 
     public void testJMSMapMessageConversion() throws Exception
     {
-        AbstractJMSMessage newMessage = new MessageConverter((MapMessage)testMapMessage).getConvertedMessage();
-        assertEquals("Converted map message String mismatch",((JMSMapMessage)newMessage).getString("testMapString"),
-                    testMapMessage.getString("testMapString"));
-        assertEquals("Converted map message Double mismatch",((JMSMapMessage)newMessage).getDouble("testMapDouble"),
-                    testMapMessage.getDouble("testMapDouble"));
+        AbstractJMSMessage newMessage = new MessageConverter((MapMessage) testMapMessage).getConvertedMessage();
+        assertEquals("Converted map message String mismatch", ((JMSMapMessage) newMessage).getString("testMapString"),
+                     testMapMessage.getString("testMapString"));
+        assertEquals("Converted map message Double mismatch", ((JMSMapMessage) newMessage).getDouble("testMapDouble"),
+                     testMapMessage.getDouble("testMapDouble"));
 
+    }
+
+    public void testMessageConversion() throws Exception
+    {
+        Message newMessage = new NonQpidMessage();
+        setMessageProperties(newMessage);
+        mesagePropertiesTest(testTextMessage, newMessage);
+    }
+
+    private void setMessageProperties(Message message) throws JMSException
+    {
+        message.setJMSCorrelationID(JMS_CORR_ID);
+        message.setJMSDeliveryMode(JMS_DELIV_MODE);
+        message.setJMSType(JMS_TYPE);
+        message.setJMSReplyTo(JMS_REPLY_TO);
+
+        //Add non-JMS properties
+        message.setStringProperty("testProp1", "testValue1");
+        message.setDoubleProperty("testProp2", Double.MIN_VALUE);
+    }
+
+
+    private void mesagePropertiesTest(Message expectedMessage, Message actualMessage)
+    {
+        try
+        {
+            //check JMS prop values on newMessage match
+            assertEquals("JMS Correlation ID mismatch", expectedMessage.getJMSCorrelationID(), actualMessage.getJMSCorrelationID());
+            assertEquals("JMS Delivery mode mismatch", expectedMessage.getJMSDeliveryMode(), actualMessage.getJMSDeliveryMode());
+            assertEquals("JMS Type mismatch", expectedMessage.getJMSType(), actualMessage.getJMSType());
+            assertEquals("JMS Reply To mismatch", expectedMessage.getJMSReplyTo(), actualMessage.getJMSReplyTo());
+
+            //check non-JMS standard props ok too
+            assertEquals("Test String prop value mismatch", expectedMessage.getStringProperty("testProp1"),
+                         actualMessage.getStringProperty("testProp1"));
+
+            assertEquals("Test Double prop value mismatch", expectedMessage.getDoubleProperty("testProp2"),
+                         actualMessage.getDoubleProperty("testProp2"));
+        }
+        catch (JMSException e)
+        {
+            fail("An error occured testing the property values" + e.getCause());
+            e.printStackTrace();
+        }
     }
 
     protected void tearDown() throws Exception
