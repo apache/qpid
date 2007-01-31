@@ -24,6 +24,7 @@
 #include "BodyHandler.h"
 #include "BrokerChannel.h"
 #include "amqp_types.h"
+#include "framing/ChannelAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -40,21 +41,21 @@ class Broker;
  *
  * Owns a channel, has references to Connection and Broker.
  */
-class BrokerAdapter : public qpid::framing::ChannelAdapter
+class BrokerAdapter : public framing::ChannelAdapter
 {
   public:
     BrokerAdapter(std::auto_ptr<Channel> ch, Connection&, Broker&);
     Channel& getChannel() { return *channel; }
 
-    void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
-    void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
-    void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
+    void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
+    void handleContent(boost::shared_ptr<framing::AMQContentBody>);
+    void handleHeartbeat(boost::shared_ptr<framing::AMQHeartbeatBody>);
 
     bool isOpen() const;
     
   private:
     void handleMethodInContext(
-        boost::shared_ptr<qpid::framing::AMQMethodBody> method,
+        boost::shared_ptr<framing::AMQMethodBody> method,
         const framing::MethodContext& context);
     
     class ServerOps;

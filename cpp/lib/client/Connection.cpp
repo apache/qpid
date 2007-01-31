@@ -113,6 +113,7 @@ void Connection::erase(ChannelId id) {
 }
 
 void Connection::received(AMQFrame* frame){
+    // FIXME aconway 2007-01-25: Mutex 
     ChannelId id = frame->getChannel();
     Channel* channel = channels[id];
     // FIXME aconway 2007-01-26: Exception thrown here is hanging the

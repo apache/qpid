@@ -70,10 +70,9 @@ class Connection : public qpid::sys::ConnectionInputHandler,
     Broker& broker;
     std::auto_ptr<qpid::framing::AMQP_ClientProxy> client;
     Settings settings;
-    // FIXME aconway 2007-01-16: Belongs on broker?
+
     std::vector<Queue::shared_ptr> exclusiveQueues;
 
-    // FIXME aconway 2007-01-16: move to broker.
     /**
      * Get named queue, never returns 0.
      * @return: named queue or default queue for channel if name=""
@@ -89,7 +88,6 @@ class Connection : public qpid::sys::ConnectionInputHandler,
   private:
     typedef boost::ptr_map<u_int16_t, BrokerAdapter> AdapterMap;
 
-    // FIXME aconway 2007-01-16: on broker.
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
     Exchange::shared_ptr findExchange(const string& name);
 

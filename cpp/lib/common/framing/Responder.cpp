@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+#include <boost/format.hpp>
 
 #include "Responder.h"
 #include "QpidError.h"
@@ -25,15 +26,16 @@ namespace framing {
 Responder::Responder() : lastId(0), responseMark(0) {}
 
 void Responder::received(const AMQRequestBody::Data& request) {
-    // FIXME aconway 2007-01-22: Re-insert strict checking when all works.
-//     if (request.responseMark < responseMark || request.responseMark > lastId)
-//         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid resposne mark");
+    if (request.responseMark < responseMark || request.responseMark > lastId)
+        THROW_QPID_ERROR(
+            PROTOCOL_ERROR, boost::format("Invalid response mark %d.")
+            %request.responseMark);
     responseMark = request.responseMark;
 }
 
 void Responder::sending(AMQResponseBody::Data& response) {
     response.responseId = ++lastId;
-    // response.requestId should have been set by caller.
+    assert(response.requestId); // Should be already set.
     response.batchOffset = 0;
 }
 
