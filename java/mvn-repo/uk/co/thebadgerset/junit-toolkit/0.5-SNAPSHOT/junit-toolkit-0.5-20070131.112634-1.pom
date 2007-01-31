@@ -3,7 +3,7 @@
   <groupId>uk.co.thebadgerset</groupId>
   <artifactId>junit-toolkit</artifactId>
   <name>junit-toolkit</name>
-  <version>0.5-20070130.111852-1</version>
+  <version>0.5-20070131.112634-1</version>
   <description>JUnit Toolkit enhances JUnit with performance testing, asymptotic behaviour analysis, and concurrency testing.</description>
   <url>http://www.thebadgerset.co.uk/junit-toolkit</url>
   <developers>
