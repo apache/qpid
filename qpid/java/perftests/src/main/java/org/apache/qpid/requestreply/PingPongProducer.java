@@ -198,6 +198,9 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the default verbose mode. */
     public static final boolean DEFAULT_VERBOSE = false;
 
+    /** Holds the name of the property to store nanosecond timestamps in ping messages with. */
+    public static final String MESSAGE_TIMESTAMP_PROPNAME = "timestamp";
+
     /** A source for providing sequential unique correlation ids. These will be unique within the same JVM. */
     private static AtomicLong idGenerator = new AtomicLong(0L);
 
@@ -629,12 +632,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             // Print out ping times for every message in verbose mode only.
             if (_verbose)
             {
-                Long timestamp = message.getLongProperty("timestamp");
+                Long timestamp = message.getLongProperty(MESSAGE_TIMESTAMP_PROPNAME);
 
                 if (timestamp != null)
                 {
-                    long diff = System.currentTimeMillis() - timestamp;
-                    _logger.trace("Time for round trip: " + diff);
+                    long diff = System.nanoTime() - timestamp;
+                    _logger.trace("Time for round trip (nanos): " + diff);
                 }
             }
         }
@@ -762,7 +765,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             committed = false;
 
             // Re-timestamp the message.
-            message.setLongProperty("timestamp", System.currentTimeMillis());
+            message.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Round robin the destinations as the messages are sent.
             //return _destinationCount;
@@ -805,7 +808,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         {
             // Generate a sample message and time stamp it.
             ObjectMessage msg = getTestMessage(_replyDestination, _messageSize, _persistent);
-            msg.setLongProperty("timestamp", System.currentTimeMillis());
+            msg.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Send the message and wait for a reply.
             pingAndWaitForReply(msg, DEFAULT_TX_BATCH_SIZE, DEFAULT_TIMEOUT);
@@ -863,8 +866,9 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     public ObjectMessage getTestMessage(Destination replyQueue, int messageSize, boolean persistent) throws JMSException
     {
         ObjectMessage msg = TestMessageFactory.newObjectMessage(_producerSession, replyQueue, messageSize, persistent);
-        // Timestamp the message.
-        //msg.setLongProperty("timestamp", System.currentTimeMillis());
+
+        // Timestamp the message in nanoseconds.
+        msg.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
         return msg;
     }
