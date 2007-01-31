@@ -18,6 +18,7 @@
  - under the License.
  -
  -->
+ 
 <project name="Qpid Common Protocol Versions" default="generate">
   <property name="topDirectoryLocation" location=".." />
   <property name="project.build.directory" location="target" />
