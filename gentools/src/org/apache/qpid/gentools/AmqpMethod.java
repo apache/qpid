@@ -24,6 +24,7 @@ import java.io.PrintStream;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
 
 public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 {
@@ -31,10 +32,10 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	public AmqpVersionSet versionSet;
 	public AmqpFieldMap fieldMap;
 	public String name;
-        public boolean isRequest;
 	public AmqpOrdinalVersionMap indexMap;
 	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
 	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
+        public AmqpFlagMap isResponseFlagMap;
 	
 	public AmqpMethod(String name, LanguageConverter converter)
 	{
@@ -45,8 +46,26 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		indexMap = new AmqpOrdinalVersionMap();
 		clientMethodFlagMap = new AmqpFlagMap();
 		serverMethodFlagMap = new AmqpFlagMap();
+		isResponseFlagMap = new AmqpFlagMap();
 	}
 
+        /** Check if this method is named as a response by any other method in the class. */
+        public void checkForResponse(Element methodElement, AmqpVersion version) {
+	    Element clazz = (Element)methodElement.getParentNode();
+	    String methodName = methodElement.getAttribute("name");
+	    NodeList methods = clazz.getElementsByTagName("method");
+	    for (int i=0; i<methods.getLength(); ++i) {
+		Element method = (Element)methods.item(i);
+		NodeList responses = method.getElementsByTagName("response");
+		for (int j =0; j<responses.getLength(); ++j) {
+		    Element response = (Element)responses.item(j);
+		    if (methodName.equals(response.getAttribute("name"))) {
+			isResponseFlagMap.setFlagForVersion(true, version);
+		    }
+		}
+	    }
+        }
+    
 	public boolean addFromNode(Node methodNode, int ordinal, AmqpVersion version)
 		throws AmqpParseException, AmqpTypeMappingException
 	{
@@ -65,7 +84,6 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		}
 		NodeList nList = methodNode.getChildNodes();
 		int fieldCntr = fieldMap.size();
-		isRequest = false; // Assume not a request  unless we find a response node.
 		for (int i=0; i<nList.getLength(); i++)
 		{
 			Node child = nList.item(i);
@@ -105,10 +123,8 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 				if (value.compareTo("no-gen") == 0)
 					return false;
 			}
-			else if (child.getNodeName().equals("response")) {
-			    isRequest = true;
-			}
 		}
+		checkForResponse((Element)methodNode, version);
 		processChassisFlags(serverChassisFlag, clientChassisFlag, version);
 		return true;
 	}
@@ -117,6 +133,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	{
 		clientMethodFlagMap.removeVersion(version);
 		serverMethodFlagMap.removeVersion(version);
+		isResponseFlagMap.removeVersion(version);
 		indexMap.removeVersion(version);
 		fieldMap.removeVersion(version);
 		versionSet.remove(version);
@@ -146,25 +163,8 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	
 	protected void processChassisFlags(boolean serverFlag, boolean clientFlag, AmqpVersion version)
 	{
-		AmqpVersionSet versionSet = serverMethodFlagMap.get(serverFlag);
-		if (versionSet != null)
-			versionSet.add(version);
-		else
-		{
-			versionSet = new AmqpVersionSet();
-			versionSet.add(version);
-			serverMethodFlagMap.put(serverFlag, versionSet);
-		}
-		
-		versionSet = clientMethodFlagMap.get(clientFlag);
-		if (versionSet != null)
-			versionSet.add(version);
-		else
-		{
-			versionSet = new AmqpVersionSet();
-			versionSet.add(version);
-			clientMethodFlagMap.put(clientFlag, versionSet);
-		}		
+	    serverMethodFlagMap.setFlagForVersion(serverFlag, version);
+	    clientMethodFlagMap.setFlagForVersion(clientFlag, version);
 	}
 	
 	public AmqpOverloadedParameterMap getOverloadedParameterLists(AmqpVersionSet globalVersionSet,

@@ -30,7 +30,21 @@ public class AmqpFlagMap extends TreeMap<Boolean, AmqpVersionSet> implements Ver
 	{
 		return containsKey(true);
 	}
-	
+
+	public boolean isSet(AmqpVersion version)
+	{
+	    System.out.println("VERSION="+version);
+	    return containsKey(true) && get(true).contains(version);
+	}
+
+        public void setFlagForVersion(boolean flag, AmqpVersion version) {
+	    if (get(flag) == null) {
+		put(flag, new AmqpVersionSet(version));
+	    } else {
+		get(flag).add(version);
+	    }
+	}
+    
 	public String toString()
 	{
 		AmqpVersionSet versionSet = get(true);
