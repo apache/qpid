@@ -189,14 +189,14 @@ MessageHandlerImpl::transfer(const MethodContext& context,
                               u_int16_t /*ticket*/,
                               const string& /*destination*/,
                               bool /*redelivered*/,
-                              bool /*immediate*/,
+                              bool immediate,
                               u_int64_t /*ttl*/,
                               u_int8_t /*priority*/,
                               u_int64_t /*timestamp*/,
                               u_int8_t /*deliveryMode*/,
                               u_int64_t /*expiration*/,
                               const string& exchangeName,
-                              const string& /*routingKey*/,
+                              const string& routingKey,
                               const string& /*messageId*/,
                               const string& /*correlationId*/,
                               const string& /*replyTo*/,
@@ -208,7 +208,7 @@ MessageHandlerImpl::transfer(const MethodContext& context,
                               const string& /*securityToken*/,
                               const qpid::framing::FieldTable& /*applicationHeaders*/,
                               qpid::framing::Content body,
-                              bool /*mandatory*/ )
+                              bool mandatory )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
@@ -216,9 +216,9 @@ MessageHandlerImpl::transfer(const MethodContext& context,
         broker.getExchanges().getDefault() : broker.getExchanges().get(exchangeName);
     if(exchange){
     	if (body.isInline()) {
-//        	MessageMessage* msg =
-//        		new MessageMessage(&connection, exchangeName, routingKey, immediate);
-//        	channel.handlePublish(msg, exchange);
+        	MessageMessage* msg =
+       			new MessageMessage(*(context.methodBody), exchangeName, routingKey, mandatory, immediate);
+        	channel.handlePublish(msg, exchange);
         
     		connection.client->getMessageHandler()->ok(context);
     	} else {
