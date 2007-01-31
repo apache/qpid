@@ -53,8 +53,6 @@ class AMQMethodBody : public AMQBody
     
     virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
 
-    // FIXME aconway 2007-01-24: remove match, use isA
-    bool match(AMQMethodBody* other) const;
     template <class T> bool isA() {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
     }

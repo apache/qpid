@@ -47,7 +47,6 @@
 #include <AMQHeaderBody.h>
 #include <AMQHeartbeatBody.h>
 #include <BasicPublishBody.h>
-#include "ChannelAdapter.h"
 
 namespace qpid {
 namespace broker {
