@@ -18,49 +18,16 @@
  * under the License.
  *
  */
+#include <boost/format.hpp>
 #include <ProtocolVersionException.h>
-#include <sstream>
+
 
 using namespace qpid::framing;
 
-ProtocolVersionException::ProtocolVersionException() throw ()
+void ProtocolVersionException::init(const std::string& msg) 
 {
+    whatStr = boost::str(
+        boost::format("ProtocolVersionException: %s found: %s")
+        % versionFound.toString() % msg);
 }
 
-ProtocolVersionException::ProtocolVersionException(const std::string& str) throw () : Exception(str)
-{
-}
-
-ProtocolVersionException::ProtocolVersionException(const char* str) throw () : Exception(str)
-{
-}
-
-ProtocolVersionException::ProtocolVersionException(const ProtocolVersion& versionFound_, const std::string& str) throw () : Exception(str)
-
-{
-    versionFound = versionFound_;
-}
-
-ProtocolVersionException::ProtocolVersionException(const ProtocolVersion& versionFound_, const char* str) throw () : Exception(str)
-
-{
-    versionFound = versionFound_;
-}
-
-ProtocolVersionException::~ProtocolVersionException() throw ()
-{
-}
-
-const char* ProtocolVersionException::what() const throw()
-{
-    std::stringstream ss;
-    ss << "ProtocolVersionException: AMQP Version " << versionFound.toString() << " found: " << whatStr;
-    return ss.str().c_str();
-}
-
-std::string ProtocolVersionException::toString() const throw()
-{
-    std::stringstream ss;
-    ss << "ProtocolVersionException: AMQP Version " << versionFound.toString() << " found: " << whatStr;
-    return ss.str();
-}

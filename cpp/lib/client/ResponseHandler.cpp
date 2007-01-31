@@ -66,10 +66,8 @@ void ResponseHandler::receive(ClassId c, MethodId  m) {
     if(!validate(response->amqpClassId(), response->amqpMethodId())) {
 	THROW_QPID_ERROR(
             PROTOCOL_ERROR,
-            (boost::format(
-                 "Expected class:method %d:%d, got %d:%d")
-             % c % m % response->amqpClassId() % response->amqpMethodId()
-            ).str());
+            boost::format("Expected class:method %d:%d, got %d:%d")
+            % c % m % response->amqpClassId() % response->amqpMethodId());
     }
 }
 

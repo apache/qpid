@@ -122,15 +122,16 @@ class Configuration{
 
   public:
 
-    struct BadOptionException : public qpid::Exception {
-        BadOptionException(const std::string& msg)
-            : qpid::Exception(msg) {}
+    struct BadOptionException : public Exception {
+        template<class T>
+        BadOptionException(const T& msg) : Exception(msg) {}
     };
             
 
     class ParseException : public Exception {
       public:
-        ParseException(const std::string& msg) : Exception(msg) {}
+        template <class T>
+        ParseException(const T& msg) : Exception(msg) {}
     };
 
 

@@ -15,9 +15,12 @@
  * limitations under the License.
  *
  */
+#include <boost/format.hpp>
 
 #include "ChannelAdapter.h"
 #include "AMQFrame.h"
+
+using boost::format;
 
 namespace qpid {
 namespace framing {
@@ -77,26 +80,22 @@ void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {
     handleMethodInContext(method, context);
 }
 
-void ChannelAdapter::assertMethodOk(AMQMethodBody& /*method*/) const {
-    // No connection methods allowed on a non-zero channel
-    // Subclass ChannelZero overrides for 0 channels.
-    // FIXME aconway 2007-01-25: with ctors
-//     assertChannelOpen();
-//     if (method.amqpClassId() == ConnectionOpenBody::CLASS_ID)
-//         throw ConnectionException(
-//             504, "Connection method on non-0 channel.");
+void ChannelAdapter::assertMethodOk(AMQMethodBody& method) const {
+    if (getId() != 0 && method.amqpClassId() == ConnectionOpenBody::CLASS_ID)
+        throw ConnectionException(
+            504, format("Connection method on non-0 channel %d.")%getId());
 }
 
 void ChannelAdapter::assertChannelOpen() const {
-    // FIXME aconway 2007-01-25: with ctors
-//     if (!isOpen())
-//         throw ConnectionException(504, "Channel is not open");
+    if (getId() != 0 && !isOpen())
+        throw ConnectionException(
+            504, format("Channel %d is not open.")%getId());
 }
 
 void ChannelAdapter::assertChannelNotOpen() const {
-    // FIXME aconway 2007-01-25: with ctors
-//     if (isOpen())
-//         throw ConnectionException(504, "Channel is already open");
+    if (getId() != 0 && isOpen())
+        throw ConnectionException(
+            504, format("Channel %d is already open.") % getId());
 }
 
 }} // namespace qpid::framing

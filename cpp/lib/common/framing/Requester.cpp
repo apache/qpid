@@ -16,6 +16,8 @@
  *
  */
 
+#include <boost/format.hpp>
+
 #include "Requester.h"
 #include "QpidError.h"
 
@@ -39,8 +41,9 @@ void Requester::processed(const AMQResponseBody::Data& response) {
         if (i != requests.end())
             requests.erase(i);
         else {
-            // FIXME aconway 2007-01-16: Uncomment exception when ids are propagating.
-//             THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid response.");
+            THROW_QPID_ERROR(
+                PROTOCOL_ERROR,
+                boost::format("Response with non-existent request id=%d")%id);
         }
     }
 }

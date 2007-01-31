@@ -19,6 +19,8 @@
  *
  */
 
+#include <boost/format.hpp>
+
 #include <QpidError.h>
 #include <sstream>
 
@@ -26,19 +28,15 @@ using namespace qpid;
 
 QpidError::QpidError() : code(0) {}
 
-QpidError::QpidError(int _code, const std::string& _msg,
-                     const SrcLine& _loc) throw()
-    : code(_code), msg(_msg), location(_loc)
-{
-    std::ostringstream os;
-    os << "Error [" << code << "] " << msg << " ("
-       << location.file << ":" << location.line << ")";
-    whatStr = os.str();
-}
-
 QpidError::~QpidError() throw() {}
 
 Exception* QpidError::clone() const throw() { return new QpidError(*this); }
 
 void QpidError::throwSelf() const  { throw *this; }
+
+void QpidError::init() {
+    whatStr = boost::str(boost::format("Error [%d] %s (%s:%d)")
+                         % code % msg % loc.file % loc.line);
+}
+
 
