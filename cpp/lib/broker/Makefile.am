@@ -23,6 +23,8 @@ libqpidbroker_la_SOURCES =				\
   BrokerExchange.h				\
   BrokerMessage.cpp				\
   BrokerMessage.h				\
+  BrokerMessageMessage.cpp				\
+  BrokerMessageMessage.h				\
   BrokerQueue.cpp				\
   BrokerQueue.h					\
   Configuration.cpp				\

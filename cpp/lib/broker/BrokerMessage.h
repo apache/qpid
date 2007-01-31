@@ -48,16 +48,10 @@ namespace qpid {
          */
         class BasicMessage : public Message{
             const ConnectionToken* const publisher;
-            string exchange;
-            string routingKey;
-            const bool mandatory;
-            const bool immediate;
-            bool redelivered;
             qpid::framing::AMQHeaderBody::shared_ptr header;
             std::auto_ptr<Content> content;
-            u_int64_t size;
-            u_int64_t persistenceId;
             qpid::sys::Mutex contentLock;
+            u_int64_t size;
 
             void sendContent(qpid::framing::OutputHandler* out, 
                              int channel, u_int32_t framesize, qpid::framing::ProtocolVersion* version);
@@ -88,15 +82,10 @@ namespace qpid {
                            u_int64_t deliveryTag, 
                            u_int32_t framesize,
 			   qpid::framing::ProtocolVersion* version);
-            void redeliver();
 
             qpid::framing::BasicHeaderProperties* getHeaderProperties();
             bool isPersistent();
-            const string& getRoutingKey() const { return routingKey; }
-            const string& getExchange() const { return exchange; }
             u_int64_t contentSize() const { return size; }
-            u_int64_t getPersistenceId() const { return persistenceId; }
-            void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; }
 
             void decode(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
             void decodeHeader(qpid::framing::Buffer& buffer);
