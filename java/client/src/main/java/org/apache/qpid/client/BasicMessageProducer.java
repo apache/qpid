@@ -388,9 +388,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             }
             else
             {
-                //TODO; Do we really want to create an empty message here ?
-                newMessage = (AbstractJMSMessage) _session.createMessage();
-                return new MessageConverter(newMessage).getConvertedMessage();
+                newMessage = new MessageConverter(message).getConvertedMessage();
             }
 
             if (newMessage != null)

@@ -25,7 +25,8 @@ import org.apache.log4j.Logger;
 import javax.jms.*;
 import java.util.Enumeration;
 
-public class MessageConverter {
+public class MessageConverter
+{
 
     /**
      * Log4J logger
@@ -114,6 +115,15 @@ public class MessageConverter {
         {
             //we're at the end so don't mind the exception
         }
+        _newMessage = (AbstractJMSMessage) nativeMessage;
+        setMessageProperties(message);
+    }
+
+    public MessageConverter(Message message) throws JMSException
+    {
+        //TODO; Do we really want to create an empty message here ?
+        BytesMessage nativeMessage = new JMSBytesMessage();                
+
         _newMessage = (AbstractJMSMessage) nativeMessage;
         setMessageProperties(message);
     }
