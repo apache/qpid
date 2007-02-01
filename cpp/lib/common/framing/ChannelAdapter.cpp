@@ -32,7 +32,7 @@ void ChannelAdapter::init(
     id = i;
     out = &o;
     version = v;
-    context = MethodContext(0, id, this);
+    context = MethodContext(id, this);
 }
 
 void ChannelAdapter::send(AMQFrame* frame) {
@@ -62,7 +62,7 @@ void ChannelAdapter::send(AMQBody::shared_ptr body) {
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     assertMethodOk(*request);
     responder.received(request->getData());
-    context =MethodContext(request.get(), id, this, request->getRequestId());
+    context =MethodContext(id, request, this, request->getRequestId());
     handleMethodInContext(request, context);
 }
 
@@ -76,7 +76,7 @@ void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
 
 void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {
     assertMethodOk(*method);
-    context = MethodContext(method.get(), id, this);
+    context = MethodContext(id, method, this);
     handleMethodInContext(method, context);
 }
 

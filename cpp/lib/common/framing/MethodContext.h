@@ -22,6 +22,8 @@
 #include "OutputHandler.h"
 #include "ProtocolVersion.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace qpid {
 namespace framing {
 
@@ -46,11 +48,17 @@ struct MethodContext
      * Passing a integer channel-id in place of a MethodContext
      * will automatically construct the MethodContext.
      */
-    MethodContext(
-        const AMQMethodBody* method,
-        ChannelId channel, OutputHandler* output=0, RequestId request=0)
+    MethodContext(ChannelId channel,
+    	OutputHandler* output=0, RequestId request=0)
+        : channelId(channel), out(output), requestId(request)
+    {}
+    
+    MethodContext(ChannelId channel,
+        boost::shared_ptr<AMQMethodBody> method,
+        OutputHandler* output=0, RequestId request=0)
         : channelId(channel), out(output), requestId(request),
-          methodBody(method) {}
+          methodBody(method)
+    {}
 
     /** \internal Channel on which the method is sent. */
     ChannelId channelId;
@@ -66,7 +74,7 @@ struct MethodContext
     /** \internal This is the Method Body itself
      * It's useful for passing around instead of unpacking all its parameters
      */
-    const AMQMethodBody* methodBody;
+    boost::shared_ptr<AMQMethodBody> methodBody;
 };
 
 }} // namespace qpid::framing
