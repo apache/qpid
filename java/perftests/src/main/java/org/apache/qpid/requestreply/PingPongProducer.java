@@ -87,7 +87,8 @@ import uk.co.thebadgerset.junit.extensions.Throttle;
  * @todo Use read/write lock in the onmessage, not for reading writing but to make use of a shared and exlcusive lock
  *       pair. Obtian read lock on all messages, before decrementing the message count. At the end of the on message
  *       method add a block that obtains the write lock for the very last message, releases any waiting producer. Means
- *       that the last message waits until all other messages have been handled before releasing producers.
+ *       that the last message waits until all other messages have been handled before releasing producers but allows
+ *       messages to be processed concurrently, unlike the current synchronized block.
  *
  * @todo Set the timeout to be per message correlation id. Restart it every time a message is received (with matching id).
  *       Means that timeout is measuring situations whether a particular ping stream has pasued for too long, rather than
