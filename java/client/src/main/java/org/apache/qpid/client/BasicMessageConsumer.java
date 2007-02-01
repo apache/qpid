@@ -212,16 +212,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         //i.e. it is only valid to call this method if
         //
-        //    (a) the session is stopped, in which case the dispatcher is not running
+        //    (a) the connection is stopped, in which case the dispatcher is not running
         //    OR
         //    (b) the listener is null AND we are not receiving synchronously at present
         //
 
-        if (_session.isStopped())
+        if (!_session.getAMQConnection().started())
         {
             _messageListener.set(messageListener);
             _session.setHasMessageListeners();
-            _session.startDistpatcherIfNecessary();
 
             if (_logger.isDebugEnabled())
             {
@@ -248,7 +247,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 synchronized (_session)
                 {
-                    
                     _messageListener.set(messageListener);
                     _session.setHasMessageListeners();
                     _session.startDistpatcherIfNecessary();
@@ -329,11 +327,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
-        _session.startDistpatcherIfNecessary();
 
         checkPreConditions();
 
         acquireReceiving();
+
+        _session.startDistpatcherIfNecessary();
 
         try
         {
@@ -385,11 +384,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
-        _session.startDistpatcherIfNecessary();
-
         checkPreConditions();
 
         acquireReceiving();
+
+        _session.startDistpatcherIfNecessary();
 
         try
         {
@@ -560,7 +559,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
             else
             {
-                //This shouldn't be possible.
                 _synchronousQueue.put(jmsMessage);
             }
         }
