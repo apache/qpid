@@ -26,7 +26,7 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.message.TestNonQpidTextMessage;
+import org.apache.qpid.client.message.NonQpidObjectMessage;
 import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.*;
@@ -71,7 +71,7 @@ public class JMSPropertiesTest extends TestCase
         MessageProducer producer = producerSession.createProducer(queue);
 
         //create a test message to send
-        ObjectMessage sentMsg = new TestNonQpidTextMessage();
+        ObjectMessage sentMsg = new NonQpidObjectMessage();
         sentMsg.setJMSCorrelationID(JMS_CORR_ID);
         sentMsg.setJMSDeliveryMode(JMS_DELIV_MODE);
         sentMsg.setJMSType(JMS_TYPE);

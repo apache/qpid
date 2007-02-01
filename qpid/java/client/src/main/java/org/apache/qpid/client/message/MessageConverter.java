@@ -121,8 +121,9 @@ public class MessageConverter
 
     public MessageConverter(Message message) throws JMSException
     {
-        //TODO; Do we really want to create an empty message here ?
-        BytesMessage nativeMessage = new JMSBytesMessage();                
+        //Send a message with just properties.
+        // Throwing away content
+        BytesMessage nativeMessage = new JMSBytesMessage();
 
         _newMessage = (AbstractJMSMessage) nativeMessage;
         setMessageProperties(message);
