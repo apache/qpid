@@ -41,6 +41,9 @@ public class Constants
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
     public final static String VIRTUAL_HOST = "VirtualHost";
+    public final static String QUEUE_OWNER = "owner";
+    public final static String OPERATION_CREATE_QUEUE = "createNewQueue";
+    public final static String OPERATION_CREATE_BINDING = "createNewBinding";
     
     public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth"; 
     
@@ -49,11 +52,11 @@ public class Constants
     public final static String NAVIGATION_ROOT = "Qpid Connections";
     public final static String DESCRIPTION = " Description";
     
-    public final static String BROKER_MANAGER = "Broker_Manager";
     public final static String QUEUE  = "Queue";
     public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
+    public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String CONNECTION ="Connection";
     
     public final static String ACTION_ADDSERVER = "New Connection";
