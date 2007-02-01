@@ -188,7 +188,7 @@ public class PingPongBouncer implements MessageListener
         Config config = new Config();
         config.setOptions(args);
         String brokerDetails = config.getHost() + ":" + config.getPort();
-        String virtualpath = "/test";
+        String virtualpath = "test";
         String destinationName = config.getDestination();
         if (destinationName == null)
         {
