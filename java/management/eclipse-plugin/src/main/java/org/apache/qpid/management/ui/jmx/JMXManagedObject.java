@@ -36,10 +36,8 @@ public class JMXManagedObject extends ManagedBean
     {
         super();
         this._objName = objName;
-        setName(_objName.getKeyProperty("name"));
-        setType(_objName.getKeyProperty("type"));
         setUniqueName(_objName.toString());
-        setDomain(_objName.getDomain());
+        setDomain(_objName.getDomain());       
         super.setProperties(new HashMap(_objName.getKeyPropertyList()));
     }
     

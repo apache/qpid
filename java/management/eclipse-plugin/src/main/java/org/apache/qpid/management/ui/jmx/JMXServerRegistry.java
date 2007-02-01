@@ -131,15 +131,15 @@ public class JMXServerRegistry extends ServerRegistry
     
     public void addManagedObject(ManagedBean mbean)
     {
-        if (mbean.getType().endsWith(Constants.QUEUE) && !mbean.getName().startsWith("tmp_"))
+        if (mbean.isQueue() && !mbean.getName().startsWith("tmp_"))
         {
             addQueueMBean(mbean);
         }
-        else if (mbean.getType().endsWith(Constants.EXCHANGE))
+        else if (mbean.isExchange())
         {
             addExchangeMBean(mbean);
         }
-        else if (mbean.getType().endsWith(Constants.CONNECTION))
+        else if (mbean.isConnection())
         {
             addConnectionMBean(mbean);
         }
@@ -149,12 +149,18 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
-        if (mbean.getType().endsWith(Constants.QUEUE))
+        if (mbean.isQueue())
+        {
             removeQueueMBean(mbean);
-        else if (mbean.getType().endsWith(Constants.EXCHANGE))
+        }
+        else if (mbean.isExchange())
+        {
             removeExchangeMBean(mbean);
-        else if (mbean.getType().endsWith(Constants.CONNECTION))
+        }
+        else if (mbean.isConnection())
+        {
             removeConnectionMBean(mbean);
+        }
         
         _mbeansMap.remove(mbean.getUniqueName());
     }
@@ -319,6 +325,12 @@ public class JMXServerRegistry extends ServerRegistry
         }
     }
     
+    /**
+     * When the mbean registration request is received from the mbean server, then the client listener
+     * can use this method.  It will add the mbean to a list, which will be used to add the mbean to
+     * the registry and gui
+     * @param objName
+     */
     public void registerManagedObject(ObjectName objName)
     {
         JMXManagedObject managedObject = new JMXManagedObject(objName);
@@ -327,10 +339,20 @@ public class JMXServerRegistry extends ServerRegistry
         addManagedObject(managedObject);
     }
     
+    /**
+     * When mbean unregistration notification is received from the mbean server, then client listener
+     * can invoke this method. It will add the mbean to the list of mbeans to be removed from registry
+     * @param objName
+     */
     public void unregisterManagedObject(ObjectName objName)
     {
         ManagedBean mbean = _mbeansMap.get(objName.toString());
-        _mbeansToBeRemoved.add(mbean);
+        // Check if mbean was not available in the map. It can happen if mbean unregistration
+        // notification is received and the mbean is not added in the map.
+        if (mbean != null)
+        {
+            _mbeansToBeRemoved.add(mbean);
+        }
     }
 
     public List<ManagedBean> getObjectsToBeRemoved()
