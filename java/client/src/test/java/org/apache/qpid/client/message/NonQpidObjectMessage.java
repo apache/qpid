@@ -24,7 +24,7 @@ import javax.jms.*;
 import java.util.Enumeration;
 import java.io.Serializable;
 
-public class TestNonQpidTextMessage implements ObjectMessage {
+public class NonQpidObjectMessage implements ObjectMessage {
 
     private JMSObjectMessage _realMessage;
     private String _contentString;
@@ -34,7 +34,7 @@ public class TestNonQpidTextMessage implements ObjectMessage {
      * does not inherit from the Qpid message superclasses
      * and expand our unit testing of MessageConverter et al
      */
-    public TestNonQpidTextMessage()
+    public NonQpidObjectMessage()
     {
         _realMessage = new JMSObjectMessage();
     }
