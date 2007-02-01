@@ -384,7 +384,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         }
 
         String brokerDetails = config.getHost() + ":" + config.getPort();
-        String virtualpath = "/test";
+        String virtualpath = "test";
         String selector = (config.getSelector() == null) ? DEFAULT_SELECTOR : config.getSelector();
         boolean verbose = true;
         boolean transacted = config.isTransacted();
