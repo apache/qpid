@@ -149,8 +149,8 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue="test-ack-queue", exclusive=True)
         
-        reply = channel.message_consume(queue="test-ack-queue", no_ack=False)
-        queue = self.client.queue(reply.consumer_tag)
+        channel.message_consume(queue="test-ack-queue", destination="consumer_tag", no_ack=False)
+        queue = self.client.queue("consumer_tag")
 
         channel.message_transfer(routing_key="test-ack-queue", body="One")
         channel.message_transfer(routing_key="test-ack-queue", body="Two")
@@ -170,8 +170,9 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        channel.message_ack(delivery_tag=msg2.delivery_tag, multiple=True)  #One & Two
-        channel.message_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
+        msg1.ok()
+        msg2.ok()
+        msg4.ok()
 
         channel.message_recover(requeue=False)
         
@@ -214,8 +215,6 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        #channel.message_ack(delivery_tag=msg2.delivery_tag, multiple=True)  #One & Two
-        #channel.message_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
         msg1.ok()  #One
         msg2.ok()  #Two
         msg4.ok()  #Two
@@ -252,8 +251,8 @@ class MessageTests(TestBase):
         #setup: declare queue and subscribe
         channel = self.channel
         channel.queue_declare(queue="test-prefetch-count", exclusive=True)
-        subscription = channel.message_consume(queue="test-prefetch-count", no_ack=False)
-        queue = self.client.queue(subscription.consumer_tag)
+        subscription = channel.message_consume(queue="test-prefetch-count", destination="consumer_tag", no_ack=False)
+        queue = self.client.queue("consumer_tag")
 
         #set prefetch to 5:
         channel.message_qos(prefetch_count=5)
@@ -263,22 +262,30 @@ class MessageTests(TestBase):
             channel.message_transfer(routing_key="test-prefetch-count", body="Message %d" % i)
 
         #only 5 messages should have been delivered:
+        msgs = []
         for i in range(1, 6):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
+            msgs.add(msg)
         try:
             extra = queue.get(timeout=1)
             self.fail("Got unexpected 6th message in original queue: " + extra.body)
         except Empty: None
 
         #ack messages and check that the next set arrive ok:
-        channel.message_ack(delivery_tag=msg.delivery_tag, multiple=True)
+        #todo: once batching is implmented, send a single response for all messages
+        for msg in msgs:
+            msg.ok()
+        msgs.clear()    
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
+            msgs.add(msg)
 
-        channel.message_ack(delivery_tag=msg.delivery_tag, multiple=True)
+        for msg in msgs:
+            msg.ok()
+        msgs.clear()    
 
         try:
             extra = queue.get(timeout=1)
@@ -294,8 +301,8 @@ class MessageTests(TestBase):
         #setup: declare queue and subscribe
         channel = self.channel
         channel.queue_declare(queue="test-prefetch-size", exclusive=True)
-        subscription = channel.message_consume(queue="test-prefetch-size", no_ack=False)
-        queue = self.client.queue(subscription.consumer_tag)
+        subscription = channel.message_consume(queue="test-prefetch-size", destination="consumer_tag", no_ack=False)
+        queue = self.client.queue("consumer_tag")
 
         #set prefetch to 50 bytes (each message is 9 or 10 bytes):
         channel.message_qos(prefetch_size=50)
@@ -305,9 +312,11 @@ class MessageTests(TestBase):
             channel.message_transfer(routing_key="test-prefetch-size", body="Message %d" % i)
 
         #only 5 messages should have been delivered (i.e. 45 bytes worth):
+        msgs = []
         for i in range(1, 6):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
+            msgs.add(msg)
 
         try:
             extra = queue.get(timeout=1)
@@ -315,13 +324,18 @@ class MessageTests(TestBase):
         except Empty: None
 
         #ack messages and check that the next set arrive ok:
-        channel.message_ack(delivery_tag=msg.delivery_tag, multiple=True)
+        for msg in msgs:
+            msg.ok()
+        msgs.clear()    
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
+            msgs.add(msg)
 
-        channel.message_ack(delivery_tag=msg.delivery_tag, multiple=True)
+        for msg in msgs:
+            msg.ok()
+        msgs.clear()    
 
         try:
             extra = queue.get(timeout=1)
@@ -366,10 +380,13 @@ class MessageTests(TestBase):
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "get-ok")
             self.assertEqual("Message %d" % i, reply.body)
-            if(i == 13):
-                channel.message_ack(delivery_tag=reply.delivery_tag, multiple=True)
-            if(i in [15, 17, 19]):
-                channel.message_ack(delivery_tag=reply.delivery_tag)
+            reply.ok()
+
+            #todo: when batching is available, test ack multiple
+            #if(i == 13):
+            #    channel.message_ack(delivery_tag=reply.delivery_tag, multiple=True)
+            #if(i in [15, 17, 19]):
+            #    channel.message_ack(delivery_tag=reply.delivery_tag)
 
         reply = channel.message_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "message")
@@ -384,7 +401,8 @@ class MessageTests(TestBase):
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "get-ok")
             self.assertEqual("Message %d" % i, reply.body)
-            channel.message_ack(delivery_tag=reply.delivery_tag)
+            reply.ok()
+            #channel.message_ack(delivery_tag=reply.delivery_tag)
 
         reply = channel.message_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "message")
