@@ -69,9 +69,33 @@ import uk.co.thebadgerset.junit.extensions.Throttle;
  * </table>
  *
  * @todo The use of a ping rate {@link #DEFAULT_RATE} and waits between pings {@link #DEFAULT_SLEEP_TIME} are overlapping.
- *       Use the rate and throttling only.
+ *       Use the rate and throttling only. Ideally, optionally pass the rate throttle into the ping method, throttle to
+ *       be created and configured by the test runner from the -f command line option and made available through
+ *       the timing controller on timing aware tests or by throttling rate of calling tests methods on non-timing aware
+ *       tests.
  *
  * @todo Make shared or unique destinations a configurable option, hard coded to false.
+ *
+ * @todo Make acknowledege mode a test option.
+ *
+ * @todo Make the message listener a static for all replies to be sent to. It won't be any more of a bottle neck than
+ *       having one per PingPongProducer, as will synchronize on message correlation id, allowing threads to process
+ *       messages concurrently for different ids. Needs to be static so that when using a chained message listener and
+ *       shared destinations between multiple PPPs, it gets notified about all replies, not just those that happen to
+ *       be picked up by the PPP that it is atteched to.
+ *
+ * @todo Use read/write lock in the onmessage, not for reading writing but to make use of a shared and exlcusive lock
+ *       pair. Obtian read lock on all messages, before decrementing the message count. At the end of the on message
+ *       method add a block that obtains the write lock for the very last message, releases any waiting producer. Means
+ *       that the last message waits until all other messages have been handled before releasing producers.
+ *
+ * @todo Set the timeout to be per message correlation id. Restart it every time a message is received (with matching id).
+ *       Means that timeout is measuring situations whether a particular ping stream has pasued for too long, rather than
+ *       the time to send an entire block of messages. This will be better because the timeout won't need to be adjusted
+ *       depending on the total number of messages being sent. Logic to be added to sendAndWait to recheck the timeout
+ *       whenever its wait expires.
+ *
+ * @todo Need to multiply up the number of expected messages for pubsub tests as each can be received by many consumers?
  */
 public class PingPongProducer implements Runnable, MessageListener, ExceptionListener
 {
@@ -222,9 +246,6 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     /** Destination where the response messages will arrive. */
     private Destination _replyDestination;
-
-    /** Destination where the producer will be sending message to. */
-    //private Destination _pingDestination;
 
     /** Determines whether this producer sends persistent messages. */
     protected boolean _persistent;
