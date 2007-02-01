@@ -1642,6 +1642,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             _dispatcher.setDaemon(true);
             _dispatcher.start();
         }
+        else
+        {
+            _dispatcher.setConnectionStopped(false);
+        }
     }
 
     void stop()
