@@ -33,11 +33,9 @@ import java.util.List;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ManagedObject;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -243,7 +241,7 @@ public class NavigationView extends ViewPart
         String domain = server.getDomain();
         try
         {
-            if (!domain.equals("All"))
+            if (!domain.equals(Constants.ALL))
             {
                 TreeObject domainNode = new TreeObject(domain, Constants.DOMAIN);
                 domainNode.setParent(serverNode);
@@ -281,17 +279,6 @@ public class NavigationView extends ViewPart
     private void populateDomain(TreeObject domain) throws IOException, Exception
     {
         ManagedServer server = (ManagedServer)domain.getParent().getManagedObject();
-        /*
-        // Add these three types - Connection, Exchange, Queue
-        // By adding these, these will always be available, even if there are no mbeans under thse types
-        // This is required because, the mbeans will be added from mbeanview, by selecting from the list
-        TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.TYPE);
-        typeChild.setParent(domain);
-        typeChild = new TreeObject(Constants.EXCHANGE, Constants.TYPE);
-        typeChild.setParent(domain);
-        typeChild = new TreeObject(Constants.QUEUE, Constants.TYPE);
-        typeChild.setParent(domain);
-        */
         
         // Now populate the mbenas under those types
         List<ManagedBean> mbeans = MBeanUtility.getManagedObjectsForDomain(server, domain.getName());
@@ -302,17 +289,20 @@ public class NavigationView extends ViewPart
             serverRegistry.addManagedObject(mbean);     
             
             // Add all mbeans other than Connections, Exchanges and Queues. Because these will be added
-            // manually by selecting from MBeanView
-            
-            if (!(mbean.getType().endsWith(Constants.CONNECTION) ||
-                  mbean.getType().endsWith(Constants.EXCHANGE) ||
-                  mbean.getType().endsWith(Constants.QUEUE)))
+            // manually by selecting from MBeanView           
+            if (!(mbean.isConnection() || mbean.isExchange() || mbean.isQueue()) )
             {
                 addManagedBean(domain, mbean);
             }
         }
     }
     
+    /**
+     * Add these three types - Connection, Exchange, Queue
+     * By adding these, these will always be available, even if there are no mbeans under thse types
+     * This is required because, the mbeans will be added from mbeanview, by selecting from the list
+     * @param parent Node
+     */
     private void addDefaultNodes(TreeObject parent)
     {
         TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.NODE_TYPE_MBEANTYPE);
@@ -360,6 +350,7 @@ public class NavigationView extends ViewPart
      * Adds the given MBean to the given domain node. Creates Notification node for the MBean.
      * @param domain
      * @param mbean mbean
+     * @throws Exception
      */
     private void addManagedBean(TreeObject domain, ManagedBean mbean) throws Exception
     {
@@ -797,6 +788,11 @@ public class NavigationView extends ViewPart
         }// end of run method.        
     }// end of Worker class
     
+    /**
+     * Adds the mbean to the navigation tree
+     * @param mbean
+     * @throws Exception
+     */
     public void addManagedBean(ManagedBean mbean) throws Exception
     {
         TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
@@ -833,7 +829,6 @@ public class NavigationView extends ViewPart
                         {
                             for (ManagedBean mbean : removalList)
                             {
-                                System.out.println("removing  " + mbean.getName() + " " + mbean.getType());
                                 TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
                                 List<TreeObject> domains = treeServerObject.getChildren();
                                 TreeObject domain = null;

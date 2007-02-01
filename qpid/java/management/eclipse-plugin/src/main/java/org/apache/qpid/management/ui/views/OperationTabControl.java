@@ -218,9 +218,9 @@ public class OperationTabControl extends TabControl
         }
         
         // Customised parameter widgets        
-        if (_mbean.getType().endsWith(Constants.EXCHANGE) &&
+        if (_mbean.isExchange() &&
             Constants.EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
-            _opData.getName().equalsIgnoreCase("createNewBinding"))
+            _opData.getName().equalsIgnoreCase(Constants.OPERATION_CREATE_BINDING))
         {                                  
             customCreateNewBinding(); 
             return;
@@ -278,10 +278,10 @@ public class OperationTabControl extends TabControl
                 combo.addSelectionListener(parameterSelectionListener);
                 valueInCombo = true;                
             }
-            else if (param.getType().equals("boolean") || param.getType().equals("java.lang.Boolean"))
+            else if (param.isBoolean())
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                combo.setItems(new String[] {"false", "true"});
+                combo.setItems(Constants.BOOLEAN_TYPE_VALUES);
                 combo.select(0);
                 param.setValueFromString(combo.getItem(0));
                 combo.setLayoutData(formData);
@@ -492,7 +492,7 @@ public class OperationTabControl extends TabControl
         {
             for (ParameterData param : params)
             {
-                param.setValue(null);
+                param.setDefaultValue();
             }
         }
     }
@@ -535,6 +535,14 @@ public class OperationTabControl extends TabControl
                 { 
                     if (param.getValue() == null || param.getValue().toString().length() == 0)
                     {
+                        // Customized check, because for this parameter null is allowed
+                        if (param.getName().equals(Constants.QUEUE_OWNER) &&
+                            _opData.getName().equals(Constants.OPERATION_CREATE_QUEUE))
+                        {
+                            continue;
+                        }
+                        // End of custom code
+                        
                         ViewUtility.popupInfoMessage(_form.getText(),
                                 "Please select the " + ViewUtility.getDisplayText(param.getName()));
                         

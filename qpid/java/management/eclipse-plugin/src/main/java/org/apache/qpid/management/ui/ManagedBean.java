@@ -32,7 +32,7 @@ public abstract class ManagedBean extends ManagedObject
     private String _uniqueName = "";
     private String _domain = "";
     private String _type = "";
-    private String _virtualHostName = "Default";
+    private String _virtualHostName = null;
     private ManagedServer _server = null;
     private HashMap _properties = null;
     
@@ -48,7 +48,9 @@ public abstract class ManagedBean extends ManagedObject
     public void setProperties(HashMap properties)
     {
         this._properties = properties;
-        setVirtualHostName(getProperty(Constants.VIRTUAL_HOST));
+        setName(getProperty("name"));
+        setType(getProperty("type"));
+        _virtualHostName = getProperty(Constants.VIRTUAL_HOST);
     }
     public String getDomain()
     {
@@ -89,12 +91,30 @@ public abstract class ManagedBean extends ManagedObject
         return _virtualHostName;
     }
     
-    public void setVirtualHostName(String virtualHost)
+    /**
+     * Returns mbean instance name. MBeans which have only one instance, the type attribute will be returned
+     * @return
+     */
+    public String getInstanceName()
     {
-        if (virtualHost != null)
-        {
-            this._virtualHostName = virtualHost;
-        }
+        if (getName() != null)
+            return getName();
+        else
+            return getType();
     }
     
+    public boolean isQueue()
+    {
+        return _type.endsWith(Constants.QUEUE);
+    }
+    
+    public boolean isConnection()
+    {
+        return _type.endsWith(Constants.CONNECTION);
+    }
+    
+    public boolean isExchange()
+    {
+        return _type.endsWith(Constants.EXCHANGE);
+    }
 }

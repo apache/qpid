@@ -153,7 +153,12 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         try
         {
-            queue = new AMQQueue(new AMQShortString(queueName), durable, new AMQShortString(owner), autoDelete, getVirtualHost());
+            AMQShortString ownerShortString = null;
+            if (owner != null)
+            {
+                ownerShortString = new AMQShortString(owner);
+            }
+            queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, autoDelete, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);
