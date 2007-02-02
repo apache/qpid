@@ -34,9 +34,13 @@ import javax.jms.*;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.client.*;
+
 import org.apache.qpid.client.message.TestMessageFactory;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.topic.Config;
@@ -570,14 +574,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             // Check if this is a pub/sub pinger, in which case create topics.
             if (_isPubSub)
             {
-                AMQShortString name = new AMQShortString(rootName + id);
-                destination = new AMQTopic(name);
+                destination = new AMQTopic(rootName + id);
             }
             // Otherwise this is a p2p pinger, in which case create queues.
             else
             {
-                AMQShortString name = new AMQShortString(rootName + id);
-                destination = new AMQQueue(name, name, false, false, false);
+                destination = new AMQQueue(rootName + id);
             }
 
             // Keep the destination.
