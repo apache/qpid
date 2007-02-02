@@ -123,7 +123,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         try
         {
             AMQQueue queue = (AMQQueue) ctx.lookup("MyQueue");
-            assertEquals("example.MyQueue", queue.getRoutingKey());
+            assertEquals("example.MyQueue", queue.getRoutingKey().toString());
         }
         catch (NamingException ne)
         {
@@ -133,7 +133,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         try
         {
             AMQTopic topic = (AMQTopic) ctx.lookup("ibmStocks");
-            assertEquals("stocks.nyse.ibm", topic.getTopicName());
+            assertEquals("stocks.nyse.ibm", topic.getTopicName().toString());
         }
         catch (Exception ne)
         {
@@ -143,7 +143,7 @@ public class PropertiesFileInitialContextFactoryTest extends TestCase
         try
         {
             AMQQueue direct = (AMQQueue) ctx.lookup("direct");
-            assertEquals("directQueue", direct.getRoutingKey());
+            assertEquals("directQueue", direct.getRoutingKey().toString());
         }
         catch (NamingException ne)
         {
