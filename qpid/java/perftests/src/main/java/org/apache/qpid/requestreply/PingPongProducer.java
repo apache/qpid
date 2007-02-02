@@ -34,13 +34,12 @@ import javax.jms.*;
 
 import org.apache.log4j.Logger;
 
-
-import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQNoConsumersException;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.topic.Config;
@@ -78,11 +77,9 @@ import uk.co.thebadgerset.junit.extensions.Throttle;
  *       the timing controller on timing aware tests or by throttling rate of calling tests methods on non-timing aware
  *       tests.
  *
- * @todo Make shared or unique destinations a configurable option, hard coded to false.
- *
  * @todo Make acknowledege mode a test option.
  *
- * @todo Make the message listener a static for all replies to be sent to. It won't be any more of a bottle neck than
+ * @todo Make the message listener a static for all replies to be sent to? It won't be any more of a bottle neck than
  *       having one per PingPongProducer, as will synchronize on message correlation id, allowing threads to process
  *       messages concurrently for different ids. Needs to be static so that when using a chained message listener and
  *       shared destinations between multiple PPPs, it gets notified about all replies, not just those that happen to
@@ -93,12 +90,6 @@ import uk.co.thebadgerset.junit.extensions.Throttle;
  *       method add a block that obtains the write lock for the very last message, releases any waiting producer. Means
  *       that the last message waits until all other messages have been handled before releasing producers but allows
  *       messages to be processed concurrently, unlike the current synchronized block.
- *
- * @todo Set the timeout to be per message correlation id. Restart it every time a message is received (with matching id).
- *       Means that timeout is measuring situations whether a particular ping stream has pasued for too long, rather than
- *       the time to send an entire block of messages. This will be better because the timeout won't need to be adjusted
- *       depending on the total number of messages being sent. Logic to be added to sendAndWait to recheck the timeout
- *       whenever its wait expires.
  *
  * @todo Need to multiply up the number of expected messages for pubsub tests as each can be received by many consumers?
  */
@@ -155,6 +146,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     public static final String COMMIT_BATCH_SIZE_PROPNAME = "CommitBatchSize";
 
+    public static final String UNIQUE_PROPNAME = "uniqueDests";
+
     /** Used to set up a default message size. */
     public static final int DEFAULT_MESSAGE_SIZE = 0;
 
@@ -171,7 +164,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     public static final long DEFAULT_SLEEP_TIME = 250;
 
     /** Default time to wait before assuming that a ping has timed out. */
-    public static final long DEFAULT_TIMEOUT = 9000;
+    public static final long DEFAULT_TIMEOUT = 30000;
 
     /** Defines the default number of pings to send in each transaction when running transactionally. */
     public static final int DEFAULT_TX_BATCH_SIZE = 100;
@@ -227,18 +220,25 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the default verbose mode. */
     public static final boolean DEFAULT_VERBOSE = false;
 
+    public static final boolean DEFAULT_UNIQUE = true;
+
     /** Holds the name of the property to store nanosecond timestamps in ping messages with. */
     public static final String MESSAGE_TIMESTAMP_PROPNAME = "timestamp";
 
     /** A source for providing sequential unique correlation ids. These will be unique within the same JVM. */
-    private static AtomicLong idGenerator = new AtomicLong(0L);
+    private static AtomicLong _correlationIdGenerator = new AtomicLong(0L);
+
+    /** A source for providing unique ids to PingPongProducer. */
+    private static AtomicInteger _pingProducerIdGenerator;
 
     /**
      * Holds a map from message ids to latches on which threads wait for replies. This map is shared accross
      * multiple ping producers on the same JVM.
      */
-    private static Map<String, CountDownLatch> trafficLights =
-        Collections.synchronizedMap(new HashMap<String, CountDownLatch>());
+    /*private static Map<String, CountDownLatch> trafficLights =
+        Collections.synchronizedMap(new HashMap<String, CountDownLatch>());*/
+    private static Map<String, PerCorrelationId> perCorrelationIds =
+        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** A convenient formatter to use when time stamping output. */
     protected static final DateFormat timestampFormatter = new SimpleDateFormat("hh:mm:ss:SS");
@@ -337,7 +337,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      * @param noOfDestinations The number of destinations to ping. Must be 1 or more.
      * @param rate             Specified the number of pings per second to send. Setting this to 0 means send as fast as
      *                         possible, with no rate restriction.
-     * @param pubsub
+     * @param pubsub           True to ping topics, false to ping queues.
+     * @param unique           True to use unique destinations for each ping pong producer, false to share.
      *
      * @throws Exception Any exceptions are allowed to fall through.
      */
@@ -345,8 +346,18 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                             String destinationName, String selector, boolean transacted, boolean persistent, int messageSize,
                             boolean verbose, boolean afterCommit, boolean beforeCommit, boolean afterSend,
                             boolean beforeSend, boolean failOnce, int txBatchSize, int noOfDestinations, int rate,
-                            boolean pubsub) throws Exception
+                            boolean pubsub, boolean unique) throws Exception
     {
+        _logger.debug("public PingPongProducer(String brokerDetails = " + brokerDetails + ", String username = " + username
+                      + ", String password = " + password + ", String virtualpath = " + virtualpath
+                      + ", String destinationName = " + destinationName + ", String selector = " + selector
+                      + ", boolean transacted = " + transacted + ", boolean persistent = " + persistent
+                      + ", int messageSize = " + messageSize + ", boolean verbose = " + verbose + ", boolean afterCommit = "
+                      + afterCommit + ", boolean beforeCommit = " + beforeCommit + ", boolean afterSend = " + afterSend
+                      + ", boolean beforeSend = " + beforeSend + ", boolean failOnce = " + failOnce + ", int txBatchSize = "
+                      + txBatchSize + ", int noOfDestinations = " + noOfDestinations + ", int rate = " + rate
+                      + ", boolean pubsub = " + pubsub + ", boolean unique = " + unique + "): called");
+
         // Check that one or more destinations were specified.
         if (noOfDestinations < 1)
         {
@@ -375,7 +386,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
         // Create the producer and the consumers for all reply destinations.
         createProducer();
-        createPingDestinations(noOfDestinations, selector, destinationName, true);
+        createPingDestinations(noOfDestinations, selector, destinationName, unique);
         createReplyConsumers(getReplyDestinations(), selector);
 
         // Keep all the remaining options.
@@ -470,7 +481,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         PingPongProducer pingProducer =
             new PingPongProducer(brokerDetails, DEFAULT_USERNAME, DEFAULT_PASSWORD, virtualpath, destName, selector,
                                  transacted, persistent, messageSize, verbose, afterCommit, beforeCommit, afterSend,
-                                 beforeSend, failOnce, batchSize, destCount, rate, pubsub);
+                                 beforeSend, failOnce, batchSize, destCount, rate, pubsub, false);
 
         pingProducer.getConnection().start();
 
@@ -605,10 +616,15 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             _logger.debug("correlationID = " + correlationID);
 
             // Countdown on the traffic light if there is one for the matching correlation id.
-            CountDownLatch trafficLight = trafficLights.get(correlationID);
+            PerCorrelationId perCorrelationId = perCorrelationIds.get(correlationID);
 
-            if (trafficLight != null)
+            if (perCorrelationId != null)
             {
+                CountDownLatch trafficLight = perCorrelationId.trafficLight;
+
+                // Restart the timeout timer on every message.
+                perCorrelationId.timeOutStart = System.nanoTime();
+
                 _logger.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
 
                 // Decrement the countdown latch. Before this point, it is possible that two threads might enter this
@@ -650,7 +666,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             }
             else
             {
-                _logger.debug("There was no thread waiting for reply: " + correlationID);
+                _logger.warn("Got unexpected message with correlationId: " + correlationID);
             }
 
             // Print out ping times for every message in verbose mode only.
@@ -693,7 +709,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                       + timeout + "): called");
 
         // Create a unique correlation id to put on the messages before sending them.
-        String messageCorrelationId = Long.toString(idGenerator.incrementAndGet());
+        String messageCorrelationId = Long.toString(_correlationIdGenerator.incrementAndGet());
 
         return pingAndWaitForReply(message, numPings, timeout, messageCorrelationId);
     }
@@ -726,17 +742,42 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             // One is added to this, so that the last reply becomes a special case. The special case is that the
             // chained message listener must be called before this sender can be unblocked, but that decrementing the
             // countdown needs to be done before the chained listener can be called.
-            CountDownLatch trafficLight = new CountDownLatch(numPings + 1);
-            trafficLights.put(messageCorrelationId, trafficLight);
+            PerCorrelationId perCorrelationId = new PerCorrelationId();
+            perCorrelationId.trafficLight = new CountDownLatch(numPings + 1);
+            perCorrelationIds.put(messageCorrelationId, perCorrelationId);
+
+            // Set up the current time as the start time for pinging on the correlation id. This is used to determine
+            // timeouts.
+            perCorrelationId.timeOutStart = System.nanoTime();
 
             // Send the specifed number of messages.
             pingNoWaitForReply(message, numPings, messageCorrelationId);
 
-            // Block the current thread until replies to all the message are received, or it times out.
-            trafficLight.await(timeout, TimeUnit.MILLISECONDS);
+            boolean timedOut = false;
+            boolean allMessagesReceived = false;
+            int numReplies = 0;
 
-            // Work out how many replies were receieved.
-            int numReplies = numPings - (int) trafficLight.getCount();
+            do
+            {
+                // Block the current thread until replies to all the messages are received, or it times out.
+                perCorrelationId.trafficLight.await(timeout, TimeUnit.MILLISECONDS);
+
+                // Work out how many replies were receieved.
+                numReplies = numPings - (int) perCorrelationId.trafficLight.getCount();
+                allMessagesReceived = numReplies >= numPings;
+
+                _logger.debug("numReplies = "+ numReplies);
+                _logger.debug("allMessagesReceived = "+ allMessagesReceived);
+
+                // Recheck the timeout condition.
+                long now = System.nanoTime();
+                long lastMessageReceievedAt = perCorrelationId.timeOutStart;
+                timedOut = (now - lastMessageReceievedAt) > (timeout * 1000000);
+
+                _logger.debug("now = " + now);
+                _logger.debug("lastMessageReceievedAt = " + lastMessageReceievedAt);
+            }
+            while (!timedOut && !allMessagesReceived);
 
             if ((numReplies < numPings) && _verbose)
             {
@@ -757,7 +798,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         // so will be a memory leak if this is not done.
         finally
         {
-            trafficLights.remove(messageCorrelationId);
+            perCorrelationIds.remove(messageCorrelationId);
         }
     }
 
@@ -1147,5 +1188,18 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     public static interface ChainedMessageListener
     {
         public void onMessage(Message message, int remainingCount) throws JMSException;
+    }
+
+    /**
+     * Holds information on each correlation id. The countdown latch, the current timeout timer... More stuff to be
+     * added to this: read/write lock to make onMessage more concurrent as described in class header comment.
+     */
+    protected static class PerCorrelationId
+    {
+        /** Holds a countdown on number of expected messages. */
+        CountDownLatch trafficLight;
+
+        /** Holds the last timestamp that the timeout was reset to. */
+        Long timeOutStart;
     }
 }
