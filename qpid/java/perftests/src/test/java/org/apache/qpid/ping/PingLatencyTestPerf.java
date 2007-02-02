@@ -41,20 +41,29 @@ import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 /**
- * PingAsyncTestPerf is a performance test that outputs multiple timings from its test method, using the timing controller
- * interface supplied by the test runner from a seperate listener thread. It differs from the {@link PingTestPerf} test
- * that it extends because it can output timings as replies are received, rather than waiting until all expected replies
- * are received. This is less 'blocky' than the tests in {@link PingTestPerf}, and provides a truer simulation of sending
- * and recieving clients working asynchronously.
+ * PingLatencyTestPerf is a performance test that outputs multiple timings from its test method, using the timing
+ * controller interface supplied by the test runner from a seperate listener thread. It outputs round trip timings for
+ * individual ping messages rather than for how long a complete batch of messages took to process. It also differs from
+ * the {@link PingTestPerf} test that it extends because it can output timings as replies are received, rather than
+ * waiting until all expected replies are received.
+ *
+ * <p/>This test does not output timings for every single ping message, as when running at high volume, writing the test
+ * log for a vast number of messages would slow the testing down. Instead samples ping latency occasionally. The frequency
+ * of ping sampling is set using the {@link #TEST_RESULTS_BATCH_SIZE_PROPNAME} property, to override the default of every
+ * {@link #DEFAULT_TEST_RESULTS_BATCH_SIZE}.
+ *
+ * <p/>The size parameter logged for each individual ping is set to the size of the batch of messages that the individual
+ * timed ping was taken from, rather than 1 for a single message. This is so that the total throughput (messages / time)
+ * can be calculated in order to examine the relationship between throughput and latency.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><td> Responsibilities <th> Collaborations
- * <tr><td> Send many ping messages and output timings asynchronously on batches received.
+ * <tr><td> Send many ping messages and output timings for sampled individual pings.
  * </table>
  */
-public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerAware
+public class PingLatencyTestPerf extends PingTestPerf implements TimingControllerAware
 {
-    private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
+    private static Logger _logger = Logger.getLogger(PingLatencyTestPerf.class);
 
     /** Holds the name of the property to get the test results logging batch size. */
     public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "BatchSize";
@@ -80,7 +89,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      *
      * @param name The test name.
      */
-    public PingAsyncTestPerf(String name)
+    public PingLatencyTestPerf(String name)
     {
         super(name);
 
@@ -95,10 +104,10 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
     public static Test suite()
     {
         // Build a new test suite
-        TestSuite suite = new TestSuite("Ping Performance Tests");
+        TestSuite suite = new TestSuite("Ping Latency Tests");
 
         // Run performance tests in read committed mode.
-        suite.addTest(new PingAsyncTestPerf("testAsyncPingOk"));
+        suite.addTest(new PingLatencyTestPerf("testPingLatency"));
 
         return suite;
     }
@@ -129,9 +138,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      *
      * @param numPings The number of pings to send.
      */
-    public void testAsyncPingOk(int numPings) throws Exception
+    public void testPingLatency(int numPings) throws Exception
     {
-        _logger.debug("public void testAsyncPingOk(int numPings): called");
+        _logger.debug("public void testPingLatency(int numPings): called");
 
         // Ensure that at least one ping was requeusted.
         if (numPings == 0)
@@ -171,7 +180,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < numPings)
         {
-            tc.completeTest(false, numPings - numReplies);
+            tc.completeTest(false, 0);
         }
 
         // Remove the chained message listener from the ping producer.
@@ -218,10 +227,10 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
     }
 
     /**
-     * BatchedResultsListener is a {@link PingPongProducer.ChainedMessageListener} that can be attached to the
-     * pinger, in order to receive notifications about every message received and the number remaining to be
-     * received. Whenever the number remaining crosses a batch size boundary this results listener outputs
-     * a test timing for the actual number of messages received in the current batch.
+     * BatchedResultsListener is a {@link org.apache.qpid.requestreply.PingPongProducer.ChainedMessageListener} that can
+     * be attached to the pinger, in order to receive notifications about every message received and the number remaining
+     * to be received. Whenever the number remaining crosses a batch size boundary this results listener outputs a test
+     * timing for the actual number of messages received in the current batch.
      */
     private class BatchedResultsListener implements PingPongProducer.ChainedMessageListener
     {
@@ -246,7 +255,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
          * @param message        The message.
          * @param remainingCount The count of messages remaining to be received with a particular correlation id.
          *
-         * @throws JMSException Any underlying JMSException is allowed to fall through.
+         * @throws javax.jms.JMSException Any underlying JMSException is allowed to fall through.
          */
         public void onMessage(Message message, int remainingCount) throws JMSException
         {
@@ -267,6 +276,12 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                     TimingController tc = perCorrelationId._tc;
                     int expected = perCorrelationId._expectedCount;
 
+                    // Extract the send time from the message and work out from the current time, what the ping latency was.
+                    // The ping producer time stamps messages in nanoseconds.
+                    long startTime = message.getLongProperty(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME);
+                    long now = System.nanoTime();
+                    long pingTime = now - startTime;
+
                     // Calculate how many messages were actually received in the last batch. This will be the batch size
                     // except where the number expected is not a multiple of the batch size and this is the first remaining
                     // count to cross a batch size boundary, in which case it will be the number expected modulo the batch
@@ -277,7 +292,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                     try
                     {
 
-                        tc.completeTest(true, receivedInBatch);
+                        tc.completeTest(true, receivedInBatch, pingTime);
                     }
                     catch (InterruptedException e)
                     {

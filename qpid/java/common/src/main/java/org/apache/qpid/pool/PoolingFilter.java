@@ -48,7 +48,7 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     void fireAsynchEvent(IoSession session, Event event)
     {
         Job job = getJobForSession(session);
-        job.acquire(); //prevents this job being removed from _jobs
+//        job.acquire(); //prevents this job being removed from _jobs
         job.add(event);
 
         //Additional checks on pool to check that it hasn't shutdown.
@@ -60,10 +60,25 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
 
     }
 
+    public void createNewJobForSession(IoSession session)
+    {
+        Job job = new Job(session, this, _maxEvents);
+        session.setAttribute(_name, job);
+    }
+
     private Job getJobForSession(IoSession session)
     {
-        Job job = _jobs.get(session);
-        return job == null ? createJobForSession(session) : job;
+        return (Job) session.getAttribute(_name);
+
+/*        if(job == null)
+        {
+            System.err.println("Error in " + _name);
+            Thread.dumpStack();
+        }
+
+
+        job = _jobs.get(session);
+        return job == null ? createJobForSession(session) : job;*/
     }
 
     private Job createJobForSession(IoSession session)
@@ -81,16 +96,18 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     //Job.JobCompletionHandler
     public void completed(IoSession session, Job job)
     {
-        if (job.isComplete())
+//        if (job.isComplete())
+//        {
+//            job.release();
+//            if (!job.isReferenced())
+//            {
+//                _jobs.remove(session);
+//            }
+//        }
+//        else
+        if (!job.isComplete())
         {
-            job.release();
-            if (!job.isReferenced())
-            {
-                _jobs.remove(session);
-            }
-        }
-        else
-        {
+
             // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
             //                       Can the pool be shutdown at this point?
             if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
@@ -121,13 +138,13 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     public void exceptionCaught(final NextFilter nextFilter, final IoSession session,
                                 final Throwable cause) throws Exception
     {
-            nextFilter.exceptionCaught(session,cause);
+        nextFilter.exceptionCaught(session, cause);
     }
 
     public void messageReceived(final NextFilter nextFilter, final IoSession session,
                                 final Object message) throws Exception
     {
-        nextFilter.messageReceived(session,message);
+        nextFilter.messageReceived(session, message);
     }
 
     public void messageSent(final NextFilter nextFilter, final IoSession session,
@@ -185,7 +202,7 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
         }
 
         public void messageReceived(final NextFilter nextFilter, final IoSession session,
-                                final Object message) throws Exception
+                                    final Object message) throws Exception
         {
 
             fireAsynchEvent(session, new Event.ReceivedEvent(nextFilter, message));
@@ -211,15 +228,15 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
 
     }
 
-    public static PoolingFilter createAynschReadPoolingFilter(ReferenceCountingExecutorService refCountingPool,String name)
+    public static PoolingFilter createAynschReadPoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
     {
-        return new AsynchReadPoolingFilter(refCountingPool,name);
+        return new AsynchReadPoolingFilter(refCountingPool, name);
     }
 
 
-    public static PoolingFilter createAynschWritePoolingFilter(ReferenceCountingExecutorService refCountingPool,String name)
+    public static PoolingFilter createAynschWritePoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
     {
-        return new AsynchWritePoolingFilter(refCountingPool,name);
+        return new AsynchWritePoolingFilter(refCountingPool, name);
     }
 
 }

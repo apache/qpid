@@ -458,7 +458,7 @@
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
                 <version>0.5-SNAPSHOT</version>
-                <scope>test</scope>
+                <scope>compile</scope>
             </dependency>
 
             <!-- Qpid Version Dependencies -->

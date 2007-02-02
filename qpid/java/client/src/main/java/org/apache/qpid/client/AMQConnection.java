@@ -209,12 +209,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         Exception lastException = new Exception();
         lastException.initCause(new ConnectException());
 
-        while (lastException != null && checkException(lastException) && _failoverPolicy.failoverAllowed())
+        while (!_connected && _failoverPolicy.failoverAllowed())
         {
             try
             {
                 makeBrokerConnection(_failoverPolicy.getNextBrokerDetails());
                 lastException = null;
+                _connected = true;
             }
             catch (Exception e)
             {
@@ -226,35 +227,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _logger.debug("Are we connected:" + _connected);
 
-        // Then the Failover Thread will handle conneciton
-        if (_failoverPolicy.failoverAllowed())
+        if (!_connected)
         {
-            //TODO this needs to be redone so that we are not spinning.
-            // A suitable object should be set that is then waited on
-            // and only notified when a connection is made or when
-            // the AMQConnection gets closed.
-            while (!_connected && !_closed.get())
-            {
-                try
-                {
-                    _logger.debug("Sleeping.");
-                    Thread.sleep(100);
-                }
-                catch (InterruptedException ie)
-                {
-                    _logger.debug("Woken up.");
-                }
-            }
-            if (!_failoverPolicy.failoverAllowed() || _failoverPolicy.getCurrentBrokerDetails() == null)
-            {
-                if (_lastAMQException != null)
-                {
-                    throw _lastAMQException;
-                }
-            }
-        }
-        else
-        {
+
             String message = null;
 
             if (lastException != null)
@@ -275,7 +250,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
 
             AMQException e = new AMQConnectionFailureException(message);
-            
+
             if (lastException != null)
             {
                 if (lastException instanceof UnresolvedAddressException)
@@ -791,6 +766,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public AMQProtocolHandler getProtocolHandler()
     {
         return _protocolHandler;
+    }
+    
+    public boolean started()
+    {
+        return _started;
     }
 
     public void bytesSent(long writtenBytes)

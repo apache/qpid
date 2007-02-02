@@ -30,13 +30,14 @@ public class UnacknowledgedMessage
     public final String consumerTag;
     public final long deliveryTag;
     public AMQQueue queue;
-    
+
     public UnacknowledgedMessage(AMQQueue queue, AMQMessage message, String consumerTag, long deliveryTag)
     {
         this.queue = queue;
         this.message = message;
         this.consumerTag = consumerTag;
         this.deliveryTag = deliveryTag;
+        message.incrementReference();
     }
 
     public void discard() throws AMQException

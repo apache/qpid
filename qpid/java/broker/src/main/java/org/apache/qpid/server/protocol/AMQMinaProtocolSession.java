@@ -23,9 +23,11 @@ package org.apache.qpid.server.protocol;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ConnectionStartBody;
@@ -123,6 +125,20 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _codecFactory = codecFactory;
         _managedObject = createMBean();
         _managedObject.register();
+
+        try
+        {
+            IoServiceConfig config = session.getServiceConfig();
+            ReadWriteThreadModel threadModel = (ReadWriteThreadModel) config.getThreadModel();
+            threadModel.getAsynchronousReadFilter().createNewJobForSession(session);
+            threadModel.getAsynchronousWriteFilter().createNewJobForSession(session);
+        }
+        catch (RuntimeException e)
+        {
+            e.printStackTrace();
+        //    throw e;
+
+        }
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException

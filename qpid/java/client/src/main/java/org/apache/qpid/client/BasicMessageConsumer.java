@@ -189,7 +189,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public String getMessageSelector() throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
         return _messageSelector;
     }
 
@@ -211,22 +211,27 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         //if the current listener is non-null and the session is not stopped, then
         //it is an error to call this method.
 
         //i.e. it is only valid to call this method if
         //
-        //    (a) the session is stopped, in which case the dispatcher is not running
+        //    (a) the connection is stopped, in which case the dispatcher is not running
         //    OR
         //    (b) the listener is null AND we are not receiving synchronously at present
         //
 
-        if (_session.isStopped())
+        if (!_session.getAMQConnection().started())
         {
             _messageListener.set(messageListener);
-            _logger.debug("Session stopped : Message listener set for destination " + _destination);
+            _session.setHasMessageListeners();
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination " + _destination);
+            }
         }
         else
         {
@@ -247,25 +252,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 synchronized (_session)
                 {
-                    //Pause Dispatcher
-                    _session.doDispatcherTask(new DispatcherCallback(this)
-                    {
-                        public void whilePaused(Queue<MessageConsumerPair> reprocessQueue)
-                        {
-                            // Prepend messages in _synchronousQueue to dispatcher queue
-                            _logger.debug("ReprocessQueue current size:" + reprocessQueue.size());
-                            for (Object item : _synchronousQueue)
-                            {
-                                reprocessQueue.offer(new MessageConsumerPair(_consumer, item));
-                            }
-                            _logger.debug("Added items to reprocessQueue:" + reprocessQueue.size());
-
-                            // Set Message Listener
-                            _logger.debug("Set Message Listener");
-                            _messageListener.set(messageListener);                            
-                        }
-                    }
-                    );                    
+                    _messageListener.set(messageListener);
+                    _session.setHasMessageListeners();
+                    _session.startDistpatcherIfNecessary();
                 }
             }
         }
@@ -273,7 +262,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
-        if(_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
             _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
             String url = jmsMsg.getStringProperty(CustomJMXProperty.JMSX_QPID_JMSDESTINATIONURL.toString());
@@ -286,7 +275,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 _logger.warn("Unable to parse the supplied destination header: " + url);
             }
-                        
+
         }
         _session.setInRecovery(false);
     }
@@ -347,13 +336,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receive(long l) throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         acquireReceiving();
 
+        _session.startDistpatcherIfNecessary();
+
         try
         {
-            if(closeOnAutoClose())
+            if (closeOnAutoClose())
             {
                 return null;
             }
@@ -388,7 +379,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private boolean closeOnAutoClose() throws JMSException
     {
-        if(isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
+        if (isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
         {
             close(false);
             return true;
@@ -401,13 +392,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public Message receiveNoWait() throws JMSException
     {
-    	checkPreConditions();
+        checkPreConditions();
 
         acquireReceiving();
 
+        _session.startDistpatcherIfNecessary();
+
         try
         {
-            if(closeOnAutoClose())
+            if (closeOnAutoClose())
             {
                 return null;
             }
@@ -463,19 +456,19 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close(boolean sendClose) throws JMSException
     {
-        synchronized(_connection.getFailoverMutex())
+        synchronized (_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
-                if(sendClose)
+                if (sendClose)
                 {
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        _consumerTag,	// consumerTag
-                        false);	// nowait
+                                                                                (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                                _consumerTag,    // consumerTag
+                                                                                false);    // nowait
 
                     try
                     {
@@ -572,8 +565,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 postDeliver(jmsMessage);
             }
             else
-            {
-                //This shouldn't be possible.
+            {                
                 _synchronousQueue.put(jmsMessage);
             }
         }
@@ -607,7 +599,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
-    	msg.setJMSDestination(_destination);
+        msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
             case Session.CLIENT_ACKNOWLEDGE:
@@ -691,7 +683,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     private void deregisterConsumer()
     {
-    	_session.deregisterConsumer(this);
+        _session.deregisterConsumer(this);
     }
 
     public String getConsumerTag()
@@ -704,26 +696,29 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _consumerTag = consumerTag;
     }
 
-	public AMQSession getSession() {
-		return _session;
-	}
+    public AMQSession getSession()
+    {
+        return _session;
+    }
 
-	private void checkPreConditions() throws JMSException{
+    private void checkPreConditions() throws JMSException
+    {
 
-		this.checkNotClosed();
+        this.checkNotClosed();
 
-		if(_session == null || _session.isClosed()){
-			throw new javax.jms.IllegalStateException("Invalid Session");
-		}
-	}
+        if (_session == null || _session.isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+    }
 
     public void acknowledge() throws JMSException
     {
-        if(!isClosed())
+        if (!isClosed())
         {
 
             Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
-            while(tags.hasNext())
+            while (tags.hasNext())
             {
                 _session.acknowledgeMessage(tags.next(), false);
                 tags.remove();
@@ -758,10 +753,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         _closeWhenNoMessages = b;
 
-        if(_closeWhenNoMessages
-                && _synchronousQueue.isEmpty() 
-                && _receiving.get()
-                && _messageListener != null)
+        if (_closeWhenNoMessages
+            && _synchronousQueue.isEmpty()
+            && _receiving.get()
+            && _messageListener != null)
         {
             _receivingThread.interrupt();
         }

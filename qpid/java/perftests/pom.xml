@@ -19,6 +19,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-perftests</artifactId>
@@ -35,7 +36,7 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-    <log4j.perftests>perftests.log4j</log4j.perftests>
+        <log4j.perftests>perftests.log4j</log4j.perftests>
     </properties>
 
     <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
@@ -43,7 +44,7 @@
         <repository>
           <id>junit-toolkit.snapshots</id>
           <name>JUnit Toolkit SNAPSHOT Repository</name>
-      <url>file://${basedir}/../mvn-repo</url>
+	  <url>file://${basedir}/../mvn-repo</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
@@ -55,7 +56,7 @@
         <pluginRepository>
           <id>junit-toolkit-plugin.snapshots</id>
           <name>JUnit Toolkit SNAPSHOT Repository</name>
-      <url>file://${basedir}/../mvn-repo</url>
+	  <url>file://${basedir}/../mvn-repo</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
@@ -74,15 +75,15 @@
             <artifactId>log4j</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>uk.co.thebadgerset</groupId>
+            <artifactId>junit-toolkit</artifactId>
+        </dependency>
+
         <!-- Test dependencies. -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>uk.co.thebadgerset</groupId>
-            <artifactId>junit-toolkit</artifactId>
         </dependency>
 
     </dependencies>
@@ -96,60 +97,57 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <!--<skip>true</skip>-->
-                </configuration>
             </plugin>
 
-            <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository. It will take a day or two from 16/1/2007.
+            <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository.
 
-             Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
+                 Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
                  scripts.
 
-         To run from maven:
+                 To run from within maven:
 
-         mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
+                 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
 
-         To run from the command line (after doing assembly:assembly goal):
+                 To run from the command line (after doing assembly:assembly goal):
 
-         java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 -o target org.apache.qpid.requestreply.PingPongTestPerf
+                 java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 
+                      -o target org.apache.qpid.requestreply.PingPongTestPerf
 
-         To generate the scripts do:
+                 To generate the scripts do:
 
-         mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
+                 mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
 
-         Then to run the scripts do (after doing assembly:assembly goal):
+                 Then to run the scripts, in the target directory do (after doing assembly:assembly goal):
 
-         ./bin/script_name or ./bin/script_name.bat
+                 ./script_name.sh
 
-         These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
-         -->
-
+                 These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
+                 -->
             <plugin>
               <groupId>uk.co.thebadgerset</groupId>
-              <artifactId>junit-toolkit-maven-plugin</artifactId>              
+              <artifactId>junit-toolkit-maven-plugin</artifactId>
 
               <configuration>
-               <scriptOutDirectory>target</scriptOutDirectory>
-               <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
+                <scriptOutDirectory>target</scriptOutDirectory>
+                <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
 
                 <systemproperties>
-                          <property>
-                            <name>log4j.configuration</name>
-                            <value>${log4j.perftests}</value>
-                          </property>
-                          <property>
-                            <name>amqj.logging.level</name>
-                            <value>warn</value>
-                          </property>
-                          <property>
-                            <name>badger.level</name>
-                            <value>warn</value>
-                          </property>
-                          <property>
-                            <name>amqj.test.logging.level</name>
-                            <value>info</value>
-                          </property>
+                  <property>
+                    <name>log4j.configuration</name>
+                    <value>${log4j.perftests}</value>
+                  </property>
+                  <property>
+                    <name>amqj.logging.level</name>
+                    <value>warn</value>
+                  </property>
+                  <property><!-- Turn off most logging messages from the junit-toolkit test tool itself. -->
+                    <name>badger.level</name>
+                    <value>warn</value>
+                  </property>
+                  <property>
+                    <name>amqj.test.logging.level</name>
+                    <value>info</value>
+                  </property>
                           <property>
                               <name>logdir</name>
                               <value>$QPID_WORK/results</value>
@@ -164,25 +162,45 @@
                           </property>
                   </systemproperties>
 
-        <commands>
-          <!-- Run the ping pong test once. This is just to check toolkit test runner is working. Real tests follow. -->
-          <PingOnce>-n PingOnce -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</PingOnce>
+                <commands>
+                  <!-- Single pings. These can be scaled up by overriding the parameters when calling the test script. -->
+                  <Ping-Once>-n Ping-Once -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</Ping-Once>
+                  <Ping-Once-Async>-n Ping-Once-Async -s [1] -r 1 -t testAsyncPingOk -o . org.apache.qpid.ping.PingAsyncTestPerf</Ping-Once-Async>
+                  <Ping-Latency>-n Ping-Latency -s [1000] -d 10S -t testPingLatency -o . org.apache.qpid.ping.PingLatencyTestPerf</Ping-Latency>
 
-          <!-- Tests the accuracy of the throttle implementation at different speeds. Throttle is used to restrict message rate in some tsts. -->
-          <ThrottleTest>-n ThrottleTest -r 5 -s [10,10000],samples=100,exp -t testThrottle -o . org.apache.qpid.ping.ThrottleTestPerf</ThrottleTest>
+                  <!-- More example Tests. These are examples to exercise all the features of the test harness. Can scale up with option overrides. -->
+                  <Ping-Tx>-n Ping-Tx -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>
+                  <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=512</Ping-Size>
+                  <Ping-Concurrent>-n Ping-Concurrent -s [100] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Concurrent>
+                  <Ping-Many-Queues>
+		      -n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=4
+		  </Ping-Many-Queues>
+                  <Ping-Duration>-n Ping-Duration -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Duration>
+                  <Ping-Rate>-n Ping-Rate -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=500</Ping-Rate>
+		  <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
+		  <Ping-Many-Topics>
+		      -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=4
+		  </Ping-Many-Topics>
+                  <Ping-Persistent>
+		      -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
+		  </Ping-Persistent>
+                  <Ping-Batch-Logging>
+		      -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
+		  </Ping-Batch-Logging>
+		  <Ping-Failover-Before-Send> 
+		      -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
+		  </Ping-Failover-Before-Send>
+		  <Ping-Failover-After-Send>
+		      -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
+		  </Ping-Failover-After-Send>
+		  <Ping-Failover-Before-Commit>
+		      -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
+		  </Ping-Failover-Before-Commit>
+		  <Ping-Failover-After-Commit>
+		      -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
+		  </Ping-Failover-After-Commit>
 
-          <!--
-             Skim Tests.
-             These are not part of the performance suite. They run quick tests to check that the different combinations of
-             options that the performance suite uses are going to work.
-            -->
-          <Skim-Tx>-n Skim-Tx -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Skim-Tx>
-          <Skim-Size>-n Skim-Size -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=51200</Skim-Size>
-          <Skim-Many>-n Skim-Many -s [1] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Many>
-          <Skim-Queues>-n Skim-Queues -s [1000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=10</Skim-Queues>
-          <Skim-Duration>-n Skim-Duration -s [1000] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Skim-Duration>
-          <Skim-Rate>-n Skim-Rate -s [1000] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=100</Skim-Rate>
-
+           
           <!-- P2P Volume Tests. -->
           <VT-Qpid-1>-n VT-Qpid-1 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000 transacted=true</VT-Qpid-1>
           <VT-Qpid-2>-n VT-Qpid-2 -s [15000000] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true BatchSize=10000</VT-Qpid-2>
@@ -323,7 +341,6 @@
             </execution>
           </executions>
         </plugin>
-
             <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
 
                  Usefull when bundling system, integration or performance tests into a convenient
@@ -353,7 +370,7 @@
         </plugins>
 
         <resources>
-        <!-- Include source files in built jar -->
+            <!-- Include source files in built jar -->
             <resource>
                 <targetPath>src/</targetPath>
                 <filtering>false</filtering>
@@ -362,7 +379,7 @@
                     <include>**/*.java</include>
                 </includes>
             </resource>
-        <!-- Include a log4j configuration in the jar at the root level (don't name this log4j.properties though as won't be able to override it). -->
+            <!-- Include a log4j configuration in the jar at the root level (don't name this log4j.properties though as won't be able to override it). -->
             <resource>
                 <targetPath>/</targetPath>
                 <filtering>false</filtering>

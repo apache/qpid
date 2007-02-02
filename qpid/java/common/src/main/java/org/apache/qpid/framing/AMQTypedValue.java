@@ -10,7 +10,7 @@ public class AMQTypedValue
 
     public AMQTypedValue(AMQType type, Object value)
     {
-        if(type == null)
+        if (type == null)
         {
             throw new NullPointerException("Cannot create a typed value with null type");
         }
@@ -21,7 +21,7 @@ public class AMQTypedValue
     private AMQTypedValue(AMQType type, ByteBuffer buffer)
     {
         _type = type;
-        _value = type.readValueFromBuffer( buffer );
+        _value = type.readValueFromBuffer(buffer);
     }
 
 
@@ -38,7 +38,7 @@ public class AMQTypedValue
 
     public void writeToBuffer(ByteBuffer buffer)
     {
-        _type.writeToBuffer(_value,buffer);
+        _type.writeToBuffer(_value, buffer);
     }
 
     public int getEncodingSize()
@@ -50,5 +50,10 @@ public class AMQTypedValue
     {
         AMQType type = AMQTypeMap.getType(buffer.get());
         return new AMQTypedValue(type, buffer);
+    }
+
+    public String toString()
+    {
+        return "[" + getType() + ": " + getValue() + "]";
     }
 }

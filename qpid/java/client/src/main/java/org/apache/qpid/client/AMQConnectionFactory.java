@@ -334,7 +334,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
                 if (addr != null)
                 {
-                    return new AMQQueue(new AMQBindingURL((String) addr.getContent()).getQueueName());
+                    return new AMQQueue(new AMQBindingURL((String) addr.getContent()));
                 }
             }
 
@@ -344,7 +344,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
                 if (addr != null)
                 {
-                    return new AMQTopic(new AMQBindingURL((String) addr.getContent()).getDestinationName());
+                    return new AMQTopic(new AMQBindingURL((String) addr.getContent()));
                 }
             }
 

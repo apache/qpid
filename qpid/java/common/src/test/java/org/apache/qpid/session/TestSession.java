@@ -24,9 +24,13 @@ import org.apache.mina.common.*;
 
 import java.net.SocketAddress;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TestSession implements IoSession
 {
+    private final ConcurrentMap attributes = new ConcurrentHashMap();
+
     public TestSession()
     {
     }
@@ -68,42 +72,42 @@ public class TestSession implements IoSession
 
     public Object getAttachment()
     {
-        return null;  //TODO
+        return getAttribute("");
     }
 
     public Object setAttachment(Object attachment)
     {
-        return null;  //TODO
+        return setAttribute("",attachment);
     }
 
     public Object getAttribute(String key)
     {
-        return null;  //TODO
+        return attributes.get(key);
     }
 
     public Object setAttribute(String key, Object value)
     {
-        return null;  //TODO
+        return attributes.put(key,value);
     }
 
     public Object setAttribute(String key)
     {
-        return null;  //TODO
+        return attributes.put(key, Boolean.TRUE);
     }
 
     public Object removeAttribute(String key)
     {
-        return null;  //TODO
+        return attributes.remove(key);
     }
 
     public boolean containsAttribute(String key)
     {
-        return false;  //TODO
+        return attributes.containsKey(key);
     }
 
     public Set getAttributeKeys()
     {
-        return null;  //TODO
+        return attributes.keySet();
     }
 
     public TransportType getTransportType()

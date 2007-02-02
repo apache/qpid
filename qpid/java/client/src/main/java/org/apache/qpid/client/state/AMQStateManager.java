@@ -53,6 +53,8 @@ public class AMQStateManager implements AMQMethodListener
     private final Map _state2HandlersMap = new HashMap();
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
+    private final Object _stateLock = new Object();
+    private static final long MAXIMUM_STATE_WAIT_TIME = 30000l;
 
     public AMQStateManager()
     {
@@ -62,7 +64,7 @@ public class AMQStateManager implements AMQMethodListener
     protected AMQStateManager(AMQState state, boolean register)
     {
         _currentState = state;
-        if(register)
+        if (register)
         {
             registerListeners();
         }
@@ -118,17 +120,10 @@ public class AMQStateManager implements AMQMethodListener
     public void changeState(AMQState newState) throws AMQException
     {
         _logger.debug("State changing to " + newState + " from old state " + _currentState);
-        final AMQState oldState = _currentState;
-        _currentState = newState;
-
-        synchronized (_stateListeners)
+        synchronized (_stateLock)
         {
-            final Iterator it = _stateListeners.iterator();
-            while (it.hasNext())
-            {
-                final StateListener l = (StateListener) it.next();
-                l.stateChanged(oldState, newState);
-            }
+            _currentState = newState;
+            _stateLock.notifyAll();
         }
     }
 
@@ -195,35 +190,33 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-    public void addStateListener(StateListener listener)
+    public void attainState(final AMQState s) throws AMQException
     {
-        _logger.debug("Adding state listener");
-        _stateListeners.add(listener);
-    }
-
-    public void removeStateListener(StateListener listener)
-    {
-        _stateListeners.remove(listener);
-    }
-
-    public void attainState(AMQState s) throws AMQException
-    {
-        boolean needToWait = false;
-        StateWaiter sw = null;
-        synchronized (_stateListeners)
+        synchronized (_stateLock)
         {
+            final long waitUntilTime = System.currentTimeMillis() + MAXIMUM_STATE_WAIT_TIME;
+            long waitTime = MAXIMUM_STATE_WAIT_TIME;
+
+            while (_currentState != s && waitTime > 0)
+            {
+                try
+                {
+                    _stateLock.wait(MAXIMUM_STATE_WAIT_TIME);
+                }
+                catch (InterruptedException e)
+                {
+                    _logger.warn("Thread interrupted");
+                }
+                if (_currentState != s)
+                {
+                    waitTime = waitUntilTime - System.currentTimeMillis();
+                }
+            }
             if (_currentState != s)
             {
-                _logger.debug("Adding state wait to reach state " + s);
-                sw = new StateWaiter(s);
-                addStateListener(sw);
-                // we use a boolean since we must release the lock before starting to wait
-                needToWait = true;
+                _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);                
+                throw new AMQException("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
             }
-        }
-        if (needToWait)
-        {
-            sw.waituntilStateHasChanged();
         }
         // at this point the state will have changed.
     }

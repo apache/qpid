@@ -27,7 +27,7 @@ import org.apache.qpid.AMQException;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    public char[] header = new char[]{'A','M','Q','P'};
+    public char[] header = new char[]{'A', 'M', 'Q', 'P'};
     // TODO: generate these constants automatically from the xml protocol spec file
 
     private static byte CURRENT_PROTOCOL_CLASS = 1;
@@ -103,11 +103,10 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     public static class Decoder //implements MessageDecoder
     {
         /**
-         *
          * @param session
          * @param in
          * @return true if we have enough data to decode the PI frame fully, false if more
-         * data is required
+         *         data is required
          */
         public boolean decodable(IoSession session, ByteBuffer in)
         {
@@ -115,12 +114,12 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         }
 
         public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out)
-            throws Exception
+                throws Exception
         {
             byte[] theHeader = new byte[4];
             in.get(theHeader);
-            ProtocolInitiation pi = new ProtocolInitiation((byte)0, (byte)0);
-            pi.header = new char[]{(char) theHeader[0],(char) theHeader[CURRENT_PROTOCOL_INSTANCE],(char) theHeader[2], (char) theHeader[3]};
+            ProtocolInitiation pi = new ProtocolInitiation((byte) 0, (byte) 0);
+            pi.header = new char[]{(char) theHeader[0], (char) theHeader[CURRENT_PROTOCOL_INSTANCE], (char) theHeader[2], (char) theHeader[3]};
             String stringHeader = new String(pi.header);
             if (!"AMQP".equals(stringHeader))
             {
@@ -139,17 +138,17 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         if (protocolClass != CURRENT_PROTOCOL_CLASS)
         {
             throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
-                    protocolClass);
+                                                protocolClass);
         }
         if (protocolInstance != CURRENT_PROTOCOL_INSTANCE)
         {
             throw new AMQProtocolInstanceException("Protocol instance " + CURRENT_PROTOCOL_INSTANCE + " was expected; received " +
-                    protocolInstance);
+                                                   protocolInstance);
         }
-        
+
         /* Look through list of available protocol versions */
         boolean found = false;
-        for (int i=0; i<pvl.pv.length; i++)
+        for (int i = 0; i < pvl.pv.length; i++)
         {
             if (pvl.pv[i][pvl.PROTOCOL_MAJOR] == protocolMajor &&
                 pvl.pv[i][pvl.PROTOCOL_MINOR] == protocolMinor)
@@ -161,7 +160,17 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         {
             // TODO: add list of available versions in list to msg...
             throw new AMQProtocolVersionException("Protocol version " +
-                protocolMajor + "." +  protocolMinor + " not found in protocol version list.");
+                                                  protocolMajor + "." + protocolMinor + " not found in protocol version list.");
         }
+    }
+
+    public String toString()
+    {
+        StringBuffer buffer = new StringBuffer(new String(header));
+        buffer.append(Integer.toHexString(protocolClass));
+        buffer.append(Integer.toHexString(protocolInstance));
+        buffer.append(Integer.toHexString(protocolMajor));
+        buffer.append(Integer.toHexString(protocolMinor));
+        return buffer.toString();
     }
 }

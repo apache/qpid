@@ -1,10 +1,26 @@
 -Notes-
 Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r501003
+	- Hard coded to return 0
 
 -Latest Revision-
-499979
+502576.499979
 
 -Not Done-
+
+502269 MNGMNT lets user copy and paste host details
+502180 QPID-331 MNGMENT setting default values on parameters
+502178 Virtual host string corrected.
+501945 QPID-332 patch
+501914 QPID-334 WeakReferenceMessageHandle bug.
+501412 MNGMNT fixed null pointer if there are no messges in the queue.
+501411 MNGMNT clearing the subscribed noticication map on unsubscribe
+501009 QPID-320 Imporve performance by remembering protocol version
+501008 QPID-324 change sending of destination to byte representing T/Q/Other
+501007 QPID-322 Test may habg isntead of fail of messages doesn't get through
+501005 QPID-324 change sending of destination to byte representing T/Q/Other
+501003 QPID-320 Imporve performance by remembering protocol version
+500310 Patch to TransactedTest to clean up messages
+500264 Change to Transacted Test
 499874 QPID-319 management console update (QPID-50)
 499851 QPID-318 removed hard coding (New Feature)
 499628 QPID-318 removed hard coding (New Feature)
@@ -50,6 +66,28 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 494650 QPID-268 Improvements to performance of generated code
 
 -Done-
+502576 QPID-343 performacne test suite doesn't output missing message count
+502271 QPID-341 When using Queues and Topics via JNDI properties not maintained.
+502268 Increased logging on StateManager
+502261 QPID-339 DispatcherTest was failing .. 
+502253 QPID-339 Client hangs when starting
+502249 QPID-330 Client occasionally fails to notice connect
+502248 QPID-339 Client hangs when starting
+502182 comments for the remained of changes to be made to tests
+502179 comments for the remained of changes to be made to tests
+502172 QPID-333 class rename
+501920 removed unused classes
+501917 QPID-333 Messsage Properties in MessageConverter lost on jms.Message-s
+501804 added ping latency test
+501465 Updated readme for local temp mvn repo
+501457 added pingclient
+501455  ping tests refactored
+501096 QPID-327 Pooling Filter Race condition
+501011 QPID-313 attain state in makeBrokerConenection missing state change.
+501010 QPID-322 Message reference count not incremented when added to unackMap.
+501004 QPID-320 Simplify MessageListener setup 
+500284 Updated script details and added guard for traffic light being null
+-
 499979 QPID-315 Test classes to reproduce missing correlation id
 499975 QPID-315 Moved message converstion to MessageConverter.
 499781 Fixed race that caused duplicate date in log file

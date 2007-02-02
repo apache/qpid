@@ -29,6 +29,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.failover.FailoverHandler;
@@ -146,6 +147,19 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             sslFilter.setUseClientMode(true);
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
         }
+
+        try
+        {
+
+            ReadWriteThreadModel threadModel = ReadWriteThreadModel.getInstance();
+            threadModel.getAsynchronousReadFilter().createNewJobForSession(session);
+            threadModel.getAsynchronousWriteFilter().createNewJobForSession(session);
+        }
+        catch (RuntimeException e)
+        {
+            e.printStackTrace();
+        }
+
 
         _protocolSession = new AMQProtocolSession(this, session, _connection);
         _protocolSession.init();

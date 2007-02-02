@@ -60,7 +60,6 @@ import java.util.StringTokenizer;
 
 /**
  * Main entry point for AMQPD.
- *
  */
 public class Main implements ProtocolVersionList, Managable
 {
@@ -119,10 +118,10 @@ public class Main implements ProtocolVersionList, Managable
         Option bind = OptionBuilder.withArgName("bind").hasArg().withDescription("bind to the specified address. Overrides any value in the config file").
                 withLongOpt("bind").create("b");
         Option logconfig = OptionBuilder.withArgName("logconfig").hasArg().withDescription("use the specified log4j xml configuration file. By " +
-                "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME + " in the same directory as the configuration file").
+                                                                                           "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME + " in the same directory as the configuration file").
                 withLongOpt("logconfig").create("l");
         Option logwatchconfig = OptionBuilder.withArgName("logwatch").hasArg().withDescription("monitor the log file configuration file for changes. Units are seconds. " +
-                "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
+                                                                                               "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
         options.addOption(help);
         options.addOption(version);
@@ -146,10 +145,12 @@ public class Main implements ProtocolVersionList, Managable
         {
             String ver = "Qpid 0.9.0.0";
             String protocol = "AMQP version(s) [major.minor]: ";
-            for (int i=0; i<pv.length; i++)
+            for (int i = 0; i < pv.length; i++)
             {
                 if (i > 0)
+                {
                     protocol += ", ";
+                }
                 protocol += pv[i][PROTOCOL_MAJOR] + "." + pv[i][PROTOCOL_MINOR];
             }
             System.out.println(ver + " (" + protocol + ")");
@@ -255,12 +256,12 @@ public class Main implements ProtocolVersionList, Managable
                 int totalVHosts = ((Collection) virtualHosts).size();
                 for (int vhost = 0; vhost < totalVHosts; vhost++)
                 {
-                    setupVirtualHosts(configFile.getParent() , (String)((List)virtualHosts).get(vhost));
+                    setupVirtualHosts(configFile.getParent(), (String) ((List) virtualHosts).get(vhost));
                 }
             }
             else
             {
-               setupVirtualHosts(configFile.getParent() , (String)virtualHosts);
+                setupVirtualHosts(configFile.getParent(), (String) virtualHosts);
             }
         }
         bind(port, connectorConfig);
@@ -277,7 +278,7 @@ public class Main implements ProtocolVersionList, Managable
             configFilePath = configFileParent + configFilePath.substring(configVar.length());
         }
 
-        if (configFilePath.indexOf(".xml") != -1 )
+        if (configFilePath.indexOf(".xml") != -1)
         {
             VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(configFilePath);
             vHostConfig.performBindings();
@@ -290,11 +291,11 @@ public class Main implements ProtocolVersionList, Managable
 
             String[] fileNames = virtualHostDir.list();
 
-            for (int each=0; each < fileNames.length; each++)
+            for (int each = 0; each < fileNames.length; each++)
             {
                 if (fileNames[each].endsWith(".xml"))
                 {
-                    VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(configFilePath+"/"+fileNames[each]);
+                    VirtualHostConfiguration vHostConfig = new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
                     vHostConfig.performBindings();
                 }
             }
@@ -324,7 +325,7 @@ public class Main implements ProtocolVersionList, Managable
             // implementation provided by MINA
             if (connectorConfig.enableExecutorPool)
             {
-                sconfig.setThreadModel(new ReadWriteThreadModel());
+                sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
             }
 
             if (connectorConfig.enableNonSSL)
@@ -405,7 +406,7 @@ public class Main implements ProtocolVersionList, Managable
         catch (NumberFormatException e)
         {
             System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be " +
-                    "a non-negative integer. Using default of zero (no watching configured");
+                               "a non-negative integer. Using default of zero (no watching configured");
         }
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
@@ -413,7 +414,7 @@ public class Main implements ProtocolVersionList, Managable
             if (logWatchTime > 0)
             {
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every " +
-                        logWatchTime + " seconds");
+                                   logWatchTime + " seconds");
                 // log4j expects the watch interval in milliseconds
                 DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
             }
@@ -439,12 +440,12 @@ public class Main implements ProtocolVersionList, Managable
         }
         catch (JMException ex)
         {
-            throw new AMQException("Exception occured in creating AMQBrokerManager MBean");    
+            throw new AMQException("Exception occured in creating AMQBrokerManager MBean");
         }
     }
 
     public ManagedObject getManagedObject()
     {
         return _mbean;
-    }    
+    }
 }
