@@ -63,18 +63,19 @@ public class PingClient extends PingPongProducer
      * @param noOfDestinations The number of destinations to ping. Must be 1 or more.
      * @param rate             Specified the number of pings per second to send. Setting this to 0 means send as fast as
      *                         possible, with no rate restriction.
-     * @param pubsub
+     * @param pubsub           True to ping topics, false to ping queues.
+     * @param unique           True to use unique destinations for each ping pong producer, false to share.
      *
      * @throws Exception Any exceptions are allowed to fall through.
      */
     public PingClient(String brokerDetails, String username, String password, String virtualpath, String destinationName,
                       String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                       boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                      int txBatchSize, int noOfDestinations, int rate, boolean pubsub) throws Exception
+                      int txBatchSize, int noOfDestinations, int rate, boolean pubsub, boolean unique) throws Exception
     {
         super(brokerDetails, username, password, virtualpath, destinationName, selector, transacted, persistent, messageSize,
               verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, txBatchSize, noOfDestinations, rate,
-              pubsub);
+              pubsub, unique);
     }
 
     /**

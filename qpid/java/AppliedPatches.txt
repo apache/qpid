@@ -6,7 +6,7 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 502576.499979
 
 -Not Done-
-
+502610 QPID-84 UPdate PropertiesFileInitialContextFactoryTest Remove referencetest
 502269 MNGMNT lets user copy and paste host details
 502180 QPID-331 MNGMENT setting default values on parameters
 502178 Virtual host string corrected.
@@ -66,6 +66,8 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 494650 QPID-268 Improvements to performance of generated code
 
 -Done-
+502627 Fixed problem with losing message results
+502620 Performance test improvement with better timeout handing
 502576 QPID-343 performacne test suite doesn't output missing message count
 502271 QPID-341 When using Queues and Topics via JNDI properties not maintained.
 502268 Increased logging on StateManager
