@@ -105,7 +105,7 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        ConnectionRedirectBody in(version, a, b);
+        ConnectionRedirectBody in(version, 0, a, b);
         in.encodeContent(buffer);
         buffer.flip(); 
         ConnectionRedirectBody out(version);
@@ -142,7 +142,8 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string a = "hostA";
         std::string b = "hostB";
-        AMQFrame in(version, 999, new ConnectionRedirectBody(version, a, b));
+        AMQFrame in(version, 999,
+                    new ConnectionRedirectBody(version, 0, a, b));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -153,7 +154,7 @@ class FramingTest : public CppUnit::TestCase
     void testBasicConsumeOkBodyFrame()
     {
         std::string s = "hostA";
-        AMQFrame in(version, 999, new BasicConsumeOkBody(version, s));
+        AMQFrame in(version, 999, new BasicConsumeOkBody(version, 0, s));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;

@@ -23,18 +23,11 @@
 #include <iostream>
 #include <AMQP_HighestVersion.h>
 #include "AMQFrame.h"
+#include "DummyChannel.h"
 
 using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
-
-struct DummyHandler : OutputHandler{
-    std::vector<AMQFrame*> frames; 
-
-    virtual void send(AMQFrame* frame){
-        frames.push_back(frame);
-    }
-};
 
 class MessageTest : public CppUnit::TestCase  
 {
@@ -52,7 +45,9 @@ class MessageTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        Message::shared_ptr msg = Message::shared_ptr(new BasicMessage(0, exchange, routingKey, false, false));
+        BasicMessage::shared_ptr msg(
+            new BasicMessage(0, exchange, routingKey, false, false,
+                             DummyChannel::basicGetBody()));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);        
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -69,7 +64,8 @@ class MessageTest : public CppUnit::TestCase
         msg->encode(buffer);
         buffer.flip();
         
-        msg = Message::shared_ptr(new BasicMessage(buffer));
+        msg.reset(new BasicMessage());
+        msg->decode(buffer);
         CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchange());
         CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
         CPPUNIT_ASSERT_EQUAL(messageId, msg->getHeaderProperties()->getMessageId());
@@ -77,10 +73,11 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getHeaderProperties()->getHeaders().getString("abc"));
         CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, msg->contentSize());
 
-        DummyHandler handler;
-        msg->deliver(&handler, 0, "ignore", 0, 100, &(qpid::framing::highestProtocolVersion)); 
-        CPPUNIT_ASSERT_EQUAL((size_t) 3, handler.frames.size());
-        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
+        DummyChannel channel(1);
+        // FIXME aconway 2007-02-02: deliver should take const ProtocolVersion&
+        msg->deliver(channel, "ignore", 0, 100); 
+        CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
+        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2]->getBody()));
         CPPUNIT_ASSERT(contentBody);
         CPPUNIT_ASSERT_EQUAL(data1 + data2, contentBody->getData());
     }

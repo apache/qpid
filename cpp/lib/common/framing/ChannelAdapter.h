@@ -27,7 +27,7 @@
 #include "BodyHandler.h"
 #include "Requester.h"
 #include "Responder.h"
-#include "OutputHandler.h"
+#include "framing/amqp_types.h"
 
 namespace qpid {
 namespace framing {
@@ -37,24 +37,26 @@ class MethodContext;
 /**
  * Base class for client and broker channel adapters.
  *
- * As BodyHandler:
+ * BodyHandler::handl*
  * - receives frame bodies from the network.
  * - Updates request/response data.
  * - Dispatches requests with a MethodContext for responses.
  *
- * As OutputHandler:
+ * send()
  * - Updates request/resposne ID data.
  * - Forwards frame to the peer.
  *
  * Thread safety: OBJECT UNSAFE. Instances must not be called
  * concurrently. AMQP defines channels to be serialized.
  */
-class ChannelAdapter : public BodyHandler, public OutputHandler {
+class ChannelAdapter : public BodyHandler {
   public:
     /**
      *@param output Processed frames are forwarded to this handler.
      */
-    ChannelAdapter() : context(0, 0), id(0), out(0) {}
+    ChannelAdapter(ChannelId id_=0, OutputHandler* out_=0,
+                   const ProtocolVersion& ver=ProtocolVersion())
+        : id(id_), out(out_), version(ver)  {}
 
     /** Initialize the channel adapter. */
     void init(ChannelId, OutputHandler&, const ProtocolVersion&);
@@ -62,12 +64,6 @@ class ChannelAdapter : public BodyHandler, public OutputHandler {
     ChannelId getId() const { return id; }
     const ProtocolVersion& getVersion() const { return version; }
     
-    /**
-     * Do request/response-id processing and then forward to
-     * handler provided to constructor. Response frames should
-     * have their request-id set before calling send.
-     */
-    void send(AMQFrame* frame);
     /**
      * Wrap body in a frame and send the frame.
      * Takes ownership of body.
@@ -92,9 +88,6 @@ class ChannelAdapter : public BodyHandler, public OutputHandler {
 
     RequestId getRequestInProgress() { return requestInProgress; }
 
-  protected:
-    MethodContext context;
-    
   private:
     ChannelId id;
     OutputHandler* out;

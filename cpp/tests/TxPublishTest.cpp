@@ -25,6 +25,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
+#include "DummyChannel.h"
 
 using std::list;
 using std::pair;
@@ -73,10 +74,12 @@ class TxPublishTest : public CppUnit::TestCase
     
 public:
     
-    TxPublishTest() : queue1(new Queue("queue1", false, &store, 0)), 
-                      queue2(new Queue("queue2", false, &store, 0)), 
-                      msg(new BasicMessage(0, "exchange", "routing_key", false, false)),
-                      op(msg, &xid)
+    TxPublishTest() :
+        queue1(new Queue("queue1", false, &store, 0)), 
+        queue2(new Queue("queue2", false, &store, 0)), 
+        msg(new BasicMessage(0, "exchange", "routing_key", false, false,
+                             DummyChannel::basicGetBody())),
+        op(msg, &xid)
     {
         msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
         msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);

@@ -39,7 +39,9 @@ namespace qpid {
                 virtual void complete(Message::shared_ptr&) = 0;
                 virtual ~CompletionHandler(){}
             };
-            MessageBuilder(CompletionHandler* _handler, MessageStore* const store = 0, u_int64_t stagingThreshold = 0);
+            MessageBuilder(CompletionHandler* _handler,
+                           MessageStore* const store = 0,
+                           u_int64_t stagingThreshold = 0);
             void initialise(Message::shared_ptr& msg);
             void setHeader(qpid::framing::AMQHeaderBody::shared_ptr& header);
             void addContent(qpid::framing::AMQContentBody::shared_ptr& content);

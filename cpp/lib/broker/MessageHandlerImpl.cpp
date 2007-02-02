@@ -34,8 +34,8 @@ using namespace framing;
 //
 void
 MessageHandlerImpl::append(const MethodContext&,
-                                           const string& /*reference*/,
-                                           const string& /*bytes*/ )
+                           const string& /*reference*/,
+                           const string& /*bytes*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
@@ -43,7 +43,7 @@ MessageHandlerImpl::append(const MethodContext&,
 
 void
 MessageHandlerImpl::cancel( const MethodContext& context,
-                                           const string& destination )
+                            const string& destination )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
@@ -54,28 +54,28 @@ MessageHandlerImpl::cancel( const MethodContext& context,
 
 void
 MessageHandlerImpl::checkpoint(const MethodContext&,
-                                               const string& /*reference*/,
-                                               const string& /*identifier*/ )
+                               const string& /*reference*/,
+                               const string& /*identifier*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
 MessageHandlerImpl::close(const MethodContext&,
-                                          const string& /*reference*/ )
+                          const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
 MessageHandlerImpl::consume(const MethodContext& context,
-                                            u_int16_t /*ticket*/,
-                                            const string& queueName,
-                                            const string& destination,
-                                            bool noLocal,
-                                            bool noAck,
-                                            bool exclusive,
-                                            const qpid::framing::FieldTable& filter )
+                            u_int16_t /*ticket*/,
+                            const string& queueName,
+                            const string& destination,
+                            bool noLocal,
+                            bool noAck,
+                            bool exclusive,
+                            const qpid::framing::FieldTable& filter )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 	
@@ -106,15 +106,15 @@ MessageHandlerImpl::empty( const MethodContext& )
 
 void
 MessageHandlerImpl::get( const MethodContext& context,
-                                        u_int16_t /*ticket*/,
-                                        const string& queueName,
-                                        const string& /*destination*/,
-                                        bool noAck )
+                         u_int16_t /*ticket*/,
+                         const string& queueName,
+                         const string& /*destination*/,
+                         bool noAck )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
     Queue::shared_ptr queue =
-        connection.getQueue(queueName, context.channelId);
+        connection.getQueue(queueName, context.channel->getId());
     
     // FIXME: get is probably Basic specific
     if(!channel.get(queue, !noAck)){
@@ -125,7 +125,7 @@ MessageHandlerImpl::get( const MethodContext& context,
 
 void
 MessageHandlerImpl::offset(const MethodContext&,
-                                           u_int64_t /*value*/ )
+                           u_int64_t /*value*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
@@ -138,16 +138,16 @@ MessageHandlerImpl::ok( const MethodContext& )
 
 void
 MessageHandlerImpl::open(const MethodContext&,
-                                         const string& /*reference*/ )
+                         const string& /*reference*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
 MessageHandlerImpl::qos(const MethodContext& context,
-                         u_int32_t prefetchSize,
-                         u_int16_t prefetchCount,
-                         bool /*global*/ )
+                        u_int32_t prefetchSize,
+                        u_int16_t prefetchCount,
+                        bool /*global*/ )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
     
@@ -160,7 +160,7 @@ MessageHandlerImpl::qos(const MethodContext& context,
 
 void
 MessageHandlerImpl::recover(const MethodContext&,
-                             bool requeue )
+                            bool requeue )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
@@ -170,45 +170,45 @@ MessageHandlerImpl::recover(const MethodContext&,
 
 void
 MessageHandlerImpl::reject(const MethodContext&,
-                            u_int16_t /*code*/,
-                            const string& /*text*/ )
+                           u_int16_t /*code*/,
+                           const string& /*text*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
 MessageHandlerImpl::resume(const MethodContext&,
-                            const string& /*reference*/,
-                            const string& /*identifier*/ )
+                           const string& /*reference*/,
+                           const string& /*identifier*/ )
 {
     assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 }
 
 void
 MessageHandlerImpl::transfer(const MethodContext& context,
-                              u_int16_t /*ticket*/,
-                              const string& /*destination*/,
-                              bool /*redelivered*/,
-                              bool immediate,
-                              u_int64_t /*ttl*/,
-                              u_int8_t /*priority*/,
-                              u_int64_t /*timestamp*/,
-                              u_int8_t /*deliveryMode*/,
-                              u_int64_t /*expiration*/,
-                              const string& exchangeName,
-                              const string& routingKey,
-                              const string& /*messageId*/,
-                              const string& /*correlationId*/,
-                              const string& /*replyTo*/,
-                              const string& /*contentType*/,
-                              const string& /*contentEncoding*/,
-                              const string& /*userId*/,
-                              const string& /*appId*/,
-                              const string& /*transactionId*/,
-                              const string& /*securityToken*/,
-                              const qpid::framing::FieldTable& /*applicationHeaders*/,
-                              qpid::framing::Content body,
-                              bool mandatory )
+                             u_int16_t /*ticket*/,
+                             const string& /*destination*/,
+                             bool /*redelivered*/,
+                             bool immediate,
+                             u_int64_t /*ttl*/,
+                             u_int8_t /*priority*/,
+                             u_int64_t /*timestamp*/,
+                             u_int8_t /*deliveryMode*/,
+                             u_int64_t /*expiration*/,
+                             const string& exchangeName,
+                             const string& routingKey,
+                             const string& /*messageId*/,
+                             const string& /*correlationId*/,
+                             const string& /*replyTo*/,
+                             const string& /*contentType*/,
+                             const string& /*contentEncoding*/,
+                             const string& /*userId*/,
+                             const string& /*appId*/,
+                             const string& /*transactionId*/,
+                             const string& /*securityToken*/,
+                             const qpid::framing::FieldTable& /*applicationHeaders*/,
+                             qpid::framing::Content body,
+                             bool mandatory )
 {
     //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
 
@@ -216,14 +216,15 @@ MessageHandlerImpl::transfer(const MethodContext& context,
         broker.getExchanges().getDefault() : broker.getExchanges().get(exchangeName);
     if(exchange){
     	if (body.isInline()) {
-        	MessageMessage* msg =
-       			new MessageMessage(*(context.methodBody), exchangeName, routingKey, mandatory, immediate);
-        	channel.handlePublish(msg, exchange);
+            MessageMessage* msg =
+                new MessageMessage(context.methodBody, exchangeName,
+                                   routingKey, mandatory, immediate);
+            channel.handlePublish(msg, exchange);
         
-    		connection.client->getMessageHandler()->ok(context);
+            connection.client->getMessageHandler()->ok(context);
     	} else {
-    		// Don't handle reference content yet
-    		assert(body.isInline());
+            // Don't handle reference content yet
+            assert(body.isInline());
     	}
     }else{
         throw ChannelException(404, "Exchange not found '" + exchangeName + "'");

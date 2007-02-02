@@ -20,6 +20,7 @@
  */
 #include <InMemoryContent.h>
 #include "AMQFrame.h"
+#include "framing/ChannelAdapter.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -39,24 +40,26 @@ u_int32_t InMemoryContent::size()
     return sum;
 }
 
-void InMemoryContent::send(const qpid::framing::ProtocolVersion& version, OutputHandler* out, int channel, u_int32_t framesize)
+// FIXME aconway 2007-02-01: Remove version parameter.
+void InMemoryContent::send(ChannelAdapter& channel, u_int32_t framesize)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {
         if ((*i)->size() > framesize) {
             u_int32_t offset = 0;
             for (int chunk = (*i)->size() / framesize; chunk > 0; chunk--) {
                 string data = (*i)->getData().substr(offset, framesize);
-                out->send(new AMQFrame(version, channel, new AMQContentBody(data)));                
+                channel.send(new AMQContentBody(data)); 
                 offset += framesize;
             }
             u_int32_t remainder = (*i)->size() % framesize;
             if (remainder) {
                 string data = (*i)->getData().substr(offset, remainder);
-                out->send(new AMQFrame(version, channel, new AMQContentBody(data)));                
+                channel.send(new AMQContentBody(data)); 
             }
         } else {
-            AMQBody::shared_ptr contentBody = static_pointer_cast<AMQBody, AMQContentBody>(*i);
-            out->send(new AMQFrame(version, channel, contentBody));
+            AMQBody::shared_ptr contentBody =
+                static_pointer_cast<AMQBody, AMQContentBody>(*i);
+            channel.send(contentBody);
         }
     }
 }

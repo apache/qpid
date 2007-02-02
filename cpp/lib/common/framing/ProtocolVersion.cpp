@@ -20,10 +20,13 @@
  */
 #include <ProtocolVersion.h>
 #include <sstream>
+#include "AMQP_HighestVersion.h"
 
 using namespace qpid::framing;
 
-ProtocolVersion::ProtocolVersion() {}
+ProtocolVersion::ProtocolVersion() {
+    *this = highestProtocolVersion;
+}
 
 ProtocolVersion::ProtocolVersion(u_int8_t _major, u_int8_t _minor) : 
     major_(_major),

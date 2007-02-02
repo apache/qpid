@@ -34,7 +34,6 @@
 #include <sys/TimeoutHandler.h>
 #include "Broker.h"
 #include "Exception.h"
-#include "BrokerAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -47,19 +46,22 @@ class Settings {
     Settings(u_int32_t _timeout, u_int64_t _stagingThreshold) : timeout(_timeout), stagingThreshold(_stagingThreshold) {}
 };
 
-class Connection : public qpid::sys::ConnectionInputHandler, 
+class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionToken
 {
   public:
-    Connection(qpid::sys::ConnectionOutputHandler* out, Broker& broker);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker);
     // ConnectionInputHandler methods
-    void received(qpid::framing::AMQFrame* frame);
-    void initiated(qpid::framing::ProtocolInitiation* header);
+    void received(framing::AMQFrame* frame);
+    void initiated(framing::ProtocolInitiation* header);
     void idleOut();
     void idleIn();
     void closed();
 
-    qpid::sys::ConnectionOutputHandler& getOutput() { return *out; }
+    sys::ConnectionOutputHandler& getOutput() { return *out; }
+
+    const framing::ProtocolVersion& getVersion() {
+        return client->getProtocolVersion(); }
 
     u_int32_t getFrameMax() const { return framemax; }
     u_int16_t getHeartbeat() const { return heartbeat; }
@@ -68,7 +70,7 @@ class Connection : public qpid::sys::ConnectionInputHandler,
     void setHeartbeat(u_int16_t hb) { heartbeat = hb; }
 
     Broker& broker;
-    std::auto_ptr<qpid::framing::AMQP_ClientProxy> client;
+    std::auto_ptr<framing::AMQP_ClientProxy> client;
     Settings settings;
 
     std::vector<Queue::shared_ptr> exclusiveQueues;
@@ -81,20 +83,18 @@ class Connection : public qpid::sys::ConnectionInputHandler,
      */
     Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
 
-    Channel& newChannel(u_int16_t channel);
-    Channel& getChannel(u_int16_t channel);
-    void closeChannel(u_int16_t channel);
+    Channel& newChannel(framing::ChannelId channel);
+    Channel& getChannel(framing::ChannelId channel);
+    void closeChannel(framing::ChannelId channel);
 
   private:
-    typedef boost::ptr_map<u_int16_t, BrokerAdapter> AdapterMap;
+    typedef boost::ptr_map<framing::ChannelId, Channel> ChannelMap;
 
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
     Exchange::shared_ptr findExchange(const string& name);
 
-    BrokerAdapter& getAdapter(u_int16_t id);
-    
-    AdapterMap adapters;
-    qpid::sys::ConnectionOutputHandler* out;
+    ChannelMap channels;
+    sys::ConnectionOutputHandler* out;
     u_int32_t framemax;
     u_int16_t heartbeat;
 };

@@ -62,11 +62,4 @@ void AMQResponseBody::printPrefix(std::ostream& out) const {
         << ",batch=" << data.batchOffset << "): ";
 }
 
-void AMQResponseBody::send(const MethodContext& context) {
-    setRequestId(context.requestId);
-    assert(context.out);
-    context.out->send(
-        new AMQFrame(version, context.channelId, this));
-}
-
 }} // namespace qpid::framing

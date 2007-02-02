@@ -62,14 +62,12 @@ class AMQResponseBody : public AMQMethodBody
     void encode(Buffer& buffer) const;
 
     Data& getData() { return data; }
-    ResponseId getResponseId() { return data.responseId; }
-    RequestId getRequestId() { return data.requestId; }
-    BatchOffset getBatchOffset() { return data.batchOffset; }
+    ResponseId getResponseId() const { return data.responseId; }
+    RequestId getRequestId() const { return data.requestId; }
+    BatchOffset getBatchOffset() const { return data.batchOffset; }
     void setResponseId(ResponseId id) { data.responseId = id; }
     void setRequestId(RequestId id) { data.requestId = id; }
     void setBatchOffset(BatchOffset id) { data.batchOffset = id; }
-
-    virtual void send(const MethodContext& context);
 
   protected:
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }

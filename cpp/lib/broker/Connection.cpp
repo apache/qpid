@@ -60,9 +60,11 @@ Exchange::shared_ptr Connection::findExchange(const string& name){
 
 
 void Connection::received(qpid::framing::AMQFrame* frame){
-    getAdapter(frame->getChannel()).handleBody(frame->getBody());
+    getChannel(frame->getChannel()).handleBody(frame->getBody());
 }
 
+// TODO aconway 2007-02-02: Should be delegated to the BrokerAdapter
+// as it is part of the protocol.
 void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
     if (client.get())
         // TODO aconway 2007-01-16: correct error code.
@@ -72,12 +74,11 @@ void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
     FieldTable properties;
     string mechanisms("PLAIN");
     string locales("en_US");
-    // TODO aconway 2007-01-16: Client call, move to adapter.
     client->getConnection().start(
-        MethodContext(0, &getAdapter(0)),
+        MethodContext(&getChannel(0)),
         header->getMajor(), header->getMinor(),
         properties, mechanisms, locales);
-    getAdapter(0).init(0, *out, client->getProtocolVersion());
+    getChannel(0).init(0, *out, client->getProtocolVersion());
 }
 
 void Connection::idleOut(){}
@@ -99,28 +100,19 @@ void Connection::closed(){
 
 void Connection::closeChannel(u_int16_t channel) {
     getChannel(channel).close(); 
-    adapters.erase(adapters.find(channel));
+    channels.erase(channels.find(channel));
 }
 
 
-BrokerAdapter& Connection::getAdapter(u_int16_t id) { 
-    AdapterMap::iterator i = adapters.find(id);
-    if (i == adapters.end()) {
-        std::auto_ptr<Channel> ch(
-            new Channel(
-                client->getProtocolVersion(), out, id,
-                framemax, broker.getQueues().getStore(),
-                settings.stagingThreshold));
-        BrokerAdapter* adapter = new BrokerAdapter(ch, *this, broker);
-        adapters.insert(id, adapter);
-        return *adapter;
-    }
-    else
-        return *i;
-}
-
-Channel& Connection::getChannel(u_int16_t id) {
-    return getAdapter(id).getChannel();
+Channel& Connection::getChannel(ChannelId id) {
+    ChannelMap::iterator i = channels.find(id);
+    if (i == channels.end()) {
+        i = channels.insert(
+            id, new Channel(
+                *this, id, framemax, broker.getQueues().getStore(),
+                settings.stagingThreshold)).first;
+    }        
+    return *i;
 }
 
 

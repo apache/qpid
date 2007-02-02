@@ -36,7 +36,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
 	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
         public AmqpFlagMap isResponseFlagMap;
-	
+
 	public AmqpMethod(String name, LanguageConverter converter)
 	{
 		this.name = name;
@@ -49,6 +49,10 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		isResponseFlagMap = new AmqpFlagMap();
 	}
 
+        public boolean isResponse(AmqpVersion version) {
+	    return (version == null) ? isResponseFlagMap.isSet() : isResponseFlagMap.isSet(version);
+	}
+    
         /** Check if this method is named as a response by any other method in the class. */
         public void checkForResponse(Element methodElement, AmqpVersion version) {
 	    Element clazz = (Element)methodElement.getParentNode();

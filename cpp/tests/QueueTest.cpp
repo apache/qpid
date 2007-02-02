@@ -22,6 +22,7 @@
 #include <QueueRegistry.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
+#include "DummyChannel.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -54,6 +55,12 @@ class QueueTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE_END();
 
   public:
+    Message::shared_ptr message(std::string exchange, std::string routingKey) {
+        return Message::shared_ptr(
+            new BasicMessage(0, exchange, routingKey, true, true,
+                             DummyChannel::basicGetBody()));
+    }
+    
     void testConsumers(){
         Queue::shared_ptr queue(new Queue("my_queue", true));
     
@@ -66,9 +73,9 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(u_int32_t(2), queue->getConsumerCount());
         
         //Test basic delivery:
-        Message::shared_ptr msg1 = Message::shared_ptr(new BasicMessage(0, "e", "A", true, true));
-        Message::shared_ptr msg2 = Message::shared_ptr(new BasicMessage(0, "e", "B", true, true));
-        Message::shared_ptr msg3 = Message::shared_ptr(new BasicMessage(0, "e", "C", true, true));
+        Message::shared_ptr msg1 = message("e", "A");
+        Message::shared_ptr msg2 = message("e", "B");
+        Message::shared_ptr msg3 = message("e", "C");
 
         queue->deliver(msg1);
         CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
@@ -122,10 +129,9 @@ class QueueTest : public CppUnit::TestCase
 
     void testDequeue(){
         Queue::shared_ptr queue(new Queue("my_queue", true));
-
-        Message::shared_ptr msg1 = Message::shared_ptr(new BasicMessage(0, "e", "A", true, true));
-        Message::shared_ptr msg2 = Message::shared_ptr(new BasicMessage(0, "e", "B", true, true));
-        Message::shared_ptr msg3 = Message::shared_ptr(new BasicMessage(0, "e", "C", true, true));
+        Message::shared_ptr msg1 = message("e", "A");
+        Message::shared_ptr msg2 = message("e", "B");
+        Message::shared_ptr msg3 = message("e", "C");
         Message::shared_ptr received;
 
         queue->deliver(msg1);
