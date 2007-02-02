@@ -165,6 +165,8 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
         textHost.setText("");
         textHost.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         textHost.setFocus();
+        /*
+        //Commented so that it lets users copy paste the host name from somewhere else
         textHost.addVerifyListener(new VerifyListener(){
                 public void verifyText(VerifyEvent event)
                 {
@@ -176,7 +178,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
                     }
                 }
             });
-        
+        */
         
         Label port = new Label(composite, SWT.NONE);
         port.setText("Port");
@@ -185,6 +187,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
         final Text textPort = new Text(composite, SWT.BORDER);
         textPort.setText("");
         textPort.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        /* commented to allow copy paste on this window
         textPort.addVerifyListener(new VerifyListener(){
                 public void verifyText(VerifyEvent event)
                 {
@@ -197,7 +200,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
                     }
                 }
             });
-        
+        */
         
         Label domain = new Label(composite, SWT.NONE);
         domain.setText("Domain");
