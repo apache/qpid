@@ -171,7 +171,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < numPings)
         {
-            tc.completeTest(false, 0);
+            tc.completeTest(false, numPings - numReplies);
         }
 
         // Remove the chained message listener from the ping producer.
