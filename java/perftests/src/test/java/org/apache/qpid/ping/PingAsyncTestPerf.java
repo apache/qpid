@@ -156,7 +156,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Attach the chained message listener to the ping producer to listen asynchronously for the replies to these
         // messages.
-        pingClient.setChainedMessageListener(batchedResultsListener);
+        //pingClient.setChainedMessageListener(batchedResultsListener);
 
         // Generate a sample message of the specified size.
         ObjectMessage msg =
@@ -166,7 +166,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
-        int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout);
+        int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout, messageCorrelationId);
 
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < numPings)
@@ -175,7 +175,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         }
 
         // Remove the chained message listener from the ping producer.
-        pingClient.removeChainedMessageListener();
+        //pingClient.removeChainedMessageListener();
 
         // Remove the expected count and timing controller for the message correlation id, to ensure they are cleaned up.
         perCorrelationIds.remove(messageCorrelationId);
