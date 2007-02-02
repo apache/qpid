@@ -26,6 +26,7 @@
 #include <qpid_test_plugin.h>
 #include <iostream>
 #include <memory>
+#include "DummyChannel.h"
 
 using namespace boost;
 using namespace qpid::broker;
@@ -36,7 +37,7 @@ class MessageBuilderTest : public CppUnit::TestCase
 {
     struct DummyHandler : MessageBuilder::CompletionHandler{
         Message::shared_ptr msg;
-        
+
         virtual void complete(Message::shared_ptr& _msg){
             msg = _msg;
         }
@@ -48,7 +49,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         Buffer* content;
         const u_int32_t contentBufferSize;
         
-    public:
+      public:
 
         void stage(Message* const msg)
         {
@@ -98,7 +99,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         }
         
         //dont care about any of the other methods:
-        TestMessageStore(u_int32_t _contentBufferSize) : NullMessageStore(false), header(0), content(0), 
+        TestMessageStore(u_int32_t _contentBufferSize) : NullMessageStore(), header(0), content(0), 
                                                          contentBufferSize(_contentBufferSize) {}
         ~TestMessageStore(){}
     };
@@ -116,7 +117,10 @@ class MessageBuilderTest : public CppUnit::TestCase
         DummyHandler handler;
         MessageBuilder builder(&handler);
 
-        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(
+            new BasicMessage(
+                0, "test", "my_routing_key", false, false,
+                DummyChannel::basicGetBody()));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(0);
         
@@ -133,7 +137,9 @@ class MessageBuilderTest : public CppUnit::TestCase
 
         string data1("abcdefg");
 
-        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(
+            new BasicMessage(0, "test", "my_routing_key", false, false,
+                             DummyChannel::basicGetBody()));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(7);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -154,7 +160,9 @@ class MessageBuilderTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
+        Message::shared_ptr message(
+            new BasicMessage(0, "test", "my_routing_key", false, false,
+                             DummyChannel::basicGetBody()));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -183,7 +191,9 @@ class MessageBuilderTest : public CppUnit::TestCase
             string data1("abcdefg");
             string data2("hijklmn");
             
-            Message::shared_ptr message(new BasicMessage(0, "test", "my_routing_key", false, false));
+            Message::shared_ptr message(
+                new BasicMessage(0, "test", "my_routing_key", false, false,
+                                 DummyChannel::basicGetBody()));
             AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
             header->setContentSize(14);
             BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());

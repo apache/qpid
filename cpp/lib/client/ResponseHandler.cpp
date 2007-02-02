@@ -63,7 +63,7 @@ void ResponseHandler::receive(ClassId c, MethodId  m) {
         THROW_QPID_ERROR(
             PROTOCOL_ERROR, "Channel closed unexpectedly.");
     }
-    if(!validate(response->amqpClassId(), response->amqpMethodId())) {
+     if(!validate(response->amqpClassId(), response->amqpMethodId())) {
 	THROW_QPID_ERROR(
             PROTOCOL_ERROR,
             boost::format("Expected class:method %d:%d, got %d:%d")
@@ -71,6 +71,10 @@ void ResponseHandler::receive(ClassId c, MethodId  m) {
     }
 }
 
+RequestId ResponseHandler::getRequestId() {
+    assert(response->getRequestId());
+    return response->getRequestId();
+}
 void ResponseHandler::expect(){
     waiting = true;
 }

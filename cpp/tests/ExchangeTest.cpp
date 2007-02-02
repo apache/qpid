@@ -26,8 +26,10 @@
 #include <TopicExchange.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
+#include "BasicGetBody.h"
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 using namespace qpid::sys;
 
 class ExchangeTest : public CppUnit::TestCase
@@ -54,7 +56,11 @@ class ExchangeTest : public CppUnit::TestCase
         queue.reset();
         queue2.reset();
 
-        Message::shared_ptr msgPtr(new BasicMessage(0, "e", "A", true, true));
+        Message::shared_ptr msgPtr(
+            new BasicMessage(
+                0, "e", "A", true, true,
+                AMQMethodBody::shared_ptr(
+                    new BasicGetBody(ProtocolVersion()))));
         DeliverableMessage msg(msgPtr);
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);

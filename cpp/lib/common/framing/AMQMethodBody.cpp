@@ -56,8 +56,4 @@ void AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/) {
     decodeContent(buffer);
 }
 
-void AMQMethodBody::send(const MethodContext& context) {
-    context.out->send(new AMQFrame(version, context.channelId, this));
-}
-
 }} // namespace qpid::framing

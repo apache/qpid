@@ -57,11 +57,8 @@ class AMQMethodBody : public AMQBody
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
     }
 
-    /**
-     * Wrap this method in a frame and send using the current context.
-     * Note the frame takes ownership of the body, it will be deleted.
-     */
-    virtual void send(const MethodContext& context);
+    /** Return request ID or response correlationID */
+    virtual RequestId getRequestId() const { return 0; }
 
   protected:
     static u_int32_t baseSize() { return 4; }

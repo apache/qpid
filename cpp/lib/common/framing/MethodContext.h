@@ -19,6 +19,8 @@
  *
  */
 
+#include <boost/shared_ptr.hpp>
+
 #include "OutputHandler.h"
 #include "ProtocolVersion.h"
 
@@ -29,53 +31,40 @@ namespace framing {
 
 class BodyHandler;
 class AMQMethodBody;
+class ChannelAdapter;
 
 /**
  * Invocation context for an AMQP method.
- * Some of the context information is related to the channel, some
- * to the specific invocation - e.g. requestId.
  * 
- * All generated proxy and handler functions take a MethodContext parameter.
- * 
- * The user does not need to create MethodContext objects explicitly,
- * the constructor will implicitly create one from a channel ID.
- * 
- * Other context members are for internal use.
+ * It provides the method being processed and the channel on which
+ * it arrived.
+ *
+ * All Handler functions take a MethodContext as the last parameter.
  */
 struct MethodContext
 {
+    typedef boost::shared_ptr<AMQMethodBody> BodyPtr;
+
+    MethodContext(ChannelAdapter* ch=0, BodyPtr method=BodyPtr())
+        : channel(ch), methodBody(method) {}
+
     /**
-     * Passing a integer channel-id in place of a MethodContext
-     * will automatically construct the MethodContext.
+     * Channel on which the method being processed arrived.
+     * 0 if the method was constructed by the caller
+     * rather than received from a channel.
      */
-    MethodContext(ChannelId channel,
-    	OutputHandler* output=0, RequestId request=0)
-        : channelId(channel), out(output), requestId(request)
-    {}
-    
-    MethodContext(ChannelId channel,
-        boost::shared_ptr<AMQMethodBody> method,
-        OutputHandler* output=0, RequestId request=0)
-        : channelId(channel), out(output), requestId(request),
-          methodBody(method)
-    {}
+    ChannelAdapter* channel;
 
-    /** \internal Channel on which the method is sent. */
-    ChannelId channelId;
-
-    /** Output handler for responses in this context */
-    OutputHandler* out;
-
-    /** \internal If we are in the context of processing an incoming request,
-     * this is the ID. Otherwise it is 0.
-     */ 
-    RequestId requestId;
-
-    /** \internal This is the Method Body itself
-     * It's useful for passing around instead of unpacking all its parameters
+    /**
+     * Body of the method being processed.
+     * It's useful for passing around instead of unpacking all its parameters.
+     * It's also provides the request ID  when constructing a response.
      */
-    boost::shared_ptr<AMQMethodBody> methodBody;
+    BodyPtr methodBody;
 };
+
+// FIXME aconway 2007-02-01: Method context only required on Handler
+// functions, not on Proxy functions.
 
 }} // namespace qpid::framing
 

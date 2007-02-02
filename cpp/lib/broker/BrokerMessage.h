@@ -27,109 +27,111 @@
 #include <boost/shared_ptr.hpp>
 #include <AMQContentBody.h>
 #include <AMQHeaderBody.h>
-#include <ProtocolVersion.h>
+#include "AMQMethodBody.h"
 #include <BasicHeaderProperties.h>
 #include <ConnectionToken.h>
 #include <Content.h>
-#include <OutputHandler.h>
 #include <Mutex.h>
 #include <TxBuffer.h>
 
 namespace qpid {
-    namespace broker {
 
-        class MessageStore;
-        using qpid::framing::string;
+namespace framing {
+class MethodContext;
+class ChannelAdapter;
+}
+
+namespace broker {
+
+class MessageStore;
+using framing::string;
 	
-        /**
-         * Represents an AMQP message, i.e. a header body, a list of
-         * content bodies and some details about the publication
-         * request.
-         */
-        class BasicMessage : public Message{
-            const ConnectionToken* const publisher;
-            qpid::framing::AMQHeaderBody::shared_ptr header;
-            std::auto_ptr<Content> content;
-            qpid::sys::Mutex contentLock;
-            u_int64_t size;
+/**
+ * Represents an AMQP message, i.e. a header body, a list of
+ * content bodies and some details about the publication
+ * request.
+ */
+class BasicMessage : public Message {
+    const ConnectionToken* const publisher;
+    framing::AMQHeaderBody::shared_ptr header;
+    std::auto_ptr<Content> content;
+    sys::Mutex contentLock;
+    u_int64_t size;
 
-            void sendContent(qpid::framing::OutputHandler* out, 
-                             int channel, u_int32_t framesize, qpid::framing::ProtocolVersion* version);
+    void sendContent(framing::ChannelAdapter&, u_int32_t framesize);
 
-        public:
-            typedef boost::shared_ptr<BasicMessage> shared_ptr;
+  public:
+    typedef boost::shared_ptr<BasicMessage> shared_ptr;
 
-            BasicMessage(const ConnectionToken* const publisher, 
-                    const string& exchange, const string& routingKey, 
-                    bool mandatory, bool immediate);
-            BasicMessage(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
-            BasicMessage();
-            ~BasicMessage();
-            void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
-            void addContent(qpid::framing::AMQContentBody::shared_ptr data);
-            bool isComplete();
-            const ConnectionToken* const getPublisher();
+    BasicMessage(const ConnectionToken* const publisher, 
+                 const string& exchange, const string& routingKey, 
+                 bool mandatory, bool immediate,
+                 framing::AMQMethodBody::shared_ptr respondTo);
+    BasicMessage();
+    ~BasicMessage();
+    void setHeader(framing::AMQHeaderBody::shared_ptr header);
+    void addContent(framing::AMQContentBody::shared_ptr data);
+    bool isComplete();
+    const ConnectionToken* const getPublisher();
 
-            void deliver(qpid::framing::OutputHandler* out, 
-                         int channel, 
-                         const string& consumerTag, 
-                         u_int64_t deliveryTag, 
-                         u_int32_t framesize,
-			 qpid::framing::ProtocolVersion* version);
-            void sendGetOk(qpid::framing::OutputHandler* out, 
-                           int channel, 
-                           u_int32_t messageCount,
-                           u_int64_t deliveryTag, 
-                           u_int32_t framesize,
-			   qpid::framing::ProtocolVersion* version);
+    void deliver(framing::ChannelAdapter&, 
+                 const string& consumerTag, 
+                 u_int64_t deliveryTag, 
+                 u_int32_t framesize);
+    
+    void sendGetOk(const framing::MethodContext&, 
+                   u_int32_t messageCount,
+                   u_int64_t deliveryTag, 
+                   u_int32_t framesize);
 
-            qpid::framing::BasicHeaderProperties* getHeaderProperties();
-            bool isPersistent();
-            u_int64_t contentSize() const { return size; }
+    framing::BasicHeaderProperties* getHeaderProperties();
+    bool isPersistent();
+    u_int64_t contentSize() const { return size; }
 
-            void decode(qpid::framing::Buffer& buffer, bool headersOnly = false, u_int32_t contentChunkSize = 0);
-            void decodeHeader(qpid::framing::Buffer& buffer);
-            void decodeContent(qpid::framing::Buffer& buffer, u_int32_t contentChunkSize = 0);
+    void decode(framing::Buffer& buffer, bool headersOnly = false,
+                u_int32_t contentChunkSize = 0);
+    void decodeHeader(framing::Buffer& buffer);
+    void decodeContent(framing::Buffer& buffer, u_int32_t contentChunkSize = 0);
 
-            void encode(qpid::framing::Buffer& buffer);
-            void encodeHeader(qpid::framing::Buffer& buffer);
-            void encodeContent(qpid::framing::Buffer& buffer);
-            /**
-             * @returns the size of the buffer needed to encode this
-             * message in its entirety
-             */
-            u_int32_t encodedSize();
-            /**
-             * @returns the size of the buffer needed to encode the
-             * 'header' of this message (not just the header frame,
-             * but other meta data e.g.routing key and exchange)
-             */
-            u_int32_t encodedHeaderSize();
-            /**
-             * @returns the size of the buffer needed to encode the
-             * (possibly partial) content held by this message
-             */
-            u_int32_t encodedContentSize();
-            /**
-             * Releases the in-memory content data held by this
-             * message. Must pass in a store from which the data can
-             * be reloaded.
-             */
-            void releaseContent(MessageStore* store);
-            /**
-             * If headers have been received, returns the expected
-             * content size else returns 0.
-             */
-            u_int64_t expectedContentSize();
-            /**
-             * Sets the 'content' implementation of this message (the
-             * message controls the lifecycle of the content instance
-             * it uses).
-             */
-            void setContent(std::auto_ptr<Content>& content);
-        };
+    void encode(framing::Buffer& buffer);
+    void encodeHeader(framing::Buffer& buffer);
+    void encodeContent(framing::Buffer& buffer);
+    /**
+     * @returns the size of the buffer needed to encode this
+     * message in its entirety
+     */
+    u_int32_t encodedSize();
+    /**
+     * @returns the size of the buffer needed to encode the
+     * 'header' of this message (not just the header frame,
+     * but other meta data e.g.routing key and exchange)
+     */
+    u_int32_t encodedHeaderSize();
+    /**
+     * @returns the size of the buffer needed to encode the
+     * (possibly partial) content held by this message
+     */
+    u_int32_t encodedContentSize();
+    /**
+     * Releases the in-memory content data held by this
+     * message. Must pass in a store from which the data can
+     * be reloaded.
+     */
+    void releaseContent(MessageStore* store);
+    /**
+     * If headers have been received, returns the expected
+     * content size else returns 0.
+     */
+    u_int64_t expectedContentSize();
+    /**
+     * Sets the 'content' implementation of this message (the
+     * message controls the lifecycle of the content instance
+     * it uses).
+     */
+    void setContent(std::auto_ptr<Content>& content);
+};
 
-    }
+}
 }
 
 

@@ -22,29 +22,28 @@
 
 using namespace qpid::broker;
 	
-MessageMessage::MessageMessage(const qpid::framing::AMQMethodBody& _methodBody, 
-                 const std::string& _exchange, const std::string& _routingKey, 
-                 bool _mandatory, bool _immediate) :
-	Message(_exchange, _routingKey, _mandatory, _immediate),
-	methodBody(_methodBody)
+MessageMessage::MessageMessage(
+    const qpid::framing::AMQMethodBody::shared_ptr _methodBody, 
+    const std::string& _exchange, const std::string& _routingKey, 
+    bool _mandatory, bool _immediate) :
+    Message(_exchange, _routingKey, _mandatory, _immediate, _methodBody),
+    methodBody(_methodBody)
 {
 }
 
-void MessageMessage::deliver(qpid::framing::OutputHandler* /*out*/, 
-	int /*channel*/, 
-	const std::string& /*consumerTag*/, 
-	u_int64_t /*deliveryTag*/, 
-	u_int32_t /*framesize*/,
-	qpid::framing::ProtocolVersion* /*version*/)
+void MessageMessage::deliver(
+    framing::ChannelAdapter& /*out*/, 
+    const std::string& /*consumerTag*/, 
+    u_int64_t /*deliveryTag*/, 
+    u_int32_t /*framesize*/)
 {
 }
 
-void MessageMessage::sendGetOk(qpid::framing::OutputHandler* /*out*/, 
-	int /*channel*/, 
-	u_int32_t /*messageCount*/,
-	u_int64_t /*deliveryTag*/, 
-	u_int32_t /*framesize*/,
-	qpid::framing::ProtocolVersion* /*version*/)
+void MessageMessage::sendGetOk(
+    const framing::MethodContext& /*context*/, 
+    u_int32_t /*messageCount*/,
+    u_int64_t /*deliveryTag*/, 
+    u_int32_t /*framesize*/)
 {
 }
 

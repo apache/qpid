@@ -24,6 +24,7 @@
 #include <iostream>
 #include <list>
 #include "AMQFrame.h"
+#include "DummyChannel.h"
 
 using std::list;
 using std::string;
@@ -31,13 +32,6 @@ using boost::dynamic_pointer_cast;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-struct DummyHandler : OutputHandler{
-    std::vector<AMQFrame*> frames; 
-
-    virtual void send(AMQFrame* frame){
-        frames.push_back(frame);
-    }
-};
 
 class InMemoryContentTest : public CppUnit::TestCase  
 {
@@ -64,12 +58,21 @@ public:
     void refragment(size_t inCount, string* in, size_t outCount, string* out, u_int32_t framesize = 5)
     {
         InMemoryContent content;
-        DummyHandler handler;
-        u_int16_t channel = 3;
+        DummyChannel channel(3);
 
         addframes(content, inCount, in);
-        content.send(highestProtocolVersion, &handler, channel, framesize);         
-        check(handler, channel, outCount, out);
+        content.send(channel, framesize);         
+        CPPUNIT_ASSERT_EQUAL(outCount, channel.out.frames.size());
+
+        for (unsigned int i = 0; i < outCount; i++) {
+            AMQContentBody::shared_ptr chunk(
+                dynamic_pointer_cast<AMQContentBody>(
+                    channel.out.frames[i]->getBody()));
+            CPPUNIT_ASSERT(chunk);
+            CPPUNIT_ASSERT_EQUAL(out[i], chunk->getData());
+            CPPUNIT_ASSERT_EQUAL(
+                ChannelId(3), channel.out.frames[i]->getChannel());
+        }
     }
 
     void addframes(InMemoryContent& content, size_t frameCount, string* frameData)
@@ -80,17 +83,7 @@ public:
         }
     }
 
-    void check(DummyHandler& handler, u_int16_t channel, size_t expectedChunkCount, string* expectedChunks)
-    {
-        CPPUNIT_ASSERT_EQUAL(expectedChunkCount, handler.frames.size());
 
-        for (unsigned int i = 0; i < expectedChunkCount; i++) {
-            AMQContentBody::shared_ptr chunk(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[i]->getBody()));
-            CPPUNIT_ASSERT(chunk);
-            CPPUNIT_ASSERT_EQUAL(expectedChunks[i], chunk->getData());
-            CPPUNIT_ASSERT_EQUAL(channel, handler.frames[i]->getChannel());
-        }
-    }
 };
 
 // Make this test suite a plugin.

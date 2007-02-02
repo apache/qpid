@@ -34,7 +34,7 @@ namespace qpid {
         class NullMessageStore : public MessageStore{
             const bool warn;
         public:
-            NullMessageStore(bool warn = true);
+            NullMessageStore(bool warn = false);
             virtual void create(const Queue& queue, const qpid::framing::FieldTable& settings);
             virtual void destroy(const Queue& queue);
             virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);

@@ -54,7 +54,7 @@ Broker::Broker(const Configuration& conf) :
     factory(*this)
 {
     if (config.getStore().empty())
-        store.reset(new NullMessageStore());
+        store.reset(new NullMessageStore(config.isTrace()));
     else
         store.reset(new MessageStoreModule(config.getStore()));
 

@@ -25,47 +25,46 @@
 #include "BrokerMessageBase.h"
 
 namespace qpid {
-	namespace framing {
-		class AMQMethodBody;
-	}
+namespace framing {
+class AMQMethodBody;
+}
 	
-    namespace broker {
-        class MessageMessage: public Message{
-        	const qpid::framing::AMQMethodBody& methodBody;
+namespace broker {
+class MessageMessage: public Message{
+    const qpid::framing::AMQMethodBody::shared_ptr methodBody;
 
-        public:
-            MessageMessage(const qpid::framing::AMQMethodBody& methodBody, 
-            	const std::string& exchange, const std::string& routingKey, 
-            	bool mandatory, bool immediate);
+  public:
+    MessageMessage(
+        const framing::AMQMethodBody::shared_ptr methodBody, 
+        const std::string& exchange, const std::string& routingKey, 
+        bool mandatory, bool immediate);
             
-			// Default destructor okay
+    // Default destructor okay
 			            
-            void deliver(qpid::framing::OutputHandler* out, 
-                         int channel, 
-                         const std::string& consumerTag, 
-                         u_int64_t deliveryTag, 
-                         u_int32_t framesize,
-			 			 qpid::framing::ProtocolVersion* version);
-            void sendGetOk(qpid::framing::OutputHandler* out, 
-                           int channel, 
-                           u_int32_t messageCount,
-                           u_int64_t deliveryTag, 
-                           u_int32_t framesize,
-			   			   qpid::framing::ProtocolVersion* version);
-            bool isComplete();
-            
-            u_int64_t contentSize() const;
-            qpid::framing::BasicHeaderProperties* getHeaderProperties();
-            bool isPersistent();
-            const ConnectionToken* const getPublisher();
-            
-            u_int32_t encodedSize();
-            u_int32_t encodedHeaderSize();
-            u_int32_t encodedContentSize();
-            u_int64_t expectedContentSize();
-        };
+    void deliver(framing::ChannelAdapter& channel, 
+                 const std::string& consumerTag, 
+                 u_int64_t deliveryTag, 
+                 u_int32_t framesize);
+    
+    void sendGetOk(const framing::MethodContext& context, 
+                   u_int32_t messageCount,
+                   u_int64_t deliveryTag, 
+                   u_int32_t framesize);
 
-    }
+    bool isComplete();
+            
+    u_int64_t contentSize() const;
+    qpid::framing::BasicHeaderProperties* getHeaderProperties();
+    bool isPersistent();
+    const ConnectionToken* const getPublisher();
+            
+    u_int32_t encodedSize();
+    u_int32_t encodedHeaderSize();
+    u_int32_t encodedContentSize();
+    u_int64_t expectedContentSize();
+};
+
+}
 }
 
 

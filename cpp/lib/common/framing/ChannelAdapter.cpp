@@ -32,12 +32,10 @@ void ChannelAdapter::init(
     id = i;
     out = &o;
     version = v;
-    context = MethodContext(id, this);
 }
 
-void ChannelAdapter::send(AMQFrame* frame) {
+void ChannelAdapter::send(AMQBody::shared_ptr body) {
     assertChannelOpen();
-    AMQBody::shared_ptr body = frame->getBody();
     switch (body->type()) {
       case REQUEST_BODY: {
           AMQRequestBody::shared_ptr request =
@@ -52,18 +50,13 @@ void ChannelAdapter::send(AMQFrame* frame) {
           break;
       }
     }
-    out->send(frame);
-}
-
-void ChannelAdapter::send(AMQBody::shared_ptr body) {
-    send(new AMQFrame(getVersion(), getId(), body));
+    out->send(new AMQFrame(getVersion(), getId(), body));
 }
 
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     assertMethodOk(*request);
     responder.received(request->getData());
-    context =MethodContext(id, request, this, request->getRequestId());
-    handleMethodInContext(request, context);
+    handleMethodInContext(request, MethodContext(this, request));
 }
 
 void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
@@ -76,8 +69,7 @@ void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
 
 void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {
     assertMethodOk(*method);
-    context = MethodContext(id, method, this);
-    handleMethodInContext(method, context);
+    handleMethodInContext(method, MethodContext(this, method));
 }
 
 void ChannelAdapter::assertMethodOk(AMQMethodBody& method) const {

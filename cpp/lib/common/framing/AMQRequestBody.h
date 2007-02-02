@@ -58,8 +58,8 @@ class AMQRequestBody : public AMQMethodBody
 
     Data& getData() { return data; }
     RequestId  getRequestId() const { return data.requestId; }
-    void setRequestId(RequestId id) { data.requestId=id; }
     ResponseId getResponseMark() const { return data.responseMark; }
+    void setRequestId(RequestId id) { data.requestId=id; }
     void setResponseMark(ResponseId mark) { data.responseMark=mark; }
 
   protected:

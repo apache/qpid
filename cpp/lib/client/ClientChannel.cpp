@@ -75,7 +75,7 @@ void Channel::protocolInit(
     ConnectionTuneBody::shared_ptr proposal =
         sendAndReceive<ConnectionTuneBody>(
             new ConnectionStartOkBody(
-                version, props, mechanism, response, locale));
+                version, responses.getRequestId(), props, mechanism, response, locale));
 
     /**
      * Assume for now that further challenges will not be required
@@ -85,9 +85,9 @@ void Channel::protocolInit(
      connection->send(new AMQFrame(0, new ConnectionSecureOkBody(response)));
     **/
 
-    (new ConnectionTuneOkBody(
-        version, proposal->getChannelMax(), connection->getMaxFrameSize(),
-        proposal->getHeartbeat()))->send(context);
+    send(new ConnectionTuneOkBody(
+             version, responses.getRequestId(), proposal->getChannelMax(), connection->getMaxFrameSize(),
+             proposal->getHeartbeat()));
     
     u_int16_t heartbeat = proposal->getHeartbeat();
     connection->connector->setReadTimeout(heartbeat * 2);
@@ -96,8 +96,7 @@ void Channel::protocolInit(
     // Send connection open.
     std::string capabilities;
     responses.expect();
-    (new ConnectionOpenBody(version, vhost, capabilities, true))
-        ->send(context);
+    send(new ConnectionOpenBody(version, vhost, capabilities, true));
     //receive connection.open-ok (or redirect, but ignore that for now
     //esp. as using force=true).
     responses.waitForResponse();
@@ -208,8 +207,7 @@ void Channel::cancel(const std::string& tag, bool synch) {
     if (i != consumers.end()) {
         Consumer& c = i->second;
         if(c.ackMode == LAZY_ACK && c.lastDeliveryTag > 0) 
-            (new BasicAckBody(version, c.lastDeliveryTag, true))
-                ->send(context);
+            send(new BasicAckBody(version, c.lastDeliveryTag, true));
         sendAndReceiveSync<BasicCancelOkBody>(
             synch, new BasicCancelBody(version, tag, !synch));
         consumers.erase(tag);
@@ -227,8 +225,7 @@ void Channel::cancelAll(){
             // trying the rest. NB no memory leaks if we do,
             // ConsumerMap holds values, not pointers.
             // 
-            (new BasicAckBody(version, c.lastDeliveryTag, true))
-                ->send(context);
+            send(new BasicAckBody(version, c.lastDeliveryTag, true));
         }
     }
 }
@@ -249,7 +246,7 @@ void Channel::retrieve(Message& msg){
 bool Channel::get(Message& msg, const Queue& queue, int ackMode) {
     string name = queue.getName();
     responses.expect();
-    (new BasicGetBody(version, 0, name, ackMode))->send(context);
+    send(new BasicGetBody(version, 0, name, ackMode));
     responses.waitForResponse();
     AMQMethodBody::shared_ptr response = responses.getResponse();
     if(response->isA<BasicGetOkBody>()) {
@@ -277,7 +274,7 @@ void Channel::publish(Message& msg, const Exchange& exchange, const std::string&
     string e = exchange.getName();
     string key = routingKey;
 
-    (new BasicPublishBody(version, 0, e, key, mandatory, immediate))->send(context);
+    send(new BasicPublishBody(version, 0, e, key, mandatory, immediate));
     //break msg up into header frame and content frame(s) and send these
     string data = msg.getData();
     msg.header->setContentSize(data.length());
@@ -426,8 +423,7 @@ void Channel::deliver(Consumer& consumer, Message& msg){
             if(++(consumer.count) < prefetch) break;
             //else drop-through
           case AUTO_ACK:
-            (new BasicAckBody(version, msg.getDeliveryTag(), multiple))
-                ->send(context);
+            send(new BasicAckBody(version, msg.getDeliveryTag(), multiple));
             consumer.lastDeliveryTag = 0;
         }
     }
@@ -512,7 +508,7 @@ void Channel::closeInternal() {
 void Channel::sendAndReceive(AMQMethodBody* toSend, ClassId c, MethodId m)
 {
     responses.expect();
-    toSend->send(context);
+    send(toSend);
     responses.receive(c, m);
 }
 
@@ -522,7 +518,7 @@ void Channel::sendAndReceiveSync(
     if(sync)
         sendAndReceive(body, c, m);
     else
-        body->send(context);
+        send(body);
 }
 
 

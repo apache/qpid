@@ -20,8 +20,7 @@
  */
 #include <string>
 
-#include <amqp_types.h>
-#include <framing/amqp_framing.h>
+#include <framing/amqp_framing.h> // FIXME aconway 2007-02-01: #include cleanup.
 #include <sys/Monitor.h>
 
 #ifndef _ResponseHandler_
@@ -52,11 +51,13 @@ class ResponseHandler{
     bool validate(framing::ClassId, framing::MethodId);
     void receive(framing::ClassId, framing::MethodId);
 
+    framing::RequestId getRequestId();
+
     template <class BodyType> bool validate() {
         return validate(BodyType::CLASS_ID, BodyType::METHOD_ID);
     }
     template <class BodyType> void receive() {
-        return receive(BodyType::CLASS_ID, BodyType::METHOD_ID);
+        receive(BodyType::CLASS_ID, BodyType::METHOD_ID);
     }
 };
 
