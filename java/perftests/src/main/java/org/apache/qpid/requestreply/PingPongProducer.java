@@ -358,6 +358,18 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                       + txBatchSize + ", int noOfDestinations = " + noOfDestinations + ", int rate = " + rate
                       + ", boolean pubsub = " + pubsub + ", boolean unique = " + unique + "): called");
 
+        // Keep all the relevant options.
+        _persistent = persistent;
+        _messageSize = messageSize;
+        _verbose = verbose;
+        _failAfterCommit = afterCommit;
+        _failBeforeCommit = beforeCommit;
+        _failAfterSend = afterSend;
+        _failBeforeSend = beforeSend;
+        _failOnce = failOnce;
+        _txBatchSize = txBatchSize;
+        _isPubSub = pubsub;
+
         // Check that one or more destinations were specified.
         if (noOfDestinations < 1)
         {
@@ -388,18 +400,6 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         createProducer();
         createPingDestinations(noOfDestinations, selector, destinationName, unique);
         createReplyConsumers(getReplyDestinations(), selector);
-
-        // Keep all the remaining options.
-        _persistent = persistent;
-        _messageSize = messageSize;
-        _verbose = verbose;
-        _failAfterCommit = afterCommit;
-        _failBeforeCommit = beforeCommit;
-        _failAfterSend = afterSend;
-        _failBeforeSend = beforeSend;
-        _failOnce = failOnce;
-        _txBatchSize = txBatchSize;
-        _isPubSub = pubsub;
     }
 
     /**
@@ -575,21 +575,25 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             // Generate an id, unique within this pinger or to the whole JVM depending on the unique flag.
             if (unique)
             {
+                _logger.debug("Creating unique destinations.");
                 id = _queueJVMSequenceID.incrementAndGet();
             }
             else
             {
+                _logger.debug("Creating shared destinations.");
                 id = _queueSharedId.incrementAndGet();
             }
 
             // Check if this is a pub/sub pinger, in which case create topics.
             if (_isPubSub)
             {
+                _logger.debug("Creating topics.");
                 destination = new AMQTopic(rootName + id);
             }
             // Otherwise this is a p2p pinger, in which case create queues.
             else
             {
+                _logger.debug("Creating queues.");
                 destination = new AMQQueue(rootName + id);
             }
 
