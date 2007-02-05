@@ -66,9 +66,9 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
  */
 public class OperationTabControl extends TabControl
 {
-    private int heightForAParameter = 30;
-    private int labelNumerator = 30;
-    private int valueNumerator = labelNumerator + 20;
+    private static final int heightForAParameter = 30;
+    private static final int labelWidth = 30;
+    private static final int valueWidth = labelWidth + 25;
     
     private FormToolkit _toolkit;
     private Form        _form;
@@ -229,80 +229,79 @@ public class OperationTabControl extends TabControl
         
         _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         _paramsComposite.setLayout(new FormLayout());
+        int parameterPositionOffset = 0;
         for (ParameterData param : params)
         {            
             boolean valueInCombo = false;
             Label label = _toolkit.createLabel(_paramsComposite, ViewUtility.getDisplayText(param.getName()));
             FormData formData = new FormData();
-            formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter + 2);
-            formData.right = new FormAttachment(labelNumerator);
+            if (params.indexOf(param) == 0)
+            {
+                parameterPositionOffset = 0;
+            }
+            else
+            {
+                parameterPositionOffset += heightForAParameter;
+            }
+            formData.top = new FormAttachment(0, parameterPositionOffset + 2);
+            formData.right = new FormAttachment(labelWidth);
             label.setLayoutData(formData);
             label.setToolTipText(param.getDescription());
             
             formData = new FormData();
-            formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter);
+            formData.top = new FormAttachment(0, parameterPositionOffset);
             formData.left = new FormAttachment(label, 5);
-            formData.right = new FormAttachment(valueNumerator);
+            formData.right = new FormAttachment(valueWidth);
+            String[] items = null;
             if (param.getName().equals(Constants.QUEUE))
             {
-                Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
-                combo.setItems(items);
-                combo.add("Select Queue", 0); 
-                combo.select(0);
-                combo.setLayoutData(formData);
-                combo.setData(param);
-                combo.addSelectionListener(parameterSelectionListener);
-                valueInCombo = true;
+                items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
             }
             else if (param.getName().equals(Constants.EXCHANGE))
             {
-                Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_virtualHostName);
-                combo.setItems(items);
-                combo.add("Select Exchange", 0);
-                combo.select(0);
-                combo.setLayoutData(formData);
-                combo.setData(param);
-                combo.addSelectionListener(parameterSelectionListener);
-                valueInCombo = true;
+                items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_virtualHostName);
             }
             else if (param.getName().equals(Constants.EXCHANGE_TYPE))
             {
-                Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                combo.setItems(Constants.EXCHANGE_TYPE_VALUES);
-                combo.add("Select Exchange Type", 0);
-                combo.select(0);
-                combo.setLayoutData(formData);
-                combo.setData(param);
-                combo.addSelectionListener(parameterSelectionListener);
-                valueInCombo = true;                
+                items = Constants.EXCHANGE_TYPE_VALUES;
+            }
+            
+            if (items != null)
+            {
+                org.eclipse.swt.widgets.List _list = new org.eclipse.swt.widgets.List(_paramsComposite, SWT.BORDER | SWT.V_SCROLL);
+                int listSize = _form.getClientArea().height / 3;
+                int itemsHeight = items.length * (_list.getItemHeight() + 2);
+                listSize = (listSize > itemsHeight) ? itemsHeight : listSize;
+                parameterPositionOffset = parameterPositionOffset + listSize;
+                formData.bottom = new FormAttachment(0, parameterPositionOffset);
+                _list.setLayoutData(formData);
+                _list.setData(param);
+                _list.setItems(items);
+                _list.addSelectionListener(parameterSelectionListener);
+                valueInCombo = true;
             }
             else if (param.isBoolean())
             {
-                Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                combo.setItems(Constants.BOOLEAN_TYPE_VALUES);
-                combo.select(0);
-                param.setValueFromString(combo.getItem(0));
-                combo.setLayoutData(formData);
-                combo.setData(param);
-                combo.addSelectionListener(bolleanSelectionListener);
+                Button booleanButton = _toolkit.createButton(_paramsComposite, "", SWT.CHECK);
+                booleanButton.setLayoutData(formData);
+                booleanButton.setData(param);
+                booleanButton.addSelectionListener(bolleanSelectionListener);
                 valueInCombo = true;                
             }
             else
             {
                 Text text = _toolkit.createText(_paramsComposite, "", SWT.NONE);
                 formData = new FormData();
-                formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter);
+                formData.top = new FormAttachment(0, parameterPositionOffset);
                 formData.left = new FormAttachment(label, 5);
-                formData.right = new FormAttachment(valueNumerator);
+                formData.right = new FormAttachment(valueWidth);
                 text.setLayoutData(formData);
                 text.addKeyListener(keyListener);
                 text.addVerifyListener(verifyListener);
                 text.setData(param);
             }
             
-            // parameter type (int, String etc)
+            // display the parameter data type next to the text field
             if (valueInCombo)
                 label = _toolkit.createLabel(_paramsComposite, "");
             else
@@ -314,8 +313,8 @@ public class OperationTabControl extends TabControl
                 label = _toolkit.createLabel(_paramsComposite, "(" + str + ")");
             }
             formData = new FormData();
-            formData.top = new FormAttachment(0, params.indexOf(param) * heightForAParameter);
-            formData.left = new FormAttachment(valueNumerator, 5);
+            formData.top = new FormAttachment(0, parameterPositionOffset);
+            formData.left = new FormAttachment(valueWidth, 5);
             label.setLayoutData(formData);
         }
     }
@@ -350,14 +349,14 @@ public class OperationTabControl extends TabControl
         Label label = _toolkit.createLabel(composite, ViewUtility.getDisplayText(param.getName()));
         FormData formData = new FormData();
         formData.top = new FormAttachment(0, 2);
-        formData.right = new FormAttachment(labelNumerator);
+        formData.right = new FormAttachment(labelWidth);
         label.setLayoutData(formData);
         label.setToolTipText(param.getDescription());
         
         formData = new FormData();
         formData.top = new FormAttachment(0);
         formData.left = new FormAttachment(label, 5);
-        formData.right = new FormAttachment(valueNumerator);
+        formData.right = new FormAttachment(valueWidth);
 
         Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);        
         String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
@@ -536,7 +535,7 @@ public class OperationTabControl extends TabControl
                     if (param.getValue() == null || param.getValue().toString().length() == 0)
                     {
                         // Customized check, because for this parameter null is allowed
-                        if (param.getName().equals(Constants.QUEUE_OWNER) &&
+                        if (param.getName().equals(Constants.ATTRIBUTE_QUEUE_OWNER) &&
                             _opData.getName().equals(Constants.OPERATION_CREATE_QUEUE))
                         {
                             continue;
@@ -627,16 +626,25 @@ public class OperationTabControl extends TabControl
     {
         public void widgetSelected(SelectionEvent e)
         {
-            Combo combo = (Combo)e.widget;
-            ParameterData parameter = (ParameterData)combo.getData();
-            if (combo.getSelectionIndex() > 0)
+            ParameterData parameter = (ParameterData)e.widget.getData();
+            parameter.setValue(null);
+            if (e.widget instanceof Combo)
             {
-                String item = combo.getItem(combo.getSelectionIndex());                
-                parameter.setValueFromString(item);
+                Combo combo = (Combo)e.widget;
+                if (combo.getSelectionIndex() > 0)
+                {
+                    String item = combo.getItem(combo.getSelectionIndex());                
+                    parameter.setValueFromString(item);
+                }
             }
-            else
+            else if (e.widget instanceof org.eclipse.swt.widgets.List)
             {
-                parameter.setValue(null);
+                org.eclipse.swt.widgets.List list = (org.eclipse.swt.widgets.List)e.widget;
+                String[] selectedItems = list.getSelection();
+                if (selectedItems.length > 0)
+                {
+                    parameter.setValueFromString(selectedItems[0]);
+                }
             }
         }
     }
@@ -648,10 +656,18 @@ public class OperationTabControl extends TabControl
     {
         public void widgetSelected(SelectionEvent e)
         {
-            Combo combo = (Combo)e.widget;
-            ParameterData parameter = (ParameterData)combo.getData();
-            String item = combo.getItem(combo.getSelectionIndex());                
-            parameter.setValueFromString(item);
+            ParameterData parameter = (ParameterData)(e.widget.getData());
+            if (e.widget instanceof Button)
+            {
+                Button button = (Button)e.widget;
+                parameter.setValue(button.getSelection());
+            }
+            else if (e.widget instanceof Combo)
+            {
+                Combo combo = (Combo)e.widget;
+                String item = combo.getItem(combo.getSelectionIndex());                
+                parameter.setValueFromString(item);
+            }
         }
     }
     

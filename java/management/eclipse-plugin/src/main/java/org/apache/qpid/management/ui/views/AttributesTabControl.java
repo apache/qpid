@@ -90,7 +90,6 @@ public class AttributesTabControl extends TabControl
     private Table _table = null;
     private TableViewer _tableViewer = null;
     private static final int[] tableWidths = new int[] {300, 300};
-    private final String[] _tableTitles = {"Attribute Name", "Value"};
     
     private Composite _tableComposite = null;
     private Composite _buttonsComposite = null;
@@ -159,10 +158,10 @@ public class AttributesTabControl extends TabControl
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(gridData);
         
-        for (int i = 0; i < _tableTitles.length; ++i)
+        for (int i = 0; i < Constants.ATTRIBUTE_TABLE_TITLES.length; ++i)
         {
             final TableColumn column = new TableColumn(_table, SWT.NONE);
-            column.setText(_tableTitles[i]);
+            column.setText(Constants.ATTRIBUTE_TABLE_TITLES[i]);
             column.setWidth(tableWidths[i]);
             column.setResizable(false);
         }
@@ -178,7 +177,7 @@ public class AttributesTabControl extends TabControl
     {
         _tableViewer = new TableViewer(_table);
         _tableViewer.setUseHashlookup(true);
-        _tableViewer.setColumnProperties(_tableTitles);
+        _tableViewer.setColumnProperties(Constants.ATTRIBUTE_TABLE_TITLES);
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(new ViewerSorterImpl());
@@ -485,7 +484,7 @@ public class AttributesTabControl extends TabControl
 
         // Name
         Label label = new Label(parent, SWT.NONE);               
-        label.setText(_tableTitles[0]);
+        label.setText(Constants.ATTRIBUTE_TABLE_TITLES[0]);
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
         Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
@@ -503,7 +502,7 @@ public class AttributesTabControl extends TabControl
         
         // value
         label = new Label(parent, SWT.NONE);
-        label.setText(_tableTitles[1]);
+        label.setText(Constants.ATTRIBUTE_TABLE_TITLES[1]);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         if (!attribute.isReadable())
