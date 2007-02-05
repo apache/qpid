@@ -83,4 +83,6 @@ interface DeliveryManager
     boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException;
 
     long getTotalMessageSize();
+
+    long getOldestMessageArrival();
 }

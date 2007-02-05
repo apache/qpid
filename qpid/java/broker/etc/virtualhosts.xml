@@ -21,18 +21,79 @@
  -->
 <virtualhosts>
     <virtualhost>
-        <path>localhost</path>
-        <bind>direct://amq.direct//queue</bind>
-        <bind>direct://amq.direct//ping</bind>
+        <name>localhost</name>
+
+        <localhost>
+            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+            <maximumMessageCount>5000</maximumMessageCount>
+            <queue>
+                <name>queue</name>
+                <queue>
+                    <exchange>amq.direct</exchange>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                </queue>
+            </queue>
+            <queue>
+                <name>ping</name>
+                <ping>
+                    <exchange>amq.direct</exchange>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                </ping>
+            </queue>
+        </localhost>
     </virtualhost>
 	<virtualhost>
-        <path>development</path>
-        <bind>direct://amq.direct//queue</bind>
-        <bind>direct://amq.direct//ping</bind>
+        <name>development</name>
+        <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+        <maximumMessageCount>5000</maximumMessageCount>
+        <development>
+            <queue>
+                <name>queue</name>
+                <queue>
+                    <exchange>amq.direct</exchange>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                </queue>
+            </queue>
+            <queue>
+                <name>ping</name>
+                <ping>
+                    <exchange>amq.direct</exchange>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                </ping>
+            </queue>
+        </development>
     </virtualhost>
 		<virtualhost>
-        <path>test</path>
-        <bind>direct://amq.direct//queue</bind>
-        <bind>direct://amq.direct//ping</bind>
+            <name>test</name>
+            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+            <maximumMessageCount>5000</maximumMessageCount>
+            <test>
+                <queue>
+                    <name>queue</name>
+                    <queue>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                    </queue>
+                </queue>
+                <queue>
+                    <name>ping</name>
+                    <ping>
+                        <exchange>amq.direct</exchange>
+                        <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                        <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                        <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                    </ping>
+                </queue>
+            </test>
     </virtualhost>
 </virtualhosts>

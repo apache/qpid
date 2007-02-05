@@ -74,4 +74,6 @@ public interface AMQMessageHandle
     void enqueue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException;
 
     void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException;
+
+    long getArrivalTime();
 }

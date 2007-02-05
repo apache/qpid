@@ -40,4 +40,6 @@ public interface ExchangeRegistry extends MessageRouter
     Exchange getExchange(AMQShortString name);
 
     void setDefaultExchange(Exchange exchange);
+
+    Exchange getDefaultExchange();
 }

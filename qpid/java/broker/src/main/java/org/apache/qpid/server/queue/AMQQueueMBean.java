@@ -22,12 +22,12 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.Main;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.log4j.Logger;
 
 import javax.management.openmbean.*;
 import javax.management.*;
@@ -41,8 +41,11 @@ import java.util.Iterator;
  * for an AMQQueue.
  */
 @MBeanDescription("Management Interface for AMQQueue")
-public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
+public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
+
+    private static final Logger _logger = Logger.getLogger(AMQQueueMBean.class);
+
     /**
      * Since the MBean is not associated with a real channel we can safely create our own store context
      * for use in the few methods that require one.
@@ -62,6 +65,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     private static CompositeType _msgContentType = null;
     private final static String[] _msgContentAttributes = {"AMQ MessageId", "MimeType", "Encoding", "Content"};
     private static OpenType[] _msgContentAttributeTypes = new OpenType[4];
+
+
+    private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
@@ -213,38 +219,38 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         return msg.getContentHeaderBody().bodySize;
     }
 
+
+
     /**
      * Checks if there is any notification to be send to the listeners
      */
     public void checkForNotification(AMQMessage msg) throws AMQException, JMException
     {
-        // Check for threshold message count
-        Integer msgCount = getMessageCount();
-        if (msgCount >= getMaximumMessageCount())
+
+        final long currentTime = System.currentTimeMillis();
+        final long thresholdTime =  currentTime - _queue.getMinimumAlertRepeatGap();
+
+        for(NotificationCheck check : NotificationCheck.values())
         {
-            notifyClients("Message count(" + msgCount + ") has reached or exceeded the threshold high value");
+            if(check.isMessageSpecific() || _lastNotificationTimes[check.ordinal()]<thresholdTime)
+            {
+                if(check.notifyIfNecessary(msg, _queue, this))
+                {
+                    _lastNotificationTimes[check.ordinal()] = currentTime;
+                }
+            }
         }
 
-        // Check for threshold message size
-        long messageSize = getMessageSize(msg);
-        if (messageSize >= _queue.getMaximumMessageSize())
-        {
-            notifyClients("Message size(ID=" + msg.getMessageId() + ", size=" + messageSize + " bytes) is higher than the threshold value");
-        }
-
-        // Check for threshold queue depth in bytes
-        long queueDepth = getQueueDepthKb();
-        if (queueDepth >= _queue.getMaximumQueueDepth())
-        {
-            notifyClients("Queue depth(" + queueDepth + "), Queue size has reached the threshold high value");
-        }
     }
 
     /**
      * Sends the notification to the listeners
      */
-    private void notifyClients(String notificationMsg)
+    public void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg)
     {
+        // important : add log to the log file - monitoring tools may be looking for this
+        _logger.info(notification.name() + " On Queue " + queue.getName() + " - " + notificationMsg);
+
         Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
                 ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
 

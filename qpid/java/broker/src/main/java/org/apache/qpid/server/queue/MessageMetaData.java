@@ -31,11 +31,19 @@ public class MessageMetaData
 
     private int _contentChunkCount;
 
+    private long _arrivalTime;
+
     public MessageMetaData(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount)
+    {
+        this(publishBody,contentHeaderBody, contentChunkCount, System.currentTimeMillis());
+    }
+
+    public MessageMetaData(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount, long arrivalTime)
     {
         _contentHeaderBody = contentHeaderBody;
         _publishBody = publishBody;
         _contentChunkCount = contentChunkCount;
+        _arrivalTime = arrivalTime;
     }
 
     public int getContentChunkCount()
@@ -66,5 +74,15 @@ public class MessageMetaData
     public void setPublishBody(BasicPublishBody publishBody)
     {
         _publishBody = publishBody;
+    }
+
+    public long getArrivalTime()
+    {
+        return _arrivalTime;
+    }
+
+    public void setArrivalTime(long arrivalTime)
+    {
+        _arrivalTime = arrivalTime;
     }
 }
