@@ -160,6 +160,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return _totalMessageSize.get();
     }
 
+    public long getOldestMessageArrival()
+    {
+        AMQMessage msg = _messages.peek();
+        return msg == null ? Long.MAX_VALUE : msg.getArrivalTime();
+    }
+
 
     public synchronized List<AMQMessage> getMessages()
     {
