@@ -113,7 +113,6 @@ class Connection:
         garbage += chr(end)
         end = c.decode_octet()
       raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
-    print "==== FRAME ", frame
     return frame
 
 class Frame:
