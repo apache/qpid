@@ -44,7 +44,7 @@
         <repository>
           <id>junit-toolkit.snapshots</id>
           <name>JUnit Toolkit SNAPSHOT Repository</name>
-	  <url>file://${basedir}/../mvn-repo</url>
+	  <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
@@ -56,7 +56,7 @@
         <pluginRepository>
           <id>junit-toolkit-plugin.snapshots</id>
           <name>JUnit Toolkit SNAPSHOT Repository</name>
-	  <url>file://${basedir}/../mvn-repo</url>
+	  <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
