@@ -220,6 +220,8 @@ class Channel:
       work.put(self.incoming)
     elif isinstance(frame, Response):
       self.requester.receive(self, frame)
+      if frame.method_type.content:
+        self.queue = self.responses
       return
     self.queue.put(frame)
 
@@ -241,7 +243,11 @@ class Channel:
         return None
       try:
         resp = self.responses.get()
-        return Message(self, resp)
+        if resp.method_type.content:
+          return Message(self, resp, read_content(self.responses))
+        else:
+          return Message(self, resp)
+
       except QueueClosed, e:
         if self.closed:
           raise Closed(self.reason)
