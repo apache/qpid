@@ -61,9 +61,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         _virtualHostMBean = virtualHostMBean;
         VirtualHost virtualHost = virtualHostMBean.getVirtualHost();
 
-
-
-
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
         _messageStore = virtualHost.getMessageStore();
@@ -142,7 +139,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
+    public void createNewQueue(String queueName, String owner, boolean durable,boolean autoDelete)
             throws JMException
     {
         AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));

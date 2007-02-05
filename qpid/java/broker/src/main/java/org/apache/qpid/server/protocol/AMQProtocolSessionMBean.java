@@ -55,30 +55,43 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private AMQMinaProtocolSession _session = null;
     private String _name = null;
     //openmbean data types for representing the channel attributes
-    private String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
-    private String[] _indexNames = {_channelAtttibuteNames[0]};
-    private OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
-    private CompositeType _channelType = null;      // represents the data type for channel data
-    private TabularType _channelsType = null;       // Data type for list of channels type
-    private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSING_THE_CONNECTION =
-            new AMQShortString("Broker Management Console has closing the connection.");
+    private final static String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
+    private final static String[] _indexNames = {_channelAtttibuteNames[0]};
+    private final static OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
+    private static CompositeType _channelType = null;      // represents the data type for channel data
+    private static TabularType _channelsType = null;       // Data type for list of channels type
+    private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION =
+            new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
     {
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
+        String remote = getRemoteAddress();
+        remote = "anonymous".equals(remote) ? remote + hashCode() : remote;
+        _name = jmxEncode(new StringBuffer(remote), 0).toString();
         init();
+    }
+    static
+    {
+        try
+        {
+            init();
+        }
+        catch(JMException ex)
+        {
+            // It should never occur
+            System.out.println(ex.getMessage());
+        }
     }
 
     /**
      * initialises the openmbean data types
      */
-    private void init() throws OpenDataException
+    private static void init() throws OpenDataException
     {
-        String remote = getRemoteAddress();
-        remote = "anonymous".equals(remote) ? remote + hashCode() : remote;
-        _name = jmxEncode(new StringBuffer(remote), 0).toString();
+
         _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
                 _channelAtttibuteNames, _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
@@ -200,8 +213,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      * @throws JMException
      */
     public void closeConnection() throws JMException
-    {
-        
+    {        
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
@@ -211,7 +223,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             0,	// classId
             0,	// methodId
         	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            BROKER_MANAGEMENT_CONSOLE_HAS_CLOSING_THE_CONNECTION    // replyText
+            BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION    // replyText
             );
         _session.writeFrame(response);
 
