@@ -3,7 +3,7 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 	- Hard coded to return 0
 
 -Latest Revision-
-502576.499979
+503646,502576.499979
 
 -Not Done-
 502610 QPID-84 UPdate PropertiesFileInitialContextFactoryTest Remove referencetest
@@ -18,7 +18,6 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 501008 QPID-324 change sending of destination to byte representing T/Q/Other
 501007 QPID-322 Test may habg isntead of fail of messages doesn't get through
 501005 QPID-324 change sending of destination to byte representing T/Q/Other
-501003 QPID-320 Imporve performance by remembering protocol version
 500310 Patch to TransactedTest to clean up messages
 500264 Change to Transacted Test
 499874 QPID-319 management console update (QPID-50)
@@ -64,8 +63,19 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 
 -PARTIAL-
 494650 QPID-268 Improvements to performance of generated code
+501003 QPID-320 Imporve performance by remembering protocol version
+	* DeliveryManager Queue data size counting.
 
 -Done-
+503646 local repository removed
+503637 Junit-toolkit update
+503609 Updated to performacen test to allow the use of shared destinations.
+503604 QPID-326 add oldest Message on queue Notification and log notification in log file
+503593 Fixed bug in session . stop() where it would NPE on close if not start()ed
+502655 Moved option sets to top of constructor
+502627 Fixed problem with losing message results.
+502620 Improved timeout handling
+502576 QPID-343 Performance test suite doesn't output missing message count on failure
 502627 Fixed problem with losing message results
 502620 Performance test improvement with better timeout handing
 502576 QPID-343 performacne test suite doesn't output missing message count
@@ -89,7 +99,6 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 501010 QPID-322 Message reference count not incremented when added to unackMap.
 501004 QPID-320 Simplify MessageListener setup 
 500284 Updated script details and added guard for traffic light being null
--
 499979 QPID-315 Test classes to reproduce missing correlation id
 499975 QPID-315 Moved message converstion to MessageConverter.
 499781 Fixed race that caused duplicate date in log file

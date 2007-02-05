@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +36,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      * Maps from exchange name to exchange instance
      */
     private ConcurrentMap<String, Exchange> _exchangeMap = new ConcurrentHashMap<String, Exchange>();
+
+    private Exchange _defaultExchange;
 
     public DefaultExchangeRegistry(ExchangeFactory exchangeFactory)
     {
@@ -52,7 +54,21 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange)
     {
+        if(_defaultExchange == null)
+        {
+            setDefaultExchange(exchange);
+        }
         _exchangeMap.put(exchange.getName(), exchange);
+    }
+
+    public void setDefaultExchange(Exchange exchange)
+    {
+        _defaultExchange = exchange;
+    }
+
+    public Exchange getDefaultExchange()
+    {
+        return _defaultExchange;
     }
 
     public void unregisterExchange(String name, boolean inUse) throws AMQException
@@ -71,7 +87,16 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public Exchange getExchange(String name)
     {
-        return _exchangeMap.get(name);
+
+        if(name == null || name.length() == 0)
+        {
+            return _defaultExchange;
+        }
+        else
+        {
+            return _exchangeMap.get(name);
+        }
+
     }
 
     /**
@@ -82,10 +107,11 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void routeContent(AMQMessage payload) throws AMQException
     {
         final String exchange = payload.getPublishBody().exchange;
-        final Exchange exch = _exchangeMap.get(exchange);
+        final Exchange exch = getExchange(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
-        // the JmsPublish being received (where the exchange is validated) and the final
+        // the BasicPublish being received (where the exchange is validated) and the final
         // content body being received (which triggers this method)
+        // TODO: check where the exchange is validated
         if (exch == null)
         {
             throw new AMQException("Exchange '" + exchange + "' does not exist");

@@ -52,7 +52,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     public ConcurrencyTest() throws Exception
     {
-        _deliveryMgr = new ConcurrentDeliveryManager(_subscriptionMgr, new AMQQueue("myQ", false, "guest", false,
+        _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscriptionMgr, new AMQQueue("myQ", false, "guest", false,
                                                                           new DefaultQueueRegistry()));
     }
 

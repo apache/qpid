@@ -42,6 +42,10 @@
         <priority value="info"/>
     </category>
 
+    <category name="org.apache.qpid.server.queue.AMQQueueMBean">
+        <priority value="info"/>
+    </category>
+
      <category name="org.apache.qpid">
         <priority value="warn"/>
     </category>

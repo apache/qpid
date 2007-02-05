@@ -110,6 +110,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
     /**
      * Compile all the tests into a test suite.
+     * @return The test method testPingOk.
      */
     public static Test suite()
     {
@@ -139,18 +140,18 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-            perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                                      testParameters.getPropertyAsInteger(
-                                                          PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                                      testParameters.getPropertyAsBoolean(
-                                                          PingPongProducer.PERSISTENT_MODE_PROPNAME));
+                perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                                          testParameters.getPropertyAsInteger(
+                                                                  PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                                          testParameters.getPropertyAsBoolean(
+                                                                  PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // start the test
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
         int numReplies = perThreadSetup._pingClient.pingAndWaitForReply(msg, numPings, timeout);
 
         // Fail the test if the timeout was exceeded.
-        if (numReplies != numPings)
+        if (numReplies != perThreadSetup._pingClient.getExpectedNumPings(numPings))
         {
             Assert.fail("The ping timed out after " + timeout + " ms. Messages Sent = " + numPings + ", MessagesReceived = "
                         + numReplies);
@@ -191,7 +192,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
             // Extract the test set up paramaeters.
             int destinationscount =
-                Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
+                    Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
 
             // This is synchronized because there is a race condition, which causes one connection to sleep if
             // all threads try to create connection concurrently.

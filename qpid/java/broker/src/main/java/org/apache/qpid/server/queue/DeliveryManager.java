@@ -64,7 +64,8 @@ interface DeliveryManager
      *
      * @param name the name of the entity on whose behalf we are delivering the message
      * @param msg  the message to deliver
-     * @throws org.apache.qpid.server.queue.FailedDequeueException if the message could not be dequeued
+     * @throws org.apache.qpid.server.queue.FailedDequeueException
+     *          if the message could not be dequeued
      */
     void deliver(String name, AMQMessage msg) throws FailedDequeueException;
 
@@ -75,4 +76,8 @@ interface DeliveryManager
     List<AMQMessage> getMessages();
 
     void populatePreDeliveryQueue(Subscription subscription);
+
+    long getTotalMessageSize();
+
+    long getOldestMessageArrival();
 }
