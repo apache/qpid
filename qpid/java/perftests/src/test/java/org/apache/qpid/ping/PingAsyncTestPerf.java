@@ -70,7 +70,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
     /** Holds test specifics by correlation id. This consists of the expected number of messages and the timing controler. */
     private Map<String, PerCorrelationId> perCorrelationIds =
-        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+            Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** Holds the batched results listener, that does logging on batch boundaries. */
     private BatchedResultsListener batchedResultsListener = null;
@@ -91,6 +91,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
     /**
      * Compile all the tests into a test suite.
+     * @return The test suite to run. Should only contain testAsyncPingOk method. 
      */
     public static Test suite()
     {
@@ -128,6 +129,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      * all replies have been received or a time out occurs before exiting this method.
      *
      * @param numPings The number of pings to send.
+     * @throws Exception pass all errors out to the test harness  
      */
     public void testAsyncPingOk(int numPings) throws Exception
     {
@@ -151,7 +153,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         PerCorrelationId perCorrelationId = new PerCorrelationId();
         TimingController tc = getTimingController().getControllerForCurrentThread();
         perCorrelationId._tc = tc;
-        perCorrelationId._expectedCount = numPings;
+        perCorrelationId._expectedCount = pingClient.getExpectedNumPings(numPings);
         perCorrelationIds.put(messageCorrelationId, perCorrelationId);
 
         // Attach the chained message listener to the ping producer to listen asynchronously for the replies to these
@@ -160,18 +162,18 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Generate a sample message of the specified size.
         ObjectMessage msg =
-            pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                      testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                      testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
+                pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                          testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                          testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
         int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout, messageCorrelationId);
 
         // Check that all the replies were received and log a fail if they were not.
-        if (numReplies < numPings)
+        if (numReplies < perCorrelationId._expectedCount)
         {
-            tc.completeTest(false, numPings - numReplies);
+            tc.completeTest(false, numPings - perCorrelationId._expectedCount);
         }
 
         // Remove the chained message listener from the ping producer.

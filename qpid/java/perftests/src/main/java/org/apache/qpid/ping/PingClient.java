@@ -38,6 +38,8 @@ import org.apache.qpid.requestreply.PingPongProducer;
  */
 public class PingClient extends PingPongProducer
 {
+    private static int _pingClientCount;
+
     /**
      * Creates a ping producer with the specified parameters, of which there are many. See their individual comments
      * for details. This constructor creates ping pong producer but de-registers its reply-to destination message
@@ -76,6 +78,8 @@ public class PingClient extends PingPongProducer
         super(brokerDetails, username, password, virtualpath, destinationName, selector, transacted, persistent, messageSize,
               verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, txBatchSize, noOfDestinations, rate,
               pubsub, unique);
+
+        _pingClientCount++;
     }
 
     /**
@@ -88,4 +92,17 @@ public class PingClient extends PingPongProducer
     {
         return _pingDestinations;
     }
+
+    public int getConsumersPerTopic()
+    {
+        if (_isUnique)
+        {
+            return 1;
+        }
+        else
+        {
+            return _pingClientCount;
+        }
+    }
+
 }
