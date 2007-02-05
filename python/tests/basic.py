@@ -352,7 +352,7 @@ class BasicTests(TestBase):
 
         reply = channel.basic_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "basic")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "get_empty")
 
         #repeat for no_ack=False
         for i in range(11, 21):
@@ -370,7 +370,7 @@ class BasicTests(TestBase):
 
         reply = channel.basic_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "basic")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "get_empty")
 
         #recover(requeue=True)
         channel.basic_recover(requeue=True)
@@ -385,10 +385,10 @@ class BasicTests(TestBase):
 
         reply = channel.basic_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "basic")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "get_empty")
 
         channel.basic_recover(requeue=True)
 
         reply = channel.basic_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "basic")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "get_empty")
