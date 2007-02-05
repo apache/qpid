@@ -1652,7 +1652,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         //stop the server delivering messages to this session
         suspendChannel();
-        _dispatcher.setConnectionStopped(true);
+        
+        if (_dispatcher != null)
+        {
+            _dispatcher.setConnectionStopped(true);
+        }
     }
 
     /**
