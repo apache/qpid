@@ -113,6 +113,7 @@ class Connection:
         garbage += chr(end)
         end = c.decode_octet()
       raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
+    print "==== FRAME ", frame
     return frame
 
 class Frame:
@@ -231,6 +232,9 @@ class Response(Frame):
     batch_offset = dec.decode_long()
     method = Method.decode(spec, dec, size - 20)
     return Response(id, request_id, batch_offset, method)
+
+  def __str__(self):
+    return "[%s] Response(%s,%s,%s) %s" % (self.channel, self.id, self.request_id, self.batch_offset, self.method)
 
 class Header(Frame):
 
