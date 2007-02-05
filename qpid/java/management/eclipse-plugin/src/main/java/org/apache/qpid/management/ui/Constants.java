@@ -28,8 +28,8 @@ package org.apache.qpid.management.ui;
 public class Constants
 {
     public final static String APPLICATION_NAME = "Qpid Management Console";
-    public final static String ITEM_VALUE = "value";
-    public final static String ITEM_TYPE  = "type";
+    public final static String VALUE = "value";
+    public final static String TYPE  = "type";
     public final static String SERVER     = "server";
     public final static String DOMAIN     = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
@@ -41,11 +41,14 @@ public class Constants
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
     public final static String VIRTUAL_HOST = "VirtualHost";
-    public final static String QUEUE_OWNER = "owner";
+    
+    // Attributes and operations are used to customize the GUI for Qpid. If these are changes in the
+    // Qpid server, then these should be updated accordingly
+    public final static String ATTRIBUTE_QUEUE_OWNER = "owner";
+    public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth";
+    public final static String ATTRIBUTE_QUEUE_CONSUMERCOUNT = "ActiveConsumerCount";    
     public final static String OPERATION_CREATE_QUEUE = "createNewQueue";
     public final static String OPERATION_CREATE_BINDING = "createNewBinding";
-    
-    public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth"; 
     
     public final static String ALL = "All";
     
@@ -57,6 +60,7 @@ public class Constants
     public final static String EXCHANGE_TYPE = "ExchangeType";
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
+    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};
     public final static String CONNECTION ="Connection";
     
     public final static String ACTION_ADDSERVER = "New Connection";

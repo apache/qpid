@@ -20,6 +20,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.TabFolder;
@@ -41,7 +42,7 @@ public class MBeanTypeTabControl
     private TabFolder _tabFolder = null;
     private Composite _composite = null;
     private Composite _listComposite = null;
-    private Composite _buttonsComposite = null;
+    private Composite _sortingComposite = null;
     private Label _labelName = null;
     private Label _labelDesc = null;
     private Label _labelList = null;
@@ -50,6 +51,8 @@ public class MBeanTypeTabControl
     private Button _refreshButton = null;
     private Button _addButton = null;
     private Button _sortBySizeButton = null;
+    private Button _sortByConsumercountButton = null;
+    private Button _sortByNameButton = null;
     
     private String _type = null;
     
@@ -57,10 +60,12 @@ public class MBeanTypeTabControl
     // is to be added to the navigation view. 
     private HashMap<String, ManagedBean> _objectsMap = new HashMap<String, ManagedBean>();
     // Map required for sorting queues based on attribute values
-    private Map<AttributeData, ManagedBean> _queueMap = new LinkedHashMap<AttributeData, ManagedBean>();
+    private Map<AttributeData, ManagedBean> _queueDepthMap = new LinkedHashMap<AttributeData, ManagedBean>();
+    // Map used for sorting Queues based on consumer count
+    private Map<AttributeData, ManagedBean> _queueConsumerCountMap = new LinkedHashMap<AttributeData, ManagedBean>();
     
     private Sorter _sorterByName = new Sorter();
-    private ComparatorImpl _sorterByQueueDepth = new ComparatorImpl();
+    private ComparatorImpl _sorterByAttribute = new ComparatorImpl();
     
     public MBeanTypeTabControl(TabFolder tabFolder)
     {
@@ -90,12 +95,7 @@ public class MBeanTypeTabControl
                 String[] selectedItems = _list.getSelection();
                 for (int i = 0; i < selectedItems.length; i++)
                 {
-                    String name = selectedItems[i];;
-                    if (Constants.QUEUE.equals(_type))
-                    {
-                        int endIndex = name.lastIndexOf("(");
-                        name = name.substring(0, endIndex -1);
-                    }
+                    String name = selectedItems[i];
                     // pass the ManagedBean to the navigation view to be added
                     ManagedBean mbean = _objectsMap.get(name);
                     IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
@@ -126,12 +126,42 @@ public class MBeanTypeTabControl
             }
         });
         
+        _sortByNameButton.addSelectionListener(new SelectionAdapter(){
+            public void widgetSelected(SelectionEvent e)
+            {
+                try
+                {
+                    java.util.List<String> list = new ArrayList<String>(_objectsMap.keySet());
+                    Collections.sort(list);
+                    _list.setItems(list.toArray(new String[0]));
+                }
+                catch (Exception ex)
+                {
+                    MBeanUtility.handleException(ex);
+                }
+            }
+        });
+        
         _sortBySizeButton.addSelectionListener(new SelectionAdapter(){
             public void widgetSelected(SelectionEvent e)
             {
                 try
                 {
-                    sortQueueByQueueDepth();
+                    sortQueuesByQueueDepth();
+                }
+                catch (Exception ex)
+                {
+                    MBeanUtility.handleException(ex);
+                }
+            }
+        });
+        
+        _sortByConsumercountButton.addSelectionListener(new SelectionAdapter(){
+            public void widgetSelected(SelectionEvent e)
+            {
+                try
+                {
+                    sortQueuesByConsumerCount();
                 }
                 catch (Exception ex)
                 {
@@ -143,6 +173,18 @@ public class MBeanTypeTabControl
     
     private void createWidgets()
     {
+        /*                   _form
+         *                      |
+         *                 _composite
+         *                      |
+         *        ---------------------------------------------------------------------
+         *        |                                    |                              |
+         *   _labelName, _labelDesc,            _listComposite                  _sortingComposite
+         *   _addButton, _refreshButton                |                              |
+         *                                    _labelList, _list                  sortingGroup
+         *                                                                            |
+         *                                                                      sorting radio buttons 
+         */
         _form.getBody().setLayout(new GridLayout());
         _composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
         _composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -166,7 +208,7 @@ public class MBeanTypeTabControl
         
         _refreshButton = _toolkit.createButton(_composite, Constants.BUTTON_REFRESH, SWT.PUSH);
         gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
-        gridData.widthHint = 80;
+        gridData.widthHint = 120;
         _refreshButton.setLayoutData(gridData);
         
         // Composite to contain the item list 
@@ -188,15 +230,39 @@ public class MBeanTypeTabControl
         
         
         // Composite to contain buttons like - Sort by size
-        _buttonsComposite = _toolkit.createComposite(_composite);
+        _sortingComposite = _toolkit.createComposite(_composite);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        _buttonsComposite.setLayoutData(gridData);
-        _buttonsComposite.setLayout(new GridLayout());
+        _sortingComposite.setLayoutData(gridData);
+        _sortingComposite.setLayout(new GridLayout());
         
-        _sortBySizeButton = _toolkit.createButton(_buttonsComposite, "Sort by Queue Depth", SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.CENTER, true, false);
-        _sortBySizeButton.setLayoutData(gridData);
+        Group sortingGroup = new Group(_sortingComposite, SWT.SHADOW_NONE);
+        sortingGroup.setBackground(_sortingComposite.getBackground());
+        sortingGroup.setText(" Sort List By ");
+        sortingGroup.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
+        gridData = new GridData(SWT.CENTER, SWT.TOP, true, true);
+        sortingGroup.setLayoutData(gridData);
+        sortingGroup.setLayout(new GridLayout());
         
+        _sortByNameButton = _toolkit.createButton(sortingGroup, "Queue Name", SWT.RADIO);
+        gridData = new GridData(SWT.LEAD, SWT.CENTER, true, false);
+        _sortByNameButton.setLayoutData(gridData);       
+               
+        _sortBySizeButton = _toolkit.createButton(sortingGroup, "Queue Depth", SWT.RADIO);
+        gridData = new GridData(SWT.LEAD, SWT.CENTER, true, false);
+        _sortBySizeButton.setLayoutData(gridData);     
+        
+        _sortByConsumercountButton = _toolkit.createButton(sortingGroup, "Consumer Count", SWT.RADIO);
+        gridData = new GridData(SWT.LEAD, SWT.CENTER, true, false);
+        _sortByConsumercountButton.setLayoutData(gridData);
+        
+        selectDefaultSortingButton();
+    }
+    
+    private void selectDefaultSortingButton()
+    {
+        _sortByNameButton.setSelection(true);
+        _sortBySizeButton.setSelection(false);
+        _sortByConsumercountButton.setSelection(false);
     }
     
     public void refresh(String typeName) throws Exception
@@ -225,7 +291,9 @@ public class MBeanTypeTabControl
     {
         // map should be cleared before populating it with new values
         _objectsMap.clear();
-        _queueMap.clear();
+        _queueDepthMap.clear();
+        _queueConsumerCountMap.clear();
+        
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
         String[] items = null;
         java.util.List<ManagedBean> list = null;
@@ -235,27 +303,27 @@ public class MBeanTypeTabControl
         {
             list = serverRegistry.getQueues(MBeanView.getVirtualHost());
             items = getQueueItems(list);
-            _sortBySizeButton.setVisible(true);
+            selectDefaultSortingButton();
+            _sortingComposite.setVisible(true);
         }
         else if (_type.equals(Constants.EXCHANGE))
         {
             list = serverRegistry.getExchanges(MBeanView.getVirtualHost());
             items = getItems(list);
-            _sortBySizeButton.setVisible(false);
+            _sortingComposite.setVisible(false);
         }
         else if (_type.equals(Constants.CONNECTION))
         {
             list = serverRegistry.getConnections(MBeanView.getVirtualHost());
             items = getItems(list);
-            _sortBySizeButton.setVisible(false);
+            _sortingComposite.setVisible(false);
         }
         else
         {
             throw new Exception("Unknown mbean type " + _type);
         }
         
-        _list.setItems(items);
-            
+        _list.setItems(items);           
     }
     
     // sets the map with appropriate mbean and name
@@ -290,26 +358,44 @@ public class MBeanTypeTabControl
             AttributeData data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_DEPTH);
             String value = data.getValue().toString();
             items[i] = mbean.getName() + " (" + value + " KB)";
-            _objectsMap.put(mbean.getName(), mbean);
-            _queueMap.put(data, mbean);
+            _objectsMap.put(items[i], mbean);
+            _queueDepthMap.put(data, mbean);
+            data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_CONSUMERCOUNT);
+            _queueConsumerCountMap.put(data, mbean);
             i++;
         }
         return items;
     }
     
-    private void sortQueueByQueueDepth() throws Exception
+    private void sortQueuesByQueueDepth()
     {
         // Queues are already in the alphabetically sorted order in _queueMap, now sort for queueDepth
-        java.util.List<AttributeData> list = new ArrayList<AttributeData>(_queueMap.keySet());
-        Collections.sort(list, _sorterByQueueDepth);
+        java.util.List<AttributeData> list = new ArrayList<AttributeData>(_queueDepthMap.keySet());
+        Collections.sort(list, _sorterByAttribute);
         
         String[] items = new String[list.size()];
         int i = 0;
         for (AttributeData data : list)
         {
-            ManagedBean mbean = _queueMap.get(data);
+            ManagedBean mbean = _queueDepthMap.get(data);
             String value = data.getValue().toString();
             items[i++] = mbean.getName() + " (" + value + " KB)";
+        }
+        _list.setItems(items);
+    }
+    
+    private void sortQueuesByConsumerCount()
+    {
+        java.util.List<AttributeData> list = new ArrayList<AttributeData>(_queueConsumerCountMap.keySet());
+        Collections.sort(list, _sorterByAttribute);
+        
+        String[] items = new String[list.size()];
+        int i = 0;
+        for (AttributeData data : list)
+        {
+            ManagedBean mbean = _queueConsumerCountMap.get(data);
+            String value = data.getValue().toString();
+            items[i++] = mbean.getName() + " (" + value + " )";
         }
         _list.setItems(items);
     }
