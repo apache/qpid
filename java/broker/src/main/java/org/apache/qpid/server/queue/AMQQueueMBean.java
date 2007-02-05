@@ -152,6 +152,16 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _queue.getMaximumMessageSize();
     }
 
+    public Long getMaximumMessageAge()
+    {
+        return _queue.getMaximumMessageAge();
+    }
+
+    public void setMaximumMessageAge(Long maximumMessageAge)
+    {
+        _queue.setMaximumMessageAge(maximumMessageAge);
+    }
+
     public void setMaximumMessageSize(Long value)
     {
         _queue.setMaximumMessageSize(value);
