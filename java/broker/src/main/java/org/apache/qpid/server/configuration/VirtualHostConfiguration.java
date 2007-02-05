@@ -34,9 +34,13 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.log4j.Logger;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Collections;
 
 public class VirtualHostConfiguration
 {
@@ -44,11 +48,7 @@ public class VirtualHostConfiguration
 
     XMLConfiguration _config;
 
-    private static final String XML_VIRTUALHOST = "virtualhost";
-    private static final String XML_PATH = "path";
-    private static final String XML_BIND = "bind";
-    private static final String XML_VIRTUALHOST_PATH = "virtualhost.path";
-    private static final String XML_VIRTUALHOST_BIND = "virtualhost.bind";
+    private static final String VIRTUALHOST_PROPERTY_BASE = "virtualhost.";
 
 
     public VirtualHostConfiguration(String configFile) throws ConfigurationException
@@ -57,137 +57,66 @@ public class VirtualHostConfiguration
 
         _config = new XMLConfiguration(configFile);
 
-        if (_config.getProperty(XML_VIRTUALHOST_PATH) == null)
-        {
-            throw new ConfigurationException(
-                    "Virtualhost Configuration document does not contain a valid virtualhost.");
-        }
     }
 
-    public void performBindings() throws AMQException, ConfigurationException, URLSyntaxException
+
+
+    private void configureVirtualHost(String virtualHostName, Configuration configuration) throws ConfigurationException, AMQException
     {
-        Object prop = _config.getProperty(XML_VIRTUALHOST_PATH);
+        _logger.debug("Loding configuration for virtaulhost: "+virtualHostName);
 
-        if (prop instanceof Collection)
-        {
-            _logger.debug("Number of VirtualHosts: " + ((Collection) prop).size());
 
-            int virtualhosts = ((Collection) prop).size();
-            for (int vhost = 0; vhost < virtualhosts; vhost++)
-            {
-                loadVirtualHost(vhost);
-            }
-        }
-        else
-        {
-            loadVirtualHost(-1);
-        }
-    }
-
-    private void loadVirtualHost(int index) throws AMQException, ConfigurationException, URLSyntaxException
-    {
-        String path = XML_VIRTUALHOST;
-
-        if (index != -1)
-        {
-            path = path + "(" + index + ")";
-        }
-
-        Object prop = _config.getProperty(path + "." + XML_PATH);
-
-        if (prop == null)
-        {
-            prop = _config.getProperty(path + "." + XML_BIND);
-            String error = "Virtual Host not defined for binding";
-
-            if (prop != null)
-            {
-                if (prop instanceof Collection)
-                {
-                    error += "s";
-                }
-
-                error += ": " + prop;
-            }
-
-            throw new ConfigurationException(error);
-        }
-
-        _logger.info("VirtualHost:'" + prop + "'");
-        String virtualHost = prop.toString();
-
-        prop = _config.getProperty(path + "." + XML_BIND);
-        if (prop instanceof Collection)
-        {
-            int bindings = ((Collection) prop).size();
-            _logger.debug("Number of Bindings: " + bindings);
-            for (int dest = 0; dest < bindings; dest++)
-            {
-                loadBinding(virtualHost, path, dest);
-            }
-        }
-        else
-        {
-            loadBinding(virtualHost,path, -1);
-        }
-    }
-
-    private void loadBinding(String virtualHost, String rootpath, int index) throws AMQException, ConfigurationException, URLSyntaxException
-    {
-        String path = rootpath + "." + XML_BIND;
-        if (index != -1)
-        {
-            path = path + "(" + index + ")";
-        }
-
-        String bindingString = _config.getString(path);
-
-        AMQBindingURL binding = new AMQBindingURL(bindingString);
-
-        _logger.debug("Loaded Binding:" + binding);
-
-        try
-        {
-            bind(virtualHost, binding);
-        }
-        catch (AMQException amqe)
-        {
-            _logger.info("Unable to bind url: " + binding);
-            throw amqe;
-        }
-    }
-
-    private void bind(String virtualHostName, AMQBindingURL binding) throws AMQException, ConfigurationException
-    {
-
-        AMQShortString queueName = binding.getQueueName();
-
-        // This will occur if the URL is a Topic
-        if (queueName == null)
-        {
-            //todo register valid topic
-            ///queueName = binding.getDestinationName();
-            throw new AMQException("Topics cannot be bound. TODO Register valid topic");
-        }
-
-        //Get references to Broker Registries
         VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(virtualHostName);
+
+
+
+        if(virtualHost == null)
+        {
+            throw new ConfigurationException("Unknown virtual host: " + virtualHostName);
+        }
+
+        List queueNames = configuration.getList("queue.name");
+
+        for(Object queueNameObj : queueNames)
+        {
+            String queueName = String.valueOf(queueNameObj);
+            configureQueue(virtualHost, queueName, configuration);
+        }
+
+    }
+
+    private void configureQueue(VirtualHost virtualHost, String queueNameString, Configuration configuration) throws AMQException, ConfigurationException
+    {
+        CompositeConfiguration queueConfiguration = new CompositeConfiguration();
+
+        queueConfiguration.addConfiguration(configuration.subset("queue."+ queueNameString));
+        queueConfiguration.addConfiguration(configuration);
+
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore messageStore = virtualHost.getMessageStore();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
 
+
+        AMQShortString queueName = new AMQShortString(queueNameString);
+
+        AMQQueue queue;
+
         synchronized (queueRegistry)
         {
-            AMQQueue queue = queueRegistry.getQueue(queueName);
+            queue = queueRegistry.getQueue(queueName);
 
             if (queue == null)
             {
-                _logger.info("Queue '" + binding.getQueueName() + "' does not exists. Creating.");
+                _logger.info("Creating queue '" + queueName + "' on virtual host " + virtualHost.getName());
+
+                boolean durable = queueConfiguration.getBoolean("durable" ,false);
+                boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
+                String owner = queueConfiguration.getString("owner", null);
 
                 queue = new AMQQueue(queueName,
-                        Boolean.parseBoolean(binding.getOption(AMQBindingURL.OPTION_DURABLE)),
-                        null /* These queues will have no owner */,
-                        false /* Therefore autodelete makes no sence */, virtualHost);
+                        durable,
+                        owner == null ? null : new AMQShortString(owner) /* These queues will have no owner */,
+                        autodelete /* Therefore autodelete makes no sence */, virtualHost);
 
                 if (queue.isDurable())
                 {
@@ -198,27 +127,69 @@ public class VirtualHostConfiguration
             }
             else
             {
-                _logger.info("Queue '" + binding.getQueueName() + "' already exists not creating.");
+                _logger.info("Queue '" + queueNameString + "' already exists on virtual host "+virtualHost.getName()+", not creating.");
             }
 
-            Exchange defaultExchange = exchangeRegistry.getExchange(binding.getExchangeName());
-            synchronized (defaultExchange)
+            String exchangeName = queueConfiguration.getString("exchange", null);
+
+            Exchange exchange = exchangeRegistry.getExchange(exchangeName == null ? null : new AMQShortString(exchangeName));
+
+            if(exchange == null)
             {
-                if (defaultExchange == null)
-                {
-                    throw new ConfigurationException("Attempt to bind queue to unknown exchange:" + binding);
-                }
-
-                defaultExchange.registerQueue(queue.getName(), queue, null);
-
-                if (binding.getRoutingKey() == null || binding.getRoutingKey().equals(""))
-                {
-                    throw new ConfigurationException("Unknown binding not specified on url:" + binding);
-                }
-
-                queue.bind(binding.getRoutingKey(), defaultExchange);
+                exchange = virtualHost.getExchangeRegistry().getDefaultExchange();
             }
-            _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + binding.getExchangeName() + " RK:'" + binding.getRoutingKey() + "'");
+
+            if (exchange == null)
+            {
+                throw new ConfigurationException("Attempt to bind queue to unknown exchange:" + exchangeName);
+            }
+
+            synchronized (exchange)
+            {
+                List routingKeys = queueConfiguration.getList("routingKey");
+                if(routingKeys == null || routingKeys.isEmpty())
+                {
+                    routingKeys = Collections.singletonList(queue.getName());
+                }
+
+                for(Object routingKeyNameObj : routingKeys)
+                {
+                    AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
+                    exchange.registerQueue(routingKey, queue, null);
+
+                    queue.bind(routingKey, exchange);
+
+                    _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + exchangeName + " RK:'" + routingKey + "'");
+                }
+            }
+
+        }
+
+
+
+        Configurator.configure(queue, queueConfiguration);
+    }
+
+
+    public void performBindings() throws AMQException, ConfigurationException
+    {
+        List virtualHostNames = _config.getList(VIRTUALHOST_PROPERTY_BASE + "name");
+
+        _logger.info("Configuring " + virtualHostNames == null ? 0 : virtualHostNames.size() + " virtual hosts: " + virtualHostNames);
+
+        for(Object nameObject : virtualHostNames)
+        {
+            String name = String.valueOf(nameObject);
+            configureVirtualHost(name, _config.subset(VIRTUALHOST_PROPERTY_BASE + name));
+        }
+
+        if (virtualHostNames == null || virtualHostNames.isEmpty())
+        {
+            throw new ConfigurationException(
+                    "Virtualhost Configuration document does not contain a valid virtualhost.");
         }
     }
+
+
+
 }
