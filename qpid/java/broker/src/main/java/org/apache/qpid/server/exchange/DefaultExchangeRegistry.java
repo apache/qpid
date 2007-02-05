@@ -67,6 +67,11 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _defaultExchange = exchange;
     }
 
+    public Exchange getDefaultExchange()
+    {
+        return _defaultExchange;
+    }
+
     public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
     {
         // TODO: check inUse argument

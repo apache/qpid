@@ -509,6 +509,12 @@ public class AMQMessage
         _messageHandle.setRedelivered(redelivered);
     }
 
+    public long getArrivalTime()
+    {
+        return _messageHandle.getArrivalTime();
+    }
+
+
     /**
      * Called when this message is delivered to a consumer. (used to
      * implement the 'immediate' flag functionality).

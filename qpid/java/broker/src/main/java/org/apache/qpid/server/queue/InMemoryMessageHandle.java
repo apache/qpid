@@ -43,6 +43,8 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     private boolean _redelivered;
 
+    private long _arrivalTime;
+
     public InMemoryMessageHandle()
     {
     }
@@ -114,6 +116,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     {
         _publishBody = publishBody;
         _contentHeaderBody = contentHeaderBody;
+        _arrivalTime = System.currentTimeMillis();
     }
 
     public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
@@ -130,4 +133,10 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     {
         // NO OP
     }
+
+    public long getArrivalTime()
+    {
+        return _arrivalTime;
+    }
+
 }
