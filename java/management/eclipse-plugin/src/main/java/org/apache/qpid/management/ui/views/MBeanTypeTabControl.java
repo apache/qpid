@@ -117,7 +117,8 @@ public class MBeanTypeTabControl
             {
                 try
                 {
-                    refresh(_type);
+                    // refresh the list from the broker server
+                    populateList();
                 }
                 catch (Exception ex)
                 {
@@ -131,6 +132,7 @@ public class MBeanTypeTabControl
             {
                 try
                 {
+                    // sort the stored list of items
                     java.util.List<String> list = new ArrayList<String>(_objectsMap.keySet());
                     Collections.sort(list);
                     _list.setItems(list.toArray(new String[0]));
@@ -147,6 +149,7 @@ public class MBeanTypeTabControl
             {
                 try
                 {
+                    // sort the stored list of items
                     sortQueuesByQueueDepth();
                 }
                 catch (Exception ex)
@@ -254,8 +257,6 @@ public class MBeanTypeTabControl
         _sortByConsumercountButton = _toolkit.createButton(sortingGroup, "Consumer Count", SWT.RADIO);
         gridData = new GridData(SWT.LEAD, SWT.CENTER, true, false);
         _sortByConsumercountButton.setLayoutData(gridData);
-        
-        selectDefaultSortingButton();
     }
     
     private void selectDefaultSortingButton()
@@ -269,6 +270,7 @@ public class MBeanTypeTabControl
     {
         _type = typeName;
         setHeader();
+        selectDefaultSortingButton();
         populateList();
         
         _listComposite.layout();
@@ -303,27 +305,41 @@ public class MBeanTypeTabControl
         {
             list = serverRegistry.getQueues(MBeanView.getVirtualHost());
             items = getQueueItems(list);
-            selectDefaultSortingButton();
+            // sort the refreshed list in the selected order
+            if (_sortBySizeButton.getSelection())
+            {
+                sortQueuesByQueueDepth();
+            }
+            else if (_sortByConsumercountButton.getSelection())
+            {
+                sortQueuesByConsumerCount();
+            }
+            else
+            {
+                _list.setItems(items);
+            }
             _sortingComposite.setVisible(true);
-        }
-        else if (_type.equals(Constants.EXCHANGE))
-        {
-            list = serverRegistry.getExchanges(MBeanView.getVirtualHost());
-            items = getItems(list);
-            _sortingComposite.setVisible(false);
-        }
-        else if (_type.equals(Constants.CONNECTION))
-        {
-            list = serverRegistry.getConnections(MBeanView.getVirtualHost());
-            items = getItems(list);
-            _sortingComposite.setVisible(false);
         }
         else
         {
-            throw new Exception("Unknown mbean type " + _type);
-        }
-        
-        _list.setItems(items);           
+            if (_type.equals(Constants.EXCHANGE))
+            {
+                list = serverRegistry.getExchanges(MBeanView.getVirtualHost());
+                items = getItems(list);
+                _sortingComposite.setVisible(false);
+            }
+            else if (_type.equals(Constants.CONNECTION))
+            {
+                list = serverRegistry.getConnections(MBeanView.getVirtualHost());
+                items = getItems(list);
+                _sortingComposite.setVisible(false);
+            }
+            else
+            {
+                throw new Exception("Unknown mbean type " + _type);
+            }
+            _list.setItems(items);  
+        }        
     }
     
     // sets the map with appropriate mbean and name
