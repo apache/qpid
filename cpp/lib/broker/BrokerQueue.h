@@ -21,7 +21,6 @@
  * under the License.
  *
  */
-
 #include <vector>
 #include <memory>
 #include <queue>
@@ -35,6 +34,9 @@
 #include <sys/Monitor.h>
 #include <QueuePolicy.h>
 
+// TODO aconway 2007-02-06: Use auto_ptr and boost::ptr_vector to
+// enforce ownership of Consumers.
+
 namespace qpid {
     namespace broker {
         class MessageStore;
@@ -42,8 +44,6 @@ namespace qpid {
         /**
          * Thrown when exclusive access would be violated.
          */
-        struct ExclusiveAccessException{};
-
         using std::string;
 
         /**

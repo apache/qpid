@@ -98,3 +98,6 @@ gen.mk: Makefile.am
 	)					\
 	> $@-t
 	mv $@-t $@
+
+
+check: $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker)

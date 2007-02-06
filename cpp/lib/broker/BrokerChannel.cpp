@@ -82,10 +82,11 @@ void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks,
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{
         queue->consume(c, exclusive);//may throw exception
-        consumers[tag] = c;
-    }catch(ExclusiveAccessException& e){
+    consumers[tag] = c;
+    } catch(...) {
+        // FIXME aconway 2007-02-06: auto_ptr for exception safe mem. mgmt.
         delete c;
-        throw e;
+        throw;
     }
 }
 
@@ -190,11 +191,11 @@ void Channel::ConsumerImpl::requestDispatch(){
 void Channel::handleInlineTransfer(Message::shared_ptr& msg, Exchange::shared_ptr& exch){
     if(transactional){
         TxPublish* deliverable = new TxPublish(msg);
-        exch->route(*deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
+        exch->route(*deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
         txBuffer.enlist(new DeletingTxOp(deliverable));
     }else{
         DeliverableMessage deliverable(msg);
-        exch->route(deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
+        exch->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
     }
 }
 
@@ -227,12 +228,12 @@ void Channel::complete(Message::shared_ptr msg) {
     if(transactional) {
         std::auto_ptr<TxPublish> deliverable(new TxPublish(msg));
         exchange->route(*deliverable, msg->getRoutingKey(),
-                        &(msg->getHeaderProperties()->getHeaders()));
+                        &(msg->getApplicationHeaders()));
         txBuffer.enlist(new DeletingTxOp(deliverable.release()));
     } else {
         DeliverableMessage deliverable(msg);
         exchange->route(deliverable, msg->getRoutingKey(),
-                        &(msg->getHeaderProperties()->getHeaders()));
+                        &(msg->getApplicationHeaders()));
     }
 }
 

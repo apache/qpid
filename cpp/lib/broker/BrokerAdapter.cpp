@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+#include <boost/format.hpp>
+
 #include "BrokerAdapter.h"
 #include "Connection.h"
 #include "Exception.h"
@@ -25,6 +27,7 @@
 namespace qpid {
 namespace broker {
 
+using boost::format;
 using namespace qpid;
 using namespace qpid::framing;
 
@@ -151,9 +154,11 @@ void BrokerAdapter::BrokerAdapter::QueueHandlerImpl::declare(const MethodContext
 	    }
 	}
     }
-    if (exclusive && !queue->isExclusiveOwner(&connection)) {
-	throw ChannelException(405, "Cannot grant exclusive access to queue");
-    }
+    if (exclusive && !queue->isExclusiveOwner(&connection)) 
+	throw ChannelException(
+            405,
+            format("Cannot grant exclusive access to queue '%s'")
+            % queue->getName());
     if (!nowait) {
         string queueName = queue->getName();
         connection.client->getQueue().declareOk(context, queueName, queue->getMessageCount(), queue->getConsumerCount());
@@ -248,20 +253,14 @@ void BrokerAdapter::BrokerAdapter::BasicHandlerImpl::consume(
         throw ConnectionException(530, "Consumer tags must be unique");
     }
 
-    try{
-        string newTag = consumerTag;
-        channel.consume(
-            newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
+    string newTag = consumerTag;
+    channel.consume(
+        newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
 
-        if(!nowait) connection.client->getBasic().consumeOk(context, newTag);
+    if(!nowait) connection.client->getBasic().consumeOk(context, newTag);
 
-        //allow messages to be dispatched if required as there is now a consumer:
-        queue->dispatch();
-    }catch(ExclusiveAccessException& e){
-        if(exclusive) throw ChannelException(403, "Exclusive access cannot be granted");
-        else throw ChannelException(403, "Access would violate previously granted exclusivity");
-    }
-
+    //allow messages to be dispatched if required as there is now a consumer:
+    queue->dispatch();
 } 
         
 void BrokerAdapter::BrokerAdapter::BasicHandlerImpl::cancel(const MethodContext& context, const string& consumerTag, bool nowait){

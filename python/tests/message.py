@@ -364,7 +364,7 @@ class MessageTests(TestBase):
         for i in range(1, 11):
             reply = channel.message_get(no_ack=True)
             self.assertEqual(reply.method.klass.name, "message")
-            self.assertEqual(reply.method.name, "get-ok")
+            self.assertEqual(reply.method.name, "ok")
             self.assertEqual("Message %d" % i, reply.body)
 
         reply = channel.message_get(no_ack=True)
@@ -378,7 +378,7 @@ class MessageTests(TestBase):
         for i in range(11, 21):
             reply = channel.message_get(no_ack=False)
             self.assertEqual(reply.method.klass.name, "message")
-            self.assertEqual(reply.method.name, "get-ok")
+            self.assertEqual(reply.method.name, "ok")
             self.assertEqual("Message %d" % i, reply.body)
             reply.ok()
 
@@ -399,7 +399,7 @@ class MessageTests(TestBase):
         for i in [14, 16, 18, 20]:
             reply = channel.message_get(no_ack=False)
             self.assertEqual(reply.method.klass.name, "message")
-            self.assertEqual(reply.method.name, "get-ok")
+            self.assertEqual(reply.method.name, "ok")
             self.assertEqual("Message %d" % i, reply.body)
             reply.ok()
             #channel.message_ack(delivery_tag=reply.delivery_tag)

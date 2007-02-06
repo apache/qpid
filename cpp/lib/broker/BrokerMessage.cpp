@@ -18,6 +18,8 @@
  * under the License.
  *
  */
+#include <boost/cast.hpp>
+
 #include <BrokerMessage.h>
 #include <iostream>
 
@@ -116,7 +118,12 @@ void BasicMessage::sendContent(
 }
 
 BasicHeaderProperties* BasicMessage::getHeaderProperties(){
-    return dynamic_cast<BasicHeaderProperties*>(header->getProperties());
+    return boost::polymorphic_downcast<BasicHeaderProperties*>(
+        header->getProperties());
+}
+
+const FieldTable& BasicMessage::getApplicationHeaders(){
+    return getHeaderProperties()->getHeaders();
 }
 
 const ConnectionToken* const BasicMessage::getPublisher(){

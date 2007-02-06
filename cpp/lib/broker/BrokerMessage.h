@@ -85,6 +85,7 @@ class BasicMessage : public Message {
                    u_int32_t framesize);
 
     framing::BasicHeaderProperties* getHeaderProperties();
+    const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
     u_int64_t contentSize() const { return size; }
 
