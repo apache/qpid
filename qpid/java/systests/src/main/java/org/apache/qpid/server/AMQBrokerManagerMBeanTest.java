@@ -70,7 +70,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
 
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
                 
-        mbean.createNewQueue(queueName, false, "test", true);
+        mbean.createNewQueue(queueName, "test", false, true);
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) != null);
 
         mbean.deleteQueue(queueName);
