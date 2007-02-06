@@ -18,11 +18,13 @@
  * under the License.
  *
  */
+#include "QpidError.h"
 #include "BrokerMessageMessage.h"
 #include "ChannelAdapter.h"
 #include "MessageTransferBody.h"
 #include "MessageAppendBody.h"
 #include "Reference.h"
+#include "framing/FieldTable.h"
 
 #include <iostream>
 
@@ -30,24 +32,15 @@ using namespace std;
 using namespace qpid::broker;
 using namespace qpid::framing;
 	
-MessageMessage::MessageMessage(
-    const boost::shared_ptr<MessageTransferBody> _methodBody, 
-    const std::string& _exchange, const std::string& _routingKey, 
-    bool _mandatory, bool _immediate) :
-    Message(_exchange, _routingKey, _mandatory, _immediate, _methodBody),
-    methodBody(_methodBody)
-{
-}
-
 MessageMessage::MessageMessage(TransferPtr transfer_)
-    : Message(transfer_->getExchange(), transfer_->getRoutingKey(),
+    : Message(transfer_->getDestination(), transfer_->getRoutingKey(),
               transfer_->getMandatory(), transfer_->getImmediate(),
               transfer_),
       transfer(transfer_)
 {}
 
 MessageMessage::MessageMessage(TransferPtr transfer_, const Reference& ref)
-    : Message(transfer_->getExchange(), transfer_->getRoutingKey(),
+    : Message(transfer_->getDestination(), transfer_->getRoutingKey(),
               transfer_->getMandatory(), transfer_->getImmediate(),
               transfer_),
       transfer(transfer_),
@@ -62,29 +55,29 @@ void MessageMessage::deliver(
 {
     channel.send(
     	new MessageTransferBody(channel.getVersion(), 
-        methodBody->getTicket(),
+        transfer->getTicket(),
         consumerTag,
         getRedelivered(),
-        methodBody->getImmediate(),
-        methodBody->getTtl(),
-        methodBody->getPriority(),
-        methodBody->getTimestamp(),
-        methodBody->getDeliveryMode(),
-        methodBody->getExpiration(),
+        transfer->getImmediate(),
+        transfer->getTtl(),
+        transfer->getPriority(),
+        transfer->getTimestamp(),
+        transfer->getDeliveryMode(),
+        transfer->getExpiration(),
         getExchange(),
         getRoutingKey(),
-        methodBody->getMessageId(),
-        methodBody->getCorrelationId(),
-        methodBody->getReplyTo(),
-        methodBody->getContentType(),
-        methodBody->getContentEncoding(),
-        methodBody->getUserId(),
-        methodBody->getAppId(),
-        methodBody->getTransactionId(),
-        methodBody->getSecurityToken(),
-        methodBody->getApplicationHeaders(),
-        methodBody->getBody(),
-        methodBody->getMandatory()));
+        transfer->getMessageId(),
+        transfer->getCorrelationId(),
+        transfer->getReplyTo(),
+        transfer->getContentType(),
+        transfer->getContentEncoding(),
+        transfer->getUserId(),
+        transfer->getAppId(),
+        transfer->getTransactionId(),
+        transfer->getSecurityToken(),
+        transfer->getApplicationHeaders(),
+        transfer->getBody(),
+        transfer->getMandatory()));
 }
 
 void MessageMessage::sendGetOk(
@@ -98,11 +91,12 @@ void MessageMessage::sendGetOk(
 
 bool MessageMessage::isComplete()
 {
-    return true;               // FIXME aconway 2007-02-05: 
+    return true;
 }
 
 u_int64_t MessageMessage::contentSize() const
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
@@ -110,33 +104,45 @@ qpid::framing::BasicHeaderProperties* MessageMessage::getHeaderProperties()
 {
     return 0;               // FIXME aconway 2007-02-05: 
 }
+
+const FieldTable& MessageMessage::getApplicationHeaders()
+{
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
+    return transfer->getApplicationHeaders();
+}
 bool MessageMessage::isPersistent()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return false;               // FIXME aconway 2007-02-05: 
 }
 
 const ConnectionToken* const MessageMessage::getPublisher()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
 u_int32_t MessageMessage::encodedSize()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
 u_int32_t MessageMessage::encodedHeaderSize()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
 u_int32_t MessageMessage::encodedContentSize()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
 u_int64_t MessageMessage::expectedContentSize()
 {
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 

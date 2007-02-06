@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+
+#include <boost/format.hpp>
+
 #include <BrokerQueue.h>
 #include <MessageStore.h>
 #include <sys/Monitor.h>
@@ -27,6 +30,7 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace qpid::framing;
+using boost::format;
 
 Queue::Queue(const string& _name, u_int32_t _autodelete, 
              MessageStore* const _store,
@@ -128,12 +132,17 @@ void Queue::dispatch(){
 
 void Queue::consume(Consumer* c, bool requestExclusive){
     Mutex::ScopedLock locker(lock);
-    if(exclusive) throw ExclusiveAccessException();
-    if(requestExclusive){
-        if(!consumers.empty()) throw ExclusiveAccessException();
+    if(exclusive) 
+        throw ChannelException(
+            403, format("Queue '%s' has an exclusive consumer."
+                        " No more consumers allowed.") % getName());
+    if(requestExclusive) {
+        if(!consumers.empty())
+            throw ChannelException(
+                403, format("Queue '%s' already has conumers."
+                            "Exclusive access denied.") %getName());
         exclusive = c;
     }
-
     if(autodelete && consumers.empty()) lastUsed = 0;
     consumers.push_back(c);
 }

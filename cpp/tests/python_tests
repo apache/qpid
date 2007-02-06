@@ -1,8 +1,4 @@
 #!/bin/sh
-# FIXME aconway 2007-01-09: Re-enable.
-echo "*** WARNING: PYTHON TESTS DISABLED till branch is functioning on 0-9."
-exit
-
 # Run the python tests.
 if test -d ../../python ;  then
     cd ../../python && ./run-tests -v -I cpp_failing.txt

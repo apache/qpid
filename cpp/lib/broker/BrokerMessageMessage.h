@@ -38,17 +38,11 @@ namespace broker {
 class Reference;
 
 class MessageMessage: public Message{
-    const boost::shared_ptr<framing::MessageTransferBody> methodBody;
-
   public:
     typedef Reference::TransferPtr TransferPtr;
     typedef Reference::AppendPtr AppendPtr;
     typedef Reference::Appends Appends;
 
-    MessageMessage(
-        const boost::shared_ptr<framing::MessageTransferBody> methodBody, 
-        const std::string& exchange, const std::string& routingKey, 
-        bool mandatory, bool immediate);
     MessageMessage(TransferPtr transfer);
     MessageMessage(TransferPtr transfer, const Reference&);
             
@@ -67,7 +61,8 @@ class MessageMessage: public Message{
     bool isComplete();
 
     u_int64_t contentSize() const;
-    qpid::framing::BasicHeaderProperties* getHeaderProperties();
+    framing::BasicHeaderProperties* getHeaderProperties();
+    const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
     const ConnectionToken* const getPublisher();
             

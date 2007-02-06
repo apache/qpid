@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "AMQP_ServerOperations.h"
+#include "AMQP_ClientProxy.h"
 #include "Reference.h"
 #include "BrokerChannel.h"
 
@@ -36,8 +37,7 @@ class MessageHandlerImpl :
         public framing::AMQP_ServerOperations::MessageHandler
 {
   public:
-    MessageHandlerImpl(Channel& ch, Connection& c, Broker& b)
-        : channel(ch), connection(c), broker(b), references(ch) {}
+    MessageHandlerImpl(Channel& ch, Connection& c, Broker& b);
 
     void append(const framing::MethodContext&,
                  const std::string& reference,
@@ -119,12 +119,11 @@ class MessageHandlerImpl :
                    framing::Content body,
                    bool mandatory );
   private:
-    void sendOk(const framing::MethodContext&);
-    
     Channel& channel;
     Connection& connection;
     Broker& broker;
     ReferenceRegistry references;
+    framing::AMQP_ClientProxy::Message& client;
 };
 
 }} // namespace qpid::broker

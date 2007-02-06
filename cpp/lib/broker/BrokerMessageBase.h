@@ -37,6 +37,7 @@ namespace framing {
 class MethodContext;
 class ChannelAdapter;
 class BasicHeaderProperties;
+class FieldTable;
 }
 	
 namespace broker {
@@ -114,7 +115,12 @@ class Message{
     virtual bool isComplete() = 0;
             
     virtual u_int64_t contentSize() const = 0;
+    // FIXME aconway 2007-02-06: Get rid of BasicHeaderProperties
+    // at this level. Expose only generic properties available from both
+    // message types (e.g. getApplicationHeaders below).
+    // 
     virtual framing::BasicHeaderProperties* getHeaderProperties() = 0;
+    virtual const framing::FieldTable& getApplicationHeaders() = 0;
     virtual bool isPersistent() = 0;
     virtual const ConnectionToken* const getPublisher() = 0;
 
