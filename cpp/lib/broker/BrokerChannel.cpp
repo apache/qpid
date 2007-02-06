@@ -187,6 +187,17 @@ void Channel::ConsumerImpl::requestDispatch(){
     if(blocked) queue->dispatch();
 }
 
+void Channel::handleInlineTransfer(Message::shared_ptr& msg, Exchange::shared_ptr& exch){
+    if(transactional){
+        TxPublish* deliverable = new TxPublish(msg);
+        exch->route(*deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
+        txBuffer.enlist(new DeletingTxOp(deliverable));
+    }else{
+        DeliverableMessage deliverable(msg);
+        exch->route(deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
+    }
+}
+
 // FIXME aconway 2007-02-05: Drop exchange member, calculate from
 // message in ::complete().
 void Channel::handlePublish(Message* _message, Exchange::shared_ptr _exchange){

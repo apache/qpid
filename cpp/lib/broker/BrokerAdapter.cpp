@@ -334,12 +334,17 @@ BrokerAdapter::BrokerAdapter::ChannelHandlerImpl::ok( const MethodContext& )
     //no specific action required, generic response handling should be sufficient
 }
 
+
+//
+// Message class method handlers
+//
 void
 BrokerAdapter::BrokerAdapter::ChannelHandlerImpl::ping( const MethodContext& context)
 {
     connection.client->getChannel().ok(context);
     connection.client->getChannel().pong(context);
 }
+
 
 void
 BrokerAdapter::BrokerAdapter::ChannelHandlerImpl::pong( const MethodContext& context)
