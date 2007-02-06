@@ -26,7 +26,7 @@
 #include <list>
 #include <sstream>
 #include "AMQFrame.h"
-#include "DummyChannel.h"
+#include "MockChannel.h"
 using std::list;
 using std::string;
 using boost::dynamic_pointer_cast;
@@ -92,7 +92,7 @@ public:
     {
         TestMessageStore store(in);
         LazyLoadedContent content(&store, 0, in.size());
-        DummyChannel channel(3);
+        MockChannel channel(3);
         content.send(channel, framesize);         
         CPPUNIT_ASSERT_EQUAL(outCount, channel.out.frames.size());
 

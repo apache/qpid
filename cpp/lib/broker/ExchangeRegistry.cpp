@@ -59,7 +59,10 @@ void ExchangeRegistry::destroy(const string& name){
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     Mutex::ScopedLock locker(lock);
-    return exchanges[name];
+    Exchange::shared_ptr exchange =exchanges[name];
+    if (!exchange) 
+        throw ChannelException(404, "Exchange not found:" + name);
+    return exchange;
 }
 
 namespace 

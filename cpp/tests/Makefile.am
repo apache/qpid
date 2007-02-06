@@ -9,12 +9,6 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-EXTRA_DIST =		\
-  topictest		\
-  qpid_test_plugin.h	\
-  MockConnectionInputHandler.h
-
-
 client_exe_tests =	\
   client_test		\
   echo_service		\
@@ -32,6 +26,7 @@ broker_tests =		\
   MessageBuilderTest	\
   MessageHandlerTest	\
   MessageTest		\
+  ReferenceTest         \
   QueueRegistryTest	\
   QueueTest		\
   QueuePolicyTest	\
@@ -69,7 +64,14 @@ noinst_PROGRAMS = $(client_exe_tests)
 
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
-EXTRA_DIST += $(TESTS) topictest
+
+EXTRA_DIST =		\
+  $(TESTS) 		\
+  topictest		\
+  qpid_test_plugin.h	\
+  MockConnectionInputHandler.h \
+  MockChannel.h		\
+  InProcessBroker.h
 
 include gen.mk
 

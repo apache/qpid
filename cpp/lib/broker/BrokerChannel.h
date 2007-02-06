@@ -36,6 +36,7 @@
 #include <Prefetch.h>
 #include <TxBuffer.h>
 #include "framing/ChannelAdapter.h"
+#include "CompletionHandler.h"
 
 namespace qpid {
 namespace broker {
@@ -51,9 +52,8 @@ using framing::string;
  * Maintains state for an AMQP channel. Handles incoming and
  * outgoing messages for that channel.
  */
-class Channel :
-        public framing::ChannelAdapter,
-        private MessageBuilder::CompletionHandler
+class Channel : public framing::ChannelAdapter,
+                public CompletionHandler
 {
     class ConsumerImpl : public virtual Consumer
     {
@@ -96,7 +96,7 @@ class Channel :
 
     boost::scoped_ptr<BrokerAdapter> adapter;
 
-    virtual void complete(Message::shared_ptr& msg);
+    virtual void complete(Message::shared_ptr msg);
     void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
     void cancel(consumer_iterator consumer);
     bool checkPrefetch(Message::shared_ptr& msg);

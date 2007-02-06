@@ -25,7 +25,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
-#include "DummyChannel.h"
+#include "MockChannel.h"
 
 using std::list;
 using std::vector;
@@ -72,7 +72,7 @@ public:
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(
                 new BasicMessage(0, "exchange", "routing_key", false, false,
-                                 DummyChannel::basicGetBody()));
+                                 MockChannel::basicGetBody()));
             msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
             msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
             messages.push_back(msg);

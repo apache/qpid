@@ -29,22 +29,19 @@
 #include <AMQContentBody.h>
 #include <AMQHeaderBody.h>
 #include <BasicPublishBody.h>
+#include "CompletionHandler.h"
 
 namespace qpid {
     namespace broker {
         class MessageBuilder{
         public:
-            class CompletionHandler{
-            public:
-                virtual void complete(Message::shared_ptr&) = 0;
-                virtual ~CompletionHandler(){}
-            };
             MessageBuilder(CompletionHandler* _handler,
                            MessageStore* const store = 0,
                            u_int64_t stagingThreshold = 0);
             void initialise(Message::shared_ptr& msg);
-            void setHeader(qpid::framing::AMQHeaderBody::shared_ptr& header);
-            void addContent(qpid::framing::AMQContentBody::shared_ptr& content);
+            void setHeader(framing::AMQHeaderBody::shared_ptr& header);
+            void addContent(framing::AMQContentBody::shared_ptr& content);
+            Message::shared_ptr getMessage() { return message; }
         private:
             Message::shared_ptr message;
             CompletionHandler* handler;

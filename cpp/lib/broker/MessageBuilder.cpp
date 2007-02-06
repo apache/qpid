@@ -27,7 +27,10 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using std::auto_ptr;
 
-MessageBuilder::MessageBuilder(CompletionHandler* _handler, MessageStore* const _store, u_int64_t _stagingThreshold) : 
+MessageBuilder::MessageBuilder(CompletionHandler* _handler,
+                               MessageStore* const _store,
+                               u_int64_t _stagingThreshold
+) : 
     handler(_handler),
     store(_store),
     stagingThreshold(_stagingThreshold)

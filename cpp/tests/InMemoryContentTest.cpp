@@ -24,7 +24,7 @@
 #include <iostream>
 #include <list>
 #include "AMQFrame.h"
-#include "DummyChannel.h"
+#include "MockChannel.h"
 
 using std::list;
 using std::string;
@@ -58,7 +58,7 @@ public:
     void refragment(size_t inCount, string* in, size_t outCount, string* out, u_int32_t framesize = 5)
     {
         InMemoryContent content;
-        DummyChannel channel(3);
+        MockChannel channel(3);
 
         addframes(content, inCount, in);
         content.send(channel, framesize);         

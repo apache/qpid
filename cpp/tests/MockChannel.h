@@ -1,5 +1,5 @@
-#ifndef _tests_DummyChannel_h
-#define _tests_DummyChannel_h
+#ifndef _tests_MockChannel_h
+#define _tests_MockChannel_h
 
 /*
  *
@@ -26,16 +26,16 @@
 #include "framing/AMQFrame.h"
 #include "BasicGetBody.h"
 
-/** Dummy output handler to collect frames */
-struct DummyOutputHandler : public qpid::framing::OutputHandler {
+/** Mock output handler to collect frames */
+struct MockOutputHandler : public qpid::framing::OutputHandler {
     std::vector<qpid::framing::AMQFrame*> frames;
     void send(qpid::framing::AMQFrame* frame){ frames.push_back(frame); }
 };
 
 /**
- * Combination dummy OutputHandler and ChannelAdapter for tests.
+ * Combination mock OutputHandler and ChannelAdapter for tests.
  */
-struct DummyChannel : public qpid::framing::ChannelAdapter
+struct MockChannel : public qpid::framing::ChannelAdapter
 {
     typedef qpid::framing::BasicGetBody Body;
     static Body::shared_ptr basicGetBody() {
@@ -43,9 +43,9 @@ struct DummyChannel : public qpid::framing::ChannelAdapter
             new Body(qpid::framing::ProtocolVersion()));
     }
 
-    DummyOutputHandler out;
+    MockOutputHandler out;
 
-    DummyChannel(qpid::framing::ChannelId id) {
+    MockChannel(qpid::framing::ChannelId id) {
         init(id, out, qpid::framing::ProtocolVersion());
     }
 
@@ -66,4 +66,4 @@ struct DummyChannel : public qpid::framing::ChannelAdapter
 
 };
 
-#endif  /*!_tests_DummyChannel_h*/
+#endif  /*!_tests_MockChannel_h*/

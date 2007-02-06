@@ -69,6 +69,8 @@ libqpidbroker_la_SOURCES =				\
   QueueRegistry.h				\
   RecoveryManager.cpp				\
   RecoveryManager.h				\
+  Reference.cpp					\
+  Reference.h					\
   ConnectionFactory.cpp				\
   ConnectionFactory.h				\
   Connection.cpp				\

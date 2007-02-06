@@ -22,7 +22,7 @@
 #include <QueueRegistry.h>
 #include <qpid_test_plugin.h>
 #include <iostream>
-#include "DummyChannel.h"
+#include "MockChannel.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -58,7 +58,7 @@ class QueueTest : public CppUnit::TestCase
     Message::shared_ptr message(std::string exchange, std::string routingKey) {
         return Message::shared_ptr(
             new BasicMessage(0, exchange, routingKey, true, true,
-                             DummyChannel::basicGetBody()));
+                             MockChannel::basicGetBody()));
     }
     
     void testConsumers(){

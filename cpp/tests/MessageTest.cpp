@@ -23,7 +23,7 @@
 #include <iostream>
 #include <AMQP_HighestVersion.h>
 #include "AMQFrame.h"
-#include "DummyChannel.h"
+#include "MockChannel.h"
 
 using namespace boost;
 using namespace qpid::broker;
@@ -47,7 +47,7 @@ class MessageTest : public CppUnit::TestCase
 
         BasicMessage::shared_ptr msg(
             new BasicMessage(0, exchange, routingKey, false, false,
-                             DummyChannel::basicGetBody()));
+                             MockChannel::basicGetBody()));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);        
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -73,7 +73,7 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getHeaderProperties()->getHeaders().getString("abc"));
         CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, msg->contentSize());
 
-        DummyChannel channel(1);
+        MockChannel channel(1);
         // FIXME aconway 2007-02-02: deliver should take const ProtocolVersion&
         msg->deliver(channel, "ignore", 0, 100); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
