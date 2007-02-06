@@ -38,6 +38,7 @@
         <java.source.version>1.5</java.source.version>
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
+		<release.revision>-r504143</release.revision>
     </properties>
    
     <repositories>
@@ -124,7 +125,7 @@
                                 <descriptor>src/main/assembly/management-eclipse-plugin.xml</descriptor>
                                 <descriptor>src/main/assembly/management-eclipse-plugin-unix.xml</descriptor>
                             </descriptors>
-                            <finalName>qpid-${pom.version}-r500219</finalName>
+                            <finalName>qpid-${pom.version}${release.revision}</finalName>
                         </configuration>
                     </execution>
                 </executions>
@@ -190,7 +191,7 @@
                                 <descriptors>
                                     <descriptor>src/main/assembly/bin-test.xml</descriptor>
                                 </descriptors>
-                                <finalName>qpid-${pom.version}-r500219</finalName>
+                                <finalName>qpid-${pom.version}${release.revision}</finalName>
                             </configuration>
                         </execution>
                         </executions>

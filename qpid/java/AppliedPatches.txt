@@ -3,7 +3,7 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 	- Hard coded to return 0
 
 -Latest Revision-
-503646,502576.499979
+504112,503646,502576.499979
 
 -Not Done-
 502610 QPID-84 UPdate PropertiesFileInitialContextFactoryTest Remove referencetest
@@ -67,6 +67,10 @@ Update includes local fix for AMQQueueMBeanTest.getQueueDepth resolved by r50100
 	* DeliveryManager Queue data size counting.
 
 -Done-
+504112 MNGMT Console fix for brokers with no virtualhost impl.
+504025 MNGMT compile fix
+503790 MNGMT QIPD-326 AMQQueueMBean update MaximumMessageAge
+503706 MNGMT QPID-213 boolean types made a check box.
 503646 local repository removed
 503637 Junit-toolkit update
 503609 Updated to performacen test to allow the use of shared destinations.
