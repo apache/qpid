@@ -96,7 +96,9 @@ class Channel : public framing::ChannelAdapter,
 
     boost::scoped_ptr<BrokerAdapter> adapter;
 
-    virtual void complete(Message::shared_ptr msg);
+	// completion handler for MessageBuilder
+    void complete(Message::shared_ptr msg);
+    
     void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
     void cancel(consumer_iterator consumer);
     bool checkPrefetch(Message::shared_ptr& msg);
@@ -110,7 +112,9 @@ class Channel : public framing::ChannelAdapter,
     
     ~Channel();
 
+	// For ChannelAdapter
     bool isOpen() const { return opened; }
+    
     void open() { opened = true; }
     void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
     Queue::shared_ptr getDefaultQueue() const { return defaultQueue; }
@@ -134,6 +138,10 @@ class Channel : public framing::ChannelAdapter,
     void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<framing::AMQHeartbeatBody>);
+    
+    void handleInlineTransfer(Message::shared_ptr& msg, Exchange::shared_ptr& exchange);
+    
+    // For ChannelAdapter
     void handleMethodInContext(
         boost::shared_ptr<framing::AMQMethodBody> method,
         const framing::MethodContext& context);

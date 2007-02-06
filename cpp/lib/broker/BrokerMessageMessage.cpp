@@ -18,15 +18,27 @@
  * under the License.
  *
  */
-#include <iostream>
 #include "BrokerMessageMessage.h"
+#include "ChannelAdapter.h"
 #include "MessageTransferBody.h"
 #include "MessageAppendBody.h"
 #include "Reference.h"
 
+#include <iostream>
+
 using namespace std;
 using namespace qpid::broker;
+using namespace qpid::framing;
 	
+MessageMessage::MessageMessage(
+    const boost::shared_ptr<MessageTransferBody> _methodBody, 
+    const std::string& _exchange, const std::string& _routingKey, 
+    bool _mandatory, bool _immediate) :
+    Message(_exchange, _routingKey, _mandatory, _immediate, _methodBody),
+    methodBody(_methodBody)
+{
+}
+
 MessageMessage::MessageMessage(TransferPtr transfer_)
     : Message(transfer_->getExchange(), transfer_->getRoutingKey(),
               transfer_->getMandatory(), transfer_->getImmediate(),
@@ -43,14 +55,36 @@ MessageMessage::MessageMessage(TransferPtr transfer_, const Reference& ref)
 {}
 
 void MessageMessage::deliver(
-    framing::ChannelAdapter& /*channel*/,
-    const std::string& /*consumerTag*/, 
+    framing::ChannelAdapter& channel, 
+    const std::string& consumerTag, 
     u_int64_t /*deliveryTag*/, 
     u_int32_t /*framesize*/)
 {
-    // FIXME aconway 2007-02-05:
-    cout << "MessageMessage::deliver" << *transfer << " + " << appends.size()
-         << " appends." << endl;
+    channel.send(
+    	new MessageTransferBody(channel.getVersion(), 
+        methodBody->getTicket(),
+        consumerTag,
+        getRedelivered(),
+        methodBody->getImmediate(),
+        methodBody->getTtl(),
+        methodBody->getPriority(),
+        methodBody->getTimestamp(),
+        methodBody->getDeliveryMode(),
+        methodBody->getExpiration(),
+        getExchange(),
+        getRoutingKey(),
+        methodBody->getMessageId(),
+        methodBody->getCorrelationId(),
+        methodBody->getReplyTo(),
+        methodBody->getContentType(),
+        methodBody->getContentEncoding(),
+        methodBody->getUserId(),
+        methodBody->getAppId(),
+        methodBody->getTransactionId(),
+        methodBody->getSecurityToken(),
+        methodBody->getApplicationHeaders(),
+        methodBody->getBody(),
+        methodBody->getMandatory()));
 }
 
 void MessageMessage::sendGetOk(

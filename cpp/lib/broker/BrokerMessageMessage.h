@@ -21,9 +21,11 @@
  * under the License.
  *
  */
-#include <vector>
 #include "BrokerMessageBase.h"
+#include "MessageTransferBody.h"
 #include "Reference.h"         
+
+#include <vector>
 
 namespace qpid {
 
@@ -36,11 +38,17 @@ namespace broker {
 class Reference;
 
 class MessageMessage: public Message{
+    const boost::shared_ptr<framing::MessageTransferBody> methodBody;
+
   public:
     typedef Reference::TransferPtr TransferPtr;
     typedef Reference::AppendPtr AppendPtr;
-    typedef  Reference::Appends Appends;
+    typedef Reference::Appends Appends;
 
+    MessageMessage(
+        const boost::shared_ptr<framing::MessageTransferBody> methodBody, 
+        const std::string& exchange, const std::string& routingKey, 
+        bool mandatory, bool immediate);
     MessageMessage(TransferPtr transfer);
     MessageMessage(TransferPtr transfer, const Reference&);
             

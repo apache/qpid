@@ -24,7 +24,6 @@ broker_tests =		\
   InMemoryContentTest	\
   LazyLoadedContentTest	\
   MessageBuilderTest	\
-  MessageHandlerTest	\
   MessageTest		\
   ReferenceTest         \
   QueueRegistryTest	\
