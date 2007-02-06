@@ -269,7 +269,7 @@ public final class JMSHeaderAdapter
                         s = String.valueOf(o);
                     }
                 }
-            }
+            }//else return s // null; 
         }
 
         return s;
@@ -508,16 +508,16 @@ public final class JMSHeaderAdapter
 
             // JMS invalid names
             if ((propertyName.equals("NULL")
-                    || propertyName.equals("TRUE")
-                    || propertyName.equals("FALSE")
-                    || propertyName.equals("NOT")
-                    || propertyName.equals("AND")
-                    || propertyName.equals("OR")
-                    || propertyName.equals("BETWEEN")
-                    || propertyName.equals("LIKE")
-                    || propertyName.equals("IN")
-                    || propertyName.equals("IS")
-                    || propertyName.equals("ESCAPE")))
+                 || propertyName.equals("TRUE")
+                 || propertyName.equals("FALSE")
+                 || propertyName.equals("NOT")
+                 || propertyName.equals("AND")
+                 || propertyName.equals("OR")
+                 || propertyName.equals("BETWEEN")
+                 || propertyName.equals("LIKE")
+                 || propertyName.equals("IN")
+                 || propertyName.equals("IS")
+                 || propertyName.equals("ESCAPE")))
             {
                 throw new IllegalArgumentException("Identifier '" + propertyName + "' is not allowed in JMS");
             }

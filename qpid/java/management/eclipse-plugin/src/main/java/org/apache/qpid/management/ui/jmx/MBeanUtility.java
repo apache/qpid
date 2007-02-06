@@ -144,39 +144,44 @@ public class MBeanUtility
         if (mbean == null)
         {
             ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
+            ex.printStackTrace();
         }
         else if (ex instanceof IOException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), "IO Error occured \n" + ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), "IO Error occured \n" + ex.toString());
+            ex.printStackTrace();
         }
         else if (ex instanceof ReflectionException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), "Server has thrown error \n" + ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Server has thrown error \n" + ex.toString());
+            ex.printStackTrace();
         }
         else if (ex instanceof InstanceNotFoundException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), "Managed Object Not Found \n" + ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Managed Object Not Found \n" + ex.toString());
+            ex.printStackTrace();
         }
         else if (ex instanceof MBeanException)
         {
             String cause = ((MBeanException)ex).getTargetException().toString();
             if (cause == null)
                 cause = ex.toString();
-            ViewUtility.popupInfoMessage(mbean.getName(), cause);
+            ViewUtility.popupInfoMessage(mbean.getInstanceName(), cause);
         }
         else if (ex instanceof JMException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), "Management Exception occured \n" + ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Management Exception occured \n" + ex.toString());
         }
         else if (ex instanceof ManagementConsoleException)
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.getMessage());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
         }
         else 
         {
-            ViewUtility.popupErrorMessage(mbean.getName(), ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.toString());
+            ex.printStackTrace();
         }
-        ex.printStackTrace();
+        
     }
     
     /**

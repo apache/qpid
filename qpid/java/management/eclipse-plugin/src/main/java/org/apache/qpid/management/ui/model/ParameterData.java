@@ -20,60 +20,81 @@
  */
 package org.apache.qpid.management.ui.model;
 
+/**
+ * Class representing an mbean operation parameter
+ * @author Bhupendra Bhardwaj
+ */
 public class ParameterData
 {
-    private String name;
-    private String description;
-    private String type;
-    private Object value;
+    private String _name;
+    private String _description;
+    private String _type;
+    private Object _value;
     
-    ParameterData(String value)
+    ParameterData(String name)
     {
-        this.name = value;
+        this._name = name;
     }
     
     public String getDescription()
     {
-        return description;
+        return _description;
     }
     public void setDescription(String description)
     {
-        this.description = description;
+        this._description = description;
     }
     
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public String getType()
     {
-        return type;
+        return _type;
     }
     public void setType(String type)
     {
-        this.type = type;
+        this._type = type;
     }
 
     public Object getValue()
     {
-        return value;
+        return _value;
     }
     
     public void setValueFromString(String strValue)
     {
-        if ("int".equals(type))
-            value = Integer.parseInt(strValue);
-        else if ("boolean".equals(type))
-            value = Boolean.valueOf(strValue);
-        else if ("long".equals(type))
-            value = Long.parseLong(strValue);
+        if ("int".equals(_type))
+            _value = Integer.parseInt(strValue);
+        else if (isBoolean())
+            _value = Boolean.valueOf(strValue);
+        else if ("long".equals(_type))
+            _value = Long.parseLong(strValue);
         else
-            value = strValue; 
+            _value = strValue; 
     }
     
     public void setValue(Object value)
     {
-        this.value = value;
+        this._value = value;
+    }
+    
+    public boolean isBoolean()
+    {
+        return (_type.equals("boolean") || _type.equals("java.lang.Boolean"));
+    }
+    
+    public void setDefaultValue()
+    {
+        if (isBoolean())
+        {
+            _value = Boolean.valueOf("false");
+        }
+        else
+        {
+            _value = null;
+        }
     }
 }

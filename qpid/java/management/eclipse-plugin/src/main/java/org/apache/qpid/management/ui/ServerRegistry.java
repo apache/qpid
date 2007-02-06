@@ -34,14 +34,11 @@ import org.apache.qpid.management.ui.model.OperationDataModel;
 public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
-    // list of all Connection mbeans
-    //private List<ManagedBean> _connections = new ArrayList<ManagedBean>();
+    // map of all Connection mbeans
     private ConcurrentMap<String,List<ManagedBean>> _connections = new ConcurrentHashMap<String,List<ManagedBean>>();
-    // list of all exchange mbeans
-    //private List<ManagedBean> _exchanges = new ArrayList<ManagedBean>();
+    // map of all exchange mbeans
     private ConcurrentMap<String,List<ManagedBean>> _exchanges = new ConcurrentHashMap<String,List<ManagedBean>>();
-    // list of all queue mbenas
-    //private List<ManagedBean> _queues = new ArrayList<ManagedBean>();
+    // map of all queue mbenas
     private ConcurrentMap<String,List<ManagedBean>> _queues = new ConcurrentHashMap<String,List<ManagedBean>>();
     
     public ServerRegistry()
@@ -68,31 +65,26 @@ public abstract class ServerRegistry
     {
         String vHost = mbean.getVirtualHostName();
         _connections.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        List<ManagedBean> beans = _connections.get(vHost);
-        beans.add(mbean);
+        _connections.get(vHost).add(mbean);
     }
     
     protected void addExchangeMBean(ManagedBean mbean)
     {
         String vHost = mbean.getVirtualHostName();
         _exchanges.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        List<ManagedBean> beans = _exchanges.get(vHost);
-        beans.add(mbean);
+        _exchanges.get(vHost).add(mbean);
     }
     
     protected void addQueueMBean(ManagedBean mbean)
     {
         String vHost = mbean.getVirtualHostName();
         _queues.putIfAbsent(vHost, new ArrayList<ManagedBean>());
-        List<ManagedBean> beans = _queues.get(vHost);
-        beans.add(mbean);
+        _queues.get(vHost).add(mbean);
     }
     
     protected void removeConnectionMBean(ManagedBean mbean)
     {
-        String vHost = mbean.getVirtualHostName();
-        List<ManagedBean> beans = _connections.get(vHost);
-        beans.remove(mbean);
+        _connections.get(mbean.getVirtualHostName()).remove(mbean);
     }
     
     protected void removeExchangeMBean(ManagedBean mbean)
@@ -126,10 +118,7 @@ public abstract class ServerRegistry
     
     public abstract void removeManagedObject(ManagedBean mbean);
    
-    public List<ManagedBean> getObjectsToBeRemoved()
-    {
-        return null;
-    }
+    public abstract List<ManagedBean> getObjectsToBeRemoved();
     
     public abstract ManagedAttributeModel getAttributeModel(ManagedBean mbean);
     

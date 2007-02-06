@@ -28,12 +28,12 @@ import javax.jms.JMSException;
 import javax.jms.Topic;
 
 public class AMQTopic extends AMQDestination implements Topic
-    {
+{
     /**
-    * Constructor for use in creating a topic using a BindingURL.
+     * Constructor for use in creating a topic using a BindingURL.
      *
      * @param binding The binding url object.
-    */
+     */
     public AMQTopic(BindingURL binding)
     {
         super(binding);
@@ -78,7 +78,7 @@ public class AMQTopic extends AMQDestination implements Topic
         return super.getDestinationName().toString();
     }
 
-     public AMQShortString getRoutingKey()
+    public AMQShortString getRoutingKey()
     {
         return getDestinationName();
     }
@@ -93,7 +93,7 @@ public class AMQTopic extends AMQDestination implements Topic
      * Override since the queue is always private and we must ensure it remains null. If not,
      * reuse of the topic when registering consumers will make all consumers listen on the same (private) queue rather
      * than getting their own (private) queue.
-     *
+     * <p/>
      * This is relatively nasty but it is difficult to come up with a more elegant solution, given
      * the requirement in the case on AMQQueue and possibly other AMQDestination subclasses to
      * use the underlying queue name even where it is server generated.

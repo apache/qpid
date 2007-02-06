@@ -41,7 +41,7 @@
     </fileSet>
     <fileSet>
       <directory>..</directory>
-      <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
+      <outputDirectory>qpid-${qpid.version}-src/java</outputDirectory>
       <includes>
         <include>**/*</include>
       </includes>
@@ -70,6 +70,25 @@
         <exclude>**/eclipse-plugin/plugins/**</exclude>
         <exclude>**/eclipse-plugin/src/main/resources/**</exclude>
       </excludes>
+    </fileSet>
+    <fileSet>
+      <directory>../../gentools</directory>
+      <outputDirectory>qpid-${qpid.version}-src/gentools</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+      <excludes>
+        <exclude>**/build</exclude>
+        <exclude>**/build/**/*</exclude>
+        <exclude>**/*.class</exclude>
+      </excludes>
+    </fileSet>
+    <fileSet>
+      <directory>../../specs</directory>
+      <outputDirectory>qpid-${qpid.version}-src/specs</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
     </fileSet>
   </fileSets>
 </assembly>
