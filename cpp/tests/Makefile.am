@@ -30,6 +30,7 @@ broker_tests =		\
   InMemoryContentTest	\
   LazyLoadedContentTest	\
   MessageBuilderTest	\
+  MessageHandlerTest	\
   MessageTest		\
   QueueRegistryTest	\
   QueueTest		\
