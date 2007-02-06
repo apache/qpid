@@ -101,7 +101,8 @@ public class TreeObject
     
     public String getVirtualHost()
     {
-        return _virtualHost;
+        // To make it work with the broker with no virtual host implementation
+        return _virtualHost == null ? Constants.DEFAULT_VH : _virtualHost;
     }
     
     public void setVirtualHost(String vHost)

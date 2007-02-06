@@ -41,6 +41,7 @@ public class Constants
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
     public final static String VIRTUAL_HOST = "VirtualHost";
+    public final static String DEFAULT_VH = "Default";
     
     // Attributes and operations are used to customize the GUI for Qpid. If these are changes in the
     // Qpid server, then these should be updated accordingly

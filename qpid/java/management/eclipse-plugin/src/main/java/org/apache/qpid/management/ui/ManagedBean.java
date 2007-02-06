@@ -88,7 +88,8 @@ public abstract class ManagedBean extends ManagedObject
     
     public String getVirtualHostName()
     {
-        return _virtualHostName;
+        // To make it work with the broker with no virtual host implementation
+        return _virtualHostName == null ? Constants.DEFAULT_VH : _virtualHostName;
     }
     
     /**

@@ -295,6 +295,16 @@ public class NavigationView extends ViewPart
                 addManagedBean(domain, mbean);
             }
         }
+        // To make it work with the broker without virtual host implementation.
+        // This will add the default nodes to the domain node
+        for (TreeObject child : domain.getChildren())
+        {
+            if (!child.getName().startsWith(Constants.VIRTUAL_HOST))
+            {
+                addDefaultNodes(domain);
+            }
+            break;
+        }
     }
     
     /**
