@@ -15,8 +15,8 @@ MESSAGES=2000
 BATCHES=10
 
 cppcmds() {
-    LISTEN_CMD=topic_listener
-    PUBLISH_CMD="topic_publisher -messages $MESSAGES -batches $BATCHES -subscribers $LISTENERS"
+    LISTEN_CMD=./topic_listener
+    PUBLISH_CMD="./topic_publisher -messages $MESSAGES -batches $BATCHES -subscribers $LISTENERS"
 }
 
 javacmds() {
