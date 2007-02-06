@@ -153,7 +153,7 @@ public class OperationTabControl extends TabControl
     {
         _mbean = mbean;
         _opData = opData;
-        _virtualHostName = _mbean.getProperty(Constants.VIRTUAL_HOST);
+        _virtualHostName = _mbean.getVirtualHostName();
         
         // Setting the form to be invisible. Just in case the mbean server connection
         // is done and it takes time in getting the response, then the ui should be blank
