@@ -78,7 +78,7 @@ void Channel::consume(string& tag, Queue::shared_ptr queue, bool acks,
                       bool exclusive, ConnectionToken* const connection,
                       const FieldTable*)
 {
-	if(tag.empty()) tag = tagGenerator.generate();
+    if(tag.empty()) tag = tagGenerator.generate();
     ConsumerImpl* c(new ConsumerImpl(this, tag, queue, connection, acks));
     try{
         queue->consume(c, exclusive);//may throw exception
@@ -187,6 +187,8 @@ void Channel::ConsumerImpl::requestDispatch(){
     if(blocked) queue->dispatch();
 }
 
+// FIXME aconway 2007-02-05: Drop exchange member, calculate from
+// message in ::complete().
 void Channel::handlePublish(Message* _message, Exchange::shared_ptr _exchange){
     Message::shared_ptr message(_message);
     exchange = _exchange;
@@ -207,19 +209,19 @@ void Channel::handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>) {
     // TODO aconway 2007-01-17: Implement heartbeating.
 }
 
-void Channel::complete(Message::shared_ptr& msg){
-    if(exchange){
-        if(transactional){
-            TxPublish* deliverable = new TxPublish(msg);
-            exchange->route(*deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
-            txBuffer.enlist(new DeletingTxOp(deliverable));
-        }else{
-            DeliverableMessage deliverable(msg);
-            exchange->route(deliverable, msg->getRoutingKey(), &(msg->getHeaderProperties()->getHeaders()));
-        }
-        exchange.reset();
-    }else{
-        std::cout << "Exchange not known in Channel::complete(Message::shared_ptr&)" << std::endl;
+void Channel::complete(Message::shared_ptr msg) {
+    Exchange::shared_ptr exchange =
+        connection.broker.getExchanges().get(msg->getExchange());
+    assert(exchange.get());
+    if(transactional) {
+        std::auto_ptr<TxPublish> deliverable(new TxPublish(msg));
+        exchange->route(*deliverable, msg->getRoutingKey(),
+                        &(msg->getHeaderProperties()->getHeaders()));
+        txBuffer.enlist(new DeletingTxOp(deliverable.release()));
+    } else {
+        DeliverableMessage deliverable(msg);
+        exchange->route(deliverable, msg->getRoutingKey(),
+                        &(msg->getHeaderProperties()->getHeaders()));
     }
 }
 

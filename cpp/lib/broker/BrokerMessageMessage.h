@@ -21,23 +21,28 @@
  * under the License.
  *
  */
-
+#include <vector>
 #include "BrokerMessageBase.h"
+#include "Reference.h"         
 
 namespace qpid {
+
 namespace framing {
-class AMQMethodBody;
+class MessageTransferBody;
+class MessageApppendBody;
 }
 	
 namespace broker {
-class MessageMessage: public Message{
-    const qpid::framing::AMQMethodBody::shared_ptr methodBody;
+class Reference;
 
+class MessageMessage: public Message{
   public:
-    MessageMessage(
-        const framing::AMQMethodBody::shared_ptr methodBody, 
-        const std::string& exchange, const std::string& routingKey, 
-        bool mandatory, bool immediate);
+    typedef Reference::TransferPtr TransferPtr;
+    typedef Reference::AppendPtr AppendPtr;
+    typedef  Reference::Appends Appends;
+
+    MessageMessage(TransferPtr transfer);
+    MessageMessage(TransferPtr transfer, const Reference&);
             
     // Default destructor okay
 			            
@@ -52,7 +57,7 @@ class MessageMessage: public Message{
                    u_int32_t framesize);
 
     bool isComplete();
-            
+
     u_int64_t contentSize() const;
     qpid::framing::BasicHeaderProperties* getHeaderProperties();
     bool isPersistent();
@@ -62,10 +67,16 @@ class MessageMessage: public Message{
     u_int32_t encodedHeaderSize();
     u_int32_t encodedContentSize();
     u_int64_t expectedContentSize();
+
+    TransferPtr getTransfer() { return transfer; }
+    const Appends& getAppends() { return appends; }
+  private:
+
+    const TransferPtr transfer;
+    const Appends appends;
 };
 
-}
-}
+}}
 
 
 #endif  /*!_broker_BrokerMessage_h*/

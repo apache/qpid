@@ -28,7 +28,7 @@
 #include <memory>
 #include <AMQP_HighestVersion.h>
 #include "AMQFrame.h"
-#include "DummyChannel.h"
+#include "MockChannel.h"
 #include "broker/Connection.h"
 #include "ProtocolInitiation.h"
 
@@ -39,7 +39,7 @@ using namespace qpid::sys;
 using std::string;
 using std::queue;
 
-struct DummyHandler : ConnectionOutputHandler{
+struct MockHandler : ConnectionOutputHandler{
     std::vector<AMQFrame*> frames; 
 
     void send(AMQFrame* frame){ frames.push_back(frame); }
@@ -60,7 +60,7 @@ class ChannelTest : public CppUnit::TestCase
 
     Broker::shared_ptr broker;
     Connection connection;
-    DummyHandler handler;
+    MockHandler handler;
     
     class MockMessageStore : public NullMessageStore
     {
@@ -240,10 +240,10 @@ class ChannelTest : public CppUnit::TestCase
         Channel channel(
             connection, 1, 1000/*framesize*/, &store, 10/*staging threshold*/);
         const string data[] = {"abcde", "fghij", "klmno"};
-
+        
         Message* msg = new BasicMessage(
             0, "my_exchange", "my_routing_key", false, false,
-            DummyChannel::basicGetBody());
+            MockChannel::basicGetBody());
 
         store.expect();
         store.stage(msg);
@@ -253,7 +253,8 @@ class ChannelTest : public CppUnit::TestCase
         store.destroy(msg);
         store.test();
 
-        Exchange::shared_ptr exchange(new FanOutExchange("my_exchange"));
+        Exchange::shared_ptr exchange  =
+            broker->getExchanges().declare("my_exchange", "fanout").first;
         Queue::shared_ptr queue(new Queue("my_queue"));
         exchange->bind(queue, "", 0);
 
@@ -333,7 +334,7 @@ class ChannelTest : public CppUnit::TestCase
     {
         BasicMessage* msg = new BasicMessage(
             0, exchange, routingKey, false, false,
-            DummyChannel::basicGetBody());
+            MockChannel::basicGetBody());
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(contentSize);        
         msg->setHeader(header);

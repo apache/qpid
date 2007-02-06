@@ -64,7 +64,10 @@ struct MethodContext
 };
 
 // FIXME aconway 2007-02-01: Method context only required on Handler
-// functions, not on Proxy functions.
+// functions, not on Proxy functions. If we add set/getChannel(ChannelAdapter*)
+// on AMQBody and set it during decodeing then we could get rid of the context.
+
+
 
 }} // namespace qpid::framing
 

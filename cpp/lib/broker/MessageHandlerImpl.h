@@ -19,23 +19,25 @@
  *
  */
 
+#include <memory>
+
 #include "AMQP_ServerOperations.h"
+#include "Reference.h"
+#include "BrokerChannel.h"
 
 namespace qpid {
 namespace broker {
 
-class Channel;
 class Connection;
 class Broker;
+class MessageMessage;
 
-class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageHandler {
-    Channel& channel;
-    Connection& connection;
-    Broker& broker;
-
+class MessageHandlerImpl :
+        public framing::AMQP_ServerOperations::MessageHandler
+{
   public:
     MessageHandlerImpl(Channel& ch, Connection& c, Broker& b)
-        : channel(ch), connection(c), broker(b) {}
+        : channel(ch), connection(c), broker(b), references(ch) {}
 
     void append(const framing::MethodContext&,
                  const std::string& reference,
@@ -116,6 +118,13 @@ class MessageHandlerImpl : public qpid::framing::AMQP_ServerOperations::MessageH
                    const framing::FieldTable& applicationHeaders,
                    framing::Content body,
                    bool mandatory );
+  private:
+    void sendOk(const framing::MethodContext&);
+    
+    Channel& channel;
+    Connection& connection;
+    Broker& broker;
+    ReferenceRegistry references;
 };
 
 }} // namespace qpid::broker
