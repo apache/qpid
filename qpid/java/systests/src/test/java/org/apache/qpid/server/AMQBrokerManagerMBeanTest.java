@@ -31,18 +31,18 @@ public class AMQBrokerManagerMBeanTest extends TestCase
 
     public void testExchangeOperations() throws Exception
     {
-        String exchange1 = "testExchange1_" +  System.currentTimeMillis();
-        String exchange2 = "testExchange2_" +  System.currentTimeMillis();
-        String exchange3 = "testExchange3_" +  System.currentTimeMillis();
+        String exchange1 = "testExchange1_" + System.currentTimeMillis();
+        String exchange2 = "testExchange2_" + System.currentTimeMillis();
+        String exchange3 = "testExchange3_" + System.currentTimeMillis();
 
         assertTrue(_exchangeRegistry.getExchange(exchange1) == null);
         assertTrue(_exchangeRegistry.getExchange(exchange2) == null);
         assertTrue(_exchangeRegistry.getExchange(exchange3) == null);
 
         ManagedBroker mbean = new AMQBrokerManagerMBean();
-        mbean.createNewExchange(exchange1,"direct",false, false);
-        mbean.createNewExchange(exchange2,"topic",false, false);
-        mbean.createNewExchange(exchange3,"headers",false, false);
+        mbean.createNewExchange(exchange1, "direct", false, false);
+        mbean.createNewExchange(exchange2, "topic", false, false);
+        mbean.createNewExchange(exchange3, "headers", false, false);
 
         assertTrue(_exchangeRegistry.getExchange(exchange1) != null);
         assertTrue(_exchangeRegistry.getExchange(exchange2) != null);
@@ -63,8 +63,8 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         ManagedBroker mbean = new AMQBrokerManagerMBean();
 
         assertTrue(_queueRegistry.getQueue(queueName) == null);
-                
-        mbean.createNewQueue(queueName, false, "test", true);
+
+        mbean.createNewQueue(queueName, "test", false, true);
         assertTrue(_queueRegistry.getQueue(queueName) != null);
 
         mbean.deleteQueue(queueName);
@@ -76,7 +76,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     {
         super.setUp();
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _queueRegistry    = appRegistry.getQueueRegistry();
+        _queueRegistry = appRegistry.getQueueRegistry();
         _exchangeRegistry = appRegistry.getExchangeRegistry();
     }
 }

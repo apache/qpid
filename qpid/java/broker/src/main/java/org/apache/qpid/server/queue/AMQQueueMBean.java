@@ -37,10 +37,7 @@ import javax.management.monitor.MonitorNotification;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * MBean class for AMQQueue. It implements all the management features exposed
- * for an AMQQueue.
- */
+/** MBean class for AMQQueue. It implements all the management features exposed for an AMQQueue. */
 @MBeanDescription("Management Interface for AMQQueue")
 public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
@@ -84,9 +81,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
     }
 
-    /**
-     * initialises the openmbean data types
-     */
+    /** initialises the openmbean data types */
     private static void init() throws OpenDataException
     {
         _msgContentAttributeTypes[0] = SimpleType.LONG;                    // For message id
@@ -135,6 +130,16 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _queue.getMessageCount();
     }
 
+    public Long getMaximumMessageAge()
+    {
+        return _queue.getMaximumMessageAge();
+    }
+
+    public void setMaximumMessageAge(Long maximumMessageAge)
+    {
+        _queue.setMaximumMessageAge(maximumMessageAge);
+    }
+
     public Long getMaximumMessageSize()
     {
         return _queue.getMaximumMessageSize();
@@ -180,9 +185,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _queue.setMaximumQueueDepth(value);
     }
 
-    /**
-     * returns the size of messages(KB) in the queue.
-     */
+    /** returns the size of messages(KB) in the queue. */
     public Long getQueueDepth()
     {
 //        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
@@ -203,9 +206,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return 0L;
     }
 
-    /**
-     * returns size of message in bytes
-     */
+    /** returns size of message in bytes */
     private long getMessageSize(AMQMessage msg)
     {
         if (msg == null)
@@ -216,9 +217,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return msg.getContentHeaderBody().bodySize;
     }
 
-    /**
-     * Checks if there is any notification to be send to the listeners
-     */
+    /** Checks if there is any notification to be send to the listeners */
     public void checkForNotification(AMQMessage msg)
     {
         final long currentTime = System.currentTimeMillis();
@@ -236,9 +235,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
     }
 
-    /**
-     * Sends the notification to the listeners
-     */
+    /** Sends the notification to the listeners */
     public void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg)
     {
         // important : add log to the log file - monitoring tools may be looking for this
@@ -250,9 +247,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _broadcaster.sendNotification(n);
     }
 
-    /**
-     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop()
-     */
+    /** @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop() */
     public void deleteMessageFromTop() throws JMException
     {
         try
@@ -265,9 +260,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
     }
 
-    /**
-     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue()
-     */
+    /** @see org.apache.qpid.server.queue.AMQQueue#clearQueue() */
     public void clearQueue() throws JMException
     {
         try
@@ -280,9 +273,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
     }
 
-    /**
-     * returns message content as byte array and related attributes for the given message id.
-     */
+    /** returns message content as byte array and related attributes for the given message id. */
     public CompositeData viewMessageContent(long msgId) throws JMException
     {
         AMQMessage msg = _queue.getMessageOnTheQueue(msgId);
@@ -321,9 +312,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
     }
 
-    /**
-     * Returns the header contents of the messages stored in this queue in tabular form.
-     */
+    /** Returns the header contents of the messages stored in this queue in tabular form. */
     public TabularData viewMessages(int beginIndex, int endIndex) throws JMException
     {
         if ((beginIndex > endIndex) || (beginIndex < 1))
@@ -351,9 +340,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _messageList;
     }
 
-    /**
-     * returns Notifications sent by this MBean.
-     */
+    /** returns Notifications sent by this MBean. */
     @Override
     public MBeanNotificationInfo[] getNotificationInfo()
     {

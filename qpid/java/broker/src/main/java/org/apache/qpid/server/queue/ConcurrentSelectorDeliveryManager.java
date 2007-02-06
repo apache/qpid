@@ -37,9 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-/**
- * Manages delivery of messages on behalf of a queue
- */
+/** Manages delivery of messages on behalf of a queue */
 public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 {
     private static final Logger _log = Logger.getLogger(ConcurrentSelectorDeliveryManager.class);
@@ -47,34 +45,26 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     @Configured(path = "advanced.compressBufferOnQueue",
                 defaultValue = "false")
     public boolean compressBufferOnQueue;
-    /**
-     * Holds any queued messages
-     */
+    /** Holds any queued messages */
     private final Queue<AMQMessage> _messages = new ConcurrentLinkedQueueAtomicSize<AMQMessage>();
     //private int _messageCount;
-    /**
-     * Ensures that only one asynchronous task is running for this manager at
-     * any time.
-     */
+    /** Ensures that only one asynchronous task is running for this manager at any time. */
     private final AtomicBoolean _processing = new AtomicBoolean();
-    /**
-     * The subscriptions on the queue to whom messages are delivered
-     */
+    /** The subscriptions on the queue to whom messages are delivered */
     private final SubscriptionManager _subscriptions;
 
     /**
-     * A reference to the queue we are delivering messages for. We need this to be able
-     * to pass the code that handles acknowledgements a handle on the queue.
+     * A reference to the queue we are delivering messages for. We need this to be able to pass the code that handles
+     * acknowledgements a handle on the queue.
      */
     private final AMQQueue _queue;
 
 
     /**
      * Lock used to ensure that an channel that becomes unsuspended during the start of the queueing process is forced
-     * to wait till the first message is added to the queue. This will ensure that the _queue has messages to be delivered
-     * via the async thread.
-     * <p/>
-     * Lock is used to control access to hasQueuedMessages() and over the addition of messages to the queue.
+     * to wait till the first message is added to the queue. This will ensure that the _queue has messages to be
+     * delivered via the async thread. <p/> Lock is used to control access to hasQueuedMessages() and over the addition
+     * of messages to the queue.
      */
     private ReentrantLock _lock = new ReentrantLock();
     private AtomicLong _totalMessageSize = new AtomicLong();
@@ -135,8 +125,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
     /**
-     * This is an EXPENSIVE opperation to perform with a ConcurrentLinkedQueue as it must run the queue to determine size.
-     * The ConcurrentLinkedQueueAtomicSize uses an AtomicInteger to record the number of elements on the queue.
+     * This is an EXPENSIVE opperation to perform with a ConcurrentLinkedQueue as it must run the queue to determine
+     * size. The ConcurrentLinkedQueueAtomicSize uses an AtomicInteger to record the number of elements on the queue.
      *
      * @return int the number of messages in the delivery queue.
      */
@@ -248,8 +238,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
     /**
-     * Only one thread should ever execute this method concurrently, but
-     * it can do so while other threads invoke deliver().
+     * Only one thread should ever execute this method concurrently, but it can do so while other threads invoke
+     * deliver().
      */
     private void processQueue()
     {

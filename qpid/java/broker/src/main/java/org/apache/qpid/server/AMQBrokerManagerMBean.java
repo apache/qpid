@@ -132,8 +132,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
-            throws JMException
+    public void createNewQueue(String queueName, String owner, boolean durable,boolean autoDelete)            throws JMException
     {
         AMQQueue queue = _queueRegistry.getQueue(queueName);
         if (queue != null)

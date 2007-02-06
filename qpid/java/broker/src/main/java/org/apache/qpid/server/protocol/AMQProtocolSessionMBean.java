@@ -53,30 +53,42 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private AMQMinaProtocolSession _session = null;
     private String _name = null;
     //openmbean data types for representing the channel attributes
-    private String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
-    private String[] _indexNames = {_channelAtttibuteNames[0]};
-    private OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
-    private CompositeType _channelType = null;      // represents the data type for channel data
-    private TabularType _channelsType = null;       // Data type for list of channels type
+    private final static String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
+    private final static String[] _indexNames = {_channelAtttibuteNames[0]};
+    private final static OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
+    private static CompositeType _channelType = null;      // represents the data type for channel data
+    private static TabularType _channelsType = null;       // Data type for list of channels type
+    private static final String BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION = "Broker Management Console has closed the connection.";
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
     {
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
-        init();
-    }
-
-    /**
-     * initialises the openmbean data types
-     */
-    private void init() throws OpenDataException
-    {
         String remote = getRemoteAddress();
         remote = "anonymous".equals(remote) ? remote + hashCode() : remote;
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
+        init();
+    }
+
+    static
+    {
+        try
+        {
+            init();
+        }
+        catch (JMException ex)
+        {
+            // It should never occur
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    /** initialises the openmbean data types */
+    private static void init() throws OpenDataException
+    {
         _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
-                _channelAtttibuteNames, _channelAttributeTypes);
+                                         _channelAtttibuteNames, _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
     }
 
@@ -119,6 +131,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      * commits transactions for a transactional channel
      *
      * @param channelId
+     *
      * @throws JMException if channel with given id doesn't exist or if commit fails
      */
     public void commitTransactions(int channelId) throws JMException
@@ -142,6 +155,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      * rollsback the transactions for a transactional channel
      *
      * @param channelId
+     *
      * @throws JMException if channel with given id doesn't exist or if rollback fails
      */
     public void rollbackTransactions(int channelId) throws JMException
@@ -165,6 +179,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      * Creates the list of channels in tabular form from the _channelMap.
      *
      * @return list of channels in tabular form.
+     *
      * @throws OpenDataException
      */
     public TabularData channels() throws OpenDataException
@@ -175,8 +190,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         for (AMQChannel channel : list)
         {
             Object[] itemValues = {channel.getChannelId(), channel.isTransactional(),
-                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
-                    channel.getUnacknowledgedMessageMap().size()};
+                                   (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
+                                   channel.getUnacknowledgedMessageMap().size()};
 
             CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
             channelsList.put(channelData);
@@ -188,25 +203,26 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     /**
      * closes the connection. The administrator can use this management operation to close connection to free up
      * resources.
+     *
      * @throws JMException
      */
     public void closeConnection() throws JMException
     {
-        
+
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame response = ConnectionCloseBody.createAMQFrame(0,
-            (byte)8, (byte)0,	// AMQP version (major, minor)
-            0,	// classId
-            0,	// methodId
-        	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            "Broker Management Console has closing the connection."	// replyText
-            );
+                                                                     (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                     0,    // classId
+                                                                     0,    // methodId
+                                                                     AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
+                                                                     BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION    // replyText
+        );
         _session.writeFrame(response);
 
         try
-        {
+        {                               
             _session.closeSession();
         }
         catch (AMQException ex)
@@ -229,7 +245,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public void notifyClients(String notificationMsg)
     {
         Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
-                ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
+                                          ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
         _broadcaster.sendNotification(n);
     }
 

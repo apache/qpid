@@ -154,8 +154,7 @@ public class VirtualHostConfiguration
 
         }
 
-
-        Configurator.configure(queue);//, queueConfiguration);
+        Configurator.configure(queue, queueConfiguration);
     }
 
 
