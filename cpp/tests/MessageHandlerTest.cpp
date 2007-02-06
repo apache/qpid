@@ -23,7 +23,7 @@
 #include <amqp_framing.h>
 #include <qpid_test_plugin.h>
 
-#include <SessionHandlerFactoryImpl.h>
+#include <BrokerAdapter.h>
 
 using namespace qpid::framing;
 using namespace qpid::broker;
