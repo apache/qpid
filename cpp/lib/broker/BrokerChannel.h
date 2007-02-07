@@ -139,7 +139,7 @@ class Channel : public framing::ChannelAdapter,
     void handleContent(boost::shared_ptr<framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<framing::AMQHeartbeatBody>);
     
-    void handleInlineTransfer(Message::shared_ptr& msg, Exchange::shared_ptr& exchange);
+    void handleInlineTransfer(Message::shared_ptr msg, Exchange::shared_ptr& exchange);
     
     // For ChannelAdapter
     void handleMethodInContext(

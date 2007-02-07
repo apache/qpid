@@ -188,7 +188,9 @@ void Channel::ConsumerImpl::requestDispatch(){
     if(blocked) queue->dispatch();
 }
 
-void Channel::handleInlineTransfer(Message::shared_ptr& msg, Exchange::shared_ptr& exch){
+void Channel::handleInlineTransfer(
+    Message::shared_ptr msg, Exchange::shared_ptr& exch)
+{
     if(transactional){
         TxPublish* deliverable = new TxPublish(msg);
         exch->route(*deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));

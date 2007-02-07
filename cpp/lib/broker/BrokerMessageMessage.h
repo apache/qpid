@@ -35,19 +35,25 @@ class MessageApppendBody;
 }
 	
 namespace broker {
+class ConnectionToken;
 class Reference;
 
 class MessageMessage: public Message{
   public:
-    typedef Reference::TransferPtr TransferPtr;
+    typedef boost::shared_ptr<MessageMessage> shared_ptr;
+    typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
     typedef Reference::AppendPtr AppendPtr;
     typedef Reference::Appends Appends;
 
-    MessageMessage(TransferPtr transfer);
-    MessageMessage(TransferPtr transfer, const Reference&);
+    MessageMessage(ConnectionToken* publisher, TransferPtr transfer);
             
     // Default destructor okay
-			            
+
+    TransferPtr getTransfer() { return transfer; }
+
+    const Appends& getAppends() { return appends; }
+    void setAppends(const Appends& appends_) { appends = appends_; }
+    
     void deliver(framing::ChannelAdapter& channel, 
                  const std::string& consumerTag, 
                  u_int64_t deliveryTag, 
@@ -64,19 +70,16 @@ class MessageMessage: public Message{
     framing::BasicHeaderProperties* getHeaderProperties();
     const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
-    const ConnectionToken* const getPublisher();
             
     u_int32_t encodedSize();
     u_int32_t encodedHeaderSize();
     u_int32_t encodedContentSize();
     u_int64_t expectedContentSize();
 
-    TransferPtr getTransfer() { return transfer; }
-    const Appends& getAppends() { return appends; }
   private:
 
     const TransferPtr transfer;
-    const Appends appends;
+    Appends appends;
 };
 
 }}

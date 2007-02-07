@@ -40,10 +40,10 @@ class BasicHeaderProperties;
 class FieldTable;
 }
 	
-namespace broker {
 
-class MessageStore;
+namespace broker {
 class ConnectionToken;
+class MessageStore;
 
 /**
  * Base class for all types of internal broker messages
@@ -51,6 +51,7 @@ class ConnectionToken;
  * TODO; AMS: for the moment this is mostly a placeholder
  */
 class Message{
+    const ConnectionToken* publisher;
     std::string exchange;
     std::string routingKey;
     const bool mandatory;
@@ -62,9 +63,12 @@ class Message{
   public:
     typedef boost::shared_ptr<Message> shared_ptr;
 
-    Message(const std::string& _exchange, const std::string& _routingKey, 
+    Message(const ConnectionToken* publisher_,
+            const std::string& _exchange,
+            const std::string& _routingKey, 
             bool _mandatory, bool _immediate,
             framing::AMQMethodBody::shared_ptr respondTo_) :
+        publisher(publisher_),
         exchange(_exchange),
         routingKey(_routingKey),
         mandatory(_mandatory),
@@ -122,7 +126,9 @@ class Message{
     virtual framing::BasicHeaderProperties* getHeaderProperties() = 0;
     virtual const framing::FieldTable& getApplicationHeaders() = 0;
     virtual bool isPersistent() = 0;
-    virtual const ConnectionToken* const getPublisher() = 0;
+    virtual const ConnectionToken* getPublisher() const {
+        return publisher;
+    }
 
     virtual void encode(framing::Buffer& /*buffer*/) {}; // XXXX: Only used in tests?
     virtual void encodeHeader(framing::Buffer& /*buffer*/) {}; // XXXX: Only used in tests?

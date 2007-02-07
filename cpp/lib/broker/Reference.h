@@ -28,20 +28,21 @@
 namespace qpid {
 
 namespace framing {
-class MessageTransferBody;
 class MessageAppendBody;
 }
 
 namespace broker {
 
+class MessageMessage;
 class CompletionHandler;
 class ReferenceRegistry;
 
 /**
  * A reference is an accumulation point for data in a multi-frame
- * message. A reference can be used by multiple transfer commands, so
- * the reference tracks which commands are using it. When the reference
- * is closed, all the associated transfers are completed.
+ * message. A reference can be used by multiple transfer commands to
+ * create multiple messages, so the reference tracks which commands
+ * are using it. When the reference is closed, all the associated
+ * transfers are completed.
  *
  * THREAD UNSAFE: per-channel resource, access to channels is
  * serialized.
@@ -50,8 +51,8 @@ class Reference
 {
   public:
     typedef std::string Id;
-    typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
-    typedef std::vector<TransferPtr> Transfers;
+    typedef boost::shared_ptr<MessageMessage> MessagePtr;
+    typedef std::vector<MessagePtr> Messages;
     typedef boost::shared_ptr<framing::MessageAppendBody> AppendPtr;
     typedef std::vector<AppendPtr> Appends;
 
@@ -60,24 +61,24 @@ class Reference
     
     const std::string& getId() const { return id; }
 
-    /** Add a transfer to be completed with this reference */
-    void transfer(TransferPtr transfer) { transfers.push_back(transfer); }
+    /** Add a message to be completed with this reference */
+    void addMessage(MessagePtr message) { messages.push_back(message); }
 
     /** Append more data to the reference */
     void append(AppendPtr ptr) { appends.push_back(ptr); }
 
-    /** Close the reference, complete each associated transfer */
+    /** Close the reference, complete each associated message */
     void close();
 
     const Appends& getAppends() const { return appends; }
-    const Transfers& getTransfers() const { return transfers; }
+    const Messages& getMessages() const { return messages; }
     
   private:
-    void complete(TransferPtr transfer);
+    void complete(MessagePtr message);
     
     Id id;
     ReferenceRegistry* registry;
-    Transfers transfers;
+    Messages messages;
     Appends appends;
 };
 

@@ -43,14 +43,14 @@ Reference&  ReferenceRegistry::get(const Reference::Id& id) {
 }
 
 void  Reference::close() {
-    for_each(transfers.begin(), transfers.end(),
+    for_each(messages.begin(), messages.end(),
              boost::bind(&Reference::complete, this, _1));
     registry->references.erase(getId());
 }
 
-void Reference::complete(TransferPtr transfer) {
-    MessageMessage::shared_ptr msg(new MessageMessage(transfer, *this));
-    registry->handler.complete(msg);
+void Reference::complete(MessagePtr message) {
+    message->setAppends(appends);
+    registry->handler.complete(message);
 }
 
 }} // namespace qpid::broker

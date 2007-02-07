@@ -25,26 +25,24 @@
 #include "MessageAppendBody.h"
 #include "Reference.h"
 #include "framing/FieldTable.h"
+#include "framing/BasicHeaderProperties.h"
 
 #include <iostream>
 
 using namespace std;
-using namespace qpid::broker;
 using namespace qpid::framing;
-	
-MessageMessage::MessageMessage(TransferPtr transfer_)
-    : Message(transfer_->getDestination(), transfer_->getRoutingKey(),
-              transfer_->getMandatory(), transfer_->getImmediate(),
-              transfer_),
-      transfer(transfer_)
-{}
 
-MessageMessage::MessageMessage(TransferPtr transfer_, const Reference& ref)
-    : Message(transfer_->getDestination(), transfer_->getRoutingKey(),
-              transfer_->getMandatory(), transfer_->getImmediate(),
-              transfer_),
-      transfer(transfer_),
-      appends(ref.getAppends())
+namespace qpid {
+namespace broker {
+	
+MessageMessage::MessageMessage(
+    ConnectionToken* publisher, TransferPtr transfer_
+) : Message(publisher, transfer_->getDestination(),
+            transfer_->getRoutingKey(),
+            transfer_->getMandatory(),
+            transfer_->getImmediate(),
+            transfer_),
+    transfer(transfer_)
 {}
 
 void MessageMessage::deliver(
@@ -55,29 +53,29 @@ void MessageMessage::deliver(
 {
     channel.send(
     	new MessageTransferBody(channel.getVersion(), 
-        transfer->getTicket(),
-        consumerTag,
-        getRedelivered(),
-        transfer->getImmediate(),
-        transfer->getTtl(),
-        transfer->getPriority(),
-        transfer->getTimestamp(),
-        transfer->getDeliveryMode(),
-        transfer->getExpiration(),
-        getExchange(),
-        getRoutingKey(),
-        transfer->getMessageId(),
-        transfer->getCorrelationId(),
-        transfer->getReplyTo(),
-        transfer->getContentType(),
-        transfer->getContentEncoding(),
-        transfer->getUserId(),
-        transfer->getAppId(),
-        transfer->getTransactionId(),
-        transfer->getSecurityToken(),
-        transfer->getApplicationHeaders(),
-        transfer->getBody(),
-        transfer->getMandatory()));
+                                transfer->getTicket(),
+                                consumerTag,
+                                getRedelivered(),
+                                transfer->getImmediate(),
+                                transfer->getTtl(),
+                                transfer->getPriority(),
+                                transfer->getTimestamp(),
+                                transfer->getDeliveryMode(),
+                                transfer->getExpiration(),
+                                getExchange(),
+                                getRoutingKey(),
+                                transfer->getMessageId(),
+                                transfer->getCorrelationId(),
+                                transfer->getReplyTo(),
+                                transfer->getContentType(),
+                                transfer->getContentEncoding(),
+                                transfer->getUserId(),
+                                transfer->getAppId(),
+                                transfer->getTransactionId(),
+                                transfer->getSecurityToken(),
+                                transfer->getApplicationHeaders(),
+                                transfer->getBody(),
+                                transfer->getMandatory()));
 }
 
 void MessageMessage::sendGetOk(
@@ -107,19 +105,11 @@ qpid::framing::BasicHeaderProperties* MessageMessage::getHeaderProperties()
 
 const FieldTable& MessageMessage::getApplicationHeaders()
 {
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return transfer->getApplicationHeaders();
 }
 bool MessageMessage::isPersistent()
 {
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
-    return false;               // FIXME aconway 2007-02-05: 
-}
-
-const ConnectionToken* const MessageMessage::getPublisher()
-{
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
-    return 0;               // FIXME aconway 2007-02-05: 
+    return transfer->getDeliveryMode() == PERSISTENT;
 }
 
 u_int32_t MessageMessage::encodedSize()
@@ -146,3 +136,5 @@ u_int64_t MessageMessage::expectedContentSize()
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
+
+}} // namespace qpid::broker

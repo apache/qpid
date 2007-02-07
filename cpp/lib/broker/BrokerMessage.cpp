@@ -41,11 +41,10 @@ BasicMessage::BasicMessage(
     const string& _exchange, const string& _routingKey, 
     bool _mandatory, bool _immediate, framing::AMQMethodBody::shared_ptr respondTo
 ) :
-    Message(_exchange, _routingKey, _mandatory, _immediate, respondTo),
-    publisher(_publisher),
+    Message(_publisher, _exchange, _routingKey, _mandatory,
+            _immediate, respondTo),
     size(0)
-{
-}
+{}
 
 // FIXME aconway 2007-02-01: remove.
 // BasicMessage::BasicMessage(Buffer& buffer, bool headersOnly, u_int32_t contentChunkSize) : 
@@ -56,7 +55,7 @@ BasicMessage::BasicMessage(
 // }
 
 // For tests only.
-BasicMessage::BasicMessage() : publisher(0), size(0)
+BasicMessage::BasicMessage() : size(0)
 {}
 
 BasicMessage::~BasicMessage(){
@@ -124,10 +123,6 @@ BasicHeaderProperties* BasicMessage::getHeaderProperties(){
 
 const FieldTable& BasicMessage::getApplicationHeaders(){
     return getHeaderProperties()->getHeaders();
-}
-
-const ConnectionToken* const BasicMessage::getPublisher(){
-    return publisher;
 }
 
 bool BasicMessage::isPersistent()
@@ -230,12 +225,14 @@ void BasicMessage::releaseContent(MessageStore* store)
         store->stage(this);
     }
     if (!content.get() || content->size() > 0) {
+        // FIXME aconway 2007-02-07: handle MessageMessage.
         //set content to lazy loading mode (but only if there is stored content):
 
         //Note: the LazyLoadedContent instance contains a raw pointer to the message, however it is
         //      then set as a member of that message so its lifetime is guaranteed to be no longer than
         //      that of the message itself
-        content = std::auto_ptr<Content>(new LazyLoadedContent(store, this, expectedContentSize()));
+        content = std::auto_ptr<Content>(
+            new LazyLoadedContent(store, this, expectedContentSize()));
     }
 }
 
