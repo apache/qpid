@@ -71,28 +71,20 @@ public class AMQChannel
      */
     private AtomicLong _deliveryTag = new AtomicLong(0);
 
-    /**
-     * A channel has a default queue (the last declared) that is used when no queue name is
-     * explictily set
-     */
+    /** A channel has a default queue (the last declared) that is used when no queue name is explictily set */
     private AMQQueue _defaultQueue;
 
-    /**
-     * This tag is unique per subscription to a queue. The server returns this in response to a
-     * basic.consume request.
-     */
+    /** This tag is unique per subscription to a queue. The server returns this in response to a basic.consume request. */
     private int _consumerTag;
 
     /**
-     * The current message - which may be partial in the sense that not all frames have been received yet -
-     * which has been received by this channel. As the frames are received the message gets updated and once all
-     * frames have been received the message can then be routed.
+     * The current message - which may be partial in the sense that not all frames have been received yet - which has
+     * been received by this channel. As the frames are received the message gets updated and once all frames have been
+     * received the message can then be routed.
      */
     private AMQMessage _currentMessage;
 
-    /**
-     * Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue.
-     */
+    /** Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue. */
     private final Map<String, AMQQueue> _consumerTag2QueueMap = new TreeMap<String, AMQQueue>();
 
     private final MessageStore _messageStore;
@@ -282,16 +274,16 @@ public class AMQChannel
     }
 
     /**
-     * Subscribe to a queue. We register all subscriptions in the channel so that
-     * if the channel is closed we can clean up all subscriptions, even if the
-     * client does not explicitly unsubscribe from all queues.
+     * Subscribe to a queue. We register all subscriptions in the channel so that if the channel is closed we can clean
+     * up all subscriptions, even if the client does not explicitly unsubscribe from all queues.
      *
      * @param tag     the tag chosen by the client (if null, server will generate one)
      * @param queue   the queue to subscribe to
      * @param session the protocol session of the subscriber
      * @param noLocal
-     * @return the consumer tag. This is returned to the subscriber and used in
-     *         subsequent unsubscribe requests
+     *
+     * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
+     *
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
@@ -331,13 +323,13 @@ public class AMQChannel
     {
         if (_transactional)
         {
-            synchronized(_txnBuffer)
+            synchronized (_txnBuffer)
             {
                 _txnBuffer.rollback();//releases messages
             }
         }
         unsubscribeAllConsumers(session);
-        requeue();        
+        requeue();
         _txnBuffer.commit();
     }
 
@@ -360,7 +352,7 @@ public class AMQChannel
      */
     public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, String consumerTag, AMQQueue queue)
     {
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
             _unacknowledgedMessageMap.put(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
             _lastDeliveryTag = deliveryTag;
@@ -369,14 +361,14 @@ public class AMQChannel
     }
 
     /**
-     * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel.
-     * May result in delivery to this same channel or to other subscribers.
+     * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel. May result in delivery to
+     * this same channel or to other subscribers.
      */
     public void requeue() throws AMQException
     {
         // we must create a new map since all the messages will get a new delivery tag when they are redelivered
         Map<Long, UnacknowledgedMessage> currentList;
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
             currentList = _unacknowledgedMessageMap;
             _unacknowledgedMessageMap = new LinkedHashMap<Long, UnacknowledgedMessage>(DEFAULT_PREFETCH);
@@ -388,41 +380,64 @@ public class AMQChannel
             {
                 unacked.message.setTxnBuffer(null);
 
+                unacked.message.release();
+
                 unacked.queue.deliver(unacked.message);
             }
         }
     }
 
-    /**
-     * Called to resend all outstanding unacknowledged messages to this same channel.
-     */
-    public void resend(AMQProtocolSession session)
+    /** Called to resend all outstanding unacknowledged messages to this same channel. */
+    public void resend(AMQProtocolSession session) throws AMQException
     {
         //messages go to this channel
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
-            for (Map.Entry<Long, UnacknowledgedMessage> entry : _unacknowledgedMessageMap.entrySet())
+            Iterator<Map.Entry<Long, UnacknowledgedMessage>> messageSetIterator =
+                    _unacknowledgedMessageMap.entrySet().iterator();
+
+            while (messageSetIterator.hasNext())
             {
+                Map.Entry<Long, UnacknowledgedMessage> entry = messageSetIterator.next();
+
                 long deliveryTag = entry.getKey();
                 String consumerTag = entry.getValue().consumerTag;
-                AMQMessage msg = entry.getValue().message;
-                msg.setRedelivered(true);
-                session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+
+                if (_consumerTag2QueueMap.containsKey(consumerTag))
+                {
+                    AMQMessage msg = entry.getValue().message;
+                    msg.setRedelivered(true);
+                    session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+                }
+                else
+                {
+                    UnacknowledgedMessage unacked = entry.getValue();
+
+                    if (unacked.queue != null)
+                    {
+                        unacked.message.setTxnBuffer(null);
+
+                        unacked.message.release();
+
+                        unacked.queue.deliver(unacked.message);
+                    }
+                    // delete the requeued message.
+                    messageSetIterator.remove();
+                }
             }
         }
     }
 
     /**
-     * Callback indicating that a queue has been deleted. We must update the structure of unacknowledged
-     * messages to remove the queue reference and also decrement any message reference counts, without
-     * actually removing the item sine we may get an ack for a delivery tag that was generated from the
-     * deleted queue.
+     * Callback indicating that a queue has been deleted. We must update the structure of unacknowledged messages to
+     * remove the queue reference and also decrement any message reference counts, without actually removing the item
+     * sine we may get an ack for a delivery tag that was generated from the deleted queue.
      *
      * @param queue
      */
     public void queueDeleted(AMQQueue queue)
     {
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
             for (Map.Entry<Long, UnacknowledgedMessage> unacked : _unacknowledgedMessageMap.entrySet())
             {
@@ -451,6 +466,7 @@ public class AMQChannel
      * @param deliveryTag the last delivery tag
      * @param multiple    if true will acknowledge all messages up to an including the delivery tag. if false only
      *                    acknowledges the single message specified by the delivery tag
+     *
      * @throws AMQException if the delivery tag is unknown (e.g. not outstanding) on this channel
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
@@ -473,7 +489,7 @@ public class AMQChannel
             //update the op to include this ack request
             if (multiple && deliveryTag == 0)
             {
-                synchronized(_unacknowledgedMessageMapLock)
+                synchronized (_unacknowledgedMessageMapLock)
                 {
                     //if have signalled to ack all, that refers only
                     //to all at this time
@@ -493,7 +509,7 @@ public class AMQChannel
 
     private void checkAck(long deliveryTag) throws AMQException
     {
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
             if (!_unacknowledgedMessageMap.containsKey(deliveryTag))
             {
@@ -512,7 +528,7 @@ public class AMQChannel
         if (multiple)
         {
             LinkedList<UnacknowledgedMessage> acked = new LinkedList<UnacknowledgedMessage>();
-            synchronized(_unacknowledgedMessageMapLock)
+            synchronized (_unacknowledgedMessageMapLock)
             {
                 if (deliveryTag == 0)
                 {
@@ -573,7 +589,7 @@ public class AMQChannel
         else
         {
             UnacknowledgedMessage msg;
-            synchronized(_unacknowledgedMessageMapLock)
+            synchronized (_unacknowledgedMessageMapLock)
             {
                 msg = _unacknowledgedMessageMap.remove(deliveryTag);
             }
@@ -616,7 +632,7 @@ public class AMQChannel
     {
         boolean suspend;
         //noinspection SynchronizeOnNonFinalField
-        synchronized(_unacknowledgedMessageMapLock)
+        synchronized (_unacknowledgedMessageMapLock)
         {
             suspend = _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark;
         }
@@ -629,7 +645,7 @@ public class AMQChannel
 
         if (isSuspended && !suspended)
         {
-            synchronized(_unacknowledgedMessageMapLock)
+            synchronized (_unacknowledgedMessageMapLock)
             {
                 // Continue being suspended if we are above the _prefetch_LowWaterMark
                 suspended = _unacknowledgedMessageMap.size() > _prefetch_LowWaterMark;
@@ -679,7 +695,7 @@ public class AMQChannel
     public void rollback() throws AMQException
     {
         //need to protect rollback and close from each other...
-        synchronized(_txnBuffer)
+        synchronized (_txnBuffer)
         {
             _txnBuffer.rollback();
         }

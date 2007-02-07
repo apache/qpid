@@ -762,4 +762,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
 
     }
+
+    public void rollback()
+    {
+        _synchronousQueue.clear();
+    }
 }

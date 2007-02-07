@@ -20,23 +20,20 @@
  */
 package org.apache.qpid.client.util;
 
+import org.apache.qpid.AMQException;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * A blocking queue that emits events above a user specified threshold allowing
- * the caller to take action (e.g. flow control) to try to prevent the queue
- * growing (much) further. The underlying queue itself is not bounded therefore
- * the caller is not obliged to react to the events.
- * <p/>
- * This implementation is <b>only</b> safe where we have a single thread adding
- * items and a single (different) thread removing items.
+ * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow
+ * control) to try to prevent the queue growing (much) further. The underlying queue itself is not bounded therefore the
+ * caller is not obliged to react to the events. <p/> This implementation is <b>only</b> safe where we have a single
+ * thread adding items and a single (different) thread removing items.
  */
 public class FlowControllingBlockingQueue
 {
-    /**
-     * This queue is bounded and is used to store messages before being dispatched to the consumer
-     */
+    /** This queue is bounded and is used to store messages before being dispatched to the consumer */
     private final BlockingQueue _queue = new LinkedBlockingQueue();
 
     private final int _flowControlHighThreshold;
@@ -44,11 +41,13 @@ public class FlowControllingBlockingQueue
 
     private final ThresholdListener _listener;
 
-    /**
-     * We require a separate count so we can track whether we have reached the
-     * threshold
-     */
+    /** We require a separate count so we can track whether we have reached the threshold */
     private int _count;
+
+    public void clear()
+    {
+        _queue.clear();
+    }
 
     public interface ThresholdListener
     {
@@ -74,7 +73,7 @@ public class FlowControllingBlockingQueue
         Object o = _queue.take();
         if (_listener != null)
         {
-            synchronized(_listener)
+            synchronized (_listener)
             {
                 if (_count-- == _flowControlLowThreshold)
                 {
@@ -90,7 +89,7 @@ public class FlowControllingBlockingQueue
         _queue.add(o);
         if (_listener != null)
         {
-            synchronized(_listener)
+            synchronized (_listener)
             {
                 if (++_count == _flowControlHighThreshold)
                 {
