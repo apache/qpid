@@ -163,7 +163,6 @@ MessageHandlerImpl::recover(const MethodContext& context,
                             bool requeue)
 {
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented");
-    // FIXME aconway 2007-02-06: Call to recover hangs client.
     channel.recover(requeue);
     client.ok(context);
 }
