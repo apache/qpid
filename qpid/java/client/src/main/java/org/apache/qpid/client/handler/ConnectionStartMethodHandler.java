@@ -63,7 +63,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         byte major = (byte) body.versionMajor;
         byte minor = (byte) body.versionMinor;
 
-        if(checkVersionOK(major, minor))
+        if (checkVersionOK(major, minor))
         {
 
             protocolSession.setProtocolVersion(major, minor);
@@ -169,16 +169,25 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
     private boolean checkVersionOK(byte versionMajor, byte versionMinor)
     {
-        byte[][] supportedVersions = ProtocolVersionList.pv;
-        boolean supported = false;
-        int i = supportedVersions.length;
-        while(i-- != 0 && !supported)
+        // this system property allows the client to accept whatever version the broker
+        // offers. Useful only when doing testing.
+        if (Boolean.getBoolean("qpid.accept.broker.version"))
         {
-            supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
-                        && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
+            return true;
         }
+        else
+        {
+            byte[][] supportedVersions = ProtocolVersionList.pv;
+            boolean supported = false;
+            int i = supportedVersions.length;
+            while(i-- != 0 && !supported)
+            {
+                supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
+                            && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
+            }
 
-        return supported;
+            return supported;
+        }
     }
 
     private String getFullSystemInfo()
