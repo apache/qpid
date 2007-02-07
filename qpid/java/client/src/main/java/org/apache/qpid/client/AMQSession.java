@@ -228,7 +228,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                     int errorCode = message.bounceBody.replyCode;
                     String reason = message.bounceBody.replyText;
-                    _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+                    }
 
                     //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
                     if (errorCode == AMQConstant.NO_CONSUMERS.getCode())
@@ -274,6 +277,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
 
                 _queue.clear();
+
+                _logger.trace("Queue cleared");
 
                 for (BasicMessageConsumer consumer : _consumers.values())
                 {
@@ -325,7 +330,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                           {
                                                               if (_acknowledgeMode == NO_ACKNOWLEDGE)
                                                               {
-                                                                  _logger.warn("Above threshold(" + _defaultPrefetchHighMark + ") so suspending channel. Current value is " + currentValue);
+                                                                  if (_logger.isDebugEnabled())
+                                                                  {
+                                                                      _logger.debug("Above threshold(" + _defaultPrefetchHighMark + ") so suspending channel. Current value is " + currentValue);
+                                                                  }
 
                                                                   new Thread(new SuspenderRunner(true)).start();
                                                               }
@@ -335,7 +343,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                           {
                                                               if (_acknowledgeMode == NO_ACKNOWLEDGE)
                                                               {
-                                                                  _logger.warn("Below threshold(" + _defaultPrefetchLowMark + ") so unsuspending channel. Current value is " + currentValue);
+                                                                  if (_logger.isDebugEnabled())
+                                                                  {
+                                                                      _logger.debug("Below threshold(" + _defaultPrefetchLowMark + ") so unsuspending channel. Current value is " + currentValue);
+                                                                  }
 
                                                                   new Thread(new SuspenderRunner(false)).start();
                                                               }
@@ -1815,10 +1826,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         synchronized (_suspensionLock)
         {
-            _logger.warn("Setting channel flow : " + (suspend ? "suspended" : "unsuspended"));
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Setting channel flow : " + (suspend ? "suspended" : "unsuspended"));
+            }
 
             _suspended = suspend;
-            
+
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.client.util;
 
-import org.apache.qpid.AMQException;
+import org.apache.log4j.Logger;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,6 +33,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class FlowControllingBlockingQueue
 {
+    private static final Logger _logger = Logger.getLogger(FlowControllingBlockingQueue.class);
+
     /** This queue is bounded and is used to store messages before being dispatched to the consumer */
     private final BlockingQueue _queue = new LinkedBlockingQueue();
 
@@ -71,6 +73,12 @@ public class FlowControllingBlockingQueue
     public Object take() throws InterruptedException
     {
         Object o = _queue.take();
+
+        if (_logger.isTraceEnabled())
+        {
+            _logger.trace("Object taken from queue:" + o);
+        }
+
         if (_listener != null)
         {
             synchronized (_listener)
@@ -87,6 +95,12 @@ public class FlowControllingBlockingQueue
     public void add(Object o)
     {
         _queue.add(o);
+
+        if (_logger.isTraceEnabled())
+        {
+            _logger.trace("Object added to queue:" + o);
+        }
+        
         if (_listener != null)
         {
             synchronized (_listener)
