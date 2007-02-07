@@ -217,14 +217,13 @@ MessageHandlerImpl::transfer(const MethodContext& context,
     MessageTransferBody::shared_ptr transfer(
         boost::shared_polymorphic_downcast<MessageTransferBody>(
             context.methodBody));
-    if (body.isInline()) {
-        Message::shared_ptr msg(new MessageMessage(transfer));
-        channel.handleInlineTransfer(msg, exchange);
-    }
-    else {
-        // Add to reference.
-        references.get(body.getValue()).transfer(transfer);
-    }
+    MessageMessage::shared_ptr message(
+        new MessageMessage(&connection, transfer));
+    
+    if (body.isInline()) 
+        channel.handleInlineTransfer(message, exchange);
+    else 
+        references.get(body.getValue()).addMessage(message);
     client.ok(context);
 }
 

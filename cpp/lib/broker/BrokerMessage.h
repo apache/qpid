@@ -52,7 +52,6 @@ using framing::string;
  * request.
  */
 class BasicMessage : public Message {
-    const ConnectionToken* const publisher;
     framing::AMQHeaderBody::shared_ptr header;
     std::auto_ptr<Content> content;
     sys::Mutex contentLock;
@@ -72,7 +71,6 @@ class BasicMessage : public Message {
     void setHeader(framing::AMQHeaderBody::shared_ptr header);
     void addContent(framing::AMQContentBody::shared_ptr data);
     bool isComplete();
-    const ConnectionToken* const getPublisher();
 
     void deliver(framing::ChannelAdapter&, 
                  const string& consumerTag, 

@@ -41,14 +41,20 @@ class ReferenceTest : public CppUnit::TestCase
 
 
     struct MockCompletionHandler : public CompletionHandler {
-        std::vector<Message::shared_ptr> messages;
-        void complete(Message::shared_ptr msg) { messages.push_back(msg); }
+        std::vector<MessageMessage::shared_ptr> messages;
+        void complete(Message::shared_ptr m) {
+            MessageMessage::shared_ptr mm =
+                dynamic_pointer_cast<MessageMessage>(m);
+            CPPUNIT_ASSERT(mm);
+            messages.push_back(mm);
+        }
     };
 
     MockCompletionHandler handler;
     ProtocolVersion v;
     ReferenceRegistry registry;
     MessageTransferBody::shared_ptr t1, t2;
+    MessageMessage::shared_ptr m1, m2;
     MessageAppendBody::shared_ptr a1, a2;
   public:
 
@@ -56,6 +62,8 @@ class ReferenceTest : public CppUnit::TestCase
         registry(handler),
         t1(new MessageTransferBody(v)),
         t2(new MessageTransferBody(v)),
+        m1(new MessageMessage(0, t1)),
+        m2(new MessageMessage(0, t2)),
         a1(new MessageAppendBody(v)),
         a2(new MessageAppendBody(v))
     {}
@@ -74,19 +82,11 @@ class ReferenceTest : public CppUnit::TestCase
         } catch(...) {}
     }
 
-    MessageMessage& handlerMessage(size_t i) {
-        CPPUNIT_ASSERT(handler.messages.size() > i);
-        MessageMessage* msg = dynamic_cast<MessageMessage*>(
-            handler.messages[i].get());
-        CPPUNIT_ASSERT(msg);
-        return *msg;
-    }
-    
     void testReference() {
         Reference& ref = registry.open("foo");
-        ref.transfer(t1);
-        ref.transfer(t2);
-        CPPUNIT_ASSERT_EQUAL(size_t(2), ref.getTransfers().size());
+        ref.addMessage(m1);
+        ref.addMessage(m2);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), ref.getMessages().size());
         ref.append(a1);
         ref.append(a2);
         CPPUNIT_ASSERT_EQUAL(size_t(2), ref.getAppends().size());
@@ -96,16 +96,16 @@ class ReferenceTest : public CppUnit::TestCase
             CPPUNIT_FAIL("Expected exception");
         } catch(...) {}
 
-        vector<Message::shared_ptr>& messages = handler.messages;
+        vector<MessageMessage::shared_ptr>& messages = handler.messages;
         CPPUNIT_ASSERT_EQUAL(size_t(2), messages.size());
 
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(0).getTransfer(), t1);
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(0).getAppends()[0], a1);
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(0).getAppends()[1], a2);
+        CPPUNIT_ASSERT_EQUAL(messages[0], m1);
+        CPPUNIT_ASSERT_EQUAL(messages[0]->getAppends()[0], a1);
+        CPPUNIT_ASSERT_EQUAL(messages[0]->getAppends()[1], a2);
 
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(1).getTransfer(), t2);
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(1).getAppends()[0], a1);
-        CPPUNIT_ASSERT_EQUAL(handlerMessage(1).getAppends()[1], a2);
+        CPPUNIT_ASSERT_EQUAL(messages[1], m2);
+        CPPUNIT_ASSERT_EQUAL(messages[1]->getAppends()[0], a1);
+        CPPUNIT_ASSERT_EQUAL(messages[1]->getAppends()[1], a2);
     }
                              
     
