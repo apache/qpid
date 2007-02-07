@@ -55,4 +55,16 @@ public class ConcurrentLinkedQueueAtomicSize<E> extends ConcurrentLinkedQueue<E>
 
         return e;
     }
+
+    @Override
+    public boolean remove(Object o)
+    {
+        if (super.remove(o))
+        {
+            _size.decrementAndGet();
+            return true;
+        }
+
+        return false;
+    }
 }

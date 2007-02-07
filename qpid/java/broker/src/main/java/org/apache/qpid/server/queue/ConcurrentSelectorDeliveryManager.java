@@ -242,6 +242,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
+    public synchronized void removeMessages(List<AMQMessage> messageList)
+    {
+        for (AMQMessage msg : messageList)
+        {
+            if (_messages.remove(msg))
+            {
+                _totalMessageSize.getAndAdd(-msg.getSize());
+            }
+        }
+    }
 
     public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
