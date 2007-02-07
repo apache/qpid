@@ -94,8 +94,11 @@ bool MessageMessage::isComplete()
 
 u_int64_t MessageMessage::contentSize() const
 {
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
-    return 0;               // FIXME aconway 2007-02-05: 
+	// FIXME astitcher 2007-2-7 only works for inline content
+	if (transfer->getBody().isInline())
+	    return transfer->getBody().size();
+	else
+    	THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");		 
 }
 
 qpid::framing::BasicHeaderProperties* MessageMessage::getHeaderProperties()
