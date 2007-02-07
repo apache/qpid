@@ -225,4 +225,20 @@ public interface ManagedQueue
                     impact= MBeanOperationInfo.ACTION)
     void clearQueue() throws IOException, JMException;
 
+    /**
+     * Moves the messages in given range of message Ids to given Queue. QPID-170
+     * @param fromMessageId  first in the range of message ids
+     * @param toMessageId    last in the range of message ids
+     * @param toQueue        where the messages are to be moved
+     * @throws IOException
+     * @throws JMException
+     * @throws AMQException
+     */
+    @MBeanOperation(name="moveMessages",
+                    description="You can move messages to another queue from this queue ",
+                    impact= MBeanOperationInfo.ACTION)
+    void moveMessages(@MBeanOperationParameter(name="from MessageId", description="from MessageId")long fromMessageId,
+                      @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
+                      @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
+            throws IOException, JMException, AMQException;
 }

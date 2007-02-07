@@ -387,19 +387,18 @@ public class JMXServerRegistry extends ServerRegistry
         return _operationModelMap.get(mbean.getUniqueName());
     }
     
-    public String[] getQueueNames(String virtualHostName)
+    public List<String> getQueueNames(String virtualHostName)
     {
         List<ManagedBean> list = getQueues(virtualHostName);
         if (list == null)
             return null;
         
-        String[] queues = new String[list.size()];
-        int i = 0;
+        List<String> queueNames = new ArrayList<String>();
         for (ManagedBean mbean : list)
         {
-            queues[i++] = mbean.getName();
+            queueNames.add(mbean.getName());
         }
-        return queues;
+        return queueNames;
     }
     
     public String[] getExchangeNames(String virtualHostName)

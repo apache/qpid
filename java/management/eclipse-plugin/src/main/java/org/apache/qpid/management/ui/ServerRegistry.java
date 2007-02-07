@@ -128,7 +128,7 @@ public abstract class ServerRegistry
     
     public abstract OperationDataModel getOperationModel(ManagedBean mbean);
     
-    public abstract String[] getQueueNames(String vistualHostName);
+    public abstract List<String> getQueueNames(String vistualHostName);
     
     public abstract String[] getExchangeNames(String vistualHostName);
     
