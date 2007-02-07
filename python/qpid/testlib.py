@@ -129,7 +129,7 @@ Options:
             print "======================================="
         return result.wasSuccessful()
 
-    def connect(self, host=None, port=None, spec=None, errata=None, user=None, password=None):
+    def connect(self, host=None, port=None, spec=None, errata=None, user=None, password=None, tune_params=None):
         """Connect to the broker, returns a qpid.client.Client"""
         host = host or self.host
         port = port or self.port
@@ -138,7 +138,7 @@ Options:
         user = user or self.user
         password = password or self.password
         client = qpid.client.Client(host, port, qpid.spec.load(spec, errata))
-        client.start({"LOGIN": user, "PASSWORD": password})
+        client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
         return client
 
 
