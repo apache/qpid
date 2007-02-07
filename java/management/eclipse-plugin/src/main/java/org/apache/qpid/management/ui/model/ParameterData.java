@@ -31,18 +31,17 @@ public class ParameterData
     private String _type;
     private Object _value;
     
-    ParameterData(String name)
+    ParameterData(String name, String desc, String type)
     {
         this._name = name;
+        this._description = desc;
+        this._type = type;
+        setDefaultValue();
     }
     
     public String getDescription()
     {
         return _description;
-    }
-    public void setDescription(String description)
-    {
-        this._description = description;
     }
     
     public String getName()
@@ -53,10 +52,6 @@ public class ParameterData
     public String getType()
     {
         return _type;
-    }
-    public void setType(String type)
-    {
-        this._type = type;
     }
 
     public Object getValue()

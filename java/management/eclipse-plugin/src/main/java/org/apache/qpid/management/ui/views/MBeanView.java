@@ -39,6 +39,7 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
@@ -184,6 +185,15 @@ public class MBeanView extends ViewPart
         }
 
         TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
+        /*
+         * This solution can be used if there are many versions of Qpid running. Otherwise
+         * there is no need to create a tabFolder everytime a bean is selected.
+        if (tabFolder != null && !tabFolder.isDisposed())
+        {
+            tabFolder.dispose();
+        }
+        tabFolder = createTabFolder();
+        */
         if (tabFolder == null)
         {
             tabFolder = createTabFolder();

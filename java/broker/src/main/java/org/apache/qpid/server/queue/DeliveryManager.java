@@ -76,6 +76,8 @@ interface DeliveryManager
 
     long clearAllMessages(StoreContext storeContext) throws AMQException;
 
+    void removeMessages(List<AMQMessage> messageListToRemove);
+
     List<AMQMessage> getMessages();
 
     void populatePreDeliveryQueue(Subscription subscription);

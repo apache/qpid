@@ -45,9 +45,8 @@ public class OperationDataModel
             for (int i = 0; i < parametersCount; i++)
             {
                 MBeanParameterInfo paramInfo = opInfo.getSignature()[i];
-                ParameterData param = new ParameterData(paramInfo.getName());
-                param.setDescription(paramInfo.getDescription());
-                param.setType(paramInfo.getType());
+                ParameterData param = new ParameterData(paramInfo.getName(), paramInfo.getDescription(),
+                                                        paramInfo.getType());
                 paramList.add(param);
             } 
             opData.setParameters(paramList);

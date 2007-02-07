@@ -163,7 +163,7 @@ public class MBeanUtility
         }
         else if (ex instanceof MBeanException)
         {
-            String cause = ((MBeanException)ex).getTargetException().toString();
+            String cause = ((MBeanException)ex).getTargetException().getMessage();
             if (cause == null)
                 cause = ex.toString();
             ViewUtility.popupInfoMessage(mbean.getInstanceName(), cause);
@@ -178,7 +178,7 @@ public class MBeanUtility
         }
         else 
         {
-            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.toString());
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
             ex.printStackTrace();
         }
         
