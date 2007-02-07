@@ -20,6 +20,7 @@ from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.content import Content
 from qpid.testlib import testrunner, TestBase
+from qpid.reference import Reference, ReferenceId
 
 class MessageTests(TestBase):
     """Tests for 'methods' on the amqp message 'class'"""
@@ -413,3 +414,66 @@ class MessageTests(TestBase):
         reply = channel.message_get(no_ack=True)
         self.assertEqual(reply.method.klass.name, "message")
         self.assertEqual(reply.method.name, "get-empty")
+
+    def test_reference_simple(self):
+        """
+        Test basic ability to handle references
+        """
+        channel = self.channel
+        channel.queue_declare(queue="ref_queue", exclusive=True)
+        channel.message_consume(queue="ref_queue", destination="c1")
+        queue = self.client.queue("c1")
+
+        refId = "myref"
+        channel.message_open(reference=refId)
+        channel.message_append(reference=refId, bytes="abcd")
+        channel.synchronous = False
+        ack = channel.message_transfer(routing_key="ref_queue", body=ReferenceId(refId))
+        channel.synchronous = True
+
+        channel.message_append(reference=refId, bytes="efgh")
+        channel.message_append(reference=refId, bytes="ijkl")
+        channel.message_close(reference=refId)
+
+        #first, wait for the ok for the transfer
+        ack.get_response(timeout=1)
+        
+        msg = queue.get(timeout=1)
+        if isinstance(msg, Reference):
+            #should we force broker to deliver as reference by frame
+            #size limit? or test that separately? for compliance, 
+            #allowing either seems best for now...            
+            data = msg.get_complete()
+        else:
+            data = msg.body
+        self.assertEquals("abcdefghijkl", data)
+
+
+    def test_reference_large(self):
+        """
+        Test basic ability to handle references whose content exceeds max frame size
+        """
+        channel = self.channel
+        self.queue_declare(queue="ref_queue")
+
+        #generate a big data string (> max frame size of consumer):
+        data = "0123456789"
+        for i in range(0, 10):
+            data += data
+        #send it inline    
+        channel.synchronous = False
+        ack = channel.message_transfer(routing_key="ref_queue", body=data)
+        channel.synchronous = True
+        #first, wait for the ok for the transfer
+        ack.get_response(timeout=1)
+
+        #create a new connection for consumer, with specific max frame size (< data)
+        other = self.connect(tune_params={"channel_max":10, "frame_max":5120, "heartbeat":0})
+        ch2 = other.channel(1)
+        ch2.channel_open()
+        ch2.message_consume(queue="ref_queue", destination="c1")
+        queue = other.queue("c1")
+        
+        msg = queue.get(timeout=1)
+        self.assertTrue(isinstance(msg, Reference))
+        self.assertEquals(data, msg.get_complete())
