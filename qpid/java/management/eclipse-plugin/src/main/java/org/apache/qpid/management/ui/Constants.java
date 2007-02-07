@@ -50,6 +50,7 @@ public class Constants
     public final static String ATTRIBUTE_QUEUE_CONSUMERCOUNT = "ActiveConsumerCount";    
     public final static String OPERATION_CREATE_QUEUE = "createNewQueue";
     public final static String OPERATION_CREATE_BINDING = "createNewBinding";
+    public final static String OPERATION_MOVE_MESSAGES = "moveMessages";
     
     public final static String ALL = "All";
     

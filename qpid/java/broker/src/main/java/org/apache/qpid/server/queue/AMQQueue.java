@@ -36,6 +36,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -101,10 +102,7 @@ public class AMQQueue implements Managable, Comparable
 
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
 
-
-
     private List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
-
 
     /**
      * Manages message delivery.
@@ -290,6 +288,60 @@ public class AMQQueue implements Managable, Comparable
         }
 
         return msg;
+    }
+
+    /**
+     * @see ManagedQueue#moveMessages
+     * @param fromMessageId
+     * @param toMessageId
+     * @param queueName
+     * @param storeContext
+     * @throws AMQException
+     */
+    public synchronized void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
+                                                        StoreContext storeContext) throws AMQException
+    {
+        AMQQueue anotherQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+        List<AMQMessage> list = getMessagesOnTheQueue();
+        List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
+        int maxMessageCountToBeMoved = (int)(toMessageId - fromMessageId + 1);
+        for (AMQMessage message : list)
+        {
+            long msgId = message.getMessageId();
+            if (msgId >= fromMessageId && msgId <= toMessageId)
+            {
+                foundMessagesList.add(message);
+            }
+            // break the loop as soon as messages to be removed are found
+            if (foundMessagesList.size() == maxMessageCountToBeMoved)
+            {
+                break;
+            }
+        }
+
+        // move messages to another queue
+        for (AMQMessage message : foundMessagesList)
+        {
+            try
+            {
+                anotherQueue.process(storeContext, message);
+            }
+            catch(AMQException ex)
+            {
+                foundMessagesList.subList(foundMessagesList.indexOf(message), foundMessagesList.size()).clear();
+                // Exception occured, so rollback the changes
+                anotherQueue.removeMessages(foundMessagesList);
+                throw ex;
+            }
+        }
+
+        // moving is successful, now remove from original queue
+        removeMessages(foundMessagesList);
+    }
+
+    public synchronized void removeMessages(List<AMQMessage> messageList)
+    {
+        _deliveryMgr.removeMessages(messageList);
     }
 
     /**

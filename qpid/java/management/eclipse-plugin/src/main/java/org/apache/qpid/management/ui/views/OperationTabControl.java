@@ -255,7 +255,14 @@ public class OperationTabControl extends TabControl
             String[] items = null;
             if (param.getName().equals(Constants.QUEUE))
             {
-                items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
+                List<String> qList = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
+                // Customization for AMQQueueMBean method Constants.OPERATION_MOVE_MESSAGES
+                if (_opData.getName().equals(Constants.OPERATION_MOVE_MESSAGES))
+                {
+                    qList.remove(_mbean.getName());    
+                }
+                // End of Customization
+                items = qList.toArray(new String[0]);
             }
             else if (param.getName().equals(Constants.EXCHANGE))
             {
@@ -269,8 +276,14 @@ public class OperationTabControl extends TabControl
             if (items != null)
             {
                 org.eclipse.swt.widgets.List _list = new org.eclipse.swt.widgets.List(_paramsComposite, SWT.BORDER | SWT.V_SCROLL);
-                int listSize = _form.getClientArea().height / 3;
+                int listSize = _form.getClientArea().height * 2 / 3;
                 int itemsHeight = items.length * (_list.getItemHeight() + 2);
+                // Set a min height for the list widget (set it to min 4 items)
+                if (items.length < 4)
+                {
+                    itemsHeight = 4 * (_list.getItemHeight() + 2);
+                }
+                
                 listSize = (listSize > itemsHeight) ? itemsHeight : listSize;
                 parameterPositionOffset = parameterPositionOffset + listSize;
                 formData.bottom = new FormAttachment(0, parameterPositionOffset);
@@ -296,7 +309,9 @@ public class OperationTabControl extends TabControl
                 formData.left = new FormAttachment(label, 5);
                 formData.right = new FormAttachment(valueWidth);
                 text.setLayoutData(formData);
+                // Listener to assign value to the parameter
                 text.addKeyListener(keyListener);
+                // Listener to verify if the entered key is valid
                 text.addVerifyListener(verifyListener);
                 text.setData(param);
             }
@@ -358,9 +373,9 @@ public class OperationTabControl extends TabControl
         formData.left = new FormAttachment(label, 5);
         formData.right = new FormAttachment(valueWidth);
 
-        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);        
-        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
-        combo.setItems(items);
+        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
+        List<String> qList = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
+        combo.setItems(qList.toArray(new String[0]));
         combo.add("Select Queue", 0); 
         combo.select(0);
         combo.setLayoutData(formData);
@@ -513,6 +528,8 @@ public class OperationTabControl extends TabControl
         {
             if (controls[i] instanceof Combo)
                 ((Combo)controls[i]).select(0);
+            if (controls[i] instanceof org.eclipse.swt.widgets.List)
+                ((org.eclipse.swt.widgets.List)controls[i]).deselectAll();
             else if (controls[i] instanceof Text)
                 ((Text)controls[i]).setText("");
             else if (controls[i] instanceof Composite)
@@ -685,7 +702,15 @@ public class OperationTabControl extends TabControl
             // Get the parameters widget and assign the text to the parameter
             String strValue = text.getText();
             ParameterData parameter = (ParameterData)text.getData();
-            parameter.setValueFromString(strValue);
+            try
+            {
+                parameter.setValueFromString(strValue);
+            }
+            catch(Exception ex)
+            {
+                // Exception occured in setting parameter value. 
+                // ignore it. The value will not be assigned to the parameter
+            }
         }
     }
     
@@ -727,12 +752,10 @@ public class OperationTabControl extends TabControl
     {
         public void verifyText(VerifyEvent event)
         {
-            Text text = (Text)event.widget;
-            String string = event.text;
-            char [] chars = new char [string.length ()];
-            string.getChars (0, chars.length, chars, 0);
-            
-            ParameterData parameter = (ParameterData)text.getData();
+            ParameterData parameter = (ParameterData)event.widget.getData();
+            String text = event.text;
+            char [] chars = new char [text.length ()];
+            text.getChars(0, chars.length, chars, 0);           
             String type = parameter.getType();
             if (type.equals("int") || type.equals("java.lang.Integer") ||
                 type.equals("long") || type.equals("java.lang.Long"))
