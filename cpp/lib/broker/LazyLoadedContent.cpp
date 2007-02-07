@@ -25,6 +25,11 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+LazyLoadedContent::~LazyLoadedContent()
+{
+    store->destroy(msg);
+}
+
 LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const _msg, u_int64_t _expectedSize) : 
     store(_store), msg(_msg), expectedSize(_expectedSize) {}
 
@@ -61,7 +66,3 @@ void LazyLoadedContent::encode(Buffer&)
     //do nothing as all content is written as soon as it is added 
 }
 
-void LazyLoadedContent::destroy()
-{
-    store->destroy(msg);
-}
