@@ -34,14 +34,13 @@ namespace qpid {
             LazyLoadedContent(
                 MessageStore* const store, Message* const msg,
                 u_int64_t expectedSize);
+            ~LazyLoadedContent();
             void add(qpid::framing::AMQContentBody::shared_ptr data);
             u_int32_t size();
             void send(
                 framing::ChannelAdapter&,
                 u_int32_t framesize);
             void encode(qpid::framing::Buffer& buffer);
-            void destroy();
-            ~LazyLoadedContent(){}
         };
     }
 }

@@ -58,9 +58,7 @@ BasicMessage::BasicMessage(
 BasicMessage::BasicMessage() : size(0)
 {}
 
-BasicMessage::~BasicMessage(){
-    if (content.get()) content->destroy();
-}
+BasicMessage::~BasicMessage(){}
 
 void BasicMessage::setHeader(AMQHeaderBody::shared_ptr _header){
     this->header = _header;
