@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -62,12 +62,25 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
         byte major = (byte) body.versionMajor;
         byte minor = (byte) body.versionMinor;
-
-        if (checkVersionOK(major, minor))
+        boolean versionOk = false;
+        // for the purposes of interop, we can make the client accept the broker's version string.
+        // if it does, it then internally records the version as being the latest one that it understands.
+        // it needs to do this since frame lookup is done by version.
+        if (Boolean.getBoolean("qpid.accept.broker.version"))
         {
+            versionOk = true;
+            int lastIndex = ProtocolVersionList.pv.length - 1;
+            major = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MAJOR];
+            minor = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MINOR];
+        }
+        else
+        {
+            versionOk = checkVersionOK(major, minor);
+        }
 
+        if (versionOk)
+        {
             protocolSession.setProtocolVersion(major, minor);
-
 
             try
             {
@@ -127,28 +140,22 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
-                try
-                {
-                    clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
-                    clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
-                    clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
-                    clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
+                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
+                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
+                clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
+
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
                     protocolSession.getProtocolMajorVersion(),
-                    protocolSession.getProtocolMinorVersion(),	
+                    protocolSession.getProtocolMinorVersion(),
                     clientProperties,	// clientProperties
                     new AMQShortString(selectedLocale),	// locale
                     new AMQShortString(mechanism),	// mechanism
                     saslResponse));	// response
-                
+
             }
             catch (UnsupportedEncodingException e)
             {
@@ -169,25 +176,16 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
     private boolean checkVersionOK(byte versionMajor, byte versionMinor)
     {
-        // this system property allows the client to accept whatever version the broker
-        // offers. Useful only when doing testing.
-        if (Boolean.getBoolean("qpid.accept.broker.version"))
+        byte[][] supportedVersions = ProtocolVersionList.pv;
+        boolean supported = false;
+        int i = supportedVersions.length;
+        while(i-- != 0 && !supported)
         {
-            return true;
+            supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
+                        && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
         }
-        else
-        {
-            byte[][] supportedVersions = ProtocolVersionList.pv;
-            boolean supported = false;
-            int i = supportedVersions.length;
-            while(i-- != 0 && !supported)
-            {
-                supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
-                            && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
-            }
 
-            return supported;
-        }
+        return supported;
     }
 
     private String getFullSystemInfo()
