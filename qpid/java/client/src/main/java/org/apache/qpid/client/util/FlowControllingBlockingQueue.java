@@ -100,7 +100,7 @@ public class FlowControllingBlockingQueue
         {
             _logger.trace("Object added to queue:" + o);
         }
-        
+
         if (_listener != null)
         {
             synchronized (_listener)
@@ -111,6 +111,11 @@ public class FlowControllingBlockingQueue
                 }
             }
         }
+    }
+
+    public int size()
+    {
+        return _count;
     }
 }
 

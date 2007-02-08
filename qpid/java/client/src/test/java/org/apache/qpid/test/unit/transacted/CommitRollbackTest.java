@@ -269,7 +269,7 @@ public class CommitRollbackTest extends TestCase
 
         _session.commit();
         assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) result).getText());
+        assertEquals("test message was incorrect message", MESSAGE_TEXT, ((TextMessage) result).getText());
     }
 
 
@@ -297,4 +297,5 @@ public class CommitRollbackTest extends TestCase
 
         assertNull("test message should be null", result);
     }
+
 }

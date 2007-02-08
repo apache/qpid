@@ -37,8 +37,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
- * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like
- * that. It is described fully in RFC 006.
+ * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like that. It is described
+ * fully in RFC 006.
  */
 public class AMQQueue implements Managable, Comparable
 {
@@ -46,62 +46,41 @@ public class AMQQueue implements Managable, Comparable
 
     private final String _name;
 
-    /**
-     * null means shared
-     */
+    /** null means shared */
     private final String _owner;
 
     private final boolean _durable;
 
-    /**
-     * If true, this queue is deleted when the last subscriber is removed
-     */
+    /** If true, this queue is deleted when the last subscriber is removed */
     private final boolean _autoDelete;
 
-    /**
-     * Holds subscribers to the queue.
-     */
+    /** Holds subscribers to the queue. */
     private final SubscriptionSet _subscribers;
 
     private final SubscriptionFactory _subscriptionFactory;
 
-    /**
-     * Manages message delivery.
-     */
+    /** Manages message delivery. */
     private final DeliveryManager _deliveryMgr;
 
-    /**
-     * The queue registry with which this queue is registered.
-     */
+    /** The queue registry with which this queue is registered. */
     private final QueueRegistry _queueRegistry;
 
-    /**
-     * Used to track bindings to exchanges so that on deletion they can easily
-     * be cancelled.
-     */
+    /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
     private final ExchangeBindings _bindings = new ExchangeBindings(this);
 
-    /**
-     * Executor on which asynchronous delivery will be carriedout where required
-     */
+    /** Executor on which asynchronous delivery will be carriedout where required */
     private final Executor _asyncDelivery;
 
     private final AMQQueueMBean _managedObject;
 
-    /**
-     * max allowed size(KB) of a single message
-     */
+    /** max allowed size(KB) of a single message */
     private long _maximumMessageSize = 10000;
 
-    /**
-     * max allowed number of messages on a queue.
-     */
+    /** max allowed number of messages on a queue. */
     @Configured(path = "maximumMessageCount", defaultValue = "0")
     public int _maximumMessageCount;
 
-    /**
-     * max queue depth for the queue
-     */
+    /** max queue depth for the queue */
     @Configured(path = "maximumQueueDepth", defaultValue = "0")
     public long _maximumQueueDepth = 10000000;
 
@@ -117,9 +96,7 @@ public class AMQQueue implements Managable, Comparable
     @Configured(path = "minimumAlertRepeatGap", defaultValue = "0")
     public long _minimumAlertRepeatGap = 30000;
 
-    /**
-     * total messages received by the queue since startup.
-     */
+    /** total messages received by the queue since startup. */
     public long _totalMessagesReceived = 0;
 
     public int compareTo(Object o)
@@ -198,7 +175,7 @@ public class AMQQueue implements Managable, Comparable
         _autoDelete = autoDelete;
         _queueRegistry = queueRegistry;
         _asyncDelivery = asyncDelivery;
-        
+
         _managedObject = createMBean();
         _managedObject.register();
 
@@ -244,17 +221,13 @@ public class AMQQueue implements Managable, Comparable
         return _autoDelete;
     }
 
-    /**
-     * @return no of messages(undelivered) on the queue.
-     */
+    /** @return no of messages(undelivered) on the queue. */
     public int getMessageCount()
     {
         return _deliveryMgr.getQueueMessageCount();
     }
 
-    /**
-     * @return List of messages(undelivered) on the queue.
-     */
+    /** @return List of messages(undelivered) on the queue. */
     public List<AMQMessage> getMessagesOnTheQueue()
     {
         return _deliveryMgr.getMessages();
@@ -263,10 +236,11 @@ public class AMQQueue implements Managable, Comparable
     public long getQueueDepth()
     {
         return _deliveryMgr.getTotalMessageSize();
-    }    
+    }
 
     /**
      * @param messageId
+     *
      * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
      */
     public AMQMessage getMessageOnTheQueue(long messageId)
@@ -285,9 +259,7 @@ public class AMQQueue implements Managable, Comparable
         return msg;
     }
 
-    /**
-     * @return MBean object associated with this Queue
-     */
+    /** @return MBean object associated with this Queue */
     public ManagedObject getManagedObject()
     {
         return _managedObject;
@@ -344,17 +316,13 @@ public class AMQQueue implements Managable, Comparable
         return _deliveryMgr.getOldestMessageArrival();
     }
 
-    /**
-     * Removes the AMQMessage from the top of the queue.
-     */
+    /** Removes the AMQMessage from the top of the queue. */
     public void deleteMessageFromTop() throws AMQException
     {
         _deliveryMgr.removeAMessageFromTop();
     }
 
-    /**
-     * removes all the messages from the queue.
-     */
+    /** removes all the messages from the queue. */
     public void clearQueue() throws AMQException
     {
         _deliveryMgr.clearAllMessages();
@@ -375,7 +343,7 @@ public class AMQQueue implements Managable, Comparable
     {
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
+        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, _deliveryMgr);
 
         if (subscription.hasFilters())
         {
@@ -396,7 +364,8 @@ public class AMQQueue implements Managable, Comparable
         Subscription removedSubscription;
         if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel,
                                                                                                          ps,
-                                                                                                         consumerTag)))
+                                                                                                         consumerTag,
+                                                                                                         _deliveryMgr)))
             == null)
         {
             throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag +

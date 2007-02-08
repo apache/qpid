@@ -79,12 +79,15 @@ public class RecoverTest extends TestCase
         // no ack for last three messages so when I call recover I expect to get three messages back
         consumerSession.recover();
         tm = (TextMessage) consumer.receive(3000);
+        assertNotNull("Message was null", tm);
         assertEquals("msg2", tm.getText());
 
         tm = (TextMessage) consumer.receive(3000);
+        assertNotNull("Message was null", tm);
         assertEquals("msg3", tm.getText());
 
         tm = (TextMessage) consumer.receive(3000);
+        assertNotNull("Message was null", tm);
         assertEquals("msg4", tm.getText());
 
         _logger.info("Received redelivery of three messages. Acknowledging last message");

@@ -39,9 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Combines the information that make up a deliverable message into a more manageable form.
- */
+/** Combines the information that make up a deliverable message into a more manageable form. */
 public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -66,36 +64,29 @@ public class AMQMessage
 
     private long _arrivalTime;
 
-    /**
-     * Keeps a track of how many bytes we have received in body frames
-     */
+    /** Keeps a track of how many bytes we have received in body frames */
     private long _bodyLengthReceived = 0;
 
-    /**
-     * The message store in which this message is contained.
-     */
+    /** The message store in which this message is contained. */
     private transient final MessageStore _store;
 
     /**
-     * For non transactional publishes, a message can be stored as
-     * soon as it is complete. For transactional messages it doesnt
-     * need to be stored until the transaction is committed.
+     * For non transactional publishes, a message can be stored as soon as it is complete. For transactional messages it
+     * doesnt need to be stored until the transaction is committed.
      */
     private boolean _storeWhenComplete;
 
-    /**
-     * TxnBuffer for transactionally published messages
-     */
+    /** TxnBuffer for transactionally published messages */
     private TxnBuffer _txnBuffer;
 
     /**
-     * Flag to indicate whether message has been delivered to a
-     * consumer. Used in implementing return functionality for
+     * Flag to indicate whether message has been delivered to a consumer. Used in implementing return functionality for
      * messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
     private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
     private AtomicBoolean _taken;
+    private Subscription _takenBySubcription;
 
 
     public AMQMessage(MessageStore messageStore, BasicPublishBody publishBody)
@@ -282,9 +273,7 @@ public class AMQMessage
         return _messageId;
     }
 
-    /**
-     * Threadsafe. Increment the reference count on the message.
-     */
+    /** Threadsafe. Increment the reference count on the message. */
     public void incrementReference()
     {
         _referenceCount.incrementAndGet();
@@ -390,9 +379,8 @@ public class AMQMessage
     /**
      * Called to enforce the 'immediate' flag.
      *
-     * @throws NoConsumersException if the message is marked for
-     *                              immediate delivery but has not been marked as delivered to a
-     *                              consumer
+     * @throws NoConsumersException if the message is marked for immediate delivery but has not been marked as delivered
+     *                              to a consumer
      */
     public void checkDeliveredToConsumer() throws NoConsumersException
     {
@@ -403,9 +391,8 @@ public class AMQMessage
     }
 
     /**
-     * Called when this message is delivered to a consumer. (used to
-     * implement the 'immediate' flag functionality).
-     * And by selectors to determin if the message has already been sent
+     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality). And
+     * by selectors to determin if the message has already been sent
      */
     public void setDeliveredToConsumer()
     {
@@ -457,13 +444,31 @@ public class AMQMessage
         return msgdec;
     }
 
-    public boolean taken()
+    public boolean taken(Subscription sub)
     {
-        return _taken.getAndSet(true);
+        if (_taken.getAndSet(true))
+        {
+            if (sub == _takenBySubcription)
+            {
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            _takenBySubcription = sub;
+            return false;
+        }
     }
 
     public void release()
     {
+        _takenBySubcription = null;
         _taken.set(false);
+    }
+
+    public Subscription getDeliveredSubscription()
+    {
+        return _takenBySubcription;
     }
 }

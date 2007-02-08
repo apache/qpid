@@ -25,18 +25,18 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 
 /**
- * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This
- * factory primarily assists testing although in future more sophisticated subscribers may need a different
- * subscription implementation.
+ * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This factory
+ * primarily assists testing although in future more sophisticated subscribers may need a different subscription
+ * implementation.
  *
  * @see org.apache.qpid.server.queue.AMQQueue
  */
 public interface SubscriptionFactory
 {
     Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks,
-                                    FieldTable filters, boolean noLocal) throws AMQException;
+                                    FieldTable filters, boolean noLocal, DeliveryManager deliveryManager) throws AMQException;
 
 
-    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
-            throws AMQException;
+    Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag,
+                                    DeliveryManager deliveryManager) throws AMQException;
 }

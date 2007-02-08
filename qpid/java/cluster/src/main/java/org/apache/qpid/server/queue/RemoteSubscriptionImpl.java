@@ -134,11 +134,21 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
 
     public boolean isBrowser()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
-    public void sendNextMessage(AMQQueue queue)
+    public Queue<AMQMessage> getResendQueue()
     {
+        return null;
+    }
 
+    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    {
+        return null;
+    }
+
+    public void addToResendQueue(AMQMessage msg)
+    {
+        //no-op
     }
 }

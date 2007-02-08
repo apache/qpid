@@ -36,9 +36,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-/**
- * Tests that acknowledgements are handled correctly.
- */
+/** Tests that acknowledgements are handled correctly. */
 public class AckTest extends TestCase
 {
     private static final Logger _log = Logger.getLogger(AckTest.class);
@@ -82,7 +80,7 @@ public class AckTest extends TestCase
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Establish some way to determine the version for the test.
-            BasicPublishBody publishBody = new BasicPublishBody((byte)8, (byte)0);
+            BasicPublishBody publishBody = new BasicPublishBody((byte) 8, (byte) 0);
             publishBody.routingKey = "rk";
             publishBody.exchange = "someExchange";
             AMQMessage msg = new AMQMessage(_messageStore, publishBody);
@@ -104,12 +102,12 @@ public class AckTest extends TestCase
     }
 
     /**
-     * Tests that the acknowledgements are correctly associated with a channel and
-     * order is preserved when acks are enabled
+     * Tests that the acknowledgements are correctly associated with a channel and order is preserved when acks are
+     * enabled
      */
     public void testAckChannelAssociationTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
@@ -130,13 +128,11 @@ public class AckTest extends TestCase
         assertTrue(_messageStore.getMessageMap().size() == msgCount);
     }
 
-    /**
-     * Tests that in no-ack mode no messages are retained
-     */
+    /** Tests that in no-ack mode no messages are retained */
     public void testNoAckMode() throws AMQException
     {
         // false arg means no acks expected
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", false);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", false, null);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -145,13 +141,10 @@ public class AckTest extends TestCase
         assertTrue(_messageStore.getMessageMap().size() == 0);
     }
 
-    /**
-     * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
-     * set case)
-     */
+    /** Tests that a single acknowledgement is handled correctly (i.e multiple flag not set case) */
     public void testSingleAckReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -175,13 +168,10 @@ public class AckTest extends TestCase
         }
     }
 
-    /**
-     * Tests that a single acknowledgement is handled correctly (i.e multiple flag not
-     * set case)
-     */
+    /** Tests that a single acknowledgement is handled correctly (i.e multiple flag not set case) */
     public void testMultiAckReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -201,12 +191,10 @@ public class AckTest extends TestCase
         }
     }
 
-    /**
-     * Tests that a multiple acknowledgement is handled correctly. When ack'ing all pending msgs.
-     */
+    /** Tests that a multiple acknowledgement is handled correctly. When ack'ing all pending msgs. */
     public void testMultiAckAllReceivedTest() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         final int msgCount = 10;
         publishMessages(msgCount);
 
@@ -231,7 +219,7 @@ public class AckTest extends TestCase
         int lowMark = 5;
         int highMark = 10;
 
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         _channel.setPrefetchLowMarkCount(lowMark);
         _channel.setPrefetchHighMarkCount(highMark);
 
@@ -282,7 +270,7 @@ public class AckTest extends TestCase
 
     public void testPrefetch() throws AMQException
     {
-        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true);
+        _subscription = new SubscriptionImpl(5, _protocolSession, "conTag", true, null);
         _channel.setPrefetchCount(5);
 
         assertTrue(_channel.getPrefetchCount() == 5);

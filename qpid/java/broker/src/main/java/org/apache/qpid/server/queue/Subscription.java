@@ -44,5 +44,11 @@ public interface Subscription
 
     void close();
 
-    boolean isBrowser();   
+    boolean isBrowser();
+
+    Queue<AMQMessage> getResendQueue();
+
+    Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages);
+
+    void addToResendQueue(AMQMessage msg);
 }

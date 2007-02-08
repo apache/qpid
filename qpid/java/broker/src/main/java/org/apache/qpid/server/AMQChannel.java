@@ -36,6 +36,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
+import org.apache.qpid.server.queue.Subscription;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.server.txn.TxnOp;
@@ -388,7 +389,7 @@ public class AMQChannel
     }
 
     /** Called to resend all outstanding unacknowledged messages to this same channel. */
-    public void resend(AMQProtocolSession session) throws AMQException
+    public void resend() throws AMQException
     {
         //messages go to this channel
         synchronized (_unacknowledgedMessageMapLock)
@@ -400,17 +401,35 @@ public class AMQChannel
             {
                 Map.Entry<Long, UnacknowledgedMessage> entry = messageSetIterator.next();
 
-                long deliveryTag = entry.getKey();
+                //long deliveryTag = entry.getKey();
                 String consumerTag = entry.getValue().consumerTag;
 
                 if (_consumerTag2QueueMap.containsKey(consumerTag))
                 {
                     AMQMessage msg = entry.getValue().message;
                     msg.setRedelivered(true);
-                    session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+                    Subscription sub = msg.getDeliveredSubscription();
+
+                    if (sub != null)
+                    {
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Requeuing " + msg + " for resend");
+                        }
+
+                        sub.addToResendQueue(msg);
+                    }
+                    else
+                    {
+                        _log.error("DeliveredSubscription not recorded");
+                    }
+
+                    // Don't write the frame as the DeliveryManager can now deal with it
+                    //session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
                 }
                 else
-                {
+                { // The current consumer has gone so we need to requeue
+
                     UnacknowledgedMessage unacked = entry.getValue();
 
                     if (unacked.queue != null)
@@ -426,6 +445,8 @@ public class AMQChannel
                 }
             }
         }
+
+        //fixme need to start the async delivery here.
     }
 
     /**

@@ -46,12 +46,22 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
                                ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession,
                                AMQMethodEvent<BasicRecoverBody> evt) throws AMQException
     {
-        _logger.debug("Recover received on protocol session " + protocolSession + " and channel " + evt.getChannelId());        
+        _logger.debug("Recover received on protocol session " + protocolSession + " and channel " + evt.getChannelId());
         AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+
         if (channel == null)
         {
             throw new AMQException("Unknown channel " + evt.getChannelId());
         }
-        channel.resend(protocolSession);
+
+        if (evt.getMethod().getRequeue())
+        {
+            //fixme need tests to exercise
+            channel.requeue();
+        }
+        else
+        {
+            channel.resend();
+        }
     }
 }

@@ -103,7 +103,22 @@ public class SubscriptionTestHelper implements Subscription
 
     public boolean isBrowser()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
+    }
+
+    public Queue<AMQMessage> getResendQueue()
+    {
+        return null;
+    }
+
+    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    {
+        return null;
+    }
+
+    public void addToResendQueue(AMQMessage msg)
+    {
+        //no-op
     }
 
     public int hashCode()

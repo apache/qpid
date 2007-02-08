@@ -80,4 +80,6 @@ interface DeliveryManager
     long getTotalMessageSize();
 
     long getOldestMessageArrival();
+
+    void setQueueHasContent(Subscription subscription);
 }
