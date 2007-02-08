@@ -33,6 +33,7 @@ import org.apache.qpid.requestreply.PingPongProducer;
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 import uk.co.thebadgerset.junit.extensions.TestThreadAware;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 /**
  * PingTestPerf is a ping test, that has been written with the intention of being scaled up to run many times
@@ -65,7 +66,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
     ThreadLocal<PerThreadSetup> threadSetup = new ThreadLocal<PerThreadSetup>();
 
     /** Holds a property reader to extract the test parameters from. */
-    protected ParsedProperties testParameters = new ParsedProperties(System.getProperties());
+    protected ParsedProperties testParameters = new TestContextProperties(System.getProperties());
 
     public PingTestPerf(String name)
     {
@@ -140,11 +141,11 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-                perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                                          testParameters.getPropertyAsInteger(
-                                                                  PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                                          testParameters.getPropertyAsBoolean(
-                                                                  PingPongProducer.PERSISTENT_MODE_PROPNAME));
+            perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                                      testParameters.getPropertyAsInteger(
+                                                          PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                                      testParameters.getPropertyAsBoolean(
+                                                          PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // start the test
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
@@ -192,7 +193,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
             // Extract the test set up paramaeters.
             int destinationscount =
-                    Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
+                Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
 
             // This is synchronized because there is a race condition, which causes one connection to sleep if
             // all threads try to create connection concurrently.
