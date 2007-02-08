@@ -458,7 +458,7 @@
             <dependency>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
-                <version>0.5-SNAPSHOT</version>
+                <version>0.5</version>
                 <scope>compile</scope>
             </dependency>
 
