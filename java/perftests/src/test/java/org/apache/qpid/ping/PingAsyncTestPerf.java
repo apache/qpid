@@ -70,7 +70,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
     /** Holds test specifics by correlation id. This consists of the expected number of messages and the timing controler. */
     private Map<String, PerCorrelationId> perCorrelationIds =
-            Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** Holds the batched results listener, that does logging on batch boundaries. */
     private BatchedResultsListener batchedResultsListener = null;
@@ -85,13 +85,13 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         super(name);
 
         // Sets up the test parameters with defaults.
-        ParsedProperties.setSysPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
-                                              Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
+        testParameters.setPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
+                                         Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
     }
 
     /**
      * Compile all the tests into a test suite.
-     * @return The test suite to run. Should only contain testAsyncPingOk method. 
+     * @return The test suite to run. Should only contain testAsyncPingOk method.
      */
     public static Test suite()
     {
@@ -129,7 +129,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      * all replies have been received or a time out occurs before exiting this method.
      *
      * @param numPings The number of pings to send.
-     * @throws Exception pass all errors out to the test harness  
+     * @throws Exception pass all errors out to the test harness
      */
     public void testAsyncPingOk(int numPings) throws Exception
     {
@@ -162,9 +162,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Generate a sample message of the specified size.
         ObjectMessage msg =
-                pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                          testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                          testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
+            pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                      testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                      testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
@@ -258,9 +258,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                 // Extract the correlation id from the message.
                 String correlationId = message.getJMSCorrelationID();
 
-                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount +
-                              "): called on batch boundary for message id: "
-                              + correlationId + " with thread id: " + Thread.currentThread().getId());
+                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
+                              + "): called on batch boundary for message id: " + correlationId + " with thread id: "
+                              + Thread.currentThread().getId());
 
                 // Get the details for the correlation id and check that they are not null. They can become null
                 // if a test times out.
