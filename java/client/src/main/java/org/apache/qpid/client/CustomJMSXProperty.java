@@ -26,7 +26,8 @@ import java.util.*;
 
 public enum CustomJMSXProperty
 {
-    JMSZ_QPID_DESTTYPE,    
+    JMS_AMQP_NULL,
+    JMS_QPID_DESTTYPE,    
     JMSXGroupID,
     JMSXGroupSeq;
 
