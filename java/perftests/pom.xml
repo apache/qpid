@@ -40,18 +40,6 @@
     </properties>
 
     <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
-    <repositories>
-        <repository>
-          <id>junit-toolkit.snapshots</id>
-          <name>JUnit Toolkit SNAPSHOT Repository</name>
-	  <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-    </repositories>
-
-    <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
     <pluginRepositories>
         <pluginRepository>
           <id>junit-toolkit-plugin.snapshots</id>
