@@ -174,7 +174,11 @@ public class VirtualHostConfiguration
     public void performBindings() throws AMQException, ConfigurationException
     {
         List virtualHostNames = _config.getList(VIRTUALHOST_PROPERTY_BASE + "name");
-
+        String defaultVirtualHostName = _config.getString("default");
+        if(defaultVirtualHostName != null)
+        {
+            ApplicationRegistry.getInstance().getVirtualHostRegistry().setDefaultVirtualHostName(defaultVirtualHostName);            
+        }
         _logger.info("Configuring " + virtualHostNames == null ? 0 : virtualHostNames.size() + " virtual hosts: " + virtualHostNames);
 
         for(Object nameObject : virtualHostNames)

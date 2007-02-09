@@ -65,6 +65,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _virtualHostRegistry = new VirtualHostRegistry();
         VirtualHost dummyHost = new VirtualHost("test",getConfiguration());
         _virtualHostRegistry.registerVirtualHost(dummyHost);
+        _virtualHostRegistry.setDefaultVirtualHostName("test");
         _authenticationManager = new NullAuthenticationManager();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
