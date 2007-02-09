@@ -171,6 +171,10 @@ class TestBase(unittest.TestCase):
         for ch, ex in self.exchanges:
             ch.exchange_delete(exchange=ex)
 
+        if not self.client.closed:    
+            self.client.channel(0).connection_close(reply_code=200)
+        del self.client    
+
     def connect(self, *args, **keys):
         """Create a new connction, return the Client object"""
         return testrunner.connect(*args, **keys)

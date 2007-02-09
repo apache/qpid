@@ -89,7 +89,7 @@ class Peer:
         try:
           frame = self.conn.read()
         except EOF, e:
-          self.close(e)
+          self.work.close()
           break
         ch = self.channel(frame.channel)
         ch.receive(frame, self.work)
@@ -126,6 +126,8 @@ class Peer:
           content = None
 
         self.delegate(channel, Message(channel, frame, content))
+    except QueueClosed, e:
+      self.close(e)
     except:
       self.fatal()
 
