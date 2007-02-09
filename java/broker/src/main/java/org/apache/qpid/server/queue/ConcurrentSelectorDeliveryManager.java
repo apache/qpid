@@ -75,7 +75,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      */
     private final AMQQueue _queue;
 
-
+    /**
+     * Flag used while moving messages from this queue to another. For moving messages the async delivery
+     * should also stop. This flat should be set to true to stop async delivery and set to false to enable
+     * async delivery again.
+     */
+    private AtomicBoolean _movingMessages = new AtomicBoolean();
+    
     /**
      * Lock used to ensure that an channel that becomes unsuspended during the start of the queueing process is forced
      * to wait till the first message is added to the queue. This will ensure that the _queue has messages to be delivered
@@ -167,9 +173,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
 
-    public synchronized List<AMQMessage> getMessages()
+    public List<AMQMessage> getMessages()
     {
-        return new ArrayList<AMQMessage>(_messages);
+        _lock.lock();
+        ArrayList<AMQMessage> list = new ArrayList<AMQMessage>(_messages);
+        _lock.unlock();
+        return list;
     }
 
     public void populatePreDeliveryQueue(Subscription subscription)
@@ -242,8 +251,52 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void removeMessages(List<AMQMessage> messageList)
+    /**
+     * For feature of moving messages, this method is used. It sets the lock and sets the movingMessages flag,
+     * so that the asyn delivery is also stopped.
+     */
+    public void startMovingMessages()
     {
+        _lock.lock();
+        _movingMessages.set(true);
+    }
+
+    /**
+     * Once moving messages to another queue is done or aborted, remove lock and unset the movingMessages flag,
+     * so that the async delivery can start again.
+     */
+    public void stopMovingMessages()
+    {
+        _movingMessages.set(false);
+        if (_lock.isHeldByCurrentThread())
+        {
+            _lock.unlock();
+        }
+    }
+
+    /**
+     * Messages will be removed from this queue and all preDeliveryQueues
+     * @param messageList
+     */
+    public void removeMovedMessages(List<AMQMessage> messageList)
+    {
+        // Remove from the
+        boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
+        if (hasSubscribers)
+        {
+            for (Subscription sub : _subscriptions.getSubscriptions())
+            {
+                if (!sub.isSuspended() && sub.hasFilters())
+                {
+                    Queue<AMQMessage> preDeliveryQueue = sub.getPreDeliveryQueue();
+                    for (AMQMessage msg : messageList)
+                    {
+                        preDeliveryQueue.remove(msg);
+                    }
+                }
+            }
+        }
+
         for (AMQMessage msg : messageList)
         {
             if (_messages.remove(msg))
@@ -253,29 +306,42 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
+    /**
+     * Now with implementation of predelivery queues, this method will mark the message on the top as taken.
+     * @param storeContext
+     * @throws AMQException
+     */
+    public void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        AMQMessage msg = poll();
+        _lock.lock();
+        AMQMessage msg = getNextMessage();
         if (msg != null)
         {
-            msg.dequeue(storeContext, _queue);
-            _totalMessageSize.getAndAdd(-msg.getSize());
-        }        
+            // mark this message as taken and get it removed
+            msg.taken();
+            _queue.dequeue(storeContext, msg);
+            getNextMessage();
+        }
+        
+        _lock.unlock();
     }
 
-    public synchronized long clearAllMessages(StoreContext storeContext) throws AMQException
+    public long clearAllMessages(StoreContext storeContext) throws AMQException
     {
         long count = 0;
-        AMQMessage msg = poll();
+        _lock.lock();
+
+        AMQMessage msg = getNextMessage();
         while (msg != null)
         {
-            msg.dequeue(storeContext, _queue);
+            //mark this message as taken and get it removed
+            msg.taken();
+            _queue.dequeue(storeContext, msg);
+            msg = getNextMessage();
             count++;
-            _totalMessageSize.set(0L);
-            msg = poll();
-
         }
 
+        _lock.unlock();
         return count;
     }
 
@@ -298,6 +364,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             //remove the already taken message
             messages.poll();
+            _totalMessageSize.addAndGet(-message.getSize());
             // try the next message
             message = messages.peek();
         }
@@ -335,6 +402,34 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
     /**
+     * enqueues the messages in the list on the queue and all required predelivery queues
+     * @param storeContext
+     * @param movedMessageList
+     */
+    public void enqueueMovedMessages(StoreContext storeContext, List<AMQMessage> movedMessageList)
+    {
+        _lock.lock();
+        for (AMQMessage msg : movedMessageList)
+        {
+            addMessageToQueue(msg);
+        }
+
+        // enqueue on the pre delivery queues
+        for (Subscription sub : _subscriptions.getSubscriptions())
+        {
+            for (AMQMessage msg : movedMessageList)
+            {
+                // Only give the message to those that want them.
+                if (sub.hasInterest(msg))
+                {
+                    sub.enqueueForPreDelivery(msg);
+                }
+            }
+        }
+        _lock.unlock();
+    }
+
+    /**
      * Only one thread should ever execute this method concurrently, but
      * it can do so while other threads invoke deliver().
      */
@@ -343,7 +438,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         // Continue to process delivery while we haveSubscribers and messages
         boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
 
-        while (hasSubscribers && hasQueuedMessages())
+        while (hasSubscribers && hasQueuedMessages() && !_movingMessages.get())
         {
             hasSubscribers = false;
 
@@ -376,11 +471,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             sendNextMessage(sub, _messages);
         }
-    }
-
-    private AMQMessage poll()
-    {
-        return _messages.poll();
     }
 
     public void deliver(StoreContext context, AMQShortString name, AMQMessage msg) throws AMQException
@@ -482,7 +572,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         public void run()
         {
             boolean running = true;
-            while (running)
+            while (running && !_movingMessages.get())
             {
                 processQueue();
 

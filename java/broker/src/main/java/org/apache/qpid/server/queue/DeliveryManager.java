@@ -76,7 +76,13 @@ interface DeliveryManager
 
     long clearAllMessages(StoreContext storeContext) throws AMQException;
 
-    void removeMessages(List<AMQMessage> messageListToRemove);
+    void startMovingMessages();
+
+    void enqueueMovedMessages(StoreContext context, List<AMQMessage> messageList);
+
+    void stopMovingMessages();
+
+    void removeMovedMessages(List<AMQMessage> messageListToRemove);
 
     List<AMQMessage> getMessages();
 
