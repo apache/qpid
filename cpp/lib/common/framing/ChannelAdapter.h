@@ -87,6 +87,7 @@ class ChannelAdapter : public BodyHandler {
         const MethodContext& context) = 0;
 
     RequestId getRequestInProgress() { return requestInProgress; }
+    RequestId getNextSendRequestId() { return requester.getNextId(); }
 
   private:
     ChannelId id;

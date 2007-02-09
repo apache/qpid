@@ -101,8 +101,9 @@ MessageHandlerImpl::consume(const MethodContext& context,
 void
 MessageHandlerImpl::empty( const MethodContext& )
 {
-    // FIXME astitcher 2007-01-11: 0-9 feature
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
+    // Shouldn't ever receive this as it is a response to get
+    // TODO astitcher 2007-02-09 What is the correct exception to throw here?
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Impossible");
 }
 
 void
@@ -112,12 +113,9 @@ MessageHandlerImpl::get( const MethodContext& context,
                          const string& /*destination*/,
                          bool noAck )
 {
-    //assert(0);                // FIXME astitcher 2007-01-11: 0-9 feature
-
     Queue::shared_ptr queue =
         connection.getQueue(queueName, context.channel->getId());
     
-    // FIXME: get is probably Basic specific
     if(channel.get(queue, !noAck))
         client.ok(context);
     else 
@@ -133,9 +131,9 @@ MessageHandlerImpl::offset(const MethodContext&,
 }
 
 void
-MessageHandlerImpl::ok( const MethodContext& )
+MessageHandlerImpl::ok(const MethodContext& /*context*/)
 {
-    // TODO: Need to ack the transfers acknowledged so far for flow control purp oses
+    channel.ack();
 }
 
 void
@@ -162,7 +160,6 @@ void
 MessageHandlerImpl::recover(const MethodContext& context,
                             bool requeue)
 {
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented");
     channel.recover(requeue);
     client.ok(context);
 }
@@ -188,7 +185,7 @@ MessageHandlerImpl::resume(const MethodContext&,
 void
 MessageHandlerImpl::transfer(const MethodContext& context,
                              u_int16_t /*ticket*/,
-                             const string& destination,
+                             const string& /* destination */,
                              bool /*redelivered*/,
                              bool /*immediate*/,
                              u_int64_t /*ttl*/,
@@ -211,8 +208,6 @@ MessageHandlerImpl::transfer(const MethodContext& context,
                              qpid::framing::Content body,
                              bool /*mandatory*/)
 {
-    Exchange::shared_ptr exchange(
-        broker.getExchanges().get(destination)); 
     MessageTransferBody::shared_ptr transfer(
         boost::shared_polymorphic_downcast<MessageTransferBody>(
             context.methodBody));
@@ -220,7 +215,7 @@ MessageHandlerImpl::transfer(const MethodContext& context,
         new MessageMessage(&connection, transfer));
     
     if (body.isInline()) 
-        channel.handleInlineTransfer(message, exchange);
+        channel.handleInlineTransfer(message);
     else 
         references.get(body.getValue()).addMessage(message);
     client.ok(context);

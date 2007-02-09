@@ -264,7 +264,7 @@ class ChannelTest : public CppUnit::TestCase
             contentSize += data[i].size();
         }
         header->setContentSize(contentSize);
-        channel.handlePublish(msg, exchange);
+        channel.handlePublish(msg);
         channel.handleHeader(header);
 
         for (int i = 0; i < 3; i++) {

@@ -140,7 +140,9 @@ void Channel::deliver(
 {
     Mutex::ScopedLock locker(deliveryLock);
 
-    u_int64_t deliveryTag = currentDeliveryTag++;
+	// Key the delivered messages to the id of the request in which they're sent 
+    u_int64_t deliveryTag = getNextSendRequestId();
+    
     if(ackExpected){
         unacked.push_back(DeliveryRecord(msg, queue, consumerTag, deliveryTag));
         outstanding.size += msg->contentSize();
@@ -188,24 +190,24 @@ void Channel::ConsumerImpl::requestDispatch(){
     if(blocked) queue->dispatch();
 }
 
-void Channel::handleInlineTransfer(
-    Message::shared_ptr msg, Exchange::shared_ptr& exch)
+void Channel::handleInlineTransfer(Message::shared_ptr msg)
 {
+    Exchange::shared_ptr exchange =
+        connection.broker.getExchanges().get(msg->getExchange());
     if(transactional){
         TxPublish* deliverable = new TxPublish(msg);
-        exch->route(*deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+        exchange->route(*deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
         txBuffer.enlist(new DeletingTxOp(deliverable));
     }else{
         DeliverableMessage deliverable(msg);
-        exch->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+        exchange->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
     }
 }
 
 // FIXME aconway 2007-02-05: Drop exchange member, calculate from
 // message in ::complete().
-void Channel::handlePublish(Message* _message, Exchange::shared_ptr _exchange){
+void Channel::handlePublish(Message* _message){
     Message::shared_ptr message(_message);
-    exchange = _exchange;
     messageBuilder.initialise(message);
 }
 
@@ -237,6 +239,11 @@ void Channel::complete(Message::shared_ptr msg) {
         exchange->route(deliverable, msg->getRoutingKey(),
                         &(msg->getApplicationHeaders()));
     }
+}
+
+// TODO astitcher 2007-02-08 This only deals correctly with non batched responses
+void Channel::ack(){
+	ack(getRequestInProgress(), false);
 }
 
 void Channel::ack(u_int64_t deliveryTag, bool multiple){

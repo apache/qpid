@@ -280,7 +280,7 @@ void BrokerAdapter::BrokerAdapter::BasicHandlerImpl::publish(
         BasicMessage* msg = new BasicMessage(
             &connection, exchangeName, routingKey, mandatory, immediate,
             context.methodBody);
-        channel.handlePublish(msg, exchange);
+        channel.handlePublish(msg);
     }else{
         throw ChannelException(
             404, "Exchange not found '" + exchangeName + "'");
