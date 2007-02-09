@@ -343,7 +343,7 @@ public class AMQQueue implements Managable, Comparable
     {
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, _deliveryMgr);
+        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
 
         if (subscription.hasFilters())
         {
@@ -364,13 +364,14 @@ public class AMQQueue implements Managable, Comparable
         Subscription removedSubscription;
         if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel,
                                                                                                          ps,
-                                                                                                         consumerTag,
-                                                                                                         _deliveryMgr)))
+                                                                                                         consumerTag)))
             == null)
         {
             throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag +
                                    " and protocol session key " + ps.getKey() + " not registered with queue " + this);
         }
+
+        removedSubscription.close();
 
         // if we are eligible for auto deletion, unregister from the queue registry
         if (_autoDelete && _subscribers.isEmpty())
@@ -543,6 +544,10 @@ public class AMQQueue implements Managable, Comparable
         _maximumMessageAge = maximumMessageAge;
     }
 
+    public void setQueueHasContent(boolean b, SubscriptionImpl subscription)
+    {
+        _deliveryMgr.setQueueHasContent(b, subscription);
+    }
 
     private class Deliver implements TxnOp
     {

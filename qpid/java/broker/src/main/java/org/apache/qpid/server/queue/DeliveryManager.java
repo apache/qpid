@@ -81,5 +81,5 @@ interface DeliveryManager
 
     long getOldestMessageArrival();
 
-    void setQueueHasContent(Subscription subscription);
+    void setQueueHasContent(boolean hasContent, Subscription subscription);
 }

@@ -805,41 +805,56 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // this is set only here, and the before the consumer's onMessage is called it is set to false
         _inRecovery = true;
 
-        boolean isSuspended = isSuspended();
-
-        if (!isSuspended)
+        try
         {
-            try
+
+            boolean isSuspended = isSuspended();
+
+            if (!isSuspended)
             {
-                suspendChannel(true);
+                try
+                {
+                    suspendChannel(true);
+                }
+                catch (AMQException e)
+                {
+                    throw new JMSAMQException(e);
+                }
             }
-            catch (AMQException e)
+            for (BasicMessageConsumer consumer : _consumers.values())
             {
-                throw new JMSAMQException(e);
+                consumer.clearUnackedMessages();
+            }
+
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            _connection.getProtocolHandler().syncWrite(BasicRecoverBody.createAMQFrame(_channelId,
+                                                                                       (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                                       false)    // requeue
+                    , BasicRecoverOkBody.class);
+
+
+            if (_dispatcher != null)
+            {
+                _dispatcher.rollback();
+            }
+                                   
+            if (!isSuspended)
+            {
+                try
+                {
+                    suspendChannel(false);
+                }
+                catch (AMQException e)
+                {
+                    throw new JMSAMQException(e);
+                }
             }
         }
-        for (BasicMessageConsumer consumer : _consumers.values())
+        catch (AMQException e)
         {
-            consumer.clearUnackedMessages();
-        }
-        
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        _connection.getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId,
-                                                                                    (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                                    false));    // requeue
-
-        if (!isSuspended)
-        {
-            try
-            {
-                suspendChannel(false);
-            }
-            catch (AMQException e)
-            {
-                throw new JMSAMQException(e);
-            }
+            throw new JMSAMQException(e);
         }
 
     }
@@ -1873,9 +1888,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     public void confirmConsumerCancelled(String consumerTag)
     {
         BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
-        if ((consumer != null) && (consumer.isAutoClose()))
+        if (consumer != null)
         {
-            consumer.closeWhenNoMessages(true);
+            if (consumer.isAutoClose())
+            {
+                consumer.closeWhenNoMessages(true);
+            }
+            //fixme seems abit like a hack
+//            else
+//            {
+//                consumer.rollback();
+//            }
         }
     }
 

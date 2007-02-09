@@ -37,6 +37,7 @@ import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
@@ -67,35 +68,35 @@ public class SubscriptionImpl implements Subscription
     private final Boolean _autoClose;
     private boolean _closed = false;
 
-    private DeliveryManager _deliveryManager;
+    private AMQQueue _queue;
+    private final AtomicBoolean _resending = new AtomicBoolean(false);
 
     public static class Factory implements SubscriptionFactory
     {
         public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag,
                                                boolean acks, FieldTable filters, boolean noLocal,
-                                               DeliveryManager deliveryManager) throws AMQException
+                                               AMQQueue queue) throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters, noLocal, deliveryManager);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters, noLocal, queue);
         }
 
-        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag,
-                                                   DeliveryManager deliveryManager)
+        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
                 throws AMQException
         {
-            return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null, false, deliveryManager);
+            return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null, false, null);
         }
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks, DeliveryManager deliveryManager)
+                            String consumerTag, boolean acks, AMQQueue queue)
             throws AMQException
     {
-        this(channelId, protocolSession, consumerTag, acks, null, false, deliveryManager);
+        this(channelId, protocolSession, consumerTag, acks, null, false, queue);
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
                             String consumerTag, boolean acks, FieldTable filters, boolean noLocal,
-                            DeliveryManager deliveryManager)
+                            AMQQueue queue)
             throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
@@ -110,7 +111,7 @@ public class SubscriptionImpl implements Subscription
         sessionKey = protocolSession.getKey();
         _acks = acks;
         _noLocal = noLocal;
-        _deliveryManager = deliveryManager;
+        _queue = queue;
 
         _filters = FilterManagerFactory.createManager(filters);
 
@@ -238,8 +239,11 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
-            ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+            ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName(),msg.isRedelivered());
             AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
+
+            //fixme what is wrong with this?
+            //AMQDataBlock frame = msg.getDataBlock(channel.getChannelId(),consumerTag,deliveryTag);
 
             protocolSession.writeFrame(frame);
         }
@@ -271,8 +275,11 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
+                ByteBuffer deliver = createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName(),msg.isRedelivered());
                 AMQDataBlock frame = msg.getDataBlock(deliver, channel.getChannelId());
+
+                //fixme what is wrong with this?
+                //AMQDataBlock frame = msg.getDataBlock(channel.getChannelId(),consumerTag,deliveryTag);                
 
                 protocolSession.writeFrame(frame);
             }
@@ -285,7 +292,7 @@ public class SubscriptionImpl implements Subscription
 
     public boolean isSuspended()
     {
-        return channel.isSuspended();
+        return channel.isSuspended() && !_resending.get();
     }
 
     /**
@@ -379,12 +386,20 @@ public class SubscriptionImpl implements Subscription
 
     public void close()
     {
+        _logger.info("Closing subscription:" + this);
+
         if (_resendQueue != null && !_resendQueue.isEmpty())
         {
             requeue();
         }
 
-        if (!_closed)
+        //remove references in PDQ
+        if (_messages != null)
+        {
+            _messages.clear();
+        }
+
+        if (_autoClose && !_closed)
         {
             _logger.info("Closing autoclose subscription:" + this);
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -400,8 +415,59 @@ public class SubscriptionImpl implements Subscription
 
     private void requeue()
     {
-        //fixme
-        _logger.error("MESSAGES LOST as subscription hasn't yet resent all its requeued messages");
+
+        if (_queue != null)
+        {
+            _logger.trace("Requeuing :" + _resendQueue.size() + " messages");
+
+            //Take  control over to this thread for delivering messages from the Async Delivery.
+            setResending(true);
+
+            while (!_resendQueue.isEmpty())
+            {
+                AMQMessage resent = _resendQueue.poll();
+
+                resent.setTxnBuffer(null);
+
+                resent.release();
+
+                try
+                {
+                    _queue.deliver(resent);
+                }
+                catch (AMQException e)
+                {
+                    _logger.error("Unable to re-deliver messages", e);
+                }
+            }
+
+            setResending(false);
+
+            if (!_resendQueue.isEmpty())
+            {
+                _logger.error("[MESSAGES LOST]Unable to re-deliver messages as queue is null.");
+            }
+
+            _queue.setQueueHasContent(false, this);
+        }
+        else
+        {
+            if (!_resendQueue.isEmpty())
+            {
+                _logger.error("Unable to re-deliver messages as queue is null.");
+            }
+        }
+
+        // Clear the messages
+        _resendQueue = null;
+    }
+
+    private void setResending(boolean resending)
+    {
+        synchronized (_resending)
+        {
+            _resending.set(resending);
+        }
     }
 
     public boolean isBrowser()
@@ -450,17 +516,22 @@ public class SubscriptionImpl implements Subscription
         getResendQueue().add(msg);
 
         // Mark Queue has having content.
-        if (_deliveryManager == null)
+        if (_queue == null)
         {
             _logger.error("Delivery Manager is null won't be able to resend messages");
         }
         else
         {
-            _deliveryManager.setQueueHasContent(this);
+            _queue.setQueueHasContent(true, this);
         }
     }
 
-    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange)
+    public Object sendlock()
+    {
+        return _resending;
+    }
+
+    private ByteBuffer createEncodedDeliverFrame(long deliveryTag, String routingKey, String exchange, boolean redelivered)
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -470,7 +541,7 @@ public class SubscriptionImpl implements Subscription
                                                                 consumerTag,    // consumerTag
                                                                 deliveryTag,    // deliveryTag
                                                                 exchange,    // exchange
-                                                                false,    // redelivered
+                                                                redelivered,    // redelivered
                                                                 routingKey    // routingKey
         );
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?

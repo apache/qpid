@@ -31,17 +31,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
-import java.util.HashMap;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 /** Manages delivery of messages on behalf of a queue */
@@ -154,13 +150,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return msg == null ? Long.MAX_VALUE : msg.getArrivalTime();
     }
 
-    public void setQueueHasContent(Subscription subscription)
+    public void setQueueHasContent(boolean hasContent, Subscription subscription)
     {
         _lock.lock();
         try
         {
 
-            _log.debug("Queue has content Set");
+            _log.trace("Queue has content Set");
             _hasContent.add(subscription);
         }
         finally
@@ -236,8 +232,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         if (messageQueue == null)
         {
-            // There is no queue with messages currently
-            _log.warn(sub + ": asked to send messages but has none on given queue:" + queue);
+            // There is no queue with messages currently. This is ok... just means the queue has no msgs matching selector
+            if (_log.isDebugEnabled())
+            {
+                _log.debug(sub + ": asked to send messages but has none on given queue:" + queue);
+            }
             return;
         }
         AMQMessage message = null;
@@ -252,7 +251,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
             if (_log.isDebugEnabled())
             {
-                _log.debug("Async Delivery Message:" + message + " to :" + this);
+                _log.debug("Async Delivery Message (" + System.identityHashCode(message) + ") to :" + System.identityHashCode(this));
             }
 
             sub.send(message, queue);
@@ -266,6 +265,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 if (messageQueue == sub.getResendQueue())
                 {
+                    if (_log.isTraceEnabled())
+                    {
+                        _log.trace("All messages sent from resendQueue for " + sub);
+                    }
+
                     _hasContent.remove(sub);
                 }
                 else if (messageQueue == sub.getPreDeliveryQueue())
@@ -299,11 +303,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             for (Subscription sub : _subscriptions.getSubscriptions())
             {
-                if (!sub.isSuspended())
+                // Ensure only we are processing the subscribers. getNextQueue as if the subscriber has a resend queue
+                // they may close and start to empty it themselves.
+                synchronized (sub.sendlock())
                 {
-                    sendNextMessage(sub, _queue);
+                    if (!sub.isSuspended())
+                    {
+                        sendNextMessage(sub, _queue);
 
-                    hasSubscribers = true;
+                        hasSubscribers = true;
+                    }
                 }
             }
         }
@@ -316,9 +325,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void deliver(String name, AMQMessage msg) throws FailedDequeueException
     {
-        if (_log.isDebugEnabled())
+        if (_log.isTraceEnabled())
         {
-            _log.debug(id() + "deliver :" + System.identityHashCode(msg));
+            _log.trace(id() + "deliver :" + System.identityHashCode(msg));
         }
 
         //Check if we have someone to deliver the message to.
@@ -436,7 +445,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         if (_log.isDebugEnabled())
         {
             _log.debug("Processing Async. Queued:" + hasQueuedMessages() + "(" + getQueueMessageCount() + ") hasContent:"
-                       + _hasContent.isEmpty() + " Active:" + _subscriptions.hasActiveSubscribers() +
+                       + !_hasContent.isEmpty() + " Active:" + _subscriptions.hasActiveSubscribers() +
                        " Processing:" + _processing.get());
         }
 

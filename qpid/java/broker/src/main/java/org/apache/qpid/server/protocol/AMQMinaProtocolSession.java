@@ -136,7 +136,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         catch (RuntimeException e)
         {
             e.printStackTrace();
-        //    throw e;
+            //    throw e;
 
         }
     }
@@ -183,12 +183,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 String locales = "en_US";
                 // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
                 AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
-            		_major, _minor,	// AMQP version (major, minor)
-                    locales.getBytes(),	// locales
-                    mechanisms.getBytes(),	// mechanisms
-                    null,	// serverProperties
-                	(short)_major,	// versionMajor
-                    (short)_minor);	// versionMinor
+                                                                       _major, _minor,    // AMQP version (major, minor)
+                                                                       locales.getBytes(),    // locales
+                                                                       mechanisms.getBytes(),    // mechanisms
+                                                                       null,    // serverProperties
+                                                                       (short) _major,    // versionMajor
+                                                                       (short) _minor);    // versionMinor
                 _minaProtocolSession.write(response);
             }
             catch (AMQException e)
@@ -307,8 +307,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     /**
-     * Convenience method that writes a frame to the protocol session. Equivalent
-     * to calling getProtocolSession().write().
+     * Convenience method that writes a frame to the protocol session. Equivalent to calling
+     * getProtocolSession().write().
      *
      * @param frame the frame to write
      */
@@ -335,14 +335,23 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     public AMQChannel getChannel(int channelId) throws AMQException
     {
-        return _channelMap.get(channelId);
+        AMQChannel channel = _channelMap.get(channelId);
+
+        if (channel == null)
+        {
+            throw new AMQException("Unknown channel " + channelId);
+        }
+        else
+        {
+            return channel;
+        }
     }
 
     public void addChannel(AMQChannel channel) throws AMQException
     {
         if (_closed)
         {
-            throw new AMQException("Session is closed");    
+            throw new AMQException("Session is closed");
         }
 
         _channelMap.put(channel.getChannelId(), channel);
@@ -385,12 +394,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     /**
-     * Close a specific channel. This will remove any resources used by the channel, including:
-     * <ul><li>any queue subscriptions (this may in turn remove queues if they are auto delete</li>
-     * </ul>
+     * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
+     * subscriptions (this may in turn remove queues if they are auto delete</li> </ul>
      *
      * @param channelId id of the channel to close
-     * @throws AMQException if an error occurs closing the channel
+     *
+     * @throws AMQException             if an error occurs closing the channel
      * @throws IllegalArgumentException if the channel id is not valid
      */
     public void closeChannel(int channelId) throws AMQException
@@ -438,8 +447,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     /**
-     * Closes all channels that were opened by this protocol session. This frees up all resources
-     * used by the channel.
+     * Closes all channels that were opened by this protocol session. This frees up all resources used by the channel.
      *
      * @throws AMQException if an error occurs while closing any channel
      */
@@ -452,10 +460,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _channelMap.clear();
     }
 
-    /**
-     * This must be called when the session is _closed in order to free up any resources
-     * managed by the session.
-     */
+    /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
         if (!_closed)
@@ -479,17 +484,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return this + " last_sent=" + _lastSent + " last_received=" + _lastReceived;
     }
 
-    /**
-     * @return an object that can be used to identity
-     */
+    /** @return an object that can be used to identity */
     public Object getKey()
     {
         return _minaProtocolSession.getRemoteAddress();
     }
 
     /**
-     * Get the fully qualified domain name of the local address to which this session is bound. Since some servers
-     * may be bound to multiple addresses this could vary depending on the acceptor this session was created from.
+     * Get the fully qualified domain name of the local address to which this session is bound. Since some servers may
+     * be bound to multiple addresses this could vary depending on the acceptor this session was created from.
      *
      * @return a String FQDN
      */
@@ -533,8 +536,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     }
 
     /**
-     * Convenience methods for managing AMQP version.
-     * NOTE: Both major and minor will be set to 0 prior to protocol initiation.
+     * Convenience methods for managing AMQP version. NOTE: Both major and minor will be set to 0 prior to protocol
+     * initiation.
      */
 
     public byte getAmqpMajor()

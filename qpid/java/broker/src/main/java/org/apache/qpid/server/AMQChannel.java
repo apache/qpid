@@ -308,6 +308,10 @@ public class AMQChannel
 
     public void unsubscribeConsumer(AMQProtocolSession session, String consumerTag) throws AMQException
     {
+        if (_log.isTraceEnabled())
+        {
+            _log.trace("Unsubscribed consumer:" + consumerTag);
+        }
         AMQQueue q = _consumerTag2QueueMap.remove(consumerTag);
         if (q != null)
         {
@@ -350,9 +354,17 @@ public class AMQChannel
      * @param message
      * @param deliveryTag
      * @param queue
+     * @param consumerTag
      */
     public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, String consumerTag, AMQQueue queue)
     {
+        if (_log.isTraceEnabled())
+        {
+            _log.trace("Adding unackedMessage (" + System.identityHashCode(message) + ") for channel " + _channelId +
+                       " with delivery tag " + deliveryTag + " and consumerTag " + consumerTag +
+                       " from queue:" + queue.getName());
+        }
+
         synchronized (_unacknowledgedMessageMapLock)
         {
             _unacknowledgedMessageMap.put(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
@@ -364,6 +376,8 @@ public class AMQChannel
     /**
      * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel. May result in delivery to
      * this same channel or to other subscribers.
+     *
+     * @throws org.apache.qpid.AMQException if delivery failes
      */
     public void requeue() throws AMQException
     {
@@ -372,7 +386,12 @@ public class AMQChannel
         synchronized (_unacknowledgedMessageMapLock)
         {
             currentList = _unacknowledgedMessageMap;
-            _unacknowledgedMessageMap = new LinkedHashMap<Long, UnacknowledgedMessage>(DEFAULT_PREFETCH);
+            _unacknowledgedMessageMap = newUnacknowledgedMap();
+        }
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Requeuing " + currentList.size() + " messages for channel:" + System.identityHashCode(this));
         }
 
         for (UnacknowledgedMessage unacked : currentList.values())
@@ -391,62 +410,61 @@ public class AMQChannel
     /** Called to resend all outstanding unacknowledged messages to this same channel. */
     public void resend() throws AMQException
     {
-        //messages go to this channel
+        Map<Long, UnacknowledgedMessage> currentList;
+
         synchronized (_unacknowledgedMessageMapLock)
         {
-            Iterator<Map.Entry<Long, UnacknowledgedMessage>> messageSetIterator =
-                    _unacknowledgedMessageMap.entrySet().iterator();
+            currentList = _unacknowledgedMessageMap;
+            _unacknowledgedMessageMap = newUnacknowledgedMap();
+        }
 
-            while (messageSetIterator.hasNext())
+        for (Map.Entry<Long, UnacknowledgedMessage> entry : currentList.entrySet())
+        {
+            UnacknowledgedMessage unacked = entry.getValue();
+
+            String consumerTag = unacked.consumerTag;
+
+            if (_consumerTag2QueueMap.containsKey(consumerTag))
             {
-                Map.Entry<Long, UnacknowledgedMessage> entry = messageSetIterator.next();
+                AMQMessage msg = entry.getValue().message;
+                msg.setRedelivered(true);
+                Subscription sub = msg.getDeliveredSubscription();
 
-                //long deliveryTag = entry.getKey();
-                String consumerTag = entry.getValue().consumerTag;
-
-                if (_consumerTag2QueueMap.containsKey(consumerTag))
+                if (sub != null)
                 {
-                    AMQMessage msg = entry.getValue().message;
-                    msg.setRedelivered(true);
-                    Subscription sub = msg.getDeliveredSubscription();
-
-                    if (sub != null)
+                    if (_log.isDebugEnabled())
                     {
-                        if (_log.isDebugEnabled())
-                        {
-                            _log.debug("Requeuing " + msg + " for resend");
-                        }
-
-                        sub.addToResendQueue(msg);
-                    }
-                    else
-                    {
-                        _log.error("DeliveredSubscription not recorded");
+                        _log.debug("Requeuing (" + System.identityHashCode(msg) + ") for resend");
                     }
 
-                    // Don't write the frame as the DeliveryManager can now deal with it
-                    //session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+                    sub.addToResendQueue(msg);
                 }
                 else
-                { // The current consumer has gone so we need to requeue
+                {
+                    _log.error("DeliveredSubscription not recorded");
+                }
 
-                    UnacknowledgedMessage unacked = entry.getValue();
+                // Don't write the frame as the DeliveryManager can now deal with it
+                //session.writeFrame(msg.getDataBlock(_channelId, consumerTag, deliveryTag));
+            }
+            else
+            { // The current consumer has gone so we need to requeue
 
-                    if (unacked.queue != null)
-                    {
-                        unacked.message.setTxnBuffer(null);
+                if (unacked.queue != null)
+                {
+                    unacked.message.setTxnBuffer(null);
 
-                        unacked.message.release();
+                    unacked.message.release();
 
-                        unacked.queue.deliver(unacked.message);
-                    }
-                    // delete the requeued message.
-                    messageSetIterator.remove();
+                    unacked.queue.deliver(unacked.message);
                 }
             }
         }
+    }
 
-        //fixme need to start the async delivery here.
+    private Map<Long, UnacknowledgedMessage> newUnacknowledgedMap()
+    {
+        return new LinkedHashMap<Long, UnacknowledgedMessage>(DEFAULT_PREFETCH);
     }
 
     /**
@@ -541,9 +559,9 @@ public class AMQChannel
 
     private void handleAcknowledgement(long deliveryTag, boolean multiple) throws AMQException
     {
-        if (_log.isDebugEnabled())
+        if (_log.isTraceEnabled())
         {
-            _log.debug("Handling acknowledgement for channel " + _channelId + " with delivery tag " + deliveryTag +
+            _log.trace("Handling acknowledgement for channel " + _channelId + " with delivery tag " + deliveryTag +
                        " and multiple " + multiple);
         }
         if (multiple)

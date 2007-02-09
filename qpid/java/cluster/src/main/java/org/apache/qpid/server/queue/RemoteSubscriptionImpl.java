@@ -151,4 +151,9 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
     {
         //no-op
     }
+
+    public Object sendlock()
+    {
+        return null;
+    }
 }

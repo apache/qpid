@@ -121,6 +121,11 @@ public class SubscriptionTestHelper implements Subscription
         //no-op
     }
 
+    public Object sendlock()
+    {
+        return null;
+    }
+
     public int hashCode()
     {
         return key.hashCode();

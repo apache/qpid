@@ -51,4 +51,6 @@ public interface Subscription
     Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages);
 
     void addToResendQueue(AMQMessage msg);
+
+    Object sendlock();
 }

@@ -46,6 +46,11 @@
         <priority value="info"/>
     </category>
 
+    <category name="org.apache.qpid.framing.AMQDataBlockEncoder">
+       <priority value="info"/>
+   </category>
+
+
      <category name="org.apache.qpid">
         <priority value="warn"/>
     </category>

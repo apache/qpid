@@ -22,8 +22,11 @@ package org.apache.qpid.test.unit.transacted;
 
 import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.message.AMQMessage;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.TxRollbackBody;
+import org.apache.qpid.framing.TxRollbackOkBody;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.log4j.Logger;
 
@@ -34,6 +37,8 @@ import javax.jms.Queue;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * This class tests a number of commits and roll back scenarios
@@ -52,6 +57,7 @@ public class CommitRollbackTest extends TestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = Logger.getLogger(CommitRollbackTest.class);
+    private final int ACK_MODE = Session.CLIENT_ACKNOWLEDGE;
 
     protected void setUp() throws Exception
     {
@@ -64,12 +70,12 @@ public class CommitRollbackTest extends TestCase
     {
         conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'");
 
-        _session = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        _session = conn.createSession(true, ACK_MODE);
 
         _jmsQueue = _session.createQueue(queue);
         _consumer = _session.createConsumer(_jmsQueue);
 
-        _pubSession = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        _pubSession = conn.createSession(true, ACK_MODE);
 
         _publisher = _pubSession.createProducer(_pubSession.createQueue(queue));
 
@@ -129,6 +135,7 @@ public class CommitRollbackTest extends TestCase
         _logger.info("receiving result");
         Message result = _consumer.receive(1000);
 
+        assertTrue("Redelivered not true", result.getJMSRedelivered());
         assertNull("test message was put and rolled back, but is still present", result);
     }
 
@@ -247,7 +254,7 @@ public class CommitRollbackTest extends TestCase
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
         _logger.info("sending test message");
-        String MESSAGE_TEXT = "testGetThenDisconnect";
+        String MESSAGE_TEXT = "testGetThenRollback";
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _pubSession.commit();
@@ -258,6 +265,7 @@ public class CommitRollbackTest extends TestCase
 
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
+        assertTrue("Message redelivered not set", !msg.getJMSRedelivered());
 
         _logger.info("rolling back");
 
@@ -270,6 +278,7 @@ public class CommitRollbackTest extends TestCase
         _session.commit();
         assertNotNull("test message was consumed and rolled back, but is gone", result);
         assertEquals("test message was incorrect message", MESSAGE_TEXT, ((TextMessage) result).getText());
+        assertTrue("Message redelivered not set", result.getJMSRedelivered());
     }
 
 
@@ -296,6 +305,142 @@ public class CommitRollbackTest extends TestCase
         Message result = _consumer.receive(1000);
 
         assertNull("test message should be null", result);
+
+        _session.commit();
     }
 
+    /**
+     * Test that Closing a consumer and then connection while messags are being resent from a rolling back get correctly
+     * requeued a session purges the dispatcher queue, and the messages arrive in the correct order
+     *
+     * @throws Exception if something goes wrong
+     */
+    public void testRollbackWithConsumerConnectionClose() throws Exception
+    {
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending two test messages");
+
+        int MESSAGE_TO_SEND = 1000;
+
+        for (int count = 0; count < MESSAGE_TO_SEND; count++)
+        {
+            _publisher.send(_pubSession.createTextMessage(String.valueOf(count)));
+        }
+
+        _pubSession.commit();
+
+        _logger.info("getting a few messages");
+
+        for (int count = 0; count < MESSAGE_TO_SEND / 2; count++)
+        {
+            assertEquals(String.valueOf(count), ((TextMessage) _consumer.receive(1000)).getText());
+        }
+
+
+        _logger.info("rolling back");
+        _session.rollback();
+
+        _logger.info("closing consumer");
+        _consumer.close();
+        _logger.info("closed consumer");
+
+        _logger.info("close connection");
+        conn.close();
+        _logger.info("closed connection");
+
+        newConnection();
+
+        _logger.info("getting all messages");
+
+        Set<String> results = new HashSet<String>();
+        for (int count = 0; count < MESSAGE_TO_SEND; count++)
+        {
+            TextMessage msg = ((TextMessage) _consumer.receive(1000));
+
+            assertNotNull("Message should not be null, count:" + count, msg);
+            String txt = msg.getText();
+            _logger.trace("Received msg:" + txt + ":" + ((AMQMessage) msg).getDeliveryTag());
+            results.add(txt);
+        }
+
+
+        Message result = _consumer.receive(1000);
+        assertNull("test message should be null", result);
+
+        assertEquals("All messages not received", MESSAGE_TO_SEND, results.size());
+
+        _session.commit();
+    }
+
+
+    /**
+     * Test that Closing a consumer and then session while messags are being resent from a rollback get correctly
+     * requeued, a session purges the dispatcher queue, and the messages arrive in the correct order
+     *
+     * @throws Exception if something goes wrong
+     */
+    public void testRollbackWithConsumerAndSessionClose() throws Exception
+    {
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending two test messages");
+
+        int MESSAGE_TO_SEND = 1000;
+
+        for (int count = 0; count < MESSAGE_TO_SEND; count++)
+        {
+            _publisher.send(_pubSession.createTextMessage(String.valueOf(count)));
+        }
+
+        _pubSession.commit();
+
+        _logger.info("getting a few messages");
+
+        for (int count = 0; count < MESSAGE_TO_SEND / 2; count++)
+        {
+            assertEquals(String.valueOf(count), ((TextMessage) _consumer.receive(1000)).getText());
+        }
+
+
+        _logger.info("rolling back");
+        _session.rollback();
+
+        _logger.info("closing consumer");
+        _consumer.close();
+        _logger.info("closed consumer");
+
+        _logger.info("closing session");
+        _session.close();
+        _logger.info("closed session");
+
+        _session = conn.createSession(true, ACK_MODE);
+
+        _consumer = _session.createConsumer(_jmsQueue);
+
+        _logger.info("getting all messages");
+
+        Set<String> results = new HashSet<String>();
+        for (int count = 0; count < MESSAGE_TO_SEND; count++)
+        {
+            TextMessage msg = ((TextMessage) _consumer.receive(1000));
+
+            assertNotNull("Message should not be null, count:" + count, msg);
+            String txt = msg.getText();
+            _logger.trace("Received msg:" + txt + ":" + ((AMQMessage) msg).getDeliveryTag());
+            results.add(txt);
+        }
+
+
+        Message result = _consumer.receive(1000);
+        assertNull("test message should be null:" + result, result);
+
+        assertEquals("All messages not received", MESSAGE_TO_SEND, results.size());
+
+        _session.commit();
+
+
+    }   
 }
