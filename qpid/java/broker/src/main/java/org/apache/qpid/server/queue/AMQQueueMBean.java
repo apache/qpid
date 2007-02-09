@@ -395,24 +395,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         {
             throw new OperationsException("\"From MessageId\" should be greater then 0 and less then \"To MessageId\"");            
         }
-        
-        try
-        {
-            _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
-        }
-        catch(AMQException amqex)
-        {
-            throw new JMException("Error moving messages to "  + toQueueName + ": " + amqex);
-        }
 
+        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
     }
-//
-//    public ObjectName getObjectName() throws MalformedObjectNameException
-//    {
-//        String objNameString = super.getObjectName().toString();
-//
-//        return new ObjectName(objNameString);
-//    }
 
 
     /**
