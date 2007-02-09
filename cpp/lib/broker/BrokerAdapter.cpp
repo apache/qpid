@@ -106,7 +106,7 @@ void BrokerAdapter::BrokerAdapter::ExchangeHandlerImpl::declare(const MethodCont
             std::pair<Exchange::shared_ptr, bool> response = broker.getExchanges().declare(exchange, type);
             if(!response.second && response.first->getType() != type){
                 throw ConnectionException(
-                    507,
+                    530,
                     "Exchange already declared to be of type "
                     + response.first->getType() + ", requested " + type);
             }
