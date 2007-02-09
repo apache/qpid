@@ -105,5 +105,6 @@ class BrokerTests(TestBase):
             channel.queue_declare(exclusive=True)
             self.fail("Expected error on queue_declare for closed channel")
         except Closed, e:
+            if isinstance(e.args[0], str): self.fail(e)
             self.assertConnectionException(504, e.args[0])
 
