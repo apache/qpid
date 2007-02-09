@@ -61,10 +61,10 @@ class StandardExchangeVerifier:
         self.assertPublishGet(q, ex, "a.x.b.x")
         self.assertPublishGet(q, ex, "a.x.x.b.x")
         # Shouldn't match
-        self.channel.message_transfer(destination=ex, routing_key="a.b")        
-        self.channel.message_transfer(destination=ex, routing_key="a.b.x.y")        
-        self.channel.message_transfer(destination=ex, routing_key="x.a.b.x")        
-        self.channel.message_transfer(destination=ex, routing_key="a.b")
+        self.channel.message_transfer(destination=ex, routing_key="a.b", body="")        
+        self.channel.message_transfer(destination=ex, routing_key="a.b.x.y", body="")        
+        self.channel.message_transfer(destination=ex, routing_key="x.a.b.x", body="")        
+        self.channel.message_transfer(destination=ex, routing_key="a.b", body="")
         self.assert_(q.empty())
 
     def verifyHeadersExchange(self, ex):
