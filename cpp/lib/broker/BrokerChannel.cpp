@@ -330,10 +330,12 @@ void Channel::handleMethodInContext(
         connection.client->getConnection().close(
             context, e.code, e.toString(),
             method->amqpClassId(), method->amqpMethodId());
+        connection.getOutput().close();
     }catch(std::exception& e){
         connection.client->getConnection().close(
             context, 541/*internal error*/, e.what(),
             method->amqpClassId(), method->amqpMethodId());
+        connection.getOutput().close();
     }
 }
 
