@@ -41,6 +41,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like
@@ -157,7 +158,7 @@ public class AMQQueue implements Managable, Comparable
     /**
      * total messages received by the queue since startup.
      */
-    public long _totalMessagesReceived = 0;
+    public AtomicLong _totalMessagesReceived = new AtomicLong();
 
     public int compareTo(Object o)
     {
@@ -291,59 +292,77 @@ public class AMQQueue implements Managable, Comparable
     }
 
     /**
-     * @see ManagedQueue#moveMessages
+     * moves messages from this queue to another queue. to do this the approach is following-
+     * - setup the queue for moving messages (hold the lock and stop the async delivery)
+     * - get all the messages available in the given message id range
+     * - setup the other queue for moving messages (hold the lock and stop the async delivery)
+     * - send these available messages to the other queue (enqueue in other queue)
+     * - Once sending to other Queue is successful, remove messages from this queue
+     * - remove locks from both queues and start async delivery
      * @param fromMessageId
      * @param toMessageId
      * @param queueName
      * @param storeContext
-     * @throws AMQException
      */
     public synchronized void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext) throws AMQException
+                                                        StoreContext storeContext)
     {
+        // prepare the delivery manager for moving messages by stopping the async delivery and creating a lock
         AMQQueue anotherQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        List<AMQMessage> list = getMessagesOnTheQueue();
-        List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
-        int maxMessageCountToBeMoved = (int)(toMessageId - fromMessageId + 1);
-        for (AMQMessage message : list)
+        try
         {
-            long msgId = message.getMessageId();
-            if (msgId >= fromMessageId && msgId <= toMessageId)
-            {
-                foundMessagesList.add(message);
-            }
-            // break the loop as soon as messages to be removed are found
-            if (foundMessagesList.size() == maxMessageCountToBeMoved)
-            {
-                break;
-            }
-        }
+            startMovingMessages();
+            List<AMQMessage> list = getMessagesOnTheQueue();
+            List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
+            int maxMessageCountToBeMoved = (int)(toMessageId - fromMessageId + 1);
 
-        // move messages to another queue
-        for (AMQMessage message : foundMessagesList)
+            // Run this loop till you find all the messages or the list has no more messages
+            for (AMQMessage message : list)
+            {
+                long msgId = message.getMessageId();
+                if (msgId >= fromMessageId && msgId <= toMessageId)
+                {
+                    foundMessagesList.add(message);
+                }
+                // break the loop as soon as messages to be removed are found
+                if (foundMessagesList.size() == maxMessageCountToBeMoved)
+                {
+                    break;
+                }
+            }
+
+            // move messages to another queue
+            anotherQueue.startMovingMessages();
+            anotherQueue.enqueueMovedMessages(storeContext, foundMessagesList);
+
+            // moving is successful, now remove from original queue
+            _deliveryMgr.removeMovedMessages(foundMessagesList);
+        }
+        finally
         {
-            try
-            {
-                anotherQueue.process(storeContext, message);
-            }
-            catch(AMQException ex)
-            {
-                foundMessagesList.subList(foundMessagesList.indexOf(message), foundMessagesList.size()).clear();
-                // Exception occured, so rollback the changes
-                anotherQueue.removeMessages(foundMessagesList);
-                throw ex;
-            }
+            // remove the lock and start the async delivery
+            anotherQueue.stopMovingMessages();
+            stopMovingMessages();   
         }
-
-        // moving is successful, now remove from original queue
-        removeMessages(foundMessagesList);
     }
 
-    public synchronized void removeMessages(List<AMQMessage> messageList)
+    public void startMovingMessages()
     {
-        _deliveryMgr.removeMessages(messageList);
+        _deliveryMgr.startMovingMessages();
     }
 
+    private void enqueueMovedMessages(StoreContext storeContext, List<AMQMessage> messageList)
+    {
+        _deliveryMgr.enqueueMovedMessages(storeContext, messageList);
+        _totalMessagesReceived.addAndGet(messageList.size());
+    }
+
+    public void stopMovingMessages()
+    {
+        _deliveryMgr.stopMovingMessages();
+        _deliveryMgr.processAsync(_asyncDelivery);
+    }
+    
     /**
      * @return MBean object associated with this Queue
      */
@@ -374,7 +393,7 @@ public class AMQQueue implements Managable, Comparable
 
     public long getReceivedMessageCount()
     {
-        return _totalMessagesReceived;
+        return _totalMessagesReceived.get();
     }
 
     public int getMaximumMessageCount()
@@ -407,7 +426,7 @@ public class AMQQueue implements Managable, Comparable
     /**
      * Removes the AMQMessage from the top of the queue.
      */
-    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
+    public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _deliveryMgr.removeAMessageFromTop(storeContext);
     }
@@ -415,7 +434,7 @@ public class AMQQueue implements Managable, Comparable
     /**
      * removes all the messages from the queue.
      */
-    public long clearQueue(StoreContext storeContext) throws AMQException
+    public synchronized long clearQueue(StoreContext storeContext) throws AMQException
     {
         return _deliveryMgr.clearAllMessages(storeContext);
     }
@@ -633,7 +652,7 @@ public class AMQQueue implements Managable, Comparable
 
     protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
-        _totalMessagesReceived++;
+        _totalMessagesReceived.incrementAndGet();
         try
         {
             _managedObject.checkForNotification(msg);
