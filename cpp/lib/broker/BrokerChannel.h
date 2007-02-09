@@ -91,7 +91,6 @@ class Channel : public framing::ChannelAdapter,
     AccumulatedAck accumulatedAck;
     MessageStore* const store;
     MessageBuilder messageBuilder;//builder for in-progress message
-    Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
     bool opened;
 
     boost::scoped_ptr<BrokerAdapter> adapter;
@@ -131,15 +130,16 @@ class Channel : public framing::ChannelAdapter,
     void close();
     void commit();
     void rollback();
+    void ack();
     void ack(u_int64_t deliveryTag, bool multiple);
     void recover(bool requeue);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag);            
-    void handlePublish(Message* msg, Exchange::shared_ptr exchange);
+    void handlePublish(Message* msg);
     void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<framing::AMQHeartbeatBody>);
     
-    void handleInlineTransfer(Message::shared_ptr msg, Exchange::shared_ptr& exchange);
+    void handleInlineTransfer(Message::shared_ptr msg);
     
     // For ChannelAdapter
     void handleMethodInContext(

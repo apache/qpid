@@ -46,6 +46,9 @@ class Requester
     /** Called after processing a response. */
     void processed(const AMQResponseBody::Data&);
 
+	/** Get the next id to be used. */
+	RequestId getNextId() { return lastId + 1; }
+
   private:
     std::set<RequestId> requests; /** Sent but not responded to */
     RequestId lastId;

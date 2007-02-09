@@ -55,7 +55,9 @@ void ChannelAdapter::send(AMQBody::shared_ptr body) {
 
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     assertMethodOk(*request);
-    responder.received(request->getData());
+    AMQRequestBody::Data& requestData = request->getData();
+    responder.received(requestData);
+    requestInProgress = requestData.requestId;
     handleMethodInContext(request, MethodContext(this, request));
 }
 
@@ -63,7 +65,10 @@ void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
     assertMethodOk(*response);
     // TODO aconway 2007-01-30: Consider a response handled on receipt.
     // Review - any cases where this is not the case?
-    requester.processed(response->getData());
+    AMQResponseBody::Data& responseData = response->getData();
+    requester.processed(responseData);
+    // For a response this is taken to be the request being responded to (for convenience)
+    requestInProgress = responseData.requestId;
     handleMethod(response);
 }
 
