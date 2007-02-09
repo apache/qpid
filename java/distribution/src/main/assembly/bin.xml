@@ -68,73 +68,79 @@
     </fileSet>
   </fileSets>
   <files>
-    <!-- due to a bug in the assembly plugin (MASSEMBLY-153) you have
-         to use decimal numbers to specify fileMode -->
+    <!-- due to a bug in the assembly 2.1 plugin (MASSEMBLY-153) you have
+         to use octal numbers to specify fileMode note not valid in 2.2 assembly plugin -->
     <file>
       <source>../common/etc/qpid-run.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-run.conf</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>config.xml</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/log4j.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>log4j.xml</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/passwd</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>passwd</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/qpid-server.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-server.conf</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/virtualhosts.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>virtualhosts.xml</destName>
+      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server.bat</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.bat</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.sh</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.sh</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/runAll</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>runAll</destName>
-      <fileMode>0755</fileMode>
+      <fileMode>493</fileMode>
     </file>
   </files>
   <dependencySets>
