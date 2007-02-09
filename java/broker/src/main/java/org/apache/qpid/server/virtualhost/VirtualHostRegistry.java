@@ -31,6 +31,9 @@ public class VirtualHostRegistry
 {
     private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String,VirtualHost>();
 
+
+    private String _defaultVirtualHostName;
+
     public synchronized void registerVirtualHost(VirtualHost host) throws Exception
     {
         if(_registry.containsKey(host.getName()))
@@ -42,8 +45,24 @@ public class VirtualHostRegistry
 
     public VirtualHost getVirtualHost(String name)
     {
+        if(name == null || name.trim().length() == 0 )
+        {
+            name = getDefaultVirtualHostName();
+        }
+
         return _registry.get(name);
     }
+
+    private String getDefaultVirtualHostName()
+    {
+        return _defaultVirtualHostName;
+    }
+
+    public void setDefaultVirtualHostName(String defaultVirtualHostName)
+    {
+        _defaultVirtualHostName = defaultVirtualHostName;
+    }
+
 
     public Collection<VirtualHost> getVirtualHosts()
     {
