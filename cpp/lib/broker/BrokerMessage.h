@@ -78,6 +78,7 @@ class BasicMessage : public Message {
                  u_int32_t framesize);
     
     void sendGetOk(const framing::MethodContext&, 
+				   const std::string& destination,
                    u_int32_t messageCount,
                    u_int64_t deliveryTag, 
                    u_int32_t framesize);
