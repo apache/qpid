@@ -47,7 +47,7 @@
             <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
         </snapshotRepository>
 
-	<!-- Qpid has a Wiki site, maven generated site not used. This is just so that it can be created locally for viewing the reports. -->
+    <!-- Qpid has a Wiki site, maven generated site not used. This is just so that it can be created locally for viewing the reports. -->
         <site>
           <id>Qpid_Site</id>
           <name>Qpid Site</name>
@@ -97,17 +97,17 @@
         <java.source.version>1.5</java.source.version>
         <compile.flags>-Xlint:fallthrough,finally</compile.flags>
 
-	<!-- 
+    <!-- 
           This should always point to a default minimal log4j configuration that all developers are happy with as a useable default. To use your own
           log4j preferences set up an alternative in your settings.xml and avoid corrupting the default with private preferences.
-	  -->
-	<!--<log4j.configuration>file:/${topDirectoryLocation}/etc/log4j.xml</log4j.configuration>-->
+      -->
+    <!--<log4j.configuration>file:/${topDirectoryLocation}/etc/log4j.xml</log4j.configuration>-->
         <amqj.logging.level>warn</amqj.logging.level> <!-- This is referenced in the default log4j.xml -->
 
         <!--Versions for various plugins and features -->
         <antrun.version>1.2-SNAPSHOT</antrun.version>
         <!--<assembly.version>2.2-SNAPSHOT</assembly.version>-->
-	<assembly.version>2.1</assembly.version>
+    <assembly.version>2.1</assembly.version>
         <cobertura.version>2.0</cobertura.version>
         <compiler.version>2.0.1</compiler.version>
         <dependency.plugin.version>1.0</dependency.plugin.version>
@@ -288,12 +288,12 @@
                         <argLine>-ea</argLine>
                         <systemproperties>
                             <property>
-			        <name>amqj.logging.level</name>
+                    <name>amqj.logging.level</name>
                                 <value>${amqj.logging.level}</value>
-				<!--
-				<name>log4j.configuration</name>
-				<value>${log4j.configuration}</value>
-				-->
+                <!--
+                <name>log4j.configuration</name>
+                <value>${log4j.configuration}</value>
+                -->
                             </property>
                         </systemproperties>
                     </configuration>
@@ -348,12 +348,11 @@
                     </executions>
                 </plugin>
 
-		<!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository. -->
                 <plugin>
                     <groupId>uk.co.thebadgerset</groupId>
                     <artifactId>junit-toolkit-maven-plugin</artifactId>
-                    <version>0.5-SNAPSHOT</version>
-		</plugin>
+                    <version>0.5</version>
+                </plugin>
 
             </plugins>
         </pluginManagement>
