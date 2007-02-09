@@ -150,6 +150,57 @@ class QueueTests(TestBase):
         except Closed, e:
             self.assertChannelException(404, e.args[0])
 
+    def test_unbind_direct(self):
+        self.unbind_test(exchange="amq.direct", routing_key="key")
+
+    def test_unbind_topic(self):
+        self.unbind_test(exchange="amq.topic", routing_key="key")
+
+    def test_unbind_fanout(self):
+        self.unbind_test(exchange="amq.fanout")
+
+    def test_unbind_headers(self):
+        self.unbind_test(exchange="amq.match", args={ "x-match":"all", "a":"b"}, headers={"a":"b"})
+
+    def unbind_test(self, exchange, routing_key="", args=None, headers={}):
+        #bind two queues and consume from them
+        channel = self.channel
+        
+        channel.queue_declare(queue="queue-1", exclusive="True")
+        channel.queue_declare(queue="queue-2", exclusive="True")
+
+        channel.message_consume(queue="queue-1", destination="queue-1", no_ack=True)
+        channel.message_consume(queue="queue-2", destination="queue-2", no_ack=True)
+
+        queue1 = self.client.queue("queue-1")
+        queue2 = self.client.queue("queue-2")
+
+        channel.queue_bind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
+        channel.queue_bind(exchange=exchange, queue="queue-2", routing_key=routing_key, arguments=args)
+
+        #send a message that will match both bindings
+        channel.message_transfer(destination=exchange, routing_key=routing_key, application_headers=headers, body="one")
+        
+        #unbind first queue
+        channel.queue_unbind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
+        
+        #send another message
+        channel.message_transfer(destination=exchange, routing_key=routing_key, application_headers=headers, body="two")
+
+        #check one queue has both messages and the other has only one
+        self.assertEquals("one", queue1.get(timeout=1).body)
+        try:
+            msg = queue1.get(timeout=1)
+            self.fail("Got extra message: %s" % msg.body)
+        except Empty: pass
+
+        self.assertEquals("one", queue2.get(timeout=1).body)
+        self.assertEquals("two", queue2.get(timeout=1).body)
+        try:
+            msg = queue2.get(timeout=1)
+            self.fail("Got extra message: " + msg)
+        except Empty: pass        
+
 
     def test_delete_simple(self):
         """
