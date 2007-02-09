@@ -277,7 +277,7 @@ class MessageTests(TestBase):
         #todo: once batching is implmented, send a single response for all messages
         for msg in msgs:
             msg.ok()
-        del msgs    
+        msgs = []    
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
@@ -286,7 +286,7 @@ class MessageTests(TestBase):
 
         for msg in msgs:
             msg.ok()
-        del msgs    
+        msgs = []    
 
         try:
             extra = queue.get(timeout=1)
@@ -317,7 +317,6 @@ class MessageTests(TestBase):
         for i in range(1, 6):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            print "Got Message %d" % i
             msgs.append(msg)
 
         try:
@@ -328,7 +327,7 @@ class MessageTests(TestBase):
         #ack messages and check that the next set arrive ok:
         for msg in msgs:
             msg.ok()
-        del msgs    
+        msgs = []    
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
@@ -337,7 +336,7 @@ class MessageTests(TestBase):
 
         for msg in msgs:
             msg.ok()
-        del msgs    
+        msgs = []    
 
         try:
             extra = queue.get(timeout=1)
