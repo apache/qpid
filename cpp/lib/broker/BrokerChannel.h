@@ -36,6 +36,7 @@
 #include <Prefetch.h>
 #include <TxBuffer.h>
 #include "framing/ChannelAdapter.h"
+#include "ChannelOpenBody.h"
 #include "CompletionHandler.h"
 
 namespace qpid {

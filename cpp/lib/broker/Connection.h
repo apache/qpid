@@ -86,6 +86,7 @@ class Connection : public sys::ConnectionInputHandler,
     Channel& newChannel(framing::ChannelId channel);
     Channel& getChannel(framing::ChannelId channel);
     void closeChannel(framing::ChannelId channel);
+    void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
 
   private:
     typedef boost::ptr_map<framing::ChannelId, Channel> ChannelMap;
