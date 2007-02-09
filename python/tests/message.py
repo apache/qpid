@@ -372,7 +372,7 @@ class MessageTests(TestBase):
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "empty")
 
         #repeat for no_ack=False
         for i in range(11, 21):
@@ -383,8 +383,11 @@ class MessageTests(TestBase):
             reply = channel.message_get(no_ack=False, queue="test-get", destination=tag)
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "ok")
-            self.assertEqual("Message %d" % i, self.client.queue(tag).get(timeout=1).body)
-            reply.ok()
+            msg = self.client.queue(tag).get(timeout=1)
+            self.assertEqual("Message %d" % i, msg.body)
+            # TODO: replace with below when we have batching
+            if(i in [11, 12, 13, 15, 17, 19]):
+              msg.ok()
 
             #todo: when batching is available, test ack multiple
             #if(i == 13):
@@ -394,7 +397,7 @@ class MessageTests(TestBase):
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "empty")
 
         #recover(requeue=True)
         channel.message_recover(requeue=True)
@@ -405,19 +408,20 @@ class MessageTests(TestBase):
             reply = channel.message_get(no_ack=False, queue="test-get", destination=tag)
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "ok")
-            self.assertEqual("Message %d" % i, self.client.queue(tag).get(timeout=1).body)
-            reply.ok()
+            msg = self.client.queue(tag).get(timeout=1)
+            self.assertEqual("Message %d" % i, msg.body)
+            msg.ok()
             #channel.message_ack(delivery_tag=reply.delivery_tag)
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "empty")
 
         channel.message_recover(requeue=True)
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")
-        self.assertEqual(reply.method.name, "get-empty")
+        self.assertEqual(reply.method.name, "empty")
 
     def test_reference_simple(self):
         """

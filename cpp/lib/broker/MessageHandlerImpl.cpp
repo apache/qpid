@@ -110,13 +110,13 @@ void
 MessageHandlerImpl::get( const MethodContext& context,
                          u_int16_t /*ticket*/,
                          const string& queueName,
-                         const string& /*destination*/,
+                         const string& destination,
                          bool noAck )
 {
     Queue::shared_ptr queue =
         connection.getQueue(queueName, context.channel->getId());
     
-    if(channel.get(queue, !noAck))
+    if(channel.get(queue, destination, !noAck))
         client.ok(context);
     else 
         client.empty(context);

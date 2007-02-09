@@ -289,7 +289,7 @@ void BrokerAdapter::BrokerAdapter::BasicHandlerImpl::publish(
         
 void BrokerAdapter::BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, u_int16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());    
-    if(!connection.getChannel(channel.getId()).get(queue, !noAck)){
+    if(!connection.getChannel(channel.getId()).get(queue, "", !noAck)){
         string clusterId;//not used, part of an imatix hack
 
         connection.client->getBasic().getEmpty(context, clusterId);

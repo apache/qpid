@@ -79,12 +79,38 @@ void MessageMessage::deliver(
 }
 
 void MessageMessage::sendGetOk(
-    const framing::MethodContext& /*context*/, 
+    const framing::MethodContext& context,
+	const std::string& destination,
     u_int32_t /*messageCount*/,
     u_int64_t /*deliveryTag*/, 
     u_int32_t /*framesize*/)
 {
-    // FIXME aconway 2007-02-05: 
+	framing::ChannelAdapter* channel = context.channel;
+    channel->send(
+    	new MessageTransferBody(channel->getVersion(), 
+                                transfer->getTicket(),
+                                destination,
+                                getRedelivered(),
+                                transfer->getImmediate(),
+                                transfer->getTtl(),
+                                transfer->getPriority(),
+                                transfer->getTimestamp(),
+                                transfer->getDeliveryMode(),
+                                transfer->getExpiration(),
+                                getExchange(),
+                                getRoutingKey(),
+                                transfer->getMessageId(),
+                                transfer->getCorrelationId(),
+                                transfer->getReplyTo(),
+                                transfer->getContentType(),
+                                transfer->getContentEncoding(),
+                                transfer->getUserId(),
+                                transfer->getAppId(),
+                                transfer->getTransactionId(),
+                                transfer->getSecurityToken(),
+                                transfer->getApplicationHeaders(),
+                                transfer->getBody(),
+                                transfer->getMandatory()));
 }
 
 bool MessageMessage::isComplete()

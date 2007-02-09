@@ -125,7 +125,7 @@ class Channel : public framing::ChannelAdapter,
                  bool exclusive, ConnectionToken* const connection = 0,
                  const framing::FieldTable* = 0);
     void cancel(const string& tag);
-    bool get(Queue::shared_ptr queue, bool ackExpected);
+    bool get(Queue::shared_ptr queue, const std::string& destination, bool ackExpected);
     void begin();
     void close();
     void commit();

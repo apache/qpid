@@ -204,8 +204,6 @@ void Channel::handleInlineTransfer(Message::shared_ptr msg)
     }
 }
 
-// FIXME aconway 2007-02-05: Drop exchange member, calculate from
-// message in ::complete().
 void Channel::handlePublish(Message* _message){
     Message::shared_ptr message(_message);
     messageBuilder.initialise(message);
@@ -292,12 +290,13 @@ void Channel::recover(bool requeue){
     }
 }
 
-bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
+bool Channel::get(Queue::shared_ptr queue, const string& destination, bool ackExpected){
     Message::shared_ptr msg = queue->dequeue();
     if(msg){
         Mutex::ScopedLock locker(deliveryLock);
-        u_int64_t myDeliveryTag = currentDeliveryTag++;
+        u_int64_t myDeliveryTag = getNextSendRequestId();
         msg->sendGetOk(MethodContext(this, msg->getRespondTo()),
+        			   destination,
                        queue->getMessageCount() + 1, myDeliveryTag,
                        framesize);
         if(ackExpected){

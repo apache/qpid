@@ -112,6 +112,7 @@ class Message{
      * Used to return a message in response to a get from a queue
      */
     virtual void sendGetOk(const framing::MethodContext& context,
+    					   const std::string& destination,
                            u_int32_t messageCount,
                            u_int64_t deliveryTag, 
                            u_int32_t framesize) = 0;

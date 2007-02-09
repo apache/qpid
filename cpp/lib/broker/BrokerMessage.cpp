@@ -89,7 +89,8 @@ void BasicMessage::deliver(ChannelAdapter& channel,
     sendContent(channel, framesize);
 }
 
-void BasicMessage::sendGetOk(const MethodContext& context, 
+void BasicMessage::sendGetOk(const MethodContext& context,
+    					     const std::string& /*destination*/,
                              u_int32_t messageCount,
                              u_int64_t deliveryTag, 
                              u_int32_t framesize)
