@@ -178,6 +178,7 @@ class ChannelTest : public CppUnit::TestCase
 
     void testDeliveryNoAck(){
         Channel channel(connection, 7, 10000);
+        channel.open();
         const string data("abcdefghijklmn");
         Message::shared_ptr msg(
             createMessage("test", "my_routing_key", "my_message_id", 14));
@@ -207,6 +208,7 @@ class ChannelTest : public CppUnit::TestCase
 
     void testDeliveryAndRecovery(){
         Channel channel(connection, 7, 10000);
+        channel.open();
         const string data("abcdefghijklmn");
 
         Message::shared_ptr msg(createMessage("test", "my_routing_key", "my_message_id", 14));

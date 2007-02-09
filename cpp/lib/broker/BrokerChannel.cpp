@@ -60,7 +60,7 @@ Channel::Channel(
     tagGenerator("sgen"),
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
-    opened(true),
+    opened(id == 0),//channel 0 is automatically open, other must be explicitly opened
     adapter(new BrokerAdapter(*this, con, con.broker))
 {
     outstanding.reset();
@@ -320,22 +320,22 @@ void Channel::handleMethodInContext(
 )
 {
     try{
-        method->invoke(*adapter, context);
+        if(id != 0 && !method->isA<ChannelOpenBody>() && !isOpen()) {
+            std::stringstream out;
+            out << "Attempt to use unopened channel: " << id;
+            throw ConnectionException(504, out.str());
+        } else {
+            method->invoke(*adapter, context);
+        }
     }catch(ChannelException& e){
         connection.client->getChannel().close(
             context, e.code, e.toString(),
             method->amqpClassId(), method->amqpMethodId());
         connection.closeChannel(getId());
     }catch(ConnectionException& e){
-        connection.client->getConnection().close(
-            context, e.code, e.toString(),
-            method->amqpClassId(), method->amqpMethodId());
-        connection.getOutput().close();
+        connection.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
-        connection.client->getConnection().close(
-            context, 541/*internal error*/, e.what(),
-            method->amqpClassId(), method->amqpMethodId());
-        connection.getOutput().close();
+        connection.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
     }
 }
 

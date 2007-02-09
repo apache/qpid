@@ -63,6 +63,11 @@ void Connection::received(qpid::framing::AMQFrame* frame){
     getChannel(frame->getChannel()).handleBody(frame->getBody());
 }
 
+void Connection::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId){
+    client->getConnection().close(MethodContext(&getChannel(0)), code, text, classId, methodId);
+    getOutput().close();
+}
+
 // TODO aconway 2007-02-02: Should be delegated to the BrokerAdapter
 // as it is part of the protocol.
 void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
