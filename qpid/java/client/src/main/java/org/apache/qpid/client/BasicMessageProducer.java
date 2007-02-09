@@ -24,14 +24,12 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 
 import javax.jms.*;
 import java.io.UnsupportedEncodingException;
-import java.util.Enumeration;
 
 public class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
@@ -440,7 +438,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
 
-        byte type;
+        int type;
         if(destination instanceof Topic)
         {
             type = AMQDestination.TOPIC_TYPE;
@@ -454,7 +452,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             type = AMQDestination.UNKNOWN_TYPE;
         }
 
-        message.getJmsHeaders().setByte(CustomJMSXProperty.JMSZ_QPID_DESTTYPE.getShortStringName(),
+        message.getJmsHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(),
                                                type);
 
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)

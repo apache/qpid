@@ -72,7 +72,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         this(contentHeader, deliveryTag);
 
 
-        byte type = contentHeader.getHeaders().getByte(CustomJMSXProperty.JMSZ_QPID_DESTTYPE.getShortStringName());
+        int type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
 
         AMQDestination dest;
 
