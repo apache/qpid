@@ -144,7 +144,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             false,	// internal
             true,	// nowait
             false,	// passive
-            0,	// ticket
+            _session.getTicket(),	// ticket
             destination.getExchangeClass());	// type
         _protocolHandler.writeFrame(declare);
     }
@@ -465,7 +465,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             immediate,	// immediate
             mandatory,	// mandatory
             destination.getRoutingKey(),	// routingKey
-            0);	// ticket
+            _session.getTicket());	// ticket
 
 
 
