@@ -28,6 +28,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -63,6 +64,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private int _acknowledgeMode;
 
     private int _channelId;
+
+    private int _ticket;
 
     private int _defaultPrefetchHighMark = DEFAULT_PREFETCH_HIGH_MARK;
     private int _defaultPrefetchLowMark = DEFAULT_PREFETCH_LOW_MARK;
@@ -144,6 +147,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private boolean _connectionStopped;
 
     private boolean _hasMessageListeners;
+
 
     /**
      * Responsible for decoding a message fragment and passing it to the appropriate message consumer.
@@ -1114,7 +1118,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                             false,    // internal
                                                             false,    // nowait
                                                             false,    // passive
-                                                            0,    // ticket
+                                                            getTicket(),    // ticket
                                                             type);    // type
         getProtocolHandler().syncWrite(frame, ExchangeDeclareOkBody.class);
     }
@@ -1136,7 +1140,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                       false,    // internal
                                                                       true,    // nowait
                                                                       false,    // passive
-                                                                      0,    // ticket
+                                                                      getTicket(),    // ticket
                                                                       type);    // type
         protocolHandler.writeFrame(exchangeDeclare);
     }
@@ -1169,7 +1173,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                 true,    // nowait
                                                                 false,    // passive
                                                                 amqd.getAMQQueueName(),    // queue
-                                                                0);    // ticket
+                                                                getTicket());    // ticket
 
         protocolHandler.writeFrame(queueDeclare);
         return amqd.getAMQQueueName();
@@ -1185,7 +1189,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                           true,    // nowait
                                                           queueName,    // queue
                                                           amqd.getRoutingKey(),    // routingKey
-                                                          0);    // ticket
+                                                          getTicket());    // ticket
 
         protocolHandler.writeFrame(queueBind);
     }
@@ -1233,7 +1237,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                   consumer.isNoLocal(),    // noLocal
                                                                   nowait,    // nowait
                                                                   queueName,    // queue
-                                                                  0);    // ticket
+                                                                  getTicket());    // ticket
             if (nowait)
             {
                 protocolHandler.writeFrame(jmsConsume);
@@ -1426,7 +1430,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                        false,    // ifUnused
                                                                        true,    // nowait
                                                                        queueName,    // queue
-                                                                       0);    // ticket
+                                                                       getTicket());    // ticket
             getProtocolHandler().syncWrite(queueDeleteFrame, QueueDeleteOkBody.class);
         }
         catch (AMQException e)
@@ -1823,5 +1827,49 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             throw new javax.jms.InvalidDestinationException("Invalid Queue");
         }
     }
+
+
+
+    public int getTicket()
+    {
+        return _ticket;
+    }
+
+    public void setTicket(int ticket)
+    {
+        _ticket = ticket;
+    }
+
+
+    public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write, boolean read) throws AMQException
+    {
+        getProtocolHandler().writeCommandFrameAndWaitForReply(AccessRequestBody.createAMQFrame(getChannelId(),
+                                                                         getProtocolMajorVersion(),
+                                                                         getProtocolMinorVersion(),
+                                                                         active,
+                                                                         exclusive,
+                                                                         passive,
+                                                                         read,
+                                                                         realm,
+                                                                         write),
+                                       new BlockingMethodFrameListener(_channelId)
+                                       {
+
+                                           public boolean processMethod(int channelId, AMQMethodBody frame) throws AMQException
+                                           {
+                                               if(frame instanceof AccessRequestOkBody)
+                                               {
+                                                    setTicket(((AccessRequestOkBody)frame).getTicket());
+                                                    return true;
+                                               }
+                                               else
+                                               {
+                                                    return false;
+                                               }
+                                           }
+                                       });
+
+    }
+
 
 }
