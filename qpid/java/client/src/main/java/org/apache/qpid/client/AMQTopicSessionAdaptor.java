@@ -24,7 +24,7 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.Serializable;
 
-public class AMQTopicSessionAdaptor implements TopicSession
+public class AMQTopicSessionAdaptor implements TopicSession, AMQSessionAdapter
 {
     protected final AMQSession _session;
 
@@ -199,4 +199,8 @@ public class AMQTopicSessionAdaptor implements TopicSession
         throw new IllegalStateException("Cannot call createTemporaryQueue from TopicSession");
     }
 
+    public AMQSession getSession()
+    {
+        return _session;
+    }
 }

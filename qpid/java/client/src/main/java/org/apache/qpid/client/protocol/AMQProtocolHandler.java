@@ -442,7 +442,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
-    private AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
+    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
                                                             BlockingMethodFrameListener listener)
             throws AMQException
     {
@@ -457,7 +457,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
-    private AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
+    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
                                                             BlockingMethodFrameListener listener, long timeout)
             throws AMQException
     {
