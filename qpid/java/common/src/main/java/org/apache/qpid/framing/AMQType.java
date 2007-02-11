@@ -60,7 +60,7 @@ public enum AMQType
 
     },
 
-    INTEGER('I')
+    INTEGER('i')
     {
 
         public int getEncodingSize(Object value)
@@ -478,7 +478,7 @@ public enum AMQType
         }
     },
 
-    INT('i')
+    INT('I')
     {
         public int getEncodingSize(Object value)
         {
