@@ -628,14 +628,38 @@ class MessageTests(TestBase):
 
         channel.message_consume(queue = "q", destination = "consumer")
         channel.message_transfer(routing_key = "q", body="blah, blah")
-        msg = self.client.queue("consumer").get(timeout = 5)
+        msg = self.client.queue("consumer").get(timeout = 1)
         self.assertEquals(msg.body, "blah, blah")
         channel.message_cancel(destination = "consumer")
         msg.reject()
 
         channel.message_consume(queue = "q", destination = "checker")
-        msg = self.client.queue("checker").get(timeout = 5)
+        msg = self.client.queue("checker").get(timeout = 1)
         self.assertEquals(msg.body, "blah, blah")
+
+    def test_checkpoint(self):
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+
+        channel.message_open(reference="my-ref")
+        channel.message_append(reference="my-ref", bytes="abcdefgh")
+        channel.message_append(reference="my-ref", bytes="ijklmnop")
+        channel.message_checkpoint(reference="my-ref", identifier="my-checkpoint")
+        channel.channel_close()
+
+        channel = self.client.channel(2)
+        channel.channel_open()
+        channel.message_consume(queue = "q", destination = "consumer")
+        offset = channel.channel_resume(reference="my-ref", identifier="my-checkpoint").value
+        self.assertEquals(offset, 16)
+        channel.message_append(reference="my-ref", bytes="qrstuvwx")
+        channel.synchronous = False
+        channel.message_transfer(routing_key="q-one", message_id="abcd", body=ReferenceId("my-ref"))
+        channel.synchronous = True
+        channel.message_close(reference="my-ref")
+
+        self.assertDataEquals(channel, self.client.queue("consumer").get(timeout = 1))
+        self.assertEmpty(self.client.queue("consumer"))
         
         
     def assertDataEquals(self, channel, msg, expected):
