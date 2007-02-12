@@ -20,27 +20,29 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.commons.collections.map.ReferenceMap;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQUndefinedDestination;
-import org.apache.qpid.client.*;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.AMQShortString;
-
-import javax.jms.*;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 
+import javax.jms.*;
+
+import org.apache.commons.collections.map.ReferenceMap;
+
+import org.apache.mina.common.ByteBuffer;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.*;
+import org.apache.qpid.client.AMQUndefinedDestination;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.URLSyntaxException;
+
 public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
-                                                                  
 
     protected boolean _redelivered;
 
@@ -60,10 +62,11 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             _data.acquire();
         }
+
         _readableProperties = false;
         _readableMessage = (data != null);
         _changedData = (data == null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties)_contentHeaderProperties).getHeaders());
+        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
@@ -71,27 +74,28 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     {
         this(contentHeader, deliveryTag);
 
-
-        int type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
+        Integer type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
+        int contentType = (type == null) ? AMQDestination.UNKNOWN_TYPE : type.intValue();
 
         AMQDestination dest;
 
-        switch(type)
+        switch (contentType)
         {
-            case AMQDestination.QUEUE_TYPE:
-                dest = new AMQQueue(exchange, routingKey, routingKey);
-                break;
-            case AMQDestination.TOPIC_TYPE:
-                dest = new AMQTopic(exchange, routingKey, null);
-                break;
-            default:
-                dest = new AMQUndefinedDestination(exchange, routingKey, null);
-                break;
+
+        case AMQDestination.QUEUE_TYPE:
+            dest = new AMQQueue(exchange, routingKey, routingKey);
+            break;
+
+        case AMQDestination.TOPIC_TYPE:
+            dest = new AMQTopic(exchange, routingKey, null);
+            break;
+
+        default:
+            dest = new AMQUndefinedDestination(exchange, routingKey, null);
+            break;
         }
         //Destination dest = AMQDestination.createDestination(url);
         setJMSDestination(dest);
-
-
 
         _data = data;
         if (_data != null)
@@ -107,7 +111,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     {
         super(contentHeader, deliveryTag);
         _readableProperties = (_contentHeaderProperties != null);
-        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties)_contentHeaderProperties).getHeaders());
+        _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
     }
 
     public String getJMSMessageID() throws JMSException
@@ -116,6 +120,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             getContentHeaderProperties().setMessageId("ID:" + _deliveryTag);
         }
+
         return getContentHeaderProperties().getMessageId();
     }
 
@@ -178,6 +183,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
                 _destinationCache.put(replyToEncoding, dest);
             }
+
             return dest;
         }
     }
@@ -188,11 +194,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             throw new IllegalArgumentException("Null destination not allowed");
         }
+
         if (!(destination instanceof AMQDestination))
         {
-            throw new IllegalArgumentException("ReplyTo destination may only be an AMQDestination - passed argument was type " +
-                    destination.getClass());
+            throw new IllegalArgumentException(
+                "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
         }
+
         final AMQDestination amqd = (AMQDestination) destination;
 
         final AMQShortString encodedDestination = amqd.getEncodedName();
@@ -278,17 +286,17 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _readableMessage = false;
     }
 
-
     public boolean propertyExists(AMQShortString propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().propertyExists(propertyName);
     }
-
 
     public boolean propertyExists(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().propertyExists(propertyName);
     }
 
@@ -298,7 +306,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
         return getJmsHeaders().getBoolean(propertyName);
     }
-
 
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
@@ -310,48 +317,56 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public byte getByteProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getByte(propertyName);
     }
 
     public short getShortProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getShort(propertyName);
     }
 
     public int getIntProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getInteger(propertyName);
     }
 
     public long getLongProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getLong(propertyName);
     }
 
     public float getFloatProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getFloat(propertyName);
     }
 
     public double getDoubleProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getDouble(propertyName);
     }
 
     public String getStringProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getString(propertyName);
     }
 
     public Object getObjectProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getObject(propertyName);
     }
 
@@ -436,7 +451,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         getJmsHeaders().remove(propertyName);
     }
 
-
     protected void removeProperty(String propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
@@ -467,7 +481,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             _session.acknowledge();
         }
     }
-
 
     /**
      * This forces concrete classes to implement clearBody()
@@ -511,6 +524,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             {
                 buf.append('\n').append(getJmsHeaders().getHeaders());
             }
+
             return buf.toString();
         }
         catch (JMSException e)
@@ -518,7 +532,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             return e.toString();
         }
     }
-
 
     public void setUnderlyingMessagePropertiesMap(FieldTable messageProperties)
     {
@@ -550,6 +563,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             reset();
         }
+
         return _data;
     }
 
@@ -608,6 +622,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
+
         return getJmsHeaders().getBytes(propertyName);
 
     }
