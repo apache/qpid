@@ -64,6 +64,61 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Backports the module to Java 1.4. This is done during the packaging phase as a transformation of the Jar. -->
+            <plugin>
+               <groupId>org.codehaus.mojo</groupId>
+               <artifactId>retrotranslator-maven-plugin</artifactId>
+               <executions>
+                   <execution>
+                       <phase>package</phase>
+                       <goals>
+                           <goal>translate</goal>
+                       </goals>
+                       <configuration>
+                           <destjar>${project.build.directory}/${project.build.finalName}-java1.4.jar</destjar>
+			   <verify>${retrotranslator.verify}</verify>
+			   <verifyClasspath>
+			       <element>${retrotranslator.1.4-rt-path}</element>
+			       <element>${retrotranslator.1.4-jce-path}</element>
+			       <element>${retrotranslator.1.4-jsse-path}</element>
+			   </verifyClasspath>
+                           <includes>
+                               <include>
+                                   <directory>${project.build.directory}</directory>
+				   <pattern>${project.build.finalName}.jar</pattern>
+                               </include>
+                           </includes>
+                       </configuration>
+                   </execution>
+
+               </executions>
+            </plugin>
+	    
+	    <!-- This identifies the backported java 1.4 jar and attaches it as a jar (classified as java1.4) build artifact. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${project.build.directory}/${project.build.finalName}-java1.4.jar</file>
+                                    <type>jar</type>
+                                    <classifier>java1.4</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -74,12 +129,11 @@
             <artifactId>log4j</artifactId>
         </dependency>
 
-
-<!-- This is a mina dependency but it isn't being picked up-->
-       <dependency>
+        <!-- This is a mina dependency but it isn't being picked up-->
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-       </dependency>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.mina</groupId>
@@ -101,6 +155,13 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
+	<!-- This needs to be included at compile time, for the retrotranslator verification to find it. -->
+	<dependency>
+	    <groupId>net.sf.retrotranslator</groupId>
+	    <artifactId>retrotranslator-runtime</artifactId>
+	    <scope>provided</scope>
+	</dependency>
 
     </dependencies>
 </project>
