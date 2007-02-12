@@ -66,7 +66,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         }
         else
         {
-            virtualHostName = String.valueOf(body.virtualHost);
+            virtualHostName = body.virtualHost == null ? null : String.valueOf(body.virtualHost);
         }
 
         VirtualHost virtualHost = stateManager.getVirtualHostRegistry().getVirtualHost(virtualHostName);
