@@ -652,13 +652,13 @@ class MessageTests(TestBase):
         channel.message_consume(queue = "q", destination = "consumer")
         offset = channel.channel_resume(reference="my-ref", identifier="my-checkpoint").value
         self.assertEquals(offset, 16)
-        channel.message_append(reference="my-ref", bytes="qrstuvwx")
+        channel.message_append(reference="my-ref", bytes="qrstuvwxyz")
         channel.synchronous = False
         channel.message_transfer(routing_key="q-one", message_id="abcd", body=ReferenceId("my-ref"))
         channel.synchronous = True
         channel.message_close(reference="my-ref")
 
-        self.assertDataEquals(channel, self.client.queue("consumer").get(timeout = 1))
+        self.assertDataEquals(channel, self.client.queue("consumer").get(timeout = 1), "abcdefghijklmnopqrstuvwxyz")
         self.assertEmpty(self.client.queue("consumer"))
         
         
