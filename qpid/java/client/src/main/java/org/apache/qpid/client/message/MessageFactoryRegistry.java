@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,20 +20,40 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.jms.JMSException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 
 public class MessageFactoryRegistry
 {
     private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
-    private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap = new HashMap<AMQShortString, MessageFactory>();
+    private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap =
+        new HashMap<AMQShortString, MessageFactory>();
+
+    /**
+     * Construct a new registry with the default message factories registered
+     * @return a message factory registry
+     */
+    public static MessageFactoryRegistry newDefaultRegistry()
+    {
+        MessageFactoryRegistry mf = new MessageFactoryRegistry();
+        mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
+        mf.registerFactory("text/plain", new JMSTextMessageFactory());
+        mf.registerFactory("text/xml", new JMSTextMessageFactory());
+        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
+        mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
+        mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
+        mf.registerFactory(null, new JMSBytesMessageFactory());
+
+        return mf;
+    }
 
     public void registerFactory(String mimeType, MessageFactory mf)
     {
@@ -41,6 +61,7 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Message factory must not be null");
         }
+
         _mimeStringToFactoryMap.put(mimeType, mf);
         _mimeShortStringToFactoryMap.put(new AMQShortString(mimeType), mf);
     }
@@ -48,6 +69,7 @@ public class MessageFactoryRegistry
     public MessageFactory deregisterFactory(String mimeType)
     {
         _mimeShortStringToFactoryMap.remove(new AMQShortString(mimeType));
+
         return _mimeStringToFactoryMap.remove(mimeType);
     }
 
@@ -62,14 +84,19 @@ public class MessageFactoryRegistry
      * @throws AMQException
      * @throws JMSException
      */
-    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
-                                            AMQShortString exchange,
-                                            AMQShortString routingKey,
-                                            ContentHeaderBody contentHeader,
-                                            List bodies) throws AMQException, JMSException
+    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
+                                            AMQShortString routingKey, ContentHeaderBody contentHeader, List bodies)
+                                     throws AMQException, JMSException
     {
-        BasicContentHeaderProperties properties =  (BasicContentHeaderProperties) contentHeader.properties;
-        MessageFactory mf =  _mimeShortStringToFactoryMap.get(properties.getContentTypeShortString());
+        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeader.properties;
+
+        // Get the message content type. This may be null for pure AMQP messages, but will always be set for JMS over
+        // AMQP. When the type is null, it can only be assumed that the message is a byte message.
+        AMQShortString contentTypeShortString = properties.getContentTypeShortString();
+        contentTypeShortString = (contentTypeShortString == null) ? new AMQShortString(JMSBytesMessage.MIME_TYPE)
+                                                                  : contentTypeShortString;
+
+        MessageFactory mf = _mimeShortStringToFactoryMap.get(contentTypeShortString);
         if (mf == null)
         {
             throw new AMQException("Unsupport MIME type of " + properties.getContentType());
@@ -86,6 +113,7 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Mime type must not be null");
         }
+
         MessageFactory mf = _mimeStringToFactoryMap.get(mimeType);
         if (mf == null)
         {
@@ -95,22 +123,5 @@ public class MessageFactoryRegistry
         {
             return mf.createMessage();
         }
-    }
-
-    /**
-     * Construct a new registry with the default message factories registered
-     * @return a message factory registry
-     */
-    public static MessageFactoryRegistry newDefaultRegistry()
-    {
-        MessageFactoryRegistry mf = new MessageFactoryRegistry();
-        mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
-        mf.registerFactory("text/plain", new JMSTextMessageFactory());
-        mf.registerFactory("text/xml", new JMSTextMessageFactory());
-        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
-        mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
-        mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
-        mf.registerFactory(null, new JMSBytesMessageFactory());
-        return mf;
     }
 }
