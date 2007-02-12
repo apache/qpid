@@ -39,10 +39,6 @@
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
 
-	<!-- Override these in local settings.xml to perform verification. Cannot make assumptions about 1.4 Jdk location to turn this on by default. -->
-	<retrotranslator.verify>false</retrotranslator.verify>
-	<retrotranslator.1.4-rt-path/>
-
     </properties>
 
     <dependencies>
