@@ -135,7 +135,7 @@ public class CommitRollbackTest extends TestCase
         _logger.info("receiving result");
         Message result = _consumer.receive(1000);
 
-        assertTrue("Redelivered not true", result.getJMSRedelivered());
+        
         assertNull("test message was put and rolled back, but is still present", result);
     }
 
