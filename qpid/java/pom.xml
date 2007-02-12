@@ -125,6 +125,13 @@
 	<build-helper.plugin.version>1.0</build-helper.plugin.version>
         <eclipse.workspace.dir>${basedir}/${topDirectoryLocation}/../workspace</eclipse.workspace.dir>
         <clover.license.pathname>/set/clover/license/path/here</clover.license.pathname>
+
+	<!-- Override these in local settings.xml to perform verification. Cannot make assumptions about 1.4 Jdk location to turn this on by default. -->
+	<retrotranslator.verify>false</retrotranslator.verify>
+        <retrotranslator.1.4-rt-path>pathto/rt.jar</retrotranslator.1.4-rt-path>
+        <retrotranslator.1.4-jce-path>pathto/jce.jar</retrotranslator.1.4-jce-path>
+        <retrotranslator.1.4-jsse-path>pathto/jsse.jar</retrotranslator.1.4-jsse-path>
+
     </properties>
 
     <modules>
