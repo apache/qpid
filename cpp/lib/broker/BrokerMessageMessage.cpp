@@ -122,7 +122,7 @@ u_int64_t MessageMessage::contentSize() const
 {
 	// FIXME astitcher 2007-2-7 only works for inline content
 	if (transfer->getBody().isInline())
-	    return transfer->getBody().size();
+	    return transfer->getBody().getValue().size();
 	else
     	THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");		 
 }
