@@ -148,6 +148,7 @@
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <unpack>false</unpack>
       <excludes>
+        <exclude>org.apache.qpid:qpid-broker</exclude>
         <exclude>org.apache.qpid:qpid-distribution</exclude>
         <exclude>org.apache.qpid.management:org.apache.qpid.management.ui</exclude>
         <exclude>org.eclipse.core:org.eclipse.core.commands</exclude>
