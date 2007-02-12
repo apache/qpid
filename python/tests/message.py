@@ -621,6 +621,21 @@ class MessageTests(TestBase):
         msg = queue.get(timeout=1)
         self.assertEquals(msg.message_id, "empty-msg")
         self.assertDataEquals(channel, msg, "")
+
+    def test_reject(self):
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+
+        channel.message_consume(queue = "q", destination = "consumer")
+        channel.message_transfer(routing_key = "q", body="blah, blah")
+        msg = self.client.queue("consumer").get(timeout = 5)
+        self.assertEquals(msg.body, "blah, blah")
+        channel.message_cancel(destination = "consumer")
+        msg.reject()
+
+        channel.message_consume(queue = "q", destination = "checker")
+        msg = self.client.queue("checker").get(timeout = 5)
+        self.assertEquals(msg.body, "blah, blah")
         
         
     def assertDataEquals(self, channel, msg, expected):
