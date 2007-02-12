@@ -127,7 +127,7 @@ namespace client {
          */
         void open(const std::string& host, int port = 5672, 
                   const std::string& uid = "guest", const std::string& pwd = "guest", 
-                  const std::string& virtualhost = "/");
+                  const std::string& virtualhost = "");
         /**
          * Closes the connection. Any further use of this connection
          * (without reopening it) will not succeed.
