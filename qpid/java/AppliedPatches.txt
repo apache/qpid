@@ -1,5 +1,6 @@
 -Notes-
 Updated to resolve Rollback/Recover problems.
+Changed Xmx to 1024
 
 -Latest Revision-
 504112,503646,502576.499979

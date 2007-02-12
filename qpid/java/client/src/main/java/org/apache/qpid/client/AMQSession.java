@@ -812,15 +812,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             if (!isSuspended)
             {
-                try
-                {
-                    suspendChannel(true);
-                }
-                catch (AMQException e)
-                {
-                    throw new JMSAMQException(e);
-                }
+                suspendChannel(true);
             }
+
             for (BasicMessageConsumer consumer : _consumers.values())
             {
                 consumer.clearUnackedMessages();
@@ -839,17 +833,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             {
                 _dispatcher.rollback();
             }
-                                   
+
             if (!isSuspended)
             {
-                try
-                {
-                    suspendChannel(false);
-                }
-                catch (AMQException e)
-                {
-                    throw new JMSAMQException(e);
-                }
+                suspendChannel(false);
             }
         }
         catch (AMQException e)

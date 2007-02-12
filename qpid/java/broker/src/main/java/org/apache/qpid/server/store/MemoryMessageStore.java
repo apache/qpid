@@ -32,9 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * A simple message store that stores the messages in a threadsafe structure in memory.
- */
+/** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore implements MessageStore
 {
     private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
@@ -85,7 +83,13 @@ public class MemoryMessageStore implements MessageStore
         {
             _log.debug("Removing message with id " + messageId);
         }
-        _messageMap.remove(messageId);
+        Object o = _messageMap.remove(messageId);
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Removed message " + System.identityHashCode(o));
+        }
+
     }
 
     public void createQueue(AMQQueue queue) throws AMQException

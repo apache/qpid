@@ -230,6 +230,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         Queue<AMQMessage> messageQueue = sub.getNextQueue(_messages);
 
+        if (_log.isTraceEnabled())
+        {
+            _log.trace("Async sendNextMessage for sub (" + System.identityHashCode(sub) +
+                       ") from queue (" + System.identityHashCode(messageQueue) +
+                       ") AMQQueue (" + System.identityHashCode(queue) + ")");
+        }
+
         if (messageQueue == null)
         {
             // There is no queue with messages currently. This is ok... just means the queue has no msgs matching selector
@@ -276,7 +283,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     //fixme
                     _log.error("MEMORY LEAK: message from PreDeliveryQueue not removed from _messages");
-                    //_messages.remove(message);
+                    //inefficient
+                    _messages.remove(message);
                 }
             }
 
@@ -353,7 +361,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     if (_log.isDebugEnabled())
                     {
                         _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() +
-                                   " subscribers to give the message to.");
+                                   " subscribers to give the message to. Queued count (" + getMessageCount() + ")");
                     }
                     for (Subscription sub : _subscriptions.getSubscriptions())
                     {
