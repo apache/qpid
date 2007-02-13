@@ -32,6 +32,7 @@ namespace Qpid.Client.Tests.Connection
         public void SimpleConnection()
         {
             IConnectionInfo connectionInfo = new QpidConnectionInfo();
+            connectionInfo.VirtualHost = "test";
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
             using (IConnection connection = new AMQConnection(connectionInfo))
             {
@@ -43,6 +44,7 @@ namespace Qpid.Client.Tests.Connection
         public void PasswordFailureConnection()
         {
             IConnectionInfo connectionInfo = new QpidConnectionInfo();
+            connectionInfo.VirtualHost = "test";
             connectionInfo.Password = "rubbish";
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo());
             try
