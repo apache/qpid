@@ -211,7 +211,7 @@ namespace Qpid.Buffer
 
         public short getShort()
         {
-            throw new NotImplementedException();
+           return _buf.GetShort();
         }
 
         public short getShort(int index)
@@ -221,7 +221,7 @@ namespace Qpid.Buffer
 
         public void putShort(short value)
         {
-            throw new NotImplementedException();
+            _buf.Put(value);
         }
 
         public void putShort(int index, short value)
@@ -231,7 +231,7 @@ namespace Qpid.Buffer
 
         public int getInt()
         {
-            throw new NotImplementedException();
+            return _buf.GetInt();
         }
 
         public int getInt(int index)
@@ -241,7 +241,7 @@ namespace Qpid.Buffer
 
         public void putInt(int value)
         {
-            throw new NotImplementedException();
+            _buf.Put(value);
         }
 
         public void putInt(int index, int value)
@@ -261,7 +261,7 @@ namespace Qpid.Buffer
 
         public long getLong()
         {
-            throw new NotImplementedException();
+            return _buf.GetLong();
         }
 
         public long getLong(int index)
@@ -271,7 +271,7 @@ namespace Qpid.Buffer
 
         public void putLong(long value)
         {
-            throw new NotImplementedException();
+            _buf.Put(value);
         }
     
         public void putLong(int index, long value)
@@ -286,17 +286,17 @@ namespace Qpid.Buffer
 
         public float getFloat()
         {
-            throw new NotImplementedException();
+           return _buf.GetFloat();
         }
 
         public float getFloat(int index)
         {
-            throw new NotImplementedException();
+           throw new NotImplementedException();
         }
 
         public void putFloat(float value)
         {
-            throw new NotImplementedException();
+            _buf.Put(value);
         }
 
         public void putFloat(int index, float value)
@@ -306,7 +306,7 @@ namespace Qpid.Buffer
 
         public double getDouble()
         {
-            throw new NotImplementedException();
+            return _buf.GetDouble();
         }
 
         public double getDouble(int index)
@@ -316,7 +316,7 @@ namespace Qpid.Buffer
 
         public void putDouble(double value)
         {
-            throw new NotImplementedException();
+            _buf.Put(value);
         }
 
         public void putDouble(int index, double value)
