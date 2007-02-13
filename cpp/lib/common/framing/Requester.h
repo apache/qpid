@@ -46,13 +46,18 @@ class Requester
     /** Called after processing a response. */
     void processed(const AMQResponseBody::Data&);
 
-	/** Get the next id to be used. */
+	/** Get the next request id to be used. */
 	RequestId getNextId() { return lastId + 1; }
+	/** Get the first request acked by this response */
+	RequestId getFirstAckRequest() { return firstAckRequest; }
+	/** Get the last request acked by this response */
+	RequestId getLastAckRequest() { return lastAckRequest; }
 
   private:
-    std::set<RequestId> requests; /** Sent but not responded to */
     RequestId lastId;
     ResponseId responseMark;
+    ResponseId firstAckRequest;
+    ResponseId lastAckRequest;
 };
 
 }} // namespace qpid::framing

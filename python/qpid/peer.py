@@ -155,12 +155,15 @@ class Responder:
     self.write = writer
     self.sequence = Sequence(1)
 
-  def respond(self, method, request):
+  def respond(self, method, batch, request):
     if isinstance(request, Method):
       self.write(method)
     else:
-      # XXX: batching
-      frame = Response(self.sequence.next(), request.id, 0, method)
+      # allow batching from frame at either end
+      if batch<0:
+        frame = Response(self.sequence.next(), request.id+batch, -batch, method)
+      else:
+        frame = Response(self.sequence.next(), request.id, batch, method)
       self.write(frame)
 
 class Closed(Exception): pass
@@ -237,8 +240,8 @@ class Channel:
   def request(self, method, listener, content = None):
     self.requester.request(method, listener, content)
 
-  def respond(self, method, request):
-    self.responder.respond(method, request)
+  def respond(self, method, batch, request):
+    self.responder.respond(method, batch, request)
 
   def invoke(self, type, args, kwargs):
     content = kwargs.pop("content", None)

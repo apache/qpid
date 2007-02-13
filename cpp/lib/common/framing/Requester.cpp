@@ -29,23 +29,12 @@ Requester::Requester() : lastId(0), responseMark(0) {}
 void Requester::sending(AMQRequestBody::Data& request) {
     request.requestId = ++lastId;
     request.responseMark = responseMark;
-    requests.insert(request.requestId);
 }
 
 void Requester::processed(const AMQResponseBody::Data& response) {
     responseMark = response.responseId;
-    RequestId id = response.requestId;
-    RequestId end = id + response.batchOffset + 1;
-    for ( ; id < end; ++id) {
-        std::set<RequestId>::iterator i = requests.find(id);
-        if (i != requests.end())
-            requests.erase(i);
-        else {
-            THROW_QPID_ERROR(
-                PROTOCOL_ERROR,
-                boost::format("Response with non-existent request id=%d")%id);
-        }
-    }
+    firstAckRequest = response.requestId;
+    lastAckRequest = firstAckRequest + response.batchOffset;
 }
 
 }} // namespace qpid::framing

@@ -138,6 +138,7 @@ class Channel : public framing::ChannelAdapter,
     void rollback();
     void ack();
     void ack(u_int64_t deliveryTag, bool multiple);
+    void ack(u_int64_t deliveryTag, u_int64_t endTag);
     void recover(bool requeue);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag);            
     void handlePublish(Message* msg);
@@ -152,8 +153,6 @@ class Channel : public framing::ChannelAdapter,
         boost::shared_ptr<framing::AMQMethodBody> method,
         const framing::MethodContext& context);
 };
-
-struct InvalidAckException{};
 
 }} // namespace broker
 
