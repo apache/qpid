@@ -215,7 +215,13 @@ namespace Qpid.Client.Tests.failover
             _log.Info("failoverComplete() called");
         }
 
-//        [Test]
+        [Test]
+        public void TestFail()
+        {
+            Assert.Fail("Tests in this class do not pass, but hang forever, so commented out until can be fixed.");
+        }
+
+        /*[Test]
         public void TestWithBasicInfo()
         {
             Console.WriteLine("TestWithBasicInfo");
@@ -226,9 +232,9 @@ namespace Qpid.Client.Tests.failover
             connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
 
             DoFailoverTxTest(connectionInfo);
-        }
+        }*/
 
-        [Test]
+        /*[Test]
         public void runTestWithUrl()
         {
             String clientId = "failover" + DateTime.Now.Ticks;
@@ -242,6 +248,6 @@ namespace Qpid.Client.Tests.failover
             _log.Info("connection url = [" + connectionInfo + "]");
 
             DoFailoverTxTest(connectionInfo);
-        }
+        }*/
     }
 }

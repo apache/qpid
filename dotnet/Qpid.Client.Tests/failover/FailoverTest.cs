@@ -213,6 +213,12 @@ namespace Qpid.Client.Tests.failover
         }
 
         [Test]
+        public void TestFail()
+        {
+            Assert.Fail("Tests in this class do not pass, but hang forever, so commented out until can be fixed.");
+        }
+
+        /*[Test]
         public void TestWithBasicInfo()
         {
             Console.WriteLine("TestWithBasicInfo");
@@ -231,7 +237,7 @@ namespace Qpid.Client.Tests.failover
             {
                 _logger.Error("Exception caught", e);
             }
-        }
+        }*/
 
 //        [Test]
 //        public void TestWithUrl()

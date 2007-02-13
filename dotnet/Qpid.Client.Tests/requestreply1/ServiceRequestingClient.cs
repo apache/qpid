@@ -64,7 +64,7 @@ namespace Qpid.Client.Tests
             }
         }
         
-        [Test]
+        /*[Test]
         public void SendMessages()
         {
             InitialiseProducer();
@@ -135,6 +135,12 @@ namespace Qpid.Client.Tests
             _log.Info(String.Format("Waiting {0} seconds to receive last message...", waitSeconds));
             Assert.IsTrue(_finishedEvent.WaitOne(waitMilliseconds, false), 
                           String.Format("Expected to finish in {0} seconds", waitSeconds));
+        }*/
+
+        [Test]
+        public void TestFail()
+        {
+            Assert.Fail("Tests in this class do not run on autopilot, but hang forever, so commented out until can be fixed.");
         }
 
         public void OnMessage(IMessage m)
@@ -180,12 +186,12 @@ namespace Qpid.Client.Tests
             }
         }
         
-        public static void Main(String[] args)
+        /*public static void Main(String[] args)
         {
             ServiceRequestingClient c = new ServiceRequestingClient();
             c.Init();
             c.SendMessages();
-        }
+        }*/
     }
     
     class Avergager
