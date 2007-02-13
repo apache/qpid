@@ -411,9 +411,9 @@ public class AMQChannel
             }
         }
 
-        if (_unacknowledgedMessageMap.size() != 0)
+        if (_consumerTag2QueueMap.size() == 0 && _unacknowledgedMessageMap.size() != 0)
         {
-            _log.error("unack map is not empty after resend was item added to unack map whilst consumer is closing");
+            _log.error("unack map is not empty after resend was item added to unack map whilst closing last consumer");
         }
     }
 
