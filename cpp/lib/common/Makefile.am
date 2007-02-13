@@ -63,6 +63,7 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/AMQHeaderBody.cpp			\
   $(framing)/AMQHeartbeatBody.cpp		\
   $(framing)/AMQMethodBody.cpp			\
+  $(framing)/MethodContext.cpp			\
   $(framing)/BasicHeaderProperties.cpp		\
   $(framing)/BodyHandler.cpp			\
   $(framing)/ChannelAdapter.cpp			\
@@ -76,8 +77,8 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/Requester.cpp			\
   $(framing)/Responder.cpp			\
   $(framing)/Value.cpp				\
+  $(framing)/Proxy.cpp				\
   $(gen)/AMQP_ClientProxy.cpp			\
-  $(gen)/AMQP_HighestVersion.h			\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
   Exception.cpp					\
@@ -87,6 +88,7 @@ libqpidcommon_la_SOURCES =			\
   sys/Time.cpp
 
 nobase_pkginclude_HEADERS =			\
+  $(gen)/AMQP_HighestVersion.h			\
   $(platform_hdr)				\
   $(framing)/AMQBody.h				\
   $(framing)/AMQContentBody.h			\
@@ -95,6 +97,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/AMQHeaderBody.h			\
   $(framing)/AMQHeartbeatBody.h			\
   $(framing)/AMQMethodBody.h			\
+  $(framing)/MethodContext.h			\
   $(framing)/BasicHeaderProperties.h		\
   $(framing)/BodyHandler.h			\
   $(framing)/ChannelAdapter.h			\
@@ -111,6 +114,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/Value.h				\
   $(framing)/amqp_framing.h			\
   $(framing)/amqp_types.h			\
+  $(framing)/Proxy.h				\
   Exception.h					\
   ExceptionHolder.h				\
   QpidError.h					\
@@ -121,9 +125,9 @@ nobase_pkginclude_HEADERS =			\
   sys/Monitor.h					\
   sys/Mutex.h					\
   sys/Runnable.h				\
-  sys/ConnectionOutputHandler.h				\
-  sys/ConnectionInputHandler.h				\
-  sys/ConnectionInputHandlerFactory.h			\
+  sys/ConnectionOutputHandler.h			\
+  sys/ConnectionInputHandler.h			\
+  sys/ConnectionInputHandlerFactory.h		\
   sys/ShutdownHandler.h				\
   sys/Socket.h					\
   sys/Thread.h					\

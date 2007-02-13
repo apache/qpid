@@ -43,7 +43,7 @@ const std::string Connection::OK("OK");
 
 Connection::Connection(
     bool _debug, u_int32_t _max_frame_size,
-    const framing::ProtocolVersion& _version
+    framing::ProtocolVersion _version
 ) : version(_version), max_frame_size(_max_frame_size),
     defaultConnector(version, _debug, _max_frame_size),
     isOpen(false), debug(_debug)

@@ -28,6 +28,9 @@
 #include <MessageStore.h>
 #include <BasicDeliverBody.h>
 #include <BasicGetOkBody.h>
+#include <AMQContentBody.h>
+#include <AMQHeaderBody.h>
+#include "AMQMethodBody.h"
 #include "AMQFrame.h"
 #include "framing/ChannelAdapter.h"
 

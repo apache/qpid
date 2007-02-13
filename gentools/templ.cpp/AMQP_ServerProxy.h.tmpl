@@ -29,44 +29,28 @@
 #ifndef _AMQP_ServerProxy_
 #define _AMQP_ServerProxy_
 
-#include <AMQP_ServerOperations.h>
-#include <FieldTable.h>
-#include <FramingContent.h>
-#include <OutputHandler.h>
+#include "framing/Proxy.h"
 
 namespace qpid {
 namespace framing {
 
-class AMQP_ServerProxy : public AMQP_ServerOperations
+class AMQP_ServerProxy : public Proxy
 {
-private:
-    ProtocolVersion version;
-    OutputHandler* out;
-%{CLIST} ${sph_handler_pointer_defn}
-
 public:
-    AMQP_ServerProxy(OutputHandler* out, u_int8_t major, u_int8_t minor);
-    const ProtocolVersion& getProtocolVersion() {return version;}
-    virtual ~AMQP_ServerProxy() {}
+    AMQP_ServerProxy(ChannelAdapter& ch);
 
-	// Get methods for handlers
-
-%{CLIST} ${sph_handler_pointer_get_method}
-
-	// Inner class definitions
+    // Inner class definitions
 
 %{CLIST} ${sph_inner_class_defn}
 
-private:
-	// Inner class instances
-	
-%{CLIST} ${sph_inner_class_instance}
-
-public:
-	// Inner class instance get methods
+    // Inner class instance get methods
 	
 %{CLIST} ${sph_inner_class_get_method}
-
+    
+private:
+    // Inner class instances
+	
+%{CLIST} ${sph_inner_class_instance}
 }; /* class AMQP_ServerProxy */
 
 } /* namespace framing */

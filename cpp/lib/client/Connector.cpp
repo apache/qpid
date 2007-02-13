@@ -23,17 +23,19 @@
 #include <sys/Time.h>
 #include "Connector.h"
 
+namespace qpid {
+namespace client {
+
 using namespace qpid::sys;
-using namespace qpid::client;
 using namespace qpid::framing;
 using qpid::QpidError;
 
-Connector::Connector(const qpid::framing::ProtocolVersion& pVersion,
-                     bool _debug, u_int32_t buffer_size) :
-    debug(_debug),
+Connector::Connector(
+    ProtocolVersion ver, bool _debug, u_int32_t buffer_size
+) : debug(_debug),
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
-    version(pVersion), 
+    version(ver), 
     closed(true),
     lastIn(0), lastOut(0),
     timeout(0),
@@ -180,3 +182,5 @@ void Connector::run(){
         handleClosed();
     }
 }
+
+}} // namespace qpid::client

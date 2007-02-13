@@ -20,36 +20,8 @@
  */
 #include <ProtocolVersion.h>
 #include <sstream>
-#include "AMQP_HighestVersion.h"
 
 using namespace qpid::framing;
-
-ProtocolVersion::ProtocolVersion() {
-    *this = highestProtocolVersion;
-}
-
-ProtocolVersion::ProtocolVersion(u_int8_t _major, u_int8_t _minor) : 
-    major_(_major),
-    minor_(_minor)
-{}
-
-ProtocolVersion::ProtocolVersion(const ProtocolVersion::ProtocolVersion& p):
-    major_(p.major_),
-    minor_(p.minor_)
-{}
-
-ProtocolVersion::~ProtocolVersion()
-{}
-
-bool  ProtocolVersion::equals(u_int8_t _major, u_int8_t _minor) const
-{
-    return major_ == _major && minor_ == _minor;
-}
-
-bool ProtocolVersion::equals(const ProtocolVersion::ProtocolVersion& p) const
-{
-    return major_ == p.major_ && minor_ == p.minor_;
-}
 
 const std::string ProtocolVersion::toString() const
 {
@@ -58,10 +30,15 @@ const std::string ProtocolVersion::toString() const
     return ss.str();
 }
 
-ProtocolVersion::ProtocolVersion ProtocolVersion::operator=(const ProtocolVersion& p)
+ProtocolVersion& ProtocolVersion::operator=(ProtocolVersion p)
 {
     major_ = p.major_;
     minor_ = p.minor_;
     return *this;
+}
+
+bool ProtocolVersion::operator==(ProtocolVersion p) const
+{
+    return major_ == p.major_ && minor_ == p.minor_;
 }
 

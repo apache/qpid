@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include <queue>
+#include <boost/scoped_ptr.hpp>
 #include "sys/types.h"
 
 #include <framing/amqp_framing.h>
@@ -39,8 +40,10 @@
 #include "Thread.h"
 
 namespace qpid {
+
 namespace framing {
 class ChannelCloseBody;
+class AMQP_ServerProxy;
 }
 
 namespace client {
@@ -102,6 +105,7 @@ class Channel : public framing::ChannelAdapter,
     u_int16_t prefetch;
     const bool transactional;
     framing::ProtocolVersion version;
+    boost::scoped_ptr<framing::AMQP_ServerProxy> proxy;
 
     void enqueue();
     void retrieve(Message& msg);
@@ -151,8 +155,6 @@ class Channel : public framing::ChannelAdapter,
         
   public:
 
-    bool isOpen() const;
-    
     /**
          * Creates a channel object.
          * 
@@ -358,9 +360,21 @@ class Channel : public framing::ChannelAdapter,
      * @see publish()
      */
     void setReturnedMessageHandler(ReturnedMessageHandler* handler);
+
+    bool isOpen() const;
+
+    /**
+     * Returns a proxy for the "raw" AMQP broker protocol. Only for use by
+     * protocol experts.
+     */
+
+    framing::AMQP_ServerProxy& brokerProxy();
+    /**
+     * Wait for the next method from the broker.
+     */
+    framing::AMQMethodBody::shared_ptr brokerResponse();
 };
 
-}
-}
+}}
 
 #endif  /*!_client_ClientChannel_h*/

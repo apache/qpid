@@ -19,8 +19,9 @@
  *
  */
 #include "AMQP_ServerOperations.h"
+#include "HandlerImpl.h"
 #include "MessageHandlerImpl.h"
-#include "BrokerChannel.h"
+#include "Exception.h"
 
 namespace qpid {
 namespace broker {
@@ -28,14 +29,6 @@ namespace broker {
 class Channel;
 class Connection;
 class Broker;
-
-/**
- * Per-channel protocol adapter.
- *
- * Translates protocol bodies into calls on the core Channel,
- * Connection and Broker objects.
- */
-
 class ChannelHandler;
 class ConnectionHandler;
 class BasicHandler;
@@ -48,20 +41,23 @@ class FileHandler;
 class StreamHandler;
 class DtxHandler;
 class TunnelHandler;
+class MessageHandlerImpl;
 
-class BrokerAdapter : public framing::AMQP_ServerOperations
+/**
+ * Per-channel protocol adapter.
+ *
+ * A container for a collection of AMQP-class adapters that translate
+ * AMQP method bodies into calls on the core Channel, Connection and
+ * Broker objects. Each adapter class also provides a client proxy
+ * to send methods to the peer.
+ * 
+ */
+class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 {
   public:
-    BrokerAdapter(Channel& ch, Connection& c, Broker& b) :
-        basicHandler(ch, c, b),
-        channelHandler(ch, c, b),
-        connectionHandler(ch, c, b),
-        exchangeHandler(ch, c, b),
-        messageHandler(ch, c, b),
-        queueHandler(ch, c, b),
-        txHandler(ch, c, b)    
-    {}
-    
+    BrokerAdapter(Channel& ch, Connection& c, Broker& b);
+
+    framing::ProtocolVersion getVersion() const;
     ChannelHandler* getChannelHandler() { return &channelHandler; }
     ConnectionHandler* getConnectionHandler() { return &connectionHandler; }
     BasicHandler* getBasicHandler() { return &basicHandler; }
@@ -80,19 +76,16 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
     TunnelHandler* getTunnelHandler() {
         throw ConnectionException(540, "Tunnel class not implemented"); }
 
-  private:
-    struct CoreRefs {
-        CoreRefs(Channel& ch, Connection& c, Broker& b)
-            : channel(ch), connection(c), broker(b) {}
+    framing::AMQP_ClientProxy& getProxy() { return proxy; }
 
-        Channel& channel;
-        Connection& connection;
-        Broker& broker;
-    };
-    
-    class ConnectionHandlerImpl : private CoreRefs, public ConnectionHandler {
+  private:
+
+    class ConnectionHandlerImpl :
+        public ConnectionHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Connection>
+    {
       public:
-        ConnectionHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        ConnectionHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
 
         void startOk(const framing::MethodContext& context,
                      const qpid::framing::FieldTable& clientProperties,
@@ -112,9 +105,13 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
         void closeOk(const framing::MethodContext& context); 
     };
 
-    class ChannelHandlerImpl : private CoreRefs, public ChannelHandler{
+    class ChannelHandlerImpl :
+        public ChannelHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Channel>
+    {
       public:
-        ChannelHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        ChannelHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        
         void open(const framing::MethodContext& context, const std::string& outOfBand); 
         void flow(const framing::MethodContext& context, bool active); 
         void flowOk(const framing::MethodContext& context, bool active); 
@@ -127,9 +124,13 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
         void closeOk(const framing::MethodContext& context); 
     };
     
-    class ExchangeHandlerImpl : private CoreRefs, public ExchangeHandler{
+    class ExchangeHandlerImpl :
+        public ExchangeHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Exchange>
+    {
       public:
-        ExchangeHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        ExchangeHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        
         void declare(const framing::MethodContext& context, u_int16_t ticket,
                      const std::string& exchange, const std::string& type, 
                      bool passive, bool durable, bool autoDelete,
@@ -139,9 +140,13 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
                      const std::string& exchange, bool ifUnused, bool nowait); 
     };
 
-    class QueueHandlerImpl : private CoreRefs, public QueueHandler{
+    class QueueHandlerImpl :
+        public QueueHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Queue>
+    {
       public:
-        QueueHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        QueueHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        
         void declare(const framing::MethodContext& context, u_int16_t ticket, const std::string& queue, 
                      bool passive, bool durable, bool exclusive, 
                      bool autoDelete, bool nowait,
@@ -162,9 +167,13 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
                      bool nowait);
     };
 
-    class BasicHandlerImpl : private CoreRefs, public BasicHandler{
+    class BasicHandlerImpl :
+        public BasicHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Basic>
+    {
       public:
-        BasicHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        BasicHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+
         void qos(const framing::MethodContext& context, u_int32_t prefetchSize,
                  u_int16_t prefetchCount, bool global); 
         void consume(
@@ -184,14 +193,19 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
         void recover(const framing::MethodContext& context, bool requeue); 
     };
 
-    class TxHandlerImpl : private CoreRefs, public TxHandler{
+    class TxHandlerImpl :
+        public TxHandler,
+        public HandlerImpl<framing::AMQP_ClientProxy::Tx>
+    {
       public:
-        TxHandlerImpl(Channel& ch, Connection& c, Broker& b) : CoreRefs(ch, c, b) {}
+        TxHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        
         void select(const framing::MethodContext& context);
         void commit(const framing::MethodContext& context);
         void rollback(const framing::MethodContext& context);
     };
 
+    Connection& connection;
     BasicHandlerImpl basicHandler;
     ChannelHandlerImpl channelHandler;
     ConnectionHandlerImpl connectionHandler;
@@ -199,7 +213,7 @@ class BrokerAdapter : public framing::AMQP_ServerOperations
     MessageHandlerImpl messageHandler;
     QueueHandlerImpl queueHandler;
     TxHandlerImpl txHandler;
-
+        
 };
 }} // namespace qpid::broker
 

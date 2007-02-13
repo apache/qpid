@@ -22,14 +22,10 @@
  *
  */
 
-#include "AMQContentBody.h"
-#include "AMQHeaderBody.h"
-#include "AMQMethodBody.h"
-#include "Content.h"
-#include "framing/amqp_types.h"
-
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include "Content.h"
+#include "framing/amqp_types.h"
 
 namespace qpid {
 	
@@ -38,6 +34,9 @@ class MethodContext;
 class ChannelAdapter;
 class BasicHeaderProperties;
 class FieldTable;
+class AMQMethodBody;
+class AMQContentBody;
+class AMQHeaderBody;
 }
 	
 
@@ -50,24 +49,17 @@ class MessageStore;
  * abstracting away the operations
  * TODO; AMS: for the moment this is mostly a placeholder
  */
-class Message{
-    const ConnectionToken* publisher;
-    std::string exchange;
-    std::string routingKey;
-    const bool mandatory;
-    const bool immediate;
-    u_int64_t persistenceId;
-    bool redelivered;
-    framing::AMQMethodBody::shared_ptr respondTo;
-
+class Message {
   public:
     typedef boost::shared_ptr<Message> shared_ptr;
+    typedef boost::shared_ptr<framing::AMQMethodBody> AMQMethodBodyPtr;
+
 
     Message(const ConnectionToken* publisher_,
             const std::string& _exchange,
             const std::string& _routingKey, 
             bool _mandatory, bool _immediate,
-            framing::AMQMethodBody::shared_ptr respondTo_) :
+            AMQMethodBodyPtr respondTo_) :
         publisher(publisher_),
         exchange(_exchange),
         routingKey(_routingKey),
@@ -92,9 +84,7 @@ class Message{
     const std::string& getExchange() const { return exchange; }
     u_int64_t getPersistenceId() const { return persistenceId; }
     bool getRedelivered() const { return redelivered; }
-    framing::AMQMethodBody::shared_ptr getRespondTo() const {
-        return respondTo;
-    }
+    AMQMethodBodyPtr getRespondTo() const { return respondTo; }
     
     void setRouting(const std::string& _exchange, const std::string& _routingKey)
     { exchange = _exchange; routingKey = _routingKey; } 
@@ -168,14 +158,24 @@ class Message{
      * it uses).
      */
     virtual void setContent(std::auto_ptr<Content>& /*content*/) {};
-    virtual void setHeader(framing::AMQHeaderBody::shared_ptr /*header*/) {};
-    virtual void addContent(framing::AMQContentBody::shared_ptr /*data*/) {};
+    virtual void setHeader(boost::shared_ptr<framing::AMQHeaderBody>) {};
+    virtual void addContent(boost::shared_ptr<framing::AMQContentBody>) {};
     /**
      * Releases the in-memory content data held by this
      * message. Must pass in a store from which the data can
      * be reloaded.
      */
     virtual void releaseContent(MessageStore* /*store*/) {};
+
+  private:
+    const ConnectionToken* publisher;
+    std::string exchange;
+    std::string routingKey;
+    const bool mandatory;
+    const bool immediate;
+    u_int64_t persistenceId;
+    bool redelivered;
+    AMQMethodBodyPtr respondTo;
 };
 
 }}

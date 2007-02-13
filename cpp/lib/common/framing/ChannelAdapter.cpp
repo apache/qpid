@@ -19,6 +19,7 @@
 
 #include "ChannelAdapter.h"
 #include "AMQFrame.h"
+#include "Exception.h"
 
 using boost::format;
 
@@ -26,7 +27,7 @@ namespace qpid {
 namespace framing {
 
 void ChannelAdapter::init(
-    ChannelId i, OutputHandler& o, const ProtocolVersion& v)
+    ChannelId i, OutputHandler& o, ProtocolVersion v)
 {
     assertChannelNotOpen();
     id = i;
@@ -34,13 +35,15 @@ void ChannelAdapter::init(
     version = v;
 }
 
-void ChannelAdapter::send(AMQBody::shared_ptr body) {
+RequestId ChannelAdapter::send(AMQBody::shared_ptr body) {
+    RequestId result = 0;
     assertChannelOpen();
     switch (body->type()) {
       case REQUEST_BODY: {
           AMQRequestBody::shared_ptr request =
               boost::shared_polymorphic_downcast<AMQRequestBody>(body);
           requester.sending(request->getData());
+          result = request->getData().requestId;
           break;
       }
       case RESPONSE_BODY: {
@@ -51,6 +54,7 @@ void ChannelAdapter::send(AMQBody::shared_ptr body) {
       }
     }
     out->send(new AMQFrame(getVersion(), getId(), body));
+    return result;
 }
 
 void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {

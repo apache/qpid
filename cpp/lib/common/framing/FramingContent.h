@@ -27,9 +27,9 @@ class Content
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
     size_t size() const;
-    bool isInline() { return discriminator == INLINE; }
-    bool isReference() { return discriminator == REFERENCE; }
-    const string& getValue() { return value; }
+    bool isInline() const { return discriminator == INLINE; }
+    bool isReference() const { return discriminator == REFERENCE; }
+    const string& getValue() const { return value; }
 
     friend std::ostream& operator<<(std::ostream&, const Content&);
 };    

@@ -30,7 +30,6 @@
 #include <MessageStore.h>
 #include <AutoDelete.h>
 #include <ExchangeRegistry.h>
-#include <BrokerChannel.h>
 #include <ConnectionToken.h>
 #include <DirectExchange.h>
 #include <OutputHandler.h>

@@ -23,10 +23,10 @@
  */
 
 #include <list>
-#include <map>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 #include <AccumulatedAck.h>
 #include <Consumer.h>
@@ -56,7 +56,7 @@ using framing::string;
 class Channel : public framing::ChannelAdapter,
                 public CompletionHandler
 {
-    class ConsumerImpl : public virtual Consumer
+    class ConsumerImpl : public Consumer
     {
         Channel* parent;
         const string tag;
@@ -64,23 +64,25 @@ class Channel : public framing::ChannelAdapter,
         ConnectionToken* const connection;
         const bool ackExpected;
         bool blocked;
+
       public:
         ConsumerImpl(Channel* parent, const string& tag,
                      Queue::shared_ptr queue,
                      ConnectionToken* const connection, bool ack);
+        ~ConsumerImpl();
         virtual bool deliver(Message::shared_ptr& msg);            
         void cancel();
         void requestDispatch();
     };
 
-    typedef std::map<string,ConsumerImpl*>::iterator consumer_iterator;
+    typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
     Connection& connection;
     u_int16_t id;
     u_int64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
     bool transactional;
-    std::map<string, ConsumerImpl*> consumers;
+    ConsumerImplMap consumers;
     u_int32_t prefetchSize;    
     u_int16_t prefetchCount;    
     Prefetch outstanding;
@@ -93,18 +95,17 @@ class Channel : public framing::ChannelAdapter,
     MessageStore* const store;
     MessageBuilder messageBuilder;//builder for in-progress message
     bool opened;
-
     boost::scoped_ptr<BrokerAdapter> adapter;
 
 	// completion handler for MessageBuilder
     void complete(Message::shared_ptr msg);
     
-    void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
-    void cancel(consumer_iterator consumer);
+    void deliver(Message::shared_ptr& msg, const string& tag,
+                 Queue::shared_ptr& queue, bool ackExpected);            
     bool checkPrefetch(Message::shared_ptr& msg);
         
   public:
-    Channel(Connection& channel,
+    Channel(Connection& parent,
             framing::ChannelId id,
             u_int32_t framesize, 
             MessageStore* const _store = 0,
@@ -112,8 +113,8 @@ class Channel : public framing::ChannelAdapter,
     
     ~Channel();
 
-	// For ChannelAdapter
     bool isOpen() const { return opened; }
+    BrokerAdapter& getAdatper() { return *adapter; }
     
     void open() { opened = true; }
     void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
@@ -122,7 +123,11 @@ class Channel : public framing::ChannelAdapter,
     u_int16_t setPrefetchCount(u_int16_t n){ return prefetchCount = n; }
 
     bool exists(const string& consumerTag);
-    void consume(string& tag, Queue::shared_ptr queue, bool acks,
+
+    /**
+     *@param tagInOut - if empty it is updated with the generated token.
+     */
+    void consume(string& tagInOut, Queue::shared_ptr queue, bool acks,
                  bool exclusive, ConnectionToken* const connection = 0,
                  const framing::FieldTable* = 0);
     void cancel(const string& tag);
@@ -146,7 +151,6 @@ class Channel : public framing::ChannelAdapter,
     void handleMethodInContext(
         boost::shared_ptr<framing::AMQMethodBody> method,
         const framing::MethodContext& context);
-    
 };
 
 struct InvalidAckException{};
