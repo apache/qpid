@@ -75,12 +75,18 @@ namespace Qpid.Client.Tests
         }
 
         [Test]
+        public void TestFail()
+        {
+            Assert.Fail("Tests in this class do not run on autopilot, but hang forever, so commented out until can be fixed.");
+        }
+
+        /*[Test]
         public void Test()
         {
             _connection.Start();
             _logger.Info("Waiting...");
             _event.WaitOne();
-        }
+        }*/
 
         public void OnMessage(IMessage message)
         {
