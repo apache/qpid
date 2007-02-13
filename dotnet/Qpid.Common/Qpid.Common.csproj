@@ -53,6 +53,7 @@
     <Compile Include="Framing\AMQMethodBody.cs" />
     <Compile Include="Framing\AMQMethodBodyFactory.cs" />
     <Compile Include="Framing\AMQProtocolHeaderException.cs" />
+    <Compile Include="Framing\AMQType.cs" />
     <Compile Include="Framing\BasicContentHeaderProperties.cs" />
     <Compile Include="Framing\CompositeAMQDataBlock.cs" />
     <Compile Include="Framing\ContentBody.cs" />
@@ -60,6 +61,8 @@
     <Compile Include="Framing\ContentHeaderBody.cs" />
     <Compile Include="Framing\ContentHeaderBodyFactory.cs" />
     <Compile Include="Framing\ContentHeaderPropertiesFactory.cs" />
+    <Compile Include="Framing\AMQTypedValue.cs" />
+    <Compile Include="Framing\AMQTypeMap.cs" />
     <Compile Include="Framing\EncodingUtils.cs" />
     <Compile Include="Framing\FieldTable.cs" />
     <Compile Include="Framing\HeartbeatBody.cs" />
