@@ -85,7 +85,8 @@ class ChannelAdapter : public BodyHandler {
         boost::shared_ptr<qpid::framing::AMQMethodBody> method,
         const MethodContext& context) = 0;
 
-    RequestId getRequestInProgress() { return requestInProgress; }
+    RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }
+    RequestId getLastAckRequest() { return requester.getLastAckRequest(); }
     RequestId getNextSendRequestId() { return requester.getNextId(); }
 
   private:
@@ -94,7 +95,6 @@ class ChannelAdapter : public BodyHandler {
     ProtocolVersion version;
     Requester requester;
     Responder responder;
-    RequestId requestInProgress; 
 };
 
 }}

@@ -384,15 +384,11 @@ class MessageTests(TestBase):
             self.assertEqual(reply.method.name, "ok")
             msg = self.client.queue(tag).get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            # TODO: replace with below when we have batching
-            if(i in [11, 12, 13, 15, 17, 19]):
+            
+            if (i==13):
+              msg.ok(batchoffset=-2)
+            if(i in [15, 17, 19]):
               msg.ok()
-
-            #todo: when batching is available, test ack multiple
-            #if(i == 13):
-            #    channel.message_ack(delivery_tag=reply.delivery_tag, multiple=True)
-            #if(i in [15, 17, 19]):
-            #    channel.message_ack(delivery_tag=reply.delivery_tag)
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")

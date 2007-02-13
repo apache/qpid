@@ -43,7 +43,7 @@ namespace qpid {
              */
             std::list<u_int64_t> individual;
 
-            void update(u_int64_t tag, bool multiple);
+            void update(u_int64_t firstTag, u_int64_t lastTag);
             void consolidate();
             void clear();
             bool covers(u_int64_t tag) const;

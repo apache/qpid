@@ -326,11 +326,7 @@ void BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, u_int16_
 } 
         
 void BrokerAdapter::BasicHandlerImpl::ack(const MethodContext&, u_int64_t deliveryTag, bool multiple){
-    try{
-        channel.ack(deliveryTag, multiple);
-    }catch(InvalidAckException& e){
-        throw ConnectionException(530, "Received ack for unrecognised delivery tag");
-    }
+	channel.ack(deliveryTag, multiple);
 } 
         
 void BrokerAdapter::BasicHandlerImpl::reject(const MethodContext&, u_int64_t /*deliveryTag*/, bool /*requeue*/){} 

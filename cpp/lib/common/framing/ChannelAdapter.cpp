@@ -61,7 +61,6 @@ void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
     assertMethodOk(*request);
     AMQRequestBody::Data& requestData = request->getData();
     responder.received(requestData);
-    requestInProgress = requestData.requestId;
     handleMethodInContext(request, MethodContext(this, request));
 }
 
@@ -71,8 +70,6 @@ void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
     // Review - any cases where this is not the case?
     AMQResponseBody::Data& responseData = response->getData();
     requester.processed(responseData);
-    // For a response this is taken to be the request being responded to (for convenience)
-    requestInProgress = responseData.requestId;
     handleMethod(response);
 }
 
