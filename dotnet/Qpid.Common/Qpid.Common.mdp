@@ -27,6 +27,9 @@
     <File name="./Framing/AMQMethodBody.cs" subtype="Code" buildaction="Compile" />
     <File name="./Framing/AMQMethodBodyFactory.cs" subtype="Code" buildaction="Compile" />
     <File name="./Framing/AMQProtocolHeaderException.cs" subtype="Code" buildaction="Compile" />
+    <File name="./Framing/AMQType.cs" subtype="Code" buildaction="Compile" />
+    <File name="./Framing/AMQTypedValue.cs" subtype="Code" buildaction="Compile" />
+    <File name="./Framing/AMQTypeMap.cs" subtype="Code" buildaction="Compile" />
     <File name="./Framing/BasicContentHeaderProperties.cs" subtype="Code" buildaction="Compile" />
     <File name="./Framing/CompositeAMQDataBlock.cs" subtype="Code" buildaction="Compile" />
     <File name="./Framing/ContentBody.cs" subtype="Code" buildaction="Compile" />

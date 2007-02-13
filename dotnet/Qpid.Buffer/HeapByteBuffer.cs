@@ -221,6 +221,40 @@ namespace Qpid.Buffer
             _underlyingData[_position++] = (byte) (data >> 8);
             _underlyingData[_position++] = (byte) data;
         }
+
+        public void Put(short data)
+        {
+           Put((ushort)data);
+        }
+
+        public void Put(int data)
+        {
+           Put((uint)data);
+        }
+
+        public void Put(long data)
+        {
+           Put((ulong)data);
+        }
+
+        public void Put(float data)
+        {
+           unsafe
+           {
+              uint val = *((uint*)&data);
+              Put(val);
+           }
+        }
+
+       public void Put(double data)
+       {
+          unsafe
+          {
+             ulong val = *((ulong*)&data);
+             Put(val);
+          }
+       }
+
         
         /// <summary>
         /// Read the byte at the current position and increment the position
@@ -289,8 +323,44 @@ namespace Qpid.Buffer
             byte b6 = _underlyingData[_position++];
             byte b7 = _underlyingData[_position++];
             byte b8 = _underlyingData[_position++];
-            return (ulong)((b1 << 56) + (b2 << 48) + (b3 << 40) + (b4 << 32) + (b5 << 24) +
-                           (b6 << 16) + (b7 << 8) + b8);
+            // all the casts necessary because otherwise each subexpression
+            // only gets promoted to uint and cause incorrect results
+            return (((ulong)b1 << 56) + ((ulong)b2 << 48) + ((ulong)b3 << 40) + 
+               ((ulong)b4 << 32) + ((ulong)b5 << 24) +
+               ((ulong)b6 << 16) + ((ulong)b7 << 8) + b8);
+        }
+
+        public short GetShort()
+        {
+           return (short) GetUnsignedShort();
+        }
+
+        public int GetInt()
+        {
+           return (int) GetUnsignedInt();
+        }
+
+        public long GetLong()
+        {
+           return (long) GetUnsignedLong();
+        }
+
+        public float GetFloat()
+        {
+           unsafe
+           {
+              uint val = GetUnsignedInt();
+              return *((float*)&val);
+           }
+        }
+
+        public double GetDouble()
+        {
+           unsafe
+           {
+              ulong val = GetUnsignedLong();
+              return *((double*)&val);
+           }
         }
 
         public /*override*/ string GetString(uint length, Encoding encoder)
@@ -400,4 +470,5 @@ namespace Qpid.Buffer
         }
     }
 }
+
 
