@@ -360,7 +360,7 @@ namespace Qpid.Client
     {
         string _username = "guest";
         string _password = "guest";
-        string _virtualHost = "/default";
+        string _virtualHost = "/";
 
         string _failoverMethod = null;
         IDictionary _failoverOptions = new Hashtable();
