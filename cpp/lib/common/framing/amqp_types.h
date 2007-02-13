@@ -20,6 +20,12 @@
  * under the License.
  *
  */
+
+/** \file
+ * Type definitions and forward declarations of all types used to
+ * in AMQP messages.
+ */
+
 #include <string>
 #ifdef _WINDOWS
 #include "windows.h"
@@ -44,5 +50,8 @@ typedef u_int16_t ClassId;
 typedef u_int16_t MethodId;
 typedef u_int16_t ReplyCode;
 
+// Types represented by classes.
+class Content;
+class FieldTable;
 }} // namespace qpid::framing
 #endif

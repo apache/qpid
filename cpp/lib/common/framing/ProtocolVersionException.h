@@ -40,7 +40,7 @@ public:
 
     template <class T>
     ProtocolVersionException(
-        const ProtocolVersion& ver, const T& msg) throw () : versionFound(ver)
+        ProtocolVersion ver, const T& msg) throw () : versionFound(ver)
     { init(boost::lexical_cast<std::string>(msg)); }
 
     template <class T>

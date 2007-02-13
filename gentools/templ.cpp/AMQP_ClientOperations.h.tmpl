@@ -26,48 +26,26 @@
 %{VLIST} *   ${major}-${minor}
  */
 
-#include <sstream>
- 
 #ifndef _AMQP_ClientOperations_
 #define _AMQP_ClientOperations_
 
-#include <FieldTable.h>
-#include <FramingContent.h>
-#include <ProtocolVersion.h>
-#include <ProtocolVersionException.h>
-#include "MethodContext.h"
+#include "ProtocolVersion.h"
 
 namespace qpid {
 namespace framing {
 
-class AMQP_ClientProxy;
+class MethodContext;
 
 class AMQP_ClientOperations
 {
-protected:
-    ProtocolVersion version;
-	AMQP_ClientOperations() {}
-
 public:
-    AMQP_ClientOperations(u_int8_t major, u_int8_t minor) : version(major, minor) {}
-    AMQP_ClientOperations(const ProtocolVersion& version) : version(version) {}
     virtual ~AMQP_ClientOperations() {}
 
-    inline u_int8_t getMajor() const { return version.getMajor(); }
-    inline u_int8_t getMinor() const { return version.getMinor(); }
-    inline const ProtocolVersion& getVersion() const { return version; }
-    inline bool isVersion(u_int8_t _major, u_int8_t _minor) const
-    {
-        return version.equals(_major, _minor);
-    }
-    inline bool isVersion(const ProtocolVersion& _version) const
-    {
-        return version.equals(_version);
-    }
+    virtual ProtocolVersion getVersion() const = 0;
 
-	// Include framing constant declarations
-	#include <AMQP_Constants.h>
-	
+    // Include framing constant declarations
+    #include <AMQP_Constants.h>
+
     // Inner classes
 
 %{CLIST} ${coh_inner_class}

@@ -27,30 +27,58 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <AMQFrame.h>
-#include <AMQP_ClientProxy.h>
 #include <AMQP_ServerOperations.h>
+#include <AMQP_ClientProxy.h>
 #include <sys/ConnectionOutputHandler.h>
 #include <sys/ConnectionInputHandler.h>
 #include <sys/TimeoutHandler.h>
+#include "framing/ProtocolVersion.h"
 #include "Broker.h"
 #include "Exception.h"
+#include "BrokerChannel.h"
 
 namespace qpid {
 namespace broker {
 
-class Settings {
-  public:
-    const u_int32_t timeout;//timeout for auto-deleted queues (in ms)
-    const u_int64_t stagingThreshold;
-
-    Settings(u_int32_t _timeout, u_int64_t _stagingThreshold) : timeout(_timeout), stagingThreshold(_stagingThreshold) {}
-};
+class Channel;
 
 class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionToken
 {
   public:
     Connection(sys::ConnectionOutputHandler* out, Broker& broker);
+
+    /** Get a channel. Create if it does not already exist */
+    Channel& getChannel(framing::ChannelId channel);
+
+    /** Close a channel */
+    void closeChannel(framing::ChannelId channel);
+
+    /** Close the connection */
+    void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
+
+    sys::ConnectionOutputHandler& getOutput() const { return *out; }
+    framing::ProtocolVersion getVersion() const { return version; }
+
+    u_int32_t getFrameMax() const { return framemax; }
+    u_int16_t getHeartbeat() const { return heartbeat; }
+    u_int32_t getTimeout() const { return timeout; }
+    u_int64_t getStagingThreshold() const { return stagingThreshold; }
+
+    void setFrameMax(u_int32_t fm) { framemax = fm; }
+    void setHeartbeat(u_int16_t hb) { heartbeat = hb; }
+    
+    /**
+     * Get named queue, never returns 0.
+     * @return: named queue or default queue for channel if name=""
+     * @exception: ChannelException if no queue of that name is found.
+     * @exception: ConnectionException if name="" and channel has no default.
+     */
+    Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
+
+    Broker& broker;
+    std::vector<Queue::shared_ptr> exclusiveQueues;
+
     // ConnectionInputHandler methods
     void received(framing::AMQFrame* frame);
     void initiated(framing::ProtocolInitiation* header);
@@ -58,46 +86,21 @@ class Connection : public sys::ConnectionInputHandler,
     void idleIn();
     void closed();
 
-    sys::ConnectionOutputHandler& getOutput() { return *out; }
-
-    const framing::ProtocolVersion& getVersion() {
-        return client->getProtocolVersion(); }
-
-    u_int32_t getFrameMax() const { return framemax; }
-    u_int16_t getHeartbeat() const { return heartbeat; }
-
-    void setFrameMax(u_int32_t fm) { framemax = fm; }
-    void setHeartbeat(u_int16_t hb) { heartbeat = hb; }
-
-    Broker& broker;
-    std::auto_ptr<framing::AMQP_ClientProxy> client;
-    Settings settings;
-
-    std::vector<Queue::shared_ptr> exclusiveQueues;
-
-    /**
-     * Get named queue, never returns 0.
-     * @return: named queue or default queue for channel if name=""
-     * @exception: ChannelException if no queue of that name is found.
-     * @exception: ConnectionException if no queue specified and channel has not declared one.
-     */
-    Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
-
-    Channel& newChannel(framing::ChannelId channel);
-    Channel& getChannel(framing::ChannelId channel);
-    void closeChannel(framing::ChannelId channel);
-    void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
-
   private:
     typedef boost::ptr_map<framing::ChannelId, Channel> ChannelMap;
 
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
     Exchange::shared_ptr findExchange(const string& name);
 
+    framing::ProtocolVersion version;
     ChannelMap channels;
     sys::ConnectionOutputHandler* out;
     u_int32_t framemax;
     u_int16_t heartbeat;
+    framing::AMQP_ClientProxy::Connection* client;
+    const u_int32_t timeout; //timeout for auto-deleted queues (in ms)
+    const u_int64_t stagingThreshold;
+
 };
 
 }}

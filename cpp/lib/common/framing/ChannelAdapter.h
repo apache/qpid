@@ -35,9 +35,8 @@ namespace framing {
 class MethodContext;
 
 /**
- * Base class for client and broker channel adapters.
+ * Base class for client and broker channels.
  *
- * BodyHandler::handl*
  * - receives frame bodies from the network.
  * - Updates request/response data.
  * - Dispatches requests with a MethodContext for responses.
@@ -55,21 +54,21 @@ class ChannelAdapter : public BodyHandler {
      *@param output Processed frames are forwarded to this handler.
      */
     ChannelAdapter(ChannelId id_=0, OutputHandler* out_=0,
-                   const ProtocolVersion& ver=ProtocolVersion())
+                   ProtocolVersion ver=ProtocolVersion())
         : id(id_), out(out_), version(ver)  {}
 
     /** Initialize the channel adapter. */
-    void init(ChannelId, OutputHandler&, const ProtocolVersion&);
+    void init(ChannelId, OutputHandler&, ProtocolVersion);
 
     ChannelId getId() const { return id; }
-    const ProtocolVersion& getVersion() const { return version; }
+    ProtocolVersion getVersion() const { return version; }
     
     /**
      * Wrap body in a frame and send the frame.
      * Takes ownership of body.
      */
-    void send(AMQBody::shared_ptr body);
-    void send(AMQBody* body) { send(AMQBody::shared_ptr(body)); }
+    RequestId send(AMQBody::shared_ptr body);
+    RequestId send(AMQBody* body) { return send(AMQBody::shared_ptr(body)); }
 
     void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody>);
     void handleRequest(boost::shared_ptr<qpid::framing::AMQRequestBody>);
@@ -95,7 +94,7 @@ class ChannelAdapter : public BodyHandler {
     ProtocolVersion version;
     Requester requester;
     Responder responder;
-    RequestId requestInProgress; // TODO aconway 2007-01-24: use it.
+    RequestId requestInProgress; 
 };
 
 }}

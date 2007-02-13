@@ -24,8 +24,6 @@
 #include "OutputHandler.h"
 #include "ProtocolVersion.h"
 
-#include <boost/shared_ptr.hpp>
-
 namespace qpid {
 namespace framing {
 
@@ -61,6 +59,12 @@ struct MethodContext
      * It's also provides the request ID  when constructing a response.
      */
     BodyPtr methodBody;
+
+    /**
+     * Return methodBody's request ID.
+     * It is an error to call this if methodBody is not a request.
+     */
+    RequestId getRequestId() const;
 };
 
 // FIXME aconway 2007-02-01: Method context only required on Handler

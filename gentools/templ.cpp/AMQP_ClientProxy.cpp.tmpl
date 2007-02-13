@@ -25,30 +25,28 @@
  * Supported AMQP versions:
 %{VLIST} *   ${major}-${minor}
  */
-
 #include <sstream>
-
-#include <AMQP_ClientProxy.h>
-#include <AMQFrame.h>
+#include "AMQP_ClientProxy.h"
 #include "framing/ChannelAdapter.h"
+#include "framing/amqp_types_full.h"
 
 %{MLIST} ${cpc_method_body_include}
 
 namespace qpid {
 namespace framing {
 
-AMQP_ClientProxy::AMQP_ClientProxy(OutputHandler* out, u_int8_t major, u_int8_t minor) :
-%{CLIST} ${cpc_constructor_initializer}
-        
-{}
 
-	// Inner class instance get methods
+AMQP_ClientProxy::AMQP_ClientProxy(ChannelAdapter& ch) :
+    Proxy(ch)%{CLIST} ${cpc_constructor_initializer}
+    {}
+
+    // Inner class instance get methods
 	
 %{CLIST} ${cpc_inner_class_get_method}
 
-	// Inner class implementation
+    // Inner class implementation
 
 %{CLIST} ${cpc_inner_class_impl}
 
-} /* namespace framing */
-} /* namespace qpid */
+}} // namespae qpid::framing 
+

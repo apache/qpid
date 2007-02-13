@@ -77,7 +77,7 @@ class Connector : public framing::OutputHandler,
 
   friend class Channel;
   public:
-    Connector(const framing::ProtocolVersion& pVersion,
+    Connector(framing::ProtocolVersion pVersion,
               bool debug = false, u_int32_t buffer_size = 1024);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);

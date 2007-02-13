@@ -22,6 +22,9 @@
 #include <assert.h>
 
 #include "Connection.h"
+#include "BrokerChannel.h"
+#include "AMQP_ClientProxy.h"
+#include "BrokerAdapter.h"
 
 using namespace boost;
 using namespace qpid::sys;
@@ -33,11 +36,14 @@ namespace broker {
 
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
     broker(broker_),
-    settings(broker.getTimeout(), broker.getStagingThreshold()),
     out(out_),
     framemax(65536), 
-    heartbeat(0)
+    heartbeat(0),
+    client(0),
+    timeout(broker.getTimeout()),
+    stagingThreshold(broker.getStagingThreshold())
 {}
+
 
 Queue::shared_ptr Connection::getQueue(const string& name, u_int16_t channel){
     Queue::shared_ptr queue;
@@ -59,31 +65,27 @@ Exchange::shared_ptr Connection::findExchange(const string& name){
 }
 
 
-void Connection::received(qpid::framing::AMQFrame* frame){
+void Connection::received(framing::AMQFrame* frame){
     getChannel(frame->getChannel()).handleBody(frame->getBody());
 }
 
-void Connection::close(ReplyCode code, const string& text, ClassId classId, MethodId methodId){
-    client->getConnection().close(MethodContext(&getChannel(0)), code, text, classId, methodId);
+void Connection::close(
+    ReplyCode code, const string& text, ClassId classId, MethodId methodId)
+{
+    client->close(code, text, classId, methodId);
     getOutput().close();
 }
 
-// TODO aconway 2007-02-02: Should be delegated to the BrokerAdapter
-// as it is part of the protocol.
-void Connection::initiated(qpid::framing::ProtocolInitiation* header) {
-    if (client.get())
-        // TODO aconway 2007-01-16: correct error code.
-        throw ConnectionException(0, "Connection initiated twice");
-    client.reset(new qpid::framing::AMQP_ClientProxy(
-                     out, header->getMajor(), header->getMinor()));
+void Connection::initiated(framing::ProtocolInitiation* header) {
+    version = ProtocolVersion(header->getMajor(), header->getMinor());
     FieldTable properties;
     string mechanisms("PLAIN");
     string locales("en_US");
-    client->getConnection().start(
-        MethodContext(&getChannel(0)),
+    getChannel(0).init(0, *out, getVersion());
+    client = &getChannel(0).getAdatper().getProxy().getConnection();
+    client->start(
         header->getMajor(), header->getMinor(),
         properties, mechanisms, locales);
-    getChannel(0).init(0, *out, client->getProtocolVersion());
 }
 
 void Connection::idleOut(){}
@@ -103,9 +105,10 @@ void Connection::closed(){
     }
 }
 
-void Connection::closeChannel(u_int16_t channel) {
-    getChannel(channel).close(); 
-    channels.erase(channels.find(channel));
+void Connection::closeChannel(u_int16_t id) {
+    ChannelMap::iterator i = channels.find(id);
+    if (i != channels.end())
+        i->close();
 }
 
 
@@ -115,7 +118,7 @@ Channel& Connection::getChannel(ChannelId id) {
         i = channels.insert(
             id, new Channel(
                 *this, id, framemax, broker.getQueues().getStore(),
-                settings.stagingThreshold)).first;
+                broker.getStagingThreshold())).first;
     }        
     return *i;
 }

@@ -22,12 +22,10 @@
  *
  */
 
-#include <BrokerMessageBase.h>
 #include <memory>
 #include <boost/shared_ptr.hpp>
-#include <AMQContentBody.h>
-#include <AMQHeaderBody.h>
-#include "AMQMethodBody.h"
+
+#include <BrokerMessageBase.h>
 #include <BasicHeaderProperties.h>
 #include <ConnectionToken.h>
 #include <Content.h>
@@ -39,6 +37,7 @@ namespace qpid {
 namespace framing {
 class MethodContext;
 class ChannelAdapter;
+class AMQHeaderBody;
 }
 
 namespace broker {
@@ -52,7 +51,7 @@ using framing::string;
  * request.
  */
 class BasicMessage : public Message {
-    framing::AMQHeaderBody::shared_ptr header;
+    boost::shared_ptr<framing::AMQHeaderBody> header;
     std::auto_ptr<Content> content;
     sys::Mutex contentLock;
     u_int64_t size;
@@ -65,10 +64,10 @@ class BasicMessage : public Message {
     BasicMessage(const ConnectionToken* const publisher, 
                  const string& exchange, const string& routingKey, 
                  bool mandatory, bool immediate,
-                 framing::AMQMethodBody::shared_ptr respondTo);
+                 boost::shared_ptr<framing::AMQMethodBody> respondTo);
     BasicMessage();
     ~BasicMessage();
-    void setHeader(framing::AMQHeaderBody::shared_ptr header);
+    void setHeader(boost::shared_ptr<framing::AMQHeaderBody> header);
     void addContent(framing::AMQContentBody::shared_ptr data);
     bool isComplete();
 

@@ -149,7 +149,9 @@ void Queue::consume(Consumer* c, bool requestExclusive){
 
 void Queue::cancel(Consumer* c){
     Mutex::ScopedLock locker(lock);
-    consumers.erase(find(consumers.begin(), consumers.end(), c));
+    Consumers::iterator i = std::find(consumers.begin(), consumers.end(), c);
+    if (i != consumers.end()) 
+        consumers.erase(i);
     if(autodelete && consumers.empty()) lastUsed = now()*TIME_MSEC;
     if(exclusive == c) exclusive = 0;
 }

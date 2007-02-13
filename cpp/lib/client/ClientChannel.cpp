@@ -24,6 +24,7 @@
 #include <QpidError.h>
 #include <MethodBodyInstances.h>
 #include "Connection.h"
+#include "AMQP_ServerProxy.h"
 
 // FIXME aconway 2007-01-26: Evaluate all throws, ensure consistent
 // handling of errors that should close the connection or the channel.
@@ -48,12 +49,23 @@ Channel::~Channel(){
     close();
 }
 
+AMQP_ServerProxy& Channel::brokerProxy() {
+    assert(proxy.get());
+    return *proxy;
+}
+
+AMQMethodBody::shared_ptr Channel::brokerResponse() {
+    // FIXME aconway 2007-02-08: implement responses.
+    return AMQMethodBody::shared_ptr();
+}
+
 void Channel::open(ChannelId id, Connection& con)
 {
     if (isOpen())
         THROW_QPID_ERROR(INTERNAL_ERROR, "Attempt to re-open channel "+id);
     connection = &con;
     init(id, con, con.getVersion()); // ChannelAdapter initialization.
+    proxy.reset(new AMQP_ServerProxy(*this));
     string oob;
     if (id != 0) 
         sendAndReceive<ChannelOpenOkBody>(new ChannelOpenBody(version, oob));

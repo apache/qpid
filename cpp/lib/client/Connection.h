@@ -96,12 +96,12 @@ class Connection : public ConnectionForChannel
     Connector* connector;
     framing::OutputHandler* out;
     volatile bool isOpen;
+    Channel channel0;
+    bool debug;
         
     void erase(framing::ChannelId);
     void channelException(
         Channel&, framing::AMQMethodBody*, const QpidError&);
-    Channel channel0;
-    bool debug;
 
     // TODO aconway 2007-01-26: too many friendships, untagle these classes.
   friend class Channel;
@@ -120,9 +120,8 @@ class Connection : public ConnectionForChannel
      * @param max_frame_size the maximum frame size that the
      * client will accept. Optional and defaults to 65536.
      */
-    Connection(
-        bool debug = false, u_int32_t max_frame_size = 65536, 
-        const framing::ProtocolVersion& = framing::highestProtocolVersion);
+    Connection(bool debug = false, u_int32_t max_frame_size = 65536,
+               framing::ProtocolVersion=framing::highestProtocolVersion);
     ~Connection();
 
     /**
@@ -185,7 +184,7 @@ class Connection : public ConnectionForChannel
     inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
 
     /** @return protocol version in use on this connection. */ 
-    const framing::ProtocolVersion& getVersion() const { return version; }
+    framing::ProtocolVersion getVersion() const { return version; }
 };
 
 }} // namespace qpid::client

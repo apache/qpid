@@ -35,19 +35,19 @@ private:
     u_int8_t minor_;
     
 public:
-    ProtocolVersion();
-    ProtocolVersion(u_int8_t _major, u_int8_t _minor);
-    ProtocolVersion(const ProtocolVersion& p);
-    virtual ~ProtocolVersion();
+    ProtocolVersion(u_int8_t _major=0, u_int8_t _minor=0) 
+        : major_(_major), minor_(_minor) {}
 
-    inline u_int8_t getMajor() const { return major_; }
-    inline void setMajor(u_int8_t major) { major_ = major; }
-    inline u_int8_t getMinor() const { return minor_; }
-    inline void setMinor(u_int8_t minor) { minor_ = minor; }
-    virtual bool equals(u_int8_t _major, u_int8_t _minor) const;
-    virtual bool equals(const ProtocolVersion& p) const;
-    virtual const std::string toString() const;
-    ProtocolVersion operator=(const ProtocolVersion& p);
+    u_int8_t getMajor() const { return major_; }
+    void setMajor(u_int8_t major) { major_ = major; }
+    u_int8_t getMinor() const { return minor_; }
+    void setMinor(u_int8_t minor) { minor_ = minor; }
+    const std::string toString() const;
+
+    ProtocolVersion& operator=(ProtocolVersion p); 
+
+    bool operator==(ProtocolVersion p) const;
+    bool operator!=(ProtocolVersion p) const { return ! (*this == p); }
 };
 
 } // namespace framing

@@ -53,13 +53,17 @@ namespace qpid {
          * or more consumers registers.
          */
         class Queue{
+            typedef std::vector<Consumer*> Consumers;
+            typedef std::queue<Binding*> Bindings;
+            typedef std::queue<Message::shared_ptr> Messages;
+            
             const string name;
             const u_int32_t autodelete;
             MessageStore* const store;
             const ConnectionToken* const owner;
-            std::vector<Consumer*> consumers;
-            std::queue<Binding*> bindings;
-            std::queue<Message::shared_ptr> messages;
+            Consumers consumers;
+            Bindings bindings;
+            Messages messages;
             bool queueing;
             bool dispatching;
             int next;

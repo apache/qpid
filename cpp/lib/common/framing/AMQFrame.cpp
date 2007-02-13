@@ -26,19 +26,24 @@
 #include "AMQRequestBody.h"
 #include "AMQResponseBody.h"
 
-using namespace qpid::framing;
+
+namespace qpid {
+namespace framing {
+
 
 AMQP_MethodVersionMap AMQFrame::versionMap;
 
-AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version):
+AMQFrame::AMQFrame(ProtocolVersion _version):
 version(_version)
- {}
+ {
+     assert(version != ProtocolVersion(0,0));
+ }
 
-AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t _channel, AMQBody* _body) :
+AMQFrame::AMQFrame(ProtocolVersion _version, u_int16_t _channel, AMQBody* _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
-AMQFrame::AMQFrame(const qpid::framing::ProtocolVersion& _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
+AMQFrame::AMQFrame(ProtocolVersion _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
@@ -119,7 +124,7 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
     body->decode(buffer, size);
 }
 
-std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t)
+std::ostream& operator<<(std::ostream& out, const AMQFrame& t)
 {
     out << "Frame[channel=" << t.channel << "; ";
     if (t.body.get() == 0)
@@ -130,3 +135,5 @@ std::ostream& qpid::framing::operator<<(std::ostream& out, const AMQFrame& t)
     return out;
 }
 
+
+}} // namespace qpid::framing

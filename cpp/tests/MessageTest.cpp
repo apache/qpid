@@ -74,7 +74,7 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, msg->contentSize());
 
         MockChannel channel(1);
-        // FIXME aconway 2007-02-02: deliver should take const ProtocolVersion&
+        // FIXME aconway 2007-02-02: deliver should take ProtocolVersion
         msg->deliver(channel, "ignore", 0, 100); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
         AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2]->getBody()));

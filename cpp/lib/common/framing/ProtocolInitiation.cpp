@@ -20,15 +20,18 @@
  */
 #include <ProtocolInitiation.h>
 
-qpid::framing::ProtocolInitiation::ProtocolInitiation(){}
+namespace qpid {
+namespace framing {
 
-qpid::framing::ProtocolInitiation::ProtocolInitiation(u_int8_t _major, u_int8_t _minor) : version(_major, _minor) {}
+ProtocolInitiation::ProtocolInitiation(){}
 
-qpid::framing::ProtocolInitiation::ProtocolInitiation(const qpid::framing::ProtocolVersion& p) : version(p) {}
+ProtocolInitiation::ProtocolInitiation(u_int8_t _major, u_int8_t _minor) : version(_major, _minor) {}
 
-qpid::framing::ProtocolInitiation::~ProtocolInitiation(){}
+ProtocolInitiation::ProtocolInitiation(ProtocolVersion p) : version(p) {}
 
-void qpid::framing::ProtocolInitiation::encode(Buffer& buffer){
+ProtocolInitiation::~ProtocolInitiation(){}
+
+void ProtocolInitiation::encode(Buffer& buffer){
     buffer.putOctet('A');
     buffer.putOctet('M');
     buffer.putOctet('Q');
@@ -39,7 +42,7 @@ void qpid::framing::ProtocolInitiation::encode(Buffer& buffer){
     buffer.putOctet(version.getMinor());    
 }
 
-bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
+bool ProtocolInitiation::decode(Buffer& buffer){
     if(buffer.available() >= 8){
 	buffer.getOctet();//A
 	buffer.getOctet();//M
@@ -56,3 +59,5 @@ bool qpid::framing::ProtocolInitiation::decode(Buffer& buffer){
 }
 
 //TODO: this should prbably be generated from the spec at some point to keep the version numbers up to date
+
+}} // namespace qpid::framing
