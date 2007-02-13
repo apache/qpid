@@ -341,7 +341,12 @@ public class AMQQueue implements Managable, Comparable
     public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
-        debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("Registering protocol session {0} with channel {1} [{4}] and " +
+                                               "consumer tag {2} with {3}",
+                                               ps, channel, consumerTag, this, System.identityHashCode(channel)));
+        }
 
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
 
@@ -358,8 +363,13 @@ public class AMQQueue implements Managable, Comparable
 
     public void unregisterProtocolSession(AMQProtocolSession ps, int channel, String consumerTag) throws AMQException
     {
-        debug("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
-              this);
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("Unregistering protocol session {0} with channel {1} [{4}] " +
+                                               "and consumer tag {2} from {3}",
+                                               ps, channel, consumerTag, this, System.identityHashCode(channel)));
+        }
 
         Subscription removedSubscription;
         if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel,
@@ -369,6 +379,12 @@ public class AMQQueue implements Managable, Comparable
         {
             throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag +
                                    " and protocol session key " + ps.getKey() + " not registered with queue " + this);
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("Removed consumer tag {0} with channel {1} [{3}] from {2}",
+                                               consumerTag, channel, this, System.identityHashCode(channel)));
         }
 
         removedSubscription.close();
@@ -412,7 +428,10 @@ public class AMQQueue implements Managable, Comparable
 
     protected void autodelete() throws AMQException
     {
-        debug("autodeleting {0}", this);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("autodeleting {0}", this));
+        }
         delete();
     }
 
@@ -514,14 +533,6 @@ public class AMQQueue implements Managable, Comparable
     public String toString()
     {
         return "Queue(" + _name + ")@" + System.identityHashCode(this);
-    }
-
-    private void debug(String msg, Object... args)
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug(MessageFormat.format(msg, args));
-        }
     }
 
     public long getMinimumAlertRepeatGap()

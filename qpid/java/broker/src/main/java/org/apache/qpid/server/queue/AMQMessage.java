@@ -471,4 +471,9 @@ public class AMQMessage
     {
         return _takenBySubcription;
     }
+
+    public boolean isTaken()
+    {
+        return _taken.get();
+    }
 }

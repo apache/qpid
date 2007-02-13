@@ -47,14 +47,25 @@
     </category>
 
     <category name="org.apache.qpid.framing.AMQDataBlockEncoder">
-       <priority value="info"/>
-   </category>
+        <priority value="info"/>
+    </category>
 
+    <!--category name="org.apache.qpid.server.queue.SubscriptionImpl">
+        <priority value="trace"/>
+    </category>
 
-     <category name="org.apache.qpid">
+    <category name="org.apache.qpid.server.queue.ConcurrentSelectorDeliveryManager">
+        <priority value="trace"/>
+    </category>
+
+     <category name="org.apache.qpid.server.AMQChannel">
+        <priority value="trace"/>
+    </category -->
+
+    <category name="org.apache.qpid">
         <priority value="warn"/>
     </category>
-    
+
     <root>
         <priority value="info"/>
         <appender-ref ref="STDOUT"/>

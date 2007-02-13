@@ -310,13 +310,15 @@ public class AMQChannel
     {
         if (_log.isTraceEnabled())
         {
-            _log.trace("Unsubscribed consumer:" + consumerTag);
+            _log.trace("Unsubscribed consumer:" + consumerTag + "on Session " + session +
+                       " Unacked Map Size:" + _unacknowledgedMessageMap.size());
         }
         AMQQueue q = _consumerTag2QueueMap.remove(consumerTag);
         if (q != null)
         {
             q.unregisterProtocolSession(session, _channelId, consumerTag);
         }
+        requeue();
     }
 
     /**
@@ -358,15 +360,18 @@ public class AMQChannel
      */
     public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, String consumerTag, AMQQueue queue)
     {
-        if (_log.isTraceEnabled())
-        {
-            _log.trace("Adding unackedMessage (" + System.identityHashCode(message) + ") for channel " + _channelId +
-                       " with delivery tag " + deliveryTag + " and consumerTag " + consumerTag +
-                       " from queue:" + queue.getName());
-        }
-
         synchronized (_unacknowledgedMessageMapLock)
         {
+            if (_log.isTraceEnabled())
+            {
+                _log.trace("Adding unackedMessage (" + System.identityHashCode(message) + ") for channel " + _channelId +
+                           "(" + System.identityHashCode(this) + ")" +
+                           " with delivery tag " + deliveryTag + " and consumerTag " + consumerTag +
+                           " from queue:" + queue.getName() +
+                           " unackedSize[" + System.identityHashCode(_unacknowledgedMessageMap) + "](pre-put):"
+                           + _unacknowledgedMessageMap.size() + ":" + _unacknowledgedMessageMap.toString());
+            }
+
             _unacknowledgedMessageMap.put(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
             _lastDeliveryTag = deliveryTag;
             checkSuspension();
@@ -404,6 +409,11 @@ public class AMQChannel
 
                 unacked.queue.deliver(unacked.message);
             }
+        }
+
+        if (_unacknowledgedMessageMap.size() != 0)
+        {
+            _log.error("unack map is not empty after resend was item added to unack map whilst consumer is closing");
         }
     }
 

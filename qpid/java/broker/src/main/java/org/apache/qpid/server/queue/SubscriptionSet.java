@@ -32,11 +32,12 @@ class SubscriptionSet implements WeightedSubscriptionManager
 {
     private static final Logger _log = Logger.getLogger(SubscriptionSet.class);
 
-    /** List of registered subscribers */
+    /** List of registered subscribers all edits must be done whilst holidng _subscriptionsChange */
     private List<Subscription> _subscriptions = new CopyOnWriteArrayList<Subscription>();
 
     /** Used to control the round robin delivery of content */
     private int _currentSubscriber;
+    private final Object _subscriptionsChange = new Object();
 
     /** Accessor for unit tests. */
     int getCurrentSubscriber()
@@ -46,7 +47,10 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     public void addSubscriber(Subscription subscription)
     {
-        _subscriptions.add(subscription);
+        synchronized (_subscriptionsChange)
+        {
+            _subscriptions.add(subscription);
+        }
     }
 
     /**
@@ -59,13 +63,27 @@ class SubscriptionSet implements WeightedSubscriptionManager
     public Subscription removeSubscriber(Subscription subscription)
     {
         // TODO: possibly need O(1) operation here.
-        int subIndex = _subscriptions.indexOf(subscription);
 
-        if (subIndex != -1)
+        Subscription sub = null;
+        synchronized (_subscriptionsChange)
         {
-            //we can't just return the passed in subscription as it is a new object
-            // and doesn't contain the stored state we need.
-            return _subscriptions.remove(subIndex);
+            int subIndex = _subscriptions.indexOf(subscription);
+
+            if (subIndex != -1)
+            {
+                //we can't just return the passed in subscription as it is a new object
+                // and doesn't contain the stored state we need.
+                //NOTE while this may be removed now anyone with an iterator will still have it in the list!!
+                sub = _subscriptions.remove(subIndex);
+            }
+            else
+            {
+                _log.error("Unable to remove from index(" + subIndex + ")subscription:" + subscription);
+            }
+        }
+        if (sub != null)
+        {
+            return sub;
         }
         else
         {

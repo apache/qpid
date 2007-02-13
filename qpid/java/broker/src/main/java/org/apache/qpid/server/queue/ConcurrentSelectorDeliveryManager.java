@@ -254,11 +254,17 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             // message will be null if we have no messages in the messageQueue.
             if (message == null)
             {
+                if (_log.isTraceEnabled())
+                {
+                    _log.trace("No messages for Subscriber(" + System.identityHashCode(sub) + ") from queue; (" + System.identityHashCode(messageQueue) + ")");
+                }
                 return;
             }
             if (_log.isDebugEnabled())
             {
-                _log.debug("Async Delivery Message (" + System.identityHashCode(message) + ") to :" + System.identityHashCode(this));
+                _log.debug("Async Delivery Message (" + System.identityHashCode(message) +
+                           ") by :" + System.identityHashCode(this) +
+                           ") to :" + System.identityHashCode(sub));
             }
 
             sub.send(message, queue);
@@ -333,16 +339,27 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void deliver(String name, AMQMessage msg) throws FailedDequeueException
     {
-        if (_log.isTraceEnabled())
+        if (_log.isDebugEnabled())
         {
-            _log.trace(id() + "deliver :" + System.identityHashCode(msg));
+            _log.debug(id() + " Deliver :" + System.identityHashCode(msg) + ")");
         }
 
         //Check if we have someone to deliver the message to.
         _lock.lock();
         try
         {
+            if (_log.isTraceEnabled())
+            {
+                _log.trace(id() + " Getting next Subscriber for message :" + System.identityHashCode(msg) + ")");
+            }
+
             Subscription s = _subscriptions.nextSubscriber(msg);
+
+            if (_log.isTraceEnabled())
+            {
+                _log.trace(id() + " Subscriber (" + System.identityHashCode(s) + ")" +
+                           " selected for message :" + System.identityHashCode(msg) + ")");
+            }
 
             if (s == null) //no-one can take the message right now.
             {
@@ -392,18 +409,58 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
             else
             {
+                if (_log.isTraceEnabled())
+                {
+                    _log.trace(id() + " About to take sendLock for subscriber :" + System.identityHashCode(s) +
+                               " to deliver message:" + System.identityHashCode(msg));
+                }
+
                 //release lock now
                 _lock.unlock();
 
-                if (_log.isDebugEnabled())
+                synchronized (s.sendlock())
                 {
-                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" +
-                               System.identityHashCode(s) + ") :" + s);
+                    if (!s.isSuspended())
+                    {
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" +
+                                       System.identityHashCode(s) + ") :" + s);
+                        }
+
+                        //Mark message as taken
+                        msg.taken(s);
+                        //Deliver the message
+                        s.send(msg, _queue);
+                    }
+                    else
+                    {
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug(id() + " Subscription(" + System.identityHashCode(s) + ") became suspended between nextSubscriber and send");
+                        }
+                    }
                 }
-                //Mark message as taken
-                msg.taken(s);
-                //Deliver the message
-                s.send(msg, _queue);
+
+                if (!msg.isTaken())
+                {
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug(id() + " Message(" + System.identityHashCode(msg) + ") has not been taken so recursing!:" +
+                                   " Subscriber:" + System.identityHashCode(s));
+                    }
+
+                    deliver(name, msg);
+                }
+                else
+                {
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug(id() + " Message(" + System.identityHashCode(msg) +
+                                   ") has been taken so disregarding deliver request to Subscriber:" +
+                                   System.identityHashCode(s));
+                    }
+                }
             }
         }
         finally
