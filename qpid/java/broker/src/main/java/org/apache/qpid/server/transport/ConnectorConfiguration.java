@@ -70,13 +70,21 @@ public class ConnectorConfiguration
                 defaultValue = "false")
     public boolean enableDirectBuffers;
 
-    @Configured(path = "connector.ssl",
+    @Configured(path = "connector.ssl.enabled",
                 defaultValue = "false")
     public boolean enableSSL;
-
-    @Configured(path = "connector.nonssl",
-                defaultValue = "true")
-    public boolean enableNonSSL;
+    
+    @Configured(path = "connector.ssl.keystorePath",
+    			defaultValue = "none")
+    public String keystorePath;
+    
+    @Configured(path = "connector.ssl.keystorePassword",
+    			defaultValue = "none")
+    public String keystorePassword;
+    
+    @Configured(path = "connector.ssl.certType",
+    			defaultValue = "SunX509")
+    public String certType;
 
     public IoAcceptor createAcceptor()
     {

@@ -35,6 +35,8 @@ public class AMQBrokerDetails implements BrokerDetails
     private String _transport;
 
     private HashMap<String, String> _options;
+    
+    private SSLConfiguration _sslConfiguration;
 
     public AMQBrokerDetails()
     {
@@ -174,15 +176,11 @@ public class AMQBrokerDetails implements BrokerDetails
         }
     }
 
-    public AMQBrokerDetails(String host, int port, boolean useSSL)
+    public AMQBrokerDetails(String host, int port, SSLConfiguration sslConfiguration)
     {
         _host = host;
         _port = port;
-
-        if (useSSL)
-        {
-            setOption(OPTIONS_SSL, "true");
-        }
+        _sslConfiguration = sslConfiguration;
     }
 
     public String getHost()
@@ -247,6 +245,16 @@ public class AMQBrokerDetails implements BrokerDetails
     {
         setOption(OPTIONS_CONNECT_TIMEOUT, Long.toString(timeout));
     }
+    
+    public SSLConfiguration getSSLConfiguration()
+    {
+    	return _sslConfiguration;
+    }
+    
+    public void setSSLConfiguration(SSLConfiguration sslConfig)
+    {
+    	_sslConfiguration = sslConfig;
+    }
 
     public String toString()
     {
@@ -280,8 +288,7 @@ public class AMQBrokerDetails implements BrokerDetails
         return _host.equalsIgnoreCase(bd.getHost()) &&
                (_port == bd.getPort()) &&
                _transport.equalsIgnoreCase(bd.getTransport()) &&
-               (useSSL() == bd.useSSL());
-
+               compareSSLConfigurations(bd.getSSLConfiguration());
         //todo do we need to compare all the options as well?
     }
 
@@ -313,26 +320,24 @@ public class AMQBrokerDetails implements BrokerDetails
 
         return optionsURL.toString();
     }
-
-    public boolean useSSL()
+    
+    // Do we need to do a more in-depth comparison?
+    private boolean compareSSLConfigurations(SSLConfiguration other) 
     {
-        // To be friendly to users we should be case insensitive.
-        // or simply force users to conform to OPTIONS_SSL
-        // todo make case insensitive by trying ssl Ssl sSl ssL SSl SsL sSL SSL
-
-        if (_options.containsKey(OPTIONS_SSL))
-        {
-            return _options.get(OPTIONS_SSL).equalsIgnoreCase("true");
-        }
-
-        return USE_SSL_DEFAULT;
+    	boolean retval = false;
+    	if (_sslConfiguration == null &&
+    			other == null) 
+    	{
+    		retval = true;
+    	}
+    	else if (_sslConfiguration != null && 
+    			other != null)
+    	{
+    		retval = true;
+    	}
+    	
+    	return retval;
     }
-
-    public void useSSL(boolean ssl)
-    {
-        setOption(OPTIONS_SSL, Boolean.toString(ssl));
-    }
-
 
     public static String checkTransport(String broker)
     {

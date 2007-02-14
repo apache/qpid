@@ -327,7 +327,7 @@ public class Main implements ProtocolVersionList
                 sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
             }
 
-            if (connectorConfig.enableNonSSL)
+            if (!connectorConfig.enableSSL)
             {
                 AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
                 InetSocketAddress bindAddress;
@@ -343,10 +343,9 @@ public class Main implements ProtocolVersionList
                 _logger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
 
-            if (connectorConfig.enableSSL)
+            else
             {
                 AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
-                handler.setUseSSL(true);
                 try
                 {
                     acceptor.bind(new InetSocketAddress(connectorConfig.sslPort),
