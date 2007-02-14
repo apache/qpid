@@ -37,7 +37,7 @@ import java.io.IOException;
  */
 public interface ManagedBroker
 {
-    static final String TYPE = "BrokerManager";
+    static final String TYPE = "VirtualHostManager";
 
     /**
      * Creates a new Exchange.

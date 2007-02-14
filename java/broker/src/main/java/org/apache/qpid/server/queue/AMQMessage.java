@@ -24,10 +24,10 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.txn.TxnBuffer;
-import org.apache.qpid.server.message.MessageDecorator;
-import org.apache.qpid.server.message.jms.JMSMessage;
+import org.apache.qpid.server.store.StoreContext;
+//import org.apache.qpid.server.txn.TxnBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.txn.TransactionalContext;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -38,15 +38,18 @@ import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.log4j.Logger;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
  */
 public class AMQMessage
 {
-    public static final String JMS_MESSAGE = "jms.message";
+    private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    private final Set<Object> _tokens = new HashSet<Object>();
+    private Set<Object> _tokens;
 
     private AMQProtocolSession _publisher;
 
@@ -54,17 +57,23 @@ public class AMQMessage
 
     private List<ByteBuffer> _contents;
 
-    private Iterable<ByteBuffer> _dupContentsIterable = new Iterable() {
-        public Iterator<ByteBuffer> iterator() {
-            return new Iterator() {
+    private Iterable<ByteBuffer> _dupContentsIterable = new Iterable()
+    {
+        public Iterator<ByteBuffer> iterator()
+        {
+            return new Iterator()
+            {
                 private Iterator<ByteBuffer> iter = _contents.iterator();
-                public boolean hasNext() {
+                public boolean hasNext()
+                {
                     return iter.hasNext();
                 }
-                public ByteBuffer next() {
+                public ByteBuffer next()
+                {
                     return iter.next().duplicate();
                 }
-                public void remove() {
+                public void remove()
+                {
                     throw new UnsupportedOperationException();
                 }
             };
@@ -73,9 +82,17 @@ public class AMQMessage
 
     private boolean _redelivered;
 
-    private final long _messageId;
+    private final Long _messageId;
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
+
+    private AMQMessageHandle _messageHandle;
+
+    // TODO: ideally this should be able to go into the transient message date - check this! (RG)
+    private TransactionalContext _txnContext;
+    
+//    private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
+    private List<AMQQueue> _destinationQueues = new CopyOnWriteArrayList<AMQQueue>();
 
     /**
      * Keeps a track of how many bytes we have received in body frames
@@ -95,67 +112,63 @@ public class AMQMessage
     private boolean _storeWhenComplete;
 
     /**
-     * TxnBuffer for transactionally published messages
-     */
-    private TxnBuffer _txnBuffer;
-
-    /**
      * Flag to indicate whether message has been delivered to a
      * consumer. Used in implementing return functionality for
      * messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
-    private ConcurrentHashMap<String, MessageDecorator> _decodedMessages;
     private AtomicBoolean _taken = new AtomicBoolean(false);
 
 
-    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody)
+    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody, TransactionalContext txnContext)
     {
-        this(messageStore, transferBody, true);
+        this(messageStore, transferBody, txnContext, true);
     }
 
-    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody, boolean storeWhenComplete)
+    public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody, TransactionalContext txnContext, boolean storeWhenComplete)
     {
         _messageId = messageStore.getNewMessageId();
         _transferBody = transferBody;
         _store = messageStore;
+        _txnContext = txnContext;
         _contents = new LinkedList();
-        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _storeWhenComplete = storeWhenComplete;
     }
 
-    public AMQMessage(MessageStore store, long messageId, MessageTransferBody transferBody,
-                      List<ByteBuffer> contents)
+    public AMQMessage(MessageStore store, long messageId, MessageTransferBody transferBody, List<ByteBuffer> contents, TransactionalContext txnContext)
             throws AMQException
 
     {
         _transferBody = transferBody;
         _contents = contents;
-        _decodedMessages = new ConcurrentHashMap<String, MessageDecorator>();
         _messageId = messageId;
         _store = store;
+        _txnContext = txnContext;
         storeMessage();
     }
 
-    public AMQMessage(MessageStore store, MessageTransferBody transferBody, List<ByteBuffer> contents)
+    public AMQMessage(MessageStore store, MessageTransferBody transferBody, List<ByteBuffer> contents, TransactionalContext txnContext)
             throws AMQException
     {
-        this(store, store.getNewMessageId(), transferBody, contents);
+        this(store, store.getNewMessageId(), transferBody, contents, txnContext);
     }
 
     protected AMQMessage(AMQMessage msg) throws AMQException
     {
-        this(msg._store, msg._messageId, msg._transferBody, msg._contents);
+        this(msg._store, msg._messageId, msg._transferBody, msg._contents, msg._txnContext);
     }
 
-    public long getSize() {
+    public long getSize()
+    {
         return getHeaderSize() + getBodySize();
     }
 
-    public int getHeaderSize() {
+    public int getHeaderSize()
+    {
         int size = _transferBody.getBodySize();
         Content body = _transferBody.getBody();
-        switch (body.getContentType()) {
+        switch (body.getContentType())
+        {
         case INLINE_T:
             size -= _transferBody.getBody().getEncodedSize();
             break;
@@ -163,102 +176,206 @@ public class AMQMessage
         return size;
     }
 
-    public long getBodySize() {
-        long size = 0;
-        for (ByteBuffer buffer : _contents) {
+    public long getBodySize()
+    {
+        long size = 0L;
+        for (ByteBuffer buffer : _contents)
+        {
             size += buffer.limit();
         }
         return size;
     }
+    
 
-    public FieldTable getApplicationHeaders() {
-        return _transferBody.getApplicationHeaders();
+    public MessageTransferBody getTransferBody()
+    {
+        return _transferBody;
     }
-
-    public void setXXXMessageId(String messageId) {
-        throw new Error("XXX");
-    }
-
-    public String getXXXMessageId() {
-        throw new Error("XXX");
-    }
-
-    public void setType(String type) {
-        throw new Error("XXX");
-    }
-
-    public String getType() {
-        throw new Error("XXX");
-    }
-
-    public void setDeliveryMode(byte mode) {
-        throw new Error("XXX");
-    }
-
-    public byte getDeliveryMode() {
-        return (byte) _transferBody.deliveryMode;
-    }
-
-    public void setReplyTo(String replyTo) {
-        throw new Error("XXX");
-    }
-
-    public String getReplyTo() {
-        return _transferBody.getReplyTo();
-    }
-
-    public String getAppId() {
+    
+    // Get methods (and some set methods) for MessageTransferBody
+    
+    public AMQShortString getAppId()
+    {
         return _transferBody.getAppId();
     }
-
-    public String getUserId() {
-        return _transferBody.getUserId();
+    
+    public FieldTable getApplicationHeaders()
+    {
+        return _transferBody.getApplicationHeaders();
     }
-
-    public void setCorrelationId(String correlationId) {
-        throw new Error("XXX");
+    
+    public Content getBody()
+    {
+        return _transferBody.getBody();
     }
-
-    public String getCorrelationId() {
+    
+    public AMQShortString getContentEncoding()
+    {
+        return _transferBody.getContentEncoding();
+    }
+    
+    public AMQShortString getContentType()
+    {
+        return _transferBody.getContentType();
+    }
+    
+    public AMQShortString getCorrelationId()
+    {
         return _transferBody.getCorrelationId();
     }
 
-    public void setPriority(byte priority) {
-        throw new Error("XXX");
+    public void setCorrelationId(AMQShortString correlationId)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.correlationId = correlationId;
+    }
+    
+    public short getDeliveryMode()
+    {
+        return _transferBody.getDeliveryMode();
     }
 
-    public byte getPriority() {
-        return (byte) _transferBody.getPriority();
+    public void setDeliveryMode(short deliveryMode)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.deliveryMode = deliveryMode;
     }
-
-    public void setExpiration(long l) {
-        throw new Error("XXX");
+    
+    public AMQShortString getDestination()
+    {
+        return _transferBody.getDestination();
     }
-
-    public long getExpiration() {
+    
+    public AMQShortString getExchange()
+    {
+        return _transferBody.getExchange();
+    }
+    
+    public long getExpiration()
+    {
         return _transferBody.getExpiration();
     }
 
-    public void setTimestamp(long l) {
-        throw new Error("XXX");
+    public void setExpiration(long expiration)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.expiration = expiration;
+    }
+    
+    public boolean isImmediate()
+    {
+        return _transferBody.getImmediate();
+    }
+    
+    public boolean isMandatory()
+    {
+        return _transferBody.getMandatory();
+    }
+    
+    // TODO - how does this relate to _messageId in this class? See other getMessageId() method below.    
+//     public AMQShortString getMessageId()
+//     {
+//         return _transferBody.getMessageId();
+//     }
+
+    public void setMessageId(AMQShortString messageId)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.messageId = messageId;
+    }
+    
+    public short getPriority()
+    {
+        return _transferBody.getPriority();
     }
 
-    public long getTimestamp() {
+    public void setPriority(short priority)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.priority = priority;
+    }
+
+    // TODO - how does this relate to the _redelivered flag in this class? See other isRedelivered() method below.    
+//     public boolean isRedelivered()
+//     {
+//         return _transferBody.getRedelivered();
+//     }
+    
+    public AMQShortString getReplyTo()
+    {
+        return _transferBody.getReplyTo();
+    }
+
+    public void setReplyTo(AMQShortString replyTo)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.replyTo = replyTo;
+    }
+    
+    public AMQShortString getRoutingKey()
+    {
+        return _transferBody.getRoutingKey();
+    }
+    
+    public byte[] getSecurityToken()
+    {
+        return _transferBody.getSecurityToken();
+    }
+    
+    public int getTicket()
+    {
+        return _transferBody.getTicket();
+    }
+    
+    public long getTimestamp()
+    {
         return _transferBody.getTimestamp();
     }
 
-    public String getContentType() {
-        return _transferBody.getContentType();
+    public void setTimestamp(long timestamp)
+    {
+        // TODO - if/when MethodBody classes have set methods, then the public access
+        // to these members should be revoked
+        _transferBody.timestamp = timestamp;
+    }
+    
+    public AMQShortString getTransactionId()
+    {
+        return _transferBody.getTransactionId();
+    }
+    
+    public long getTtl()
+    {
+        return _transferBody.getTtl();
+    }
+    
+    public AMQShortString getUserId()
+    {
+        return _transferBody.getUserId();
     }
 
-    public String getEncoding() {
-        return _transferBody.getContentEncoding();
+    public void setType(String type)
+    {
+        throw new Error("XXX");
     }
 
-    public byte[] getMessageBytes() {
+    public String getType()
+    {
+        throw new Error("XXX");
+    }
+
+    public byte[] getMessageBytes()
+    {
         byte[] result = new byte[(int) getBodySize()];
         int offset = 0;
-        for (ByteBuffer bb : getContents()) {
+        for (ByteBuffer bb : getContents())
+        {
             bb.get(result, offset, bb.remaining());
         }
         return result;
@@ -268,20 +385,17 @@ public class AMQMessage
     {
         if (isPersistent())
         {
-            _store.put(this);
+//            _store.put(this);
         }
     }
 
-    public MessageTransferBody getTransferBody()
+    public Iterable<ByteBuffer> getContents()
     {
-        return _transferBody;
-    }
-
-    public Iterable<ByteBuffer> getContents() {
         return _dupContentsIterable;
     }
 
-    public List<AMQBody> getPayload() {
+    public List<AMQBody> getPayload()
+    {
         throw new Error("XXX");
     }
 
@@ -296,21 +410,6 @@ public class AMQMessage
     public boolean isRedelivered()
     {
         return _redelivered;
-    }
-
-    String getExchangeName()
-    {
-        return _transferBody.exchange;
-    }
-
-    String getRoutingKey()
-    {
-        return _transferBody.routingKey;
-    }
-
-    boolean isImmediate()
-    {
-        return _transferBody.immediate;
     }
 
     NoConsumersException getNoConsumersException(String queue)
@@ -334,13 +433,17 @@ public class AMQMessage
     public void incrementReference()
     {
         _referenceCount.incrementAndGet();
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Ref count on message " + _messageId + " incremented to " + _referenceCount);
+        }
     }
 
     /**
      * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
      */
-    public void decrementReference() throws MessageCleanupException
+    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
         // note that the operation of decrementing the reference count and then removing the message does not
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
@@ -350,7 +453,20 @@ public class AMQMessage
         {
             try
             {
-                _store.removeMessage(_messageId);
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Ref count on message " + _messageId + " is zero; removing message");
+                }
+
+                // must check if the handle is null since there may be cases where we decide to throw away a message
+                // and the handle has not yet been constructed
+                // New:
+//                 if (_messageHandle != null)
+//                 {
+//                     _messageHandle.removeMessage(storeContext, _messageId);
+//                 }
+                // Old:
+                _store.removeMessage(storeContext, _messageId);
             }
             catch (AMQException e)
             {
@@ -373,6 +489,11 @@ public class AMQMessage
 
     public boolean checkToken(Object token)
     {
+        if(_tokens==null)
+        {
+            _tokens  = new HashSet<Object>();
+        }
+        
         if (_tokens.contains(token))
         {
             return true;
@@ -386,38 +507,23 @@ public class AMQMessage
 
     public void enqueue(AMQQueue queue) throws AMQException
     {
-        //if the message is not persistent or the queue is not durable
-        //we will not need to recover the association and so do not
-        //need to record it
-        if (isPersistent() && queue.isDurable())
-        {
-            _store.enqueueMessage(queue.getName(), _messageId);
-        }
+        _destinationQueues.add(queue);
     }
 
-    public void dequeue(AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, AMQQueue queue) throws AMQException
     {
+        _messageHandle.dequeue(storeContext, _messageId, queue);
         //only record associations where both queue and message will survive
         //a restart, so only need to remove association if this is the case
         if (isPersistent() && queue.isDurable())
         {
-            _store.dequeueMessage(queue.getName(), _messageId);
+            _store.dequeueMessage(storeContext, queue.getName(), _messageId);
         }
     }
 
     public boolean isPersistent() throws AMQException
     {
         return getDeliveryMode() == 2;
-    }
-
-    public void setTxnBuffer(TxnBuffer buffer)
-    {
-        _txnBuffer = buffer;
-    }
-
-    public TxnBuffer getTxnBuffer()
-    {
-        return _txnBuffer;
     }
 
     /**
@@ -453,41 +559,6 @@ public class AMQMessage
         return _deliveredToConsumer;
     }
 
-
-    public MessageDecorator getDecodedMessage(String type)
-    {
-        MessageDecorator msgtype = null;
-
-        if (_decodedMessages != null)
-        {
-            msgtype = _decodedMessages.get(type);
-
-            if (msgtype == null)
-            {
-                msgtype = decorateMessage(type);
-            }
-        }
-
-        return msgtype;
-    }
-
-    private MessageDecorator decorateMessage(String type)
-    {
-        MessageDecorator msgdec = null;
-
-        if (type.equals(JMS_MESSAGE))
-        {
-            msgdec = new JMSMessage(this);
-        }
-
-        if (msgdec != null)
-        {
-            _decodedMessages.put(type, msgdec);
-        }
-
-        return msgdec;
-    }
-
     public boolean taken()
     {
         return _taken.getAndSet(true);
@@ -497,4 +568,73 @@ public class AMQMessage
     {
         _taken.set(false);
     }
+
+    public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory) throws AMQException
+    {
+        final boolean persistent = isPersistent();
+        _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
+        if (persistent)
+        {
+            _txnContext.beginTranIfNecessary();
+        }
+
+        // enqueuing the messages ensure that if required the destinations are recorded to a
+        // persistent store
+        for (AMQQueue q : _destinationQueues)
+        {
+            _messageHandle.enqueue(storeContext, _messageId, q);
+        }
+        deliver(storeContext);
+    }
+    
+    private void deliver(StoreContext storeContext) throws AMQException
+    {
+        // we get a reference to the destination queues now so that we can clear the
+        // transient message data as quickly as possible
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Delivering message " + _messageId);
+        }
+        try
+        {
+            // first we allow the handle to know that the message has been fully received. This is useful if it is
+            // maintaining any calculated values based on content chunks
+            _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId, _transferBody);
+
+            // we then allow the transactional context to do something with the message content
+            // now that it has all been received, before we attempt delivery
+            _txnContext.messageFullyReceived(isPersistent());
+
+            for (AMQQueue q : _destinationQueues)
+            {
+                _txnContext.deliver(this, q);
+            }
+        }
+        finally
+        {
+            _destinationQueues.clear();
+            decrementReference(storeContext);
+        }
+    }
+    
+    // Robert Godfrey added these in r497770
+    public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
+            throws AMQException
+    {
+        throw new Error("XXX");
+    }
+    public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
+    {
+        throw new Error("XXX");
+    }
+    private ByteBuffer createEncodedGetOkFrame(int channelId, long deliveryTag, int queueSize)
+    {
+        throw new Error("XXX");
+    }
+    // Robert Godfrey added these in r503604
+    public long getArrivalTime()
+    {
+        throw new Error("XXX");
+    }
+
 }

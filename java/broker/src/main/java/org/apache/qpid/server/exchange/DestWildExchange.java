@@ -24,12 +24,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -44,7 +46,7 @@ public class DestWildExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
 
-    private ConcurrentHashMap<String, List<AMQQueue>> _routingKey2queues = new ConcurrentHashMap<String, List<AMQQueue>>();
+    private ConcurrentHashMap<AMQShortString, List<AMQQueue>> _routingKey2queues = new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
 
     /**
      *  DestWildExchangeMBean class implements the management interface for the
@@ -88,18 +90,18 @@ public class DestWildExchange extends AbstractExchange
         public TabularData bindings() throws OpenDataException
         {
             _bindingList = new TabularDataSupport(_bindinglistDataType);
-            for (Map.Entry<String, List<AMQQueue>> entry : _routingKey2queues.entrySet())
+            for (Map.Entry<AMQShortString, List<AMQQueue>> entry : _routingKey2queues.entrySet())
             {
-                String key = entry.getKey();
+                AMQShortString key = entry.getKey();
                 List<String> queueList = new ArrayList<String>();
 
                 List<AMQQueue> queues = entry.getValue();
                 for (AMQQueue q : queues)
                 {
-                    queueList.add(q.getName());
+                    queueList.add(q.getName().toString());
                 }
 
-                Object[] bindingItemValues = {key, queueList.toArray(new String[0])};
+                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -109,14 +111,14 @@ public class DestWildExchange extends AbstractExchange
 
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
 
             try
             {
-                registerQueue(binding, queue, null);
-                queue.bind(binding, DestWildExchange.this);
+                registerQueue(new AMQShortString(binding), queue, null);
+                queue.bind(new AMQShortString(binding), DestWildExchange.this);
             }
             catch (AMQException ex)
             {
@@ -127,7 +129,12 @@ public class DestWildExchange extends AbstractExchange
     } // End of MBean class
 
 
-    public synchronized void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public AMQShortString getType()
+    {
+        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+    }
+
+    public synchronized void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -155,7 +162,7 @@ public class DestWildExchange extends AbstractExchange
     {
         MessageTransferBody transferBody = payload.getTransferBody();
 
-        final String routingKey = transferBody.routingKey;
+        final AMQShortString routingKey = transferBody.routingKey;
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         // if we have no registered queues we have nothing to do
         // TODO: add support for the immediate flag
@@ -172,18 +179,21 @@ public class DestWildExchange extends AbstractExchange
             // TODO: modify code generator to add clone() method then clone the deliver body
             // without this addition we have a race condition - we will be modifying the body
             // before the encoder has encoded the body for delivery
-            q.deliver(payload);
+//            q.deliver(payload);
+            payload.enqueue(q);
+//            HERE!!
+//            q.process(storeContext, payload);
         }
     }
 
-    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         return queues != null && queues.contains(queue);
     }
 
 
-    public boolean isBound(String routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         return queues != null && !queues.isEmpty();
@@ -206,7 +216,7 @@ public class DestWildExchange extends AbstractExchange
         return !_routingKey2queues.isEmpty();
     }
 
-    public synchronized void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public synchronized void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -241,11 +251,5 @@ public class DestWildExchange extends AbstractExchange
             _logger.error("Exception occured in creating the topic exchenge mbean", ex);
             throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
         }
-    }
-
-
-    public String getType()
-    {
-        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
     }
 }

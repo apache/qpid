@@ -164,4 +164,14 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
                 protocolMajor + "." +  protocolMinor + " not found in protocol version list.");
         }
     }
+
+    public String toString()
+    {
+        StringBuffer buffer = new StringBuffer(new String(header));
+        buffer.append(Integer.toHexString(protocolClass));
+        buffer.append(Integer.toHexString(protocolInstance));
+        buffer.append(Integer.toHexString(protocolMajor));
+        buffer.append(Integer.toHexString(protocolMinor));
+        return buffer.toString();
+    }
 }

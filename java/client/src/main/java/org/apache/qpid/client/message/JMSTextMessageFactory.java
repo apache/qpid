@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 public class JMSTextMessageFactory extends AbstractJMSMessageFactory
 {

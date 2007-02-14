@@ -22,8 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.protocol.AMQConstant;
-
-import java.util.List;
+import org.apache.qpid.server.RequiredDeliveryException;
 
 /**
  * Signals that no consumers exist for a message at a given point in time.

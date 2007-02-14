@@ -30,7 +30,9 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -49,20 +51,28 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final ExchangeFactory _exchangeFactory;
     private final MessageStore _messageStore;
 
+    private final VirtualHost.VirtualHostMBean _virtualHostMBean;
+
     @MBeanConstructor("Creates the Broker Manager MBean")
-    public AMQBrokerManagerMBean() throws JMException
+    public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
         super(ManagedBroker.class, ManagedBroker.TYPE);
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _queueRegistry = appRegistry.getQueueRegistry();
-        _exchangeRegistry = appRegistry.getExchangeRegistry();
-        _exchangeFactory = ApplicationRegistry.getInstance().getExchangeFactory();
-        _messageStore = ApplicationRegistry.getInstance().getMessageStore();
+
+        _virtualHostMBean = virtualHostMBean;
+        VirtualHost virtualHost = virtualHostMBean.getVirtualHost();
+
+
+
+
+        _queueRegistry = virtualHost.getQueueRegistry();
+        _exchangeRegistry = virtualHost.getExchangeRegistry();
+        _messageStore = virtualHost.getMessageStore();
+        _exchangeFactory = virtualHost.getExchangeFactory();
     }
 
     public String getObjectInstanceName()
     {
-        return this.getClass().getName();
+        return _virtualHostMBean.getVirtualHost().getName();
     }
 
     /**
@@ -81,10 +91,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             synchronized (_exchangeRegistry)
             {
-                Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
+                Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange = _exchangeFactory.createExchange(exchangeName, type, durable, autoDelete, 0);
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable, autoDelete, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else
@@ -114,7 +124,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         // when there are no bindings.
         try
         {
-            _exchangeRegistry.unregisterExchange(exchangeName, false);
+            _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
         }
         catch (AMQException ex)
         {
@@ -135,7 +145,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     public void createNewQueue(String queueName, boolean durable, String owner, boolean autoDelete)
             throws JMException
     {
-        AMQQueue queue = _queueRegistry.getQueue(queueName);
+        AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue != null)
         {
             throw new JMException("The queue \"" + queueName + "\" already exists.");
@@ -143,7 +153,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         try
         {
-            queue = new AMQQueue(queueName, durable, owner, autoDelete, _queueRegistry);
+            queue = new AMQQueue(new AMQShortString(queueName), durable, new AMQShortString(owner), autoDelete, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);
@@ -156,6 +166,11 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
     }
 
+    private VirtualHost getVirtualHost()
+    {
+        return _virtualHostMBean.getVirtualHost();
+    }
+
     /**
      * Deletes the queue from queue registry and persistant storage.
      *
@@ -164,7 +179,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void deleteQueue(String queueName) throws JMException
     {
-        AMQQueue queue = _queueRegistry.getQueue(queueName);
+        AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue == null)
         {
             throw new JMException("The Queue " + queueName + " is not a registerd queue.");
@@ -173,7 +188,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.removeQueue(queueName);
+            _messageStore.removeQueue(new AMQShortString(queueName));
 
         }
         catch (AMQException ex)
@@ -182,11 +197,14 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
     }
 
-    public ObjectName getObjectName() throws MalformedObjectNameException
+    public ManagedObject getParentObject()
     {
-        StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
-        objectName.append(":type=").append(getType());
+        return _virtualHostMBean;
+    }
 
-        return new ObjectName(objectName.toString());
+    // This will have a single instance for a virtual host, so not having the name property in the ObjectName
+    public ObjectName getObjectName() throws MalformedObjectNameException
+    {        
+        return getObjectNameForSingleInstanceMBean();
     }
 } // End of MBean class

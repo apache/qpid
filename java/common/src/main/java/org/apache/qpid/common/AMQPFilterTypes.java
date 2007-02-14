@@ -20,20 +20,22 @@
  */
 package org.apache.qpid.common;
 
+import org.apache.qpid.framing.AMQShortString;
+
 public enum AMQPFilterTypes
 {
     JMS_SELECTOR("x-filter-jms-selector"),
     NO_CONSUME("x-filter-no-consume"),
     AUTO_CLOSE("x-filter-auto-close");
 
-    private final String _value;
+    private final AMQShortString _value;
 
     AMQPFilterTypes(String value)
     {
-        _value = value;
+        _value = new AMQShortString(value);
     }
 
-    public String getValue()
+    public AMQShortString getValue()
     {
         return _value;
     }

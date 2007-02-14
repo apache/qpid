@@ -21,19 +21,22 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+//import org.apache.log4j.Logger;
 
 public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeDeleteBody>
 {
+    //private static final Logger _logger = Logger.getLogger(ExchangeDeleteHandler.class);
+
     private static final ExchangeDeleteHandler _instance = new ExchangeDeleteHandler();
 
     public static ExchangeDeleteHandler getInstance()
@@ -41,21 +44,22 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         return _instance;
     }
 
-    private ExchangeDeleteHandler()
-    {
-    }
+    private ExchangeDeleteHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ExchangeDeleteBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ExchangeDeleteBody> evt) throws AMQException
     {
-        ExchangeDeleteBody body = evt.getMethod();
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final ExchangeDeleteBody body = evt.getMethod();
+        VirtualHost virtualHost = session.getVirtualHost();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+
         try
         {
-            protocolSession.getExchangeRegistry().unregisterExchange(body.exchange, body.ifUnused);
+            exchangeRegistry.unregisterExchange(body.exchange, body.ifUnused);
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeResponse(evt, ExchangeDeleteOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor())); // AMQP minor version
+            session.writeResponse(evt, ExchangeDeleteOkBody.createMethodBody(
+                session.getProtocolMajorVersion(), // AMQP major version
+                session.getProtocolMinorVersion())); // AMQP minor version
         }
         catch (ExchangeInUseException e)
         {

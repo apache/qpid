@@ -57,7 +57,7 @@ public abstract class AMQMethodBody extends AMQBody
 
     protected abstract void writeMethodPayload(ByteBuffer buffer);
 
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }
@@ -110,10 +110,9 @@ public abstract class AMQMethodBody extends AMQBody
         return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor);
     }
 
-
-
     public AMQConnectionException getConnectionException(int code, String message, Throwable cause)
     {
         return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, cause);
     }
+
 }

@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.ConnectionConsumer;
 import javax.jms.ConnectionMetaData;
@@ -156,21 +157,30 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
 
     // Keeps a tally of connections for logging and debugging
-    private static AtomicInteger _ConnectionId;    
-    static { _ConnectionId = new AtomicInteger(0); }
+    private static AtomicLong _ConnectionId;    
+    static { _ConnectionId = new AtomicLong(0); }
 
     /*
      * The connection meta data
      */
     private QpidConnectionMetaData _connectionMetaData;
 
+    /**
+     * @param broker      brokerdetails
+     * @param username    username
+     * @param password    password
+     * @param clientName  clientid
+     * @param virtualHost virtualhost
+     * @throws AMQException
+     * @throws URLSyntaxException
+     */
     public AMQConnection(String broker, String username, String password,
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
                                   username + ":" + password + "@" +
-                                  (clientName==null?"":clientName) +
-                                  virtualHost + "?brokerlist='" + broker + "'"));
+                                  (clientName == null ? "" : clientName) + "/" +
+                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"));
     }
 
     public AMQConnection(String host, int port, String username, String password,
@@ -185,12 +195,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(useSSL ?
                                   ConnectionURL.AMQ_PROTOCOL + "://" +
                                   username + ":" + password + "@" +
-                                  (clientName==null?"":clientName) +
+                                  (clientName == null ? "" : clientName) +
                                   virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                   + "," + ConnectionURL.OPTIONS_SSL + "='true'" :
                                                                                 ConnectionURL.AMQ_PROTOCOL + "://" +
                                                                                 username + ":" + password + "@" +
-                                                                                (clientName==null?"":clientName) +
+                                                                                (clientName == null ? "" : clientName) +
                                                                                 virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                                                                 + "," + ConnectionURL.OPTIONS_SSL + "='false'"
         ));
@@ -215,7 +225,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _clientName = connectionURL.getClientName();
         _username = connectionURL.getUsername();
         _password = connectionURL.getPassword();
-        _virtualHost = connectionURL.getVirtualHost();
+        setVirtualHost(connectionURL.getVirtualHost());
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
 
@@ -326,6 +336,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _clientName = clientName;
         _username = username;
         _password = password;
+        setVirtualHost(virtualHost);
+    }
+
+    private void setVirtualHost(String virtualHost)
+    {
+        if(virtualHost.startsWith("/"))
+        {
+            virtualHost = virtualHost.substring(1);
+        }
         _virtualHost = virtualHost;
     }
 
@@ -410,6 +429,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _failoverPolicy.failoverAllowed();
     }
 
+    // Test purposes only - used for testing refs, which cannot be done using JMS interfaces
+    public AMQSession createAMQSession(final boolean transacted, final int acknowledgeMode) throws JMSException
+    {
+        return (AMQSession)createSession(transacted, acknowledgeMode, AMQSession.DEFAULT_PREFETCH_HIGH_MARK);
+    }
+
     public Session createSession(final boolean transacted, final int acknowledgeMode) throws JMSException
     {
         return createSession(transacted, acknowledgeMode, AMQSession.DEFAULT_PREFETCH_HIGH_MARK);
@@ -484,20 +509,21 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         _protocolHandler.syncWrite(channelId,
-            ChannelOpenBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
+            ChannelOpenBody.createMethodBody(
+                _protocolHandler.getProtocolMajorVersion(), // AMQP major version
+                _protocolHandler.getProtocolMinorVersion(), // AMQP minor version
                 null),	// outOfBand
                 ChannelOpenOkBody.class);
 
         //todo send low water mark when protocol allows.
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+
         // Be aware of possible changes to parameter order as versions change.
         _protocolHandler.syncWrite(channelId,
-		MessageQosBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
+		    MessageQosBody.createMethodBody(
+                _protocolHandler.getProtocolMajorVersion(), // AMQP major version
+                _protocolHandler.getProtocolMinorVersion(), // AMQP minor version
                 false,	// global
                 prefetchHigh,	// prefetchCount
                 0),	// prefetchSize
@@ -509,10 +535,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            _protocolHandler.syncWrite(channelId, TxSelectBody.createMethodBody((byte)0, (byte)9), TxSelectOkBody.class);
+            _protocolHandler.syncWrite(channelId, TxSelectBody.createMethodBody(
+                _protocolHandler.getProtocolMajorVersion(), // AMQP major version
+                _protocolHandler.getProtocolMinorVersion()), // AMQP minor version
+                TxSelectOkBody.class);
         }
     }
 
@@ -544,6 +571,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /**
      * Returns an AMQQueueSessionAdaptor which wraps an AMQSession and throws IllegalStateExceptions
      * where specified in the JMS spec
+     *
      * @param transacted
      * @param acknowledgeMode
      * @return QueueSession
@@ -557,6 +585,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /**
      * Returns an AMQTopicSessionAdapter which wraps an AMQSession and throws IllegalStateExceptions
      * where specified in the JMS spec
+     *
      * @param transacted
      * @param acknowledgeMode
      * @return TopicSession
@@ -591,7 +620,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         checkNotClosed();
         return _connectionMetaData;
-        
+
     }
 
     public ExceptionListener getExceptionListener() throws JMSException
@@ -642,13 +671,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close() throws JMSException
     {
-        synchronized(getFailoverMutex())
+        close(-1);
+    }
+
+    public void close(long timeout) throws JMSException
+    {
+        synchronized (getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
                 try
                 {
-                    closeAllSessions(null);
+                    closeAllSessions(null, timeout);
                     _protocolHandler.closeConnection();
                 }
                 catch (AMQException e)
@@ -686,7 +720,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      *              <p/>
      *              The caller must hold the failover mutex before calling this method.
      */
-    private void closeAllSessions(Throwable cause) throws JMSException
+    private void closeAllSessions(Throwable cause, long timeout) throws JMSException
     {
         final LinkedList sessionCopy = new LinkedList(_sessions.values());
         final Iterator it = sessionCopy.iterator();
@@ -702,7 +736,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 try
                 {
-                    session.close();
+                    session.close(timeout);
                 }
                 catch (JMSException e)
                 {
@@ -920,7 +954,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             if (cause instanceof AMQException)
             {
-                je = new JMSException(Integer.toString(((AMQException)cause).getErrorCode()) ,"Exception thrown against " + toString() + ": " + cause);
+                je = new JMSException(Integer.toString(((AMQException) cause).getErrorCode()), "Exception thrown against " + toString() + ": " + cause);
             }
             else
             {
@@ -951,7 +985,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 _logger.info("Closing AMQConnection due to :" + cause.getMessage());
                 _closed.set(true);
-                closeAllSessions(cause); // FIXME: when doing this end up with RejectedExecutionException from executor.
+                closeAllSessions(cause, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
             }
             catch (JMSException e)
             {
@@ -973,8 +1007,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     void deregisterSession(int channelId)
     {
         _sessions.remove(channelId);
-    }    
-    
+    }
+
     /**
      * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
      * The caller must hold the failover mutex before calling this method.
@@ -982,7 +1016,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void resubscribeSessions() throws JMSException, AMQException
     {
         ArrayList sessions = new ArrayList(_sessions.values());
-        _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: remove?
+        _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: removeKey?
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
@@ -1025,7 +1059,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 null);          // factory location
     }
     
-    public int getConnectionId()
+    public long getConnectionId()
     {
         return _ConnectionId.get();
     }

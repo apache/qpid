@@ -27,7 +27,21 @@ public class HeartbeatBody extends AMQBody
     public static final byte TYPE = 8;
     public static AMQFrame FRAME = new HeartbeatBody().toFrame();
 
-    protected byte getFrameType()
+    public HeartbeatBody()
+    {
+
+    }
+
+    public HeartbeatBody(ByteBuffer buffer, long size)
+    {
+        if(size > 0)
+        {
+            //allow other implementations to have a payload, but ignore it:
+            buffer.skip((int) size);
+        }
+    }
+
+    public byte getFrameType()
     {
         return TYPE;
     }

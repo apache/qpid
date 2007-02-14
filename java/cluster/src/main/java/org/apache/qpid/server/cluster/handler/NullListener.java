@@ -31,7 +31,7 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 
 public class NullListener<T extends AMQMethodBody> implements StateAwareMethodListener<T>
 {
-    public void methodReceived(AMQProtocolSession protocolSession, AMQMethodEvent<T> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<T> evt) throws AMQException
     {
     }
 }

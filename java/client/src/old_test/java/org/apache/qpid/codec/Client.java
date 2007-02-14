@@ -106,12 +106,12 @@ public class Client extends IoHandlerAdapter
 
     private static boolean isDeliver(Object o)
     {
-        return o instanceof AMQFrame && ((AMQFrame) o).bodyFrame instanceof BasicDeliverBody;
+        return o instanceof AMQFrame && ((AMQFrame) o).getBodyFrame() instanceof BasicDeliverBody;
     }
 
     private static boolean isContent(Object o)
     {
-        return o instanceof AMQFrame && ((AMQFrame) o).bodyFrame instanceof ContentBody;
+        return o instanceof AMQFrame && ((AMQFrame) o).getBodyFrame() instanceof ContentBody;
     }
 
     public static void main(String[] argv) throws Exception

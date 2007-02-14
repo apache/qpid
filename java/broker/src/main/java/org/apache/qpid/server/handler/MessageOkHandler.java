@@ -23,14 +23,16 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageOkHandler implements StateAwareMethodListener<MessageOkBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageOkHandler.class);
+
     private static MessageOkHandler _instance = new MessageOkHandler();
 
     public static MessageOkHandler getInstance()
@@ -40,10 +42,7 @@ public class MessageOkHandler implements StateAwareMethodListener<MessageOkBody>
 
     private MessageOkHandler() {}
     
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageOkBody> evt)
-                                throws AMQException
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageOkBody> evt) throws AMQException
     {
 		// TODO
     }

@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ReplicatingConsumeHandler extends ReplicatingHandler<MessageConsumeBody>
 {
@@ -46,17 +47,22 @@ public class ReplicatingConsumeHandler extends ReplicatingHandler<MessageConsume
         super(groupMgr, base(), policy);
     }
 
-    protected void replicate(AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
+    protected void replicate(AMQStateManager stateManager, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
         //only replicate if the queue in question is a shared queue
-        if (isShared(session.getQueueRegistry().getQueue(evt.getMethod().queue)))
+        if (isShared(queueRegistry.getQueue(evt.getMethod().queue)))
         {
-            super.replicate(session, evt);
+            super.replicate(stateManager, evt);
         }
         else
         {
             _logger.info(new LogMessage("Handling consume for private queue ({0}) locally", evt.getMethod()));
-            local(session, evt);
+            local(stateManager, evt);
             _logger.info(new LogMessage("Handled consume for private queue ({0}) locally", evt.getMethod()));
 
         }

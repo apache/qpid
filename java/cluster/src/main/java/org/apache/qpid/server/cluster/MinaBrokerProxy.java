@@ -65,7 +65,6 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     {
         super(host, port);
         _local = local;
-        // TODO - FIX THIS
         _legacyHandler = new ClientHandlerRegistry(local, null);
     }
 
@@ -183,7 +182,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         {
             //signal redirection to waiting thread
             ConnectionRedirectBody redirect = (ConnectionRedirectBody) method;
-            String[] parts = redirect.host.split(":");
+            String[] parts = redirect.host.toString().split(":");
             _connectionMonitor.redirect(parts[0], Integer.parseInt(parts[1]));
         }
         else
@@ -203,15 +202,15 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
 
     private void handleFrame(AMQFrame frame) throws AMQException
     {
-        AMQBody body = frame.bodyFrame;
+        AMQBody body = frame.getBodyFrame();
         if (body instanceof AMQRequestBody)
         {
-            handleMethod(frame.channel, ((AMQRequestBody)body).getMethodPayload(),
+            handleMethod(frame.getChannel(), ((AMQRequestBody)body).getMethodPayload(),
                 ((AMQRequestBody)body).getRequestId());
         }
         else if (body instanceof AMQResponseBody)
         {
-            handleMethod(frame.channel, ((AMQResponseBody)body).getMethodPayload(),
+            handleMethod(frame.getChannel(), ((AMQResponseBody)body).getMethodPayload(),
                 ((AMQRequestBody)body).getRequestId());
         }
         else

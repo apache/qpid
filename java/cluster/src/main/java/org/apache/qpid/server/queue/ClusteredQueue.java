@@ -24,9 +24,12 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.QueueDeleteBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -44,27 +47,19 @@ public class ClusteredQueue extends AMQQueue
     private final GroupManager _groupMgr;
     private final NestedSubscriptionManager _subscriptions;
 
-    public ClusteredQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public ClusteredQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, queueRegistry, new ClusteredSubscriptionManager());
+        super(name, durable, owner, autoDelete, virtualHost, new ClusteredSubscriptionManager());
         _groupMgr = groupMgr;
         _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
     }
 
-    public ClusteredQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-        super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new ClusteredSubscriptionManager(),
-              new SubscriptionImpl.Factory());
-        _groupMgr = groupMgr;
-        _subscriptions = ((ClusteredSubscriptionManager) getSubscribers()).getAllSubscribers();
-    }
 
-    public void deliver(AMQMessage message) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", message, this));
-        super.deliver(message);
+        _logger.info(new LogMessage("{0} delivered to clustered queue {1}", msg, this));
+        super.process(storeContext, msg);
     }
 
     protected void autodelete() throws AMQException
@@ -77,13 +72,21 @@ public class ClusteredQueue extends AMQQueue
             //send deletion request to all other members:
         	// AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         	// TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            QueueDeleteBody request = new QueueDeleteBody((byte)0, (byte)9);
-            request.queue = getName();
-            _groupMgr.broadcast(new SimpleSendable(request));
+            QueueDeleteBody request = new QueueDeleteBody((byte)0,
+                                                          (byte)9,
+                                                          QueueDeleteBody.getClazz((byte)0,(byte)9),
+                                                          QueueDeleteBody.getMethod((byte)0,(byte)9),
+                                                          false,
+                                                          false,
+                                                          false,
+                                                          getName(),
+                                                          0);
+
+            _groupMgr.broadcast(new SimpleBodySendable(request));
         }
     }
 
-    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, String consumerTag) throws AMQException
+    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         //handle locally:
         super.unregisterProtocolSession(ps, channel, consumerTag);
@@ -91,9 +94,13 @@ public class ClusteredQueue extends AMQQueue
         //signal other members:
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        MessageCancelBody request = new MessageCancelBody((byte)0, (byte)9);
-        request.destination = getName();
-        _groupMgr.broadcast(new SimpleSendable(request));
+        MessageCancelBody request = new MessageCancelBody((byte)0,
+                                                      (byte)9,
+                                                      MessageCancelBody.getClazz((byte)0, (byte)9),
+                                                      MessageCancelBody.getMethod((byte)0, (byte)9),
+                                                      getName());
+        
+        _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 
     public void addRemoteSubcriber(MemberHandle peer)

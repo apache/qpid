@@ -32,6 +32,7 @@ public abstract class ManagedBean extends ManagedObject
     private String _uniqueName = "";
     private String _domain = "";
     private String _type = "";
+    private String _virtualHostName = "Default";
     private ManagedServer _server = null;
     private HashMap _properties = null;
     
@@ -47,6 +48,7 @@ public abstract class ManagedBean extends ManagedObject
     public void setProperties(HashMap properties)
     {
         this._properties = properties;
+        setVirtualHostName(getProperty(Constants.VIRTUAL_HOST));
     }
     public String getDomain()
     {
@@ -80,6 +82,19 @@ public abstract class ManagedBean extends ManagedObject
     public void setUniqueName(String uniqueName)
     {
         this._uniqueName = uniqueName;
+    }
+    
+    public String getVirtualHostName()
+    {
+        return _virtualHostName;
+    }
+    
+    public void setVirtualHostName(String virtualHost)
+    {
+        if (virtualHost != null)
+        {
+            this._virtualHostName = virtualHost;
+        }
     }
     
 }

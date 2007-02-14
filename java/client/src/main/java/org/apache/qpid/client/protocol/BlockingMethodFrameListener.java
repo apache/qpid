@@ -21,10 +21,13 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.failover.FailoverException;
 
 public abstract class BlockingMethodFrameListener implements AMQMethodListener
 {
@@ -52,6 +55,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This method is called by the MINA dispatching thread. Note that it could
      * be called before blockForFrame() has been called.
+     *
      * @param evt the frame event
      * @return true if the listener has dealt with this frame
      * @throws AMQException
@@ -89,7 +93,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This method is called by the thread that wants to wait for a frame.
      */
-    public AMQMethodEvent blockForFrame() throws AMQException
+    public AMQMethodEvent blockForFrame(long timeout) throws AMQException
     {
         synchronized (_lock)
         {
@@ -97,11 +101,29 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             {
                 try
                 {
-                    _lock.wait();
+                    if (timeout == -1)
+                    {
+                        _lock.wait();
+                    }
+                    else
+                    {
+
+                        _lock.wait(timeout);
+                        if (!_ready)
+                        {
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion");
+                            _ready = true;
+                        }
+                    }
                 }
                 catch (InterruptedException e)
                 {
-                    // IGNORE
+                    // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
+//                    if (!_ready && timeout != -1)
+//                    {
+//                        _error = new AMQException("Server did not respond timely");
+//                        _ready = true;
+//                    }
                 }
             }
         }
@@ -109,11 +131,16 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         {
             if (_error instanceof AMQException)
             {
-                throw (AMQException)_error;
+                throw(AMQException) _error;
+            }
+            else if (_error instanceof FailoverException)
+            {
+                // This should ensure that FailoverException is not wrapped and can be caught.                
+                throw(FailoverException) _error;  // needed to expose FailoverException.
             }
             else
             {
-                throw new AMQException("Woken up due to " + _error.getClass(), _error); // FIXME: This will wrap FailoverException and prevent it being caught.
+                throw new AMQException("Woken up due to " + _error.getClass(), _error);
             }
         }
 
@@ -123,6 +150,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This is a callback, called by the MINA dispatcher thread only. It is also called from within this
      * class to avoid code repetition but again is only called by the MINA dispatcher thread.
+     *
      * @param e
      */
     public void error(Exception e)

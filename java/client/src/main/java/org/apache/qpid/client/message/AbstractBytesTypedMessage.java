@@ -10,6 +10,7 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 
 /**

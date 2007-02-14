@@ -22,6 +22,7 @@ package org.apache.qpid.server.cluster.replay;
 
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.MessageConsumeBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -29,19 +30,19 @@ import java.util.List;
 
 class ConsumerCounts
 {
-    private final Map<String, Integer> _counts = new HashMap<String, Integer>();
+    private final Map<AMQShortString, Integer> _counts = new HashMap<AMQShortString, Integer>();
 
-    synchronized void increment(String queue)
+    synchronized void increment(AMQShortString queue)
     {
         _counts.put(queue, get(queue) + 1);
     }
 
-    synchronized void decrement(String queue)
+   synchronized void decrement(AMQShortString queue)
     {
         _counts.put(queue,  get(queue) - 1);
     }
 
-    private int get(String queue)
+    private int get(AMQShortString queue)
     {
         Integer count = _counts.get(queue);
         return count == null ? 0 : count;
@@ -49,13 +50,21 @@ class ConsumerCounts
 
     synchronized void replay(List<AMQMethodBody> messages)
     {
-        for(String queue : _counts.keySet())
+        for(AMQShortString queue : _counts.keySet())
         {
             // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            MessageConsumeBody m = new MessageConsumeBody((byte)0, (byte)9);
-            m.queue = queue;
-            m.destination = queue;
+            MessageConsumeBody m = new MessageConsumeBody((byte)0,
+                                                      (byte)9,
+                                                      MessageConsumeBody.getClazz((byte)0, (byte)9),
+                                                      MessageConsumeBody.getMethod((byte)0, (byte)9),
+                                                      queue,  // AMQShortString destination
+                                                      false,  // boolean exclusive
+                                                      null,  // FieldTable filter
+                                                      false,  // boolean noAck
+                                                      false,  // boolean noLocal
+                                                      queue,  // AMQShortString queue
+                                                      0);  // int ticket
             replay(m, messages);
         }
     }

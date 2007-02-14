@@ -24,9 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
@@ -92,6 +89,7 @@ public class OperationTabControl extends TabControl
     
     // for customized method in header exchange
     private HashMap<Text, Text> headerBindingHashMap = null;
+    private String _virtualHostName = null;
     
     public OperationTabControl(TabFolder tabFolder)
     {
@@ -155,6 +153,7 @@ public class OperationTabControl extends TabControl
     {
         _mbean = mbean;
         _opData = opData;
+        _virtualHostName = _mbean.getProperty(Constants.VIRTUAL_HOST);
         
         // Setting the form to be invisible. Just in case the mbean server connection
         // is done and it takes time in getting the response, then the ui should be blank
@@ -219,8 +218,8 @@ public class OperationTabControl extends TabControl
         }
         
         // Customised parameter widgets        
-        if (_mbean.getType().equals(Constants.EXCHANGE) &&
-            "headers".equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
+        if (_mbean.getType().endsWith(Constants.EXCHANGE) &&
+            Constants.EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase("createNewBinding"))
         {                                  
             customCreateNewBinding(); 
@@ -247,7 +246,7 @@ public class OperationTabControl extends TabControl
             if (param.getName().equals(Constants.QUEUE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames();
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
                 combo.setItems(items);
                 combo.add("Select Queue", 0); 
                 combo.select(0);
@@ -259,7 +258,7 @@ public class OperationTabControl extends TabControl
             else if (param.getName().equals(Constants.EXCHANGE))
             {
                 Combo combo = new Combo(_paramsComposite, SWT.READ_ONLY | SWT.DROP_DOWN);
-                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames();
+                String[] items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_virtualHostName);
                 combo.setItems(items);
                 combo.add("Select Exchange", 0);
                 combo.select(0);
@@ -360,8 +359,8 @@ public class OperationTabControl extends TabControl
         formData.left = new FormAttachment(label, 5);
         formData.right = new FormAttachment(valueNumerator);
 
-        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
-        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames();
+        Combo combo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);        
+        String[] items = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
         combo.setItems(items);
         combo.add("Select Queue", 0); 
         combo.select(0);
@@ -472,7 +471,7 @@ public class OperationTabControl extends TabControl
         int width = 600;
         int height = 400;
         Shell shell = ViewUtility.createPopupShell(Constants.RESULT, width, height);
-        populateResults(result, shell);
+        ViewUtility.populateCompositeWithData(_toolkit, shell, result);
         
         shell.open();
         while (!shell.isDisposed()) {
@@ -482,23 +481,6 @@ public class OperationTabControl extends TabControl
         }
         shell.dispose();
     }
-    
-    /**
-     * Displays the operation result
-     * @param result
-     * @param parent
-     */
-    private void populateResults(Object result, Composite parent)
-    {
-        if (result instanceof TabularDataSupport)
-        {
-            ViewUtility.createTabularDataHolder(_toolkit, parent, (TabularDataSupport)result);
-        }
-        else if (result instanceof CompositeDataSupport)
-        {
-            ViewUtility.populateCompositeDataHolder(_toolkit, parent, (CompositeDataSupport)result);
-        }
-    }  
     
     /**
      * Clears the parameter values of the operation
@@ -521,7 +503,7 @@ public class OperationTabControl extends TabControl
      */
     private void clearParameterValues(Composite control)
     {
-        if (control == null)
+        if (control == null || (control.isDisposed()))
             return;
         
         Control[] controls = control.getChildren();
@@ -623,7 +605,7 @@ public class OperationTabControl extends TabControl
         else
         {
             ViewUtility.disposeChildren(_resultsComposite);
-            populateResults(result, _resultsComposite);
+            ViewUtility.populateCompositeWithData(_toolkit, _resultsComposite, result);
             _resultsComposite.layout();
             _form.layout();
         }

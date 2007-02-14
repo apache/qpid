@@ -82,8 +82,6 @@ public class FailoverHandler implements Runnable
         // client code which runs in a separate thread.
         synchronized (_amqProtocolHandler.getConnection().getFailoverMutex())
         {
-            _logger.info("Starting failover process");
-
             // We switch in a new state manager temporarily so that the interaction to get to the "connection open"
             // state works, without us having to terminate any existing "state waiters". We could theoretically
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
@@ -92,6 +90,8 @@ public class FailoverHandler implements Runnable
             _amqProtocolHandler.setStateManager(new AMQStateManager(_amqProtocolHandler.getProtocolSession()));
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
+                _logger.info("Failover process veto-ed by client");
+
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 if (_host != null)
                 {
@@ -105,6 +105,9 @@ public class FailoverHandler implements Runnable
                 _amqProtocolHandler.setFailoverLatch(null);
                 return;
             }
+
+            _logger.info("Starting failover process");
+
             boolean failoverSucceeded;
             // when host is non null we have a specified failover host otherwise we all the client to cycle through
             // all specified hosts

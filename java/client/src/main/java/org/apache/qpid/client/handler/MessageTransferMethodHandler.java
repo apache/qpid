@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.MessageHeaders;
 import org.apache.qpid.client.message.UnprocessedMessage;
@@ -31,10 +30,13 @@ import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.apache.log4j.Logger;
+
 public class MessageTransferMethodHandler implements StateAwareMethodListener
 {
-    private static MessageTransferMethodHandler _instance = new MessageTransferMethodHandler();
     private static final Logger _logger = Logger.getLogger(MessageTransferMethodHandler.class);
+
+    private static MessageTransferMethodHandler _instance = new MessageTransferMethodHandler();
     
     public static MessageTransferMethodHandler getInstance()
     {
@@ -42,18 +44,11 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
     }
 
     private MessageTransferMethodHandler() {}
-    
-    
-    public void methodReceived (AMQStateManager stateManager,
-                                AMQProtocolSession protocolSession,
-                               	AMQMethodEvent evt)
-                                throws AMQException
+
+    public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
-    	final UnprocessedMessage msg = new UnprocessedMessage();
     	MessageTransferBody transferBody = (MessageTransferBody) evt.getMethod();
         
-        msg.channelId = evt.getChannelId();
-        msg.deliveryTag = evt.getRequestId();
         _logger.debug("New JmsDeliver method received");
         
         MessageHeaders messageHeaders = new MessageHeaders();
@@ -73,7 +68,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         messageHeaders.setDeliveryMode(transferBody.getDeliveryMode());
         messageHeaders.setJMSHeaders(transferBody.getApplicationHeaders());
         
-        msg.contentHeader = messageHeaders;
+    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), evt.getRequestId(), messageHeaders);
         
         if(transferBody.getBody().getContentType() == Content.TypeEnum.INLINE_T)
         {

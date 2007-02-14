@@ -21,26 +21,32 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.framing.ConnectionSecureBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionSecureOkBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+//import org.apache.log4j.Logger;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
 public class ConnectionSecureMethodHandler implements StateAwareMethodListener
 {
+    //private static final Logger _logger = Logger.getLogger(ConnectionSecureMethodHandler.class);
+
     private static final ConnectionSecureMethodHandler _instance = new ConnectionSecureMethodHandler();
 
     public static ConnectionSecureMethodHandler getInstance()
     {
         return _instance;
     }
+    
+    private ConnectionSecureMethodHandler() {}
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
@@ -56,10 +62,11 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         {
             // Evaluate server challenge
             byte[] response = client.evaluateChallenge(body.challenge);
-            // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+
             // Be aware of possible changes to parameter order as versions change.
-            AMQMethodBody methodBody = ConnectionSecureOkBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
+            AMQMethodBody methodBody = ConnectionSecureOkBody.createMethodBody(
+                protocolSession.getProtocolMajorVersion(),  // AMQP major version
+                protocolSession.getProtocolMinorVersion(),  // AMQP minor version
                 response);	// response
             protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
         }
@@ -67,7 +74,5 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         {
             throw new AMQException("Error processing SASL challenge: " + e, e);
         }
-
-
     }
 }

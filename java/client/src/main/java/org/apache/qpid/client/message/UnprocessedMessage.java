@@ -24,28 +24,69 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class contains everything needed to process a JMS message. It assembles the
- * deliver body, the content header and the content body/ies.
+ * This class contains everything needed to process a JMS message.
  *
  * Note that the actual work of creating a JMS message for the client code's use is done
  * outside of the MINA dispatcher thread in order to minimise the amount of work done in
  * the MINA dispatcher thread.
  *
  */
-public class UnprocessedMessage {
-	public int bytesReceived = 0;
+public class UnprocessedMessage
+{
+	private int bytesReceived = 0;
+	private int channelId;
+	private List<byte[]> contents = new LinkedList();
+	private long deliveryTag;
+	private MessageHeaders messageHeaders;
+    
+    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders)
+    {
+        this.channelId = channelId;
+        this.deliveryTag = deliveryTag;
+        this.messageHeaders = messageHeaders;
+    }
+    
+    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, byte[] content)
+    {
+        this.channelId = channelId;
+        this.deliveryTag = deliveryTag;
+        this.messageHeaders = messageHeaders;
+        addContent(content);
+    }
 
-	public List contents = new LinkedList();
-
-	public int channelId;
-
-	public long deliveryTag;
-
-	public MessageHeaders contentHeader;
-
-	public void addContent(byte[] content) {
+	public void addContent(byte[] content)
+    {
 		contents.add(content);
-		bytesReceived = bytesReceived + content.length;
+		bytesReceived += content.length;
 	}
 
+    public int getBytesReceived()
+    {
+        return bytesReceived;
+    }
+
+    public int getChannelId()
+    {
+        return channelId;
+    }
+    
+    public List<byte[]> getContents()
+    {
+        return contents;
+    }
+
+    public long getDeliveryTag()
+    {
+        return deliveryTag;
+    }
+    
+    public MessageHeaders getMessageHeaders()
+    {
+        return messageHeaders;
+    }
+    
+    public String toString()
+    {
+        return "UnprocessedMessage: ch=" + channelId + "; bytesReceived=" + bytesReceived + "; deliveryTag=" + deliveryTag + "; MsgHdrs=" + messageHeaders + "Num contents=" + contents.size() + "; First content=" + new String(contents.get(0));
+    }
 }

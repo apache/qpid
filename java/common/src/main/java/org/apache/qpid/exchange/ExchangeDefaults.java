@@ -20,21 +20,28 @@
  */
 package org.apache.qpid.exchange;
 
+import org.apache.qpid.framing.AMQShortString;
+
 public class ExchangeDefaults
 {
-    public final static String TOPIC_EXCHANGE_NAME = "amq.topic";
+    public final static AMQShortString TOPIC_EXCHANGE_NAME = new AMQShortString("amq.topic");
 
-    public final static String TOPIC_EXCHANGE_CLASS = "topic";
+    public final static AMQShortString TOPIC_EXCHANGE_CLASS = new AMQShortString("topic");
 
-    public final static String DIRECT_EXCHANGE_NAME = "amq.direct";
+    public final static AMQShortString DIRECT_EXCHANGE_NAME = new AMQShortString("amq.direct");
 
-    public final static String DIRECT_EXCHANGE_CLASS = "direct";
+    public final static AMQShortString DIRECT_EXCHANGE_CLASS = new AMQShortString("direct");
 
-    public final static String HEADERS_EXCHANGE_NAME = "amq.match";
+    public final static AMQShortString HEADERS_EXCHANGE_NAME = new AMQShortString("amq.match");
 
-    public final static String HEADERS_EXCHANGE_CLASS = "headers";
+    public final static AMQShortString HEADERS_EXCHANGE_CLASS = new AMQShortString("headers");
 
-    public final static String FANOUT_EXCHANGE_NAME = "amq.fanout";
+    public final static AMQShortString FANOUT_EXCHANGE_NAME = new AMQShortString("amq.fanout");
 
-    public final static String FANOUT_EXCHANGE_CLASS = "fanout";
+    public final static AMQShortString FANOUT_EXCHANGE_CLASS = new AMQShortString("fanout");
+
+
+    public final static AMQShortString SYSTEM_MANAGEMENT_EXCHANGE_NAME = new AMQShortString("qpid.sysmgmt");
+
+    public final static AMQShortString SYSTEM_MANAGEMENT_CLASS = new AMQShortString("sysmmgmt");
 }

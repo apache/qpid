@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.util.ArrayList;
+
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.eclipse.swt.widgets.Control;
@@ -33,6 +35,26 @@ public abstract class TabControl
 {
     protected ManagedBean _mbean = null;
     protected TabFolder _tabFolder = null;
+    
+    private static java.util.List<String> simpleTypes = new ArrayList<String>();
+    
+    static
+    {
+        simpleTypes.add("java.math.BigDecimal");
+        simpleTypes.add("java.math.BigInteger");
+        simpleTypes.add("java.lang.Boolean");
+        simpleTypes.add("java.lang.Byte");
+        simpleTypes.add("java.lang.Character");
+        simpleTypes.add("java.util.Date");
+        simpleTypes.add("java.lang.Double");
+        simpleTypes.add("java.lang.Float");
+        simpleTypes.add("java.lang.Integer");
+        simpleTypes.add("java.lang.Long");
+        simpleTypes.add("javax.management.ObjectName");
+        simpleTypes.add("java.lang.Short");
+        simpleTypes.add("java.lang.String");
+        simpleTypes.add("boolean");
+    }
     
     public TabControl(TabFolder tabFolder)
     {
@@ -60,5 +82,10 @@ public abstract class TabControl
     public void setFocus()
     {
         
+    }
+    
+    public boolean isSimpleType(Object data)
+    {        
+        return simpleTypes.contains(data.getClass().getName());
     }
 }

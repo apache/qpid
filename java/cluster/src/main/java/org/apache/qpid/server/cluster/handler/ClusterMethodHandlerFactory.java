@@ -23,6 +23,7 @@ package org.apache.qpid.server.cluster.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.framing.MessageTransferBody;
@@ -162,17 +163,15 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class SynchHandler implements StateAwareMethodListener<ClusterSynchBody>
     {
-        public void methodReceived(AMQProtocolSession session,
-                                   AMQMethodEvent<ClusterSynchBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterSynchBody> evt) throws AMQException
         {
-            _groupMgr.handleSynch(ClusteredProtocolSession.getSessionPeer(session));
+            _groupMgr.handleSynch(ClusteredProtocolSession.getSessionPeer(stateManager.getProtocolSession()));
         }
     }
 
     private class JoinHandler implements StateAwareMethodListener<ClusterJoinBody>
     {
-        public void methodReceived(AMQProtocolSession session,
-                                   AMQMethodEvent<ClusterJoinBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterJoinBody> evt) throws AMQException
         {
             _groupMgr.handleJoin(new SimpleMemberHandle(evt.getMethod().broker));
         }
@@ -180,8 +179,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class LeaveHandler implements StateAwareMethodListener<ClusterLeaveBody>
     {
-        public void methodReceived(AMQProtocolSession protocolSession,
-                                   AMQMethodEvent<ClusterLeaveBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterLeaveBody> evt) throws AMQException
         {
             _groupMgr.handleLeave(new SimpleMemberHandle(evt.getMethod().broker));
         }
@@ -189,8 +187,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class SuspectHandler implements StateAwareMethodListener<ClusterSuspectBody>
     {
-        public void methodReceived(AMQProtocolSession protocolSession,
-                                   AMQMethodEvent<ClusterSuspectBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterSuspectBody> evt) throws AMQException
         {
             _groupMgr.handleSuspect(new SimpleMemberHandle(evt.getMethod().broker));
         }
@@ -198,8 +195,7 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class MembershipHandler implements StateAwareMethodListener<ClusterMembershipBody>
     {
-        public void methodReceived(AMQProtocolSession session,
-                                   AMQMethodEvent<ClusterMembershipBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterMembershipBody> evt) throws AMQException
         {
             ClusterMembershipBody body = evt.getMethod();
             _groupMgr.handleMembershipAnnouncement(new String(body.members));
@@ -208,15 +204,14 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
 
     private class PingHandler implements StateAwareMethodListener<ClusterPingBody>
     {
-        public void methodReceived(AMQProtocolSession session,
-                                   AMQMethodEvent<ClusterPingBody> evt) throws AMQException
+        public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ClusterPingBody> evt) throws AMQException
         {
             MemberHandle peer = new SimpleMemberHandle(evt.getMethod().broker);
             _groupMgr.handlePing(peer, evt.getMethod().load);
             if (evt.getMethod().responseRequired)
             {
                 evt.getMethod().load = _loadTable.getLocalLoad();
-                session.writeFrame(new AMQFrame(evt.getChannelId(), evt.getMethod()));
+                stateManager.getProtocolSession().writeFrame(new AMQFrame(evt.getChannelId(), evt.getMethod()));
             }
         }
     }
@@ -228,12 +223,12 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
             super(ConnectionOpenMethodHandler.getInstance());
         }
 
-        void postHandle(AMQStateManager stateMgr, AMQProtocolSession session, AMQMethodEvent<ConnectionOpenBody> evt)
+        void postHandle(AMQStateManager stateMgr, AMQMethodEvent<ConnectionOpenBody> evt)
         {
-            String capabilities = evt.getMethod().capabilities;
+            AMQShortString capabilities = evt.getMethod().capabilities;
             if (ClusterCapability.contains(capabilities))
             {
-                ClusteredProtocolSession.setSessionPeer(session, ClusterCapability.getPeer(capabilities));
+                ClusteredProtocolSession.setSessionPeer(stateMgr.getProtocolSession(), ClusterCapability.getPeer(capabilities));
             }
             else
             {
@@ -249,9 +244,9 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
             super(ConnectionCloseMethodHandler.getInstance());
         }
 
-        void postHandle(AMQStateManager stateMgr, AMQProtocolSession session, AMQMethodEvent<ConnectionCloseBody> evt)
+        void postHandle(AMQStateManager stateMgr, AMQMethodEvent<ConnectionCloseBody> evt)
         {
-            if (!ClusteredProtocolSession.isPeerSession(session))
+            if (!ClusteredProtocolSession.isPeerSession(stateMgr.getProtocolSession()))
             {
                 _loadTable.decrementLocalLoad();
             }

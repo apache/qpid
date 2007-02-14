@@ -20,10 +20,8 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.message.jms.JMSMessage;
-
-import javax.jms.JMSException;
 
 /**
  * A filter performing a comparison of two objects
@@ -35,7 +33,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
         	
-            public Object evaluate(AMQMessage message) throws JMSException {
+            public Object evaluate(AMQMessage message) throws AMQException {
                 
             	Boolean lv = (Boolean) left.evaluate(message);
                 // Can we do an OR shortcut??
@@ -56,7 +54,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
 
-            public Object evaluate(AMQMessage message) throws JMSException {
+            public Object evaluate(AMQMessage message) throws AMQException {
 
                 Boolean lv = (Boolean) left.evaluate(message);
 
@@ -85,9 +83,9 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         super(left, right);
     }
 
-    abstract public Object evaluate(AMQMessage message) throws JMSException;
+    abstract public Object evaluate(AMQMessage message) throws AMQException;
 
-    public boolean matches(AMQMessage message) throws JMSException {
+    public boolean matches(AMQMessage message) throws AMQException {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            
     }

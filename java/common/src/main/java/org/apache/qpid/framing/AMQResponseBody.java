@@ -21,6 +21,7 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class AMQResponseBody extends AMQBody
 {
@@ -31,9 +32,14 @@ public class AMQResponseBody extends AMQBody
     protected long requestId;
     protected int batchOffset;
     protected AMQMethodBody methodPayload;
+    protected AMQVersionAwareProtocolSession protocolSession;
 
     // Constructor
-    public AMQResponseBody() {}
+    public AMQResponseBody(AMQVersionAwareProtocolSession protocolSession)
+    {
+        this.protocolSession = protocolSession;
+    }
+    
     public AMQResponseBody(long responseId, long requestId,
             int batchOffset, AMQMethodBody methodPayload)
     {
@@ -41,6 +47,7 @@ public class AMQResponseBody extends AMQBody
         this.requestId = requestId;
         this.batchOffset = batchOffset;
         this.methodPayload = methodPayload;
+        protocolSession = null;
     }
 
     // Field methods
@@ -49,7 +56,7 @@ public class AMQResponseBody extends AMQBody
     public int  getBatchOffset() { return batchOffset; }
     public AMQMethodBody getMethodPayload() { return methodPayload; }
     
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }
@@ -69,15 +76,18 @@ public class AMQResponseBody extends AMQBody
     }
     
     protected void populateFromBuffer(ByteBuffer buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException
+        throws AMQFrameDecodingException
     {
+        if (protocolSession == null)
+            throw new AMQFrameDecodingException("Cannot call populateFromBuffer() without using correct constructor.");
+            
         responseId = EncodingUtils.readLong(buffer);
         requestId = EncodingUtils.readLong(buffer);
         // XXX
         batchOffset = EncodingUtils.readInteger(buffer);
-        AMQMethodBodyFactory factory = AMQMethodBodyFactory.getInstance();
-        methodPayload = factory.createBody(buffer);
-        methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
+
+        AMQMethodBodyFactory methodBodyFactory = new AMQMethodBodyFactory(protocolSession);
+        methodPayload = methodBodyFactory.createBody(buffer, size);
     }
     
     public String toString()
@@ -91,9 +101,6 @@ public class AMQResponseBody extends AMQBody
     {
         AMQResponseBody responseFrame = new AMQResponseBody(responseId,
             requestId, batchOffset, methodPayload);
-        AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
-        frame.bodyFrame = responseFrame;
-        return frame;
+        return new AMQFrame(channelId, responseFrame);
     }
 }

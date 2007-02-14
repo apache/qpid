@@ -35,6 +35,7 @@ public class EncodingUtils
 
     public static final int SIZEOF_UNSIGNED_SHORT = 2;
     public static final int SIZEOF_UNSIGNED_INT = 4;
+    private static final boolean[] ALL_FALSE_ARRAY = new boolean[8];
 
     public static int encodedShortStringLength(String s)
     {
@@ -47,6 +48,120 @@ public class EncodingUtils
             return (short) (1 + s.length());
         }
     }
+
+
+    public static int encodedShortStringLength(short s)
+    {
+        if( s == 0 )
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(s < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Integer.MIN_VALUE
+            s=(short)-s;
+        }
+
+        if(s>9999)
+        {
+            return 1+5;
+        }
+        else if(s>999)
+        {
+            return 1+4;
+        }
+        else if(s>99)
+        {
+            return 1+3;
+        }
+        else if(s>9)
+        {
+            return 1+2;
+        }
+        else
+        {
+            return 1+1;
+        }
+
+    }
+
+
+    public static int encodedShortStringLength(int i)
+    {
+        if( i == 0 )
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(i < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Integer.MIN_VALUE
+            i=-i;
+        }
+
+        // range is now 1 - 2147483647
+        if(i < Short.MAX_VALUE)
+        {
+            return len + encodedShortStringLength((short)i);
+        }
+        else if (i > 999999)
+        {
+            return len + 6 + encodedShortStringLength((short)(i/1000000));
+        }
+        else // if (i > 99999)
+        {
+            return len + 5 + encodedShortStringLength((short)(i/100000));
+        }
+
+    }
+
+    public static int encodedShortStringLength(long l)
+    {
+        if(l == 0)
+        {
+            return 1 + 1;
+        }
+
+        int len = 0;
+        if(l < 0)
+        {
+            len=1;
+            // sloppy - doesn't work of Long.MIN_VALUE
+            l=-l;
+        }
+        if(l < Integer.MAX_VALUE)
+        {
+            return len + encodedShortStringLength((int) l);
+        }
+        else if(l > 9999999999L)
+        {
+            return len + 10 + encodedShortStringLength((int) (l / 10000000000L));
+        }
+        else
+        {
+            return len + 1 + encodedShortStringLength((int) (l / 10L));
+        }
+
+    }
+
+
+    public static int encodedShortStringLength(AMQShortString s)
+    {
+        if (s == null)
+        {
+            return 1;
+        }
+        else
+        {
+            return (short) (1 + s.length());
+        }
+    }
+
 
     public static int encodedLongStringLength(String s)
     {
@@ -114,6 +229,21 @@ public class EncodingUtils
                 encodedString[i] = (byte) cha[i];
             }
             writeBytes(buffer, encodedString);
+        }
+        else
+        {
+            // really writing out unsigned byte
+            buffer.put((byte) 0);
+        }
+    }
+
+
+    public static void writeShortStringBytes(ByteBuffer buffer, AMQShortString s)
+    {
+        if (s != null)
+        {
+
+            s.writeToBuffer(buffer);
         }
         else
         {
@@ -224,6 +354,7 @@ public class EncodingUtils
         }
     }
 
+
     public static void writeFieldTableBytes(ByteBuffer buffer, FieldTable table)
     {
         if (table != null)
@@ -255,6 +386,238 @@ public class EncodingUtils
         buffer.put(packedValue);
     }
 
+    public static void writeBooleans(ByteBuffer buffer, boolean value)
+    {
+
+        buffer.put(value ? (byte) 1 : (byte) 0);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer, boolean value0, boolean value1)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+
+        buffer.put(packedValue);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer, boolean value0, boolean value1, boolean value2)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+
+        buffer.put(packedValue);
+    }
+
+
+
+    public static void writeBooleans(ByteBuffer buffer,
+                                     boolean value0,
+                                     boolean value1,
+                                     boolean value2,
+                                     boolean value3)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+        if (value3)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 3));
+        }
+
+        buffer.put(packedValue);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer,
+                                     boolean value0,
+                                     boolean value1,
+                                     boolean value2,
+                                     boolean value3,
+                                     boolean value4)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+        if (value3)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 3));
+        }
+
+        if (value4)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 4));
+        }
+
+        buffer.put(packedValue);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer,
+                                     boolean value0,
+                                     boolean value1,
+                                     boolean value2,
+                                     boolean value3,
+                                     boolean value4,
+                                     boolean value5)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+        if (value3)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 3));
+        }
+
+        if (value4)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 4));
+        }
+
+        if (value5)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 5));
+        }
+
+        buffer.put(packedValue);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer,
+                                     boolean value0,
+                                     boolean value1,
+                                     boolean value2,
+                                     boolean value3,
+                                     boolean value4,
+                                     boolean value5,
+                                     boolean value6)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+        if (value3)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 3));
+        }
+
+        if (value4)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 4));
+        }
+
+        if (value5)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 5));
+        }
+
+        if (value6)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 6));
+        }
+
+        buffer.put(packedValue);
+    }
+
+    public static void writeBooleans(ByteBuffer buffer,
+                                     boolean value0,
+                                     boolean value1,
+                                     boolean value2,
+                                     boolean value3,
+                                     boolean value4,
+                                     boolean value5,
+                                     boolean value6,
+                                     boolean value7)
+    {
+        byte packedValue = value0 ? (byte) 1 : (byte) 0;
+
+        if (value1)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 1));
+        }
+
+        if (value2)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 2));
+        }
+
+        if (value3)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 3));
+        }
+
+        if (value4)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 4));
+        }
+
+        if (value5)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 5));
+        }
+
+        if (value6)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 6));
+        }
+
+        if (value7)
+        {
+            packedValue = (byte) (packedValue | (byte)(1 << 7));
+        }
+
+        buffer.put(packedValue);
+    }
+
+
+
+
     /**
      * This is used for writing longstrs.
      *
@@ -282,13 +645,27 @@ public class EncodingUtils
 
     public static boolean[] readBooleans(ByteBuffer buffer)
     {
-        byte packedValue = buffer.get();
-        boolean[] result = new boolean[8];
-
-        for (int i = 0; i < 8; i++)
+        final byte packedValue = buffer.get();
+        if(packedValue == 0)
         {
-            result[i] = ((packedValue & (1 << i)) != 0);
+            return ALL_FALSE_ARRAY;
         }
+        final boolean[] result = new boolean[8];
+
+        result[0] = ((packedValue & 1) != 0);
+        result[1] = ((packedValue & (1 << 1)) != 0);
+        result[2] = ((packedValue & (1 << 2)) != 0);
+        result[3] = ((packedValue & (1 << 3)) != 0);
+        if((packedValue & 0xF0) == 0)
+        {
+            result[0] = ((packedValue & 1) != 0);
+        }
+        result[4] = ((packedValue & (1 << 4)) != 0);
+        result[5] = ((packedValue & (1 << 5)) != 0);
+        result[6] = ((packedValue & (1 << 6)) != 0);
+        result[7] = ((packedValue & (1 << 7)) != 0);
+
+
         return result;
     }
 
@@ -310,6 +687,12 @@ public class EncodingUtils
     	Content content = new Content();
         content.populateFromBuffer(buffer);
         return content;
+    }
+
+    public static AMQShortString readAMQShortString(ByteBuffer buffer)
+    {
+        return AMQShortString.readFromBuffer(buffer);
+
     }
 
     public static String readShortString(ByteBuffer buffer)
@@ -363,7 +746,7 @@ public class EncodingUtils
         }
     }
 
-    public static byte[] readLongstr(ByteBuffer buffer) throws AMQFrameDecodingException
+    public static byte[] readLongstr(ByteBuffer buffer)
     {
         long length = buffer.getUnsignedInt();
         if (length == 0)
@@ -468,7 +851,7 @@ public class EncodingUtils
         buffer.put((byte) (aBoolean ? 1 : 0));
     }
 
-    public static Boolean readBoolean(ByteBuffer buffer)
+    public static boolean readBoolean(ByteBuffer buffer)
     {
         byte packedValue = buffer.get();
         return (packedValue == 1);
@@ -485,7 +868,7 @@ public class EncodingUtils
         buffer.put(aByte);
     }
 
-    public static Byte readByte(ByteBuffer buffer)
+    public static byte readByte(ByteBuffer buffer)
     {
         return buffer.get();
     }
@@ -502,7 +885,7 @@ public class EncodingUtils
         buffer.putShort(aShort);
     }
 
-    public static Short readShort(ByteBuffer buffer)
+    public static short readShort(ByteBuffer buffer)
     {
         return buffer.getShort();
     }
@@ -518,7 +901,7 @@ public class EncodingUtils
         buffer.putInt(aInteger);
     }
 
-    public static Integer readInteger(ByteBuffer buffer)
+    public static int readInteger(ByteBuffer buffer)
     {
         return buffer.getInt();
     }
@@ -534,7 +917,7 @@ public class EncodingUtils
         buffer.putLong(aLong);
     }
 
-    public static Long readLong(ByteBuffer buffer)
+    public static long readLong(ByteBuffer buffer)
     {
         return buffer.getLong();
     }
@@ -550,7 +933,7 @@ public class EncodingUtils
         buffer.putFloat(aFloat);
     }
 
-    public static Float readFloat(ByteBuffer buffer)
+    public static float readFloat(ByteBuffer buffer)
     {
         return buffer.getFloat();
     }
@@ -567,7 +950,7 @@ public class EncodingUtils
         buffer.putDouble(aDouble);
     }
 
-    public static Double readDouble(ByteBuffer buffer)
+    public static double readDouble(ByteBuffer buffer)
     {
         return buffer.getDouble();
     }
@@ -627,6 +1010,41 @@ public class EncodingUtils
         writeByte(buffer, (byte) character);
     }
 
+    public static long readLongAsShortString(ByteBuffer buffer)
+    {
+        short length = buffer.getUnsigned();
+        short pos = 0;
+        if(length == 0)
+        {
+            return 0L;
+        }
+        byte digit = buffer.get();
+        boolean isNegative;
+        long result = 0;
+        if(digit == (byte)'-')
+        {
+            isNegative = true;
+            pos++;
+            digit = buffer.get();
+        }
+        else
+        {
+            isNegative = false;
+        }
+        result = digit - (byte)'0';
+        pos++;
+
+        while(pos < length)
+        {
+            pos++;
+            digit = buffer.get();
+            result = (result << 3) + (result << 1);
+            result += digit - (byte)'0';
+        }
+
+        return result;
+    }
+
     public static long readUnsignedInteger(ByteBuffer buffer)
     {
         long l = 0xFF & buffer.get();
@@ -638,5 +1056,24 @@ public class EncodingUtils
         l = l | (0xFF & buffer.get());
 
         return l;
+    }
+
+
+    public static void main(String[] args)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(8);
+        buf.setAutoExpand(true);
+
+        long l = (long) Integer.MAX_VALUE;
+        l += 1024L;
+
+        writeUnsignedInteger(buf, l);
+
+        buf.flip();
+
+        long l2 = readUnsignedInteger(buf);
+
+        System.out.println("before: " + l);
+        System.out.println("after:  " + l2);
     }
 }

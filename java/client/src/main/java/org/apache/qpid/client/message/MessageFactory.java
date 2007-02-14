@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import java.util.List;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.JMSException;
 

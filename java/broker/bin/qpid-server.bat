@@ -17,7 +17,7 @@
 @REM under the License.
 @REM
 
-@echo off
+echo off
 REM Script to run the Qpid Java Broker
 
 rem Guess QPID_HOME if not defined
@@ -60,9 +60,11 @@ set QPID_ARGS=%QPID_ARGS% %1
 shift
 goto loop
 
+rem QPID_OPTS intended to hold any -D props for use
+rem user must enclose any value for QPID_OPTS in double quotes
 :runCommand
 set LAUNCH_JAR=%QPID_HOME%\lib\qpid-incubating.jar
 set MODULE_JARS=%QPID_MODULE_JARS%
-"%JAVA_HOME%\bin\java" -server -Xmx1024m -DQPID_HOME="%QPID_HOME%" -cp "%LAUNCH_JAR%;%MODULE_JARS%" org.apache.qpid.server.Main %QPID_ARGS%
+"%JAVA_HOME%\bin\java" -server -Xmx1024m %QPID_OPTS% -DQPID_HOME="%QPID_HOME%" -cp "%LAUNCH_JAR%;%MODULE_JARS%" org.apache.qpid.server.Main %QPID_ARGS%
 
 :end

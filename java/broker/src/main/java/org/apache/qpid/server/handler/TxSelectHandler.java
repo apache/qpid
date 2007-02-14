@@ -24,14 +24,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
 {
+    //private static final Logger _log = Logger.getLogger(TxSelectHandler.class);
+    
     private static TxSelectHandler _instance = new TxSelectHandler();
 
     public static TxSelectHandler getInstance()
@@ -43,13 +45,14 @@ public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
     {
     }
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<TxSelectBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxSelectBody> evt) throws AMQException
     {
-        protocolSession.getChannel(evt.getChannelId()).setTransactional(true);
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        
+        session.getChannel(evt.getChannelId()).setLocalTransactional();
         // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeResponse(evt, TxSelectOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor())); // AMQP minor version
+        session.writeResponse(evt, TxSelectOkBody.createMethodBody(
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion())); // AMQP minor version
     }
 }

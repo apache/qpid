@@ -21,22 +21,17 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.io.StringReader;
-import java.io.ByteArrayInputStream;
-
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-//import org.apache.activemq.command.Message;
-//import org.apache.activemq.util.ByteArrayInputStream;
-import org.apache.xpath.CachedXPathAPI;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.xpath.CachedXPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 
 public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
     
@@ -46,17 +41,24 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
         this.xpath = xpath;
     }
     
-    public boolean evaluate(AMQMessage m) throws JMSException {
+    public boolean evaluate(AMQMessage m) throws AMQException
+    {
+        // TODO - we would have to check the content type and then evaluate the content
+        //        here... is this really a feature we wish to implement? - RobG
+        /*
+
         if( m instanceof TextMessage ) {
             String text = ((TextMessage)m).getText();
-            return evaluate(text);                
+            return evaluate(text);
         } else if ( m instanceof BytesMessage ) {
             BytesMessage bm = (BytesMessage) m;
             byte data[] = new byte[(int) bm.getBodyLength()];
             bm.readBytes(data);
             return evaluate(data);
-        }            
+        }
+        */
         return false;
+
     }
 
     private boolean evaluate(byte[] data) {

@@ -32,6 +32,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.framing.ConnectionSecureBody;
@@ -128,9 +129,9 @@ public class ClientHandlerRegistry extends AMQStateManager
 
     class ConnectionTuneHandler extends ConnectionTuneMethodHandler
     {
-        protected AMQMethodBody createConnectionOpenMethodBody(String path, String capabilities, boolean insist)
+        protected AMQMethodBody createConnectionOpenMethodBody(AMQProtocolSession protocolSession, AMQShortString path, AMQShortString capabilities, boolean insist)
         {
-            return super.createConnectionOpenMethodBody(path, ClusterCapability.add(capabilities, _identity), insist);
+            return super.createConnectionOpenMethodBody(protocolSession, path, new AMQShortString(ClusterCapability.add(capabilities, _identity)), insist);
         }
     }
 }

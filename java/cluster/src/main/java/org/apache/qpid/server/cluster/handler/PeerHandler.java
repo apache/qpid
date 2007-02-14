@@ -47,14 +47,14 @@ public class PeerHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A
         _client = client;
     }
 
-    protected void peer(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void peer(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException
     {
-        _peer.methodReceived(session, evt);
+        _peer.methodReceived(stateMgr, evt);
     }
 
-    protected void client(AMQProtocolSession session, AMQMethodEvent<A> evt) throws AMQException
+    protected void client(AMQStateManager stateMgr, AMQMethodEvent<A> evt) throws AMQException
     {
-        _client.methodReceived(session, evt);
+        _client.methodReceived(stateMgr, evt);
     }
 
 }

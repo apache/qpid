@@ -41,11 +41,11 @@ class QueueNameGenerator extends ClusterMethodHandler<QueueDeclareBody>
         _handler = handler;
     }
 
-    protected void peer(AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+    protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
     {
     }
 
-    protected void client(AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt)
+    protected void client(AMQStateManager stateMgr,  AMQMethodEvent<QueueDeclareBody> evt)
             throws AMQException
     {
         setName(evt.getMethod());//need to set the name before propagating this method

@@ -22,6 +22,7 @@ package org.apache.qpid.server.cluster.replay;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
@@ -50,13 +51,13 @@ public class RecordingMethodHandlerFactory extends WrappingMethodHandlerFactory
     private final byte minor = (byte)9;
     private final Iterable<FrameDescriptor> _frames = Arrays.asList(new FrameDescriptor[]
             {
-                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor)),
-                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody(major, minor)),
-                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor)),
-                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor)),
-                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor)),
-                    new FrameDescriptor(MessageConsumeBody.class, new MessageConsumeBody(major, minor)),
-                    new FrameDescriptor(MessageCancelBody.class, new MessageCancelBody(major, minor))
+                    new FrameDescriptor(QueueDeclareBody.class, new QueueDeclareBody(major, minor, QueueDeclareBody.getClazz(major, minor), QueueDeclareBody.getMethod(major, minor),null,false,false,false,false,false,null,0)),
+                    new FrameDescriptor(QueueDeleteBody.class, new QueueDeleteBody(major, minor, QueueDeleteBody.getClazz(major, minor), QueueDeleteBody.getMethod(major, minor),false,false,false,null,0)),
+                    new FrameDescriptor(QueueBindBody.class, new QueueBindBody(major, minor, QueueBindBody.getClazz(major, minor), QueueBindBody.getMethod(major, minor),null,null,false,null,null,0)),
+                    new FrameDescriptor(ExchangeDeclareBody.class, new ExchangeDeclareBody(major, minor, ExchangeDeclareBody.getClazz(major, minor), ExchangeDeclareBody.getMethod(major, minor),null,false,false,null,false,false,false,0,null)),
+                    new FrameDescriptor(ExchangeDeleteBody.class, new ExchangeDeleteBody(major, minor, ExchangeDeleteBody.getClazz(major, minor), ExchangeDeleteBody.getMethod(major, minor),null,false,false,0)),
+                    new FrameDescriptor(MessageConsumeBody.class, new MessageConsumeBody(major, minor, MessageConsumeBody.getClazz(major, minor), MessageConsumeBody.getMethod(major, minor),null,false,null,false,false,null,0)),
+                    new FrameDescriptor(MessageCancelBody.class, new MessageCancelBody(major, minor, MessageCancelBody.getClazz(major, minor), MessageCancelBody.getMethod(major, minor),(AMQShortString)null))
             });
 
 

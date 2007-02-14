@@ -74,6 +74,13 @@
       </includes>      
     </fileSet>
     <fileSet>
+      <directory>../management/eclipse-plugin</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+      <includes>
+        <include>README.txt</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
       <includes>

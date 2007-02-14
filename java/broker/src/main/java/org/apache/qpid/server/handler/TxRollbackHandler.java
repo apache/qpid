@@ -24,15 +24,17 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxRollbackOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.AMQChannel;
+
+//import org.apache.log4j.Logger;
 
 public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBody>
 {
+    //private static final Logger _log = Logger.getLogger(TxRollbackHandler.class);
+    
     private static TxRollbackHandler _instance = new TxRollbackHandler();
 
     public static TxRollbackHandler getInstance()
@@ -44,20 +46,24 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
     {
     }
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<TxRollbackBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxRollbackBody> evt) throws AMQException
     {
-        try{
-            AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        
+        try
+        {
+            AMQChannel channel = session.getChannel(evt.getChannelId());
             channel.rollback();
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeResponse(evt, TxRollbackOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor())); // AMQP minor version
+            session.writeResponse(evt, TxRollbackOkBody.createMethodBody(
+                session.getProtocolMajorVersion(), // AMQP major version
+                session.getProtocolMinorVersion())); // AMQP minor version
             //Now resend all the unacknowledged messages back to the original subscribers.
             //(Must be done after the TxnRollback-ok response).
-            channel.resend(protocolSession);
-        }catch(AMQException e){
+            channel.resend(session, false);
+        }
+        catch(AMQException e)
+        {
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to rollback: " + e.getMessage());
         }
     }

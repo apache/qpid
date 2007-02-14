@@ -22,15 +22,19 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageOpenBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageOpenHandler implements StateAwareMethodListener<MessageOpenBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageOpenHandler.class);
+
     private static MessageOpenHandler _instance = new MessageOpenHandler();
 
     public static MessageOpenHandler getInstance()
@@ -39,13 +43,15 @@ public class MessageOpenHandler implements StateAwareMethodListener<MessageOpenB
     }
 
     private MessageOpenHandler() {}
-    
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageOpenBody> evt)
-                                throws AMQException
+        
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageOpenBody> evt) throws AMQException
     {
-		// TODO
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+        channel.addMessageOpen(evt.getMethod());
+        session.writeResponse(evt, MessageOkBody.createMethodBody(
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion())); // AMQP minor version
     }
 }
 

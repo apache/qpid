@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * Separated out from the ExchangeRegistry interface to allow components
@@ -33,6 +33,7 @@ public interface MessageRouter
     /**
      * Routes content through exchanges, delivering it to 1 or more queues.
      * @param message the message to be routed
+     *
      * @throws org.apache.qpid.AMQException if something goes wrong delivering data
      */
     void routeContent(AMQMessage message) throws AMQException;

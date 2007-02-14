@@ -21,6 +21,7 @@
 
 package org.apache.qpid;
 
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 
 public class AMQConnectionException extends AMQException
@@ -30,6 +31,7 @@ public class AMQConnectionException extends AMQException
     /* AMQP version for which exception ocurred */
     private final byte major;
     private final byte minor;
+    boolean _closeConnetion;
 
     public AMQConnectionException(int errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
     {
@@ -51,7 +53,7 @@ public class AMQConnectionException extends AMQException
 
     public ConnectionCloseBody getCloseMethodBody()
     {
-        return ConnectionCloseBody.createMethodBody(major, minor, _classId, _methodId, getErrorCode(), getMessage());
+        return ConnectionCloseBody.createMethodBody(major, minor, _classId, _methodId, getErrorCode(), new AMQShortString(getMessage()));
     }
 
     public int getClassId()
@@ -62,5 +64,4 @@ public class AMQConnectionException extends AMQException
     public int getMethodId(){
         return _methodId;
     }
-
 }

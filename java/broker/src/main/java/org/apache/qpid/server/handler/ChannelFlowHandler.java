@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ChannelFlowBody;
 import org.apache.qpid.framing.ChannelFlowOkBody;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.StateAwareMethodListener;
+
+import org.apache.log4j.Logger;
 
 public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowBody>
 {
@@ -44,24 +43,21 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
         return _instance;
     }
 
-    private ChannelFlowHandler()
-    {
-    }
+    private ChannelFlowHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelFlowBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelFlowBody> evt) throws AMQException
     {
-        ChannelFlowBody body = evt.getMethod();
-
-        AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final ChannelFlowBody body = evt.getMethod();
+        AMQChannel channel = session.getChannel(evt.getChannelId());
         channel.setSuspended(!body.active);
         _logger.debug("Channel.Flow for channel " + evt.getChannelId() + ", active=" + body.active);
 
         // Be aware of possible changes to parameter order as versions change.
         AMQMethodBody response = ChannelFlowOkBody.createMethodBody(
-            protocolSession.getMajor(), // AMQP major version
-            protocolSession.getMinor(), // AMQP minor version
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion(), // AMQP minor version
             body.active);	// active
-        protocolSession.writeResponse(evt, response);
+        session.writeResponse(evt, response);
     }
 }

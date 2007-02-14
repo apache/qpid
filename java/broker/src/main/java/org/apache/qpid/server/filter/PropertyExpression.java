@@ -21,19 +21,12 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
          
-import java.io.IOException;
+//import java.io.IOException;
 import java.util.HashMap;
 
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-
-//import org.apache.activemq.command.ActiveMQDestination;
-//import org.apache.activemq.command.Message;
-//import org.apache.activemq.command.TransactionId;
-//import org.apache.activemq.util.JMSExceptionSupport;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.message.jms.JMSMessage;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
@@ -44,41 +37,11 @@ import org.apache.log4j.Logger;
  */
 public class PropertyExpression implements Expression
 {
-
-    interface SubExpression
-    {
-        public Object evaluate(AMQMessage message);
-    }
-
-    interface JMSExpression
-    {
-        public abstract Object evaluate(JMSMessage message);
-    }
-
-    static class SubJMSExpression implements SubExpression
-    {
-        JMSExpression _expression;
-
-        SubJMSExpression(JMSExpression expression)
-        {
-            _expression = expression;
-        }
-
-
-        public Object evaluate(AMQMessage message)
-        {
-            JMSMessage msg = (JMSMessage) message.getDecodedMessage(AMQMessage.JMS_MESSAGE);
-            if (msg != null)
-            {
-                return _expression.evaluate(msg);
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
-
+    // Constants - defined the same as JMS
+    private static final int NON_PERSISTENT = 1;
+    private static final int PERSISTENT = 2;
+    private static final int DEFAULT_PRIORITY = 4;
+    
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
 
 
@@ -86,62 +49,43 @@ public class PropertyExpression implements Expression
 
     static
     {
-        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSDestination();
+                        return message.getDestination();
                     }
                 }
-        ));
-//
-//            public Object evaluate(AMQMessage message)
-//            {
-//                //fixme
-//
-//
-////                AMQDestination dest = message.getOriginalDestination();
-////                if (dest == null)
-////                {
-////                    dest = message.getDestination();
-////                }
-////                if (dest == null)
-////                {
-////                    return null;
-////                }
-////                return dest.toString();
-//                return "";
-//            }
-//        });
-        JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo", new SubJMSExpression(
-                new JMSExpression()
+        );
+        JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSReplyTo();
+                        return message.getReplyTo();
                     }
-                })
+                }
         );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSType", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSType",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSType();
+                        return message.getType();
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
                         try
                         {
-                            Integer mode = new Integer(message.getAMQMessage().isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+                            int mode = message.isPersistent() ? PERSISTENT : NON_PERSISTENT;
                             _logger.info("JMSDeliveryMode is :" + mode);
                             return mode;
                         }
@@ -150,83 +94,83 @@ public class PropertyExpression implements Expression
                             //shouldn't happen
                         }
 
-                        return DeliveryMode.NON_PERSISTENT;
+                        return NON_PERSISTENT;
                     }
-                }));
+                });
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSPriority", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSPriority",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSPriority();
+                        return message.getPriority();
                     }
                 }
-        ));
+        );
 
 
-        JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getAMQMessage().getMessageId();
+                        return message.getMessageId();
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSTimestamp();
+                        return message.getTimestamp();
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSCorrelationID();
+                        return message.getCorrelationId();
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getJMSExpiration();
+                        return message.getExpiration();
                     }
                 }
-        ));
+        );
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new SubJMSExpression(
-                new JMSExpression()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered",
+                new Expression()
                 {
-                    public Object evaluate(JMSMessage message)
+                    public Object evaluate(AMQMessage message)
                     {
-                        return message.getAMQMessage().isRedelivered();
+                        return message.isRedelivered();
                     }
                 }
-        ));
+        );
 
     }
 
-    private final String name;
-    private final SubExpression jmsPropertyExpression;
+    private final AMQShortString name;
+    private final Expression jmsPropertyExpression;
 
-    public PropertyExpression(String name)
+    public PropertyExpression(AMQShortString name)
     {
         this.name = name;
-        jmsPropertyExpression = (SubExpression) JMS_PROPERTY_EXPRESSIONS.get(name);
+        jmsPropertyExpression = (Expression) JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException
+    public Object evaluate(AMQMessage message) throws AMQException
     {
 //        try
 //        {
@@ -252,21 +196,21 @@ public class PropertyExpression implements Expression
         }
 //            catch (IOException ioe)
 //            {
-//                JMSException exception = new JMSException("Could not get property: " + name + " reason: " + ioe.getMessage());
+//                AMQException exception = new AMQException("Could not get property: " + name + " reason: " + ioe.getMessage());
 //                exception.initCause(ioe);
 //                throw exception;
 //            }
 //        }
 //        catch (IOException e)
 //        {
-//            JMSException exception = new JMSException(e.getMessage());
+//            AMQException exception = new AMQException(e.getMessage());
 //            exception.initCause(e);
 //            throw exception;
 //        }
 
     }
 
-    public String getName()
+    public AMQShortString getName()
     {
         return name;
     }
@@ -277,7 +221,7 @@ public class PropertyExpression implements Expression
      */
     public String toString()
     {
-        return name;
+        return name.asString();
     }
 
     /**

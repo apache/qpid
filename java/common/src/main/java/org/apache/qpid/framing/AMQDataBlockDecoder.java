@@ -24,93 +24,84 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AMQDataBlockDecoder
 {
-    Logger _logger = Logger.getLogger(AMQDataBlockDecoder.class);
+    private static final String SESSION_METHOD_BODY_FACTORY = "QPID_SESSION_METHOD_BODY_FACTORY";
 
-    private final Map _supportedBodies = new HashMap();
+    private static final BodyFactory[] _bodiesSupported = new BodyFactory[Byte.MAX_VALUE];
+
+    static
+    {
+        _bodiesSupported[HeartbeatBody.TYPE] = new HeartbeatBodyFactory();
+    }
+
+    Logger _logger = Logger.getLogger(AMQDataBlockDecoder.class);
 
     public AMQDataBlockDecoder()
     {
-        _supportedBodies.put(new Byte(AMQRequestBody.TYPE), new BodyFactory() {
-            public AMQBody createBody(ByteBuffer in) {
-                return new AMQRequestBody();
-            }
-        });
-        _supportedBodies.put(new Byte(AMQResponseBody.TYPE), new BodyFactory() {
-            public AMQBody createBody(ByteBuffer in) {
-                return new AMQResponseBody();
-            }
-        });
-        _supportedBodies.put(new Byte(HeartbeatBody.TYPE), new HeartbeatBodyFactory());
     }
 
     public boolean decodable(IoSession session, ByteBuffer in) throws AMQFrameDecodingException
     {
-        // type, channel, body size and end byte
-        if (in.remaining() < (1 + 2 + 4 + 1))
+        final int remainingAfterAttributes = in.remaining() - (1 + 2 + 4 + 1);
+        // type, channel, body length and end byte
+        if (remainingAfterAttributes < 0)
         {
             return false;
         }
+        in.skip(1 + 2);
+        final long bodySize = in.getUnsignedInt();
 
+        return (remainingAfterAttributes >= bodySize);
+    }
+
+
+    protected Object createAndPopulateFrame(IoSession session, ByteBuffer in)
+                    throws AMQFrameDecodingException, AMQProtocolVersionException
+    {
         final byte type = in.get();
+        BodyFactory bodyFactory;
+        if (type == AMQRequestBody.TYPE)
+        {
+            AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
+            bodyFactory = new AMQRequestBodyFactory(protocolSession);
+        }
+        else if (type == AMQResponseBody.TYPE)
+        {
+            AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
+            bodyFactory = new AMQResponseBodyFactory(protocolSession);
+        }
+        else
+        {
+            bodyFactory = _bodiesSupported[type];
+        }
+
+        if(bodyFactory == null)
+        {
+            throw new AMQFrameDecodingException("Unsupported frame type: " + type);
+        }
+
         final int channel = in.getUnsignedShort();
         final long bodySize = in.getUnsignedInt();
 
         // bodySize can be zero
-        if (type <= 0 || channel < 0 || bodySize < 0)
+        if (channel < 0 || bodySize < 0)
         {
             throw new AMQFrameDecodingException("Undecodable frame: type = " + type + " channel = " + channel +
                                                 " bodySize = " + bodySize);
         }
 
-        if (in.remaining() < (bodySize + 1))
-        {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean isSupportedFrameType(byte frameType)
-    {
-        final boolean result = _supportedBodies.containsKey(new Byte(frameType));
-
-        if (!result)
-        {
-        	_logger.warn("AMQDataBlockDecoder does not handle frame type " + frameType);
-        }
-
-        return result;
-    }
-
-    protected Object createAndPopulateFrame(ByteBuffer in)
-                    throws AMQFrameDecodingException, AMQProtocolVersionException
-    {
-        final byte type = in.get();
-        if (!isSupportedFrameType(type))
-        {
-            throw new AMQFrameDecodingException("Unsupported frame type: " + type);
-        }
-        final int channel = in.getUnsignedShort();
-        final long bodySize = in.getUnsignedInt();
-
-        BodyFactory bodyFactory = (BodyFactory) _supportedBodies.get(new Byte(type));
-        if (bodyFactory == null)
-        {
-            throw new AMQFrameDecodingException("Unsupported body type: " + type);
-        }
-        AMQFrame frame = new AMQFrame();
-
-        frame.populateFromBuffer(in, channel, bodySize, bodyFactory);
+        AMQFrame frame = new AMQFrame(in, channel, bodySize, bodyFactory);
 
         byte marker = in.get();
         if ((marker & 0xFF) != 0xCE)
         {
-            throw new AMQFrameDecodingException("End of frame marker not found. Read " + marker + " size=" + bodySize + " type=" + type);
+            throw new AMQFrameDecodingException("End of frame marker not found. Read " + marker + " length=" + bodySize + " type=" + type);
         }
         return frame;
     }
@@ -118,6 +109,6 @@ public class AMQDataBlockDecoder
     public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out)
         throws Exception
     {
-        out.write(createAndPopulateFrame(in));
+        out.write(createAndPopulateFrame(session, in));
     }
 }

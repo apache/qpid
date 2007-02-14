@@ -34,7 +34,6 @@ public class ClientNotificationListener extends ClientListener
     
     public void handleNotification(Notification notification, Object handback)
     {
-        System.out.println("\nReceived mbean notification: " + notification);
         ObjectName objName = (ObjectName)notification.getSource();
         //String     type = notification.getType();
         getServerRegistry().addNotification(objName, notification);

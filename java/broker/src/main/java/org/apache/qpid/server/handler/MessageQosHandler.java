@@ -24,14 +24,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageQosBody;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageQosHandler implements StateAwareMethodListener<MessageQosBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageQosHandler.class);
+
     private static MessageQosHandler _instance = new MessageQosHandler();
 
     public static MessageQosHandler getInstance()
@@ -41,16 +43,14 @@ public class MessageQosHandler implements StateAwareMethodListener<MessageQosBod
 
     private MessageQosHandler() {}
     
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageQosBody> evt)
-                                throws AMQException
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageQosBody> evt) throws AMQException
     {
-        protocolSession.getChannel(evt.getChannelId()).setPrefetchCount(evt.getMethod().prefetchCount);
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        session.getChannel(evt.getChannelId()).setPrefetchCount(evt.getMethod().prefetchCount);
         // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), new MessageOkBody(
-            protocolSession.getMajor(), // AMQP major version
-            protocolSession.getMinor())); // AMQP minor version
+        session.writeResponse(evt.getChannelId(), evt.getRequestId(), MessageOkBody.createMethodBody(
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion())); // AMQP minor version
     }
 }
 

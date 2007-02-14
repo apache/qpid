@@ -23,7 +23,7 @@ package org.apache.qpid.headers;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.testutil.Config;
+//import org.apache.qpid.testutil.Config;
 
 import javax.jms.MessageListener;
 import javax.jms.Message;
@@ -31,9 +31,9 @@ import javax.jms.Destination;
 import javax.jms.MessageProducer;
 import javax.jms.JMSException;
 
-public class Listener implements MessageListener
+public class Listener //implements MessageListener
 {
-    private final AMQConnection _connection;
+/*    private final AMQConnection _connection;
     private final MessageProducer _controller;
     private final AMQSession _session;
     private final MessageFactory _factory;
@@ -113,5 +113,5 @@ public class Listener implements MessageListener
         config.setName("test_headers_exchange");
         config.setOptions(argv);
         new Listener((AMQConnection) config.getConnection(), config.getDestination());
-    }
+    }*/
 }

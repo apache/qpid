@@ -46,8 +46,8 @@ class ClusterBuilder
 
     ServerHandlerRegistry getHandlerRegistry()
     {
-        // TODO - FIX THIS!
-        return new ServerHandlerRegistry(getHandlerFactory(), null, null, null);
+        // TODO - FIX THIS! These cannot be null to work correctly
+        return new ServerHandlerRegistry(getHandlerFactory(), null, null);
     }
 
     private MethodHandlerFactory getHandlerFactory()

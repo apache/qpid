@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionRedirectBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+import org.apache.log4j.Logger;
 
 public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
 {
@@ -41,28 +42,27 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    private ConnectionRedirectMethodHandler()
-    {
-    }
+    private ConnectionRedirectMethodHandler() {}
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.info("ConnectionRedirect frame received");
         ConnectionRedirectBody method = (ConnectionRedirectBody) evt.getMethod();
 
+        String host = method.host.toString();
         // the host is in the form hostname:port with the port being optional
-        int portIndex = method.host.indexOf(':');
-        String host;
+        int portIndex = host.indexOf(':');
+
         int port;
         if (portIndex == -1)
         {
-            host = method.host;
             port = DEFAULT_REDIRECT_PORT;
         }
         else
         {
-            host = method.host.substring(0, portIndex);
-            port = Integer.parseInt(method.host.substring(portIndex + 1));
+            port = Integer.parseInt(host.substring(portIndex + 1));
+            host = host.substring(0, portIndex);
+
         }
         protocolSession.failover(host, port);
     }

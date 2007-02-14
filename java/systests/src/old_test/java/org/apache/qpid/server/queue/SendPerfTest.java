@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,9 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.handler.OnCurrentThreadExecutor;
@@ -43,6 +46,7 @@ import org.apache.qpid.server.util.TimedRun;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedList;
 
 public class SendPerfTest extends TimedRun
 {
@@ -101,13 +105,16 @@ public class SendPerfTest extends TimedRun
         ContentHeaderBody header = new ContentHeaderBody();
         List<ContentBody> body = new ArrayList<ContentBody>();
         MessageStore messageStore = new SkeletonMessageStore();
+        // channel can be null since it is only used in ack processing which does not apply to this test
+        TransactionalContext txContext = new NonTransactionalContext(messageStore, null,
+                                                                     new LinkedList<RequiredDeliveryException>());
         body.add(new ContentBody());
+        MessageHandleFactory factory = new MessageHandleFactory();
         for (int i = 0; i < count; i++)
         {
-            for (AMQQueue q : queues)
-            {
-                q.deliver(new AMQMessage(messageStore, i, publish, header, body));
-            }
+            // this routes and delivers the message
+            AMQMessage msg = new AMQMessage(i, publish, txContext, header, queues, body, messageStore,
+                                            factory);
         }
     }
 

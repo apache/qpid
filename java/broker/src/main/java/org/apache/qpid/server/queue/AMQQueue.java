@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,16 +23,19 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.txn.TxnBuffer;
-import org.apache.qpid.server.txn.TxnOp;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,12 +71,12 @@ public class AMQQueue implements Managable, Comparable
 
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
-    private final String _name;
+    private final AMQShortString _name;
 
     /**
      * null means shared
      */
-    private final String _owner;
+    private final AMQShortString _owner;
 
     private final boolean _durable;
 
@@ -105,11 +108,6 @@ public class AMQQueue implements Managable, Comparable
     private final DeliveryManager _deliveryMgr;
 
     /**
-     * The queue registry with which this queue is registered.
-     */
-    private final QueueRegistry _queueRegistry;
-
-    /**
      * Used to track bindings to exchanges so that on deletion they can easily
      * be cancelled.
      */
@@ -121,6 +119,9 @@ public class AMQQueue implements Managable, Comparable
     private final Executor _asyncDelivery;
 
     private final AMQQueueMBean _managedObject;
+
+    private final VirtualHost _virtualHost;
+
 
     /**
      * max allowed size(KB) of a single message
@@ -147,60 +148,27 @@ public class AMQQueue implements Managable, Comparable
         return _name.compareTo(((AMQQueue) o).getName());
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
-                    boolean autoDelete, QueueRegistry queueRegistry)
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
+                    boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionImpl.Factory());
+        this(name, durable, owner, autoDelete, virtualHost,
+             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionSet(), new SubscriptionImpl.Factory());
     }
 
-    public AMQQueue(String name, boolean durable, String owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscriptionFactory);
-    }
 
-    public AMQQueue(String name, boolean durable, String owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery,
-                    SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
 
-        this(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new SubscriptionSet(), subscriptionFactory);
-    }
-
-    public AMQQueue(String name, boolean durable, String owner,
-                    boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-
-        this(name, durable, owner, autoDelete, queueRegistry, asyncDelivery, new SubscriptionSet(),
-             new SubscriptionImpl.Factory());
-    }
-
-    protected AMQQueue(String name, boolean durable, String owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
-                       SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
-            throws AMQException
-    {
-        this(name, durable, owner, autoDelete, queueRegistry,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, subscriptionFactory);
-    }
-
-    protected AMQQueue(String name, boolean durable, String owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
+                       boolean autoDelete, VirtualHost virtualHost,
                        SubscriptionSet subscribers)
             throws AMQException
     {
-        this(name, durable, owner, autoDelete, queueRegistry,
+        this(name, durable, owner, autoDelete, virtualHost,
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, new SubscriptionImpl.Factory());
     }
 
-    protected AMQQueue(String name, boolean durable, String owner,
-                       boolean autoDelete, QueueRegistry queueRegistry,
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
+                       boolean autoDelete, VirtualHost virtualHost,
                        Executor asyncDelivery, SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
             throws AMQException
     {
@@ -208,45 +176,23 @@ public class AMQQueue implements Managable, Comparable
         {
             throw new IllegalArgumentException("Queue name must not be null");
         }
-        if (queueRegistry == null)
+        if (virtualHost == null)
         {
-            throw new IllegalArgumentException("Queue registry must not be null");
+            throw new IllegalArgumentException("Virtual Host must not be null");
         }
         _name = name;
         _durable = durable;
         _owner = owner;
         _autoDelete = autoDelete;
-        _queueRegistry = queueRegistry;
+        _virtualHost = virtualHost;
         _asyncDelivery = asyncDelivery;
+
         _managedObject = createMBean();
         _managedObject.register();
+
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
-
-        //fixme - Make this configurable via the broker config.xml
-        if (System.getProperties().getProperty("deliverymanager") != null)
-        {
-            if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentSelectorDeliveryManager"))
-            {
-                _logger.info("Using ConcurrentSelectorDeliveryManager");
-                _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
-            }
-            else if (System.getProperties().getProperty("deliverymanager").equals("ConcurrentDeliveryManager"))
-            {
-                _logger.info("Using ConcurrentDeliveryManager");
-                _deliveryMgr = new ConcurrentDeliveryManager(_subscribers, this);
-            }
-            else
-            {
-                _logger.info("Using SynchronizedDeliveryManager");
-                _deliveryMgr = new SynchronizedDeliveryManager(_subscribers, this);
-            }
-        }
-        else
-        {
-            _logger.info("Using Default DeliveryManager: ConcurrentSelectorDeliveryManager");
-            _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
-        }
+		_deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
     }
 
     private AMQQueueMBean createMBean() throws AMQException
@@ -261,7 +207,7 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    public String getName()
+    public AMQShortString getName()
     {
         return _name;
     }
@@ -276,7 +222,7 @@ public class AMQQueue implements Managable, Comparable
         return _durable;
     }
 
-    public String getOwner()
+    public AMQShortString getOwner()
     {
         return _owner;
     }
@@ -301,6 +247,12 @@ public class AMQQueue implements Managable, Comparable
     {
         return _deliveryMgr.getMessages();
     }
+
+    public long getQueueDepth()
+    {
+        return _deliveryMgr.getTotalMessageSize();
+    }
+
 
     /**
      * @param messageId
@@ -365,13 +317,13 @@ public class AMQQueue implements Managable, Comparable
         _maxMessageCount = value;
     }
 
-    public Long getMaximumQueueDepth()
+    public long getMaximumQueueDepth()
     {
         return _maxQueueDepth;
     }
 
     // Sets the queue depth, the max queue size
-    public void setMaximumQueueDepth(Long value)
+    public void setMaximumQueueDepth(long value)
     {
         _maxQueueDepth = value;
     }
@@ -379,28 +331,46 @@ public class AMQQueue implements Managable, Comparable
     /**
      * Removes the AMQMessage from the top of the queue.
      */
-    public void deleteMessageFromTop() throws AMQException
+    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.removeAMessageFromTop();
+        _deliveryMgr.removeAMessageFromTop(storeContext);
     }
 
     /**
      * removes all the messages from the queue.
      */
-    public long clearQueue() throws AMQException
+    public long clearQueue(StoreContext storeContext) throws AMQException
     {
-        return _deliveryMgr.clearAllMessages();
+        return _deliveryMgr.clearAllMessages(storeContext);
     }
 
-    public void bind(String routingKey, Exchange exchange)
+    public void bind(AMQShortString routingKey, Exchange exchange)
     {
         _bindings.addBinding(routingKey, exchange);
     }
 
-    public void registerProtocolSession(AMQProtocolSession ps, int channel, String consumerTag, boolean acks,
+    public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks,
                                         FieldTable filters, boolean noLocal, boolean exclusive)
             throws AMQException
     {
+        if(incrementSubscriberCount() > 1)
+        {
+            if(isExclusive())
+            {
+                decrementSubscriberCount();
+                throw EXISTING_EXCLUSIVE;
+            }
+            else if(exclusive)
+            {
+                decrementSubscriberCount();
+                throw EXISTING_SUBSCRIPTION;
+            }
+        }
+        else if(exclusive)
+        {
+            setExclusive(true);
+        }
+
         if(incrementSubscriberCount() > 1)
         {
             if(isExclusive())
@@ -455,7 +425,7 @@ public class AMQQueue implements Managable, Comparable
         return _subscriberCount.decrementAndGet();
     }
 
-    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, String consumerTag) throws AMQException
+    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         debug("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
               this);
@@ -520,7 +490,7 @@ public class AMQQueue implements Managable, Comparable
         {
             _subscribers.queueDeleted(this);
             _bindings.deregister();
-            _queueRegistry.unregisterQueue(_name);
+            _virtualHost.getQueueRegistry().unregisterQueue(_name);
             _managedObject.unregister();
             for(Task task : _deleteTaskList)
             {
@@ -528,7 +498,6 @@ public class AMQQueue implements Managable, Comparable
             }
             _deleteTaskList.clear();
         }
-
     }
 
     protected void autodelete() throws AMQException
@@ -536,31 +505,10 @@ public class AMQQueue implements Managable, Comparable
         debug("autodeleting {0}", this);
         delete();
     }
-
-    public void deliver(AMQMessage msg) throws AMQException
+    
+    public void processGet(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        TxnBuffer buffer = msg.getTxnBuffer();
-        if (buffer == null)
-        {
-            //non-transactional
-            record(msg);
-            process(msg);
-        }
-        else
-        {
-            buffer.enlist(new Deliver(msg));
-        }
-    }
-
-    private void record(AMQMessage msg) throws AMQException
-    {
-        msg.enqueue(this);
-        msg.incrementReference();
-    }
-
-    private void process(AMQMessage msg) throws FailedDequeueException
-    {
-        _deliveryMgr.deliver(getName(), msg);
+        _deliveryMgr.deliver(storeContext, getName(), msg);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -570,16 +518,33 @@ public class AMQQueue implements Managable, Comparable
         {
             // as this message will be returned, it should be removed
             // from the queue:
-            dequeue(msg);
+            dequeue(storeContext, msg);
         }
     }
 
-    void dequeue(AMQMessage msg) throws FailedDequeueException
+
+    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
+    {
+        _deliveryMgr.deliver(storeContext, getName(), msg);
+        try
+        {
+            msg.checkDeliveredToConsumer();
+            updateReceivedMessageCount(msg);
+        }
+        catch (NoConsumersException e)
+        {
+            // as this message will be returned, it should be removed
+            // from the queue:
+            dequeue(storeContext, msg);
+        }
+    }
+
+    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {
-            msg.dequeue(this);
-            msg.decrementReference();
+            msg.dequeue(storeContext, this);
+            msg.decrementReference(storeContext);
         }
         catch (MessageCleanupException e)
         {
@@ -591,7 +556,7 @@ public class AMQQueue implements Managable, Comparable
         }
         catch (AMQException e)
         {
-            throw new FailedDequeueException(_name, e);
+            throw new FailedDequeueException(_name.toString(), e);
         }
     }
 
@@ -605,10 +570,17 @@ public class AMQQueue implements Managable, Comparable
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount(AMQMessage msg)
+    protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
         _totalMessagesReceived++;
-        _managedObject.checkForNotification(msg);
+        try
+        {
+            _managedObject.checkForNotification(msg);
+        }
+        catch (JMException e)
+        {
+            throw new AMQException("Unable to get notification from manage queue: " + e, e);
+        }
     }
 
     public boolean equals(Object o)
@@ -645,44 +617,19 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    private class Deliver implements TxnOp
+    public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException
     {
-        private final AMQMessage _msg;
+        return _deliveryMgr.performGet(session, channel, acks);
+    }
 
-        Deliver(AMQMessage msg)
-        {
-            _msg = msg;
-        }
+    public QueueRegistry getQueueRegistry()
+    {
+        return _virtualHost.getQueueRegistry();
+    }
 
-        public void prepare() throws AMQException
-        {
-            //do the persistent part of the record()
-            _msg.enqueue(AMQQueue.this);
-        }
-
-        public void undoPrepare()
-        {
-        }
-
-        public void commit()
-        {
-            //do the memeory part of the record()
-            _msg.incrementReference();
-            //then process the message
-            try
-            {
-                process(_msg);
-            }
-            catch (FailedDequeueException e)
-            {
-                //TODO: is there anything else we can do here? I think not...
-                _logger.error("Error during commit of a queue delivery: " + e, e);
-            }
-        }
-
-        public void rollback()
-        {
-        }
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     public static interface Task
@@ -694,5 +641,4 @@ public class AMQQueue implements Managable, Comparable
     {
         _deleteTaskList.add(task);
     }
-
 }

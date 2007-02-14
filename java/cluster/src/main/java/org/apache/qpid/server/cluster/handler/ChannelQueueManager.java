@@ -27,8 +27,10 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeleteBody;
@@ -46,7 +48,7 @@ import java.util.HashMap;
 class ChannelQueueManager
 {
     private static final Logger _logger = Logger.getLogger(ChannelQueueManager.class);
-    private final Map<Integer, String> _channelQueues = new HashMap<Integer, String>();
+    private final Map<Integer, AMQShortString> _channelQueues = new HashMap<Integer, AMQShortString>();
 
     ClusterMethodHandler<QueueDeclareBody> createQueueDeclareHandler()
     {
@@ -68,37 +70,37 @@ class ChannelQueueManager
         return new MessageConsumeHandler();
     }
 
-    private void set(int channel, String queue)
+    private void set(int channel, AMQShortString queue)
     {
         _channelQueues.put(channel, queue);
         _logger.info(new LogMessage("Set default queue for {0} to {1}", channel, queue));
     }
 
-    private String get(int channel)
+    private AMQShortString get(int channel)
     {
-        String queue = _channelQueues.get(channel);
+        AMQShortString queue = _channelQueues.get(channel);
         _logger.info(new LogMessage("Default queue for {0} is {1}", channel, queue));
         return queue;
     }
 
     private class QueueDeclareHandler extends ClusterMethodHandler<QueueDeclareBody>
     {
-        protected void peer(AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQProtocolSession session, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
         {
             set(evt.getChannelId(), evt.getMethod().queue);
         }
     }
     private class QueueBindHandler extends ClusterMethodHandler<QueueBindBody>
     {
-        protected void peer(AMQProtocolSession session, AMQMethodEvent<QueueBindBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueBindBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQProtocolSession session, AMQMethodEvent<QueueBindBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueBindBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {
@@ -108,11 +110,11 @@ class ChannelQueueManager
     }
     private class QueueDeleteHandler extends ClusterMethodHandler<QueueDeleteBody>
     {
-        protected void peer(AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQProtocolSession session, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {
@@ -123,11 +125,11 @@ class ChannelQueueManager
 
     private class MessageConsumeHandler extends ClusterMethodHandler<MessageConsumeBody>
     {
-        protected void peer(AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
+        protected void peer(AMQStateManager stateMgr,  AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
         {
         }
 
-        protected void client(AMQProtocolSession session, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
+        protected void client(AMQStateManager stateMgr, AMQMethodEvent<MessageConsumeBody> evt) throws AMQException
         {
             if(evt.getMethod().queue == null)
             {

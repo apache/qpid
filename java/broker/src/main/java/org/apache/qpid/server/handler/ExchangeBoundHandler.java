@@ -1,24 +1,28 @@
 /*
  *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeBoundBody;
 import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -29,13 +33,13 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-/**
- * @author Apache Software Foundation
- */
+//import org.apache.log4j.Logger;
+
 public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBoundBody>
 {
-    private static final ExchangeBoundHandler _instance = new ExchangeBoundHandler();
+    //private static final Logger _logger = Logger.getLogger(ExchangeBoundHandler.class);
 
     public static final int OK = 0;
 
@@ -51,39 +55,42 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
 
     public static final int SPECIFIC_QUEUE_NOT_BOUND_WITH_RK = 6;
 
+    private static final ExchangeBoundHandler _instance = new ExchangeBoundHandler();
+
     public static ExchangeBoundHandler getInstance()
     {
         return _instance;
     }
 
-    private ExchangeBoundHandler()
-    {
-    }
+    private ExchangeBoundHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ExchangeBoundBody> evt) throws AMQException
     {
-        byte major = protocolSession.getMajor();
-        byte minor = protocolSession.getMinor();
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final ExchangeBoundBody body = evt.getMethod();
+        VirtualHost virtualHost = session.getVirtualHost();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+        byte major = session.getProtocolMajorVersion();
+        byte minor = session.getProtocolMinorVersion();
         
-        ExchangeBoundBody body = evt.getMethod();
-
-        String exchangeName = body.exchange;
-        String queueName = body.queue;
-        String routingKey = body.routingKey;
+        AMQShortString exchangeName = body.exchange;
+        AMQShortString queueName = body.queue;
+        AMQShortString routingKey = body.routingKey;
         if (exchangeName == null)
         {
             throw new AMQException("Exchange exchange must not be null");
         }
-        Exchange exchange = protocolSession.getExchangeRegistry().getExchange(exchangeName);
+        Exchange exchange = virtualHost.getExchangeRegistry().getExchange(exchangeName);
         AMQMethodBody response;
+
         if (exchange == null)
         {
             // AMQP version change:  Be aware of possible changes to parameter order as versions change.
             response = ExchangeBoundOkBody.createMethodBody
                 (major, minor,	// AMQP version (major, minor)
                  EXCHANGE_NOT_FOUND,	// replyCode
-                 "Exchange " + exchangeName + " not found");	// replyText
+                 new AMQShortString("Exchange " + exchangeName + " not found"));	// replyText
         }
         else if (routingKey == null)
         {
@@ -108,14 +115,14 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
             }
             else
             {
-                AMQQueue queue = protocolSession.getQueueRegistry().getQueue(queueName);
+                AMQQueue queue = queueRegistry.getQueue(queueName);
                 if (queue == null)
                 {
                     // AMQP version change:  Be aware of possible changes to parameter order as versions change.
                     response = ExchangeBoundOkBody.createMethodBody
                         (major, minor,	// AMQP version (major, minor)
                          QUEUE_NOT_FOUND,	// replyCode
-                         "Queue " + queueName + " not found");	// replyText
+                         new AMQShortString("Queue " + queueName + " not found"));	// replyText
                 }
                 else
                 {
@@ -133,21 +140,22 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                         response = ExchangeBoundOkBody.createMethodBody
                             (major, minor,	// AMQP version (major, minor)
                              QUEUE_NOT_BOUND,	// replyCode
-                             "Queue " + queueName + " not bound to exchange " + exchangeName);	// replyText
+                             new AMQShortString("Queue " + queueName + " not bound to exchange " +
+                                exchangeName));	// replyText
                     }
                 }
             }
         }
         else if (queueName != null)
         {
-            AMQQueue queue = protocolSession.getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = queueRegistry.getQueue(queueName);
             if (queue == null)
             {
                 // AMQP version change:  Be aware of possible changes to parameter order as versions change.
                 response = ExchangeBoundOkBody.createMethodBody
                     (major, minor,	// AMQP version (major, minor)
                      QUEUE_NOT_FOUND,	// replyCode
-                     "Queue " + queueName + " not found");	// replyText
+                     new AMQShortString("Queue " + queueName + " not found"));	// replyText
             }
             else
             {
@@ -165,8 +173,8 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                     response = ExchangeBoundOkBody.createMethodBody
                         (major, minor,	// AMQP version (major, minor)
                          SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
-                         "Queue " + queueName + " not bound with routing key " +
-                         body.routingKey + " to exchange " + exchangeName);	// replyText
+                         new AMQShortString("Queue " + queueName + " not bound with routing key " +
+                         body.routingKey + " to exchange " + exchangeName));	// replyText
                 }
             }
         }
@@ -186,10 +194,10 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 response = ExchangeBoundOkBody.createMethodBody
                     (major, minor,	// AMQP version (major, minor)
                      NO_QUEUE_BOUND_WITH_RK,	// replyCode
-                     "No queue bound with routing key " + body.routingKey +
-                     " to exchange " + exchangeName);	// replyText
+                     new AMQShortString("No queue bound with routing key " + body.routingKey +
+                     " to exchange " + exchangeName));	// replyText
             }
         }
-        protocolSession.writeResponse(evt, response);
+        session.writeResponse(evt, response);
     }
 }

@@ -21,14 +21,18 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageCheckpointBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.MessageCheckpointBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+//import org.apache.log4j.Logger;
 
 public class MessageCheckpointMethodHandler implements StateAwareMethodListener
 {
+    //private static final Logger _logger = Logger.getLogger(MessageCheckpointMethodHandler.class);
+
     private static MessageCheckpointMethodHandler _instance = new MessageCheckpointMethodHandler();
 
     public static MessageCheckpointMethodHandler getInstance()
@@ -37,12 +41,8 @@ public class MessageCheckpointMethodHandler implements StateAwareMethodListener
     }
 
     private MessageCheckpointMethodHandler() {}
-    
-    
-    public void methodReceived (AMQStateManager stateManager,
-                                AMQProtocolSession protocolSession,
-                               	AMQMethodEvent evt)
-                                throws AMQException
+
+    public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
 		// TODO
     }

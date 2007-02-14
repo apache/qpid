@@ -20,21 +20,25 @@
  */
 package org.apache.qpid.server.protocol;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
-public interface AMQProtocolSession extends AMQProtocolWriter
+public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
 
 
@@ -56,14 +60,14 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      * in the AMQ protocol specification (RFC 6).
      * @return the context key
      */
-    String getContextKey();
+    AMQShortString getContextKey();
 
     /**
      * Set the context key associated with this session. Context key is described
      * in the AMQ protocol specification (RFC 6).
      * @param contextKey the context key
      */
-    void setContextKey(String contextKey);
+    void setContextKey(AMQShortString contextKey);
 
     /**
      * Get the channel for this session associated with the specified id. A channel
@@ -80,13 +84,13 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      */
     void addChannel(AMQChannel channel) throws AMQException;
 
-    void closeChannelRequest(int channelId, int replyCode, String replyText) throws AMQException;
+    void closeChannelRequest(int channelId, int replyCode, AMQShortString replyText) throws AMQException;
     
     void closeChannelResponse(int channelId, long requestId) throws AMQException;
     
-    void closeSessionRequest(int replyCode, String replyText, int classId, int methodId) throws AMQException;
+    void closeSessionRequest(int replyCode, AMQShortString replyText, int classId, int methodId) throws AMQException;
 
-    void closeSessionRequest(int replyCode, String replyText) throws AMQException;
+    void closeSessionRequest(int replyCode, AMQShortString replyText) throws AMQException;
     
     void closeSessionResponse(long requestId) throws AMQException;
     
@@ -145,23 +149,23 @@ public interface AMQProtocolSession extends AMQProtocolWriter
      */
     void setSaslServer(SaslServer saslServer);
 
-
     FieldTable getClientProperties();
 
     void setClientProperties(FieldTable clientProperties);
     
-    QueueRegistry getQueueRegistry();
-    ExchangeRegistry getExchangeRegistry();
     AMQStateManager getStateManager();
-    byte getMajor();
-    byte getMinor();
-    boolean versionEquals(byte major, byte minor);
+    
     void checkMethodBodyVersion(AMQMethodBody methodBody);
-    int getConnectionId();
+    
+    long getConnectionId();
 
     Object getClientIdentifier();
 
     void addSessionCloseTask(Task task);
 
     void removeSessionCloseTask(Task task);
+
+    VirtualHost getVirtualHost();
+
+    void setVirtualHost(VirtualHost virtualHost) throws AMQException;
 }

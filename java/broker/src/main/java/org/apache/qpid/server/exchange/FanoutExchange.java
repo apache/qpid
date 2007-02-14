@@ -1,3 +1,23 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
@@ -6,6 +26,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.AMQException;
@@ -85,7 +106,7 @@ public class FanoutExchange extends AbstractExchange
 
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
@@ -93,8 +114,8 @@ public class FanoutExchange extends AbstractExchange
 
             try
             {
-                registerQueue(binding, queue, null);
-                queue.bind(binding, FanoutExchange.this);
+                registerQueue(new AMQShortString(binding), queue, null);
+                queue.bind(new AMQShortString(binding), FanoutExchange.this);
             }
             catch (AMQException ex)
             {
@@ -118,12 +139,12 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public String getType()
+    public AMQShortString getType()
     {
         return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
     }
 
-    public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
 
@@ -138,7 +159,7 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -174,17 +195,17 @@ public class FanoutExchange extends AbstractExchange
 
             for (AMQQueue q : _queues)
             {
-                q.deliver(payload);
+                payload.enqueue(q);
             }
         }
     }
 
-    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         return _queues.contains(queue);
     }
 
-    public boolean isBound(String routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
 
         return _queues != null && !_queues.isEmpty();

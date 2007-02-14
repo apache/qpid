@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.StateAwareMethodListener;
+
 import org.apache.log4j.Logger;
 
 public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<ConnectionCloseBody>
@@ -43,16 +41,14 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
         return _instance;
     }
 
-    private ConnectionCloseMethodHandler()
-    {
-    }
+    private ConnectionCloseMethodHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionCloseBody body = evt.getMethod();
         _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode +
-            "/" + body.replyText +  " for " + protocolSession);
-        protocolSession.closeSessionResponse(evt.getRequestId());
+            "/" + body.replyText +  " for " + session);
+        session.closeSessionResponse(evt.getRequestId());
     }
 }

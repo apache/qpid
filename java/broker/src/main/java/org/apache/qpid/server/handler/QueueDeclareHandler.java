@@ -20,24 +20,27 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,28 +61,27 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
     private final AtomicInteger _counter = new AtomicInteger();
 
-    private final MessageStore _store;
-
     protected QueueDeclareHandler()
     {
         Configurator.configure(this);
-        _store = ApplicationRegistry.getInstance().getMessageStore();
     }
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueueDeclareBody> evt) throws AMQException
     {
-        QueueDeclareBody body = evt.getMethod();
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final QueueDeclareBody body = evt.getMethod();
+        VirtualHost virtualHost = session.getVirtualHost();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        MessageStore store = virtualHost.getMessageStore();
 
         // if we aren't given a queue name, we create one which we return to the client
         if (body.queue == null)
         {
             body.queue = createName();
         }
-        //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
         AMQQueue queue = null;
-        QueueRegistry queueRegistry = protocolSession.getQueueRegistry();
         synchronized (queueRegistry)
         {
             if ((queue = queueRegistry.getQueue(body.queue)) == null)
@@ -92,22 +94,22 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
                 else
                 {
-                    queue = createQueue(body, queueRegistry, protocolSession);
+                    queue = createQueue(body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        _store.createQueue(queue);
+                        store.createQueue(queue);
                     }
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)
                     {
-                        Exchange defaultExchange = protocolSession.getExchangeRegistry().getExchange("amq.direct");
+                        Exchange defaultExchange = exchangeRegistry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
                         defaultExchange.registerQueue(body.queue, queue, null);
                         queue.bind(body.queue, defaultExchange);
                         _log.info("Queue " + body.queue + " bound to default exchange");
                     }
                 }
             }
-            else if(queue.getOwner() != null && !protocolSession.getContextKey().equals(queue.getOwner()))
+            else if(queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
             {
                 // todo - constant
                 throw body.getChannelException(405, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
@@ -118,25 +120,26 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 _log.info("Queue " + body.queue + " exists and is accesible to this connection [owner=" + queue.getOwner() +"]");
             }
             //set this as the default queue on the channel:
-            protocolSession.getChannel(evt.getChannelId()).setDefaultQueue(queue);
+            session.getChannel(evt.getChannelId()).setDefaultQueue(queue);
         }
+
         if (!body.nowait)
         {
             // Be aware of possible changes to parameter order as versions change.
             AMQMethodBody response = QueueDeclareOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor(), // AMQP minor version
+                session.getProtocolMajorVersion(), // AMQP major version
+                session.getProtocolMinorVersion(), // AMQP minor version
                 queue.getConsumerCount(), // consumerCount
                 queue.getMessageCount(), // messageCount
                 body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
-            protocolSession.writeResponse(evt, response);
+            session.writeResponse(evt, response);
         }
     }
 
-    protected String createName()
+    protected AMQShortString createName()
     {
-        return "tmp_" + pad(_counter.incrementAndGet());
+        return new AMQShortString("tmp_" + pad(_counter.incrementAndGet()));
     }
 
     protected static String pad(int value)
@@ -144,13 +147,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return MessageFormat.format("{0,number,0000000000000}", value);
     }
 
-    protected AMQQueue createQueue(QueueDeclareBody body, final QueueRegistry registry, final AMQProtocolSession session)
+    protected AMQQueue createQueue(QueueDeclareBody body, VirtualHost virtualHost, final AMQProtocolSession session)
             throws AMQException
     {
-        String owner = body.exclusive ? session.getContextKey() : null;
-        if (owner != null) _log.info("Queue " + body.queue + " is owned by " + owner);
-        final AMQQueue queue =  new AMQQueue(body.queue, body.durable, owner, body.autoDelete, registry);
-        final String queueName = queue.getName();
+        final QueueRegistry registry = virtualHost.getQueueRegistry();
+        AMQShortString owner = body.exclusive ? session.getContextKey() : null;
+        final AMQQueue queue =  new AMQQueue(body.queue, body.durable, owner, body.autoDelete, virtualHost);
+        final AMQShortString queueName = queue.getName();
 
         if(body.exclusive && !body.durable)
         {
@@ -177,7 +180,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     session.removeSessionCloseTask(deleteQueueTask);
                 }
             });
-
 
         }
         return queue;

@@ -20,14 +20,12 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.message.jms.JMSMessage;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import javax.jms.JMSException;
 
 /**
  * A filter performing a comparison of two objects
@@ -123,7 +121,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(AMQMessage message) throws JMSException {
+        public Object evaluate(AMQMessage message) throws AMQException {
 
             Object rv = this.getRight().evaluate(message);
 
@@ -139,7 +137,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
         
-        public boolean matches(AMQMessage message) throws JMSException {
+        public boolean matches(AMQMessage message) throws AMQException {
             Object object = evaluate(message);
             return object!=null && object==Boolean.TRUE;            
         }
@@ -199,7 +197,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 	private static BooleanExpression doCreateEqual(Expression left, Expression right) {
         return new ComparisonExpression(left, right) {
 
-            public Object evaluate(AMQMessage message) throws JMSException {
+            public Object evaluate(AMQMessage message) throws AMQException {
                 Object lv = left.evaluate(message);
                 Object rv = right.evaluate(message);
                 
@@ -340,7 +338,8 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         super(left, right);
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException {
+    public Object evaluate(AMQMessage message) throws AMQException
+    {
         Comparable lv = (Comparable) left.evaluate(message);
         if (lv == null) {
             return null;
@@ -457,7 +456,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     protected abstract boolean asBoolean(int answer);
     
-    public boolean matches(AMQMessage message) throws JMSException {
+    public boolean matches(AMQMessage message) throws AMQException {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            
     }

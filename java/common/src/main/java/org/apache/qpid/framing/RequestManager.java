@@ -40,7 +40,7 @@ public class RequestManager
      * to be known.
      */
     private boolean serverFlag;
-    private int connectionId;
+    private long connectionId;
 
     /**
      * Request and response frames must have a requestID and responseID which
@@ -56,7 +56,7 @@ public class RequestManager
 
     private ConcurrentHashMap<Long, AMQMethodListener> requestSentMap;
 
-    public RequestManager(int connectionId, int channel, AMQProtocolWriter protocolWriter, boolean serverFlag)
+    public RequestManager(long connectionId, int channel, AMQProtocolWriter protocolWriter, boolean serverFlag)
     {
         this.channel = channel;
         this.protocolWriter = protocolWriter;

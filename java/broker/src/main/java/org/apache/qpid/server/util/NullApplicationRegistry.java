@@ -33,24 +33,23 @@ import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.NullAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 
 import java.util.HashMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
-    private QueueRegistry _queueRegistry;
-
-    private ExchangeRegistry _exchangeRegistry;
-
-    private ExchangeFactory _exchangeFactory;
-
     private ManagedObjectRegistry _managedObjectRegistry;
 
     private AuthenticationManager _authenticationManager;
 
-    private MessageStore _messageStore;
+    private VirtualHostRegistry _virtualHostRegistry;
 
 
     public NullApplicationRegistry()
@@ -60,15 +59,16 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _configuration.addProperty("store.class","org.apache.qpid.server.store.MemoryMessageStore");
+
         _managedObjectRegistry = new NoopManagedObjectRegistry();
-        _queueRegistry = new DefaultQueueRegistry();
-        _exchangeFactory = new DefaultExchangeFactory();
-        _exchangeRegistry = new DefaultExchangeRegistry(_exchangeFactory);
+        _virtualHostRegistry = new VirtualHostRegistry();
+        VirtualHost dummyHost = new VirtualHost("test",getConfiguration());
+        _virtualHostRegistry.registerVirtualHost(dummyHost);
         _authenticationManager = new NullAuthenticationManager();
-        _messageStore = new MemoryMessageStore();
-        ((MemoryMessageStore)_messageStore).configure();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
+
     }
 
     public Configuration getConfiguration()
@@ -76,20 +76,6 @@ public class NullApplicationRegistry extends ApplicationRegistry
         return _configuration;
     }
 
-    public QueueRegistry getQueueRegistry()
-    {
-        return _queueRegistry;
-    }
-
-    public ExchangeRegistry getExchangeRegistry()
-    {
-        return _exchangeRegistry;
-    }
-
-    public ExchangeFactory getExchangeFactory()
-    {
-        return _exchangeFactory;
-    }
 
     public ManagedObjectRegistry getManagedObjectRegistry()
     {
@@ -101,9 +87,15 @@ public class NullApplicationRegistry extends ApplicationRegistry
         return _authenticationManager;
     }
 
-    public MessageStore getMessageStore()
+    public Collection<String> getVirtualHostNames()
     {
-        return _messageStore;
+        String[] hosts = {"test"}; 
+        return Arrays.asList( hosts );
+    }
+
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return _virtualHostRegistry;
     }
 }
 

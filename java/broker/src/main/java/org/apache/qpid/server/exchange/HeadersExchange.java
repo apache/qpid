@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -111,7 +112,7 @@ public class HeadersExchange extends AbstractExchange
             for (Iterator<Registration> itr = _bindings.iterator(); itr.hasNext();)
             {
                 Registration registration = itr.next();
-                String queueName = registration.queue.getName();
+                String queueName = registration.queue.getName().toString();
 
                 HeadersBinding headers = registration.binding;
                 FieldTable headerMappings = headers.getMappings();
@@ -146,11 +147,11 @@ public class HeadersExchange extends AbstractExchange
          * <attributename>=<value>,<attributename>=<value>,...
          * @param queueName
          * @param binding
-         * @throws JMException
+         * @throws javax.management.JMException
          */
         public void createNewBinding(String queueName, String binding) throws JMException
         {
-            AMQQueue queue = ApplicationRegistry.getInstance().getQueueRegistry().getQueue(queueName);
+            AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
 
             if (queue == null)
             {
@@ -174,13 +175,18 @@ public class HeadersExchange extends AbstractExchange
 
     } // End of MBean class
 
-    public void registerQueue(String routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    public AMQShortString getType()
+    {
+        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+    }
+
+    public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() + " with " + args);
         _bindings.add(new Registration(new HeadersBinding(args), queue));
     }
 
-    public void deregisterQueue(String routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
         _bindings.remove(new Registration(null, queue));
@@ -193,7 +199,7 @@ public class HeadersExchange extends AbstractExchange
         {
             _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
         }
-        boolean delivered = false;
+        boolean routed = false;
         for (Registration e : _bindings)
         {
             if (e.binding.matches(headers))
@@ -203,11 +209,11 @@ public class HeadersExchange extends AbstractExchange
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
                                   headers + " to " + e.queue.getName());
                 }
-                e.queue.deliver(payload);
-                delivered = true;
+                payload.enqueue(e.queue);
+                routed = true;
             }
         }
-        if (!delivered)
+        if (!routed)
         {
 
             String msg = "Exchange " + getName() + ": message not routable.";
@@ -224,12 +230,12 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(String routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         return isBound(queue);
     }
 
-    public boolean isBound(String routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
         return hasBindings();
     }
@@ -284,10 +290,5 @@ public class HeadersExchange extends AbstractExchange
         {
             return o instanceof Registration && ((Registration) o).queue.equals(queue);
         }
-    }
-
-    public String getType()
-    {
-        return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
     }
 }

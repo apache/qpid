@@ -66,8 +66,9 @@ package org.apache.qpid.server.filter.jms.selector;
 import java.io.*;
 import java.util.*;
 
-import javax.jms.InvalidSelectorException;
+import org.apache.qpid.AMQInvalidSelectorException;
 
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.filter.*;
 
 /**
@@ -81,14 +82,14 @@ public class SelectorParser {
         this(new StringReader(""));
     }
 
-    public BooleanExpression parse(String sql) throws InvalidSelectorException {
+    public BooleanExpression parse(String sql) throws AMQInvalidSelectorException {
         this.ReInit(new StringReader(sql));
 
         try {
             return this.JmsSelector();
         }
         catch (Throwable e) {
-	        throw (InvalidSelectorException)new InvalidSelectorException(sql).initCause(e);
+	        throw (AMQInvalidSelectorException)new AMQInvalidSelectorException(sql).initCause(e);
         }
 
     }
@@ -589,7 +590,7 @@ PropertyExpression variable() :
     (
         t = <ID>
         {
-            left = new PropertyExpression(t.image);
+            left = new PropertyExpression(new AMQShortString(t.image));
         }
     )
     {

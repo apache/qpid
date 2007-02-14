@@ -26,14 +26,16 @@ import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageCancelHandler implements StateAwareMethodListener<MessageCancelBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageCancelHandler.class);
+
     private static MessageCancelHandler _instance = new MessageCancelHandler();
 
     public static MessageCancelHandler getInstance()
@@ -42,21 +44,19 @@ public class MessageCancelHandler implements StateAwareMethodListener<MessageCan
     }
 
     private MessageCancelHandler() {}
-    
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageCancelBody> evt)
-                                throws AMQException
+     
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageCancelBody> evt) throws AMQException
     {
-        final AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        AMQProtocolSession session = stateManager.getProtocolSession();
         final MessageCancelBody body = evt.getMethod();
-        channel.unsubscribeConsumer(protocolSession, body.destination);
+        final AMQChannel channel = session.getChannel(evt.getChannelId());
+        channel.unsubscribeConsumer(session, body.destination);
         
         // Be aware of possible changes to parameter order as versions change.
         final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
-            protocolSession.getMajor(), // AMQP major version
-            protocolSession.getMinor()); // AMQP minor version
-        protocolSession.writeResponse(evt, methodBody);
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion()); // AMQP minor version
+        session.writeResponse(evt, methodBody);
     }
 }
 

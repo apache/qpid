@@ -51,11 +51,11 @@ public class PubSubTwoConnectionTest extends TestCase
     public void testTwoConnections() throws Exception
     {
         Topic topic = new AMQTopic("MyTopic");
-        Connection con1 = new AMQConnection("vm://:1", "guest", "guest", "Client1", "/test_path");
+        Connection con1 = new AMQConnection("vm://:1", "guest", "guest", "Client1", "test");
         Session session1 = con1.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageProducer producer = session1.createProducer(topic);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "Client2", "/test_path");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "Client2", "test");
         Session session2 = con2.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer = session2.createConsumer(topic);
         con2.start();        

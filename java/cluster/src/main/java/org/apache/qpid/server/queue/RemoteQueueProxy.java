@@ -22,17 +22,16 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.GroupManager;
-import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.cluster.MemberHandle;
 import org.apache.qpid.server.cluster.SimpleSendable;
+import org.apache.qpid.server.cluster.util.LogMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -46,23 +45,15 @@ public class RemoteQueueProxy extends AMQQueue
     private final MemberHandle _target;
     private final GroupManager _groupMgr;
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, queueRegistry);
+        super(name, durable, owner, autoDelete, virtualHost);
         _target = target;
         _groupMgr = groupMgr;
         _groupMgr.addMemberhipChangeListener(new ProxiedQueueCleanup(target, this));
     }
 
-    public RemoteQueueProxy(MemberHandle target, GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-        super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery);
-        _target = target;
-        _groupMgr = groupMgr;
-        _groupMgr.addMemberhipChangeListener(new ProxiedQueueCleanup(target, this));
-    }
 
     public void deliver(AMQMessage msg) throws NoConsumersException
     {
@@ -94,18 +85,15 @@ public class RemoteQueueProxy extends AMQQueue
         throw new Error("XXX");
         /*
         MessageTransferBody publish = msg.getPublishBody();
+<<<<<<< .working
         ContentHeaderBody header = msg.getContentHeaderBody();
         List<Content> bodies = msg.getContentBodies();
+=======
+        publish.immediate = false; //can't as yet handle the immediate flag in a cluster
+>>>>>>> .merge-right.r501854
 
-        //(i) construct a new publishing block:
-        publish.immediate = false;//can't as yet handle the immediate flag in a cluster
-        List<AMQBody> parts = new ArrayList<AMQBody>(2 + bodies.size());
-        parts.add(publish);
-        parts.add(header);
-        parts.addAll(bodies);
-
-        //(ii) send this on to the broker for which it is acting as proxy:
-        _groupMgr.send(_target, new SimpleSendable(parts));
+        // send this on to the broker for which it is acting as proxy:
+        _groupMgr.send(_target, new SimpleSendable(msg));
         */
     }
 }
