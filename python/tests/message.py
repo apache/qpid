@@ -171,8 +171,7 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        msg1.ok()
-        msg2.ok()
+        msg1.ok(batchoffset=1)#One and Two
         msg4.ok()
 
         channel.message_recover(requeue=False)
@@ -216,9 +215,8 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        msg1.ok()  #One
-        msg2.ok()  #Two
-        msg4.ok()  #Two
+        msg1.ok(batchoffset=1)  #One and Two
+        msg4.ok()  #Four
 
         channel.message_cancel(destination="consumer_tag")
         channel.message_consume(queue="test-requeue", destination="consumer_tag")
@@ -263,11 +261,9 @@ class MessageTests(TestBase):
             channel.message_transfer(routing_key="test-prefetch-count", body="Message %d" % i)
 
         #only 5 messages should have been delivered:
-        msgs = []
         for i in range(1, 6):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msgs.append(msg)
         try:
             extra = queue.get(timeout=1)
             self.fail("Got unexpected 6th message in original queue: " + extra.body)
@@ -275,18 +271,13 @@ class MessageTests(TestBase):
 
         #ack messages and check that the next set arrive ok:
         #todo: once batching is implmented, send a single response for all messages
-        for msg in msgs:
-            msg.ok()
-        msgs = []    
+        msg.ok(batchoffset=-4)#1-5
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msgs.append(msg)
 
-        for msg in msgs:
-            msg.ok()
-        msgs = []    
+        msg.ok(batchoffset=-4)#6-10
 
         try:
             extra = queue.get(timeout=1)
@@ -313,11 +304,9 @@ class MessageTests(TestBase):
             channel.message_transfer(routing_key="test-prefetch-size", body="Message %d" % i)
 
         #only 5 messages should have been delivered (i.e. 45 bytes worth):
-        msgs = []
         for i in range(1, 6):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msgs.append(msg)
 
         try:
             extra = queue.get(timeout=1)
@@ -325,18 +314,13 @@ class MessageTests(TestBase):
         except Empty: None
 
         #ack messages and check that the next set arrive ok:
-        for msg in msgs:
-            msg.ok()
-        msgs = []    
+        msg.ok(batchoffset=-4)#1-5
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msgs.append(msg)
 
-        for msg in msgs:
-            msg.ok()
-        msgs = []    
+        msg.ok(batchoffset=-4)#6-10
 
         try:
             extra = queue.get(timeout=1)
@@ -386,7 +370,7 @@ class MessageTests(TestBase):
             self.assertEqual("Message %d" % i, msg.body)
             
             if (i==13):
-              msg.ok(batchoffset=-2)
+              msg.ok(batchoffset=-2)#11, 12 & 13
             if(i in [15, 17, 19]):
               msg.ok()
 
