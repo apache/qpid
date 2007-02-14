@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.*;
-
-import java.util.List;
-import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
+import org.apache.qpid.framing.BasicDeliverBody;
+import org.apache.qpid.framing.BasicReturnBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the

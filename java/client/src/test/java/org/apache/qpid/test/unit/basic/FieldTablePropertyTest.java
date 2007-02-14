@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.TestMessageHelper;
-
 import java.util.Enumeration;
 
 import javax.jms.JMSException;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.TestMessageHelper;
 
 public class FieldTablePropertyTest extends TestCase
 {

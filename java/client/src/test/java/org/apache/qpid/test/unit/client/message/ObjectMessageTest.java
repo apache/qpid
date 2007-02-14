@@ -20,23 +20,24 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.VMBrokerSetup;
-
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Message;
-import javax.jms.JMSException;
-import javax.jms.ObjectMessage;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {

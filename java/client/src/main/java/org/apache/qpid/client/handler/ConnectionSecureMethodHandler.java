@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.client.handler;
 
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionSecureOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
 
 public class ConnectionSecureMethodHandler implements StateAwareMethodListener
 {

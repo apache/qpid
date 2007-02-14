@@ -20,12 +20,22 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.mina.common.*;
-import org.apache.mina.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.mina.common.IdleStatus;
+import org.apache.mina.common.IoFilterAdapter;
+import org.apache.mina.common.IoHandler;
+import org.apache.mina.common.IoSession;
+import org.apache.mina.util.BlockingQueue;
+import org.apache.mina.util.ByteBufferUtil;
+import org.apache.mina.util.IdentityHashSet;
 import org.apache.mina.util.Queue;
 import org.apache.mina.util.Stack;
-
-import java.util.*;
 
 /**
  * A Thread-pooling filter.  This filter forwards {@link IoHandler} events

@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.test.unit.topic;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.transport.TransportConnection;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -36,6 +29,13 @@ import javax.jms.TextMessage;
 import javax.jms.TopicSubscriber;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class DurableSubscriptionTest extends TestCase
 {

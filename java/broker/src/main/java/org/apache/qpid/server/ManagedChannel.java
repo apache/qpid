@@ -21,8 +21,9 @@
 
 package org.apache.qpid.server;
 
-import javax.management.JMException;
 import java.io.IOException;
+
+import javax.management.JMException;
 
 /**
  * The managed interface exposed to allow management of channels.

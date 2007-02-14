@@ -19,14 +19,19 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.*;
 
 public class MultipleConnectionTest extends TestCase
 {

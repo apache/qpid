@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
@@ -27,12 +32,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Collections;
 
 /**
  * @author Robert Greig (robert.j.greig@jpmorgan.com)

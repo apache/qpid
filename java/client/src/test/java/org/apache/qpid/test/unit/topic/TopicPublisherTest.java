@@ -20,13 +20,17 @@
  */
 package org.apache.qpid.test.unit.topic;
 
+import javax.jms.MessageConsumer;
+import javax.jms.TextMessage;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.*;
 
 /**
  * @author Apache Software Foundation

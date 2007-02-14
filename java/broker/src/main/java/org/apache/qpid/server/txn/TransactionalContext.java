@@ -22,9 +22,9 @@ package org.apache.qpid.server.txn;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 
 /**

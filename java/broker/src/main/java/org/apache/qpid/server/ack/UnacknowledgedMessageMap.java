@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.ack;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.txn.TransactionalContext;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.txn.TransactionalContext;
 
 public interface UnacknowledgedMessageMap
 {
@@ -76,4 +76,5 @@ public interface UnacknowledgedMessageMap
 
     public long getUnacknowledgeBytes();
 }
+
 

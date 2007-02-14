@@ -19,20 +19,26 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageProducer;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.*;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {

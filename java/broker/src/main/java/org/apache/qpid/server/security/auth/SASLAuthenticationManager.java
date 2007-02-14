@@ -20,23 +20,23 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.configuration.PropertyUtils;
-import org.apache.qpid.framing.AMQShortString;
+import java.lang.reflect.Method;
+import java.security.Security;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.security.Security;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class SASLAuthenticationManager implements AuthenticationManager
 {

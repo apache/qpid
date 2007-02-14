@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.List;
+import java.util.concurrent.Executor;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-
-import java.util.concurrent.Executor;
-import java.util.List;
+import org.apache.qpid.server.store.StoreContext;
 
 interface DeliveryManager
 {

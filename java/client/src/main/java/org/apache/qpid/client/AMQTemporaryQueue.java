@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
+
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * AMQ implementation of a TemporaryQueue.

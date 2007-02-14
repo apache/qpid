@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 /**
  * A frame listener that is informed of the protocl state when invoked and has

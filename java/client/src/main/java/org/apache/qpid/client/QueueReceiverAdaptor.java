@@ -20,7 +20,12 @@
  */
 package org.apache.qpid.client;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Queue;
+import javax.jms.QueueReceiver;
 
 /**
  * Class that wraps a MessageConsumer for backwards JMS compatibility

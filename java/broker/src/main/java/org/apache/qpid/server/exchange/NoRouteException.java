@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * Thrown by an exchange if there is no way to route a message with the

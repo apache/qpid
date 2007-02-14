@@ -20,13 +20,17 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
-
-import java.util.Enumeration;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.jms.*;
+
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+
+import org.apache.log4j.Logger;
 
 public class AMQQueueBrowser implements QueueBrowser
 {

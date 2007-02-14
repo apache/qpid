@@ -21,8 +21,8 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.url.BindingURL;
 
 /**
  * A destination backed by a headers exchange

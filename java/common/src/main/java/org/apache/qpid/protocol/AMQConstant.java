@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.AMQShortString;
-
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.framing.AMQShortString;
 
 public final class AMQConstant
 {

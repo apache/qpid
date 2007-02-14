@@ -20,6 +20,19 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -29,14 +42,6 @@ import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import javax.jms.*;
-
-import junit.framework.TestCase;
 
 public class FieldTableMessageTest extends TestCase implements MessageListener
 {

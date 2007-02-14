@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.common;
 
-import org.apache.log4j.Logger;
-
-import java.util.Properties;
-import java.util.Map;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.log4j.Logger;
 
 public class QpidProperties
 {

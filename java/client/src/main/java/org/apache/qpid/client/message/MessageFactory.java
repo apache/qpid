@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
+import java.util.List;
 
 import javax.jms.JMSException;
-import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
 
 
 public interface MessageFactory

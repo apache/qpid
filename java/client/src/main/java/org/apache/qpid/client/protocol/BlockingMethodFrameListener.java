@@ -21,13 +21,11 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQTimeoutException;
+import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.failover.FailoverException;
 
 public abstract class BlockingMethodFrameListener implements AMQMethodListener
 {

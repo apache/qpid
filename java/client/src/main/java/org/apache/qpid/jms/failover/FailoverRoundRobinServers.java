@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms.failover;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.log4j.Logger;
 
 public class FailoverRoundRobinServers implements FailoverMethod
 {

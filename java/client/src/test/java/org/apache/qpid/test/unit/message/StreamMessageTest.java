@@ -20,19 +20,28 @@
  */
 package org.apache.qpid.test.unit.message;
 
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.StreamMessage;
+
 import junit.framework.TestCase;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
-import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
-
-import javax.jms.*;
 
 /**
  * @author Apache Software Foundation

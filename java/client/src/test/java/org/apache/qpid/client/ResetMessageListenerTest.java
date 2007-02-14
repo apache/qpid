@@ -20,25 +20,27 @@
  */
 package org.apache.qpid.client;
 
-import junit.framework.TestCase;
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.Message;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.naming.Context;
-import javax.naming.spi.InitialContextFactory;
 import java.util.Hashtable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.naming.Context;
+import javax.naming.spi.InitialContextFactory;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue

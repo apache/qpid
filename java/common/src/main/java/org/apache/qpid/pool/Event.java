@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.pool;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.IoFilter;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.IdleStatus;
 
 
 abstract public class Event

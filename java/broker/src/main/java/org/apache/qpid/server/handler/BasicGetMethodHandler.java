@@ -1,22 +1,17 @@
 package org.apache.qpid.server.handler;
 
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicGetBody;
+import org.apache.qpid.framing.BasicGetEmptyBody;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.ConsumerTagNotUniqueException;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 
 public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetBody>
 {

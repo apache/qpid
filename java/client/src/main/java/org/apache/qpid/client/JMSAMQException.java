@@ -17,9 +17,9 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQException;
-
 import javax.jms.JMSException;
+
+import org.apache.qpid.AMQException;
 
 /**
  * @author Apache Software Foundation

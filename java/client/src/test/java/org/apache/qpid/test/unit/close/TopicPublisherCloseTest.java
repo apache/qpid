@@ -19,14 +19,16 @@
  *
  */package org.apache.qpid.test.unit.close;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.*;
-import junit.framework.TestCase;
-
 import javax.jms.Session;
+import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
-import javax.jms.Topic;
+
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.transport.TransportConnection;
 
 /**
  * @author Apache Software Foundation

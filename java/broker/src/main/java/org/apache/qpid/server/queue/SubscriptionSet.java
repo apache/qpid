@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 
 /**
  * Holds a set of subscriptions for a queue and manages the round

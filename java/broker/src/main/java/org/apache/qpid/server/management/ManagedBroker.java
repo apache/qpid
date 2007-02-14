@@ -21,12 +21,13 @@
 
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.server.exchange.ManagedExchange;
-import org.apache.qpid.server.queue.ManagedQueue;
+import java.io.IOException;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
-import java.io.IOException;
+
+import org.apache.qpid.server.exchange.ManagedExchange;
+import org.apache.qpid.server.queue.ManagedQueue;
 
 /**
  * The ManagedBroker is the management interface to expose management

@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.ack;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.txn.TxnOp;
-import org.apache.qpid.server.store.StoreContext;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.TxnOp;
 
 /**
  * A TxnOp implementation for handling accumulated acks
@@ -126,4 +126,5 @@ public class TxAck implements TxnOp
     {
     }
 }
+
 

@@ -20,14 +20,19 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import org.apache.commons.configuration.Configuration;
-
-import javax.security.auth.callback.*;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.sasl.AuthorizeCallback;
-import java.util.Map;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Map;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.AuthorizeCallback;
+
+import org.apache.commons.configuration.Configuration;
 
 public abstract class UsernamePasswordInitialiser implements AuthenticationProviderInitialiser
 {

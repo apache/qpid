@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.AMQTypedValue;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import org.apache.log4j.Logger;
+import org.apache.qpid.framing.AMQTypedValue;
+import org.apache.qpid.framing.FieldTable;
 
 /**
  * Defines binding and matching based on a set of headers.

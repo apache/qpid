@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.jms;
 
+import java.io.UnsupportedEncodingException;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import java.io.UnsupportedEncodingException;
 
 /**
  */

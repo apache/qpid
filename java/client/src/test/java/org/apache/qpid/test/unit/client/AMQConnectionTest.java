@@ -20,15 +20,17 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import org.apache.qpid.client.AMQTopic;
+import javax.jms.JMSException;
+import javax.jms.QueueSession;
+import javax.jms.TopicSession;
+
+import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.*;
-
-import junit.framework.TestCase;
 
 public class AMQConnectionTest extends TestCase
 {

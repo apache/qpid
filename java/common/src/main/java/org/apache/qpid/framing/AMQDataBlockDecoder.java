@@ -26,9 +26,6 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class AMQDataBlockDecoder
 {
     private static final String SESSION_METHOD_BODY_FACTORY = "QPID_SESSION_METHOD_BODY_FACTORY";

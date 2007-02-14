@@ -20,31 +20,24 @@
  */
 package org.apache.qpid.server.registry;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagementConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.queue.DefaultQueueRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.SASLAuthenticationManager;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.mina.common.ByteBuffer;
-
-import java.io.File;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {

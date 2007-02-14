@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.common.QpidProperties;
+import java.util.Enumeration;
 
 import javax.jms.ConnectionMetaData;
 import javax.jms.JMSException;
-import java.util.Enumeration;
+
+import org.apache.qpid.common.QpidProperties;
 
 public class QpidConnectionMetaData implements ConnectionMetaData
 {
