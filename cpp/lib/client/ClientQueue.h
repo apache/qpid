@@ -55,24 +55,25 @@ namespace client {
 	std::string name;
         const bool autodelete;
         const bool exclusive;
+        bool durable;
 
     public:
 
         /**
-         * Creates an unnamed, temporary queue. A name will be
-         * assigned to this queue instance by a call to
+         * Creates an unnamed, non-durable, temporary queue. A name
+         * will be assigned to this queue instance by a call to
          * Channel::declareQueue().
          */
 	Queue();
         /**
-         * Creates a shared queue with a given name, that will not be
-         * autodeleted.
+         * Creates a shared, non-durable, queue with a given name,
+         * that will not be autodeleted.
          * 
          * @param name the name of the queue
          */
 	Queue(std::string name);
         /**
-         * Creates a queue with a given name.
+         * Creates a non-durable queue with a given name.
          * 
          * @param name the name of the queue
          * 
@@ -81,17 +82,19 @@ namespace client {
          */
 	Queue(std::string name, bool temp);
         /**
-         * This constructor allows the autodelete and exclusive
-         * propeties to be explictly set. Note however that if
+         * This constructor allows the autodelete, exclusive and
+         * durable propeties to be explictly set. Note however that if
          * exclusive is true, autodelete has no meaning as exclusive
          * queues are always destroyed when the connection that
          * created them is closed.
          */
-	Queue(std::string name, bool autodelete, bool exclusive);
+	Queue(std::string name, bool autodelete, bool exclusive, bool durable);
 	const std::string& getName() const;
 	void setName(const std::string&);
         bool isAutoDelete() const;
         bool isExclusive() const;
+        bool isDurable() const;
+        void setDurable(bool durable);
     };
 
 }
