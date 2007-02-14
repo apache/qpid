@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.framing;
 
+import java.nio.charset.Charset;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
-
-import java.nio.charset.Charset;
 
 public class EncodingUtils
 {

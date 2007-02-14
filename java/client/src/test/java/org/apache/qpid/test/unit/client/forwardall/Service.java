@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-
-import javax.jms.Destination;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.JMSException;
 
 /**
  * Declare a queue and bind it to amq.direct with a 'well known' routing key,

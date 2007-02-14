@@ -21,10 +21,10 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface Exchange

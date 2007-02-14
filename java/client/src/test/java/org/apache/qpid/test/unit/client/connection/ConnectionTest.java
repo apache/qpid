@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQAuthenticationException;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.AMQConnectionFailureException;
-
 import javax.jms.Connection;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.AMQConnectionFailureException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.client.AMQAuthenticationException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.transport.TransportConnection;
 
 public class ConnectionTest extends TestCase
 {

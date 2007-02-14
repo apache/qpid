@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.pool;
 
-import org.apache.mina.common.IoSession;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.mina.common.IoSession;
 
 /**
  * Holds events for a session that will be processed asynchronously by

@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
-
-import javax.jms.JMSException;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.jms.JMSException;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {

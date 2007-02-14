@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.VersionSpecificRegistry;
 
 public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, ProtocolVersionAware

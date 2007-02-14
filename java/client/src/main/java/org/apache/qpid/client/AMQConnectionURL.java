@@ -20,14 +20,17 @@
  */
 package org.apache.qpid.client;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
-
-import java.util.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class AMQConnectionURL implements ConnectionURL
 {

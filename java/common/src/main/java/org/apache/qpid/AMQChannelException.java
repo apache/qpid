@@ -20,9 +20,9 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseBody;
 
 public class AMQChannelException extends AMQException
 {

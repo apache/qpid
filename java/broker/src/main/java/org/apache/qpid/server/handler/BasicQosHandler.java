@@ -20,17 +20,13 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
-import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.state.StateAwareMethodListener;
 
 public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
 {

@@ -20,13 +20,18 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import org.apache.log4j.Logger;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.regex.Pattern;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-import java.security.Principal;
-import java.io.*;
-import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.

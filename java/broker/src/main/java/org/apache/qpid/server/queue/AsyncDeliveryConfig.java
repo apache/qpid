@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import org.apache.qpid.configuration.Configured;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class AsyncDeliveryConfig
 {

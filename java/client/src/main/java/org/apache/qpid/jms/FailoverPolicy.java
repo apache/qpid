@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
-import org.apache.log4j.Logger;
 
 
 public class FailoverPolicy

@@ -22,7 +22,6 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.server.filter.jms.selector.SelectorParser;
 import org.apache.qpid.server.queue.AMQMessage;
 

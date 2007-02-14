@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
-
-import java.util.HashMap;
-import java.net.URISyntaxException;
-import java.net.URI;
 
 public class AMQBrokerDetails implements BrokerDetails
 {

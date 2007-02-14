@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -40,23 +48,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.management.Managable;
-import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
-
-import javax.management.JMException;
-import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.List;
-import java.util.StringTokenizer;
 
 /**
  * Main entry point for AMQPD.

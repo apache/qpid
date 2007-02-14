@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.pool;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
-
-import java.util.EnumSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionHandler
 {
@@ -239,4 +238,5 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     }
 
 }
+
 

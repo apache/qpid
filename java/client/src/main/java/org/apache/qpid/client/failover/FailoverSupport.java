@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.client.failover;
 
+import javax.jms.JMSException;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.failover.FailoverException;
-
-import javax.jms.JMSException;
 
 public abstract class FailoverSupport
 {

@@ -24,10 +24,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicReturnBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class BasicReturnMethodHandler implements StateAwareMethodListener
 {

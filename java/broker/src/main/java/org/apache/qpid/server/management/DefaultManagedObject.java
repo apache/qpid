@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful

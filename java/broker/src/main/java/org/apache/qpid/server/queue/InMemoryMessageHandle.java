@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-
-import java.util.LinkedList;
-import java.util.List;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
  */

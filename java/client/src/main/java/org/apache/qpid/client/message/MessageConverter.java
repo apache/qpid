@@ -20,10 +20,18 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.log4j.Logger;
-
-import javax.jms.*;
 import java.util.Enumeration;
+
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageEOFException;
+import javax.jms.ObjectMessage;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
+
+import org.apache.log4j.Logger;
 
 public class MessageConverter
 {

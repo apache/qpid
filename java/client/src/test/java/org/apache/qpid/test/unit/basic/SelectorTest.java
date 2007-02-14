@@ -20,21 +20,20 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import org.apache.log4j.Logger;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.DeliveryMode;
-
-import junit.framework.TestCase;
 
 public class SelectorTest extends TestCase implements MessageListener
 {

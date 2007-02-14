@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.TestMessageHelper;
-
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -32,6 +27,11 @@ import java.util.NoSuchElementException;
 import javax.jms.JMSException;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.TestMessageHelper;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
 
 public class FieldTableKeyEnumeratorTest extends TestCase
 {

@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
+import javax.jms.JMSException;
+
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
-
-import javax.jms.JMSException;
 
 public class JMSTextMessageFactory extends AbstractJMSMessageFactory
 {

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.log4j.Logger;
-
 import javax.management.JMException;
+
+import org.apache.log4j.Logger;
 
 /**
  * This managed object registry does not actually register MBeans. This can be used in tests when management is

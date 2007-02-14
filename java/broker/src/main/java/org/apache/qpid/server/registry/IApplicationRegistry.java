@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
+import java.util.Collection;
+
+import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.commons.configuration.Configuration;
-
-import java.util.Collection;
 
 public interface IApplicationRegistry
 {

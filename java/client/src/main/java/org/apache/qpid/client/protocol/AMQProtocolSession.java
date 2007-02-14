@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.jms.JMSException;
+import javax.security.sasl.SaslClient;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IdleStatus;
@@ -31,15 +38,16 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.commons.lang.StringUtils;
-
-import javax.jms.JMSException;
-import javax.security.sasl.SaslClient;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.MainRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.

@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.security.auth;
 
+import java.io.IOException;
+import java.security.Principal;
+
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-import java.security.Principal;
-import java.io.IOException;
 
 /**
  * Represents a "user database" which is really a way of storing principals (i.e. usernames) and

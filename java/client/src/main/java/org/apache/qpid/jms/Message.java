@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.*;
+import javax.jms.JMSException;
 
 public interface Message extends javax.jms.Message
 {

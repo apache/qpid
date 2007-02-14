@@ -17,6 +17,9 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -27,9 +30,6 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * A transactional context that only supports local transactions.

@@ -1,7 +1,12 @@
 package org.apache.qpid.client;
 
-import javax.jms.*;
+import javax.jms.Destination;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Topic;
+import javax.jms.TopicPublisher;
 
 public class TopicPublisherAdapter implements TopicPublisher
 {
