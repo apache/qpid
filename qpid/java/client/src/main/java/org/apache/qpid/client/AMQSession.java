@@ -656,6 +656,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             if (!_closed.getAndSet(true))
             {
 
+                // we pass null since this is not an error case
+                closeProducersAndConsumers(null);                
+
                 try
                 {
                     _connection.getProtocolHandler().closeSession(this);
@@ -672,8 +675,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
 
-                    // we pass null since this is not an error case
-                    closeProducersAndConsumers(null);
 
                 }
                 catch (AMQException e)
