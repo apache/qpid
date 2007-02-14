@@ -21,17 +21,23 @@
 package org.apache.qpid.server.state;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.handler.*;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.EnumMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -44,8 +50,7 @@ public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
 
-    private final QueueRegistry _queueRegistry;
-    private final ExchangeRegistry _exchangeRegistry;
+    private final VirtualHostRegistry _virtualHostRegistry;
     private final AMQProtocolSession _protocolSession;
     /**
      * The current state
@@ -56,20 +61,20 @@ public class AMQStateManager implements AMQMethodListener
      * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
      * The class must be a subclass of AMQFrame.
      */
-    private final Map<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
-            new HashMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>();
+    private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
+            new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(AMQState.class);
+
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
 
-    public AMQStateManager(QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+    public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        this(AMQState.CONNECTION_NOT_STARTED, true, queueRegistry, exchangeRegistry, protocolSession);
+        this(AMQState.CONNECTION_NOT_STARTED, true, virtualHostRegistry, protocolSession);
     }
 
-    protected AMQStateManager(AMQState initial, boolean register, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQProtocolSession protocolSession)
+    protected AMQStateManager(AMQState initial, boolean register, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
-        _queueRegistry = queueRegistry;
-        _exchangeRegistry = exchangeRegistry;
+        _virtualHostRegistry = virtualHostRegistry;
         _protocolSession = protocolSession;
         _currentState = initial;
         if (register)
@@ -80,14 +85,7 @@ public class AMQStateManager implements AMQMethodListener
 
     protected void registerListeners()
     {
-        Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap =
-                new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
-
-        // we need to register a map for the null (i.e. all state) handlers otherwise you get
-        // a stack overflow in the handler searching code when you present it with a frame for which
-        // no handlers are registered
-        //
-        _state2HandlersMap.put(null, frame2handlerMap);
+        Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> frame2handlerMap;
 
         frame2handlerMap = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
         frame2handlerMap.put(ConnectionStartOkBody.class, ConnectionStartOkMethodHandler.getInstance());
@@ -179,10 +177,22 @@ public class AMQStateManager implements AMQMethodListener
         StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(_protocolSession, evt);
+            checkChannel(evt, _protocolSession);
+            handler.methodReceived(this,  evt);
             return true;
         }
         return false;
+    }
+
+    private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
+            throws AMQException
+    {
+        if(evt.getChannelId() != 0
+                && !(evt.getMethod() instanceof ChannelOpenBody)
+                && protocolSession.getChannel(evt.getChannelId()) == null)
+        {
+            throw evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR.getCode(),"No such channel: " + evt.getChannelId());
+        }
     }
 
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
@@ -196,26 +206,14 @@ public class AMQStateManager implements AMQMethodListener
         final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>
                 classToHandlerMap = _state2HandlersMap.get(currentState);
 
-        if (classToHandlerMap == null)
-        {
-            // if no specialised per state handler is registered look for a
-            // handler registered for "all" states
-            return findStateTransitionHandler(null, frame);
-        }
-        final StateAwareMethodListener<B> handler = (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+        final StateAwareMethodListener<B> handler = classToHandlerMap == null
+                                                          ? null
+                                                          : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+
         if (handler == null)
         {
-            if (currentState == null)
-            {
-                _logger.debug("No state transition handler defined for receiving frame " + frame);
-                return null;
-            }
-            else
-            {
-                // if no specialised per state handler is registered look for a
-                // handler registered for "all" states
-                return findStateTransitionHandler(null, frame);
-            }
+            _logger.debug("No state transition handler defined for receiving frame " + frame);
+            return null;
         }
         else
         {
@@ -232,5 +230,15 @@ public class AMQStateManager implements AMQMethodListener
     public void removeStateListener(StateListener listener)
     {
         _stateListeners.remove(listener);
+    }
+
+    public VirtualHostRegistry getVirtualHostRegistry()
+    {
+        return _virtualHostRegistry;
+    }
+
+    public AMQProtocolSession getProtocolSession()
+    {
+        return _protocolSession;
     }
 }

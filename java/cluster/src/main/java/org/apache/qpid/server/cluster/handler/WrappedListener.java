@@ -42,11 +42,11 @@ public class WrappedListener<T extends AMQMethodBody> implements StateAwareMetho
         _primary = check(primary);
     }
 
-    public void methodReceived(AMQProtocolSession session, AMQMethodEvent<T> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateMgr, AMQMethodEvent<T> evt) throws AMQException
     {
-        _pre.methodReceived(session, evt);
-        _primary.methodReceived(session, evt);
-        _post.methodReceived(session, evt);
+        _pre.methodReceived(stateMgr, evt);
+        _primary.methodReceived(stateMgr, evt);
+        _post.methodReceived(stateMgr, evt);
     }
 
     private static <T extends AMQMethodBody> StateAwareMethodListener<T> check(StateAwareMethodListener<T> in)

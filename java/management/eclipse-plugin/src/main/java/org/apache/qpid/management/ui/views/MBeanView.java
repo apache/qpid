@@ -64,6 +64,7 @@ public class MBeanView extends ViewPart
     private static ManagedServer _server = null;
     private TreeObject _selectedNode = null;
     private ManagedBean _mbean = null;
+    private static String _virtualHostName = null;
     // This map contains a TabFolder for each kind of MBean. TabFolder is mapped with mbeantype(eg Connection, Queue etc)
     private HashMap<String, TabFolder> tabFolderMap = new HashMap<String, TabFolder>();
     private ISelectionListener selectionListener = new SelectionListenerImpl();
@@ -102,13 +103,9 @@ public class MBeanView extends ViewPart
             setServer();
             try
             {
-                if (Constants.TYPE.equals(_selectedNode.getType()))
+                if (Constants.NODE_TYPE_MBEANTYPE.equals(_selectedNode.getType()))
                 {
                     refreshTypeTabFolder(_selectedNode.getName());
-                }
-                else if (Constants.DOMAIN.equals(_selectedNode.getType()))
-                {
-                    refreshTypeTabFolder(typeTabFolder.getItem(0));
                 }
                 else
                 {
@@ -134,22 +131,31 @@ public class MBeanView extends ViewPart
         if (Constants.SERVER.equals(_selectedNode.getType()))
         {
             _server = (ManagedServer)_selectedNode.getManagedObject();
+            _virtualHostName = null;
         }
         else
         {
             TreeObject parent = _selectedNode.getParent();
-            while (!parent.getType().equals(Constants.SERVER))
+            while (parent != null && !parent.getType().equals(Constants.SERVER))
             {
                 parent = parent.getParent();
             }
             
-            _server = (ManagedServer)parent.getManagedObject();
+            if (parent != null && parent.getType().equals(Constants.SERVER))
+                _server = (ManagedServer)parent.getManagedObject();
+            
+            _virtualHostName = _selectedNode.getVirtualHost();
         }
     }
     
     public static ManagedServer getServer()
     {
         return _server;
+    }
+    
+    public static String getVirtualHost()
+    {
+        return _virtualHostName;
     }
     
     private void showSelectedMBean() throws Exception

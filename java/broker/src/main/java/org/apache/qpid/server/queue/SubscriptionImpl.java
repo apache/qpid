@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessageOkBody;
@@ -37,6 +38,8 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 import java.util.Queue;
@@ -56,7 +59,7 @@ public class SubscriptionImpl implements Subscription
 
     public final AMQProtocolSession protocolSession;
 
-    public final String consumerTag;
+    public final AMQShortString consumerTag;
 
     private final Object sessionKey;
 
@@ -76,12 +79,12 @@ public class SubscriptionImpl implements Subscription
 
     public static class Factory implements SubscriptionFactory
     {
-        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag, boolean acks, FieldTable filters, boolean noLocal) throws AMQException
+        public Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal) throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag, acks, filters, noLocal);
         }
 
-        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, String consumerTag)
+        public SubscriptionImpl createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag)
                 throws AMQException
         {
             return new SubscriptionImpl(channel, protocolSession, consumerTag, false, null, false);
@@ -89,14 +92,14 @@ public class SubscriptionImpl implements Subscription
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks)
+                            AMQShortString consumerTag, boolean acks)
             throws AMQException
     {
         this(channelId, protocolSession, consumerTag, acks, null, false);
     }
 
     public SubscriptionImpl(int channelId, AMQProtocolSession protocolSession,
-                            String consumerTag, boolean acks, FieldTable filters, boolean noLocal)
+                            AMQShortString consumerTag, boolean acks, FieldTable filters, boolean noLocal)
             throws AMQException
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
@@ -166,7 +169,7 @@ public class SubscriptionImpl implements Subscription
 
 
     public SubscriptionImpl(int channel, AMQProtocolSession protocolSession,
-                            String consumerTag)
+                            AMQShortString consumerTag)
             throws AMQException
     {
         this(channel, protocolSession, consumerTag, false);
@@ -205,42 +208,67 @@ public class SubscriptionImpl implements Subscription
      * @param queue
      * @throws AMQException
      */
-    public void send(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    public void send(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         if (msg != null)
         {
-            try {
-                if (!_isBrowser && !_acks) {
-                    queue.dequeue(msg);
-                }
-
-                synchronized(channel) {
-                    long deliveryTag = channel.getNextDeliveryTag();
-
-                    if (_acks) {
-                        if (_isBrowser) {
-                            channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
-                        } else {
-                            channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
-                        }
-                    }
-
-                    channel.deliver(msg, consumerTag, deliveryTag);
-                }
-            } finally {
-                if (!_isBrowser) {
-                    msg.setDeliveredToConsumer();
-                }
+            if (_isBrowser)
+            {
+                sendToBrowser(msg, queue);
+            }
+            else
+            {
+                sendToConsumer(channel.getStoreContext(), msg, queue);
             }
         }
         else
         {
             _logger.error("Attempt to send Null message", new NullPointerException());
         }
+//         if (msg != null)
+//         {
+//             try
+//             {
+//                 if (!_isBrowser && !_acks)
+//                 {
+//                     queue.dequeue(channel.getStoreContext(), msg);
+//                 }
+// 
+//                 synchronized(channel)
+//                 {
+//                     long deliveryTag = channel.getNextDeliveryTag();
+// 
+//                     if (_acks)
+//                     {
+//                         if (_isBrowser)
+//                         {
+//                             channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
+//                         }
+//                         else
+//                         {
+//                             channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+//                         }
+//                     }
+//                     msg.enqueue(queue);
+// //                    channel.deliver(msg, consumerTag, deliveryTag);
+//                 }
+//             }
+//             finally
+//             {
+//                 if (!_isBrowser)
+//                 {
+//                     msg.setDeliveredToConsumer();
+//                 }
+//             }
+//         }
+//         else
+//         {
+//             _logger.error("Attempt to send Null message", new NullPointerException());
+//         }
     }
 
     // XXX
-    /*    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws AMQException
     {
         // We don't decrement the reference here as we don't want to consume the message
         // but we do want to send it to the client.
@@ -255,14 +283,13 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
-            ByteBuffer deliver = null;
-            if (true) throw new Error("XXX");
-            //createEncodedDeliverFrame(deliveryTag, msg.getRoutingKey(), msg.getExchangeName());
-            channel.deliver(msg, consumerTag, null);
+//            msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
+            channel.deliver(msg, consumerTag, deliveryTag);
         }
     }
 
-    private void sendToConsumer(AMQMessage msg, AMQQueue queue) throws FailedDequeueException
+    private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
+            throws AMQException
     {
         try
         {
@@ -277,7 +304,11 @@ public class SubscriptionImpl implements Subscription
             // the message is unacked, it will be lost.
             if (!_acks)
             {
-                queue.dequeue(msg);
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                }
+                queue.dequeue(storeContext, msg);
             }
             synchronized(channel)
             {
@@ -288,25 +319,30 @@ public class SubscriptionImpl implements Subscription
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
                 }
 
-                channel.deliver(msg, consumerTag, new AMQMethodListener() {
-                    public boolean methodReceived(AMQMethodEvent evt) throws AMQException {
-                        if (_logger.isDebugEnabled()) {
-                            _logger.debug("Ack received on channel " + evt.getChannelId());
-                        }
-                        // XXX: reject?
-                        // XXX: multiple
-                        channel.acknowledgeMessage(deliveryTag, false);
-                        return true;
-                    }
-                    public void error(Exception e) {}
-                });
+//                msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
+//                 channel.deliver(msg, consumerTag, new AMQMethodListener()
+//                 {
+//                     public boolean methodReceived(AMQMethodEvent evt) throws AMQException
+//                     {
+//                         if (_logger.isDebugEnabled())
+//                         {
+//                             _logger.debug("Ack received on channel " + evt.getChannelId());
+//                         }
+//                         // XXX: reject?
+//                         // XXX: multiple
+//                         channel.acknowledgeMessage(deliveryTag, false);
+//                         return true;
+//                     }
+//                     public void error(Exception e) {}
+//                 });
+                channel.deliver(msg, consumerTag, deliveryTag);
             }
         }
         finally
         {
             msg.setDeliveredToConsumer();
         }
-        }*/
+    }
 
     public boolean isSuspended()
     {
@@ -318,7 +354,7 @@ public class SubscriptionImpl implements Subscription
      *
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         channel.queueDeleted(queue);
     }
@@ -369,6 +405,8 @@ public class SubscriptionImpl implements Subscription
                 }
 
             }
+
+
         }
         if (_logger.isTraceEnabled())
         {
@@ -426,7 +464,8 @@ public class SubscriptionImpl implements Subscription
             // Be aware of possible changes to parameter order as versions change.
             if (true) throw new Error("XXX");
             /*protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
-        		(byte)8, (byte)0,	// AMQP version (major, minor)
+        		protocolSession.getProtocolMajorVersion(),
+                protocolSession.getProtocolMinorVersion(),
             	consumerTag	// consumerTag
                 ));*/
             _closed = true;
@@ -436,5 +475,10 @@ public class SubscriptionImpl implements Subscription
     public boolean isBrowser()
     {
         return _isBrowser;
+    }
+
+    public boolean wouldSuspend(AMQMessage msg)
+    {
+        return channel.wouldSuspend(msg);
     }
 }

@@ -21,13 +21,17 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.framing.AMQShortString;
 
 
 public interface QueueRegistry
 {
+    VirtualHost getVirtualHost();
+
     void registerQueue(AMQQueue queue) throws AMQException;
 
-    void unregisterQueue(String name) throws AMQException;
+    void unregisterQueue(AMQShortString name) throws AMQException;
 
-    AMQQueue getQueue(String name);
+    AMQQueue getQueue(AMQShortString name);
 }

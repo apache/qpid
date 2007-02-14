@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 
 public class JMSMapMessageFactory extends AbstractJMSMessageFactory

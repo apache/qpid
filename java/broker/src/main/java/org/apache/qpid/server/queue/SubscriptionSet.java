@@ -137,7 +137,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
             ++_currentSubscriber;
             subscriberScanned();
 
-            if (!subscription.isSuspended())
+            if (!(subscription.isSuspended() || subscription.wouldSuspend(msg)))
             {
                 if (subscription.hasInterest(msg))
                 {
@@ -204,7 +204,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
      *
      * @param queue
      */
-    public void queueDeleted(AMQQueue queue)
+    public void queueDeleted(AMQQueue queue) throws AMQException
     {
         for (Subscription s : _subscriptions)
         {

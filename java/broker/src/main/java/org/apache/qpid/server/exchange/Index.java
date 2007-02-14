@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 class Index
 {
-    private ConcurrentMap<String, List<AMQQueue>> _index
-            = new ConcurrentHashMap<String, List<AMQQueue>>();
+    private ConcurrentMap<AMQShortString, List<AMQQueue>> _index
+            = new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
 
-    synchronized boolean add(String key, AMQQueue queue)
+    synchronized boolean add(AMQShortString key, AMQQueue queue)
     {
         List<AMQQueue> queues = _index.get(key);
         if(queues == null)
@@ -62,7 +63,7 @@ class Index
         }
     }
 
-    synchronized boolean remove(String key, AMQQueue queue)
+    synchronized boolean remove(AMQShortString key, AMQQueue queue)
     {
         List<AMQQueue> queues = _index.get(key);
         if (queues != null)
@@ -77,13 +78,13 @@ class Index
         return false;
     }
 
-    List<AMQQueue> get(String key)
+    List<AMQQueue> get(AMQShortString key)
     {
         return _index.get(key);
     }
 
-    Map<String, List<AMQQueue>> getBindingsMap()
+    Map<AMQShortString, List<AMQQueue>> getBindingsMap()
     {
-        return new HashMap<String, List<AMQQueue>>(_index);
+        return new HashMap<AMQShortString, List<AMQQueue>>(_index);
     }
 }

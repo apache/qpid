@@ -21,16 +21,26 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
-    private ConcurrentMap<String, AMQQueue> _queueMap = new ConcurrentHashMap<String, AMQQueue>();
+    private ConcurrentMap<AMQShortString, AMQQueue> _queueMap = new ConcurrentHashMap<AMQShortString, AMQQueue>();
 
-    public DefaultQueueRegistry()
+    private final VirtualHost _virtualHost;
+
+    public DefaultQueueRegistry(VirtualHost virtualHost)
     {
+        _virtualHost = virtualHost;
+    }
+
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
     }
 
     public void registerQueue(AMQQueue queue) throws AMQException
@@ -38,12 +48,12 @@ public class DefaultQueueRegistry implements QueueRegistry
         _queueMap.put(queue.getName(), queue);
     }
 
-    public void unregisterQueue(String name) throws AMQException
+    public void unregisterQueue(AMQShortString name) throws AMQException
     {
         _queueMap.remove(name);
     }
 
-    public AMQQueue getQueue(String name)
+    public AMQQueue getQueue(AMQShortString name)
     {
         return _queueMap.get(name);
     }

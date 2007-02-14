@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+
+import org.apache.log4j.Logger;
 
 public class ConnectionTuneMethodHandler implements StateAwareMethodListener
 {
@@ -45,9 +46,7 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    protected ConnectionTuneMethodHandler()
-    {
-    }
+    protected ConnectionTuneMethodHandler() {}
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
@@ -66,29 +65,31 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
         protocolSession.setConnectionTuneParameters(params);
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), createTuneOkMethodBody(params));
+        protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), createTuneOkMethodBody(protocolSession, params));
+        String host = protocolSession.getAMQConnection().getVirtualHost();
+        AMQShortString virtualHost = new AMQShortString("/" + host);
         protocolSession.writeRequest(evt.getChannelId(),
-            createConnectionOpenMethodBody(protocolSession.getAMQConnection().getVirtualHost(), null, true),
+            createConnectionOpenMethodBody(protocolSession, virtualHost, null, true),
             protocolSession.getStateManager());
     }
 
-    protected AMQMethodBody createConnectionOpenMethodBody(String path, String capabilities, boolean insist)
+    protected AMQMethodBody createConnectionOpenMethodBody(AMQProtocolSession protocolSession, AMQShortString path, AMQShortString capabilities, boolean insist)
     {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        return ConnectionOpenBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
+        return ConnectionOpenBody.createMethodBody(
+            protocolSession.getProtocolMajorVersion(),  // AMQP major version
+            protocolSession.getProtocolMinorVersion(),  // AMQP minor version
             capabilities,	// capabilities
             insist,	// insist
             path);	// virtualHost
     }
 
-    protected AMQMethodBody createTuneOkMethodBody(ConnectionTuneParameters params)
+    protected AMQMethodBody createTuneOkMethodBody(AMQProtocolSession protocolSession, ConnectionTuneParameters params)
     {
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        return ConnectionTuneOkBody.createMethodBody((byte)0, (byte)9,	// AMQP version (major, minor)
+        return ConnectionTuneOkBody.createMethodBody(
+            protocolSession.getProtocolMajorVersion(),  // AMQP major version
+            protocolSession.getProtocolMinorVersion(),  // AMQP minor version
             params.getChannelMax(),	// channelMax
             params.getFrameMax(),	// frameMax
             params.getHeartbeat());	// heartbeat

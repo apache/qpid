@@ -20,17 +20,13 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import javax.jms.JMSException;
-
-//import org.apache.activemq.command.Message;
-//import org.apache.activemq.util.JMSExceptionSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Used to evaluate an XPath Expression in a JMS selector.
@@ -75,7 +71,7 @@ public final class XPathExpression implements BooleanExpression {
     private final XPathEvaluator evaluator;
     
     static public interface XPathEvaluator {
-        public boolean evaluate(AMQMessage message) throws JMSException;
+        public boolean evaluate(AMQMessage message) throws AMQException;
     }    
     
     XPathExpression(String xpath) {
@@ -97,7 +93,7 @@ public final class XPathExpression implements BooleanExpression {
         }
     }
 
-    public Object evaluate(AMQMessage message) throws JMSException {
+    public Object evaluate(AMQMessage message) throws AMQException {
 //        try {
 //FIXME this is flow to disk work
 //            if( message.isDropped() )
@@ -120,9 +116,10 @@ public final class XPathExpression implements BooleanExpression {
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
-     * @throws JMSException
+     * @throws AMQException
      */
-    public boolean matches(AMQMessage message) throws JMSException {
+    public boolean matches(AMQMessage message) throws AMQException
+    {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            
     }

@@ -17,19 +17,19 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.Main;
 import org.apache.qpid.AMQException;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.openmbean.*;
-import javax.management.JMException;
-import javax.management.Notification;
-import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
-import javax.management.OperationsException;
+import javax.management.*;
 import javax.management.monitor.MonitorNotification;
 
 import java.util.ArrayList;
@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Iterator;
 
 /**
  * MBean class for AMQQueue. It implements all the management features exposed
@@ -45,19 +46,25 @@ import java.util.Set;
 @MBeanDescription("Management Interface for AMQQueue")
 public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
 {
+    /**
+     * Since the MBean is not associated with a real channel we can safely create our own store context
+     * for use in the few methods that require one.
+     */
+    private StoreContext _storeContext = new StoreContext();
+
     private AMQQueue _queue = null;
     private String _queueName = null;
     // OpenMBean data types for viewMessages method
-    private String[] _msgAttributeNames = {"Message Id", "Header", "Size(bytes)", "Redelivered"};
-    private String[] _msgAttributeIndex = {_msgAttributeNames[0]};
-    private OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
-    private CompositeType _messageDataType = null;           // Composite type for representing AMQ Message data.
-    private TabularType _messagelistDataType = null;         // Datatype for representing AMQ messages list.
+    private final static String[] _msgAttributeNames = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered"};
+    private static String[] _msgAttributeIndex = {_msgAttributeNames[0]};
+    private static OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
+    private static CompositeType _messageDataType = null;           // Composite type for representing AMQ Message data.
+    private static TabularType _messagelistDataType = null;         // Datatype for representing AMQ messages list.
 
     // OpenMBean data types for viewMessageContent method
-    private CompositeType _msgContentType = null;
-    private String[] _msgContentAttributes = {"Message Id", "MimeType", "Encoding", "Content"};
-    private OpenType[] _msgContentAttributeTypes = new OpenType[4];
+    private static CompositeType _msgContentType = null;
+    private final static String[] _msgContentAttributes = {"AMQ MessageId", "MimeType", "Encoding", "Content"};
+    private static OpenType[] _msgContentAttributeTypes = new OpenType[4];
 
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
@@ -65,13 +72,31 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
         _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
-        init();
+    }
+
+
+    public ManagedObject getParentObject()
+    {
+        return _queue.getVirtualHost().getManagedObject();
+    }
+
+    static
+    {
+        try
+        {
+            init();
+        }
+        catch(JMException ex)
+        {
+            // It should never occur
+            System.out.println(ex.getMessage());
+        }
     }
 
     /**
      * initialises the openmbean data types
      */
-    private void init() throws OpenDataException
+    private static void init() throws OpenDataException
     {
         _msgContentAttributeTypes[0] = SimpleType.LONG;                    // For message id
         _msgContentAttributeTypes[1] = SimpleType.STRING;                  // For MimeType
@@ -106,7 +131,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
 
     public String getOwner()
     {
-        return _queue.getOwner();
+        return String.valueOf(_queue.getOwner());
     }
 
     public boolean isAutoDelete()
@@ -167,26 +192,21 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     /**
      * returns the size of messages(KB) in the queue.
      */
-    public Long getQueueDepth()
+    public Long getQueueDepth() throws JMException
     {
-        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
-        if (list.size() == 0)
-        {
-            return 0l;
-        }
+        return getQueueDepthKb();
+    }
 
-        long queueDepth = 0;
-        for (AMQMessage message : list)
-        {
-            queueDepth = queueDepth + getMessageSize(message);
-        }
-        return (long) Math.round(queueDepth / 1000);
+    public long getQueueDepthKb()
+    {
+        long queueBytesSize = _queue.getQueueDepth();
+        return queueBytesSize >> 10 ;
     }
 
     /**
      * returns size of message in bytes
      */
-    private long getMessageSize(AMQMessage msg)
+    private long getMessageSize(AMQMessage msg) throws AMQException
     {
         if (msg == null)
         {
@@ -199,7 +219,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     /**
      * Checks if there is any notification to be send to the listeners
      */
-    public void checkForNotification(AMQMessage msg)
+    public void checkForNotification(AMQMessage msg) throws AMQException, JMException
     {
         // Check for threshold message count
         Integer msgCount = getMessageCount();
@@ -216,7 +236,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         }
 
         // Check for threshold queue depth in bytes
-        long queueDepth = getQueueDepth();
+        long queueDepth = getQueueDepthKb();
         if (queueDepth >= _queue.getMaximumQueueDepth())
         {
             notifyClients("Queue depth(" + queueDepth + "), Queue size has reached the threshold high value");
@@ -235,13 +255,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop()
+     * @see org.apache.qpid.server.queue.AMQQueue#deleteMessageFromTop
      */
     public void deleteMessageFromTop() throws JMException
     {
         try
         {
-            _queue.deleteMessageFromTop();
+            _queue.deleteMessageFromTop(_storeContext);
         }
         catch (AMQException ex)
         {
@@ -250,13 +270,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
     }
 
     /**
-     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue()
+     * @see org.apache.qpid.server.queue.AMQQueue#clearQueue
      */
     public void clearQueue() throws JMException
     {
         try
         {
-            _queue.clearQueue();
+            _queue.clearQueue(_storeContext);
         }
         catch (AMQException ex)
         {
@@ -278,13 +298,14 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         // get message content
         byte[] bytes = msg.getMessageBytes();
         Byte[] msgContent = new Byte[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
+        for (int i = 0; i < bytes.length; i++)
+        {
             msgContent[i] = Byte.valueOf(bytes[i]);
         }
 
         // Create header attributes list
-        String mimeType = msg.getContentType();
-        String encoding = msg.getEncoding();
+        AMQShortString mimeType = msg.getContentType();
+        AMQShortString encoding = msg.getContentEncoding();
         Object[] itemValues = {msgId, mimeType, encoding, msgContent};
 
         return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
@@ -295,7 +316,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         hdrs.put("Reply-To", msg.getReplyTo());
         hdrs.put("Application-Id", msg.getAppId());
         hdrs.put("User-Id", msg.getUserId());
-        hdrs.put("Message-Id", msg.getXXXMessageId());
+        hdrs.put("Message-Id", msg.getMessageId());
         hdrs.put("Correlation-Id", msg.getCorrelationId());
         hdrs.put("DeliveryMode", msg.getDeliveryMode());
         hdrs.put("Expiration", msg.getExpiration());
@@ -319,25 +340,41 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         List<AMQMessage> list = _queue.getMessagesOnTheQueue();
         TabularDataSupport _messageList = new TabularDataSupport(_messagelistDataType);
 
-        // Create the tabular list of message header contents
-        for (int i = beginIndex; i <= endIndex && i <= list.size(); i++)
+//         try
         {
-            AMQMessage msg = list.get(i - 1);
-            // Create header attributes list
-            Map headers = getHeaders(msg);
-            Set<String> names = headers.keySet();
-            String[] values = new String[names.size()];
-            int index = 0;
-            for (String name : names) {
-                values[index++] = "" + headers.get(name);
+            // Create the tabular list of message header contents
+            for (int i = beginIndex; i <= endIndex && i <= list.size(); i++)
+            {
+                AMQMessage msg = list.get(i - 1);
+                // Create header attributes list
+                Map headers = getHeaders(msg);
+                Set<String> names = headers.keySet();
+                String[] values = new String[names.size()];
+                int index = 0;
+                for (String name : names)
+                {
+                    values[index++] = "" + headers.get(name);
+                }
+                Object[] itemValues = {msg.getMessageId(), values, msg.getSize(), msg.isRedelivered()};
+                CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
+                _messageList.put(messageData);
             }
-            Object[] itemValues = {msg.getMessageId(), values, msg.getSize(), msg.isRedelivered()};
-            CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
-            _messageList.put(messageData);
         }
+//         catch (AMQException e)
+//         {
+//             throw new JMException("Error creating message contents: " + e);
+//         }
 
         return _messageList;
     }
+//
+//    public ObjectName getObjectName() throws MalformedObjectNameException
+//    {
+//        String objNameString = super.getObjectName().toString();
+//
+//        return new ObjectName(objNameString);
+//    }
+
 
     /**
      * returns Notifications sent by this MBean.
@@ -353,4 +390,4 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue
         return new MBeanNotificationInfo[]{info1};
     }
 
-} // End of AMQMBean class
+} // End of AMQQueueMBean class

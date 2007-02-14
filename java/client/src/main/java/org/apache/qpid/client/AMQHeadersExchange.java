@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * A destination backed by a headers exchange
@@ -33,12 +34,17 @@ public class AMQHeadersExchange extends AMQDestination
         this(binding.getExchangeName());
     }
 
-    public AMQHeadersExchange(String queueName)
+    public AMQHeadersExchange(String name)
+    {
+        this(new AMQShortString(name));
+    }
+
+    public AMQHeadersExchange(AMQShortString queueName)
     {
         super(queueName, ExchangeDefaults.HEADERS_EXCHANGE_CLASS, queueName, true, true, null);
     }
 
-    public String getRoutingKey()
+    public AMQShortString getRoutingKey()
     {
         return getDestinationName();
     }

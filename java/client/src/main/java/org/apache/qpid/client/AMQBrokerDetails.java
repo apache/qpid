@@ -308,7 +308,7 @@ public class AMQBrokerDetails implements BrokerDetails
             }
         }
 
-        //remove the extra DEFAULT_OPTION_SEPERATOR or the '?' if there are no options
+        //removeKey the extra DEFAULT_OPTION_SEPERATOR or the '?' if there are no options
         optionsURL.deleteCharAt(optionsURL.length() - 1);
 
         return optionsURL.toString();
@@ -334,4 +334,15 @@ public class AMQBrokerDetails implements BrokerDetails
     }
 
 
+    public static String checkTransport(String broker)
+    {
+        if ((!broker.contains("://")))
+        {
+            return "tcp://" + broker;
+        }
+        else
+        {
+            return broker;
+        }
+    }
 }

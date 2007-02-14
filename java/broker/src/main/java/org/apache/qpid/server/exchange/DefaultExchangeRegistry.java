@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,7 +36,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     /**
      * Maps from exchange name to exchange instance
      */
-    private ConcurrentMap<String, Exchange> _exchangeMap = new ConcurrentHashMap<String, Exchange>();
+    private ConcurrentMap<AMQShortString, Exchange> _exchangeMap = new ConcurrentHashMap<AMQShortString, Exchange>();
 
     private Exchange _defaultExchange;
 
@@ -66,7 +67,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _defaultExchange = exchange;
     }
 
-    public void unregisterExchange(String name, boolean inUse) throws AMQException
+    public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
     {
         // TODO: check inUse argument
         Exchange e = _exchangeMap.remove(name);
@@ -80,7 +81,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
-    public Exchange getExchange(String name)
+    public Exchange getExchange(AMQShortString name)
     {
 
         if(name == null || name.length() == 0)
@@ -101,7 +102,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      */
     public void routeContent(AMQMessage payload) throws AMQException
     {
-        final String exchange = payload.getTransferBody().destination;
+        final AMQShortString exchange = payload.getTransferBody().destination;
         final Exchange exch = getExchange(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
         // the JmsPublish being received (where the exchange is validated) and the final

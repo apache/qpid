@@ -24,7 +24,11 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,6 +37,7 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -49,6 +54,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      * Holds any queued messages
      */
     private final Queue<AMQMessage> _messages = new ConcurrentLinkedQueueAtomicSize<AMQMessage>();
+
+    private final ReentrantLock _messageAccessLock = new ReentrantLock();
+
     //private int _messageCount;
     /**
      * Ensures that only one asynchronous task is running for this manager at
@@ -75,6 +83,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      * Lock is used to control access to hasQueuedMessages() and over the addition of messages to the queue.
      */
     private ReentrantLock _lock = new ReentrantLock();
+    private AtomicLong _totalMessageSize = new AtomicLong();
 
 
     ConcurrentSelectorDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
@@ -99,15 +108,17 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         // XXX
         /*if (compressBufferOnQueue)
         {
-            Iterator it = msg.getContentBodies().iterator();
+            Iterator<ContentBody> it = msg.getContentBodyIterator();
             while (it.hasNext())
             {
-                ContentBody cb = (ContentBody) it.next();
+                ContentBody cb = it.next();
                 cb.reduceBufferToFit();
             }
             }*/
 
         _messages.offer(msg);
+
+        _totalMessageSize.addAndGet(msg.getSize());
 
         return true;
     }
@@ -143,6 +154,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
 
+
+    public long getTotalMessageSize()
+    {
+        return _totalMessageSize.get();
+    }
+
+
     public synchronized List<AMQMessage> getMessages()
     {
         return new ArrayList<AMQMessage>(_messages);
@@ -167,34 +185,101 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public synchronized void removeAMessageFromTop() throws AMQException
+    public boolean performGet(AMQProtocolSession protocolSession, AMQChannel channel, boolean acks) throws AMQException
+    {
+        AMQMessage msg = getNextMessage();
+        if(msg == null)
+        {
+            return false;
+        }
+        else
+        {
+
+            try
+            {
+                // if we do not need to wait for client acknowledgements
+                // we can decrement the reference count immediately.
+
+                // By doing this _before_ the send we ensure that it
+                // doesn't get sent if it can't be dequeued, preventing
+                // duplicate delivery on recovery.
+
+                // The send may of course still fail, in which case, as
+                // the message is unacked, it will be lost.
+                if (!acks)
+                {
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                    }
+                    _queue.dequeue(channel.getStoreContext(), msg);
+                }
+                synchronized(channel)
+                {
+                    long deliveryTag = channel.getNextDeliveryTag();
+
+                    if (acks)
+                    {
+                        channel.addUnacknowledgedMessage(msg, deliveryTag, null, _queue);
+                    }
+
+                    msg.writeGetOk(protocolSession, channel.getChannelId(), deliveryTag, _queue.getMessageCount());
+                    _totalMessageSize.addAndGet(-msg.getSize());
+                }
+            }
+            finally
+            {
+                msg.setDeliveredToConsumer();
+            }
+            return true;
+
+        }
+    }
+
+
+    public synchronized void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         AMQMessage msg = poll();
         if (msg != null)
         {
-            msg.dequeue(_queue);
-        }
+            msg.dequeue(storeContext, _queue);
+            _totalMessageSize.getAndAdd(-msg.getSize());
+        }        
     }
 
-    public synchronized long clearAllMessages() throws AMQException
+//    public synchronized long clearAllMessages() throws AMQException
+    public synchronized long clearAllMessages(StoreContext storeContext) throws AMQException
     {
         long count = 0;
         AMQMessage msg = poll();
         while (msg != null)
         {
-            msg.dequeue(_queue);
+            msg.dequeue(storeContext, _queue);
+            count++;
+            _totalMessageSize.set(0L);
             count++;
             msg = poll();
+
         }
         return count;
     }
 
+    public synchronized AMQMessage getNextMessage() throws AMQException
+    {
+        return getNextMessage(_messages);
+    }
 
-    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub)
+
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages)
+    {
+        return getNextMessage(messages, false);
+    }
+
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages, boolean browsing)
     {
         AMQMessage message = messages.peek();
 
-        while (message != null && (sub.isBrowser() || message.taken()))
+        while (message != null && (browsing || message.taken()))
         {
             //remove the already taken message
             messages.poll();
@@ -209,7 +294,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         AMQMessage message = null;
         try
         {
-            message = getNextMessage(messageQueue, sub);
+            message = getNextMessage(messageQueue, sub.isBrowser());
 
             // message will be null if we have no messages in the messageQueue.
             if (message == null)
@@ -225,8 +310,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             //remove sent message from our queue.
             messageQueue.poll();
+            _totalMessageSize.addAndGet(-message.getSize());
         }
-        catch (FailedDequeueException e)
+        catch (AMQException e)
         {
             message.release();
             _log.error("Unable to deliver message as dequeue failed: " + e, e);
@@ -282,12 +368,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return _messages.poll();
     }
 
-    public void deliver(String name, AMQMessage msg) throws FailedDequeueException
+    public void deliver(StoreContext context, AMQShortString name, AMQMessage msg) throws AMQException
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug(id() + "deliver :" + System.identityHashCode(msg));
+            _log.debug(id() + "deliver :" + msg);
         }
+        msg.release();
 
         //Check if we have someone to deliver the message to.
         _lock.lock();
@@ -299,7 +386,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(id() + "Testing Message(" + System.identityHashCode(msg) + ") for Queued Delivery");
+                    _log.debug(id() + "Testing Message(" + msg + ") for Queued Delivery");
                 }
                 if (!msg.isImmediate())
                 {
@@ -311,7 +398,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     //Pre Deliver to all subscriptions
                     if (_log.isDebugEnabled())
                     {
-                        _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() + 
+                        _log.debug(id() + "We have " + _subscriptions.getSubscriptions().size() +
                                    " subscribers to give the message to.");
                     }
                     for (Subscription sub : _subscriptions.getSubscriptions())
@@ -333,7 +420,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         {
                             if (_log.isDebugEnabled())
                             {
-                                _log.debug(id() + "Queuing message(" + System.identityHashCode(msg) + 
+                                _log.debug(id() + "Queuing message(" + System.identityHashCode(msg) +
                                            ") for PreDelivery for subscriber(" + System.identityHashCode(sub) + ")");
                             }
                             sub.enqueueForPreDelivery(msg);
@@ -348,7 +435,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" + 
+                    _log.debug(id() + "Delivering Message:" + System.identityHashCode(msg) + " to(" +
                                System.identityHashCode(s) + ") :" + s);
                 }
                 //Deliver the message

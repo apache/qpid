@@ -28,10 +28,12 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.Content;
+import org.apache.qpid.framing.AMQShortString;
 
 public class MessageFactoryRegistry
 {
-    private final Map _mimeToFactoryMap = new HashMap();
+    private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
+    private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap = new HashMap<AMQShortString, MessageFactory>();
 
     public void registerFactory(String mimeType, MessageFactory mf)
     {
@@ -39,12 +41,14 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Message factory must not be null");
         }
-        _mimeToFactoryMap.put(mimeType, mf);
+        _mimeStringToFactoryMap.put(mimeType, mf);
+        _mimeShortStringToFactoryMap.put(new AMQShortString(mimeType), mf);
     }
 
     public MessageFactory deregisterFactory(String mimeType)
     {
-        return (MessageFactory) _mimeToFactoryMap.remove(mimeType);
+        _mimeShortStringToFactoryMap.remove(new AMQShortString(mimeType));
+        return _mimeStringToFactoryMap.remove(mimeType);
     }
 
     /**
@@ -62,7 +66,7 @@ public class MessageFactoryRegistry
                                             MessageHeaders contentHeader,
                                             List contents) throws AMQException, JMSException
     {
-        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(contentHeader.getContentType());
+        MessageFactory mf =  _mimeShortStringToFactoryMap.get(contentHeader.getContentType());
         if (mf == null)
         {
             throw new AMQException("Unsupport MIME type of " + contentHeader.getContentType());
@@ -79,7 +83,7 @@ public class MessageFactoryRegistry
         {
             throw new IllegalArgumentException("Mime type must not be null");
         }
-        MessageFactory mf = (MessageFactory) _mimeToFactoryMap.get(mimeType);
+        MessageFactory mf = _mimeStringToFactoryMap.get(mimeType);
         if (mf == null)
         {
             throw new AMQException("Unsupport MIME type of " + mimeType);
@@ -100,7 +104,7 @@ public class MessageFactoryRegistry
         mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
         mf.registerFactory("text/plain", new JMSTextMessageFactory());
         mf.registerFactory("text/xml", new JMSTextMessageFactory());
-        mf.registerFactory("application/octet-stream", new JMSBytesMessageFactory());
+        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
         mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
         mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
         mf.registerFactory(null, new JMSBytesMessageFactory());

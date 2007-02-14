@@ -21,14 +21,18 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageRejectBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.MessageRejectBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+//import org.apache.log4j.Logger;
 
 public class MessageRejectMethodHandler implements StateAwareMethodListener
 {
+    //private static final Logger _logger = Logger.getLogger(MessageRejectMethodHandler.class);
+
     private static MessageRejectMethodHandler _instance = new MessageRejectMethodHandler();
 
     public static MessageRejectMethodHandler getInstance()
@@ -37,12 +41,8 @@ public class MessageRejectMethodHandler implements StateAwareMethodListener
     }
 
     private MessageRejectMethodHandler() {}
-    
-    
-    public void methodReceived (AMQStateManager stateManager,
-                                AMQProtocolSession protocolSession,
-                               	AMQMethodEvent evt)
-                                throws AMQException
+
+    public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
 		// TODO
     }

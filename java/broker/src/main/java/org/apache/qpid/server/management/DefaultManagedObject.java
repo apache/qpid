@@ -67,7 +67,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         try
         {
-            ApplicationRegistry.getInstance().getManagedObjectRegistry().registerObject(this);
+            getManagedObjectRegistry().registerObject(this);
         }
         catch (JMException e)
         {
@@ -75,11 +75,16 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         }
     }
 
+    protected ManagedObjectRegistry getManagedObjectRegistry()
+    {
+        return ApplicationRegistry.getInstance().getManagedObjectRegistry();
+    }
+
     public void unregister() throws AMQException
     {
         try
         {
-            ApplicationRegistry.getInstance().getManagedObjectRegistry().unregisterObject(this);
+            getManagedObjectRegistry().unregisterObject(this);
         }
         catch (JMException e)
         {
@@ -91,14 +96,14 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         return getObjectInstanceName() + "[" + getType() + "]";
     }
+    
 
     /**
      * Created the ObjectName as per the JMX Specs
      * @return ObjectName
      * @throws MalformedObjectNameException
      */
-    public ObjectName getObjectName()
-        throws MalformedObjectNameException
+    public ObjectName getObjectName() throws MalformedObjectNameException
     {
         String name = getObjectInstanceName();
         StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
@@ -113,26 +118,41 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         return new ObjectName(objectName.toString());
     }
 
-    private String getHierarchicalType(ManagedObject obj)
+    protected ObjectName getObjectNameForSingleInstanceMBean() throws MalformedObjectNameException
     {
-        String parentType = null;
+        StringBuffer objectName = new StringBuffer(ManagedObject.DOMAIN);
+
+        objectName.append(":type=");
+        objectName.append(getHierarchicalType(this));
+
+        String hierarchyName = getHierarchicalName(this);
+        if (hierarchyName != null)
+        {
+            objectName.append(",");
+            objectName.append(hierarchyName.substring(0, hierarchyName.lastIndexOf(",")));
+        }
+
+        return new ObjectName(objectName.toString());
+    }
+
+    protected String getHierarchicalType(ManagedObject obj)
+    {
         if (obj.getParentObject() != null)
         {
-            parentType = getHierarchicalType(obj.getParentObject()).toString();
+            String parentType = getHierarchicalType(obj.getParentObject()).toString();
             return parentType + "." + obj.getType();
         }
         else
             return obj.getType();
     }
 
-    private String getHierarchicalName(ManagedObject obj)
+    protected String getHierarchicalName(ManagedObject obj)
     {
-        String parentName = null;
         if (obj.getParentObject() != null)
         {
-            parentName = obj.getParentObject().getType() + "=" +
-                         obj.getParentObject().getObjectInstanceName() + ","+
-                         getHierarchicalName(obj.getParentObject());
+            String parentName = obj.getParentObject().getType() + "=" +
+                                obj.getParentObject().getObjectInstanceName() + ","+
+                                getHierarchicalName(obj.getParentObject());
 
             return parentName;
         }

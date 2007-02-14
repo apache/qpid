@@ -43,7 +43,7 @@ public class ResponseManager
      * to be known.
      */
     private boolean serverFlag;
-    private int connectionId;
+    private long connectionId;
 
     private int maxAccumulatedResponses = 20; // Default
 //    private Class currentResponseMethodBodyClass;
@@ -80,11 +80,18 @@ public class ResponseManager
         {
             return (int)(requestId - o.requestId);
         }
+        
+        public String toString()
+        {
+            return requestId + ":" + (responseMethodBody == null ?
+                "null" :
+                "C" + responseMethodBody.getClazz() + " M" + responseMethodBody.getMethod());
+        }
     }
 
     private ConcurrentHashMap<Long, ResponseStatus> responseMap;
 
-    public ResponseManager(int connectionId, int channel, AMQMethodListener methodListener,
+    public ResponseManager(long connectionId, int channel, AMQMethodListener methodListener,
         AMQProtocolWriter protocolWriter, boolean serverFlag)
     {
         this.channel = channel;

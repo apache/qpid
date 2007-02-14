@@ -23,8 +23,11 @@ package org.apache.qpid.test.unit.transacted;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.mina.util.SessionLog;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
@@ -54,10 +57,11 @@ public class TransactedTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        queue1 = new AMQQueue("Q1", "Q1", false, true);
+        TransportConnection.createVMBroker(1);
+        queue1 = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
         queue2 = new AMQQueue("Q2", false);
 
-        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "/test");
+        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
         session = con.createSession(true, 0);
         consumer1 = session.createConsumer(queue1);
         //Dummy just to create the queue. 
@@ -66,16 +70,26 @@ public class TransactedTest extends TestCase
         producer2 = session.createProducer(queue2);
         con.start();
 
-        prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "/test");
+        prepCon = new AMQConnection("vm://:1", "guest", "guest", "PrepConnection", "test");
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
+
+//         //add some messages
+//         prepProducer1.send(prepSession.createTextMessage("A"));
+//         prepProducer1.send(prepSession.createTextMessage("B"));
+//         prepProducer1.send(prepSession.createTextMessage("C"));
+// 
+//         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+//         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+//         testConsumer2 = testSession.createConsumer(queue2);
     }
 
     protected void tearDown() throws Exception
     {
         con.close();
         prepCon.close();
+        TransportConnection.killAllVMBrokers();
         super.tearDown();
     }
 
@@ -96,9 +110,9 @@ public class TransactedTest extends TestCase
 
         //commit
         session.commit();
-
+        testCon.start();
         //ensure sent messages can be received and received messages are gone
-        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
@@ -108,6 +122,7 @@ public class TransactedTest extends TestCase
         expect("Y", testConsumer2.receive(1000));
         expect("Z", testConsumer2.receive(1000));
 
+        testConsumer1 = testSession.createConsumer(queue1);
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
         testCon.close();
@@ -141,11 +156,12 @@ public class TransactedTest extends TestCase
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
-
+        testCon.start();
+        testConsumer1 = testSession.createConsumer(queue1);
         //commit
         session.commit();
 
-        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
+        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
         testConsumer2 = testSession.createConsumer(queue2);
@@ -164,7 +180,7 @@ public class TransactedTest extends TestCase
 
     public void testResendsMsgsAfterSessionClose() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue3 = new AMQQueue("Q3", false);
@@ -172,7 +188,7 @@ public class TransactedTest extends TestCase
         //force synch to ensure the consumer has resulted in a bound queue
         ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(true, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue3);
 
@@ -234,6 +250,7 @@ public class TransactedTest extends TestCase
 
         con.close();
         con2.close();
+
     }
     
     // This checks that queue Q1 is in fact empty and does not have any stray
@@ -251,6 +268,6 @@ public class TransactedTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(TransactedTest.class));
+        return new junit.framework.TestSuite(TransactedTest.class);
     }
 }

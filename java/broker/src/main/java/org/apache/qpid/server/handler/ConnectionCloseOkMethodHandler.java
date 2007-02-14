@@ -23,12 +23,10 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.state.AMQState;
+
 import org.apache.log4j.Logger;
 
 public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<ConnectionCloseOkBody>
@@ -42,14 +40,12 @@ public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<
         return _instance;
     }
 
-    private ConnectionCloseOkMethodHandler()
-    {
-    }
+    private ConnectionCloseOkMethodHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ConnectionCloseOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionCloseOkBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         _logger.info("Received Connection-close-ok");
-        protocolSession.closeSession();
+        session.closeSession();
     }
 }

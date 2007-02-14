@@ -83,7 +83,7 @@ public class Main extends org.apache.qpid.server.Main
             // implementation provided by MINA
             if (connectorConfig.enableExecutorPool)
             {
-                sconfig.setThreadModel(new ReadWriteThreadModel());
+                sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
             }
 
             String host = InetAddress.getLocalHost().getHostName();

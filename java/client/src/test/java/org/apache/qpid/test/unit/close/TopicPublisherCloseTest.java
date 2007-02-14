@@ -51,7 +51,7 @@ public class TopicPublisherCloseTest extends TestCase
 
     public void testAllMethodsThrowAfterConnectionClose() throws Exception
     {
-        AMQConnection connection = new AMQConnection(_connectionString, "guest", "guest", "Client", "/test_path");
+        AMQConnection connection = new AMQConnection(_connectionString, "guest", "guest", "Client", "test");
 
         Topic destination1 = new AMQTopic("t1");
         TopicSession session1 = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);

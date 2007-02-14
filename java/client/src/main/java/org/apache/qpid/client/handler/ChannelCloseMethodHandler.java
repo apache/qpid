@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
@@ -29,12 +28,14 @@ import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
+
+import org.apache.log4j.Logger;
 
 public class ChannelCloseMethodHandler implements StateAwareMethodListener
 {
@@ -46,24 +47,27 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
     {
         return _handler;
     }
+    
+    private ChannelCloseMethodHandler() {}
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("ChannelClose method received");
-        ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
+        final ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
         int errorCode = method.replyCode;
-        String reason = method.replyText;
+        String reason = method.replyText.asString();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        AMQMethodBody methodBody = ChannelCloseOkBody.createMethodBody((byte)0, (byte)9);
+        AMQMethodBody methodBody = ChannelCloseOkBody.createMethodBody(
+            protocolSession.getProtocolMajorVersion(),  // AMQP major version
+            protocolSession.getProtocolMinorVersion()); // AMQP minor version
         protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
+
         if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
         {
             _logger.error("Channel close received with errorCode " + errorCode + ", and reason " + reason);
@@ -79,13 +83,12 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             {
                 _logger.info("Broker responded with Invalid Selector.");
 
-                throw new AMQInvalidSelectorException(reason);
+                throw new AMQInvalidSelectorException(String.valueOf(reason));
             }
             else
             {
                 throw new AMQChannelClosedException(errorCode, "Error: " + reason);
             }
-
         }
         protocolSession.channelClosed(evt.getChannelId(), errorCode, reason);
     }

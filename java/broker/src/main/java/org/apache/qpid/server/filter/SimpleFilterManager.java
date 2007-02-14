@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.server.filter;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.AMQException;
 
-import javax.jms.JMSException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SimpleFilterManager implements FilterManager
 {
-    private final Logger _logger = LoggerFactory.getLogger(SimpleFilterManager.class);
+    private final Logger _logger = Logger.getLogger(SimpleFilterManager.class);
 
     private final ConcurrentLinkedQueue<MessageFilter> _filters;
 
@@ -60,10 +59,10 @@ public class SimpleFilterManager implements FilterManager
                     return false;
                 }
             }
-            catch (JMSException e)
+            catch (AMQException e)
             {
                 //fixme
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();  
                 return false;
             }
         }

@@ -32,12 +32,15 @@ public class Constants
     public final static String ITEM_TYPE  = "type";
     public final static String SERVER     = "server";
     public final static String DOMAIN     = "domain";
-    public final static String TYPE       = "mbeantype";
+    public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
+    // currently used only for virtual host instances, but will work as general also
+    public final static String TYPE_INSTANCE = "mbeantype_instance";
     public final static String MBEAN      = "mbean";
     public final static String ATTRIBUTE = "Attribute";
     public final static String ATTRIBUTES = "Attributes";
     public final static String NOTIFICATION = "Notifications";
     public final static String RESULT = "Result";
+    public final static String VIRTUAL_HOST = "VirtualHost";
     
     public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth"; 
     

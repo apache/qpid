@@ -22,15 +22,19 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageAppendBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageAppendHandler implements StateAwareMethodListener<MessageAppendBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageAppendHandler.class);
+
     private static MessageAppendHandler _instance = new MessageAppendHandler();
 
     public static MessageAppendHandler getInstance()
@@ -40,12 +44,14 @@ public class MessageAppendHandler implements StateAwareMethodListener<MessageApp
 
     private MessageAppendHandler() {}
     
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageAppendBody> evt)
-                                throws AMQException
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageAppendBody> evt) throws AMQException
     {
-		// TODO
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+        channel.addMessageAppend(evt.getMethod());
+        session.writeResponse(evt, MessageOkBody.createMethodBody(
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion())); // AMQP minor version
     }
 }
 

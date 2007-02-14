@@ -56,7 +56,7 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public Enumeration getJMSXPropertyNames() throws JMSException
     {
-        return CustomJMXProperty.asEnumeration();
+        return CustomJMSXProperty.asEnumeration();
     }
 
     public int getProviderMajorVersion() throws JMSException

@@ -20,18 +20,16 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageRecoverBody;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+
+import org.apache.log4j.Logger;
 
 public class MessageRecoverHandler implements StateAwareMethodListener<MessageRecoverBody>
 {
@@ -46,24 +44,28 @@ public class MessageRecoverHandler implements StateAwareMethodListener<MessageRe
 
     private MessageRecoverHandler() {}
 
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageRecoverBody> evt)
-                                throws AMQException
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageRecoverBody> evt) throws AMQException
     {
-        _logger.debug("Recover received on protocol session " + protocolSession + " and channel " + evt.getChannelId());
-        AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+        _logger.debug("Recover received on protocol session " + session + " and channel " + evt.getChannelId());
         if (channel == null)
         {
             throw new AMQException("Unknown channel " + evt.getChannelId());
         }
         MessageRecoverBody body = evt.getMethod();
-        if (body.requeue) {
+        if (body.requeue)
+        {
             channel.requeue();
-        } else {
-            channel.resend(protocolSession);
         }
-        MessageOkBody response = MessageOkBody.createMethodBody(protocolSession.getMajor(), protocolSession.getMinor());
-        protocolSession.writeResponse(evt, response);
+        else
+        {
+            channel.resend(session, false);
+        }
+        MessageOkBody response = MessageOkBody.createMethodBody(
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion()); // AMQP minor version
+        session.writeResponse(evt, response);
     }
 }
 

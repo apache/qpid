@@ -48,7 +48,7 @@ public class ReceiveTest extends TestCase
         {
             createVMBroker();
             String broker = _connectionString;
-            init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "/test_path"));
+            init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "test"));
         }
     }
 

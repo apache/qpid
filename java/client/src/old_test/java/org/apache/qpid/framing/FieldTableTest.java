@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.framing;
 
+import junit.framework.TestCase;
 import org.apache.mina.common.ByteBuffer;
 
 import java.io.BufferedReader;
@@ -28,8 +29,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Enumeration;
 import java.util.Properties;
-
-import junit.framework.TestCase;
 
 public class FieldTableTest extends TestCase
 {
@@ -40,17 +39,17 @@ public class FieldTableTest extends TestCase
 
         String key = "String";
         String value = "Hello";
-        table.put(key, value);
+        table.setString(key, value);
 
         //Add one for the type encoding
         int size = EncodingUtils.encodedShortStringLength(key) + 1 +
                    EncodingUtils.encodedLongStringLength(value);
 
         assertEquals(table.getEncodedSize(), size);
-        
+
         key = "Integer";
         Integer number = new Integer(60);
-        table.put(key, number);
+        table.setInteger(key, number);
 
         //Add one for the type encoding
         size += EncodingUtils.encodedShortStringLength(key) + 1 + 4;
@@ -87,22 +86,22 @@ public class FieldTableTest extends TestCase
         doTestEncoding(load("FieldTableTest2.properties"));
     }
     */
-    void doTestEncoding(FieldTable table) throws AMQFrameDecodingException
+    void doTestEncoding(FieldTable table) throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         assertEquivalent(table, encodeThenDecode(table));
     }
 
     public void assertEquivalent(FieldTable table1, FieldTable table2)
     {
-        for (Object o : table1.keySet())
+        for (String  key : table1.keys())
         {
-            String key = (String) o;
-            assertEquals("Values for " + key + " did not match", table1.get(key), table2.get(key));
+
+            assertEquals("Values for " + key + " did not match", table1.getObject(key), table2.getObject(key));
             //System.out.println("Values for " + key + " matched (" + table1.get(key) + ")");
         }
     }
 
-    FieldTable encodeThenDecode(FieldTable table) throws AMQFrameDecodingException
+    FieldTable encodeThenDecode(FieldTable table) throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         ContentHeaderBody header = new ContentHeaderBody();
         header.classId = 6;
@@ -153,11 +152,11 @@ public class FieldTableTest extends TestCase
             try
             {
                 int ival = Integer.parseInt(value);
-                table.put(key, (long) ival);
+                table.setLong(key, (long) ival);
             }
             catch (NumberFormatException e)
             {
-                table.put(key, value);
+                table.setObject(key, value);
             }
         }
         return table;

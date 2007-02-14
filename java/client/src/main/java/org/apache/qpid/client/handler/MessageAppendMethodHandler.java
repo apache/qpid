@@ -20,18 +20,20 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageAppendBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.MessageAppendBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+import org.apache.log4j.Logger;
 
 public class MessageAppendMethodHandler implements StateAwareMethodListener
 {
-    private static MessageAppendMethodHandler _instance = new MessageAppendMethodHandler();
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+
+    private static MessageAppendMethodHandler _instance = new MessageAppendMethodHandler();
 
     public static MessageAppendMethodHandler getInstance()
     {
@@ -39,16 +41,15 @@ public class MessageAppendMethodHandler implements StateAwareMethodListener
     }
 
     private MessageAppendMethodHandler() {}
-    
-    
-    public void methodReceived (AMQStateManager stateManager,
-                                AMQProtocolSession protocolSession,
-                               	AMQMethodEvent evt)
-                                throws AMQException
+
+    public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
-    	try {
+    	try
+        {
 			protocolSession.messageAppendBodyReceived((MessageAppendBody)evt.getMethod());
-		} catch (Exception e) {
+		}
+        catch (Exception e)
+        {
 			_logger.error("Unable to add data from MessageAppendBody",e); 
 		}
     }

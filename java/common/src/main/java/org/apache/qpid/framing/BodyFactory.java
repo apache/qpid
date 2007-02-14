@@ -21,11 +21,12 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
  * Any class that is capable of turning a stream of bytes into an AMQ structure must implement this interface.
  */
 public interface BodyFactory
 {
-    AMQBody createBody(ByteBuffer in) throws AMQFrameDecodingException;
+    AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException;
 }

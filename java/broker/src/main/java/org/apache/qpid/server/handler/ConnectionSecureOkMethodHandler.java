@@ -21,19 +21,22 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionSecureOkBody;
+import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.HeartbeatConfig;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import org.apache.log4j.Logger;
 
 import javax.security.sasl.SaslServer;
@@ -50,35 +53,34 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    private ConnectionSecureOkMethodHandler()
-    {
-    }
+    private ConnectionSecureOkMethodHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ConnectionSecureOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionSecureOkBody> evt) throws AMQException
     {
-        ConnectionSecureOkBody body = evt.getMethod();
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final ConnectionSecureOkBody body = evt.getMethod();
 
         AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
-        SaslServer ss = protocolSession.getSaslServer();
+        SaslServer ss = session.getSaslServer();
         if (ss == null)
         {
             throw new AMQException("No SASL context set up in session");
         }
 
         AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
-        AMQStateManager stateManager = protocolSession.getStateManager();
-        byte major = protocolSession.getMajor();
-        byte minor = protocolSession.getMinor();
+        byte major = session.getProtocolMajorVersion();
+        byte minor = session.getProtocolMinorVersion();
         switch (authResult.status)
         {
             case ERROR:
                 // Can't do this as we violate protocol. Need to send Close
                 // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
                 _logger.info("Authentication failed");
-                disposeSaslServer(protocolSession);
-                protocolSession.closeSessionRequest(AMQConstant.NOT_ALLOWED.getCode(),
+                stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                // Be aware of possible changes to parameter order as versions change.
+                session.closeSessionRequest(AMQConstant.NOT_ALLOWED.getCode(),
                     AMQConstant.NOT_ALLOWED.getName(), body.getClazz(), body.getMethod());
+                disposeSaslServer(session);
                 break;
             case SUCCESS:
                 _logger.info("Connected as: " + ss.getAuthorizationID());
@@ -92,8 +94,8 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                     Integer.MAX_VALUE,	// channelMax
                     ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
                     HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                protocolSession.writeResponse(evt, tune);
-                disposeSaslServer(protocolSession);
+                session.writeResponse(evt, tune);
+                disposeSaslServer(session);
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
@@ -101,7 +103,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 AMQMethodBody challenge = ConnectionSecureBody.createMethodBody(
                     major, minor,	// AMQP version (major, minor)
                     authResult.challenge);	// challenge
-                protocolSession.writeResponse(evt, challenge);
+                session.writeResponse(evt, challenge);
         }
     }
 

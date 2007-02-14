@@ -55,7 +55,7 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
     {
         try
         {
-            _groupMgr.send(_peer, new SimpleSendable(msg.getPayload()));
+            _groupMgr.send(_peer, new SimpleSendable(msg));
         }
         catch (AMQException e)
         {
@@ -134,11 +134,12 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
 
     public boolean isBrowser()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
-    public void sendNextMessage(AMQQueue queue)
+    public boolean wouldSuspend(AMQMessage msg)
     {
-
+        return _suspended;
     }
+
 }

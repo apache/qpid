@@ -54,7 +54,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "/test_path");
+        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "test");
         destination = new AMQQueue(randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 
@@ -101,6 +101,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             fail("This Test should succeed but failed due to: " + e);
         }
         finally
@@ -236,7 +237,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        received++;
+
         try
         {
             if (message instanceof ObjectMessage)
@@ -255,13 +256,11 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             items.add(e);
         }
 
-        if (waiting)
-        {
             synchronized(this)
             {
+                received++;
                 notify();
             }
-        }
     }
 
 

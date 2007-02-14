@@ -26,6 +26,7 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.AMQConnectionFailureException;
 
 import javax.jms.Connection;
 
@@ -47,14 +48,15 @@ public class ConnectionTest extends TestCase
 
     protected void tearDown() throws Exception
     {
-        TransportConnection.killAllVMBrokers();
+        TransportConnection.killVMBroker(1);
     }
 
     public void testSimpleConnection()
     {
         try
         {
-            new AMQConnection(_broker, "guest", "guest", "fred", "/test");
+            AMQConnection conn  = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            conn.close();
         }
         catch (Exception e)
         {
@@ -93,6 +95,7 @@ public class ConnectionTest extends TestCase
                 fail("Correct exception not thrown. Excpected 'AMQConnectionFailureException' got: " + amqe);
             }
         }
+
     }
 
     public void testUnresolvedHostFailure() throws Exception
@@ -114,7 +117,7 @@ public class ConnectionTest extends TestCase
     public void testClientIdCannotBeChanged() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
-                                                  "fred", "/test");
+                                                  "fred", "test");
         try
         {
             connection.setClientID("someClientId");
@@ -129,7 +132,7 @@ public class ConnectionTest extends TestCase
     public void testClientIdIsPopulatedAutomatically() throws Exception
     {
         Connection connection = new AMQConnection(_broker, "guest", "guest",
-                                                  null, "/test");
+                                                  null, "test");
         assertNotNull(connection.getClientID());
     }
 

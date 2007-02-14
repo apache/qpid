@@ -23,6 +23,7 @@ package org.apache.qpid.server.cluster.replay;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.QueueBindBody;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,11 +59,11 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
 
     private final Map<Class<? extends AMQMethodBody>, MethodRecorder> _globalRecorders = new HashMap<Class<? extends AMQMethodBody>, MethodRecorder>();
     private final Map<Class<? extends AMQMethodBody>, MethodRecorder> _localRecorders = new HashMap<Class<? extends AMQMethodBody>, MethodRecorder>();
-    private final Map<String, QueueDeclareBody> _sharedQueues = new ConcurrentHashMap<String, QueueDeclareBody>();
-    private final Map<String, QueueDeclareBody> _privateQueues = new ConcurrentHashMap<String, QueueDeclareBody>();
-    private final Bindings<String, String, QueueBindBody> _sharedBindings = new Bindings<String, String, QueueBindBody>();
-    private final Bindings<String, String, QueueBindBody> _privateBindings = new Bindings<String, String, QueueBindBody>();
-    private final Map<String, ExchangeDeclareBody> _exchanges = new ConcurrentHashMap<String, ExchangeDeclareBody>();
+    private final Map<AMQShortString, QueueDeclareBody> _sharedQueues = new ConcurrentHashMap<AMQShortString, QueueDeclareBody>();
+    private final Map<AMQShortString, QueueDeclareBody> _privateQueues = new ConcurrentHashMap<AMQShortString, QueueDeclareBody>();
+    private final Bindings<AMQShortString, AMQShortString, QueueBindBody> _sharedBindings = new Bindings<AMQShortString, AMQShortString, QueueBindBody>();
+    private final Bindings<AMQShortString, AMQShortString, QueueBindBody> _privateBindings = new Bindings<AMQShortString, AMQShortString, QueueBindBody>();
+    private final Map<AMQShortString, ExchangeDeclareBody> _exchanges = new ConcurrentHashMap<AMQShortString, ExchangeDeclareBody>();
     private final ConsumerCounts _consumers = new ConsumerCounts();
 
     public ReplayStore()
@@ -81,8 +83,11 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _localRecorders.put(ExchangeDeleteBody.class, new ExchangeDeleteRecorder());
     }
 
-    public void methodReceived(AMQProtocolSession session, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
+
         _logger.debug(new LogMessage("Replay store received {0}", evt.getMethod()));
         AMQMethodBody request = evt.getMethod();
 
@@ -126,7 +131,7 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         _consumers.replay(methods);
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        methods.add(new ClusterSynchBody((byte)0, (byte)9));
+        methods.add(new ClusterSynchBody((byte)0, (byte)9, ClusterSynchBody.getClazz((byte)0, (byte)9), ClusterSynchBody.getMethod((byte)0, (byte)9)));
         return methods;
     }
 
@@ -204,15 +209,15 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
     private static class QueueDeclareRecorder extends ChainedMethodRecorder<QueueDeclareBody>
     {
         private final boolean _exclusive;
-        private final Map<String, QueueDeclareBody> _queues;
+        private final Map<AMQShortString, QueueDeclareBody> _queues;
 
-        QueueDeclareRecorder(boolean exclusive, Map<String, QueueDeclareBody> queues)
+        QueueDeclareRecorder(boolean exclusive, Map<AMQShortString, QueueDeclareBody> queues)
         {
             _queues = queues;
             _exclusive = exclusive;
         }
 
-        QueueDeclareRecorder(boolean exclusive, Map<String, QueueDeclareBody> queues, QueueDeclareRecorder recorder)
+        QueueDeclareRecorder(boolean exclusive, Map<AMQShortString, QueueDeclareBody> queues, QueueDeclareRecorder recorder)
         {
             super(recorder);
             _queues = queues;
@@ -236,15 +241,15 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
 
     private class QueueDeleteRecorder extends ChainedMethodRecorder<QueueDeleteBody>
     {
-        private final Map<String, QueueDeclareBody> _queues;
-        private final Bindings<String, String, QueueBindBody> _bindings;
+        private final Map<AMQShortString, QueueDeclareBody> _queues;
+        private final Bindings<AMQShortString, AMQShortString, QueueBindBody> _bindings;
 
-        QueueDeleteRecorder(Map<String, QueueDeclareBody> queues, Bindings<String, String, QueueBindBody> bindings)
+        QueueDeleteRecorder(Map<AMQShortString, QueueDeclareBody> queues, Bindings<AMQShortString, AMQShortString, QueueBindBody> bindings)
         {
             this(queues, bindings, null);
         }
 
-        QueueDeleteRecorder(Map<String, QueueDeclareBody> queues, Bindings<String, String, QueueBindBody> bindings, QueueDeleteRecorder recorder)
+        QueueDeleteRecorder(Map<AMQShortString, QueueDeclareBody> queues, Bindings<AMQShortString, AMQShortString, QueueBindBody> bindings, QueueDeleteRecorder recorder)
         {
             super(recorder);
             _queues = queues;
@@ -267,16 +272,16 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
 
     private class QueueBindRecorder extends ChainedMethodRecorder<QueueBindBody>
     {
-        private final Map<String, QueueDeclareBody> _queues;
-        private final Bindings<String, String, QueueBindBody> _bindings;
+        private final Map<AMQShortString, QueueDeclareBody> _queues;
+        private final Bindings<AMQShortString, AMQShortString, QueueBindBody> _bindings;
 
-        QueueBindRecorder(Map<String, QueueDeclareBody> queues, Bindings<String, String, QueueBindBody> bindings)
+        QueueBindRecorder(Map<AMQShortString, QueueDeclareBody> queues, Bindings<AMQShortString, AMQShortString, QueueBindBody> bindings)
         {
             _queues = queues;
             _bindings = bindings;
         }
 
-        QueueBindRecorder(Map<String, QueueDeclareBody> queues, Bindings<String, String, QueueBindBody> bindings, QueueBindRecorder recorder)
+        QueueBindRecorder(Map<AMQShortString, QueueDeclareBody> queues, Bindings<AMQShortString, AMQShortString, QueueBindBody> bindings, QueueBindRecorder recorder)
         {
             super(recorder);
             _queues = queues;

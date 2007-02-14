@@ -31,14 +31,17 @@
       <directory>src/main/release</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
       <includes>
-    <include>DISCLAIMER</include>
+          <include>DISCLAIMER</include>
+          <include>LICENSE.txt</include>
+          <include>NOTICE.txt</include>
+          <include>README.txt</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
       <includes>
-    <include>*.txt</include>
+          <include>*.txt</include>
       </includes>
     </fileSet>
     <fileSet>
@@ -53,14 +56,14 @@
       <directory>src/main/release/docs</directory>
       <outputDirectory>qpid-${qpid.version}/docs</outputDirectory>
       <includes>
-    <include>RELEASE_NOTES.txt</include>
+          <include>RELEASE_NOTES.txt</include>
       </includes>
     </fileSet>
     <fileSet>
       <directory>target</directory>
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <includes>
-    <include>qpid-incubating.jar</include>
+          <include>qpid-incubating.jar</include>
       </includes>
     </fileSet>
   </fileSets>
@@ -71,73 +74,67 @@
       <source>../common/etc/qpid-run.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-run.conf</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>config.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/log4j.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>log4j.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/passwd</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>passwd</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/qpid-server.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-server.conf</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/virtualhosts.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>virtualhosts.xml</destName>
-      <fileMode>420</fileMode>
     </file>
     <file>
       <source>../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid-server.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server.bat</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.bat</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.bat</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/run.sh</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>run.sh</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
     <file>
       <source>../broker/bin/runAll</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>runAll</destName>
-      <fileMode>493</fileMode>
+      <fileMode>0755</fileMode>
     </file>
   </files>
   <dependencySets>

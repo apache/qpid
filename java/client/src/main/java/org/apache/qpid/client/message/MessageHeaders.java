@@ -24,6 +24,7 @@ package org.apache.qpid.client.message;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQPInvalidClassException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 
@@ -35,13 +36,13 @@ public class MessageHeaders
 {
     private static final Logger _logger = Logger.getLogger(MessageHeaders.class);
     
-    private String _contentType;
+    private AMQShortString _contentType;
 
-    private String _encoding;
+    private AMQShortString _encoding;
     
-    private String _destination;
+    private AMQShortString _destination;
     
-    private String _exchange;
+    private AMQShortString _exchange;
 
     private FieldTable _jmsHeaders;
 
@@ -49,33 +50,35 @@ public class MessageHeaders
 
     private short _priority;
 
-    private String _correlationId;
+    private AMQShortString _correlationId;
 
-    private String _replyTo;
+    private AMQShortString _replyTo;
 
     private long _expiration;
 
-    private String _messageId;
+    private AMQShortString _messageId;
 
     private long _timestamp;
 
-    private String _type;
+    private AMQShortString _type;
 
-    private String _userId;
+    private AMQShortString _userId;
 
-    private String _appId;
+    private AMQShortString _appId;
 
-    private String _transactionId;
+    private AMQShortString _transactionId;
 
-    private String _routingKey;
+    private AMQShortString _routingKey;
     
     private int _size;
     
-    public int getSize() {
+    public int getSize()
+    {
 		return _size;
 	}
 
-	public void setSize(int size) {
+	public void setSize(int size)
+    {
 		this._size = size;
 	}
 
@@ -83,29 +86,24 @@ public class MessageHeaders
     {
     }
 
-    public String getContentTypeShortString()
+    public AMQShortString getContentType()
     {
         return _contentType;
     }
 
-    public String getContentType()
+    public void setContentType(AMQShortString contentType)
     {
-        return _contentType == null ? null : _contentType.toString();
+        _contentType = contentType;
     }
 
-    public void setContentType(String contentType)
+    public AMQShortString getEncoding()
     {
-        _contentType = contentType == null ? null : new String(contentType);
+        return _encoding;
     }
 
-    public String getEncoding()
+    public void setEncoding(AMQShortString encoding)
     {
-        return _encoding == null ? null : _encoding.toString();
-    }
-
-    public void setEncoding(String encoding)
-    {
-        _encoding = encoding == null ? null : new String(encoding);
+        _encoding = encoding;
     }
 
     public FieldTable getJMSHeaders()
@@ -144,22 +142,22 @@ public class MessageHeaders
         _priority = priority;
     }
 
-    public String getCorrelationId()
+    public AMQShortString getCorrelationId()
     {
-        return _correlationId == null ? null : _correlationId.toString();
+        return _correlationId;
     }
 
-    public void setCorrelationId(String correlationId)
+    public void setCorrelationId(AMQShortString correlationId)
     {
-        _correlationId = correlationId == null ? null : new String(correlationId);
+        _correlationId = correlationId;
     }
 
-    public String getReplyTo()
+    public AMQShortString getReplyTo()
     {
-        return _replyTo == null ? null : _replyTo.toString();
+        return _replyTo;
     }
     
-    public void setReplyTo(String replyTo)
+    public void setReplyTo(AMQShortString replyTo)
     {
         _replyTo = replyTo;
     }
@@ -175,12 +173,12 @@ public class MessageHeaders
     }
 
 
-    public String getMessageId()
+    public AMQShortString getMessageId()
     {
         return _messageId;
     }
 
-    public void setMessageId(String messageId)
+    public void setMessageId(AMQShortString messageId)
     {
         _messageId = messageId;
     }
@@ -195,39 +193,39 @@ public class MessageHeaders
         _timestamp = timestamp;
     }
 
-    public String getType()
+    public AMQShortString getType()
     {
-        return _type == null ? null : _type.toString();
+        return _type;
     }
 
-    public void setType(String type)
+    public void setType(AMQShortString type)
     {
-        _type = type == null ? null : new String(type);
+        _type = type;
     }
 
-    public String getUserId()
+    public AMQShortString getUserId()
     {
-        return _userId == null ? null : _userId.toString();
+        return _userId;
     }
 
-    public void setUserId(String userId)
+    public void setUserId(AMQShortString userId)
     {
-        _userId = userId == null ? null : new String(userId);
+        _userId = userId;
     }
 
-    public String getAppId()
+    public AMQShortString getAppId()
     {
-        return _appId == null ? null : _appId.toString();
+        return _appId;
     }
 
-    public void setAppId(String appId)
+    public void setAppId(AMQShortString appId)
     {
-        _appId = appId == null ? null : new String(appId);
+        _appId = appId;
     }
 
     // MapMessage  Interface
 
-    public boolean getBoolean(String string) throws JMSException
+    public boolean getBoolean(AMQShortString string) throws JMSException
     {
         Boolean b = getJMSHeaders().getBoolean(string);
 
@@ -237,13 +235,13 @@ public class MessageHeaders
             {
                 Object str = getJMSHeaders().getObject(string);
 
-                if (str == null || !(str instanceof String))
+                if (str == null || !(str instanceof AMQShortString))
                 {
                     throw new MessageFormatException("getBoolean can't use " + string + " item.");
                 }
                 else
                 {
-                    return Boolean.valueOf((String) str);
+                    return Boolean.valueOf(((AMQShortString)str).asString());
                 }
             }
             else
@@ -255,13 +253,13 @@ public class MessageHeaders
         return b;
     }
 
-    public char getCharacter(String string) throws JMSException
+    public char getCharacter(AMQShortString string) throws JMSException
     {
         Character c = getJMSHeaders().getCharacter(string);
 
         if (c == null)
         {
-            if (getJMSHeaders().isNullStringValue(string))
+            if (getJMSHeaders().isNullStringValue(string.asString()))
             {
                 throw new NullPointerException("Cannot convert null char");
             }
@@ -276,7 +274,7 @@ public class MessageHeaders
         }
     }
 
-    public byte[] getBytes(String string) throws JMSException
+    public byte[] getBytes(AMQShortString string) throws JMSException
     {
         byte[] bs = getJMSHeaders().getBytes(string);
 
@@ -290,7 +288,7 @@ public class MessageHeaders
         }
     }
 
-    public byte getByte(String string) throws JMSException
+    public byte getByte(AMQShortString string) throws JMSException
     {
             Byte b = getJMSHeaders().getByte(string);
             if (b == null)
@@ -299,13 +297,13 @@ public class MessageHeaders
                 {
                     Object str = getJMSHeaders().getObject(string);
 
-                    if (str == null || !(str instanceof String))
+                    if (str == null || !(str instanceof AMQShortString))
                     {
                         throw new MessageFormatException("getByte can't use " + string + " item.");
                     }
                     else
                     {
-                        return Byte.valueOf((String) str);
+                        return Byte.valueOf(((AMQShortString)str).asString());
                     }
                 }
                 else
@@ -317,7 +315,7 @@ public class MessageHeaders
             return b;
     }
 
-    public short getShort(String string) throws JMSException
+    public short getShort(AMQShortString string) throws JMSException
     {
             Short s = getJMSHeaders().getShort(string);
 
@@ -329,7 +327,7 @@ public class MessageHeaders
             return s;
     }
 
-    public int getInteger(String string) throws JMSException
+    public int getInteger(AMQShortString string) throws JMSException
     {
             Integer i = getJMSHeaders().getInteger(string);
 
@@ -341,7 +339,7 @@ public class MessageHeaders
             return i;
     }
 
-    public long getLong(String string) throws JMSException
+    public long getLong(AMQShortString string) throws JMSException
     {
             Long l = getJMSHeaders().getLong(string);
 
@@ -353,7 +351,7 @@ public class MessageHeaders
             return l;
     }
 
-    public float getFloat(String string) throws JMSException
+    public float getFloat(AMQShortString string) throws JMSException
     {
             Float f = getJMSHeaders().getFloat(string);
 
@@ -363,13 +361,13 @@ public class MessageHeaders
                 {
                     Object str = getJMSHeaders().getObject(string);
 
-                    if (str == null || !(str instanceof String))
+                    if (str == null || !(str instanceof AMQShortString))
                     {
                         throw new MessageFormatException("getFloat can't use " + string + " item.");
                     }
                     else
                     {
-                        return Float.valueOf((String) str);
+                        return Float.valueOf(((AMQShortString)str).asString());
                     }
                 }
                 else
@@ -382,7 +380,7 @@ public class MessageHeaders
             return f;
     }
 
-    public double getDouble(String string) throws JMSException
+    public double getDouble(AMQShortString string) throws JMSException
     {
             Double d = getJMSHeaders().getDouble(string);
 
@@ -394,9 +392,9 @@ public class MessageHeaders
             return d;
     }
 
-    public String getString(String string) throws JMSException
+    public AMQShortString getString(AMQShortString string) throws JMSException
     {
-        String s = getJMSHeaders().getString(string);
+        AMQShortString s = new AMQShortString(getJMSHeaders().getString(string.asString()));
 
         if (s == null)
         {
@@ -415,7 +413,7 @@ public class MessageHeaders
                     }
                     else
                     {
-                        s = String.valueOf(o);
+                        s = (AMQShortString) o;
                     }
                 }
             }
@@ -424,76 +422,76 @@ public class MessageHeaders
         return s;
     }
 
-    public Object getObject(String string) throws JMSException
+    public Object getObject(AMQShortString string) throws JMSException
     {
         return getJMSHeaders().getObject(string);
     }
 
-    public void setBoolean(String string, boolean b) throws JMSException
+    public void setBoolean(AMQShortString string, boolean b) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setBoolean(string, b);
     }
 
-    public void setChar(String string, char c) throws JMSException
+    public void setChar(AMQShortString string, char c) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setChar(string, c);
     }
 
-    public Object setBytes(String string, byte[] bytes)
+    public Object setBytes(AMQShortString string, byte[] bytes)
     {
         return getJMSHeaders().setBytes(string, bytes);
     }
 
-    public Object setBytes(String string, byte[] bytes, int start, int length)
+    public Object setBytes(AMQShortString string, byte[] bytes, int start, int length)
     {
         return getJMSHeaders().setBytes(string, bytes, start, length);
     }
 
-    public void setByte(String string, byte b) throws JMSException
+    public void setByte(AMQShortString string, byte b) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setByte(string, b);
     }
 
-    public void setShort(String string, short i) throws JMSException
+    public void setShort(AMQShortString string, short i) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setShort(string, i);
     }
 
-    public void setInteger(String string, int i) throws JMSException
+    public void setInteger(AMQShortString string, int i) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setInteger(string, i);
     }
 
-    public void setLong(String string, long l) throws JMSException
+    public void setLong(AMQShortString string, long l) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setLong(string, l);
     }
 
-    public void setFloat(String string, float v) throws JMSException
+    public void setFloat(AMQShortString string, float v) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setFloat(string, v);
     }
 
-    public void setDouble(String string, double v) throws JMSException
+    public void setDouble(AMQShortString string, double v) throws JMSException
     {
         checkPropertyName(string);
         getJMSHeaders().setDouble(string, v);
     }
 
-    public void setString(String string, String string1) throws JMSException
+    public void setString(AMQShortString string, AMQShortString string1) throws JMSException
     {
         checkPropertyName(string);
-        getJMSHeaders().setString(string, string1);
+        getJMSHeaders().setString(string.asString(), string1.asString());
     }
 
-    public void setObject(String string, Object object) throws JMSException
+    public void setObject(AMQShortString string, Object object) throws JMSException
     {
         checkPropertyName(string);
         try
@@ -506,7 +504,7 @@ public class MessageHeaders
         }
     }
 
-    public boolean itemExists(String string) throws JMSException
+    public boolean itemExists(AMQShortString string) throws JMSException
     {
         return getJMSHeaders().containsKey(string);
     }
@@ -521,7 +519,7 @@ public class MessageHeaders
         getJMSHeaders().clear();
     }
 
-    public boolean propertyExists(String propertyName)
+    public boolean propertyExists(AMQShortString propertyName)
     {
         return getJMSHeaders().propertyExists(propertyName);
     }
@@ -531,7 +529,7 @@ public class MessageHeaders
         return getJMSHeaders().setObject(key.toString(), value);
     }
 
-    public Object remove(String propertyName)
+    public Object remove(AMQShortString propertyName)
     {
         return getJMSHeaders().remove(propertyName);
     }
@@ -637,35 +635,43 @@ public class MessageHeaders
 
     }
 
-	public String getTransactionId() {
+	public AMQShortString getTransactionId()
+    {
 		return _transactionId;
 	}
 
-	public void setTransactionId(String id) {
+	public void setTransactionId(AMQShortString id)
+    {
 		_transactionId = id;
 	}
 
-	public String getDestination() {
+	public AMQShortString getDestination()
+    {
 		return _destination;
 	}
 
-	public void setDestination(String destination) {
+	public void setDestination(AMQShortString destination)
+    {
 		this._destination = destination;
 	}
 
-	public String getExchange() {
+	public AMQShortString getExchange()
+    {
 		return _exchange;
 	}
 
-	public void setExchange(String exchange) {
+	public void setExchange(AMQShortString exchange)
+    {
 		this._exchange = exchange;
 	}
 
-	public String getRoutingKey() {
+	public AMQShortString getRoutingKey()
+    {
 		return _routingKey;
 	}
 
-	public void setRoutingKey(String routingKey) {
+	public void setRoutingKey(AMQShortString routingKey)
+    {
 		this._routingKey = routingKey;
 	}
 }

@@ -21,14 +21,18 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.MessageResumeBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.MessageResumeBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+//import org.apache.log4j.Logger;
 
 public class MessageResumeMethodHandler implements StateAwareMethodListener
 {
+    //private static final Logger _logger = Logger.getLogger(MessageResumeMethodHandler.class);
+
     private static MessageResumeMethodHandler _instance = new MessageResumeMethodHandler();
 
     public static MessageResumeMethodHandler getInstance()
@@ -37,14 +41,10 @@ public class MessageResumeMethodHandler implements StateAwareMethodListener
     }
 
     private MessageResumeMethodHandler() {}
-    
-    
-    public void methodReceived (AMQStateManager stateManager,
-                                AMQProtocolSession protocolSession,
-                               	AMQMethodEvent evt)
-                                throws AMQException
+
+    public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
-		System.out.println("");
+		// TODO
     }
 }
 

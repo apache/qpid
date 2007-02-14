@@ -23,6 +23,7 @@ package org.apache.qpid.server.registry;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,7 +39,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private static Map _instanceMap = new HashMap();
+    private static Map<Integer, IApplicationRegistry> _instanceMap = new HashMap<Integer, IApplicationRegistry>();
 
     private final Map<Class<?>, Object> _configuredObjects = new HashMap<Class<?>, Object>();
 
@@ -62,20 +63,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             {
                 synchronized (ApplicationRegistry.class)
                 {
-                    Iterator keyIterator = _instanceMap.keySet().iterator();
+                    Iterator<IApplicationRegistry> keyIterator = _instanceMap.values().iterator();
 
                     while (keyIterator.hasNext())
                     {
-                        int key = (Integer) keyIterator.next();
-                        IApplicationRegistry instance = (IApplicationRegistry) _instanceMap.get(key);
+                        IApplicationRegistry instance = keyIterator.next();
 
-                        if ((instance != null))
-                        {
-                            if (instance.getMessageStore() != null)
-                            {
-                                instance.getMessageStore().close();
-                            }
-                        }
+                        instance.close();
                     }
                 }
             }
@@ -118,7 +112,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         try
         {
-            ((IApplicationRegistry) _instanceMap.get(instanceID)).getMessageStore().close();
+            _instanceMap.get(instanceID).close();
         }
         catch (Exception e)
         {
@@ -143,7 +137,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance(int instanceID)
     {
-        IApplicationRegistry instance = (IApplicationRegistry) _instanceMap.get(instanceID);
+        IApplicationRegistry instance = _instanceMap.get(instanceID);
 
         if (instance == null)
         {
@@ -165,6 +159,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         else
         {
             return instance;
+        }
+    }
+
+    public void close() throws Exception
+    {
+        for(VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
+        {
+            virtualHost.close();
         }
     }
 
@@ -192,6 +194,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
         return instance;
     }
+
+    
 
     public static void setDefaultApplicationRegistry(String clazz)
     {

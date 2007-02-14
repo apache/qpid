@@ -34,7 +34,7 @@ class HeadersBinding
 {
     private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
 
-    private final FieldTable _mappings = new FieldTable();
+    private final FieldTable _mappings;
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
@@ -91,12 +91,7 @@ class HeadersBinding
 
     HeadersBinding(FieldTable mappings)
     {
-        Enumeration propertyNames = mappings.getPropertyNames();
-        while(propertyNames.hasMoreElements())
-        {
-            String propName = (String) propertyNames.nextElement();
-            _mappings.put(propName, mappings.getObject(propName));
-        }
+        _mappings = mappings;
         initMappings();
     }
 

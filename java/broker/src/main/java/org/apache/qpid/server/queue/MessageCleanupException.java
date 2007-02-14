@@ -32,4 +32,8 @@ public class MessageCleanupException extends AMQException
     {
         super("Failed to cleanup message with id " + messageId, e);
     }
+    public MessageCleanupException(String message)
+    {
+        super(message);
+    }
 }

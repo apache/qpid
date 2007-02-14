@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.AMQException;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -27,42 +30,49 @@ import java.nio.charset.Charset;
 import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {
     private static final String MIME_TYPE = "text/plain";
+    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
+
 
     private String _decodedValue;
 
     /**
      * This constant represents the name of a property that is set when the message payload is null.
      */
-    private static final String PAYLOAD_NULL_PROPERTY = "JMS_QPID_NULL";
+    private static final AMQShortString PAYLOAD_NULL_PROPERTY = new AMQShortString("JMS_QPID_NULL");
+    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
-    JMSTextMessage() throws JMSException
+    public JMSTextMessage() throws JMSException
     {
-        this(null, null);
+        this(null, (AMQShortString)null);
+    }
+
+    JMSTextMessage(ByteBuffer data, AMQShortString encoding) throws JMSException
+    {
+        super(data); // this instantiates a content header
+        getMessageHeaders().setContentType(MIME_TYPE_SHORT_STRING);
+        getMessageHeaders().setEncoding(encoding);
     }
 
     JMSTextMessage(ByteBuffer data, String encoding) throws JMSException
     {
-        super(data); // this instantiates a content header
-        getMessageHeaders().setContentType(MIME_TYPE);
-        getMessageHeaders().setEncoding(encoding);
+        this(data, new AMQShortString(encoding));
     }
 
     JMSTextMessage(long deliveryTag, MessageHeaders contentHeader, ByteBuffer data)
             throws AMQException
     {
         super(deliveryTag, contentHeader, data);
-        contentHeader.setContentType(MIME_TYPE);
+        contentHeader.setContentType(MIME_TYPE_SHORT_STRING);
         _data = data;
     }
 
     JMSTextMessage(ByteBuffer data) throws JMSException
     {
-        this(data, null);
+        this(data, (AMQShortString)null);
     }
 
     JMSTextMessage(String text) throws JMSException
@@ -91,9 +101,9 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         _data = data;
     }
 
-    public String getMimeType()
+    public AMQShortString getMimeTypeAsShortString()
     {
-        return MIME_TYPE;
+        return MIME_TYPE_SHORT_STRING;
     }
 
     public void setText(String text) throws JMSException
@@ -115,7 +125,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 }
                 else
                 {
-                    _data.put(text.getBytes(getMessageHeaders().getEncoding()));
+                    _data.put(text.getBytes(getMessageHeaders().getEncoding().asString()));
                 }
                 _changedData=true;
             }
@@ -151,7 +161,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.forName(getMessageHeaders().getEncoding()).newDecoder());
+                    _decodedValue = _data.getString(Charset.forName(getMessageHeaders().getEncoding().asString()).newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {
@@ -164,7 +174,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.defaultCharset().newDecoder());
+                    _decodedValue = _data.getString(DEFAULT_CHARSET.newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {

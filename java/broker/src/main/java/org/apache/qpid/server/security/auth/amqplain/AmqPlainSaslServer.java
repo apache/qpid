@@ -56,13 +56,13 @@ public class AmqPlainSaslServer implements SaslServer
         try
         {
             final FieldTable ft = FieldTableFactory.newFieldTable(ByteBuffer.wrap(response), response.length);
-            String username = (String) ft.get("LOGIN");
+            String username = (String) ft.getString("LOGIN");
             // we do not care about the prompt but it throws if null
             NameCallback nameCb = new NameCallback("prompt", username);
             // we do not care about the prompt but it throws if null
             PasswordCallback passwordCb = new PasswordCallback("prompt", false);
             // TODO: should not get pwd as a String but as a char array...
-            String pwd = (String) ft.get("PASSWORD");
+            String pwd = (String) ft.getString("PASSWORD");
             passwordCb.setPassword(pwd.toCharArray());
             AuthorizeCallback authzCb = new AuthorizeCallback(username, username);
             Callback[] callbacks = new Callback[]{nameCb, passwordCb, authzCb};

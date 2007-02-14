@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.protocol;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.Map;
 import java.util.HashMap;
 
@@ -27,14 +29,14 @@ public final class AMQConstant
 {
     private int _code;
 
-    private String _name;
+    private AMQShortString _name;
 
     private static Map _codeMap = new HashMap();
 
     private AMQConstant(int code, String name, boolean map)
     {
         _code = code;
-        _name = name;
+        _name = new AMQShortString(name);
         if (map)
         {
             _codeMap.put(new Integer(code), this);
@@ -51,7 +53,7 @@ public final class AMQConstant
         return _code;
     }
 
-    public String getName()
+    public AMQShortString getName()
     {
         return _name;
     }

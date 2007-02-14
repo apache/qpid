@@ -37,157 +37,157 @@ public class HeadersBindingTest extends TestCase
     {
         bindHeaders.setString("A", "Value of A");
 
-        matchHeaders.put("A", "Value of A");
+        matchHeaders.setString("A", "Value of A");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testDefault_2()
     {
-        bindHeaders.put("A", "Value of A");
+        bindHeaders.setString("A", "Value of A");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Value of B");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Value of B");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testDefault_3()
     {
-        bindHeaders.put("A", "Value of A");
+        bindHeaders.setString("A", "Value of A");
 
-        matchHeaders.put("A", "Altered value of A");
+        matchHeaders.setString("A", "Altered value of A");
 
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAll_1()
     {
-        bindHeaders.put("X-match", "all");
-        bindHeaders.put("A", "Value of A");
+        bindHeaders.setString("X-match", "all");
+        bindHeaders.setString("A", "Value of A");
 
-        matchHeaders.put("A", "Value of A");
+        matchHeaders.setString("A", "Value of A");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAll_2()
     {
-        bindHeaders.put("X-match", "all");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "all");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
+        matchHeaders.setString("A", "Value of A");
 
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAll_3()
     {
-        bindHeaders.put("X-match", "all");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "all");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Value of B");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Value of B");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAll_4()
     {
-        bindHeaders.put("X-match", "all");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "all");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Value of B");
-        matchHeaders.put("C", "Value of C");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Value of B");
+        matchHeaders.setString("C", "Value of C");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAll_5()
     {
-        bindHeaders.put("X-match", "all");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "all");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Altered value of B");
-        matchHeaders.put("C", "Value of C");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Altered value of B");
+        matchHeaders.setString("C", "Value of C");
 
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_1()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
 
-        matchHeaders.put("A", "Value of A");
+        matchHeaders.setString("A", "Value of A");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_2()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
+        matchHeaders.setString("A", "Value of A");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_3()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Value of B");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Value of B");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_4()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Value of B");
-        matchHeaders.put("C", "Value of C");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Value of B");
+        matchHeaders.setString("C", "Value of C");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_5()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Value of A");
-        matchHeaders.put("B", "Altered value of B");
-        matchHeaders.put("C", "Value of C");
+        matchHeaders.setString("A", "Value of A");
+        matchHeaders.setString("B", "Altered value of B");
+        matchHeaders.setString("C", "Value of C");
 
         assertTrue(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }
 
     public void testAny_6()
     {
-        bindHeaders.put("X-match", "any");
-        bindHeaders.put("A", "Value of A");
-        bindHeaders.put("B", "Value of B");
+        bindHeaders.setString("X-match", "any");
+        bindHeaders.setString("A", "Value of A");
+        bindHeaders.setString("B", "Value of B");
 
-        matchHeaders.put("A", "Altered value of A");
-        matchHeaders.put("B", "Altered value of B");
-        matchHeaders.put("C", "Value of C");
+        matchHeaders.setString("A", "Altered value of A");
+        matchHeaders.setString("B", "Altered value of B");
+        matchHeaders.setString("C", "Value of C");
 
         assertFalse(new HeadersBinding(bindHeaders).matches(matchHeaders));
     }

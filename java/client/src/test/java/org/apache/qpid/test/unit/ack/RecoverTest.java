@@ -25,37 +25,46 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 import javax.jms.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RecoverTest extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(RecoverTest.class);
 
+    private Exception _error;
+    private AtomicInteger count;
+
     protected void setUp() throws Exception
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
+        _error = null;
+        count = new AtomicInteger();
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
         TransportConnection.killAllVMBrokers();
+        count = null;
     }
 
 
     public void testRecoverResendsMsgs() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = new AMQQueue("someQ", "someQ", false, true);
+        Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         //force synch to ensure the consumer has resulted in a bound queue
-        ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
+        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -104,15 +113,15 @@ public class RecoverTest extends TestCase
 
     public void testRecoverResendsMsgsAckOnEarlier() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = new AMQQueue("someQ", "someQ", false, true);
+        Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         //force synch to ensure the consumer has resulted in a bound queue
-        ((AMQSession) consumerSession).declareExchangeSynch("amq.direct", "direct");
+        ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -168,15 +177,15 @@ public class RecoverTest extends TestCase
 
     public void testAcknowledgePerConsumer() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = new AMQQueue("Q1", "Q1", false, true);
-        Queue queue2 = new AMQQueue("Q2", "Q2", false, true);
+        Queue queue = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
+        Queue queue2 = new AMQQueue(new AMQShortString("Q2"), new AMQShortString("Q2"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageConsumer consumer2 = consumerSession.createConsumer(queue2);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "/test");
+        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
         MessageProducer producer2 = producerSession.createProducer(queue2);
@@ -207,41 +216,96 @@ public class RecoverTest extends TestCase
 
     public void testRecoverInAutoAckListener() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "/test");
+        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         final Session consumerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = new AMQQueue("Q1", "Q1", false, true);
+        Queue queue = new AMQQueue(new AMQShortString("Q3"), new AMQShortString("Q3"), false, true);
+        MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageProducer producer = consumerSession.createProducer(queue);
         producer.send(consumerSession.createTextMessage("hello"));
-        MessageConsumer consumer = consumerSession.createConsumer(queue);
+
+
+        final Object lock = new Object();
+
         consumer.setMessageListener(new MessageListener()
         {
-            private int count = 0;
+
+
 
             public void onMessage(Message message)
             {
                 try
                 {
-                    if (count++ == 0)
+                    count.incrementAndGet();
+                    if (count.get() == 1)
                     {
-                        assertFalse(message.getJMSRedelivered());
+                        if(message.getJMSRedelivered())
+                        {
+                            setError(new Exception("Message marked as redilvered on what should be first delivery attempt"));
+                        }
                         consumerSession.recover();
                     }
-                    else if (count++ == 1)
+                    else if (count.get() == 2)
                     {
-                        assertTrue(message.getJMSRedelivered());
+                        if(!message.getJMSRedelivered())
+                        {
+                            setError(new Exception("Message not marked as redilvered on what should be second delivery attempt"));
+                        }
                     }
                     else
                     {
-                        fail("Message delivered too many times!");
+                        System.err.println(message);
+                        fail("Message delivered too many times!: " + count);
                     }
                 }
                 catch (JMSException e)
                 {
                     _logger.error("Error recovering session: " + e, e);
+                    setError(e);
+                }
+                synchronized(lock)
+                {
+                    lock.notify();
                 }
             }
         });
+
+        con.start();
+
+        long waitTime = 300000L;
+        long waitUntilTime = System.currentTimeMillis() + waitTime;
+
+        synchronized(lock)
+        {
+            while((count.get() <= 1) && (waitTime > 0))
+            {
+                lock.wait(waitTime);
+                if(count.get() <= 1)
+                {
+                    waitTime = waitUntilTime - System.currentTimeMillis();
+                }
+            }
+        }
+
+        Thread.sleep(1000);
+
+        if(count.get() != 2)
+        {
+            System.err.println("Count != 2 : " + count);
+        }
+            assertTrue(count.get() == 2);
+
+        con.close();
+
+        if(_error != null)
+        {
+            throw _error;
+        }
+    }
+
+    private void setError(Exception e)
+    {
+        _error = e;
     }
 
     public static junit.framework.Test suite()

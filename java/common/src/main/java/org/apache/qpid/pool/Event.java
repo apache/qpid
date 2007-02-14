@@ -25,90 +25,66 @@ import org.apache.mina.common.IoFilter;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.IdleStatus;
 
-/**
- * Represents an operation on IoFilter.
- */
-enum EventType
+
+abstract public class Event
 {
-    OPENED, CLOSED, READ, WRITE, WRITTEN, RECEIVED, SENT, IDLE, EXCEPTION
-}
 
-class Event
-{
-    private static final Logger _log = Logger.getLogger(Event.class);
-
-    private final EventType type;
-    private final IoFilter.NextFilter nextFilter;
-    private final Object data;
-
-    public Event(IoFilter.NextFilter nextFilter, EventType type, Object data)
+    public Event()
     {
-        this.type = type;
-        this.nextFilter = nextFilter;
-        this.data = data;
-        if (type == EventType.EXCEPTION)
-        {
-            _log.error("Exception event constructed: " + data, (Throwable) data);
-        }
-    }
-
-    public Object getData()
-    {
-        return data;
     }
 
 
-    public IoFilter.NextFilter getNextFilter()
+    abstract public void process(IoSession session);
+
+
+    public static final class ReceivedEvent extends Event
     {
-        return nextFilter;
+        private final Object _data;
+
+        private final IoFilter.NextFilter _nextFilter;
+
+        public ReceivedEvent(final IoFilter.NextFilter nextFilter, final Object data)
+        {
+            super();
+            _nextFilter = nextFilter;
+            _data = data;
+        }
+
+        public void process(IoSession session)
+        {
+            _nextFilter.messageReceived(session, _data);
+        }
+
+        public IoFilter.NextFilter getNextFilter()
+        {
+            return _nextFilter;
+        }
     }
 
 
-    public EventType getType()
+    public static final class WriteEvent extends Event
     {
-        return type;
-    }
+        private final IoFilter.WriteRequest _data;
+        private final IoFilter.NextFilter _nextFilter;
 
-    void process(IoSession session)
-    {
-        if (_log.isDebugEnabled())
+        public WriteEvent(final IoFilter.NextFilter nextFilter, final IoFilter.WriteRequest data)
         {
-            _log.debug("Processing " + this);
+            super();
+            _nextFilter = nextFilter;
+            _data = data;
         }
-        if (type == EventType.RECEIVED)
+
+
+        public void process(IoSession session)
         {
-            nextFilter.messageReceived(session, data);
-            //ByteBufferUtil.releaseIfPossible( data );
+            _nextFilter.filterWrite(session, _data);
         }
-        else if (type == EventType.SENT)
+
+        public IoFilter.NextFilter getNextFilter()
         {
-            nextFilter.messageSent(session, data);
-            //ByteBufferUtil.releaseIfPossible( data );
-        }
-        else if (type == EventType.EXCEPTION)
-        {
-            nextFilter.exceptionCaught(session, (Throwable) data);
-        }
-        else if (type == EventType.IDLE)
-        {
-            nextFilter.sessionIdle(session, (IdleStatus) data);
-        }
-        else if (type == EventType.OPENED)
-        {
-            nextFilter.sessionOpened(session);
-        }
-        else if (type == EventType.WRITE)
-        {
-            nextFilter.filterWrite(session, (IoFilter.WriteRequest) data);
-        }
-        else if (type == EventType.CLOSED)
-        {
-            nextFilter.sessionClosed(session);
+            return _nextFilter;
         }
     }
 
-    public String toString()
-    {
-        return "Event: type " + type + ", data: " + data;
-    }
+
 }

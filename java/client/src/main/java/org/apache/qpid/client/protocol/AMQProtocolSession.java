@@ -37,28 +37,32 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MainRegistry;
 import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.framing.ResponseManager;
+import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.client.state.AMQStateManager;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.
- *
+ * <p/>
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
-public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionList
+public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareProtocolSession
 {
 
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
@@ -107,7 +111,12 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
     
-    protected int _ConnectionId;
+    protected long _ConnectionId;
+
+    private byte _protocolMinorVersion;
+    private byte _protocolMajorVersion;
+    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length-1][PROTOCOL_MAJOR],pv[pv.length-1][PROTOCOL_MINOR]);
+
 
     /**
      * No-arg constructor for use by test subclass - has to initialise final vars
@@ -130,6 +139,8 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
         // properties of the connection are made available to the event handlers
+        _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
+        //fixme - real value needed
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
         _stateManager = new AMQStateManager(this);
 
@@ -143,6 +154,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     {
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
+        _minaProtocolSession.setAttachment(this);
         // properties of the connection are made available to the event handlers
         _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
 
@@ -221,8 +233,9 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     /**
      * Store the SASL client currently being used for the authentication handshake
+     *
      * @param client if non-null, stores this in the session. if null clears any existing client
-     * being stored
+     *               being stored
      */
     public void setSaslClient(SaslClient client)
     {
@@ -253,6 +266,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
     /**
      * This is involed from MessageTransferMethodHandler if type is CONTENT_TYPE_REFERENCE
      * This is invoked on the MINA dispatcher thread.
+     *
      * @param message
      * @throws AMQException if this was not expected
      */
@@ -296,13 +310,14 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      * This is involed from MessageTransferMethodHandler if type is CONTENT_TYPE_INLINE
      * Deliver a message to the appropriate session, removing the unprocessed message
      * from our map
+     *
      * @param channelId the channel id the message should be delivered to
-     * @param msg the message
+     * @param msg       the message
      */
     public void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
     {
         AMQSession session = (AMQSession) _channelId2SessionMap.get(channelId);
-        msg.contentHeader.setSize(msg.bytesReceived);
+        msg.getMessageHeaders().setSize(msg.getBytesReceived());
         session.messageReceived(msg);
     }
     
@@ -360,6 +375,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         WriteFuture f = _minaProtocolSession.write(frame);
         if (wait)
         {
+            //fixme -- time out?
             f.join();
         }
         else
@@ -404,6 +420,7 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     /**
      * Starts the process of closing a session
+     *
      * @param session the AMQSession being closed
      */
     public void closeSession(AMQSession session)
@@ -425,19 +442,27 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
      * This method decides whether this is a response or an initiation. The latter
      * case causes the AMQSession to be closed and an exception to be thrown if
      * appropriate.
+     *
      * @param channelId the id of the channel (session)
      * @return true if the client must respond to the server, i.e. if the server
-     * initiated the channel close, false if the channel close is just the server
-     * responding to the client's earlier request to close the channel.
+     *         initiated the channel close, false if the channel close is just the server
+     *         responding to the client's earlier request to close the channel.
      */
-    public boolean channelClosed(int channelId, int code, String text)
+    public boolean channelClosed(int channelId, int code, String text) throws AMQException
     {
         final Integer chId = channelId;
         // if this is not a response to an earlier request to close the channel
         if (_closingChannels.remove(chId) == null)
         {
             final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
-            session.closed(new AMQException(_logger, code, text));
+            try
+            {
+                session.closed(new AMQException(_logger, code, text));
+            }
+            catch (JMSException e)
+            {
+                throw new AMQException("JMSException received while closing session", e);
+            }
             return true;
         }
         else
@@ -453,15 +478,20 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
 
     public void closeProtocolSession()
     {
+        closeProtocolSession(true);
+    }
+
+    public void closeProtocolSession(boolean waitLast)
+    {
         _logger.debug("Waiting for last write to join.");
-        if (_lastWriteFuture != null)
+        if (waitLast && _lastWriteFuture != null)
         {
             _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         }
 
         _logger.debug("Closing protocol session");
         final CloseFuture future = _minaProtocolSession.close();
-        future.join();
+        future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
     }
 
     public void failover(String host, int port)
@@ -469,20 +499,19 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         _protocolHandler.failover(host, port);
     }
 
-    protected String generateQueueName()
+    protected AMQShortString generateQueueName()
     {
         int id;
-        synchronized(_queueIdLock)
+        synchronized (_queueIdLock)
         {
             id = _queueId++;
         }
         //get rid of / and : and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(),"/;:","");
-        return "tmp_" + localAddress + "_" + id;
+        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(), "/;:", "");
+        return new AMQShortString("tmp_" + localAddress + "_" + id);
     }
 
     /**
-     *
      * @param delay delay in seconds (not ms)
      */
     void initHeartbeats(int delay)
@@ -495,11 +524,39 @@ public class AMQProtocolSession implements AMQProtocolWriter, ProtocolVersionLis
         }
     }
 
-    public void confirmConsumerCancelled(int channelId, String consumerTag)
+    public void confirmConsumerCancelled(int channelId, AMQShortString consumerTag)
     {
         final Integer chId = channelId;
         final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
 
         session.confirmConsumerCancelled(consumerTag);
     }
+
+    public void setProtocolVersion(final byte versionMajor, final byte versionMinor)
+    {
+        _protocolMajorVersion = versionMajor;
+        _protocolMinorVersion = versionMinor;
+        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);        
+    }
+
+    public byte getProtocolMinorVersion()
+    {
+        return _protocolMinorVersion;
+    }
+
+    public byte getProtocolMajorVersion()
+    {
+        return _protocolMajorVersion;
+    }
+    
+    public boolean isProtocolVersionEqual(byte major, byte minor)
+    {
+        return _protocolMinorVersion == major && _protocolMajorVersion == minor;
+    }
+    
+    public VersionSpecificRegistry getRegistry()
+    {
+        return _registry;
+    }
+
 }

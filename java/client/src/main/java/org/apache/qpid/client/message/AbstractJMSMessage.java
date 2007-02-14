@@ -34,15 +34,22 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.BasicMessageConsumer;
-import org.apache.qpid.client.CustomJMXProperty;
+import org.apache.qpid.client.CustomJMSXProperty;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
+import javax.jms.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+
 public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
+                                                                  
 
     protected boolean _redelivered;
 
@@ -51,6 +58,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     protected boolean _readableMessage = false;
     protected boolean _changedData;
     private Destination _destination;
+    private JMSHeaderAdapter _headerAdapter;
     private BasicMessageConsumer _consumer;
 
     protected AbstractJMSMessage(ByteBuffer data)
@@ -84,16 +92,28 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _readableProperties = (_messageHeaders != null);
     }
 
-    public String getJMSMessageID() throws JMSException
+    public AMQShortString getJMSMessageIDAsShortString() throws JMSException
     {
         if (getMessageHeaders().getMessageId() == null)
         {
-            getMessageHeaders().setMessageId("ID:" + _deliveryTag);
+            getMessageHeaders().setMessageId(new AMQShortString("ID:" + _deliveryTag));
         }
         return getMessageHeaders().getMessageId();
     }
+    
+    // The String version is required for javax.jms.Message
+    public String getJMSMessageID() throws JMSException
+    {
+        return getJMSMessageIDAsShortString().asString();
+    }
 
+    // The String version is required for javax.jms.Message
     public void setJMSMessageID(String messageId) throws JMSException
+    {
+        setJMSMessageID(new AMQShortString(messageId));
+    }
+    
+    public void setJMSMessageID(AMQShortString messageId) throws JMSException
     {
         getMessageHeaders().setMessageId(messageId);
     }
@@ -115,22 +135,35 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setJMSCorrelationIDAsBytes(byte[] bytes) throws JMSException
     {
-        getMessageHeaders().setCorrelationId(new String(bytes));
+        getMessageHeaders().setCorrelationId(new AMQShortString(bytes));
     }
 
+    // The String version is required for javax.jms.Message
     public void setJMSCorrelationID(String correlationId) throws JMSException
+    {
+        setJMSCorrelationID(new AMQShortString(correlationId));
+    }
+    
+    public void setJMSCorrelationID(AMQShortString correlationId) throws JMSException
     {
         getMessageHeaders().setCorrelationId(correlationId);
     }
 
-    public String getJMSCorrelationID() throws JMSException
+    public AMQShortString getJMSCorrelationIDAsShortString() throws JMSException
     {
         return getMessageHeaders().getCorrelationId();
     }
 
+    // The String version is required for javax.jms.Message
+    public String getJMSCorrelationID() throws JMSException
+    {
+        AMQShortString ss = getMessageHeaders().getCorrelationId();
+        return ss == null ? null : ss.asString();
+    }
+
     public Destination getJMSReplyTo() throws JMSException
     {
-        String replyToEncoding = getMessageHeaders().getReplyTo();
+        AMQShortString replyToEncoding = getMessageHeaders().getReplyTo();
         if (replyToEncoding == null)
         {
             return null;
@@ -142,7 +175,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             {
                 try
                 {
-                    BindingURL binding = new AMQBindingURL(replyToEncoding);
+                    BindingURL binding = new AMQBindingURL(replyToEncoding.asString());
                     dest = AMQDestination.createDestination(binding);
                 }
                 catch (URLSyntaxException e)
@@ -165,11 +198,11 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (!(destination instanceof AMQDestination))
         {
             throw new IllegalArgumentException("ReplyTo destination may only be an AMQDestination - passed argument was type " +
-                                               destination.getClass());
+                    destination.getClass());
         }
         final AMQDestination amqd = (AMQDestination) destination;
 
-        final String encodedDestination = amqd.getEncodedName();
+        final AMQShortString encodedDestination = amqd.getEncodedName();
         _destinationCache.put(encodedDestination, destination);
         getMessageHeaders().setReplyTo(encodedDestination);
     }
@@ -179,7 +212,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         return _destination;
     }
 
-    public void setJMSDestination(Destination destination) throws JMSException
+    public void setJMSDestination(Destination destination)
     {
         _destination = destination;
     }
@@ -209,7 +242,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         // Since the type field is not a part of message.transport and is used only for
         // JMS messages, this change to JMS Headers solves the problem.
         // return getMessageHeaders().getType();
-        return getStringProperty(CustomJMXProperty.JMSXType.toString());
+        return getStringProperty(CustomJMSXProperty.JMSXType.toString());
     }
 
     public void setJMSType(String string) throws JMSException
@@ -217,7 +250,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         // Since the type field is not a part of message.transport and is used only for
         // JMS messages, this change to JMS Headers solves the problem.
         // getMessageHeaders().setType(string);
-        setStringProperty(CustomJMXProperty.JMSXType.toString(), string);
+        setStringProperty(CustomJMSXProperty.JMSXType.toString(), string);
     }
 
     public long getJMSExpiration() throws JMSException
@@ -243,7 +276,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public void clearProperties() throws JMSException
     {
         getMessageHeaders().getJMSHeaders().clear();
-
         _readableProperties = false;
     }
 
@@ -253,11 +285,24 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _readableMessage = false;
     }
 
-
-    public boolean propertyExists(String propertyName) throws JMSException
+    public boolean propertyExists(AMQShortString propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
         return getMessageHeaders().getJMSHeaders().propertyExists(propertyName);
+    }
+
+    public boolean propertyExists(String propertyName) throws JMSException
+    {
+        return propertyExists(new AMQShortString(propertyName));
+    }
+
+    public boolean getBooleanProperty(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        Boolean b = getMessageHeaders().getJMSHeaders().getBoolean(propertyName);
+        if (b != null)
+            return b;
+        return false;
     }
 
     public boolean getBooleanProperty(String propertyName) throws JMSException
@@ -267,7 +312,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (b != null)
             return b;
         return false;
-//        return getMessageHeaders().getJMSHeaders().getBoolean(propertyName);
     }
 
     public byte getByteProperty(String propertyName) throws JMSException
@@ -277,7 +321,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (b == null)
             throw new NumberFormatException("Byte value null");
         return b;
-//        return getMessageHeaders().getJMSHeaders().getByte(propertyName);
+    }
+
+    public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
+    {
+        checkPropertyName(propertyName);
+        return getMessageHeaders().getJMSHeaders().getBytes(propertyName);
+
     }
 
     public short getShortProperty(String propertyName) throws JMSException
@@ -291,7 +341,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (b == null)
             throw new NumberFormatException("Short value null");
         return (short)b;
-//        return getMessageHeaders().getJMSHeaders().getShort(propertyName);
     }
 
     public int getIntProperty(String propertyName) throws JMSException
@@ -309,7 +358,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (b == null)
             throw new NumberFormatException("Int value null");
         return (short)b;
-//        return getMessageHeaders().getJMSHeaders().getInteger(propertyName);
     }
 
     public long getLongProperty(String propertyName) throws JMSException
@@ -318,6 +366,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         Long l = getMessageHeaders().getJMSHeaders().getLong(propertyName);
         if (l != null)
             return l;
+        // try Integer
         Integer i = getMessageHeaders().getJMSHeaders().getInteger(propertyName);
         if (i != null)
             return i;
@@ -330,7 +379,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (b == null)
             throw new NumberFormatException("Long value null");
         return (short)b;
-//        return getMessageHeaders().getJMSHeaders().getLong(propertyName);
     }
 
     public float getFloatProperty(String propertyName) throws JMSException
@@ -374,11 +422,16 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         return getMessageHeaders().getJMSHeaders().getPropertyNames();
     }
 
-    public void setBooleanProperty(String propertyName, boolean b) throws JMSException
+    public void setBooleanProperty(AMQShortString propertyName, boolean b) throws JMSException
     {
         checkWritableProperties();
         checkPropertyName(propertyName);
         getMessageHeaders().getJMSHeaders().setBoolean(propertyName, b);
+    }
+
+    public void setBooleanProperty(String propertyName, boolean b) throws JMSException
+    {
+        setBooleanProperty(new AMQShortString(propertyName), b);
     }
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
@@ -437,7 +490,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         getMessageHeaders().getJMSHeaders().setObject(propertyName, object);
     }
 
-    protected void removeProperty(String propertyName) throws JMSException
+    protected void removeProperty(AMQShortString propertyName) throws JMSException
     {
         checkPropertyName(propertyName);
         getMessageHeaders().getJMSHeaders().remove(propertyName);
@@ -468,7 +521,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void acknowledge() throws JMSException
     {
-        if(_session != null)
+        if (_session != null)
         {
             _session.acknowledge();
         }
@@ -488,7 +541,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
      */
     public abstract String toBodyString() throws JMSException;
 
-    public abstract String getMimeType();
+    public String getMimeType()
+    {
+        return getMimeTypeAsShortString().toString();
+    }
+
+    public abstract AMQShortString getMimeTypeAsShortString();
 
     public String toString()
     {
@@ -496,6 +554,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             StringBuffer buf = new StringBuffer("Body:\n");
             buf.append(toBodyString());
+            buf.append("\nJMS Correlation ID: ").append(getJMSCorrelationID());
             buf.append("\nJMS timestamp: ").append(getJMSTimestamp());
             buf.append("\nJMS expiration: ").append(getJMSExpiration());
             buf.append("\nJMS priority: ").append(getJMSPriority());
@@ -525,13 +584,13 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         getMessageHeaders().setJMSHeaders(messageProperties);
     }
 
-    private void checkPropertyName(String propertyName)
+    private void checkPropertyName(CharSequence propertyName)
     {
         if (propertyName == null)
         {
             throw new IllegalArgumentException("Property name must not be null");
         }
-        else if ("".equals(propertyName))
+        else if (propertyName.length() == 0)
         {
             throw new IllegalArgumentException("Property name must not be the empty string");
         }

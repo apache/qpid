@@ -23,14 +23,16 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageEmptyBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+//import org.apache.log4j.Logger;
+
 public class MessageEmptyHandler implements StateAwareMethodListener<MessageEmptyBody>
 {
+    //private static final Logger _logger = Logger.getLogger(MessageEmptyHandler.class);
+
     private static MessageEmptyHandler _instance = new MessageEmptyHandler();
 
     public static MessageEmptyHandler getInstance()
@@ -39,11 +41,8 @@ public class MessageEmptyHandler implements StateAwareMethodListener<MessageEmpt
     }
 
     private MessageEmptyHandler() {}
-    
-    
-    public void methodReceived (AMQProtocolSession protocolSession,
-                               	AMQMethodEvent<MessageEmptyBody> evt)
-                                throws AMQException
+      
+    public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageEmptyBody> evt) throws AMQException
     {
 		// TODO
     }

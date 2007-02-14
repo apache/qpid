@@ -17,7 +17,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
@@ -25,31 +24,29 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-/**
- * @author Apache Software Foundation
- */
+import org.apache.log4j.Logger;
+
 public class ExchangeBoundOkMethodHandler implements StateAwareMethodListener
 {
-     private static final Logger _logger = Logger.getLogger(ExchangeBoundOkMethodHandler.class);
-     private static final ExchangeBoundOkMethodHandler _instance = new ExchangeBoundOkMethodHandler();
+    private static final Logger _logger = Logger.getLogger(ExchangeBoundOkMethodHandler.class);
 
-     public static ExchangeBoundOkMethodHandler getInstance()
-     {
-         return _instance;
-     }
+    private static final ExchangeBoundOkMethodHandler _instance = new ExchangeBoundOkMethodHandler();
 
-     private ExchangeBoundOkMethodHandler()
-     {
-     }
+    public static ExchangeBoundOkMethodHandler getInstance()
+    {
+        return _instance;
+    }
 
-     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-     {
-         if (_logger.isDebugEnabled())
-         {
+    private ExchangeBoundOkMethodHandler() {}
+
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    {
+        if (_logger.isDebugEnabled())
+        {
             ExchangeBoundOkBody body = (ExchangeBoundOkBody) evt.getMethod();
             _logger.debug("Received Exchange.Bound-Ok message, response code: " + body.replyCode + " text: " +
                           body.replyText);
-         }
-     }
+        }
+    }
 }
 

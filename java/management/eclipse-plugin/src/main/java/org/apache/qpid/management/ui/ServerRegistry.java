@@ -23,6 +23,8 @@ package org.apache.qpid.management.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.management.ui.jmx.ClientListener;
 import org.apache.qpid.management.ui.model.ManagedAttributeModel;
@@ -33,11 +35,14 @@ public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
     // list of all Connection mbeans
-    protected List<ManagedBean> _connections = new ArrayList<ManagedBean>();
+    //private List<ManagedBean> _connections = new ArrayList<ManagedBean>();
+    private ConcurrentMap<String,List<ManagedBean>> _connections = new ConcurrentHashMap<String,List<ManagedBean>>();
     // list of all exchange mbeans
-    protected List<ManagedBean> _exchanges = new ArrayList<ManagedBean>();
+    //private List<ManagedBean> _exchanges = new ArrayList<ManagedBean>();
+    private ConcurrentMap<String,List<ManagedBean>> _exchanges = new ConcurrentHashMap<String,List<ManagedBean>>();
     // list of all queue mbenas
-    protected List<ManagedBean> _queues = new ArrayList<ManagedBean>();
+    //private List<ManagedBean> _queues = new ArrayList<ManagedBean>();
+    private ConcurrentMap<String,List<ManagedBean>> _queues = new ConcurrentHashMap<String,List<ManagedBean>>();
     
     public ServerRegistry()
     {
@@ -61,47 +66,58 @@ public abstract class ServerRegistry
     
     protected void addConnectionMBean(ManagedBean mbean)
     {
-        _connections.add(mbean);
+        String vHost = mbean.getVirtualHostName();
+        _connections.putIfAbsent(vHost, new ArrayList<ManagedBean>());
+        List<ManagedBean> beans = _connections.get(vHost);
+        beans.add(mbean);
     }
     
     protected void addExchangeMBean(ManagedBean mbean)
     {
-        _exchanges.add(mbean);
+        String vHost = mbean.getVirtualHostName();
+        _exchanges.putIfAbsent(vHost, new ArrayList<ManagedBean>());
+        List<ManagedBean> beans = _exchanges.get(vHost);
+        beans.add(mbean);
     }
     
     protected void addQueueMBean(ManagedBean mbean)
     {
-        _queues.add(mbean);
+        String vHost = mbean.getVirtualHostName();
+        _queues.putIfAbsent(vHost, new ArrayList<ManagedBean>());
+        List<ManagedBean> beans = _queues.get(vHost);
+        beans.add(mbean);
     }
     
     protected void removeConnectionMBean(ManagedBean mbean)
     {
-        _connections.remove(mbean);
+        String vHost = mbean.getVirtualHostName();
+        List<ManagedBean> beans = _connections.get(vHost);
+        beans.remove(mbean);
     }
     
     protected void removeExchangeMBean(ManagedBean mbean)
     {
-        _exchanges.remove(mbean);
+        _exchanges.get(mbean.getVirtualHostName()).remove(mbean);
     }
     
     protected void removeQueueMBean(ManagedBean mbean)
     {
-        _queues.remove(mbean);
+        _queues.get(mbean.getVirtualHostName()).remove(mbean);
     }
     
-    public List<ManagedBean> getConnections()
+    public List<ManagedBean> getConnections(String virtualHost)
     {
-        return _connections;
+        return _connections.get(virtualHost);
     }
     
-    public List<ManagedBean> getExchanges()
+    public List<ManagedBean> getExchanges(String virtualHost)
     {
-        return _exchanges;
+        return _exchanges.get(virtualHost);
     }
     
-    public List<ManagedBean> getQueues()
+    public List<ManagedBean> getQueues(String virtualHost)
     {
-        return _queues;
+        return _queues.get(virtualHost);
     }
     
     public abstract void addManagedObject(ManagedBean key);
@@ -123,11 +139,11 @@ public abstract class ServerRegistry
     
     public abstract OperationDataModel getOperationModel(ManagedBean mbean);
     
-    public abstract String[] getQueueNames();
+    public abstract String[] getQueueNames(String vistualHostName);
     
-    public abstract String[] getExchangeNames();
+    public abstract String[] getExchangeNames(String vistualHostName);
     
-    public abstract String[] getConnectionNames();
+    public abstract String[] getConnectionNames(String vistualHostName);
     
     public abstract List<NotificationObject> getNotifications(ManagedBean mbean);
     

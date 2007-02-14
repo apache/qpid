@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,14 +25,16 @@ import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxCommitOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
+import org.apache.log4j.Logger;
+
 public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
 {
+    private static final Logger _log = Logger.getLogger(TxCommitHandler.class);
+
     private static TxCommitHandler _instance = new TxCommitHandler();
 
     public static TxCommitHandler getInstance()
@@ -44,19 +46,26 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
     }
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<TxCommitBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxCommitBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();        
 
-        try{
-            AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+        try
+        {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Commit received on channel " + evt.getChannelId());
+            }
+            AMQChannel channel = session.getChannel(evt.getChannelId());
             channel.commit();
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeResponse(evt, TxCommitOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor())); // AMQP minor version
-            channel.processReturns(protocolSession);
-        }catch(AMQException e){
+            session.writeResponse(evt, TxCommitOkBody.createMethodBody(
+                session.getProtocolMajorVersion(), // AMQP major version
+                session.getProtocolMinorVersion())); // AMQP minor version
+            channel.processReturns(session);
+        }
+        catch(AMQException e)
+        {
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());
         }
     }

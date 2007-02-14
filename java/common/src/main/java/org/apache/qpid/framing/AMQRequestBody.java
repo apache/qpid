@@ -21,6 +21,7 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class AMQRequestBody extends AMQBody
 {
@@ -30,16 +31,21 @@ public class AMQRequestBody extends AMQBody
     protected long requestId;
     protected long responseMark;
     protected AMQMethodBody methodPayload;
-
+    protected AMQVersionAwareProtocolSession protocolSession;
 
     // Constructor
-    public AMQRequestBody() {}
+    public AMQRequestBody(AMQVersionAwareProtocolSession protocolSession)
+    {
+        this.protocolSession = protocolSession;
+    }
+    
     public AMQRequestBody(long requestId, long responseMark,
             AMQMethodBody methodPayload)
     {
         this.requestId = requestId;
         this.responseMark = responseMark;
         this.methodPayload = methodPayload;
+        protocolSession = null;
     }
 
 
@@ -49,7 +55,7 @@ public class AMQRequestBody extends AMQBody
     public AMQMethodBody getMethodPayload() { return methodPayload; }
     
     
-    protected byte getFrameType()
+    public byte getFrameType()
     {
         return TYPE;
     }
@@ -68,14 +74,19 @@ public class AMQRequestBody extends AMQBody
     }
     
     protected void populateFromBuffer(ByteBuffer buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException
+        throws AMQFrameDecodingException
     {
+        if (protocolSession == null)
+        {
+            throw new AMQFrameDecodingException("Cannot call populateFromBuffer() without using correct constructor.");
+        }
+        
         requestId = EncodingUtils.readLong(buffer);
         responseMark = EncodingUtils.readLong(buffer);
         int reserved = EncodingUtils.readInteger(buffer); // reserved, throw away
-        AMQMethodBodyFactory factory = AMQMethodBodyFactory.getInstance();
-        methodPayload = factory.createBody(buffer);
-        methodPayload.populateFromBuffer(buffer, size - 8 - 8 - 4);
+        
+        AMQMethodBodyFactory methodBodyFactory = new AMQMethodBodyFactory(protocolSession);
+        methodPayload = methodBodyFactory.createBody(buffer, size);
     }
     
     public String toString()
@@ -89,9 +100,6 @@ public class AMQRequestBody extends AMQBody
     {
         AMQRequestBody requestFrame = new AMQRequestBody(requestId, responseMark,
             methodPayload);
-        AMQFrame frame = new AMQFrame();
-        frame.channel = channelId;
-        frame.bodyFrame = requestFrame;
-        return frame;
+        return new AMQFrame(channelId, requestFrame);
     }
 }

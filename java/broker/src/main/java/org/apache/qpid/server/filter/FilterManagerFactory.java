@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.server.filter;
 
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
+import org.apache.qpid.framing.FieldTable;
 
 
 public class FilterManagerFactory
@@ -45,28 +41,23 @@ public class FilterManagerFactory
 
             manager = new SimpleFilterManager();
 
-            Iterator it = filters.keySet().iterator();
-            _logger.info("Processing filters:");
-            while (it.hasNext())
+            if(filters.containsKey(AMQPFilterTypes.JMS_SELECTOR.getValue()))
             {
-                String key = (String) it.next();
-                _logger.info("filter:" + key);
-                if (key.equals(AMQPFilterTypes.JMS_SELECTOR.getValue()))
-                {
-                    String selector = (String) filters.get(key);
+                String selector =  filters.getString(AMQPFilterTypes.JMS_SELECTOR.getValue());
 
-                    if (selector != null && !selector.equals(""))
-                    {
-                        manager.add(new JMSSelectorFilter(selector));
-                    }
-                }
-
-                if (key.equals(AMQPFilterTypes.NO_CONSUME.getValue()))
+                if (selector != null && !selector.equals(""))
                 {
-                    manager.add(new NoConsumerFilter());
+                    manager.add(new JMSSelectorFilter(selector));
                 }
 
             }
+
+            if (filters.containsKey(AMQPFilterTypes.NO_CONSUME.getValue()))
+            {
+                manager.add(new NoConsumerFilter());
+            }
+
+
 
             //If we added no filters don't bear the overhead of having an filter manager
             if (!manager.hasFilters())
@@ -76,7 +67,7 @@ public class FilterManagerFactory
         }
         else
         {
-            _logger.info("No Filters found.");
+            _logger.debug("No Filters found.");
         }
 
 

@@ -31,50 +31,101 @@ package org.apache.qpid.framing;
 import java.util.HashMap;
 import java.lang.reflect.Constructor;
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
-class MainRegistry
+public class MainRegistry
 {
-    private static final Logger _log = Logger.getLogger(MainRegistry.class);
-	private static HashMap<Long, Class> classIDMethodIDVersionBodyMap = new HashMap<Long, Class>();
+	private static final HashMap<Long, AMQMethodBodyInstanceFactory> classIDMethodIDVersionBodyMap = new HashMap<Long, AMQMethodBodyInstanceFactory>();
+
 	
+    private static final Logger _log = Logger.getLogger(MainRegistry.class);
+	
+
+    private static final int DEFAULT_MINOR_VERSION_COUNT = 10;
+    private static final int DEFAULT_MAJOR_VERSION_COUNT = 10;
+    
+    private static VersionSpecificRegistry[][] _specificRegistries = new VersionSpecificRegistry[DEFAULT_MAJOR_VERSION_COUNT][];
+    	
     static
     {
 %{CLIST}	${reg_map_put_method}
     }
     
-    public static AMQMethodBody get(short classID, short methodID, byte major, byte minor)
+    public static AMQMethodBody get(short classID, short methodID, byte major, byte minor, ByteBuffer in, long size)
         throws AMQFrameDecodingException
     {
-		Class bodyClass = classIDMethodIDVersionBodyMap.get(
-		    createMapKey(classID, methodID, major, minor));
-		if (bodyClass == null)
+		VersionSpecificRegistry registry = getVersionSpecificRegistry(major, minor);
+        AMQMethodBodyInstanceFactory bodyFactory = registry.getMethodBody(classID,methodID);
+		
+        if (bodyFactory == null)
+        {
+            throw new AMQFrameDecodingException(_log,
+                "Unable to find a suitable decoder for class " + classID + " and method " +
+                methodID + " in AMQP version " + major + "-" + minor + ".");
+        }
+        return bodyFactory.newInstance(major, minor, in, size);
+
+	    
+    }
+	
+	public static VersionSpecificRegistry getVersionSpecificRegistry(byte major, byte minor)
+	{
+		try
 		{
-	    	throw new AMQFrameDecodingException(_log,
-	    	    "Unable to find a suitable decoder for class " + classID + " and method " +
-	    	    methodID + " in AMQP version " + major + "-" + minor + ".");
-	    }
-	    try
-	    {
-	    	Constructor initFn = bodyClass.getConstructor(byte.class, byte.class);
-	        return (AMQMethodBody) initFn.newInstance(major, minor);
-	    }
-	    catch (Exception e)
-	    {
-	    	throw new AMQFrameDecodingException(_log,
-	    	    "Unable to instantiate body class for class " + classID + " and method " +
-	    	    methodID + " in AMQP version " + major + "-" + minor + " : " + e, e);
-	    }
-    }
+			return _specificRegistries[(int)major][(int)minor];
+		}
+		catch (IndexOutOfBoundsException e)
+		{
+			return null;
+		}
+		catch (NullPointerException e)
+		{
+			return null;
+		}
+		
+		
+	}
     
-    private static Long createMapKey(short classID, short methodID, byte major, byte minor)
-    {
-    	/**
-         *	Mapping of 4 components into a guaranteed unique key:
-         *  MSB                                     LSB
-         *  +----+----+----+----+----+----+-----+-----+
-         *  |    0    | classID |methodID |major|minor|
-         *  +----+----+----+----+----+----+-----+-----+
-         */
-    	return new Long(((long)classID << 32) + ((long)methodID << 16) + ((long)major << 8) + minor);
+	private static VersionSpecificRegistry addVersionSpecificRegistry(byte major, byte minor)
+	{
+		VersionSpecificRegistry[][] registries = _specificRegistries;
+		if(major >= registries.length)
+		{
+			_specificRegistries = new VersionSpecificRegistry[(int)major + 1][];
+			System.arraycopy(registries, 0, _specificRegistries, 0, registries.length);
+			registries = _specificRegistries;
+		}
+		if(registries[major] == null)
+		{
+			registries[major] = new VersionSpecificRegistry[ minor >= DEFAULT_MINOR_VERSION_COUNT ? minor + 1 : DEFAULT_MINOR_VERSION_COUNT ];
+		}
+		else if(registries[major].length <= minor)
+		{
+			VersionSpecificRegistry[] minorArray = registries[major];
+			registries[major] = new VersionSpecificRegistry[ minor + 1 ];
+			System.arraycopy(minorArray, 0, registries[major], 0, minorArray.length);
+			
+		}
+		
+		VersionSpecificRegistry newRegistry = new VersionSpecificRegistry(major,minor);
+		
+		registries[major][minor] = newRegistry;
+		
+		return newRegistry;
+	}
+		
+	private static void registerMethod(short classID, short methodID, byte major, byte minor, AMQMethodBodyInstanceFactory instanceFactory )
+	{
+		VersionSpecificRegistry registry = getVersionSpecificRegistry(major,minor);
+		if(registry == null)
+		{
+			registry = addVersionSpecificRegistry(major,minor);
+			
+		}
+		
+		registry.registerMethod(classID, methodID, instanceFactory);
+        
     }
+
+    
 }

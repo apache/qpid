@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+
+import org.apache.log4j.Logger;
 
 public class ChannelCloseHandler implements StateAwareMethodListener<ChannelCloseBody>
 {
@@ -43,16 +40,14 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
         return _instance;
     }
 
-    private ChannelCloseHandler()
-    {
-    }
+    private ChannelCloseHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelCloseBody> evt) throws AMQException
     {
-        ChannelCloseBody body = evt.getMethod();
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        final ChannelCloseBody body = evt.getMethod();
         _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " +
             body.classId + " and method " + body.methodId);
-        protocolSession.closeChannelResponse(evt.getChannelId(), evt.getRequestId());
+        session.closeChannelResponse(evt.getChannelId(), evt.getRequestId());
     }
 }

@@ -23,7 +23,10 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.server.cluster.GroupManager;
+import org.apache.qpid.server.cluster.SimpleBodySendable;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.QueueDeleteBody;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.util.concurrent.Executor;
 
@@ -35,19 +38,12 @@ public class PrivateQueue extends AMQQueue
 {
     private final GroupManager _groupMgr;
 
-    public PrivateQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry)
+    public PrivateQueue(GroupManager groupMgr, AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, queueRegistry);
+        super(name, durable, owner, autoDelete, virtualHost);
         _groupMgr = groupMgr;
 
-    }
-
-    public PrivateQueue(GroupManager groupMgr, String name, boolean durable, String owner, boolean autoDelete, QueueRegistry queueRegistry, Executor asyncDelivery)
-            throws AMQException
-    {
-        super(name, durable, owner, autoDelete, queueRegistry, asyncDelivery);
-        _groupMgr = groupMgr;
     }
 
     protected void autodelete() throws AMQException
@@ -58,8 +54,11 @@ public class PrivateQueue extends AMQQueue
         //send delete request to peers:
         // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        QueueDeleteBody request = new QueueDeleteBody((byte)0, (byte)9);
+        QueueDeleteBody request = new QueueDeleteBody((byte)8, (byte)0,
+                                                      QueueDeleteBody.getClazz((byte)8, (byte)0),
+                                                      QueueDeleteBody.getMethod((byte)8, (byte)0),
+                                                      false,false,false,null,0);
         request.queue = getName();
-        _groupMgr.broadcast(new SimpleSendable(request));
+        _groupMgr.broadcast(new SimpleBodySendable(request));
     }
 }

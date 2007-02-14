@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.QueueBindBody;
@@ -34,6 +33,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import org.apache.log4j.Logger;
 
 public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 {
@@ -46,18 +48,21 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         return _instance;
     }
 
-    private QueueBindHandler()
-    {
-    }
+    private QueueBindHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<QueueBindBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueueBindBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
         final QueueBindBody body = evt.getMethod();
+        VirtualHost virtualHost = session.getVirtualHost();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        
+
         final AMQQueue queue;
         if (body.queue == null)
         {
-            queue = protocolSession.getChannel(evt.getChannelId()).getDefaultQueue();
+            queue = session.getChannel(evt.getChannelId()).getDefaultQueue();
             if (queue == null)
             {
                 throw new AMQException("No default queue defined on channel and queue was null");
@@ -69,14 +74,14 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         else
         {
-            queue = protocolSession.getQueueRegistry().getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.queue);
         }
 
         if (queue == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), "Queue " + body.queue + " does not exist.");
         }
-        final Exchange exch = protocolSession.getExchangeRegistry().getExchange(body.exchange);
+        final Exchange exch = exchangeRegistry.getExchange(body.exchange);
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), "Exchange " + body.exchange + " does not exist.");
@@ -91,9 +96,9 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             // Be aware of possible changes to parameter order as versions change.
             final AMQMethodBody response = QueueBindOkBody.createMethodBody(
-                protocolSession.getMajor(), // AMQP major version
-                protocolSession.getMinor()); // AMQP minor version
-            protocolSession.writeResponse(evt, response);
+                session.getProtocolMajorVersion(), // AMQP major version
+                session.getProtocolMinorVersion()); // AMQP minor version
+            session.writeResponse(evt, response);
         }
     }
 }

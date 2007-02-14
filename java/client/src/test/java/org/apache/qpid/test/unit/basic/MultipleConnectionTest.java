@@ -41,7 +41,7 @@ public class MultipleConnectionTest extends TestCase
 
         Receiver(String broker, AMQDestination dest, int sessions) throws Exception
         {
-            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"), dest, sessions);
+            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "test"), dest, sessions);
         }
 
         Receiver(AMQConnection connection, AMQDestination dest, int sessions) throws Exception
@@ -72,7 +72,7 @@ public class MultipleConnectionTest extends TestCase
 
         Publisher(String broker, AMQDestination dest) throws Exception
         {
-            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"), dest);
+            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "test"), dest);
         }
 
         Publisher(AMQConnection connection, AMQDestination dest) throws Exception

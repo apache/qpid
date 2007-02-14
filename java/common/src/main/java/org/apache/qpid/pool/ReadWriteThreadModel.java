@@ -26,15 +26,38 @@ import org.apache.mina.common.ThreadModel;
 
 public class ReadWriteThreadModel implements ThreadModel
 {
+
+    private static final ReadWriteThreadModel _instance = new ReadWriteThreadModel();
+
+    private final PoolingFilter _asynchronousReadFilter;
+    private final PoolingFilter _asynchronousWriteFilter;
+
+    private ReadWriteThreadModel()
+    {
+        final ReferenceCountingExecutorService executor = ReferenceCountingExecutorService.getInstance();
+        _asynchronousReadFilter = PoolingFilter.createAynschReadPoolingFilter(executor, "AsynchronousReadFilter");
+        _asynchronousWriteFilter = PoolingFilter.createAynschWritePoolingFilter(executor, "AsynchronousWriteFilter");
+    }
+
+    public PoolingFilter getAsynchronousReadFilter()
+    {
+        return _asynchronousReadFilter;
+    }
+
+    public PoolingFilter getAsynchronousWriteFilter()
+    {
+        return _asynchronousWriteFilter;
+    }
+
     public void buildFilterChain(IoFilterChain chain) throws Exception
     {
-        ReferenceCountingExecutorService executor = ReferenceCountingExecutorService.getInstance();
-        PoolingFilter asyncRead = new PoolingFilter(executor, PoolingFilter.READ_EVENTS,
-                                                    "AsynchronousReadFilter");
-        PoolingFilter asyncWrite = new PoolingFilter(executor, PoolingFilter.WRITE_EVENTS,
-                                                     "AsynchronousWriteFilter");
 
-        chain.addFirst("AsynchronousReadFilter", new ReferenceCountingIoFilter(asyncRead));
-        chain.addLast("AsynchronousWriteFilter", new ReferenceCountingIoFilter(asyncWrite));
+        chain.addFirst("AsynchronousReadFilter", new ReferenceCountingIoFilter(_asynchronousReadFilter));
+        chain.addLast("AsynchronousWriteFilter", new ReferenceCountingIoFilter(_asynchronousWriteFilter));
+    }
+
+    public static ReadWriteThreadModel getInstance()
+    {
+        return _instance;
     }
 }

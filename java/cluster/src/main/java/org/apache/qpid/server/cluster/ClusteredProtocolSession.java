@@ -24,7 +24,10 @@ import org.apache.mina.common.IoSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.MessageRouter;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -32,6 +35,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
 
@@ -39,10 +43,12 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
 {
     private MemberHandle _peer;
 
-    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry, ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager)
-            throws AMQException
+    public ClusteredProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory, AMQStateManager stateManager) throws AMQException
+//    public ClusteredProtocolSession(IoSession session, QueueRegistry queueRegistry,
+//        ExchangeRegistry exchangeRegistry, AMQCodecFactory codecFactory) throws AMQException
     {
-        super(session, queueRegistry, exchangeRegistry, codecFactory, stateManager);
+        super(session, virtualHostRegistry, codecFactory, stateManager);
+//        super(session, queueRegistry, exchangeRegistry, codecFactory);
     }
 
     public boolean isPeerSession()
@@ -65,7 +71,8 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
         AMQChannel channel = super.getChannel(channelId);
         if (isPeerSession() && channel == null)
         {
-            channel = new OneUseChannel(channelId, this, getStateManager());
+            VirtualHost virtualHost = getVirtualHost();
+            channel = new OneUseChannel(channelId, this, virtualHost.getMessageStore(),virtualHost.getExchangeRegistry(), getStateManager());
             addChannel(channel);
         }
         return channel;
@@ -101,19 +108,12 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
      */
     private class OneUseChannel extends AMQChannel
     {
-        public OneUseChannel(int channelId, AMQProtocolSession session,
-            AMQMethodListener methodListener)
-        {
-            this(channelId, session, ApplicationRegistry.getInstance(), methodListener);
-        }
-
-        public OneUseChannel(int channelId, AMQProtocolSession session, IApplicationRegistry registry,
-                             AMQMethodListener methodListener)
+        public OneUseChannel(int channelId, AMQProtocolSession session, MessageStore messageStore, MessageRouter exchanges, AMQMethodListener methodListener)
         {
             super(channelId,
                   session,
-                  registry.getMessageStore(),
-                  registry.getExchangeRegistry(),
+                  messageStore,
+                  exchanges,
                   methodListener);
         }
 

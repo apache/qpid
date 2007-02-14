@@ -25,7 +25,7 @@ import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -39,10 +39,23 @@ import junit.framework.TestCase;
 
 public class DurableSubscriptionTest extends TestCase
 {
+
+    protected void setUp() throws Exception
+    {
+        super.setUp();
+        TransportConnection.createVMBroker(1);
+    }
+
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        TransportConnection.killAllVMBrokers();
+    }
+
     public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);
@@ -83,7 +96,7 @@ public class DurableSubscriptionTest extends TestCase
     public void testDurability() throws AMQException, JMSException, URLSyntaxException
     {
         AMQTopic topic = new AMQTopic("MyTopic");
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "/test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         MessageProducer producer = session1.createProducer(topic);
@@ -128,6 +141,6 @@ public class DurableSubscriptionTest extends TestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(DurableSubscriptionTest.class));
+        return new junit.framework.TestSuite(DurableSubscriptionTest.class);
     }
 }

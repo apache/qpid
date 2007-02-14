@@ -26,16 +26,17 @@ import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+//import org.apache.log4j.Logger;
 
 public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenBody>
 {
+    //private static final Logger _logger = Logger.getLogger(ChannelOpenHandler.class);
+    
     private static ChannelOpenHandler _instance = new ChannelOpenHandler();
 
     public static ChannelOpenHandler getInstance()
@@ -43,19 +44,18 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         return _instance;
     }
 
-    private ChannelOpenHandler()
-    {
-    }
+    private ChannelOpenHandler() {}
 
-    public void methodReceived(AMQProtocolSession protocolSession,
-                               AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
     {
+        AMQProtocolSession session = stateManager.getProtocolSession();
+        VirtualHost virtualHost = session.getVirtualHost();
         // Be aware of possible changes to parameter order as versions change.
         // XXX: Client id
         AMQMethodBody response = ChannelOpenOkBody.createMethodBody(
-            protocolSession.getMajor(), // AMQP major version
-            protocolSession.getMinor(), // AMQP minor version
+            session.getProtocolMajorVersion(), // AMQP major version
+            session.getProtocolMinorVersion(), // AMQP minor version
             "XXX".getBytes());
-        protocolSession.writeResponse(evt, response);
+        session.writeResponse(evt, response);
     }
 }

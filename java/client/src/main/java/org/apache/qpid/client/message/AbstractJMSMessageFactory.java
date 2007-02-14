@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,7 +30,6 @@ import javax.jms.JMSException;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -61,5 +63,4 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         msg.setJMSRedelivered(redelivered);
         return msg;
     }
-
 }

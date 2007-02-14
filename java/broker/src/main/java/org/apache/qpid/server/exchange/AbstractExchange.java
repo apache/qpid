@@ -21,9 +21,14 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
@@ -31,11 +36,15 @@ import javax.management.ObjectName;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
-    private String _name;
+    private AMQShortString _name;
+
+
 
     protected boolean _durable;
     protected String _exchangeType;
     protected int _ticket;
+
+    private VirtualHost _virtualHost;
 
     protected ExchangeMBean _exchangeMbean;
 
@@ -56,14 +65,19 @@ public abstract class AbstractExchange implements Exchange, Managable
             super(ManagedExchange.class, ManagedExchange.TYPE);
         }
 
+        public ManagedObject getParentObject()
+        {
+            return _virtualHost.getManagedObject();
+        }
+
         public String getObjectInstanceName()
         {
-            return _name;
+            return _name.toString();
         }
 
         public String getName()
         {
-            return _name;
+            return _name.toString();
         }
 
         public String getExchangeType()
@@ -86,6 +100,7 @@ public abstract class AbstractExchange implements Exchange, Managable
             return _autoDelete;
         }
 
+        // Added exchangetype in the object name lets maangement apps to do any customization required
         public ObjectName getObjectName() throws MalformedObjectNameException
         {
             String objNameString = super.getObjectName().toString();
@@ -93,9 +108,13 @@ public abstract class AbstractExchange implements Exchange, Managable
             return new ObjectName(objNameString);
         }
 
+        protected ManagedObjectRegistry getManagedObjectRegistry()
+        {
+            return ApplicationRegistry.getInstance().getManagedObjectRegistry();
+        }
     } // End of MBean class
 
-    public String getName()
+    public AMQShortString getName()
     {
         return _name;
     }
@@ -107,8 +126,9 @@ public abstract class AbstractExchange implements Exchange, Managable
      */
     protected abstract ExchangeMBean createMBean() throws AMQException;
 
-    public void initialise(String name, boolean durable, int ticket, boolean autoDelete) throws AMQException
+    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException
     {
+        _virtualHost = host;
         _name = name;
         _durable = durable;
         _autoDelete = autoDelete;
@@ -150,4 +170,13 @@ public abstract class AbstractExchange implements Exchange, Managable
         return _exchangeMbean;
     }
 
+    public VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public QueueRegistry getQueueRegistry()
+    {
+        return getVirtualHost().getQueueRegistry();
+    }
 }

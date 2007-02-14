@@ -20,18 +20,20 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionClosedException;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.client.AMQAuthenticationException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
+
+import org.apache.log4j.Logger;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener
 {
@@ -44,9 +46,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    private ConnectionCloseMethodHandler()
-    {
-    }
+    private ConnectionCloseMethodHandler() {}
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
@@ -57,13 +57,13 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         //stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
         int errorCode = method.replyCode;
-        String reason = method.replyText;
+        AMQShortString reason = method.replyText;
 
         // TODO: check whether channel id of zero is appropriate
-        // AMQP version change: Hardwire the version to 0-9 (major=0, minor=9)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeResponse(0, evt.getRequestId(), ConnectionCloseOkBody.createMethodBody((byte)0, (byte)9));
+        protocolSession.writeResponse(0, evt.getRequestId(), ConnectionCloseOkBody.createMethodBody(
+            protocolSession.getProtocolMajorVersion(),  // AMQP major version
+            protocolSession.getProtocolMinorVersion())); // AMQP minor version
 
         if (errorCode != 200)
         {
@@ -76,7 +76,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
                  //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                  stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
 
-                throw new AMQAuthenticationException(errorCode, reason);
+                throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString());
             }
             else
             {

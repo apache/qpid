@@ -21,10 +21,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.management.ManagedObject;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -58,6 +60,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
     private CompositeType _channelType = null;      // represents the data type for channel data
     private TabularType _channelsType = null;       // Data type for list of channels type
+    private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSING_THE_CONNECTION =
+            new AMQShortString("Broker Management Console has closing the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
@@ -88,6 +92,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public String getRemoteAddress()
     {
         return _session.getIOSession().getRemoteAddress().toString();
+    }
+
+    public ManagedObject getParentObject()
+    {
+        return _session.getVirtualHost().getManagedObject();
     }
 
     public Long getWrittenBytes()
@@ -175,7 +184,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         for (AMQChannel channel : list)
         {
             Object[] itemValues = {channel.getChannelId(), channel.isTransactional(),
-                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName() : null,
+                    (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
                     channel.getUnacknowledgedMessageMap().size()};
 
             CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
@@ -192,11 +201,14 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void closeConnection() throws JMException
     {
-        try {
+        try
+        {
             _session.closeSessionRequest
                 (AMQConstant.REPLY_SUCCESS.getCode(), // XXX: Success???
-                 "Broker Management Console has closing the connection.");
-        } catch (AMQException ex) {
+                 new AMQShortString("Broker Management Console is closing the connection."));
+        }
+        catch (AMQException ex)
+        {
             throw new MBeanException(ex, ex.toString());
         }
     }

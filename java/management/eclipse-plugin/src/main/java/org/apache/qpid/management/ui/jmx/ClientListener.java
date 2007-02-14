@@ -43,8 +43,6 @@ public class ClientListener implements NotificationListener
     
     public void handleNotification(Notification notification, Object handback)
     {
-        System.out.println("\nReceived server notification: " + notification);
-        
         ObjectName objName = null;
         String     type = notification.getType();
         if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(type))

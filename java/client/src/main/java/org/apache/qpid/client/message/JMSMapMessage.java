@@ -25,13 +25,14 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.AMQException;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
 
 public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
 {
@@ -39,10 +40,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
 
     public static final String MIME_TYPE = "jms/map-message";
+    private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
     private Map<String,Object> _map = new HashMap<String, Object>();
 
-    JMSMapMessage() throws JMSException
+    public JMSMapMessage() throws JMSException
     {
         this(null);
     }
@@ -67,15 +69,14 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 		}
 	}	
 
-    
     public String toBodyString() throws JMSException
     {
         return _map.toString();
     }
 
-    public String getMimeType()
+    public AMQShortString getMimeTypeAsShortString()
     {
-        return MIME_TYPE;
+        return MIME_TYPE_SHORT_STRING;
     }
 
 
