@@ -20,14 +20,14 @@
  */
 #include <ClientQueue.h>
 
-qpid::client::Queue::Queue() : name(""), autodelete(true), exclusive(true){}
+qpid::client::Queue::Queue() : name(""), autodelete(true), exclusive(true), durable(false){}
 
-qpid::client::Queue::Queue(std::string _name) : name(_name), autodelete(false), exclusive(false){}
+qpid::client::Queue::Queue(std::string _name) : name(_name), autodelete(false), exclusive(false), durable(false){}
 
-qpid::client::Queue::Queue(std::string _name, bool temp) : name(_name), autodelete(temp), exclusive(temp){}
+qpid::client::Queue::Queue(std::string _name, bool temp) : name(_name), autodelete(temp), exclusive(temp), durable(false){}
 
-qpid::client::Queue::Queue(std::string _name, bool _autodelete, bool _exclusive) 
-  : name(_name), autodelete(_autodelete), exclusive(_exclusive){}
+qpid::client::Queue::Queue(std::string _name, bool _autodelete, bool _exclusive, bool _durable) 
+    : name(_name), autodelete(_autodelete), exclusive(_exclusive), durable(_durable){}
 
 const std::string& qpid::client::Queue::getName() const{
     return name;
@@ -43,6 +43,14 @@ bool qpid::client::Queue::isAutoDelete() const{
 
 bool qpid::client::Queue::isExclusive() const{
     return exclusive;
+}
+
+bool qpid::client::Queue::isDurable() const{
+    return durable;
+}
+
+void qpid::client::Queue::setDurable(bool _durable){
+    durable = _durable;
 }
 
 

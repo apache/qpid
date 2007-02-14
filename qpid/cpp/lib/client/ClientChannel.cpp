@@ -87,7 +87,7 @@ void Channel::deleteExchange(Exchange& exchange, bool synch){
 void Channel::declareQueue(Queue& queue, bool synch){
     string name = queue.getName();
     FieldTable args;
-    AMQFrame*  frame = new AMQFrame(version, id, new QueueDeclareBody(version, 0, name, false, false, 
+    AMQFrame*  frame = new AMQFrame(version, id, new QueueDeclareBody(version, 0, name, false/*passive*/, queue.isDurable(), 
                                                              queue.isExclusive(), 
                                                              queue.isAutoDelete(), !synch, args));
     if(synch){
