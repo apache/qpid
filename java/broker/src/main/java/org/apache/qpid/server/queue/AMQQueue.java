@@ -129,7 +129,8 @@ public class AMQQueue implements Managable, Comparable
     /**
      * max allowed size(KB) of a single message
      */
-    private long _maximumMessageSize = 10000;
+    @Configured(path = "maximumMessageSize", defaultValue = "0")
+    public long _maximumMessageSize;
 
     /**
      * max allowed number of messages on a queue.
@@ -141,19 +142,19 @@ public class AMQQueue implements Managable, Comparable
      * max queue depth for the queue
      */
     @Configured(path = "maximumQueueDepth", defaultValue = "0")
-    public long _maximumQueueDepth = 10000000;
+    public long _maximumQueueDepth;
 
-/*
+    /**
      * maximum message age before alerts occur
      */
     @Configured(path = "maximumMessageAge", defaultValue = "0")
-    public long _maximumMessageAge = 30000; //0
+    public long _maximumMessageAge;
 
-    /*
+    /**
      * the minimum interval between sending out consequetive alerts of the same type
      */
     @Configured(path = "minimumAlertRepeatGap", defaultValue = "0")
-    public long _minimumAlertRepeatGap = 30000;
+    public long _minimumAlertRepeatGap;
 
     /**
      * total messages received by the queue since startup.
