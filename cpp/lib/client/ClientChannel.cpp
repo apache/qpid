@@ -159,7 +159,7 @@ void Channel::declareQueue(Queue& queue, bool synch){
     sendAndReceiveSync<QueueDeclareOkBody>(
         synch,
         new QueueDeclareBody(
-            version, 0, name, false, false, 
+            version, 0, name, false/*passive*/, queue.isDurable(),
             queue.isExclusive(), queue.isAutoDelete(), !synch, args));        
     if (synch) {
         if(queue.getName().length() == 0){
