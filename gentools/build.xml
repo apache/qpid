@@ -22,7 +22,7 @@
 	<property name="src" location="src" />
 
 	<target name="compile">
-    	<javac srcdir="${src}" source="1.5" fork="true" />
+    	<javac srcdir="${src}" source="1.5" fork="true" debug="on"/>
     </target>
     
 	<target name="clean">
