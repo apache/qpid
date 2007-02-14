@@ -30,7 +30,7 @@ vg_options="
 if test x$VALGRIND = x; then
   vg=
 else
-  vg="libtool --debug --mode=execute valgrind `echo $vg_options` --"
+  vg="libtool --mode=execute valgrind `echo $vg_options` --"
 fi
 
 vg_leak_check()
