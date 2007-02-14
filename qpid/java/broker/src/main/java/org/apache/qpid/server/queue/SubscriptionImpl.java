@@ -537,6 +537,10 @@ public class SubscriptionImpl implements Subscription
 
     public void addToResendQueue(AMQMessage msg)
     {
+        //fixme - will this be ok as we need to ensure redelivery to same subscriber first
+        //release the message so it can be redelivered
+        msg.release();
+        
         // add to our resend queue
         getResendQueue().add(msg);
 

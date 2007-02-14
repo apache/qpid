@@ -448,10 +448,6 @@ public class AMQMessage
     {
         if (_taken.getAndSet(true))
         {
-            if (sub == _takenBySubcription)
-            {
-                return false;
-            }
             return true;
         }
         else

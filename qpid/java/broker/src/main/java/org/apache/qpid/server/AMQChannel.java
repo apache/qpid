@@ -372,6 +372,20 @@ public class AMQChannel
                            + _unacknowledgedMessageMap.size() + ":" + _unacknowledgedMessageMap.toString());
             }
 
+            //Debug adding messages to this map.
+            if (_log.isTraceEnabled())
+            {
+                for (Map.Entry<Long, UnacknowledgedMessage> entry : _unacknowledgedMessageMap.entrySet())
+                {
+                    if (entry.getValue().message == message)
+                    {
+                        // this is set at error level but only output it if we are tracing.
+                        _log.error("Adding message (" + System.identityHashCode(message) +
+                                   ") that is already in unacked map entryTag:"
+                                   + entry.getKey() + " dT:" + deliveryTag);
+                    }
+                }
+            }
             _unacknowledgedMessageMap.put(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
             _lastDeliveryTag = deliveryTag;
             checkSuspension();

@@ -481,8 +481,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                 }
 
+
+                //this will remove consumer from _consumers map
                 deregisterConsumer();
+
+                // clears unacks from this consumer
                 _unacknowledgedDeliveryTags.clear();
+
                 if (_messageListener != null && _receiving.get())
                 {
                     _logger.info("Interrupting thread: " + _receivingThread);

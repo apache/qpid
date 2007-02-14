@@ -47,6 +47,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -288,6 +289,61 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 setConnectionStopped(isStopped);
             }
 
+        }
+
+        /**
+         * The dispatcher should be stopped when calling this.
+         *
+         * @param consumerTag
+         */
+        public void removePending(String consumerTag)
+        {
+
+            synchronized (_lock)
+            {
+                boolean stopped = connectionStopped();
+
+                _dispatcher.setConnectionStopped(false);
+
+                LinkedList<UnprocessedMessage> tmpList = new LinkedList<UnprocessedMessage>();
+
+                while (_queue.size() != 0)
+                {
+                    UnprocessedMessage message = null;
+                    try
+                    {
+                        message = (UnprocessedMessage) _queue.take();
+
+                        if (!message.deliverBody.consumerTag.equals(consumerTag))
+                        {
+                            tmpList.add(message);
+                        }
+                        else
+                        {
+                            _logger.error("Pruned pending message for consumer:" + consumerTag);
+                        }
+                    }
+                    catch (InterruptedException e)
+                    {
+                        _logger.error("Interrupted whilst taking message");
+                    }
+                }
+
+                if (!tmpList.isEmpty())
+                {
+                    _logger.error("Tmp list is not empty");
+                }
+
+                for (UnprocessedMessage msg : tmpList)
+                {
+                    _queue.add(msg);
+                }
+                
+                if (stopped)
+                {
+                    _dispatcher.setConnectionStopped(stopped);
+                }
+            }
         }
     }
 
@@ -599,8 +655,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             //Ensure we only try and close an open session.
             if (!_closed.getAndSet(true))
             {
-                // we pass null since this is not an error case
-                closeProducersAndConsumers(null);
 
                 try
                 {
@@ -617,6 +671,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     _connection.getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
+
+                    // we pass null since this is not an error case
+                    closeProducersAndConsumers(null);
 
                 }
                 catch (AMQException e)
@@ -1784,7 +1841,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     void deregisterConsumer(BasicMessageConsumer consumer)
     {
+        //need to clear pending messages from session _queue that the dispatcher will handle
+        // or we will get 
+        //  _dispatcher.removePending(consumer.getConsumerTag());
+
         _consumers.remove(consumer.getConsumerTag());
+
         String subscriptionName = _reverseSubscriptionMap.remove(consumer);
         if (subscriptionName != null)
         {
