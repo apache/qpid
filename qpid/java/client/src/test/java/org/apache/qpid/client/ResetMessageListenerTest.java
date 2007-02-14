@@ -241,7 +241,7 @@ public class ResetMessageListenerTest extends TestCase
 
         try
         {
-            _logger.error("Send additional messages");
+            _logger.info("Send additional messages");
 
             for (int msg = 0; msg < MSG_COUNT; msg++)
             {
