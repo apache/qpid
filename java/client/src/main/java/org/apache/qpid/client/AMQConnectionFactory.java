@@ -42,7 +42,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     private String _virtualPath;
 
     private ConnectionURL _connectionDetails;
-
+    private SSLConfiguration _sslConfig;
 
     public AMQConnectionFactory()
     {
@@ -112,6 +112,22 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
             _connectionDetails.setPassword(password);
         }
         _defaultPassword = password;
+    }
+    
+    /**
+     * Getter for SSLConfiguration
+     * @return SSLConfiguration if set, otherwise null
+     */
+    public final SSLConfiguration getSSLConfiguration() {
+    	return _sslConfig;
+    }
+    
+    /**
+     * Setter for SSLConfiguration
+     * @param sslConfig config to store
+     */
+    public final void setSSLConfiguration(SSLConfiguration sslConfig) {
+    	_sslConfig = sslConfig;
     }
 
     /**
@@ -229,7 +245,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                 {
                     _connectionDetails.setClientName(getUniqueClientID());
                 }
-                return new AMQConnection(_connectionDetails);
+                return new AMQConnection(_connectionDetails, _sslConfig);
             }
             else
             {
@@ -260,7 +276,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                 {
                     _connectionDetails.setClientName(getUniqueClientID());
                 }
-                return new AMQConnection(_connectionDetails);
+                return new AMQConnection(_connectionDetails, _sslConfig);
             }
             else
             {

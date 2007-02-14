@@ -44,9 +44,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
- * TODO: This is a cut-and-paste from the original broker Main class. Would be preferrable
- * to make that class more reuseable to avoid all this duplication.
- *
+ * TODO: This is a cut-and-paste from the original broker Main class. Would be preferrable to make that class more
+ * reuseable to avoid all this duplication.
  */
 public class Main extends org.apache.qpid.server.Main
 {
@@ -88,18 +87,16 @@ public class Main extends org.apache.qpid.server.Main
 
             String host = InetAddress.getLocalHost().getHostName();
             ClusteredProtocolHandler handler = new ClusteredProtocolHandler(new InetSocketAddress(host, port));
-            if (connectorConfig.enableNonSSL)
+            if (!connectorConfig.enableSSL)
             {
                 acceptor.bind(new InetSocketAddress(port), handler, sconfig);
                 _logger.info("Qpid.AMQP listening on non-SSL port " + port);
                 handler.connect(commandLine.getOptionValue("j"));
             }
-
-            if (connectorConfig.enableSSL)
+            else
             {
                 ClusteredProtocolHandler sslHandler = new ClusteredProtocolHandler(handler);
-                sslHandler.setUseSSL(true);
-                acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+                acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), sslHandler, sconfig);
                 _logger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
             }
         }
