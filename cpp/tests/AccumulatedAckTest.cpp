@@ -58,14 +58,14 @@ class AccumulatedAckTest : public CppUnit::TestCase
         {
             AccumulatedAck ack;
             ack.clear();
-            ack.update(1, false);
-            ack.update(3, false);
-            ack.update(10, false);
-            ack.update(8, false);
-            ack.update(6, false);
-            ack.update(3, true);
-            ack.update(2, true);
-            ack.update(5, true);
+            ack.update(1, 1);
+            ack.update(3, 3);
+            ack.update(10, 10);
+            ack.update(8, 8);
+            ack.update(6, 6);
+            ack.update(3, 3);
+            ack.update(2, 2);
+            ack.update(0, 5);
             ack.consolidate();
             CPPUNIT_ASSERT_EQUAL((u_int64_t) 5, ack.range);
             CPPUNIT_ASSERT_EQUAL((size_t) 3, ack.individual.size());

@@ -18,14 +18,17 @@
  * under the License.
  *
  */
-#include <AccumulatedAck.h>
+#include "AccumulatedAck.h"
+
+#include <assert.h>
 
 using std::less_equal;
 using std::bind2nd;
 using namespace qpid::broker;
 
 void AccumulatedAck::update(u_int64_t firstTag, u_int64_t lastTag){
-    if (firstTag-1 == range) {
+	assert(firstTag<=lastTag);
+    if (firstTag <= range+1) {
     	range = lastTag;
     } else {
     	for (u_int64_t tag = firstTag; tag<=lastTag; tag++)
