@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.qpid.client.SSLConfiguration;
+
 public interface BrokerDetails
 {
 
@@ -28,7 +30,6 @@ public interface BrokerDetails
      * @see ConnectionURL
     */
     public static final String OPTIONS_RETRY = "retries";
-    public static final String OPTIONS_SSL = ConnectionURL.OPTIONS_SSL;
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final int DEFAULT_PORT = 5672;
 
@@ -55,10 +56,6 @@ public interface BrokerDetails
 
     void setTransport(String transport);
 
-    boolean useSSL();
-
-    void useSSL(boolean ssl);
-
     String getOption(String key);
 
     void setOption(String key, String value);
@@ -66,6 +63,10 @@ public interface BrokerDetails
     long getTimeout();
 
     void setTimeout(long timeout);
+    
+    SSLConfiguration getSSLConfiguration();
+    
+    void setSSLConfiguration(SSLConfiguration sslConfiguration);
 
     String toString();
 

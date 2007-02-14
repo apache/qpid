@@ -24,8 +24,13 @@
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
-        <ssl>false</ssl>
-        <nonssl>true</nonssl>
+        <!-- Uncomment out this block and edit the keystorePath and keystorePassword
+             to enable SSL support
+        <ssl>
+            <enabled>true</enabled>
+            <keystorePath>/path/to/keystore.ks</keystorePath>
+            <keystorePassword>keystorepass</keystorePassword>
+        </ssl>-->
         <qpidnio>true</qpidnio>
         <transport>nio</transport>
         <port>5672</port>

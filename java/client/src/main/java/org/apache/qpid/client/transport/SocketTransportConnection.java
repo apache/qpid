@@ -81,7 +81,6 @@ public class SocketTransportConnection implements ITransportConnection
         scfg.setReceiveBufferSize(Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE));
         _logger.info("recv-buffer-size = " + scfg.getReceiveBufferSize());
         final InetSocketAddress address = new InetSocketAddress(brokerDetail.getHost(), brokerDetail.getPort());
-        protocolHandler.setUseSSL(brokerDetail.useSSL());
         _logger.info("Attempting connection to " + address);
         ConnectFuture future = ioConnector.connect(address, protocolHandler);
 

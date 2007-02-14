@@ -115,7 +115,7 @@ public class FailoverHandler implements Runnable
             // if _host has value then we are performing a redirect.
             if (_host != null)
             {
-                failoverSucceeded = _amqProtocolHandler.getConnection().attemptReconnection(_host, _port, _amqProtocolHandler.isUseSSL());
+                failoverSucceeded = _amqProtocolHandler.getConnection().attemptReconnection(_host, _port);
             }
             else
             {

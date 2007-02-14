@@ -141,6 +141,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * The connection meta data
      */
     private QpidConnectionMetaData _connectionMetaData;
+    
+    /**
+     * Configuration info for SSL
+     */
+    private SSLConfiguration _sslConfiguration;
 
     /**
      * @param broker      brokerdetails
@@ -157,17 +162,43 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
                                   username + ":" + password + "@" +
                                   (clientName == null ? "" : clientName) + "/" +
-                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"));
+                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"), null);
     }
+    
+    /**
+     * @param broker      brokerdetails
+     * @param username    username
+     * @param password    password
+     * @param clientName  clientid
+     * @param virtualHost virtualhost
+     * @throws AMQException
+     * @throws URLSyntaxException
+     */
+    public AMQConnection(String broker, String username, String password,
+                         String clientName, String virtualHost, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
+    {
+        this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
+                                  username + ":" + password + "@" +
+                                  (clientName == null ? "" : clientName) + "/" +
+                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"), sslConfig);
+    }
+    
 
     public AMQConnection(String host, int port, String username, String password,
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
-        this(host, port, false, username, password, clientName, virtualHost);
+        this(host, port, false, username, password, clientName, virtualHost, null);
     }
+    
+    public AMQConnection(String host, int port, String username, String password,
+            String clientName, String virtualHost, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
+    {
+    	this(host, port, false, username, password, clientName, virtualHost, sslConfig);
+    }
+    
 
     public AMQConnection(String host, int port, boolean useSSL, String username, String password,
-                         String clientName, String virtualHost) throws AMQException, URLSyntaxException
+                         String clientName, String virtualHost, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(useSSL ?
                                   ConnectionURL.AMQ_PROTOCOL + "://" +
@@ -180,18 +211,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                                                                                 (clientName == null ? "" : clientName) +
                                                                                 virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                                                                 + "," + ConnectionURL.OPTIONS_SSL + "='false'"
-        ));
+        ), sslConfig);
     }
 
     public AMQConnection(String connection) throws AMQException, URLSyntaxException
     {
-        this(new AMQConnectionURL(connection));
+        this(new AMQConnectionURL(connection), null);
     }
+    
+    public AMQConnection(String connection, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
+    {
+        this(new AMQConnectionURL(connection), sslConfig);
+    }
+    
 
-    public AMQConnection(ConnectionURL connectionURL) throws AMQException
+    public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
         _logger.info("Connection:" + connectionURL);
-
+        _sslConfiguration = sslConfig;
         if (connectionURL == null)
         {
             throw new IllegalArgumentException("Connection must be specified");
@@ -319,9 +356,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    public boolean attemptReconnection(String host, int port, boolean useSSL)
+    public boolean attemptReconnection(String host, int port)
     {
-        BrokerDetails bd = new AMQBrokerDetails(host, port, useSSL);
+        BrokerDetails bd = new AMQBrokerDetails(host, port, _sslConfiguration);
 
         _failoverPolicy.setBroker(bd);
 
@@ -1017,5 +1054,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 AMQConnectionFactory.class.getName(),
                 null);          // factory location
     }
-
+    
+    public SSLConfiguration getSSLConfiguration()
+    {
+    	return _sslConfiguration;
+    }
 }
