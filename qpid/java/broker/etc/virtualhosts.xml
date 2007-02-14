@@ -23,7 +23,6 @@
     <default>test</default>
     <virtualhost>
         <name>localhost</name>
-
         <localhost>
             <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
             <maximumMessageCount>5000</maximumMessageCount>
@@ -47,11 +46,11 @@
             </queue>
         </localhost>
     </virtualhost>
-	<virtualhost>
+    <virtualhost>
         <name>development</name>
-        <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-        <maximumMessageCount>5000</maximumMessageCount>
         <development>
+            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+            <maximumMessageCount>5000</maximumMessageCount>
             <queue>
                 <name>queue</name>
                 <queue>
@@ -72,11 +71,11 @@
             </queue>
         </development>
     </virtualhost>
-		<virtualhost>
+        <virtualhost>
             <name>test</name>
-            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-            <maximumMessageCount>5000</maximumMessageCount>
             <test>
+                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                <maximumMessageCount>5000</maximumMessageCount>
                 <queue>
                     <name>queue</name>
                     <queue>
