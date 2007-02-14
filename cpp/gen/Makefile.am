@@ -27,6 +27,6 @@ $(BUILT_SOURCES) timestamp: $(spec) $(java_sources) $(cxx_templates)
 	touch timestamp
 
 gen-src.mk: timestamp
-	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) >> $@-t
+	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
 	mv $@-t $@
 endif
