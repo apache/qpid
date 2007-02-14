@@ -19,21 +19,31 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.mina.common.ByteBuffer;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import javax.jms.*;
-
-import junit.framework.TestCase;
-import junit.framework.Assert;
 
 public class BytesMessageTest extends TestCase implements MessageListener
 {

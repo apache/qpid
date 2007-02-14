@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.configuration.Configured;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.util.NewThreadExecutor;
+import org.apache.qpid.configuration.Configured;
 
 public class ConnectorConfiguration
 {

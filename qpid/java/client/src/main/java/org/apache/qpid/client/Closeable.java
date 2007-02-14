@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.client;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides support for orderly shutdown of an object.

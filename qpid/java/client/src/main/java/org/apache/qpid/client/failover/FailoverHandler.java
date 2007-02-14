@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.mina.common.IoSession;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.failover.FailoverState;
-import org.apache.qpid.AMQDisconnectedException;
-import org.apache.log4j.Logger;
-
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.IoSession;
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.state.AMQStateManager;
 
 /**
  * When failover is required, we need a separate thread to handle the establishment of the new connection and

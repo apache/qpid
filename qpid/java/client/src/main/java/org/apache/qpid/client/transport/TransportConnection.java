@@ -20,25 +20,22 @@
  */
 package org.apache.qpid.client.transport;
 
-import org.apache.log4j.Logger;
-import org.apache.mina.common.IoConnector;
-import org.apache.mina.common.IoHandlerAdapter;
-import org.apache.mina.common.IoServiceConfig;
-
-
-import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
-import org.apache.mina.transport.socket.nio.SocketConnector;
-import org.apache.qpid.client.AMQBrokerDetails;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.IoConnector;
+import org.apache.mina.common.IoHandlerAdapter;
+import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.SocketConnector;
+import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
+import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up

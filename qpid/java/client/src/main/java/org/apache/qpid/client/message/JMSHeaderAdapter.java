@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.AMQPInvalidClassException;
-import org.apache.mina.common.ByteBuffer;
+import java.util.Enumeration;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import java.util.Enumeration;
+
+import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQPInvalidClassException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 
 
 public final class JMSHeaderAdapter
@@ -467,14 +468,14 @@ public final class JMSHeaderAdapter
 //          '_' and '$'. An identifier part character is any character for which the
 //          method Character.isJavaIdentifierPart returns true.
 //        - Identifiers cannot be the names NULL, TRUE, or FALSE.
-//        – Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or
+//        ï¿½ Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or
 //          ESCAPE.
-//        – Identifiers are either header field references or property references. The
+//        ï¿½ Identifiers are either header field references or property references. The
 //          type of a property value in a message selector corresponds to the type
 //          used to set the property. If a property that does not exist in a message is
 //          referenced, its value is NULL. The semantics of evaluating NULL values
-//          in a selector are described in Section 3.8.1.2, “Null Values.”
-//        – The conversions that apply to the get methods for properties do not
+//          in a selector are described in Section 3.8.1.2, ï¿½Null Values.ï¿½
+//        ï¿½ The conversions that apply to the get methods for properties do not
 //          apply when a property is used in a message selector expression. For
 //          example, suppose you set a property as a string value, as in the
 //          following:
@@ -482,8 +483,8 @@ public final class JMSHeaderAdapter
 //          The following expression in a message selector would evaluate to false,
 //          because a string cannot be used in an arithmetic expression:
 //          "NumberOfOrders > 1"
-//        – Identifiers are case sensitive.
-//        – Message header field references are restricted to JMSDeliveryMode,
+//        ï¿½ Identifiers are case sensitive.
+//        ï¿½ Message header field references are restricted to JMSDeliveryMode,
 //          JMSPriority, JMSMessageID, JMSTimestamp, JMSCorrelationID, and
 //          JMSType. JMSMessageID, JMSCorrelationID, and JMSType values may be
 //          null and if so are treated as a NULL value.

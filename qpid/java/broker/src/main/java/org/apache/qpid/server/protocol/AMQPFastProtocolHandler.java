@@ -30,6 +30,7 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.util.SessionUtil;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -43,7 +44,6 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.ssl.SSLContextFactory;
-
 
 /**
  * The protocol handler handles "protocol events" for all connections. The state

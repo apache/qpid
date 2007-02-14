@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.ContentHeaderProperties;
-import org.apache.qpid.client.AMQSession;
-
 import javax.jms.JMSException;
+
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.ContentHeaderProperties;
 
 public class AMQMessage
 {

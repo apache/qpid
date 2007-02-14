@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.log4j.Logger;
+import java.lang.management.ManagementFactory;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
-import java.lang.management.ManagementFactory;
+
+import org.apache.log4j.Logger;
 
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {

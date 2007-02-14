@@ -17,14 +17,15 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
+import javax.jms.Connection;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.MessageConsumer;
 
 /**
  * @author Apache Software Foundation

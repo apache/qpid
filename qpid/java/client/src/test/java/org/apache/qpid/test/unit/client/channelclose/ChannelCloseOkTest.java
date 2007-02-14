@@ -20,16 +20,26 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
-
-import javax.jms.*;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**

@@ -19,17 +19,27 @@
  */
 package org.apache.qpid.test.unit.ack;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 import junit.framework.TestCase;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.exchange.ExchangeDefaults;
-
-import javax.jms.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.qpid.framing.AMQShortString;
 
 public class RecoverTest extends TestCase
 {

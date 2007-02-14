@@ -20,25 +20,23 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
-import org.apache.qpid.AMQChannelException;
-import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.BasicConsumeOkBody;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BasicConsumeMethodHandler implements StateAwareMethodListener<BasicConsumeBody>
 {

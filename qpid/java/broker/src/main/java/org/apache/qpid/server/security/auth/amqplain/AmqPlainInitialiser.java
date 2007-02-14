@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.amqplain;
 
-import org.apache.qpid.server.security.auth.UsernamePasswordInitialiser;
-
 import javax.security.sasl.SaslServerFactory;
+
+import org.apache.qpid.server.security.auth.UsernamePasswordInitialiser;
 
 public class AmqPlainInitialiser extends UsernamePasswordInitialiser
 {

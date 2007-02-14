@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.io.IOException;
+
+import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
+import javax.management.openmbean.TabularData;
+
 import org.apache.qpid.server.management.MBeanAttribute;
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanOperationParameter;
 import org.apache.qpid.server.queue.ManagedQueue;
-
-import javax.management.openmbean.TabularData;
-import javax.management.JMException;
-import javax.management.MBeanOperationInfo;
-import java.io.IOException;
 
 /**
  * The management interface exposed to allow management of an Exchange.

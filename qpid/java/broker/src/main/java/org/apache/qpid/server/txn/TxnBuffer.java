@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Holds a list of TxnOp instance representing transactional

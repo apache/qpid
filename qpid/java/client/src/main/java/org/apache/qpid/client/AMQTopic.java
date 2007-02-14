@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-
 import javax.jms.JMSException;
 import javax.jms.Topic;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.url.BindingURL;
 
 public class AMQTopic extends AMQDestination implements Topic
 {

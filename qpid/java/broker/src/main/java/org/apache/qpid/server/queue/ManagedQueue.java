@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.server.management.MBeanOperation;
-import org.apache.qpid.server.management.MBeanOperationParameter;
-import org.apache.qpid.AMQException;
+import java.io.IOException;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
-import java.io.IOException;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.server.management.MBeanOperation;
+import org.apache.qpid.server.management.MBeanOperationParameter;
 
 /**
  * The management interface exposed to allow management of a queue.

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.url.BindingURL;
+import javax.jms.Queue;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-
-import javax.jms.Queue;
+import org.apache.qpid.url.BindingURL;
 
 public class AMQQueue extends AMQDestination implements Queue
 {

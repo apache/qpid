@@ -1,6 +1,7 @@
 package org.apache.qpid.client;
 
-import javax.jms.*;
+import javax.jms.Destination;
+import javax.jms.JMSException;
 
 /**
  * Provides support for covenience interface implemented by both AMQTemporaryTopic and AMQTemporaryQueue

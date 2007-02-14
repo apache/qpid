@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.exchange.Exchange;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-
-import java.util.List;
-import java.util.HashSet;
-import java.util.concurrent.CopyOnWriteArrayList;
+import org.apache.qpid.server.exchange.Exchange;
 
 /**
  * When a queue is deleted, it should be deregistered from any

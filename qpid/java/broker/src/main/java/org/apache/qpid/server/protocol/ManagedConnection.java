@@ -21,15 +21,16 @@
 
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.server.management.MBeanOperationParameter;
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.server.management.MBeanOperation;
+import java.io.IOException;
+import java.util.Date;
 
-import javax.management.openmbean.TabularData;
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
-import java.util.Date;
-import java.io.IOException;
+import javax.management.openmbean.TabularData;
+
+import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.server.management.MBeanOperation;
+import org.apache.qpid.server.management.MBeanOperationParameter;
 
 /**
  * The management interface exposed to allow management of Connections.

@@ -20,11 +20,17 @@
  */
 package org.apache.qpid.framing;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQPInvalidClassException;
-
-import java.util.*;
 
 //extends FieldTable
 public class FieldTable

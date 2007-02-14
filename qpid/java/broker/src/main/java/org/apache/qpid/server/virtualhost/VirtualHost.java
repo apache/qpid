@@ -20,18 +20,22 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.DefaultQueueRegistry;
-import org.apache.qpid.server.exchange.*;
-import org.apache.qpid.server.management.*;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.AMQBrokerManagerMBean;
+import javax.management.NotCompliantMBeanException;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-
-import javax.management.NotCompliantMBeanException;
+import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.queue.DefaultQueueRegistry;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.MessageStore;
 
 public class VirtualHost
 {

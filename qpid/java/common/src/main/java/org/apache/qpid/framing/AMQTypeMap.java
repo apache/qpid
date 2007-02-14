@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class AMQTypeMap
 {

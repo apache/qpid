@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.protocol;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 
 /**

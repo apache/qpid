@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.state.listener;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.AMQException;
 
 public class SpecificMethodFrameListener extends BlockingMethodFrameListener
 {

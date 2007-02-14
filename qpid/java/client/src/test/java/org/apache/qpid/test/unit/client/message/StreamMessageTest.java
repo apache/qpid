@@ -20,12 +20,19 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
+import java.util.HashMap;
+
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.StreamMessage;
+
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
-
-import javax.jms.*;
-import java.util.HashMap;
 
 /**
  * @author Apache Software Foundation

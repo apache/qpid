@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {

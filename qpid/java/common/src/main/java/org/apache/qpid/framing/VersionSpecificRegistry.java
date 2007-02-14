@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
 public class VersionSpecificRegistry
 {

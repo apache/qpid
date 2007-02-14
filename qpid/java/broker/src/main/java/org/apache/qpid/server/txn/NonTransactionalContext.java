@@ -17,22 +17,22 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author Apache Software Foundation

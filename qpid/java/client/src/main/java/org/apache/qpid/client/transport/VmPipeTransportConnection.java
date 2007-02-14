@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.client.transport;
 
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.transport.ITransportConnection;
-import org.apache.qpid.pool.PoolingFilter;
-import org.apache.qpid.pool.ReferenceCountingExecutorService;
-import org.apache.qpid.jms.BrokerDetails;
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
-
-import java.io.IOException;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.pool.PoolingFilter;
+import org.apache.qpid.pool.ReferenceCountingExecutorService;
 
 public class VmPipeTransportConnection implements ITransportConnection
 {

@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.test.unit.message;
 
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.TextMessage;
+
 import junit.framework.TestCase;
-import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.message.JMSTextMessage;
+
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.AMQQueue;
-
-import javax.jms.Message;
-import javax.jms.Destination;
-import javax.jms.TextMessage;
-import javax.jms.MapMessage;
-import javax.jms.JMSException;
-import java.util.HashMap;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.MessageConverter;
 
 
 public class MessageConverterTest extends TestCase

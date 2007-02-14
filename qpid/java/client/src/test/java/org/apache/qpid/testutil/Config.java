@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.testutil;
 
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
+import javax.jms.Connection;
+import javax.jms.Destination;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
-
-import javax.jms.Destination;
-import javax.jms.Connection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
 
 public class Config
 {

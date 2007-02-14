@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 

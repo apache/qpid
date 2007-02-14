@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.test.unit.client.destinationurl;
 
+import junit.framework.TestCase;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.exchange.ExchangeDefaults;
-
-import junit.framework.TestCase;
 
 public class DestinationURLTest extends TestCase
 {

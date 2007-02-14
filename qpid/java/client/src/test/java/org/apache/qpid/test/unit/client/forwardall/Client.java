@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-
-import javax.jms.Message;
-import javax.jms.MessageListener;
 
 /**
  * Declare a private temporary response queue,

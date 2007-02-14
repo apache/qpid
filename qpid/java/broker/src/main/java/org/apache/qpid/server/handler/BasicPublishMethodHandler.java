@@ -20,24 +20,17 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class BasicPublishMethodHandler  implements StateAwareMethodListener<BasicPublishBody>
 {
@@ -90,4 +83,5 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
         }
     }
 }
+
 

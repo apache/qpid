@@ -20,10 +20,18 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.log4j.Logger;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
-import java.io.*;
-import java.util.*;
+import org.apache.log4j.Logger;
 
 public class CallbackHandlerRegistry
 {

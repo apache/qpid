@@ -20,17 +20,29 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.jms.ConnectionURL;
-
-import javax.jms.*;
-import javax.jms.Connection;
-import javax.naming.*;
-import javax.naming.spi.ObjectFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.naming.Context;
+import javax.naming.Name;
+import javax.naming.NamingException;
+import javax.naming.RefAddr;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+import javax.naming.spi.ObjectFactory;
+
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory, ObjectFactory, Referenceable

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.codec;
 
+import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.apache.mina.common.IoSession;
 import org.apache.qpid.framing.AMQDataBlockEncoder;
 
 public class AMQEncoder implements ProtocolEncoder

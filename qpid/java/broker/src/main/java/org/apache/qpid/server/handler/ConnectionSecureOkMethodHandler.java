@@ -20,24 +20,26 @@
  */
 package org.apache.qpid.server.handler;
 
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ConnectionSecureBody;
+import org.apache.qpid.framing.ConnectionSecureOkBody;
+import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.HeartbeatConfig;
-import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.AuthenticationManager;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.log4j.Logger;
-
-import javax.security.sasl.SaslServer;
-import javax.security.sasl.SaslException;
 
 public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener<ConnectionSecureOkBody>
 {

@@ -20,15 +20,21 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.log4j.Logger;
-
-import javax.security.sasl.SaslClientFactory;
-import java.io.*;
-import java.util.Properties;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Security;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
-import java.security.Security;
+
+import javax.security.sasl.SaslClientFactory;
+
+import org.apache.log4j.Logger;
 
 public class DynamicSaslRegistrar
 {

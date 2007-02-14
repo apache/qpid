@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.transport;
 
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.jms.BrokerDetails;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.ConnectFuture;
@@ -30,9 +30,9 @@ import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 
 public class SocketTransportConnection implements ITransportConnection
 {

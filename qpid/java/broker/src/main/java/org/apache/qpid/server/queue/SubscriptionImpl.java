@@ -20,20 +20,21 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Queue;
+
 import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicCancelOkBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
-
-import java.util.Queue;
 
 /**
  * Encapsulation of a supscription to a queue.

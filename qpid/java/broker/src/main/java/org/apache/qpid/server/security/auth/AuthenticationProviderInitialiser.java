@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.security.auth;
 
-import org.apache.commons.configuration.Configuration;
+import java.util.Map;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslServerFactory;
-import java.util.Map;
+
+import org.apache.commons.configuration.Configuration;
 
 public interface AuthenticationProviderInitialiser
 {
