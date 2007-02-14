@@ -44,6 +44,7 @@ namespace qpid {
 namespace framing {
 class ChannelCloseBody;
 class AMQP_ServerProxy;
+class AMQMethodBody;
 }
 
 namespace client {
@@ -89,10 +90,13 @@ class Channel : public framing::ChannelAdapter,
         u_int64_t lastDeliveryTag;
     };
     typedef std::map<std::string, Consumer> ConsumerMap;
+    typedef std::queue<boost::shared_ptr<framing::AMQMethodBody> > IncomingMethods;
+    
     static const std::string OK;
         
     Connection* connection;
     sys::Thread dispatcher;
+    IncomingMethods incomingMethods;
     IncomingMessage* incoming;
     ResponseHandler responses;
     std::queue<IncomingMessage*> messages;//holds returned messages or those delivered for a consume
@@ -367,12 +371,12 @@ class Channel : public framing::ChannelAdapter,
      * Returns a proxy for the "raw" AMQP broker protocol. Only for use by
      * protocol experts.
      */
-
     framing::AMQP_ServerProxy& brokerProxy();
+
     /**
      * Wait for the next method from the broker.
      */
-    framing::AMQMethodBody::shared_ptr brokerResponse();
+    framing::AMQMethodBody::shared_ptr receive();
 };
 
 }}

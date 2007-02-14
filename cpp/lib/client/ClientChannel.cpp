@@ -54,11 +54,6 @@ AMQP_ServerProxy& Channel::brokerProxy() {
     return *proxy;
 }
 
-AMQMethodBody::shared_ptr Channel::brokerResponse() {
-    // FIXME aconway 2007-02-08: implement responses.
-    return AMQMethodBody::shared_ptr();
-}
-
 void Channel::open(ChannelId id, Connection& con)
 {
     if (isOpen())
@@ -482,7 +477,6 @@ void Channel::close(
     u_int16_t code, const std::string& text,
     ClassId classId, MethodId methodId)
 {
-    // FIXME aconway 2007-01-26: Locking?
     if (getId() != 0 && isOpen()) {
         try {
             sendAndReceive<ChannelCloseOkBody>(

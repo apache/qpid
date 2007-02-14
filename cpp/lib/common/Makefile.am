@@ -85,7 +85,8 @@ libqpidcommon_la_SOURCES =			\
   ExceptionHolder.cpp				\
   QpidError.cpp					\
   sys/Runnable.cpp				\
-  sys/Time.cpp
+  sys/Time.cpp					\
+  sys/ProducerConsumer.cpp
 
 nobase_pkginclude_HEADERS =			\
   $(gen)/AMQP_HighestVersion.h			\
@@ -132,7 +133,8 @@ nobase_pkginclude_HEADERS =			\
   sys/Socket.h					\
   sys/Thread.h					\
   sys/Time.h					\
-  sys/TimeoutHandler.h
+  sys/TimeoutHandler.h				\
+  sys/ProducerConsumer.h
 
 
 # Force build during dist phase so help2man will work.
