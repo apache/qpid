@@ -20,35 +20,44 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
-import org.apache.qpid.pool.ReadWriteThreadModel;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.SSLConfiguration;
 import org.apache.qpid.client.failover.FailoverHandler;
 import org.apache.qpid.client.failover.FailoverState;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.ConnectionCloseOkBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.ssl.BogusSSLContextFactory;
-
-import java.util.Iterator;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
+import org.apache.qpid.ssl.SSLContextFactory;
 
 
 public class AMQProtocolHandler extends IoHandlerAdapter
@@ -60,12 +69,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * mapping between connection instances and protocol handler instances.
      */
     private AMQConnection _connection;
-
-    /**
-     * Used only when determining whether to add the SSL filter or not. This should be made more
-     * generic in future since we will potentially have many transport layer options
-     */
-    private boolean _useSSL;
 
     /**
      * Our wrapper for a protocol session that provides access to session values
@@ -99,16 +102,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _connection = con;
     }
 
-    public boolean isUseSSL()
-    {
-        return _useSSL;
-    }
-
-    public void setUseSSL(boolean useSSL)
-    {
-        _useSSL = useSSL;
-    }
-
     public void sessionCreated(IoSession session) throws Exception
     {
         _logger.debug("Protocol session created for session " + System.identityHashCode(session));
@@ -125,10 +118,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             session.getFilterChain().addLast("protocolFilter", pcf);
         }
         // we only add the SSL filter where we have an SSL connection
-        if (_useSSL)
+        if (_connection.getSSLConfiguration() != null)
         {
-            //FIXME: Bogus context cannot be used in production.
-            SSLFilter sslFilter = new SSLFilter(BogusSSLContextFactory.getInstance(false));
+        	SSLConfiguration sslConfig = _connection.getSSLConfiguration();
+        	SSLContextFactory sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType()); 
+            SSLFilter sslFilter = new SSLFilter(sslFactory.buildClientContext());
             sslFilter.setUseClientMode(true);
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
         }

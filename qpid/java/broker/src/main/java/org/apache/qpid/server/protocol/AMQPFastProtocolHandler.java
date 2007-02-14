@@ -20,15 +20,8 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.transport.ConnectorConfiguration;
-import org.apache.qpid.ssl.BogusSSLContextFactory;
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
@@ -37,8 +30,19 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.util.SessionUtil;
-
-import java.io.IOException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQProtocolHeaderException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ConnectorConfiguration;
+import org.apache.qpid.ssl.SSLContextFactory;
 
 
 /**
@@ -56,17 +60,14 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
     private final IApplicationRegistry _applicationRegistry;
 
 
-    private boolean _useSSL;
-
     public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
     {
-        this(ApplicationRegistry.getInstance(applicationRegistryInstance));
+    	this(ApplicationRegistry.getInstance(applicationRegistryInstance));
     }
 
     public AMQPFastProtocolHandler(IApplicationRegistry applicationRegistry)
     {
         _applicationRegistry = applicationRegistry;
-
         _logger.debug("AMQPFastProtocolHandler created");
     }
 
@@ -89,16 +90,30 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
                 getConfiguredObject(ConnectorConfiguration.class);
         if (connectorConfig.enableExecutorPool)
         {
-            if (_useSSL)
+            if (connectorConfig.enableSSL)
             {
+            	String keystorePath = connectorConfig.keystorePath;
+            	String keystorePassword = connectorConfig.keystorePassword;
+            	String certType = connectorConfig.certType;
+            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
-                                                          new SSLFilter(BogusSSLContextFactory.getInstance(true)));
+                                                          new SSLFilter(sslContextFactory.buildServerContext()));
             }
             protocolSession.getFilterChain().addBefore("AsynchronousWriteFilter", "protocolFilter", pcf);
         }
         else
         {
-            protocolSession.getFilterChain().addLast("protocolFilter", pcf);
+        	protocolSession.getFilterChain().addLast("protocolFilter", pcf);
+            if (connectorConfig.enableSSL)
+            {
+            	String keystorePath = connectorConfig.keystorePath;
+            	String keystorePassword = connectorConfig.keystorePassword;
+            	String certType = connectorConfig.certType;
+            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
+                                                          new SSLFilter(sslContextFactory.buildServerContext()));
+            }        	
+            
         }
     }
 
@@ -215,15 +230,5 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         {
             _logger.debug("Message sent: " + object);
         }
-    }
-
-    public boolean isUseSSL()
-    {
-        return _useSSL;
-    }
-
-    public void setUseSSL(boolean useSSL)
-    {
-        _useSSL = useSSL;
     }
 }
