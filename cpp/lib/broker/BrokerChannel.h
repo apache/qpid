@@ -78,7 +78,6 @@ class Channel : public framing::ChannelAdapter,
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
     Connection& connection;
-    u_int16_t id;
     u_int64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
     bool transactional;

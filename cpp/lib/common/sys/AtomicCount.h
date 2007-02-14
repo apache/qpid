@@ -20,7 +20,7 @@
  */
 
 #include <boost/detail/atomic_count.hpp>
-#include <boost/noncopyable.hpp>
+#include "ScopedIncrement.h"
 
 namespace qpid {
 namespace sys {
@@ -30,26 +30,8 @@ namespace sys {
  */
 class AtomicCount : boost::noncopyable {
   public:
-    class ScopedDecrement : boost::noncopyable {
-      public:
-        /** Decrement counter in constructor and increment in destructor. */
-        ScopedDecrement(AtomicCount& c) : count(c) { value = --count; }
-        ~ScopedDecrement() { ++count; }
-        /** Return the value returned by the decrement. */
-        operator long() { return value; }
-      private:
-        AtomicCount& count;
-        long value;
-    };
-
-    class ScopedIncrement : boost::noncopyable {
-      public:
-        /** Increment counter in constructor and increment in destructor. */
-        ScopedIncrement(AtomicCount& c) : count(c) { ++count; }
-        ~ScopedIncrement() { --count; }
-      private:
-        AtomicCount& count;
-    };
+    typedef ScopedDecrement<AtomicCount> ScopedDecrement;
+    typedef ScopedIncrement<AtomicCount> ScopedIncrement;
 
     AtomicCount(long value = 0) : count(value) {}
     

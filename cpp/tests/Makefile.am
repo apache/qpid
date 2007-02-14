@@ -47,14 +47,15 @@ framing_tests =		\
   HeaderTest
 
 misc_tests =		\
-  ExceptionTest
+  ExceptionTest		\
+	  ProducerConsumerTest
 
 posix_tests =		\
   EventChannelTest	\
   EventChannelThreadsTest
 
 unit_tests =		\
-  $(broker_tests)	\
+b  $(broker_tests)	\
   $(framing_tests)	\
   $(misc_tests) 	\
   $(round_trip_tests)
