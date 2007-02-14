@@ -140,7 +140,7 @@ public class LargeMessageTest extends TestCase
 
             String _messageText = buildLargeMessage(messageSize);
 
-            _logger.error("Message built");
+            _logger.debug("Message built");
 
             producer.send(_session.createTextMessage(_messageText));
 
