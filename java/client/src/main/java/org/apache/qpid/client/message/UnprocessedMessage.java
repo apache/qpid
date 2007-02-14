@@ -81,6 +81,7 @@ public class UnprocessedMessage
                 else
                 {
                     _bodies = new ArrayList<ContentBody>();
+                    _bodies.add(body);
                 }
 
             }
