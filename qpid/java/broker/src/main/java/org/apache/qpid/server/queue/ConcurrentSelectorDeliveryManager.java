@@ -287,8 +287,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
                 else if (messageQueue == sub.getPreDeliveryQueue())
                 {
-                    //fixme
-                    _log.error("MEMORY LEAK: message from PreDeliveryQueue not removed from _messages");
+                    _log.error("Message from PreDeliveryQueue not removed from _messages: Using inefficient remove");
                     //inefficient
                     _messages.remove(message);
                 }

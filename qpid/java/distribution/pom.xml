@@ -38,7 +38,7 @@
         <java.source.version>1.5</java.source.version>
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
-		<release.revision>-r506981</release.revision>
+		<release.revision>-r507473</release.revision>
     </properties>
    
     <repositories>
