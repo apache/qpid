@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.url.URLHelper;
+import javax.jms.Destination;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-
-import javax.naming.Reference;
-import javax.naming.NamingException;
-import javax.naming.StringRefAddr;
-import javax.naming.Referenceable;
-import javax.jms.Destination;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
 
 
 public abstract class AMQDestination implements Destination, Referenceable

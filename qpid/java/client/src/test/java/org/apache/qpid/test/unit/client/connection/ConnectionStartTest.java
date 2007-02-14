@@ -20,30 +20,23 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQAuthenticationException;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.message.AMQMessage;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.AMQConnectionFailureException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.Session;
-import javax.jms.MessageProducer;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import junit.framework.TestCase;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.transport.TransportConnection;
 
 public class ConnectionStartTest extends TestCase
 {

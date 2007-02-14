@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.List;
 
 public interface MessageStore
 {

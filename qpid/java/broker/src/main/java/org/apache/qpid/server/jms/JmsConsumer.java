@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.jms;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public class JmsConsumer
 {

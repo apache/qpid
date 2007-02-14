@@ -20,11 +20,16 @@
  */
 package org.apache.qpid.test.unit.client.protocol;
 
-import org.apache.mina.common.support.BaseIoSession;
-import org.apache.mina.common.*;
-
-import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+
+import org.apache.mina.common.IoFilterChain;
+import org.apache.mina.common.IoHandler;
+import org.apache.mina.common.IoService;
+import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.common.IoSessionConfig;
+import org.apache.mina.common.TransportType;
+import org.apache.mina.common.support.BaseIoSession;
 
 public class TestIoSession extends BaseIoSession {
 

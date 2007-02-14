@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.configuration;
 
+import java.lang.reflect.Field;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.configuration.Configured;
-import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.configuration.PropertyException;
+import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-
-import java.lang.reflect.Field;
 
 /**
  * This class contains utilities for populating classes automatically from values pulled from configuration

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import org.apache.qpid.testutil.VMBrokerSetup;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.testutil.VMBrokerSetup;
 
 /**
  * Runs the Service's and Client parts of the test in the same process

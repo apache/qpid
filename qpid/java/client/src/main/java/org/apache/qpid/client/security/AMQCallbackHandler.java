@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-
 import javax.security.auth.callback.CallbackHandler;
+
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public interface AMQCallbackHandler extends CallbackHandler
 {

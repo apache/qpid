@@ -20,19 +20,23 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.mina.util.SessionLog;
-import org.apache.log4j.Logger;
-
-import javax.jms.*;
-
-import junit.framework.TestCase;
+import org.apache.qpid.framing.AMQShortString;
 
 public class TransactedTest extends TestCase
 {

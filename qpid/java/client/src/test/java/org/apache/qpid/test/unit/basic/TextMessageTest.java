@@ -20,20 +20,27 @@
  */
 package org.apache.qpid.test.unit.basic;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import javax.jms.*;
-
-import junit.framework.TestCase;
-import junit.framework.Assert;
 
 public class TextMessageTest extends TestCase implements MessageListener
 {

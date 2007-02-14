@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client.protocol;
 
+import org.apache.log4j.Logger;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
-import org.apache.log4j.Logger;
 
 /**
  * A MINA filter that monitors the numbers of messages pending to be sent by MINA. It outputs a message

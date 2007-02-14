@@ -22,11 +22,11 @@ package org.apache.qpid.client.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionRedirectBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
 {

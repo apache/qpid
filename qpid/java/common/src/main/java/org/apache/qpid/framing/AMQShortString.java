@@ -1,9 +1,7 @@
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.log4j.Logger;
-
-import java.util.Arrays;
+import org.apache.mina.common.ByteBuffer;
 
 /**
  * A short string is a representation of an AMQ Short String

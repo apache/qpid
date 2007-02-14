@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-
-import javax.security.auth.callback.*;
 import java.io.IOException;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public class UsernamePasswordCallbackHandler implements AMQCallbackHandler
 {

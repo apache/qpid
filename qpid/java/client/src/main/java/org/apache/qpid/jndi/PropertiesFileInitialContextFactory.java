@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.jndi;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQHeadersExchange;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.framing.AMQShortString;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -38,14 +36,17 @@ import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQHeadersExchange;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {

@@ -20,14 +20,12 @@
  */
 package org.apache.qpid.url;
 
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-
-import java.util.HashMap;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQBindingURL implements BindingURL
 {

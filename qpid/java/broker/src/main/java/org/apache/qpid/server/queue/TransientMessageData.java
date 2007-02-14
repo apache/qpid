@@ -17,13 +17,13 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.AMQException;
-
-import java.util.List;
-import java.util.LinkedList;
 
 /**
  * Contains data that is only used in AMQMessage transiently, e.g. while the content

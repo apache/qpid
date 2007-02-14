@@ -21,6 +21,7 @@
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
 

@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.Map;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 

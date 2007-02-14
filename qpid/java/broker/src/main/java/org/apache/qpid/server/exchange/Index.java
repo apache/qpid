@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.framing.AMQShortString;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * An index of queues against routing key. Allows multiple queues to be stored

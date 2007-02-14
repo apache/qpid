@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.configuration;
 
-import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 
 /**
  * Indicates an error parsing a property expansion.
