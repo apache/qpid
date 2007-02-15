@@ -59,7 +59,7 @@ public class TransactedTest extends TestCase
         super.setUp();
         TransportConnection.createVMBroker(1);
         queue1 = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
-        queue2 = new AMQQueue("Q2x", false);
+        queue2 = new AMQQueue("Q2", false);
 
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
         session = con.createSession(true, 0);
@@ -167,7 +167,6 @@ public class TransactedTest extends TestCase
     // messages left over from the last test (which can affect later tests)...
     public void testEmpty2() throws Exception
     {
-//System.out.println("=== DEBUG === testEmpty2(): assertTrue(null == consumer1.receive(1000));");
         assertTrue(null == consumer1.receive(1000));
     }
 

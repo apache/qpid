@@ -69,6 +69,11 @@ public class LocalTransactionalContext implements TransactionalContext
             this.message = message;
             this.queue = queue;
         }
+        
+        public String toString()
+        {
+            return "msg=" + message.getBody() + "; q=" + queue.getName();
+        }
     }
 
     public LocalTransactionalContext(MessageStore messageStore, StoreContext storeContext,
@@ -89,6 +94,7 @@ public class LocalTransactionalContext implements TransactionalContext
     public void rollback() throws AMQException
     {
         _txnBuffer.rollback(_storeContext);
+        _postCommitDeliveryList.clear();
     }
 
     public void deliver(AMQMessage message, AMQQueue queue) throws AMQException
