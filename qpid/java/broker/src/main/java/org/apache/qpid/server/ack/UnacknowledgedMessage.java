@@ -50,5 +50,15 @@ public class UnacknowledgedMessage
         }
         message.decrementReference(storeContext);
     }
+
+    public void restoreTransientMessageData() throws AMQException
+    {
+        message.restoreTransientMessageData();
+    }
+
+    public void clearTransientMessageData()
+    {
+        message.clearTransientMessageData();
+    }
 }
 

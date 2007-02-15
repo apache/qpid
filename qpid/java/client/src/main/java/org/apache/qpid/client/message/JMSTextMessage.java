@@ -28,6 +28,7 @@ import javax.jms.JMSException;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
@@ -42,7 +43,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     /**
      * This constant represents the name of a property that is set when the message payload is null.
      */
-    private static final AMQShortString PAYLOAD_NULL_PROPERTY = new AMQShortString("JMS_QPID_NULL");
+    private static final AMQShortString PAYLOAD_NULL_PROPERTY = CustomJMSXProperty.JMS_AMQP_NULL.getShortStringName();
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     public JMSTextMessage() throws JMSException

@@ -68,7 +68,7 @@ public class AMQConnectionURL implements ConnectionURL
                 String uid = AMQConnectionFactory.getUniqueClientID();
                 if (uid == null)
                 {
-                    URLHelper.parseError(-1, "Client Name not specified", fullURL);
+                    throw URLHelper.parseError(-1, "Client Name not specified", fullURL);
                 }
                 else
                 {
@@ -106,7 +106,7 @@ public class AMQConnectionURL implements ConnectionURL
 
             if (userInfo == null)
             {
-                URLHelper.parseError(AMQ_PROTOCOL.length() + 3,
+                throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3,
                         "User information not found on url", fullURL);
             }
             else
@@ -126,11 +126,11 @@ public class AMQConnectionURL implements ConnectionURL
                 int testIndex = start + authLength;
                 if (testIndex < fullURL.length() && fullURL.charAt(testIndex) == '?')
                 {
-                    URLHelper.parseError(start, testIndex - start, "Virtual host found", fullURL);
+                    throw URLHelper.parseError(start, testIndex - start, "Virtual host found", fullURL);
                 }
                 else
                 {
-                    URLHelper.parseError(-1, "Virtual host not specified", fullURL);
+                    throw URLHelper.parseError(-1, "Virtual host not specified", fullURL);
                 }
 
             }
@@ -155,17 +155,17 @@ public class AMQConnectionURL implements ConnectionURL
 
             if (slash == -1)
             {
-                URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
+                throw URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
             }
             else
             {
                 if (slash != 0 && fullURL.charAt(slash - 1) == ':')
                 {
-                    URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2, "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
+                    throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2, "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
                 }
                 else
                 {
-                    URLHelper.parseError(slash, "Forward slash not allowed in URL", fullURL);
+                    throw URLHelper.parseError(slash, "Forward slash not allowed in URL", fullURL);
                 }
             }
 
@@ -180,7 +180,7 @@ public class AMQConnectionURL implements ConnectionURL
 
         if (colonIndex == -1)
         {
-            URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
+            throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
                     "Null password in user information not allowed.", _url);
         }
         else

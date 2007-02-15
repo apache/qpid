@@ -49,22 +49,22 @@ public class InMemoryMessageHandle implements AMQMessageHandle
     {
     }
 
-    public ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException
+    public ContentHeaderBody getContentHeaderBody(StoreContext context, Long messageId) throws AMQException
     {
         return _contentHeaderBody;
     }
 
-    public int getBodyCount(Long messageId)
+    public int getBodyCount(StoreContext context, Long messageId)
     {
         return _contentBodies.size();
     }
 
-    public long getBodySize(Long messageId) throws AMQException
+    public long getBodySize(StoreContext context, Long messageId) throws AMQException
     {
-        return getContentHeaderBody(messageId).bodySize;
+        return getContentHeaderBody(context, messageId).bodySize;
     }
 
-    public ContentBody getContentBody(Long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentBody getContentBody(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -80,7 +80,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _contentBodies.add(contentBody);
     }
 
-    public BasicPublishBody getPublishBody(Long messageId) throws AMQException
+    public BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException
     {
         return _publishBody;
     }
@@ -96,10 +96,10 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(Long messageId) throws AMQException
+    public boolean isPersistent(StoreContext context, Long messageId) throws AMQException
     {
         //todo remove literal values to a constant file such as AMQConstants in common
-        ContentHeaderBody chb = getContentHeaderBody(messageId);
+        ContentHeaderBody chb = getContentHeaderBody(context, messageId);
         return chb.properties instanceof BasicContentHeaderProperties &&
                ((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2;
     }

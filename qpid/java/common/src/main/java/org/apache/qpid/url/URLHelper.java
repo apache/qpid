@@ -114,11 +114,11 @@ public class URLHelper
 
             if (sepIndex >= options.length() || sepIndex == 0)
             {
-                parseError(valueIndex, "Unterminated option", options);
+                throw parseError(valueIndex, "Unterminated option", options);
             }
             else
             {
-                parseError(sepIndex, "Unterminated option. Possible illegal option separator:'" +
+                throw parseError(sepIndex, "Unterminated option. Possible illegal option separator:'" +
                         options.charAt(sepIndex) + "'", options);
             }
         }
@@ -136,14 +136,14 @@ public class URLHelper
     }
 
 
-    public static void parseError(int index, String error, String url) throws URLSyntaxException
+    public static URLSyntaxException parseError(int index, String error, String url)
     {
-        parseError(index, 1, error, url);
+        return parseError(index, 1, error, url);
     }
 
-    public static void parseError(int index, int length, String error, String url) throws URLSyntaxException
+    public static URLSyntaxException parseError(int index, int length, String error, String url)
     {
-        throw new URLSyntaxException(url, error, index, length);
+        return new URLSyntaxException(url, error, index, length);
     }
 
     public static String printOptions(HashMap<String, String> options)

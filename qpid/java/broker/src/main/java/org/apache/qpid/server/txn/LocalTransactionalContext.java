@@ -168,7 +168,7 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             if (_log.isDebugEnabled())
             {
-                _log.debug("Starting transaction on message store");
+                _log.debug("Starting transaction on message store: " + this);
             }
             _messageStore.beginTran(_storeContext);
             _inTran = true;
@@ -179,7 +179,7 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug("Committing transactional context");
+            _log.debug("Committing transactional context: " + this);
         }
         if (_ackOp != null)
         {

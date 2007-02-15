@@ -78,8 +78,9 @@ public class AMQQueueMBeanTest extends TestCase
         assertFalse(mgr.hasActiveSubscribers());
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
-        _channel = new AMQChannel(1, _messageStore, null);
+
         _protocolSession = new MockProtocolSession(_messageStore);
+        _channel = new AMQChannel(_protocolSession, 1, _messageStore, null);
         _protocolSession.addChannel(_channel);
 
         _queue.registerProtocolSession(_protocolSession, 1, new AMQShortString("test"), false, null,false,false);

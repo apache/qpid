@@ -43,6 +43,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.MessageRouter;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
@@ -112,7 +113,7 @@ public class AMQChannel
      * A context used by the message store enabling it to track context for a given channel even across
      * thread boundaries
      */
-    private final StoreContext _storeContext = new StoreContext();
+    private final StoreContext _storeContext;
 
     private final List<RequiredDeliveryException> _returnMessages = new LinkedList<RequiredDeliveryException>();
 
@@ -120,12 +121,16 @@ public class AMQChannel
 
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
+    private final AMQProtocolSession _session;
 
 
-    public AMQChannel(int channelId, MessageStore messageStore, MessageRouter exchanges)
+
+    public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
     {
+        _session = session;
         _channelId = channelId;
+        _storeContext = new StoreContext("Session: " + session.getClientIdentifier() + "; channel: " + channelId);
         _prefetch_HighWaterMark = DEFAULT_PREFETCH;
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
@@ -338,7 +343,8 @@ public class AMQChannel
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
         requeue();
-		_txnContext.commit();
+        _txnContext.commit();
+
     }
 
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
@@ -386,7 +392,9 @@ public class AMQChannel
                 _txnContext.deliver(unacked.message, unacked.queue);
             }
         }
+
     }
+
 
     /**
      * Called to resend all outstanding unacknowledged messages to this same channel.
@@ -403,7 +411,7 @@ public class AMQChannel
                 AMQShortString consumerTag = message.consumerTag;
                 AMQMessage msg = message.message;
                 msg.setRedelivered(true);
-                if((consumerTag != null) && _consumerTag2QueueMap.containsKey(consumerTag))
+                if((consumerTag != null) && _consumerTag2QueueMap.containsKey(consumerTag) && !isSuspended())
                 {
                     msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
                 }
@@ -417,6 +425,7 @@ public class AMQChannel
                         msgToRequeue.add(message);                         
                     }
                 }
+                
                 // false means continue processing
                 return false;
             }
@@ -430,6 +439,7 @@ public class AMQChannel
         {
             _txnContext.deliver(message.message, message.queue);
             _unacknowledgedMessageMap.remove(message.deliveryTag);
+            message.message.decrementReference(_storeContext);
         }
     }
 
@@ -559,6 +569,8 @@ public class AMQChannel
     public void rollback() throws AMQException
     {
         _txnContext.rollback();
+
+
     }
 
     public String toString()
