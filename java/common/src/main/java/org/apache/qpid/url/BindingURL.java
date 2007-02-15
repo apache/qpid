@@ -40,29 +40,17 @@ public interface BindingURL
 
     AMQShortString getExchangeClass();
 
-    void setExchangeClass(AMQShortString name);
-
     AMQShortString getExchangeName();
-
-    void setExchangeName(AMQShortString name);
 
     AMQShortString getDestinationName();
 
-    void setDestinationName(AMQShortString name);
-
     AMQShortString getQueueName();
 
-    void setQueueName(AMQShortString name);
-
     String getOption(String key);
-
-    void setOption(String key, String value);
 
     boolean containsOption(String key);
 
     AMQShortString getRoutingKey();
-
-    void setRoutingKey(AMQShortString key);
 
     String toString();
 }

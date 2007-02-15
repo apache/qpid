@@ -97,12 +97,12 @@ public class SkeletonMessageStore implements MessageStore
 
     }
 
-    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(StoreContext s,Long messageId) throws AMQException
     {
         return null;
     }
 
-    public ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException
+    public ContentBody getContentBodyChunk(StoreContext s,Long messageId, int index) throws AMQException
     {
         return null;
     }

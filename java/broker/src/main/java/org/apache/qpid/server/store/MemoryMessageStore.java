@@ -174,12 +174,12 @@ public class MemoryMessageStore implements MessageStore
         _metaDataMap.put(messageId, messageMetaData);
     }
 
-    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(StoreContext context,Long messageId) throws AMQException
     {
         return _metaDataMap.get(messageId);
     }
 
-    public ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException
+    public ContentBody getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
     {
         List<ContentBody> bodyList = _contentBodyMap.get(messageId);
         return bodyList.get(index);

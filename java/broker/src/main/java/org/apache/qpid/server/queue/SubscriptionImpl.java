@@ -267,9 +267,11 @@ public class SubscriptionImpl implements Subscription
                 if (_acks)
                 {
                     channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                    msg.decrementReference(storeContext);
                 }
 
                 msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
+
             }
         }
         finally
