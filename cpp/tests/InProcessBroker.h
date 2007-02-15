@@ -22,6 +22,7 @@
 #include <iostream>
 #include <algorithm>
 
+#include "AMQP_HighestVersion.h"
 #include "framing/AMQFrame.h"
 #include "broker/Broker.h"
 #include "broker/Connection.h"
@@ -70,7 +71,9 @@ class InProcessBroker : public client::Connector {
     };
     typedef std::vector<Frame> Conversation;
 
-    InProcessBroker(framing::ProtocolVersion ver) :
+    InProcessBroker(framing::ProtocolVersion ver=
+                    framing::highestProtocolVersion
+    ) :
         Connector(ver),
         protocolInit(ver),
         broker(broker::Broker::create()),
@@ -151,8 +154,9 @@ class InProcessBrokerClient : public qpid::client::Connection {
     qpid::broker::InProcessBroker broker;
     
     /** Constructor creates broker and opens client connection. */
-    InProcessBrokerClient(qpid::framing::ProtocolVersion version)
-        : broker(version)
+    InProcessBrokerClient(qpid::framing::ProtocolVersion version=
+                          qpid::framing::highestProtocolVersion
+    ) : broker(version)
     {
         setConnector(broker);
         open("");
