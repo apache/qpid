@@ -550,7 +550,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         try
         {
             AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-                                                                          false,
+                                                                          messageFrame.getRedeliveredFlag(),
                                                                           messageFrame.getMessageHeaders(),
                                                                           messageFrame.getContents());
 
