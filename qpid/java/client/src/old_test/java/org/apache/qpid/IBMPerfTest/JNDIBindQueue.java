@@ -63,7 +63,7 @@ public class JNDIBindQueue
 
             try
             {
-                _connection = new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'");
+                _connection = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'");
                 System.out.println("Connected");
             }
             catch (Exception amqe)
