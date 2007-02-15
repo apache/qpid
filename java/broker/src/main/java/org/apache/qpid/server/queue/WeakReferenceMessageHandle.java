@@ -56,21 +56,21 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _messageStore = messageStore;
     }
 
-    public ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException
+    public ContentHeaderBody getContentHeaderBody(StoreContext context, Long messageId) throws AMQException
     {
         ContentHeaderBody chb = (_contentHeaderBody != null ? _contentHeaderBody.get() : null);
         if (chb == null)
         {
-            MessageMetaData mmd = loadMessageMetaData(messageId);
+            MessageMetaData mmd = loadMessageMetaData(context, messageId);
             chb = mmd.getContentHeaderBody();
         }
         return chb;
     }
 
-    private MessageMetaData loadMessageMetaData(Long messageId)
+    private MessageMetaData loadMessageMetaData(StoreContext context, Long messageId)
             throws AMQException
     {
-        MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
+        MessageMetaData mmd = _messageStore.getMessageMetaData(context, messageId);
         populateFromMessageMetaData(mmd);
         return mmd;
     }
@@ -82,11 +82,11 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _publishBody = new WeakReference<BasicPublishBody>(mmd.getPublishBody());
     }
 
-    public int getBodyCount(Long messageId) throws AMQException
+    public int getBodyCount(StoreContext context, Long messageId) throws AMQException
     {
         if (_contentBodies == null)
         {
-            MessageMetaData mmd = _messageStore.getMessageMetaData(messageId);
+            MessageMetaData mmd = _messageStore.getMessageMetaData(context, messageId);
             int chunkCount = mmd.getContentChunkCount();
             _contentBodies = new ArrayList<WeakReference<ContentBody>>(chunkCount);
             for (int i = 0; i < chunkCount; i++)
@@ -97,12 +97,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return _contentBodies.size();
     }
 
-    public long getBodySize(Long messageId) throws AMQException
+    public long getBodySize(StoreContext context, Long messageId) throws AMQException
     {
-        return getContentHeaderBody(messageId).bodySize;
+        return getContentHeaderBody(context, messageId).bodySize;
     }
 
-    public ContentBody getContentBody(Long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentBody getContentBody(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -113,7 +113,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         ContentBody cb = wr.get();
         if (cb == null)
         {
-            cb = _messageStore.getContentBodyChunk(messageId, index);
+            cb = _messageStore.getContentBodyChunk(context, messageId, index);
             _contentBodies.set(index, new WeakReference<ContentBody>(cb));
         }
         return cb;
@@ -145,12 +145,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody, isLastContentBody);
     }
 
-    public BasicPublishBody getPublishBody(Long messageId) throws AMQException
+    public BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException
     {
         BasicPublishBody bpb = (_publishBody != null ? _publishBody.get() : null);
         if (bpb == null)
         {
-            MessageMetaData mmd = loadMessageMetaData(messageId);
+            MessageMetaData mmd = loadMessageMetaData(context, messageId);
 
             bpb = mmd.getPublishBody();
         }
@@ -167,10 +167,10 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         _redelivered = redelivered;
     }
 
-    public boolean isPersistent(Long messageId) throws AMQException
+    public boolean isPersistent(StoreContext context, Long messageId) throws AMQException
     {
         //todo remove literal values to a constant file such as AMQConstants in common
-        ContentHeaderBody chb = getContentHeaderBody(messageId);
+        ContentHeaderBody chb = getContentHeaderBody(context, messageId);
         return chb.properties instanceof BasicContentHeaderProperties &&
                ((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2;
     }

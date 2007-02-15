@@ -75,7 +75,7 @@ public class AMQBrokerDetails implements BrokerDetails
                         }
                         else
                         {
-                            URLHelper.parseError(0, transport.length(), "Unknown transport", url);
+                            throw URLHelper.parseError(0, transport.length(), "Unknown transport", url);
                         }
                     }
                 }
@@ -89,7 +89,7 @@ public class AMQBrokerDetails implements BrokerDetails
 
             if (transport == null)
             {
-                URLHelper.parseError(-1, "Unknown transport:'" + transport + "'" +
+                throw URLHelper.parseError(-1, "Unknown transport:'" + transport + "'" +
                                          " In broker URL:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
             }
 
@@ -144,7 +144,7 @@ public class AMQBrokerDetails implements BrokerDetails
                     }
                     else
                     {
-                        URLHelper.parseError(connection.toString().indexOf(connection.getAuthority()) + end - 1,
+                        throw URLHelper.parseError(connection.toString().indexOf(connection.getAuthority()) + end - 1,
                                              "Illegal character in port number", connection.toString());
                     }
 
@@ -172,7 +172,7 @@ public class AMQBrokerDetails implements BrokerDetails
                 throw(URLSyntaxException) uris;
             }
 
-            URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
+            throw URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
         }
     }
 

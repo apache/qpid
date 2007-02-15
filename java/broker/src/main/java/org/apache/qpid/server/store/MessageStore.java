@@ -84,8 +84,8 @@ public interface MessageStore
 
     void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException;
 
-    MessageMetaData getMessageMetaData(Long messageId) throws AMQException;
+    MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException;
 
-    ContentBody getContentBodyChunk(Long messageId, int index) throws AMQException;
+    ContentBody getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
 
 }
