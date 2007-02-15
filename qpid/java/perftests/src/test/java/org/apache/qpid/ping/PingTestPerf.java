@@ -237,13 +237,15 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                     perThreadSetup._pingClient.close();
                 }
             }
-
-            // Ensure the per thread fixture is reclaimed.
-            threadSetup.remove();
         }
         catch (JMSException e)
         {
             _logger.warn("There was an exception during per thread tear down.");
+        }
+        finally
+        {
+            // Ensure the per thread fixture is reclaimed.
+            threadSetup.remove();
         }
     }
 
