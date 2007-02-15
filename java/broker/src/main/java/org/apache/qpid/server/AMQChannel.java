@@ -395,6 +395,7 @@ public class AMQChannel
     {
         MessageTransferBody mtb = msg.getTransferBody().copy();
         mtb.destination = destination;
+        mtb.redelivered = msg.isRedelivered();
         ByteBuffer buf = ByteBuffer.allocate((int)msg.getBodySize());
         for (ByteBuffer bb : msg.getContents())
         {
@@ -441,6 +442,7 @@ public class AMQChannel
     {
         MessageTransferBody mtb = msg.getTransferBody().copy();
         mtb.destination = destination;
+        mtb.redelivered = msg.isRedelivered();
         mtb.body = new Content(Content.TypeEnum.REF_T, refId);
         _session.writeRequest(_channelId, mtb, listener);
         for (ByteBuffer bb : msg.getContents())

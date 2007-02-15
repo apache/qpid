@@ -37,20 +37,23 @@ public class UnprocessedMessage
 	private int channelId;
 	private List<byte[]> contents = new LinkedList();
 	private long deliveryTag;
+    private boolean redeliveredFlag;
 	private MessageHeaders messageHeaders;
     
-    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders)
+    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, boolean redeliveredFlag)
     {
         this.channelId = channelId;
         this.deliveryTag = deliveryTag;
         this.messageHeaders = messageHeaders;
+        this.redeliveredFlag = redeliveredFlag;
     }
     
-    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, byte[] content)
+    public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, byte[] content, boolean redeliveredFlag)
     {
         this.channelId = channelId;
         this.deliveryTag = deliveryTag;
         this.messageHeaders = messageHeaders;
+        this.redeliveredFlag = redeliveredFlag;
         addContent(content);
     }
 
@@ -78,6 +81,11 @@ public class UnprocessedMessage
     public long getDeliveryTag()
     {
         return deliveryTag;
+    }
+    
+    public boolean getRedeliveredFlag()
+    {
+        return redeliveredFlag;
     }
     
     public MessageHeaders getMessageHeaders()

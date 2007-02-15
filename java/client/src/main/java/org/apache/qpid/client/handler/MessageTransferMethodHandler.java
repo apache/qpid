@@ -68,7 +68,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         messageHeaders.setDeliveryMode(transferBody.getDeliveryMode());
         messageHeaders.setJMSHeaders(transferBody.getApplicationHeaders());
         
-    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), evt.getRequestId(), messageHeaders);
+    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), evt.getRequestId(), messageHeaders, transferBody.getRedelivered());
         
         if(transferBody.getBody().getContentType() == Content.TypeEnum.INLINE_T)
         {
@@ -78,7 +78,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         else
         {
         	String referenceId = new String(transferBody.getBody().getContentAsByteArray());
-        	protocolSession.deliverMessageToAMQSession(evt.getChannelId(),referenceId);
+        	protocolSession.deliverMessageToAMQSession(evt.getChannelId(), referenceId);
         }
         
     }
