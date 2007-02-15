@@ -46,6 +46,8 @@ public class MessageCloseMethodHandler implements StateAwareMethodListener
     {
 		MessageCloseBody body = (MessageCloseBody)evt.getMethod();
 		String referenceId = new String(body.getReference());
+		System.out.println("Message.closing()-->Handing message to session");
+		
 		protocolSession.deliverMessageToAMQSession(evt.getChannelId(), referenceId);
 		_logger.debug("Method Close Body received, notify session to accept unprocessed message");
     }

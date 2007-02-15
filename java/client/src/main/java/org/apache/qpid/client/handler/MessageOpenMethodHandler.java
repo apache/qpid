@@ -21,6 +21,7 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
@@ -44,7 +45,11 @@ public class MessageOpenMethodHandler implements StateAwareMethodListener
 
     public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
-		// TODO
+    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), evt.getRequestId(), null, false);
+    	String referenceId = new String(((MessageOpenBody)evt.getMethod()).getReference());
+    	protocolSession.unprocessedMessageReceived(referenceId, msg);
+    	
+    	System.out.println("Message.open()-->Adding message to map with ref");
     }
 }
 

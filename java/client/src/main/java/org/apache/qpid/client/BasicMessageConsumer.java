@@ -328,7 +328,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     public int getPrefetchHigh()
-    {
+    {    
         return _prefetchHigh;
     }
 
