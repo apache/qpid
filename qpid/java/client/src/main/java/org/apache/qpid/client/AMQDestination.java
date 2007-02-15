@@ -76,7 +76,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
-        _queueName = new AMQShortString(binding.getQueueName());
+        _queueName = binding.getQueueName() == null ? null : new AMQShortString(binding.getQueueName());
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString destinationName, AMQShortString queueName)

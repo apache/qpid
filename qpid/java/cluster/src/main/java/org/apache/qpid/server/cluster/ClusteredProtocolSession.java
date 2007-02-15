@@ -107,7 +107,7 @@ public class ClusteredProtocolSession extends AMQMinaProtocolSession
         public OneUseChannel(int channelId, VirtualHost virtualHost)
             throws AMQException
         {
-            super(channelId,
+            super(ClusteredProtocolSession.this,channelId,
                   virtualHost.getMessageStore(),
                   virtualHost.getExchangeRegistry());
         }

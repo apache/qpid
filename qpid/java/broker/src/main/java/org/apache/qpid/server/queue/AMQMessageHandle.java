@@ -35,17 +35,17 @@ import org.apache.qpid.server.store.StoreContext;
  */
 public interface AMQMessageHandle
 {
-    ContentHeaderBody getContentHeaderBody(Long messageId) throws AMQException;
+    ContentHeaderBody getContentHeaderBody(StoreContext context, Long messageId) throws AMQException;
 
     /**
      * @return the number of body frames associated with this message
      */
-    int getBodyCount(Long messageId) throws AMQException;
+    int getBodyCount(StoreContext context, Long messageId) throws AMQException;
 
     /**
      * @return the size of the body
      */
-    long getBodySize(Long messageId) throws AMQException;
+    long getBodySize(StoreContext context, Long messageId) throws AMQException;
 
     /**
      * Get a particular content body
@@ -53,17 +53,17 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentBody getContentBody(Long messageId, int index) throws IllegalArgumentException, AMQException;
+    ContentBody getContentBody(StoreContext context, Long messageId, int index) throws IllegalArgumentException, AMQException;
 
     void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody) throws AMQException;
 
-    BasicPublishBody getPublishBody(Long messageId) throws AMQException;
+    BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException;
 
     boolean isRedelivered();
 
     void setRedelivered(boolean redelivered);
 
-    boolean isPersistent(Long messageId) throws AMQException;
+    boolean isPersistent(StoreContext context, Long messageId) throws AMQException;
 
     void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
                                         ContentHeaderBody contentHeaderBody)

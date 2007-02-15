@@ -58,7 +58,7 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         assertTrue(channelCount == 1);
         AMQQueue queue = new org.apache.qpid.server.queue.AMQQueue(new AMQShortString("testQueue_" + System.currentTimeMillis()),
                                                             false, new AMQShortString("test"), true, _virtualHost);
-        AMQChannel channel = new AMQChannel(2, _messageStore, null);
+        AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore, null);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);
         channelCount = _mbean.channels().size();
@@ -69,7 +69,7 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         assertTrue(_mbean.getMaximumNumberOfChannels() == 1000L);
 
         // check APIs
-        AMQChannel channel3 = new AMQChannel(3, _messageStore, null);
+        AMQChannel channel3 = new AMQChannel(_protocolSession,3, _messageStore, null);
         channel3.setLocalTransactional();
         _protocolSession.addChannel(channel3);
         _mbean.rollbackTransactions(2);
@@ -89,14 +89,14 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         }
 
         // check if closing of session works
-        _protocolSession.addChannel(new AMQChannel(5, _messageStore, null));
+        _protocolSession.addChannel(new AMQChannel(_protocolSession,5, _messageStore, null));
         _mbean.closeConnection();
         try
         {
             channelCount = _mbean.channels().size();
             assertTrue(channelCount == 0);
             // session is now closed so adding another channel should throw an exception
-            _protocolSession.addChannel(new AMQChannel(6, _messageStore, null));
+            _protocolSession.addChannel(new AMQChannel(_protocolSession,6, _messageStore, null));
             fail();
         }
         catch(AMQException ex)
@@ -109,13 +109,14 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _channel = new AMQChannel(1, _messageStore, null);
+
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         _virtualHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _queueRegistry = _virtualHost.getQueueRegistry();
         _exchangeRegistry = _virtualHost.getExchangeRegistry();
         _mockIOSession = new MockIoSession();
         _protocolSession = new AMQMinaProtocolSession(_mockIOSession, appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true));
+        _channel = new AMQChannel(_protocolSession,1, _messageStore, null);
         _protocolSession.addChannel(_channel);
         _mbean = (AMQProtocolSessionMBean)_protocolSession.getManagedObject();
     }

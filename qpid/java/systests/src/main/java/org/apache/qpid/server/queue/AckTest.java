@@ -75,8 +75,9 @@ public class AckTest extends TestCase
     {
         super.setUp();
         _messageStore = new TestableMemoryMessageStore();
-        _channel = new AMQChannel(5, _messageStore, null/*dont need exchange registry*/);
         _protocolSession = new MockProtocolSession(_messageStore);
+        _channel = new AMQChannel(_protocolSession,5, _messageStore, null/*dont need exchange registry*/);
+
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
         _queue = new AMQQueue(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"), _subscriptionManager);
