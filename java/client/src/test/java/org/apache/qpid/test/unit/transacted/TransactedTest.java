@@ -59,7 +59,7 @@ public class TransactedTest extends TestCase
         super.setUp();
         TransportConnection.createVMBroker(1);
         queue1 = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
-        queue2 = new AMQQueue("Q2", false);
+        queue2 = new AMQQueue("Q2x", false);
 
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
         session = con.createSession(true, 0);
@@ -74,15 +74,6 @@ public class TransactedTest extends TestCase
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
-
-//         //add some messages
-//         prepProducer1.send(prepSession.createTextMessage("A"));
-//         prepProducer1.send(prepSession.createTextMessage("B"));
-//         prepProducer1.send(prepSession.createTextMessage("C"));
-// 
-//         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "/test");
-//         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-//         testConsumer2 = testSession.createConsumer(queue2);
     }
 
     protected void tearDown() throws Exception
@@ -110,8 +101,9 @@ public class TransactedTest extends TestCase
 
         //commit
         session.commit();
-        testCon.start();
+
         //ensure sent messages can be received and received messages are gone
+
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         testConsumer1 = testSession.createConsumer(queue1);
@@ -156,10 +148,10 @@ public class TransactedTest extends TestCase
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
-        testCon.start();
-        testConsumer1 = testSession.createConsumer(queue1);
+
         //commit
-        session.commit();
+        //session.commit();
+
 
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -175,6 +167,7 @@ public class TransactedTest extends TestCase
     // messages left over from the last test (which can affect later tests)...
     public void testEmpty2() throws Exception
     {
+//System.out.println("=== DEBUG === testEmpty2(): assertTrue(null == consumer1.receive(1000));");
         assertTrue(null == consumer1.receive(1000));
     }
 
