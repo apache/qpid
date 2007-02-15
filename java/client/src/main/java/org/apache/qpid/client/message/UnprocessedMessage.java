@@ -56,7 +56,7 @@ public class UnprocessedMessage
         this.redeliveredFlag = redeliveredFlag;
         addContent(content);
     }
-
+    
 	public void addContent(byte[] content)
     {
 		contents.add(content);
@@ -97,4 +97,12 @@ public class UnprocessedMessage
     {
         return "UnprocessedMessage: ch=" + channelId + "; bytesReceived=" + bytesReceived + "; deliveryTag=" + deliveryTag + "; MsgHdrs=" + messageHeaders + "Num contents=" + contents.size() + "; First content=" + new String(contents.get(0));
     }
+
+	public void setMessageHeaders(MessageHeaders messageHeaders) {
+		this.messageHeaders = messageHeaders;
+	}
+
+	public void setRedeliveredFlag(boolean redeliveredFlag) {
+		this.redeliveredFlag = redeliveredFlag;
+	}
 }

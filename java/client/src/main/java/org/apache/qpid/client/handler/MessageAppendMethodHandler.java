@@ -47,6 +47,7 @@ public class MessageAppendMethodHandler implements StateAwareMethodListener
     	try
         {
 			protocolSession.messageAppendBodyReceived((MessageAppendBody)evt.getMethod());
+			System.out.println("Message.appened()-->Appending message content to body");
 		}
         catch (Exception e)
         {

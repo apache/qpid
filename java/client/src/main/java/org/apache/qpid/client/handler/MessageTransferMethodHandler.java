@@ -78,7 +78,7 @@ public class MessageTransferMethodHandler implements StateAwareMethodListener
         else
         {
         	String referenceId = new String(transferBody.getBody().getContentAsByteArray());
-        	protocolSession.deliverMessageToAMQSession(evt.getChannelId(), referenceId);
+        	protocolSession.messageTransferBodyReceivedForReferenceCase(referenceId, messageHeaders,transferBody.getRedelivered());
         }
         
     }

@@ -36,7 +36,9 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
+import org.apache.qpid.client.message.MessageHeaders;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
@@ -52,9 +54,7 @@ import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.protocol.AMQProtocolWriter;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-import org.apache.qpid.client.state.AMQStateManager;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.
@@ -280,6 +280,12 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
     	String referenceId = new String(appendBody.getReference());
     	UnprocessedMessage msg = (UnprocessedMessage)_referenceId2UnprocessedMsgMap.get(referenceId);
     	msg.addContent(appendBody.bytes);
+    }
+    
+    public void messageTransferBodyReceivedForReferenceCase(String referenceId,MessageHeaders messageHeaders,boolean redilivered){
+    	UnprocessedMessage msg = (UnprocessedMessage)_referenceId2UnprocessedMsgMap.get(referenceId);
+    	msg.setMessageHeaders(messageHeaders);
+    	msg.setRedeliveredFlag(redilivered);    	
     }
     
     public void messageRequestBodyReceived(int channelId, AMQRequestBody requestBody) throws Exception

@@ -343,6 +343,7 @@ public class AMQChannel
         long maxFrameSize = _session.getFrameMax();
         Iterable<ByteBuffer> contentItr = msg.getContents();
         if (msg.getSize() > maxFrameSize)
+        //if(true)
         {
             Iterator<ByteBuffer> cItr = contentItr.iterator();
             if (cItr.next().limit() > maxFrameSize) // First chunk should equal incoming frame size
