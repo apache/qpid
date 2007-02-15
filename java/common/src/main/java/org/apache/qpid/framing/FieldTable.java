@@ -832,10 +832,14 @@ public class FieldTable
 
         if(_encodedForm != null)
         {
+            // FIXME: This is a quick fix for a problem where the ByteBuffer _encodedForm
+            // becomes consumed if debug messages are printed which involve a FieldTable,
+            // and for some tests. This is a rather ugly quick-fix...
             if (_encodedForm.remaining() == 0)
             {
                 _encodedForm.rewind();
             }
+//            _encodedForm.flip();
             buffer.put(_encodedForm);
         }
         else if(_properties != null)
