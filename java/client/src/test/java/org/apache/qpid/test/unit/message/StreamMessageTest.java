@@ -40,6 +40,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 
@@ -122,9 +123,9 @@ public class StreamMessageTest extends TestCase
 
     public void testModifyReceivedMessageExpandsBuffer() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        AMQQueue queue = new AMQQueue("testQ");
+        AMQQueue queue = new AMQQueue(con.getDefaultQueueExchangeName(), new AMQShortString("testQ"));
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         consumer.setMessageListener(new MessageListener()
         {

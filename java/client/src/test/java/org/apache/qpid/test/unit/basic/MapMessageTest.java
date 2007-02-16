@@ -83,7 +83,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(randomize("MapMessageTest"), true);
+        Destination destination = new AMQQueue(connection,randomize("MapMessageTest"), true);
         init(connection, destination);
     }
 

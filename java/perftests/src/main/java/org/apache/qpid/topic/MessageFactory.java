@@ -24,6 +24,7 @@ import javax.jms.*;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 /**
  */
@@ -46,8 +47,8 @@ class MessageFactory
         _session = session;
         if (session instanceof AMQSession)
         {
-            _topic = new AMQTopic("topic_control");
-            _control = new AMQTopic("topictest.control");
+            _topic = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, "topic_control");
+            _control = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, "topictest.control");
         }
         else
         {

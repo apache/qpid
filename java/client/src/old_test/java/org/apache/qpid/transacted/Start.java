@@ -22,6 +22,8 @@ package org.apache.qpid.transacted;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.AMQQueue;
 
 import javax.jms.Connection;
@@ -33,7 +35,7 @@ public class Start
     public static void main(String[] argv) throws Exception
     {
         Connection con = new Config(argv).createConnection();
-        AMQQueue ping = new AMQQueue("ping");
+        AMQQueue ping = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString("ping"));
         Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.createProducer(ping).send(session.createTextMessage("start"));
         session.close();

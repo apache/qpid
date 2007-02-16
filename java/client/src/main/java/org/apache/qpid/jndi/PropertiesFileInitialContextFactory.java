@@ -47,6 +47,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
@@ -236,12 +237,12 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     {
         if(value instanceof AMQShortString)
         {
-            return new AMQQueue((AMQShortString) value);
+            return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, (AMQShortString) value);
         }
         else if (value instanceof String)
 
         {
-            return new AMQQueue(new AMQShortString((String) value));
+            return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
 
@@ -259,11 +260,11 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     {
         if(value instanceof AMQShortString)
         {
-            return new AMQTopic((AMQShortString)value);
+            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, (AMQShortString)value);
         }
         else if (value instanceof String)
         {
-            return new AMQTopic(new AMQShortString((String) value));
+            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
 

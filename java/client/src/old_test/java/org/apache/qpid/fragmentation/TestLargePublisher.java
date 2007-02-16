@@ -21,9 +21,12 @@
 package org.apache.qpid.fragmentation;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.log4j.Logger;
@@ -49,7 +52,7 @@ public class TestLargePublisher
 
     private AMQConnection _connection;
 
-    private Session _session;
+    private AMQSession _session;
 
     private class CallbackHandler implements MessageListener
     {
@@ -109,8 +112,8 @@ public class TestLargePublisher
         {
             createConnection(host, port, clientID);
             
-            _session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            AMQTopic destination = new AMQTopic("large");
+            _session = (AMQSession) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            AMQTopic destination = new AMQTopic(_session.getDefaultTopicExchangeName(), new AMQShortString("large"));
             MessageProducer producer = (MessageProducer) _session.createProducer(destination);
 
             _connection.start();

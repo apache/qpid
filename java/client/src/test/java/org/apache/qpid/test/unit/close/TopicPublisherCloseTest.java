@@ -55,7 +55,7 @@ public class TopicPublisherCloseTest extends TestCase
     {
         AMQConnection connection = new AMQConnection(_connectionString, "guest", "guest", "Client", "test");
 
-        Topic destination1 = new AMQTopic("t1");
+        Topic destination1 = new AMQTopic(connection, "t1");
         TopicSession session1 = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         TopicPublisher pub = session1.createPublisher(destination1);
         connection.close();

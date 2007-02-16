@@ -68,7 +68,7 @@ public class LargeMessageTest extends TestCase
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue("LargeMessageTest", true);
+        Destination destination = new AMQQueue(connection,"LargeMessageTest", true);
         init(connection, destination);
     }
 

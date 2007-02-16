@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.List;
 
 /**
@@ -35,6 +37,10 @@ public interface ConnectionURL
     public static final String OPTIONS_FAILOVER = "failover";
     public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";
     public static final String OPTIONS_SSL = "ssl";
+    public static final String OPTIONS_DEFAULT_TOPIC_EXCHANGE = "defaultTopicExchange";
+    public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
+    public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";
+    public static final String OPTIONS_TEMPORARY_QUEUE_EXCHANGE = "temporaryQueueExchange";
 
     String getURL();
 
@@ -69,4 +75,12 @@ public interface ConnectionURL
     String getOption(String key);
 
     void setOption(String key, String value);
+
+    AMQShortString getDefaultQueueExchangeName();
+
+    AMQShortString getDefaultTopicExchangeName();
+
+    AMQShortString getTemporaryQueueExchangeName();
+
+    AMQShortString getTemporaryTopicExchangeName();
 }

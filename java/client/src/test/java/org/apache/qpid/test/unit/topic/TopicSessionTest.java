@@ -59,8 +59,9 @@ public class TopicSessionTest extends TestCase
 
     public void testTopicSubscriptionUnsubscription() throws Exception
     {
-        AMQTopic topic = new AMQTopic("MyTopic");
+
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQTopic topic = new AMQTopic(con.getDefaultTopicExchangeName(),"MyTopic");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic,"subscription0");
         TopicPublisher publisher = session1.createPublisher(topic);
@@ -104,9 +105,10 @@ public class TopicSessionTest extends TestCase
 
     private void subscriptionNameReuseForDifferentTopic(boolean shutdown) throws Exception
     {
-        AMQTopic topic = new AMQTopic("MyTopic1" + String.valueOf(shutdown));
-        AMQTopic topic2 = new AMQTopic("MyOtherTopic1" + String.valueOf(shutdown));
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQTopic topic = new AMQTopic(con,"MyTopic1" + String.valueOf(shutdown));
+        AMQTopic topic2 = new AMQTopic(con,"MyOtherTopic1" + String.valueOf(shutdown));
+
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
         TopicPublisher publisher = session1.createPublisher(null);
@@ -142,8 +144,9 @@ public class TopicSessionTest extends TestCase
 
     public void testUnsubscriptionAfterConnectionClose() throws Exception
     {
-        AMQTopic topic = new AMQTopic("MyTopic3");
         AMQConnection con1 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQTopic topic = new AMQTopic(con1,"MyTopic3");
+
         TopicSession session1 = con1.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
 
@@ -171,8 +174,9 @@ public class TopicSessionTest extends TestCase
 
     public void testTextMessageCreation() throws Exception
     {
-        AMQTopic topic = new AMQTopic("MyTopic4");
+
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQTopic topic = new AMQTopic(con,"MyTopic4");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
         MessageConsumer consumer1 = session1.createConsumer(topic);

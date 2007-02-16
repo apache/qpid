@@ -145,12 +145,12 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public boolean isTopic()
     {
-        return ExchangeDefaults.TOPIC_EXCHANGE_NAME.equals(_exchangeName);
+        return ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(_exchangeClass);
     }
 
     public boolean isQueue()
     {
-        return ExchangeDefaults.DIRECT_EXCHANGE_NAME.equals(_exchangeName);
+        return ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(_exchangeClass);
     }
 
     public AMQShortString getDestinationName()
@@ -411,11 +411,11 @@ public abstract class AMQDestination implements Destination, Referenceable
 
         if (exchangeClass.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
         {
-            return new AMQQueue(destinationName,queueName,isExclusive,isAutoDelete,isDurable);
+            return new AMQQueue(exchangeName,destinationName,queueName,isExclusive,isAutoDelete,isDurable);
         }
         else if (exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
         {
-            return new AMQTopic(destinationName,isAutoDelete,queueName,isDurable);
+            return new AMQTopic(exchangeName,destinationName,isAutoDelete,queueName,isDurable);
         }
         else if (exchangeClass.equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS))
         {

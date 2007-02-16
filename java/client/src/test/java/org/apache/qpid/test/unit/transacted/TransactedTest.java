@@ -25,7 +25,6 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
-import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import junit.framework.TestCase;
@@ -37,6 +36,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.Session;
 
 public class TransactedTest extends TestCase
 {
@@ -62,11 +62,13 @@ public class TransactedTest extends TestCase
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
-        queue1 = new AMQQueue(new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
-        queue2 = new AMQQueue("Q2", false);
-
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
         session = con.createSession(true, 0);
+        queue1 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
+        queue2 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q2"), false);
+
+
+
         consumer1 = session.createConsumer(queue1);
         //Dummy just to create the queue. 
         MessageConsumer consumer2 = session.createConsumer(queue2);
@@ -147,15 +149,15 @@ public class TransactedTest extends TestCase
 
     public void testResendsMsgsAfterSessionClose() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
-        AMQQueue queue3 = new AMQQueue("Q3", false);
+        AMQQueue queue3 = new AMQQueue(consumerSession.getDefaultQueueExchangeName(),new AMQShortString("Q3"), false);
         MessageConsumer consumer = consumerSession.createConsumer(queue3);
         //force synch to ensure the consumer has resulted in a bound queue
         ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
         Session producerSession = con2.createSession(true, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue3);
 

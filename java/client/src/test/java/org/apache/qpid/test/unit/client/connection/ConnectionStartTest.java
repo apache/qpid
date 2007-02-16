@@ -54,9 +54,11 @@ public class ConnectionStartTest extends TestCase
 
         try
         {
-            AMQQueue queue = new AMQQueue("ConnectionStartTest");
+
 
             AMQConnection pubCon = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+
+            AMQQueue queue = new AMQQueue(pubCon,"ConnectionStartTest");
 
             Session pubSess = pubCon.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
