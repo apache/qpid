@@ -27,6 +27,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.qpid.server.AMQChannel;
 
 public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
 {
@@ -44,11 +45,19 @@ public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxSelectBody> evt) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        
-        session.getChannel(evt.getChannelId()).setLocalTransactional();
+
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+
+        if (channel == null)
+        {
+            throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
+        }
+
+        channel.setLocalTransactional();
+
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        session.writeFrame(TxSelectOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0));
+        session.writeFrame(TxSelectOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0));
     }
 }

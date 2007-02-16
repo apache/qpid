@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -31,6 +32,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.AMQChannel;
 
 public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -65,7 +67,15 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         AMQQueue queue;
         if(body.queue == null)
         {
-            queue = session.getChannel(evt.getChannelId()).getDefaultQueue();
+             AMQChannel channel = session.getChannel(evt.getChannelId());
+
+            if (channel == null)
+            {
+                throw body.getChannelNotFoundException(evt.getChannelId());
+            }
+
+            //get the default queue on the channel:            
+            queue = channel.getDefaultQueue();
         }
         else
         {
@@ -76,19 +86,19 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(404, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
             }
         }
         else
         {
             if(body.ifEmpty && !queue.isEmpty())
             {
-                throw body.getChannelException(406, "Queue: " + body.queue + " is not empty." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is not empty." );
             }
             else if(body.ifUnused && !queue.isUnused())
             {                
                 // TODO - Error code
-                throw body.getChannelException(406, "Queue: " + body.queue + " is still used." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is still used." );
 
             }
             else

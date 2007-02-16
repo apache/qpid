@@ -325,6 +325,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content header frame received: " + frame);
         }
+        //fixme what happens if getChannel returns null
         getChannel(frame.getChannel()).publishContentHeader((ContentHeaderBody) frame.getBodyFrame());
     }
 
@@ -334,6 +335,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content body frame received: " + frame);
         }
+        //fixme what happens if getChannel returns null
         getChannel(frame.getChannel()).publishContentBody((ContentBody) frame.getBodyFrame(), this);
     }
 

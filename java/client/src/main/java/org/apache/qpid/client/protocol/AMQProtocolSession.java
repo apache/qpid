@@ -48,6 +48,7 @@ import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.
@@ -389,7 +390,7 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
      *         initiated the channel close, false if the channel close is just the server
      *         responding to the client's earlier request to close the channel.
      */
-    public boolean channelClosed(int channelId, int code, String text) throws AMQException
+    public boolean channelClosed(int channelId, AMQConstant code, String text) throws AMQException
     {
         final Integer chId = channelId;
         // if this is not a response to an earlier request to close the channel

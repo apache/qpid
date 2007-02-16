@@ -20,12 +20,14 @@
  */
 package org.apache.qpid;
 
+import org.apache.qpid.protocol.AMQConstant;
+
 /**
  * AMQ channel closed exception.
  */
 public class AMQChannelClosedException extends AMQException
 {
-    public AMQChannelClosedException(int errorCode, String msg)
+    public AMQChannelClosedException(AMQConstant errorCode, String msg)
     {
         super(errorCode, msg);
     }
