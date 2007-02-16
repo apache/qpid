@@ -65,27 +65,19 @@ public class PubSubTwoConnectionTest extends TestCase
         assertEquals("Hello", tm1.getText());
     }
     
-    public static void main(String[] args){
-    	PubSubTwoConnectionTest test = new PubSubTwoConnectionTest();
-    	try {
-			//test.setUp();
-			//test.testTwoConnections();
-    		int a = 5;
-    		
-    		System.out.println(a++);
-    		System.out.println(a);
-    		System.out.println(++a);
-    		
-    		int b = ++a;
-    		int c = a++;
-    		
-    		System.out.println(b);
-    		System.out.println(c);
-    		System.out.println(a);
-    		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+    public static void main(String[] args)
+    {
+        PubSubTwoConnectionTest test = new PubSubTwoConnectionTest();
+        try
+        {
+            test.setUp();
+            test.testTwoConnections();
+            test.tearDown();
+        }
+        catch (Exception e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }

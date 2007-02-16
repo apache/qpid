@@ -35,10 +35,18 @@ public class UnprocessedMessage
 {
 	private int bytesReceived = 0;
 	private int channelId;
+    private byte[] referenceId;
 	private List<byte[]> contents = new LinkedList();
 	private long deliveryTag;
     private boolean redeliveredFlag;
 	private MessageHeaders messageHeaders;
+    
+    public UnprocessedMessage(int channelId, long deliveryTag, byte[] referenceId)
+    {
+        this.channelId = channelId;
+        this.deliveryTag = deliveryTag;
+        this.referenceId = referenceId;
+    }
     
     public UnprocessedMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, boolean redeliveredFlag)
     {
@@ -73,6 +81,11 @@ public class UnprocessedMessage
         return channelId;
     }
     
+    public byte[] getReferenceId()
+    {
+        return referenceId;
+    }
+    
     public List<byte[]> getContents()
     {
         return contents;
@@ -95,7 +108,9 @@ public class UnprocessedMessage
     
     public String toString()
     {
-        return "UnprocessedMessage: ch=" + channelId + "; bytesReceived=" + bytesReceived + "; deliveryTag=" + deliveryTag + "; MsgHdrs=" + messageHeaders + "Num contents=" + contents.size() + "; First content=" + new String(contents.get(0));
+        return "UnprocessedMessage: ch=" + channelId + "; bytesReceived=" + bytesReceived + "; deliveryTag=" +
+            deliveryTag + "; MsgHdrs=" + messageHeaders + "Num contents=" + contents.size() + "; First content=" +
+            new String(contents.get(0));
     }
 
 	public void setMessageHeaders(MessageHeaders messageHeaders) {

@@ -375,6 +375,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         checkMethodBodyVersion(methodBody);
         AMQChannel channel = getChannel(channelNum);
+        if (channel == null)
+        {
+            throw new RuntimeException("Attempt to write to non-existent channel " + channelNum + " method=" +methodBody);
+        }
         RequestManager requestManager = channel.getRequestManager();
         return requestManager.sendRequest(methodBody, methodListener);
     }
@@ -389,10 +393,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         checkMethodBodyVersion(methodBody);
         AMQChannel channel = getChannel(channelNum);
+        if (channel == null)
+        {
+            throw new RuntimeException("Attempt to write to non-existent channel " + channelNum + ": reqId=" + requestId + " method=" + methodBody);
+        }
         ResponseManager responseManager = channel.getResponseManager();
-        try {
+        try
+        {
             responseManager.sendResponse(requestId, methodBody);
-        } catch (RequestResponseMappingException e) {
+        }
+        catch (RequestResponseMappingException e)
+        {
             throw new RuntimeException(e);
         }
     }
@@ -599,7 +610,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 task.doTask(this);
             }
         }
-        _minaProtocolSession.close();
+// gsim-python
+//        _minaProtocolSession.close();
     }
 
     /**

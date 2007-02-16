@@ -309,33 +309,6 @@ public class AMQChannel
             _returnMessages.add(e);
         }
     }
-// 
-//     public void deliver(AMQMessage msg, AMQShortString destination, final long deliveryTag)
-//     {
-//         deliver(msg, destination, new AMQMethodListener()
-//         {
-//             public boolean methodReceived(AMQMethodEvent evt) throws AMQException
-//             {
-//                 AMQMethodBody method = evt.getMethod();
-//                 if (_log.isDebugEnabled())
-//                 {
-//                     _log.debug(method + " received on channel " + _channelId);
-//                 }
-//                 // XXX: multiple?
-//                 if (method instanceof MessageOkBody)
-//                 {
-//                     acknowledgeMessage(deliveryTag, false);
-//                     return true;
-//                 }
-//                 else
-//                 {
-//                     // TODO: implement reject
-//                     return false;
-//                 }
-//             }
-//             public void error(Exception e) {}
-//         });
-//     }
 
     public void deliver(AMQMessage msg, AMQShortString destination, final long deliveryTag)
     {
@@ -343,7 +316,6 @@ public class AMQChannel
         long maxFrameSize = _session.getFrameMax();
         Iterable<ByteBuffer> contentItr = msg.getContents();
         if (msg.getSize() > maxFrameSize)
-        //if(true)
         {
             Iterator<ByteBuffer> cItr = contentItr.iterator();
             if (cItr.next().limit() > maxFrameSize) // First chunk should equal incoming frame size
@@ -410,34 +382,29 @@ public class AMQChannel
     public void deliverRef(final AMQMessage msg, final AMQShortString destination, final long deliveryTag)
     {
         final byte[] refId = String.valueOf(System.currentTimeMillis()).getBytes();
-        deliverRef(refId, msg, destination, _session.getStateManager());
-//         AMQMethodBody openBody = MessageOpenBody.createMethodBody(
-//             _session.getProtocolMajorVersion(), // AMQP major version
-//             _session.getProtocolMinorVersion(), // AMQP minor version
-//             refId);
-//         _session.writeRequest(_channelId, openBody, new AMQMethodListener()
-//         {
-//             public boolean methodReceived(AMQMethodEvent evt) throws AMQException
-//             {
-//                 AMQMethodBody method = evt.getMethod();
-//                 if (_log.isDebugEnabled())
-//                 {
-//                     _log.debug(method + " received on channel " + _channelId);
-//                 }
-//                 if (method instanceof MessageOkBody)
-//                 {
-//                     acknowledgeMessage(deliveryTag, false);
-//                     deliverRef(refId, msg, destination, _session.getStateManager());
-//                     return true;
-//                 }
-//                 else
-//                 {
-//                     // TODO: implement reject
-//                     return false;
-//                 }
-//             }
-//             public void error(Exception e) {}
-//         });
+        deliverRef(refId, msg, destination, new AMQMethodListener()
+        {
+            public boolean methodReceived(AMQMethodEvent evt) throws AMQException
+            {
+                AMQMethodBody method = evt.getMethod();
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug(method + " received on channel " + _channelId);
+                }
+                // XXX: multiple?
+                if (method instanceof MessageOkBody)
+                {
+                    acknowledgeMessage(deliveryTag, false);
+                    return true;
+                }
+                else
+                {
+                    // TODO: implement reject
+                    return false;
+                }
+            }
+            public void error(Exception e) {}
+        });
     }
     
     public void deliverRef(byte[] refId, AMQMessage msg, AMQShortString destination, AMQMethodListener listener)
@@ -470,58 +437,6 @@ public class AMQChannel
             refId);
         _session.writeRequest(_channelId, closeBody, listener);
     }
-
-//     protected void route(AMQMessage msg) throws AMQException
-//     {
-//         if (isTransactional())
-//         {
-//             //don't create a transaction unless needed
-//             if (msg.isPersistent())
-//             {
-// //                _txnBuffer.containsPersistentChanges();
-//             }
-// 
-//             //A publication will result in the enlisting of several
-//             //TxnOps. The first is an op that will store the message.
-//             //Following that (and ordering is important), an op will
-//             //be added for every queue onto which the message is
-//             //enqueued. Finally a cleanup op will be added to decrement
-//             //the reference associated with the routing.
-// //             Store storeOp = new Store(msg);
-// //             _txnBuffer.enlist(storeOp);
-// //             msg.setTxnBuffer(_txnBuffer);
-//             try
-//             {
-//                 _exchanges.routeContent(msg);
-// //                 _txnBuffer.enlist(new Cleanup(msg));
-//             }
-//             catch (RequiredDeliveryException e)
-//             {
-//                 //Can only be due to the mandatory flag, as no attempt
-//                 //has yet been made to deliver the message. The
-//                 //message will thus not have been delivered to any
-//                 //queue so we can return the message (without killing
-//                 //the transaction) and for efficiency remove the store
-//                 //operation from the buffer.
-// //                 _txnBuffer.cancel(storeOp);
-//                 throw e;
-//             }
-//         }
-//         else
-//         {
-//             try
-//             {
-//                 _exchanges.routeContent(msg);
-//                 //following check implements the functionality
-//                 //required by the 'immediate' flag:
-//                 msg.checkDeliveredToConsumer();
-//             }
-//             finally
-//             {
-//                 msg.decrementReference(_storeContext);
-//             }
-//         }
-//     }
 
     public RequestManager getRequestManager()
     {
