@@ -30,15 +30,14 @@ Reference&  ReferenceRegistry::open(const Reference::Id& id) {
     // TODO aconway 2007-02-05: should we throw Channel or Connection
     // exceptions here?
     if (i != references.end())
-        THROW_QPID_ERROR(CLIENT_ERROR, "Attempt to re-open reference " +id);
+        throw ConnectionException(503, "Attempt to re-open reference " +id);
     return references[id] = Reference(id, this);
 }
 
 Reference&  ReferenceRegistry::get(const Reference::Id& id) {
     ReferenceMap::iterator i = references.find(id);
     if (i == references.end()) 
-        THROW_QPID_ERROR(
-            CLIENT_ERROR, "Attempt to use non-existent reference "+id);
+        throw ConnectionException(503, "Attempt to use non-existent reference "+id);
     return i->second;
 }
 
