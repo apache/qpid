@@ -22,7 +22,10 @@ package org.apache.qpid.fragmentation;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
@@ -76,11 +79,12 @@ public class TestLargeSubscriber
             InetAddress address = InetAddress.getLocalHost();
             AMQConnection con = new AMQConnection(host, port, username, password,
                                                   address.getHostName(), virtualPath);
-            final Session session = (Session) con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final AMQSession session = (AMQSession) con.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             final int expectedMessageCount = numExpectedMessages;
 
-            MessageConsumer consumer = session.createConsumer(new AMQTopic("large"),
+            MessageConsumer consumer = session.createConsumer(new AMQTopic(session.getDefaultTopicExchangeName(),
+                                                                           new AMQShortString("large")),
                                                               100, true, false, null);
 
             consumer.setMessageListener(new MessageListener()

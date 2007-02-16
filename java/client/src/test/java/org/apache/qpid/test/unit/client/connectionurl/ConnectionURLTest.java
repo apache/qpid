@@ -456,6 +456,24 @@ public class ConnectionURLTest extends TestCase
         }
     }
 
+
+    public void testDefaultExchanges() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@id/test" + "?defaultQueueExchange='test.direct'&defaultTopicExchange='test.topic'&temporaryQueueExchange='tmp.direct'&temporaryTopicExchange='tmp.topic'";
+
+        AMQConnectionURL conn = new AMQConnectionURL(url);
+
+        assertEquals(conn.getDefaultQueueExchangeName(),"test.direct");
+
+        assertEquals(conn.getDefaultTopicExchangeName(),"test.topic");
+
+        assertEquals(conn.getTemporaryQueueExchangeName(),"tmp.direct");
+
+        assertEquals(conn.getTemporaryTopicExchangeName(),"tmp.topic");
+
+    }
+
+
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(ConnectionURLTest.class);

@@ -20,16 +20,21 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import javax.jms.Connection;
-
-import junit.framework.TestCase;
-
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jms.Session;
+
+import junit.framework.TestCase;
+
+import javax.jms.Connection;
+import javax.jms.QueueSession;
+import javax.jms.TopicSession;
 
 public class ConnectionTest extends TestCase
 {
@@ -54,7 +59,7 @@ public class ConnectionTest extends TestCase
     {
         try
         {
-            AMQConnection conn  = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            AMQConnection conn = new AMQConnection(_broker, "guest", "guest", "fred", "test");
             conn.close();
         }
         catch (Exception e)
@@ -62,6 +67,54 @@ public class ConnectionTest extends TestCase
             fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
     }
+
+
+    public void testDefaultExchanges()
+    {
+        try
+        {
+            AMQConnection conn = new AMQConnection("amqp://guest:guestd@clientid/test?brokerlist='"
+                                                   + _broker
+                                                   + "?retries='1''&defaultQueueExchange='test.direct'"
+                                                   + "&defaultTopicExchange='test.topic'"
+                                                   + "&temporaryQueueExchange='tmp.direct'"
+                                                   + "&temporaryTopicExchange='tmp.topic'");
+
+            QueueSession queueSession = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            AMQQueue queue = (AMQQueue) queueSession.createQueue("MyQueue");
+
+            assertEquals(queue.getExchangeName().toString(), "test.direct");
+
+            AMQQueue tempQueue = (AMQQueue) queueSession.createTemporaryQueue();
+
+            assertEquals(tempQueue.getExchangeName().toString(), "tmp.direct");
+
+
+            queueSession.close();
+
+
+            TopicSession topicSession = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            AMQTopic topic = (AMQTopic) topicSession.createTopic("silly.topic");
+
+            assertEquals(topic.getExchangeName().toString(), "test.topic");
+
+            AMQTopic tempTopic = (AMQTopic) topicSession.createTemporaryTopic();
+
+            assertEquals(tempTopic.getExchangeName().toString(), "tmp.topic");
+
+            topicSession.close();
+
+
+            conn.close();
+        }
+        catch (Exception e)
+        {
+            fail("Connection to " + _broker + " should succeed. Reason: " + e);
+        }
+    }
+
 
     // FIXME The inVM broker currently has no authentication .. Needs added QPID-70
     public void passwordFailureConnection() throws Exception

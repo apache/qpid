@@ -43,6 +43,7 @@ import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.topic.Config;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 import uk.co.thebadgerset.junit.extensions.BatchedThrottle;
 import uk.co.thebadgerset.junit.extensions.Throttle;
@@ -704,13 +705,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             if (_isPubSub)
             {
                 _logger.debug("Creating topics.");
-                destination = new AMQTopic(rootName + id);
+                destination = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, rootName + id);
             }
             // Otherwise this is a p2p pinger, in which case create queues.
             else
             {
                 _logger.debug("Creating queues.");
-                destination = new AMQQueue(rootName + id);
+                destination = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, rootName + id);
             }
 
             // Keep the destination.

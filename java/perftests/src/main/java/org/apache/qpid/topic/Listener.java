@@ -31,6 +31,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 /**
  * This class has not kept up to date with the topic_listener in the cpp tests. It should provide identical behaviour for
@@ -97,9 +98,9 @@ public class Listener implements MessageListener
 
         if (_session instanceof AMQSession)
         {
-            _topic = new AMQTopic(CONTROL_TOPIC);
+            _topic = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, CONTROL_TOPIC);
             //_control = new AMQTopic(CONTROL_TOPIC);
-            _response = new AMQQueue(RESPONSE_QUEUE);
+            _response = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, RESPONSE_QUEUE);
         }
         else
         {

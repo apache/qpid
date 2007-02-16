@@ -76,7 +76,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(randomize("PropertyValueTest"), true);
+        Destination destination = new AMQQueue(connection, randomize("PropertyValueTest"), true);
         init(connection, destination);
     }
 
@@ -132,7 +132,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             }
             else
             {
-                q = new AMQQueue("TestReply");
+                q = new AMQQueue(_connection,"TestReply");
             }
 
             m.setJMSReplyTo(q);

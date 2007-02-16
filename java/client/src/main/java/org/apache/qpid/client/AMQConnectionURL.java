@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
-
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQConnectionURL implements ConnectionURL
 {
@@ -43,6 +44,11 @@ public class AMQConnectionURL implements ConnectionURL
     private String _username;
     private String _password;
     private String _virtualHost;
+    private AMQShortString _defaultQueueExchangeName;
+    private AMQShortString _defaultTopicExchangeName;
+    private AMQShortString _temporaryTopicExchangeName;
+    private AMQShortString _temporaryQueueExchangeName;
+
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
@@ -107,7 +113,7 @@ public class AMQConnectionURL implements ConnectionURL
             if (userInfo == null)
             {
                 throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3,
-                        "User information not found on url", fullURL);
+                                           "User information not found on url", fullURL);
             }
             else
             {
@@ -161,7 +167,9 @@ public class AMQConnectionURL implements ConnectionURL
             {
                 if (slash != 0 && fullURL.charAt(slash - 1) == ':')
                 {
-                    throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2, "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
+                    throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2,
+                                               "Virtual host looks like a windows path, forward slash not allowed in URL",
+                                               fullURL);
                 }
                 else
                 {
@@ -181,7 +189,7 @@ public class AMQConnectionURL implements ConnectionURL
         if (colonIndex == -1)
         {
             throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
-                    "Null password in user information not allowed.", _url);
+                                       "Null password in user information not allowed.", _url);
         }
         else
         {
@@ -229,6 +237,29 @@ public class AMQConnectionURL implements ConnectionURL
             }
 
             _options.remove(OPTIONS_FAILOVER);
+        }
+
+        if (_options.containsKey(OPTIONS_DEFAULT_TOPIC_EXCHANGE))
+        {
+            _defaultTopicExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_TOPIC_EXCHANGE));
+        }
+
+
+        if (_options.containsKey(OPTIONS_DEFAULT_QUEUE_EXCHANGE))
+        {
+            _defaultQueueExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_QUEUE_EXCHANGE));
+        }
+
+
+        if (_options.containsKey(OPTIONS_TEMPORARY_QUEUE_EXCHANGE))
+        {
+            _temporaryQueueExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_QUEUE_EXCHANGE));
+        }
+
+
+        if (_options.containsKey(OPTIONS_TEMPORARY_TOPIC_EXCHANGE))
+        {
+            _temporaryTopicExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_TOPIC_EXCHANGE));
         }
     }
 
@@ -330,6 +361,26 @@ public class AMQConnectionURL implements ConnectionURL
     public void setOption(String key, String value)
     {
         _options.put(key, value);
+    }
+
+    public AMQShortString getDefaultQueueExchangeName()
+    {
+        return _defaultQueueExchangeName;
+    }
+
+    public AMQShortString getDefaultTopicExchangeName()
+    {
+        return _defaultTopicExchangeName;
+    }
+
+    public AMQShortString getTemporaryQueueExchangeName()
+    {
+        return _temporaryQueueExchangeName;
+    }
+
+    public AMQShortString getTemporaryTopicExchangeName()
+    {
+        return _temporaryTopicExchangeName;
     }
 
     public String toString()

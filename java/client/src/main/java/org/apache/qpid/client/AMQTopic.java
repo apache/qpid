@@ -39,32 +39,43 @@ public class AMQTopic extends AMQDestination implements Topic
         super(binding);
     }
 
-    public AMQTopic(String name)
-    {
-        this(new AMQShortString(name));
-    }
+//    public AMQTopic(String exchangeName, String routingKey)
+//    {
+//        this(new AMQShortString(exchangeName), new AMQShortString(routingKey));
+//    }
 
     public AMQTopic(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)
     {
         super(exchange, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, routingKey, true, true, queueName, false);
     }
 
-
-    public AMQTopic(AMQShortString name)
+    public AMQTopic(AMQConnection conn, String routingKey)
     {
-        this(name, true, null, false);
+        this(conn.getDefaultTopicExchangeName(), new AMQShortString(routingKey));
     }
 
-    public AMQTopic(AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
+
+    public AMQTopic(AMQShortString exchangeName, String routingKey)
     {
-        super(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete,
+        this(exchangeName, new AMQShortString(routingKey));
+    }
+
+    public AMQTopic(AMQShortString exchangeName, AMQShortString routingKey)
+    {
+        this(exchangeName, routingKey, null);
+    }
+
+    public AMQTopic(AMQShortString exchangeName, AMQShortString name, boolean isAutoDelete, AMQShortString queueName, boolean isDurable)
+    {
+        super(exchangeName, ExchangeDefaults.TOPIC_EXCHANGE_CLASS, name, true, isAutoDelete,
               queueName, isDurable);
     }
 
     public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
-        return new AMQTopic(topic.getDestinationName(), false, getDurableTopicQueueName(subscriptionName, connection),
+        return new AMQTopic(topic.getExchangeName(), topic.getDestinationName(), false,
+                            getDurableTopicQueueName(subscriptionName, connection),
                             true);
     }
 

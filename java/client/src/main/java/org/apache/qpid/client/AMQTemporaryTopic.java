@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import javax.jms.JMSException;
 import javax.jms.TemporaryTopic;
 
@@ -36,7 +38,7 @@ class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic, TemporaryDes
      */
     public AMQTemporaryTopic(AMQSession session)
     {
-        super("TempQueue" + Long.toString(System.currentTimeMillis()));
+        super(session.getTemporaryTopicExchangeName(),new AMQShortString("TempQueue" + Long.toString(System.currentTimeMillis())));
         _session = session;
     }
 

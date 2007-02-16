@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -88,4 +90,12 @@ public interface Session extends javax.jms.Session
      */
     MessageProducer createProducer(Destination destination, boolean immediate)
             throws JMSException;
+
+    AMQShortString getTemporaryTopicExchangeName();
+
+    AMQShortString getDefaultQueueExchangeName();
+
+    AMQShortString getDefaultTopicExchangeName();
+
+    AMQShortString getTemporaryQueueExchangeName();
 }

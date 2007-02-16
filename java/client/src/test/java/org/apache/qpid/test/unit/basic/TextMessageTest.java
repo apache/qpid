@@ -41,6 +41,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.framing.AMQShortString;
 
 public class TextMessageTest extends TestCase implements MessageListener
 {
@@ -74,7 +75,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(randomize("TextMessageTest"), true);
+        Destination destination = new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("TextMessageTest")), true);
         init(connection, destination);
     }
 

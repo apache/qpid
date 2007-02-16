@@ -32,6 +32,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 public class MultipleConnectionTest extends TestCase
 {
@@ -191,7 +192,7 @@ public class MultipleConnectionTest extends TestCase
         String broker = _connectionString;
         int messages = 10;
 
-        AMQTopic topic = new AMQTopic("amq.topic");
+        AMQTopic topic = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME,"amq.topic");
 
         Receiver[] receivers = new Receiver[]{
                 new Receiver(broker, topic, 2),

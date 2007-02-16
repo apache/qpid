@@ -58,7 +58,7 @@ import org.apache.qpid.client.transport.TransportConnection;
  */
 public class ChannelCloseOkTest extends TestCase
 {
-    private Connection _connection;
+    private AMQConnection _connection;
     private Destination _destination1;
     private Destination _destination2;
     private Session _session1;
@@ -77,8 +77,8 @@ public class ChannelCloseOkTest extends TestCase
         TransportConnection.createVMBroker(1);
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test");
 
-        _destination1 = new AMQQueue("q1", true);
-        _destination2 = new AMQQueue("q2", true);
+        _destination1 = new AMQQueue(_connection,"q1", true);
+        _destination2 = new AMQQueue(_connection, "q2", true);
         _session1 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _session1.createConsumer(_destination1).setMessageListener(new MessageListener()
         {
@@ -164,7 +164,7 @@ public class ChannelCloseOkTest extends TestCase
         assertEquals(1, _received2.size());
 
         // Now send message to incorrect destination on session 1.
-        Destination destination = new AMQQueue("incorrect");
+        Destination destination = new AMQQueue(_connection, "incorrect");
         send(_session1, destination, "third"); // no point waiting as message will never be received.
 
         // Ensure both sessions are still ok.

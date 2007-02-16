@@ -27,6 +27,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 public class Config
 {
@@ -117,12 +118,12 @@ public class Config
         if(isQueue())
         {
             System.out.println("Using queue named " + name);
-            return new AMQQueue(name);
+            return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME,name);
         }
         else if(isTopic())
         {
             System.out.println("Using topic named " + name);
-            return new AMQTopic(name);
+            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME,name);
         }
         else if(isHeaders())
         {

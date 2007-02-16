@@ -380,4 +380,9 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         }
     }
 
+    public String toString()
+    {
+        return String.valueOf(System.identityHashCode(this));
+    }
+
 }

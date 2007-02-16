@@ -24,6 +24,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.MessageProducer;
 import javax.jms.Message;
@@ -51,7 +53,7 @@ public class LatencyTest implements MessageListener
 
     LatencyTest(AMQConnection connection, int count, int delay, int length) throws Exception
     {
-        this(connection, new AMQQueue(randomize("LatencyTest"), true), count, delay, length);
+        this(connection, new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("LatencyTest")), true), count, delay, length);
     }
 
     LatencyTest(AMQConnection connection, AMQDestination destination, int count, int delay, int length) throws Exception
