@@ -298,7 +298,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     {
                         _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
                     }
-                    else if (errorCode == (AMQConstant.NO_ROUTE)
+                    else if (errorCode == AMQConstant.NO_ROUTE)
                     {
                         _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
                     }
