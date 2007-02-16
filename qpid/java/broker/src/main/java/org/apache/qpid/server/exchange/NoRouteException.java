@@ -35,8 +35,8 @@ public class NoRouteException extends RequiredDeliveryException
         super(msg, message);
     }
 
-    public int getReplyCode()
+    public AMQConstant getReplyCode()
     {
-        return AMQConstant.NO_ROUTE.getCode();
+        return AMQConstant.NO_ROUTE;
     }
 }
