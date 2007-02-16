@@ -66,10 +66,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             AMQChannel channel = session.getChannel(evt.getChannelId());
 
-//            if (channel == null)
-//            {
-//                throw body.getChannelNotFoundException(evt.getChannelId());
-//            }
+            if (channel == null)
+            {
+                throw body.getChannelNotFoundException(evt.getChannelId());
+            }
 
             queue = channel.getDefaultQueue();
 
