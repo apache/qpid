@@ -89,10 +89,8 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 /**
- * The state manager is responsible for managing the state of the protocol session.
- * <p/>
- * For each AMQProtocolHandler there is a separate state manager.
- *
+ * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
+ * there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {
@@ -100,14 +98,12 @@ public class AMQStateManager implements AMQMethodListener
 
     private final VirtualHostRegistry _virtualHostRegistry;
     private final AMQProtocolSession _protocolSession;
-    /**
-     * The current state
-     */
+    /** The current state */
     private AMQState _currentState;
 
     /**
-     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
-     * The class must be a subclass of AMQFrame.
+     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
+     * AMQFrame.
      */
     private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
             new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(AMQState.class);
@@ -206,7 +202,7 @@ public class AMQStateManager implements AMQMethodListener
 
     public void error(Exception e)
     {
-        _logger.error("State manager received error notification: " + e, e);
+        _logger.error("State manager received error notification[Current State:" + _currentState + "]: " + e, e);
         for (StateListener l : _stateListeners)
         {
             l.error(e);
@@ -221,7 +217,7 @@ public class AMQStateManager implements AMQMethodListener
 
             checkChannel(evt, _protocolSession);
 
-            handler.methodReceived(this,  evt);
+            handler.methodReceived(this, evt);
             return true;
         }
         return false;
@@ -230,16 +226,17 @@ public class AMQStateManager implements AMQMethodListener
     private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
             throws AMQException
     {
-        if(evt.getChannelId() != 0
-                && !(evt.getMethod() instanceof ChannelOpenBody)
-                && protocolSession.getChannel(evt.getChannelId()) == null)
+        if (evt.getChannelId() != 0
+            && !(evt.getMethod() instanceof ChannelOpenBody)
+            && (protocolSession.getChannel(evt.getChannelId()) == null)
+            && !protocolSession.channelAwaitingClosure(evt.getChannelId()))
         {
-            throw evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR.getCode(),"No such channel: " + evt.getChannelId());
+            throw evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR.getCode(), "No such channel: " + evt.getChannelId());
         }
     }
 
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
-                                                                                             B frame)
+                                                                                               B frame)
             throws IllegalStateTransitionException
     {
         if (_logger.isDebugEnabled())
@@ -250,8 +247,8 @@ public class AMQStateManager implements AMQMethodListener
                 classToHandlerMap = _state2HandlersMap.get(currentState);
 
         final StateAwareMethodListener<B> handler = classToHandlerMap == null
-                                                          ? null
-                                                          : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+                                                    ? null
+                                                    : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
 
         if (handler == null)
         {
