@@ -94,6 +94,16 @@ public class MockProtocolSession implements AMQProtocolSession
     {
     }
 
+    public void closeChannelOk(int channelId)
+    {
+        
+    }
+
+    public boolean channelAwaitingClosure(int channelId)
+    {
+        return false;
+    }
+
     public void removeChannel(int channelId)
     {
         _channelMap.remove(channelId);
