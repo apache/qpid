@@ -29,6 +29,7 @@ import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -120,7 +121,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 _log.info("Queue " + body.queue + " exists and is accesible to this connection [owner=" + queue.getOwner() +"]");
             }
             //set this as the default queue on the channel:
-            session.getChannel(evt.getChannelId()).setDefaultQueue(queue);
+            AMQChannel channel = session.getChannel(evt.getChannelId());
+            if (channel == null)
+                throw new AMQException("Attempt to write to non-existent channel " + evt.getChannelId() + ": " + body);
+            channel.setDefaultQueue(queue);
+            //session.getChannel(evt.getChannelId()).setDefaultQueue(queue);
         }
 
         if (!body.nowait)

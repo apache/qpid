@@ -163,7 +163,9 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         else
         {
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
+
             // TODO: Closing with code 200 ("reply-sucess") ??? This cannot be right!
+            // gsim-python
             //session.closeSessionRequest(200, new AMQShortString(throwable.getMessage()));
             session.closeSession();
         }

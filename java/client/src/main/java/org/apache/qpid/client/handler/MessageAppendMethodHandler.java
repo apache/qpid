@@ -24,7 +24,9 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.MessageAppendBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
 import org.apache.log4j.Logger;
@@ -47,7 +49,12 @@ public class MessageAppendMethodHandler implements StateAwareMethodListener
     	try
         {
 			protocolSession.messageAppendBodyReceived((MessageAppendBody)evt.getMethod());
-			System.out.println("Message.appened()-->Appending message content to body");
+
+            // Be aware of possible changes to parameter order as versions change.
+            final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
+                protocolSession.getProtocolMajorVersion(), // AMQP major version
+                protocolSession.getProtocolMinorVersion()); // AMQP minor version
+            protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
 		}
         catch (Exception e)
         {

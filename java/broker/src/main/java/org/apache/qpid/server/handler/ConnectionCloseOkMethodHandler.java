@@ -46,6 +46,12 @@ public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         _logger.info("Received Connection-close-ok");
+        // We wait for the Mina library to close the connection, which will happen when
+        // the client closes the Mina connection, causing AMQFastProtocolHand.sessionClosed()
+        // to be called.
+        // TODO - Find a better way of doing this without holding up this thread...
+        try { Thread.currentThread().sleep(2000); } // 2 seconds
+        catch (InterruptedException e) {}
         session.closeSession();
     }
 }
