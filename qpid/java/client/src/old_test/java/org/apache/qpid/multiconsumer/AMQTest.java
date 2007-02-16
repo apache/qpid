@@ -31,7 +31,6 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
-import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
@@ -41,6 +40,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.Session;
 
 /**
  * Test AMQ.
@@ -54,7 +56,7 @@ public class AMQTest extends TestCase implements ExceptionListener
     private static final String DUMMYCONTENT = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String HUGECONTENT;
 
-    private Connection connect = null;
+    private AMQConnection connect = null;
     private Session pubSession = null;
     private Session subSession = null;
     private Topic topic = null;
@@ -75,7 +77,7 @@ public class AMQTest extends TestCase implements ExceptionListener
         connect.setExceptionListener(this);
         pubSession = connect.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
         subSession = connect.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-        topic = new AMQTopic(SUBJECT);
+        topic = new AMQTopic(pubSession.getDefaultTopicExchangeName(), new AMQShortString(SUBJECT));
 
         connect.start();
     }

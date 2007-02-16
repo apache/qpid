@@ -72,7 +72,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(randomize("ObjectMessageTest"), true));
+        init(connection, new AMQQueue(connection,randomize("ObjectMessageTest"), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception

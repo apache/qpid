@@ -41,9 +41,9 @@ public class JMSDestinationTest extends TestCase
 
     public void testJMSDestination() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = new AMQQueue(new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
+        Queue queue = new AMQQueue(con.getDefaultQueueExchangeName(), new AMQShortString("someQ"), new AMQShortString("someQ"), false, true);
         MessageConsumer consumer = consumerSession.createConsumer(queue);
 
         Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");

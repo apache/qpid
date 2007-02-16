@@ -68,7 +68,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
 
     void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(randomize("BytesMessageTest"), true));
+        init(connection, new AMQQueue(connection, randomize("BytesMessageTest"), true));
     }
 
     void init(AMQConnection connection, AMQDestination destination) throws Exception

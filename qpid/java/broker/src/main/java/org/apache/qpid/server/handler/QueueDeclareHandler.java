@@ -107,7 +107,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)
                     {
-                        Exchange defaultExchange = exchangeRegistry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+                        Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
                         defaultExchange.registerQueue(body.queue, queue, null);
                         queue.bind(body.queue, defaultExchange);
                         _log.info("Queue " + body.queue + " bound to default exchange");

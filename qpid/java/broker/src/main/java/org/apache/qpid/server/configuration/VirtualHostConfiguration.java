@@ -32,6 +32,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -71,7 +72,16 @@ public class VirtualHostConfiguration
             throw new ConfigurationException("Unknown virtual host: " + virtualHostName);
         }
 
-        List queueNames = configuration.getList("queue.name");
+        List exchangeNames = configuration.getList("exchanges.exchange.name");
+
+        for(Object exchangeNameObj : exchangeNames)
+        {
+            String exchangeName = String.valueOf(exchangeNameObj);
+            configureExchange(virtualHost, exchangeName, configuration);
+        }
+
+
+        List queueNames = configuration.getList("queues.queue.name");
 
         for(Object queueNameObj : queueNames)
         {
@@ -81,12 +91,49 @@ public class VirtualHostConfiguration
 
     }
 
+    private void configureExchange(VirtualHost virtualHost, String exchangeNameString, Configuration configuration) throws AMQException
+    {
+
+        CompositeConfiguration exchangeConfiguration = new CompositeConfiguration();
+
+        exchangeConfiguration.addConfiguration(configuration.subset("exchanges.exchange."+ exchangeNameString));
+        exchangeConfiguration.addConfiguration(configuration.subset("exchanges"));
+
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+        MessageStore messageStore = virtualHost.getMessageStore();
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+
+        AMQShortString exchangeName = new AMQShortString(exchangeNameString);
+
+
+        Exchange exchange;
+
+
+
+        synchronized (exchangeRegistry)
+        {
+            exchange = exchangeRegistry.getExchange(exchangeName);
+            if(exchange == null)
+            {
+
+                AMQShortString type = new AMQShortString(exchangeConfiguration.getString("type","direct"));
+                boolean durable = exchangeConfiguration.getBoolean("durable",false);
+                boolean autodelete = exchangeConfiguration.getBoolean("autodelete",false);
+
+                Exchange newExchange = exchangeFactory.createExchange(exchangeName,type,durable,autodelete,0);
+                exchangeRegistry.registerExchange(newExchange);
+            }
+
+        }
+    }
+
     private void configureQueue(VirtualHost virtualHost, String queueNameString, Configuration configuration) throws AMQException, ConfigurationException
     {
         CompositeConfiguration queueConfiguration = new CompositeConfiguration();
 
-        queueConfiguration.addConfiguration(configuration.subset("queue."+ queueNameString));
-        queueConfiguration.addConfiguration(configuration);
+        queueConfiguration.addConfiguration(configuration.subset("queues.queue."+ queueNameString));
+        queueConfiguration.addConfiguration(configuration.subset("queues"));
 
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore messageStore = virtualHost.getMessageStore();

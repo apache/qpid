@@ -23,6 +23,8 @@ package org.apache.qpid.pubsub1;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.MessageProducer;
@@ -110,8 +112,8 @@ public class TestPublisher
         {
             createConnection(host, port, clientID);
             
-            _session = (Session) _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            AMQTopic destination = new AMQTopic(commandQueueName);
+            _session =  _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            AMQTopic destination = new AMQTopic(_session.getDefaultTopicExchangeName(), new AMQShortString(commandQueueName));
             MessageProducer producer = (MessageProducer) _session.createProducer(destination);
 
             _connection.start();

@@ -31,6 +31,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQConnectionTest extends TestCase
 {
@@ -45,8 +46,8 @@ public class AMQConnectionTest extends TestCase
         super.setUp();
         TransportConnection.createVMBroker(1);
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "test");
-        _topic = new AMQTopic("mytopic");
-        _queue = new AMQQueue("myqueue");
+        _topic = new AMQTopic(_connection.getDefaultTopicExchangeName(), new AMQShortString("mytopic"));
+        _queue = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("myqueue"));
     }
 
     protected void tearDown() throws Exception

@@ -62,7 +62,7 @@ public class AMQBindingURL implements BindingURL
             if (exchangeClass == null)
             {
                 _url = ExchangeDefaults.DIRECT_EXCHANGE_CLASS + "://" +
-                        ExchangeDefaults.DIRECT_EXCHANGE_NAME + "//" + _url;
+                        ExchangeDefaults.DEFAULT_EXCHANGE_NAME + "//" + _url;
                 //URLHelper.parseError(-1, "Exchange Class not specified.", _url);
                 parseBindingURL();
                 return;
@@ -76,7 +76,14 @@ public class AMQBindingURL implements BindingURL
 
             if (exchangeName == null)
             {
-                throw URLHelper.parseError(-1, "Exchange Name not specified.", _url);
+                if(getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
+                {
+                    setExchangeName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
+                }
+                else
+                {
+                    throw URLHelper.parseError(-1, "Exchange Name not specified.", _url);
+                }
             }
             else
             {
@@ -172,6 +179,11 @@ public class AMQBindingURL implements BindingURL
     {
 
         _exchangeClass = exchangeClass;
+        if (exchangeClass.equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
+        {
+            setOption(BindingURL.OPTION_EXCLUSIVE, "true");
+        }
+
     }
 
     public AMQShortString getExchangeName()
@@ -182,11 +194,6 @@ public class AMQBindingURL implements BindingURL
     private void setExchangeName(AMQShortString name)
     {
         _exchangeName = name;
-
-        if (name.equals(ExchangeDefaults.TOPIC_EXCHANGE_NAME))
-        {
-            setOption(BindingURL.OPTION_EXCLUSIVE, "true");
-        }
     }
 
     public AMQShortString getDestinationName()

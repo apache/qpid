@@ -25,6 +25,8 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.MessageListener;
@@ -48,8 +50,8 @@ public class Client
         this.name = name;
         session = connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 
-        AMQTopic topic = new AMQTopic("cluster_test_topic");
-        AMQQueue queue = new AMQQueue("cluster_test_queue");
+        AMQTopic topic = new AMQTopic(((AMQSession)session).getDefaultTopicExchangeName(), new AMQShortString("cluster_test_topic"));
+        AMQQueue queue = new AMQQueue(((AMQSession)session).getDefaultQueueExchangeName(), new AMQShortString("cluster_test_queue"));
 
         topicProducer = session.createProducer(topic);
         queueProducer = session.createProducer(queue);

@@ -55,10 +55,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void registerExchange(Exchange exchange)
     {
-        if(_defaultExchange == null)
-        {
-            setDefaultExchange(exchange);
-        }
         _exchangeMap.put(exchange.getName(), exchange);
     }
 

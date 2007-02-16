@@ -70,7 +70,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(randomize("FieldTableMessageTest"), true));
+        init(connection, new AMQQueue(connection,randomize("FieldTableMessageTest"), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception

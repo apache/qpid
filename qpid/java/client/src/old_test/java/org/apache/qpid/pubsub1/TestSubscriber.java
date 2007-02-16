@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -87,17 +89,17 @@ public class TestSubscriber
             InetAddress address = InetAddress.getLocalHost();
             AMQConnection con1 = new AMQConnection(args[0], Integer.parseInt(args[1]), args[2], args[3],
                                                   address.getHostName(), args[4]);
-            final org.apache.qpid.jms.Session session1 = (org.apache.qpid.jms.Session) con1.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Session session1 = con1.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             AMQConnection con2 = new AMQConnection(args[0], Integer.parseInt(args[1]), args[2], args[3],
                                                   address.getHostName(), args[4]);
-            final org.apache.qpid.jms.Session session2 = (org.apache.qpid.jms.Session) con2.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Session session2 = con2.createSession(false, Session.AUTO_ACKNOWLEDGE);
             String selector = args[6];
 
             final int expectedMessageCount = Integer.parseInt(args[5]);
             _logger.info("Message selector is <" + selector + ">...");
 
-            Topic t = new AMQTopic("cbr");
+            Topic t = new AMQTopic(session1.getDefaultTopicExchangeName(), new AMQShortString("cbr"));
             MessageConsumer consumer1 = session1.createConsumer(t,
                                                                 100, false, false, selector);
             MessageConsumer consumer2 = session2.createConsumer(t,

@@ -21,6 +21,7 @@
 package org.apache.qpid.test.unit.client.forwardall;
 
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.framing.AMQShortString;
 
 /**
@@ -32,14 +33,10 @@ class SpecialQueue extends AMQQueue
 {
     private final AMQShortString name;
 
-    SpecialQueue(String name)
+    SpecialQueue(AMQConnection con, String name)
     {
-        this(new AMQShortString(name));
-    }
-    SpecialQueue(AMQShortString name)
-    {
-        super(name, true);
-        this.name = name;
+        super(con, name, true);
+        this.name = new AMQShortString(name);
     }
 
     public AMQShortString getRoutingKey()

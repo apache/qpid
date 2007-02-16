@@ -26,6 +26,7 @@ import javax.jms.MessageListener;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Declare a private temporary response queue,
@@ -50,10 +51,10 @@ public class Client implements MessageListener
         _connection = connection;
         _expected = expected;
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        AMQQueue response = new AMQQueue("ResponseQueue", true);
+        AMQQueue response = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("ResponseQueue"), true);
         _session.createConsumer(response).setMessageListener(this);
         _connection.start();
-        AMQQueue service = new SpecialQueue("ServiceQueue");
+        AMQQueue service = new SpecialQueue(_connection,"ServiceQueue");
         Message request = _session.createTextMessage("Request!");
         request.setJMSReplyTo(response);
         _session.createProducer(service).send(request);
