@@ -24,58 +24,54 @@
     <virtualhost>
         <name>localhost</name>
         <localhost>
-            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-            <maximumMessageCount>5000</maximumMessageCount>
-            <queue>
-                <name>queue</name>
+            <exchanges>
+                <exchange>
+                    <type>direct</type>
+                    <name>test.direct</name>
+                    <durable>true</durable>
+                </exchange>
+                <exchange>
+                    <type>topic</type>
+                    <name>test.topic</name>
+                </exchange>
+            </exchanges>
+            <queues>
+                <exchange>amq.direct</exchange>
+                <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+
                 <queue>
-                    <exchange>amq.direct</exchange>
-                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
-                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
-                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                    <name>queue</name>
                 </queue>
-            </queue>
-            <queue>
-                <name>ping</name>
-                <ping>
-                    <exchange>amq.direct</exchange>
-                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
-                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
-                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
-                </ping>
-            </queue>
+                <queue>
+                    <name>ping</name>
+                </queue>
+                <queue>
+                    <name>test-queue</name>
+                    <test-queue>
+                        <exchange>test.direct</exchange>
+                        <durable>true</durable>
+                    </test-queue>
+                </queue>
+                <queue>
+                    <name>test-ping</name>
+                    <test-ping>
+                        <exchange>test.direct</exchange>
+                    </test-ping>
+                </queue>
+
+            </queues>
         </localhost>
     </virtualhost>
+
+
     <virtualhost>
         <name>development</name>
         <development>
             <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
             <maximumMessageCount>5000</maximumMessageCount>
-            <queue>
-                <name>queue</name>
-                <queue>
-                    <exchange>amq.direct</exchange>
-                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
-                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
-                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
-                </queue>
-            </queue>
-            <queue>
-                <name>ping</name>
-                <ping>
-                    <exchange>amq.direct</exchange>
-                    <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
-                    <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
-                    <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
-                </ping>
-            </queue>
-        </development>
-    </virtualhost>
-        <virtualhost>
-            <name>test</name>
-            <test>
-                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-                <maximumMessageCount>5000</maximumMessageCount>
+            <queues>
                 <queue>
                     <name>queue</name>
                     <queue>
@@ -94,6 +90,34 @@
                         <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
                     </ping>
                 </queue>
+            </queues>
+        </development>
+    </virtualhost>
+        <virtualhost>
+            <name>test</name>
+            <test>
+                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                <maximumMessageCount>5000</maximumMessageCount>
+                <queues>
+                    <queue>
+                        <name>queue</name>
+                        <queue>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                        </queue>
+                    </queue>
+                    <queue>
+                        <name>ping</name>
+                        <ping>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
+                        </ping>
+                    </queue>
+                </queues>
             </test>
     </virtualhost>
 </virtualhosts>

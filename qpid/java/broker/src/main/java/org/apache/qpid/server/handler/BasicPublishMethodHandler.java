@@ -63,7 +63,7 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
         if (body.exchange == null)
         {
-            body.exchange = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+            body.exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
 
         }
         VirtualHost vHost = session.getVirtualHost();

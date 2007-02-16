@@ -75,7 +75,7 @@ public class ReceiveTest extends TestCase
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue("ReceiveTest", true));
+        init(connection, new AMQQueue(connection,"ReceiveTest", true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception

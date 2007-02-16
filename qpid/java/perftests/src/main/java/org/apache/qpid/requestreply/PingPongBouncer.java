@@ -35,6 +35,7 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.topic.Config;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 /**
  * PingPongBouncer is a message listener the bounces back messages to their reply to destination. This is used to return
@@ -414,11 +415,11 @@ public class PingPongBouncer implements MessageListener
     {
         if (isPubSub())
         {
-            _consumerDestination = new AMQTopic(name);
+            _consumerDestination = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, name);
         }
         else
         {
-            _consumerDestination = new AMQQueue(name);
+            _consumerDestination = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, name);
         }
     }
 

@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import javax.jms.Queue;
+import javax.jms.Connection;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -43,9 +44,19 @@ public class AMQQueue extends AMQDestination implements Queue
      * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
      * @param name the name of the queue
      */
-    public AMQQueue(AMQShortString name)
+    public AMQQueue(AMQShortString exchangeName, String name)
     {
-        this(name, false);
+        this(exchangeName, new AMQShortString(name));
+    }
+
+
+    /**
+     * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
+     * @param name the name of the queue
+     */
+    public AMQQueue(AMQShortString exchangeName, AMQShortString name)
+    {
+        this(exchangeName, name, false);
     }
 
     public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName)
@@ -58,9 +69,20 @@ public class AMQQueue extends AMQDestination implements Queue
      * Create a reference to a non temporary queue. Note this does not actually imply the queue exists.
      * @param name the name of the queue
      */
-    public AMQQueue(String name)
+    public AMQQueue(String exchangeName, String name)
     {
-        this(new AMQShortString(name), false);
+        this(new AMQShortString(exchangeName), new AMQShortString(name), false);
+    }
+
+
+    public AMQQueue(AMQConnection connection, String name)
+    {
+        this(connection.getDefaultQueueExchangeName(),name);
+    }
+
+    public AMQQueue(AMQConnection connection, String name, boolean temporary)
+    {
+        this(connection.getDefaultQueueExchangeName(), new AMQShortString(name),temporary);        
     }
 
 
@@ -71,9 +93,9 @@ public class AMQQueue extends AMQDestination implements Queue
      * @param temporary if true the broker will generate a queue name, also if true then the queue is autodeleted
      * and exclusive
      */
-    public AMQQueue(String name, boolean temporary)
+    public AMQQueue(String exchangeName, String name, boolean temporary)
     {
-        this(new AMQShortString(name),temporary);
+        this(new AMQShortString(exchangeName), new AMQShortString(name),temporary);
     }
 
 
@@ -84,11 +106,11 @@ public class AMQQueue extends AMQDestination implements Queue
      * @param temporary if true the broker will generate a queue name, also if true then the queue is autodeleted
      * and exclusive
      */
-    public AMQQueue(AMQShortString name, boolean temporary)
+    public AMQQueue(AMQShortString exchangeName, AMQShortString name, boolean temporary)
     {
         // queue name is set to null indicating that the broker assigns a name in the case of temporary queues
         // temporary queues are typically used as response queues
-        this(name, temporary?null:name, temporary, temporary, !temporary);
+        this(exchangeName, name, temporary?null:name, temporary, temporary, !temporary);
         
     }
 
@@ -99,19 +121,20 @@ public class AMQQueue extends AMQDestination implements Queue
      * @param exclusive true if the queue should only permit a single consumer
      * @param autoDelete true if the queue should be deleted automatically when the last consumers detaches
      */
-    public AMQQueue(AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete)
+    public AMQQueue(AMQShortString exchangeName, AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete)
     {
-        this(destinationName, queueName, exclusive, autoDelete, false);
+        this(exchangeName, destinationName, queueName, exclusive, autoDelete, false);
     }
 
 
-    public AMQQueue(AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable)
+    public AMQQueue(AMQShortString exchangeName, AMQShortString destinationName, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable)
     {
-        super(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, destinationName, exclusive,
+        super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, destinationName, exclusive,
               autoDelete, queueName, durable);
     }
 
-  
+
+
     public AMQShortString getRoutingKey()
     {
         return getAMQQueueName();

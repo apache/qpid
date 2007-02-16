@@ -33,6 +33,7 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageConverter;
+import org.apache.qpid.exchange.ExchangeDefaults;
 
 
 public class MessageConverterTest extends TestCase
@@ -41,7 +42,7 @@ public class MessageConverterTest extends TestCase
     public static final String JMS_CORR_ID = "QPIDID_01";
     public static final int JMS_DELIV_MODE = 1;
     public static final String JMS_TYPE = "test.jms.type";
-    public static final Destination JMS_REPLY_TO = new AMQQueue("my.replyto");
+    public static final Destination JMS_REPLY_TO = new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME,"my.replyto");
 
     protected JMSTextMessage testTextMessage;
 

@@ -24,6 +24,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -41,7 +43,7 @@ public class ChannelFlowTest implements MessageListener
 
     ChannelFlowTest(AMQConnection connection) throws Exception
     {
-        this(connection, new AMQQueue(randomize("ChannelFlowTest"), true));
+        this(connection, new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("ChannelFlowTest")), true));
     }
 
     ChannelFlowTest(AMQConnection connection, AMQDestination destination) throws Exception

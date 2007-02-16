@@ -47,8 +47,8 @@ public class AMQSessionTest extends TestCase
     {
         super.setUp();
         _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "test");
-        _topic = new AMQTopic("mytopic");
-        _queue = new AMQQueue("myqueue");
+        _topic = new AMQTopic(_connection,"mytopic");
+        _queue = new AMQQueue(_connection,"myqueue");
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 

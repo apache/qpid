@@ -22,6 +22,8 @@ package org.apache.qpid.transacted;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.AMQQueue;
 
 import javax.jms.Connection;
@@ -35,7 +37,7 @@ public class Ping
         Config config = new Config(argv);
         Connection con = config.createConnection();
         con.setClientID("ping");
-        new Relay(new AMQQueue("ping"), new AMQQueue("pong"), con,
+        new Relay(new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString("ping")), new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString("pong")), con,
                   config.isEchoOn(),
                   config.getBatchSize(),
                   config.usePersistentMessages()).start();
