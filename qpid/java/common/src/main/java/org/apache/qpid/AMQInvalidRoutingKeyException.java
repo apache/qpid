@@ -14,18 +14,18 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid;
 
 import org.apache.qpid.protocol.AMQConstant;
 
-public class AMQInvalidSelectorException extends AMQException
+public class AMQInvalidRoutingKeyException extends AMQException
 {
-    public AMQInvalidSelectorException(String message)
+    public AMQInvalidRoutingKeyException(String message)
     {
-        super(AMQConstant.INVALID_SELECTOR,message);
+        super(AMQConstant.INVALID_ROUTING_KEY,message);
     }
 }

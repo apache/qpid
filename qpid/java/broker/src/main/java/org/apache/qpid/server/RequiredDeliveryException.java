@@ -21,6 +21,7 @@
 package org.apache.qpid.server;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.queue.AMQMessage;
 
 /**
@@ -44,10 +45,10 @@ public abstract class RequiredDeliveryException extends AMQException
         return _amqMessage;
     }
 
-    public int getErrorCode()
+    public AMQConstant getErrorCode()
     {
         return getReplyCode();
     }
 
-    public abstract int getReplyCode();
+    public abstract AMQConstant getReplyCode();
 }

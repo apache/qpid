@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
@@ -52,33 +53,38 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         _logger.debug("ChannelClose method received");
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
-        int errorCode = method.replyCode;
+        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
         AMQShortString reason = method.replyText;
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-
         // TODO: Be aware of possible changes to parameter order as versions change.
         AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), method.getMajor(), method.getMinor());
         protocolSession.writeFrame(frame);
-        if (errorCode != AMQConstant.REPLY_SUCCESS.getCode())
+        if (errorCode != AMQConstant.REPLY_SUCCESS)
         {
             _logger.error("Channel close received with errorCode " + errorCode + ", and reason " + reason);
-            if (errorCode == AMQConstant.NO_CONSUMERS.getCode())
+            if (errorCode == AMQConstant.NO_CONSUMERS)
             {
                 throw new AMQNoConsumersException("Error: " + reason, null);
             }
-            else if (errorCode == AMQConstant.NO_ROUTE.getCode())
+            else if (errorCode == AMQConstant.NO_ROUTE)
             {
                 throw new AMQNoRouteException("Error: " + reason, null);
             }
-            else if (errorCode == AMQConstant.INVALID_SELECTOR.getCode())
+            else if (errorCode == AMQConstant.INVALID_SELECTOR)
             {
-                _logger.info("Broker responded with Invalid Selector.");
+                _logger.debug("Broker responded with Invalid Selector.");
 
                 throw new AMQInvalidSelectorException(String.valueOf(reason));
+            }
+            else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
+            {
+                _logger.debug("Broker responded with Invalid Routing Key.");
+
+                throw new AMQInvalidRoutingKeyException(String.valueOf(reason));
             }
             else
             {

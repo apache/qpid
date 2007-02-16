@@ -47,13 +47,19 @@ public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckB
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicAckBody> evt) throws AMQException
     {
         AMQProtocolSession protocolSession = stateManager.getProtocolSession();
-        
+
         if (_log.isDebugEnabled())
         {
             _log.debug("Ack received on channel " + evt.getChannelId());
         }
         BasicAckBody body = evt.getMethod();
         final AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
+
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(evt.getChannelId());
+        }
+
         // this method throws an AMQException if the delivery tag is not known
         channel.acknowledgeMessage(body.deliveryTag, body.multiple);
     }

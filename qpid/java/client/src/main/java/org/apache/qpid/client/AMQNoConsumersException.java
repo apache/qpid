@@ -28,7 +28,7 @@ public class AMQNoConsumersException extends AMQUndeliveredException
 {
     public AMQNoConsumersException(String msg, Object bounced)
     {
-        super(AMQConstant.NO_CONSUMERS.getCode(), msg, bounced);
+        super(AMQConstant.NO_CONSUMERS, msg, bounced);
     }
 
 

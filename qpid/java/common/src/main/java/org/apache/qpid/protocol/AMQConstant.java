@@ -69,7 +69,7 @@ public final class AMQConstant
     public static final AMQConstant MESSAGE_TOO_LARGE = new AMQConstant(311, "message too large", true);
 
     public static final AMQConstant NO_ROUTE = new AMQConstant(312, "no route", true);
-    
+
     public static final AMQConstant NO_CONSUMERS = new AMQConstant(313, "no consumers", true);
 
     public static final AMQConstant CONTEXT_IN_USE = new AMQConstant(320, "context in use", true);
@@ -78,11 +78,17 @@ public final class AMQConstant
 
     public static final AMQConstant INVALID_SELECTOR = new AMQConstant(322, "selector invalid", true);
 
+    public static final AMQConstant INVALID_ROUTING_KEY = new AMQConstant(323, "routing key invalid", true);
+
     public static final AMQConstant INVALID_PATH = new AMQConstant(402, "invalid path", true);
 
     public static final AMQConstant ACCESS_REFUSED = new AMQConstant(403, "access refused", true);
 
     public static final AMQConstant NOT_FOUND = new AMQConstant(404, "not found", true);
+
+    public static final AMQConstant ALREADY_EXISTS = new AMQConstant(405, "Already exists", true);
+
+    public static final AMQConstant IN_USE = new AMQConstant(406, "In use", true);
 
     public static final AMQConstant FRAME_ERROR = new AMQConstant(501, "frame error", true);
 

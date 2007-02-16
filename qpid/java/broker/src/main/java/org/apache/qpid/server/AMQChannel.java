@@ -602,7 +602,7 @@ public class AMQChannel
         for (RequiredDeliveryException bouncedMessage : _returnMessages)
         {
             AMQMessage message = bouncedMessage.getAMQMessage();
-            message.writeReturn(session, _channelId, bouncedMessage.getReplyCode(), new AMQShortString(bouncedMessage.getMessage()));
+            message.writeReturn(session, _channelId, bouncedMessage.getReplyCode().getCode(), new AMQShortString(bouncedMessage.getMessage()));
         }
         _returnMessages.clear();
     }

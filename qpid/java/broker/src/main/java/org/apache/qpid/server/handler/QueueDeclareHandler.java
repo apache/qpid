@@ -43,6 +43,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.AMQChannel;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
@@ -83,7 +84,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             body.queue = createName();
         }
 
-        AMQQueue queue = null;
+        AMQQueue queue;
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
         synchronized (queueRegistry)
@@ -94,8 +95,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 if(body.passive)
                 {
                     String msg = "Queue: " + body.queue + " not found.";
-                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(),msg );
-
+                    throw body.getChannelException(AMQConstant.NOT_FOUND,msg );
                 }
                 else
                 {
@@ -116,12 +116,18 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             }
             else if(queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
             {
-                // todo - constant
-                throw body.getChannelException(405, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
-
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
             }
+
+            AMQChannel channel = session.getChannel(evt.getChannelId());
+
+            if (channel == null)
+            {
+                throw body.getChannelNotFoundException(evt.getChannelId());
+            }
+
             //set this as the default queue on the channel:
-            session.getChannel(evt.getChannelId()).setDefaultQueue(queue);
+            channel.setDefaultQueue(queue);
         }
 
         if (!body.nowait)

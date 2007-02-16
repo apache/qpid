@@ -57,16 +57,16 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         // does it matter
         //stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
-        int errorCode = method.replyCode;
+        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
         AMQShortString reason = method.replyText;
 
         // TODO: check whether channel id of zero is appropriate
         // Be aware of possible changes to parameter order as versions change.
         protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0, method.getMajor(), method.getMinor()));
 
-        if (errorCode != 200)
+        if (errorCode != AMQConstant.REPLY_SUCCESS)
         {
-            if(errorCode == AMQConstant.NOT_ALLOWED.getCode())
+            if(errorCode == AMQConstant.NOT_ALLOWED)
             {
                 _logger.info("Authentication Error:"+Thread.currentThread().getName());
 

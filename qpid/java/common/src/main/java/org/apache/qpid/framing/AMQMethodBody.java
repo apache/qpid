@@ -23,19 +23,26 @@ package org.apache.qpid.framing;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public abstract class AMQMethodBody extends AMQBody
 {
-    public static final byte TYPE = 1;    
-    
-    /**
-     * AMQP version
-     */
+    public static final byte TYPE = 1;
+
+    /** AMQP version */
     protected byte major;
     protected byte minor;
-    public byte getMajor() { return major; }
-    public byte getMinor() { return minor; }
-    
+
+    public byte getMajor()
+    {
+        return major;
+    }
+
+    public byte getMinor()
+    {
+        return minor;
+    }
+
     public AMQMethodBody(byte major, byte minor)
     {
         this.major = major;
@@ -45,14 +52,10 @@ public abstract class AMQMethodBody extends AMQBody
     /** unsigned short */
     protected abstract int getBodySize();
 
-    /**
-     * @return unsigned short
-     */
+    /** @return unsigned short */
     protected abstract int getClazz();
 
-    /**
-     * @return unsigned short
-     */
+    /** @return unsigned short */
     protected abstract int getMethod();
 
     protected abstract void writeMethodPayload(ByteBuffer buffer);
@@ -90,27 +93,38 @@ public abstract class AMQMethodBody extends AMQBody
     }
 
     /**
-     * Creates an AMQChannelException for the corresponding body type (a channel exception
-     * should include the class and method ids of the body it resulted from).
+     * Creates an AMQChannelException for the corresponding body type (a channel exception should include the class and
+     * method ids of the body it resulted from).
      */
-    public AMQChannelException getChannelException(int code, String message)
+
+    /**
+     * Convenience Method to create a channel not found exception
+     *
+     * @param channelId The channel id that is not found
+     *
+     * @return new AMQChannelException
+     */
+    public AMQChannelException getChannelNotFoundException(int channelId)
+    {
+        return getChannelException(AMQConstant.NOT_FOUND, "Channel not found for id:" + channelId);
+    }
+
+    public AMQChannelException getChannelException(AMQConstant code, String message)
     {
         return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor);
     }
 
-    public AMQChannelException getChannelException(int code, String message, Throwable cause)
+    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
     {
         return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, cause);
     }
 
-    public AMQConnectionException getConnectionException(int code, String message)
+    public AMQConnectionException getConnectionException(AMQConstant code, String message)
     {
         return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor);
     }
 
-
-
-    public AMQConnectionException getConnectionException(int code, String message, Throwable cause)
+    public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)
     {
         return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, cause);
     }

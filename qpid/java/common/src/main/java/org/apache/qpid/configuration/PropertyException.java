@@ -22,6 +22,7 @@ package org.apache.qpid.configuration;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * Indicates an error parsing a property expansion.
@@ -38,12 +39,12 @@ public class PropertyException extends AMQException
         super(msg, t);
     }
 
-    public PropertyException(int errorCode, String msg, Throwable t)
+    public PropertyException(AMQConstant errorCode, String msg, Throwable t)
     {
         super(errorCode, msg, t);
     }
 
-    public PropertyException(int errorCode, String msg)
+    public PropertyException(AMQConstant errorCode, String msg)
     {
         super(errorCode, msg);
     }
@@ -58,7 +59,7 @@ public class PropertyException extends AMQException
         super(logger, msg);
     }
 
-    public PropertyException(Logger logger, int errorCode, String msg)
+    public PropertyException(Logger logger, AMQConstant errorCode, String msg)
     {
         super(logger, errorCode, msg);
     }
