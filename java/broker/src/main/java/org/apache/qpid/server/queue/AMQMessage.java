@@ -419,6 +419,7 @@ public class AMQMessage
 
     public void setRedelivered(boolean redelivered)
     {
+        _transferBody.redelivered = redelivered;
         _redelivered = redelivered;
     }
 

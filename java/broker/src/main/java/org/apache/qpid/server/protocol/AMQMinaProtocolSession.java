@@ -599,6 +599,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 task.doTask(this);
             }
         }
+        _minaProtocolSession.close();
     }
 
     /**
