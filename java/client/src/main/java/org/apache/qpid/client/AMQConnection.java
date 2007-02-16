@@ -966,7 +966,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             if (cause instanceof AMQException)
             {
-                je = new JMSException(Integer.toString(((AMQException) cause).getErrorCode()), "Exception thrown against " + toString() + ": " + cause);
+                je = new JMSException(Integer.toString(((AMQException) cause).getErrorCode().getCode()), "Exception thrown against " + toString() + ": " + cause);
             }
             else
             {

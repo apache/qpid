@@ -55,7 +55,6 @@ import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxSelectBody;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.handler.BasicAckMethodHandler;
@@ -231,7 +230,7 @@ public class AMQStateManager implements AMQMethodListener
             && (protocolSession.getChannel(evt.getChannelId()) == null)
             && !protocolSession.channelAwaitingClosure(evt.getChannelId()))
         {
-            throw evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR.getCode(), "No such channel: " + evt.getChannelId());
+            throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
         }
     }
 

@@ -24,6 +24,8 @@ import java.util.Queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
@@ -37,11 +39,8 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 
 /**
- * Encapsulation of a supscription to a queue.
- * <p/>
- * Ties together the protocol session of a subscriber, the consumer tag that
- * was given out by the broker and the channel id.
- * <p/>
+ * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
+ * that was given out by the broker and the channel id. <p/>
  */
 public class SubscriptionImpl implements Subscription
 {
@@ -59,9 +58,7 @@ public class SubscriptionImpl implements Subscription
 
     private final boolean _noLocal;
 
-    /**
-     * True if messages need to be acknowledged
-     */
+    /** True if messages need to be acknowledged */
     private final boolean _acks;
     private FilterManager _filters;
     private final boolean _isBrowser;
@@ -96,8 +93,8 @@ public class SubscriptionImpl implements Subscription
     {
         AMQChannel channel = protocolSession.getChannel(channelId);
         if (channel == null)
-        {
-            throw new NullPointerException("channel not found in protocol session");
+        {            
+            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session");
         }
 
         this.channel = channel;
@@ -172,9 +169,7 @@ public class SubscriptionImpl implements Subscription
         return (o instanceof SubscriptionImpl) && equals((SubscriptionImpl) o);
     }
 
-    /**
-     * Equality holds if the session matches and the channel and consumer tag are the same.
-     */
+    /** Equality holds if the session matches and the channel and consumer tag are the same. */
     private boolean equals(SubscriptionImpl psc)
     {
         return sessionKey.equals(psc.sessionKey)
@@ -193,11 +188,12 @@ public class SubscriptionImpl implements Subscription
     }
 
     /**
-     * This method can be called by each of the publisher threads.
-     * As a result all changes to the channel object must be thread safe.
+     * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
+     * thread safe.
      *
      * @param msg
      * @param queue
+     *
      * @throws AMQException
      */
     public void send(AMQMessage msg, AMQQueue queue) throws AMQException
@@ -224,7 +220,7 @@ public class SubscriptionImpl implements Subscription
         // We don't decrement the reference here as we don't want to consume the message
         // but we do want to send it to the client.
 
-        synchronized(channel)
+        synchronized (channel)
         {
             long deliveryTag = channel.getNextDeliveryTag();
 
@@ -260,7 +256,7 @@ public class SubscriptionImpl implements Subscription
                 }
                 queue.dequeue(storeContext, msg);
             }
-            synchronized(channel)
+            synchronized (channel)
             {
                 long deliveryTag = channel.getNextDeliveryTag();
 
@@ -309,11 +305,11 @@ public class SubscriptionImpl implements Subscription
             Object localInstance;
             Object msgInstance;
 
-            if((protocolSession.getClientProperties() != null) &&
-                 (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+            if ((protocolSession.getClientProperties() != null) &&
+                (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
             {
-                if((msg.getPublisher().getClientProperties() != null) &&
-                     (msgInstance = msg.getPublisher().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+                if ((msg.getPublisher().getClientProperties() != null) &&
+                    (msgInstance = msg.getPublisher().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                 {
                     if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
                     {
@@ -402,10 +398,10 @@ public class SubscriptionImpl implements Subscription
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
-        		protocolSession.getProtocolMajorVersion(),
-                protocolSession.getProtocolMinorVersion(),
-            	consumerTag	// consumerTag
-                ));
+                                                                        protocolSession.getProtocolMajorVersion(),
+                                                                        protocolSession.getProtocolMinorVersion(),
+                                                                        consumerTag    // consumerTag
+            ));
             _closed = true;
         }
     }

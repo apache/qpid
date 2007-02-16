@@ -61,11 +61,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         final int channelId = evt.getChannelId();
 
         AMQChannel channel = session.getChannel(channelId);
+
         VirtualHost vHost = session.getVirtualHost();
+
         if (channel == null)
         {
-            _log.error("Channel " + channelId + " not found");
-            // TODO: either alert or error that the
+            throw body.getChannelNotFoundException(evt.getChannelId());
         }
         else
         {
@@ -78,12 +79,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 if (body.queue != null)
                 {
                     String msg = "No such queue, '" + body.queue + "'";
-                    throw body.getChannelException(AMQConstant.NOT_FOUND.getCode(), msg);
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
                 }
                 else
                 {
                     String msg = "No queue name provided, no default queue defined.";
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED.getCode(), msg);
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED, msg);
                 }
             }
             else
@@ -108,24 +109,24 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 catch (AMQInvalidSelectorException ise)
                 {
                     _log.info("Closing connection due to invalid selector");
-                    throw body.getChannelException(AMQConstant.INVALID_SELECTOR.getCode(), ise.getMessage());
+                    throw body.getChannelException(AMQConstant.INVALID_SELECTOR, ise.getMessage());
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
                     AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.consumerTag + "'");
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED.getCode(),
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "Non-unique consumer tag, '" + body.consumerTag + "'");
                 }
                 catch (AMQQueue.ExistingExclusiveSubscription e)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " as it already has an existing exclusive consumer");
                 }
                 catch (AMQQueue.ExistingSubscriptionPreventsExclusive e)
                 {
-                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED.getCode(),
+                    throw body.getChannelException(AMQConstant.ACCESS_REFUSED,
                                                    "Cannot subscribe to queue "
                                                    + queue.getName()
                                                    + " exclusively as it already has a consumer");

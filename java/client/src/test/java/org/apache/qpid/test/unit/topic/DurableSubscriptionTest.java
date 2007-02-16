@@ -63,7 +63,7 @@ public class DurableSubscriptionTest extends TestCase
         Session session2 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber consumer2 = session2.createDurableSubscriber(topic, "MySubscription");
 
-        con.start();        
+        con.start();
 
         producer.send(session1.createTextMessage("A"));
 

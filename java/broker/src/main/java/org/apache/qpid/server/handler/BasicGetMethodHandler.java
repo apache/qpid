@@ -39,8 +39,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {
-            _log.error("Channel " + channelId + " not found");
-            // TODO: either alert or error that the
+            throw body.getChannelNotFoundException(evt.getChannelId());
         }
         else
         {
@@ -51,12 +50,12 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 _log.info("No queue for '" + body.queue + "'");
                 if(body.queue!=null)
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_FOUND.getCode(),
+                    throw body.getConnectionException(AMQConstant.NOT_FOUND,
                                                       "No such queue, '" + body.queue + "'");
                 }
                 else
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED.getCode(),
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                                       "No queue name provided, no default queue defined.");
                 }
             }

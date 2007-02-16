@@ -21,31 +21,36 @@
 package org.apache.qpid;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * Generic AMQ exception.
  */
 public class AMQException extends Exception
 {
-    private int _errorCode;
+    private AMQConstant _errorCode;
 
     public AMQException(String message)
     {
         super(message);
+        //fixme This method needs removed and all AMQExceptions need a valid error code
+        _errorCode = AMQConstant.getConstant(-1);
     }
 
     public AMQException(String msg, Throwable t)
     {
         super(msg, t);
+        //fixme This method needs removed and all AMQExceptions need a valid error code
+        _errorCode = AMQConstant.getConstant(-1);
     }
 
-    public AMQException(int errorCode, String msg, Throwable t)
+    public AMQException(AMQConstant errorCode, String msg, Throwable t)
     {
         super(msg + " [error code " + errorCode + ']', t);
         _errorCode = errorCode;
     }
 
-    public AMQException(int errorCode, String msg)
+    public AMQException(AMQConstant errorCode, String msg)
     {
         super(msg + " [error code " + errorCode + ']');
         _errorCode = errorCode;
@@ -63,13 +68,13 @@ public class AMQException extends Exception
         logger.error(getMessage(), this);
     }
 
-    public AMQException(Logger logger, int errorCode, String msg)
+    public AMQException(Logger logger, AMQConstant errorCode, String msg)
     {
         this(errorCode, msg);
         logger.error(getMessage(), this);
     }
 
-    public int getErrorCode()
+    public AMQConstant getErrorCode()
     {
         return _errorCode;
     }

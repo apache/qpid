@@ -45,18 +45,27 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<TxRollbackBody> evt) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        
-        try{
+
+        try
+        {
             AMQChannel channel = session.getChannel(evt.getChannelId());
+
+            if (channel == null)
+            {
+                throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
+            }
+
             channel.rollback();
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
-            session.writeFrame(TxRollbackOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0));
+            session.writeFrame(TxRollbackOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0));
             //Now resend all the unacknowledged messages back to the original subscribers.
             //(Must be done after the TxnRollback-ok response).
             channel.resend(session, false);
-        }catch(AMQException e){
+        }
+        catch (AMQException e)
+        {
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to rollback: " + e.getMessage());
         }
     }
