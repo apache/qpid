@@ -28,7 +28,7 @@ public class AMQNoRouteException extends AMQUndeliveredException
 {
     public AMQNoRouteException(String msg, Object bounced)
     {
-        super(AMQConstant.NO_ROUTE.getCode(), msg, bounced);
+        super(AMQConstant.NO_ROUTE, msg, bounced);
     }
 
 

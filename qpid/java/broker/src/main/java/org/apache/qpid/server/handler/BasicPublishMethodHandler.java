@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -70,8 +71,7 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
         // if the exchange does not exist we raise a channel exception
         if (e == null)
         {
-            throw body.getChannelException(500, "Unknown exchange name");
-
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange name");
         }
         else
         {
@@ -79,6 +79,12 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
             AMQChannel channel = session.getChannel(evt.getChannelId());
+
+            if (channel == null)
+            {
+                throw body.getChannelNotFoundException(evt.getChannelId());
+            }
+
             channel.setPublishFrame(body, session);
         }
     }

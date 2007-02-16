@@ -23,6 +23,7 @@ package org.apache.qpid;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class AMQChannelException extends AMQException
 {
@@ -32,7 +33,7 @@ public class AMQChannelException extends AMQException
     private final byte major;
     private final byte minor;
 
-    public AMQChannelException(int errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
+    public AMQChannelException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
     {
         super(errorCode, msg, t);
         _classId = classId;
@@ -41,7 +42,7 @@ public class AMQChannelException extends AMQException
         this.minor = minor;
     }
 
-    public AMQChannelException(int errorCode, String msg, int classId, int methodId, byte major, byte minor)
+    public AMQChannelException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor)
     {
         super(errorCode, msg);
         _classId = classId;
@@ -52,6 +53,6 @@ public class AMQChannelException extends AMQException
 
     public AMQFrame getCloseFrame(int channel)
     {
-        return ChannelCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode(), new AMQShortString(getMessage()));
+        return ChannelCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode().getCode(), new AMQShortString(getMessage()));
     }
 }

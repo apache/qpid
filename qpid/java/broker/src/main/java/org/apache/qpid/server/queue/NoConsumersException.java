@@ -35,8 +35,8 @@ public class NoConsumersException extends RequiredDeliveryException
         super("Immediate delivery is not possible.", message);
     }
 
-    public int getReplyCode()
+    public AMQConstant getReplyCode()
     {
-        return AMQConstant.NO_CONSUMERS.getCode();
+        return AMQConstant.NO_CONSUMERS;
     }
 }

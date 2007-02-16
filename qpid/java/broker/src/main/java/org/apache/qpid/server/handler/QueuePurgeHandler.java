@@ -11,6 +11,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.AMQChannel;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
 {
@@ -39,18 +40,27 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         VirtualHost virtualHost = session.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+
         QueuePurgeBody body = evt.getMethod();
         AMQQueue queue;
         if(body.queue == null)
         {
-            queue = session.getChannel(evt.getChannelId()).getDefaultQueue();
+
+           if (channel == null)
+           {
+               throw body.getChannelNotFoundException(evt.getChannelId());
+           }
+
+           //get the default queue on the channel:
+           queue = channel.getDefaultQueue();
+            
             if(queue == null)
             {
                 if(_failIfNotFound)
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED.getCode(),"No queue specified.");
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,"No queue specified.");
                 }
-
             }
         }
         else
@@ -62,12 +72,12 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(404, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
             }
         }
         else
         {
-                long purged = queue.clearQueue(session.getChannel(evt.getChannelId()).getStoreContext());
+                long purged = queue.clearQueue(channel.getStoreContext());
 
 
                 if(!body.nowait)

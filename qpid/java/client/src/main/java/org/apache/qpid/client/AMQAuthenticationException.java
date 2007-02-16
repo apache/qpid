@@ -21,10 +21,11 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class AMQAuthenticationException extends AMQException
 {
-    public AMQAuthenticationException(int error, String msg)
+    public AMQAuthenticationException(AMQConstant error, String msg)
     {
         super(error,msg);
     }

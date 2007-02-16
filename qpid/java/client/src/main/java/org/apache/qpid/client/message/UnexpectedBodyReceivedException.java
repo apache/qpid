@@ -22,6 +22,7 @@ package org.apache.qpid.client.message;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class UnexpectedBodyReceivedException extends AMQException
 {
@@ -36,7 +37,7 @@ public class UnexpectedBodyReceivedException extends AMQException
         super(logger, msg);
     }
 
-    public UnexpectedBodyReceivedException(Logger logger, int errorCode, String msg)
+    public UnexpectedBodyReceivedException(Logger logger, AMQConstant errorCode, String msg)
     {
         super(logger, errorCode, msg);
     }

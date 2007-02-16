@@ -20,6 +20,8 @@
  */
 package org.apache.qpid;
 
+import org.apache.qpid.protocol.AMQConstant;
+
 /**
  * Generic AMQ exception.
  */
@@ -27,7 +29,7 @@ public class AMQUndeliveredException extends AMQException
 {
     private Object _bounced;
 
-    public AMQUndeliveredException(int errorCode, String msg, Object bounced)
+    public AMQUndeliveredException(AMQConstant errorCode, String msg, Object bounced)
     {
         super(errorCode, msg);
 
