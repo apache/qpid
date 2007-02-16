@@ -468,6 +468,7 @@ public class AMQChannel
             _session.getProtocolMajorVersion(), // AMQP major version
             _session.getProtocolMinorVersion(), // AMQP minor version
             refId);
+        _session.writeRequest(_channelId, closeBody, listener);
     }
 
 //     protected void route(AMQMessage msg) throws AMQException

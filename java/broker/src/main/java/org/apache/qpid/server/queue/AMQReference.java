@@ -37,8 +37,8 @@ import java.util.List;
 public class AMQReference
 {
     private byte[] ref;
-    private static List<AMQMessage> messageList = new LinkedList();
-    private static List<ByteBuffer> contentList = new LinkedList();
+    private List<AMQMessage> messageList = new LinkedList();
+    private List<ByteBuffer> contentList = new LinkedList();
     
     public AMQReference(byte[] ref)
     {

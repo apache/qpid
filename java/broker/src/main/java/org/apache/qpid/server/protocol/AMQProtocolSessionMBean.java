@@ -96,7 +96,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public ManagedObject getParentObject()
     {
-        return _session.getVirtualHost().getManagedObject();
+        return _session.getVirtualHost() == null ? null : _session.getVirtualHost().getManagedObject();
     }
 
     public Long getWrittenBytes()
