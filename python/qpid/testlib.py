@@ -26,6 +26,7 @@ import qpid.client, qpid.spec
 import Queue
 from getopt import getopt, GetoptError
 from qpid.content import Content
+from qpid.message import Message
 
 def findmodules(root):
     """Find potential python modules under directory root"""
@@ -233,13 +234,15 @@ class TestBase(unittest.TestCase):
         """
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
-    def assertChannelException(self, expectedCode, message): 
+    def assertChannelException(self, expectedCode, message):
+        if not isinstance(message, Message): self.fail("expected channel_close method")
         self.assertEqual("channel", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
 
 
     def assertConnectionException(self, expectedCode, message): 
+        if not isinstance(message, Message): self.fail("expected connection_close method")
         self.assertEqual("connection", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
