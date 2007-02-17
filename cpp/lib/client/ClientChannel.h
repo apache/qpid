@@ -43,7 +43,6 @@ namespace qpid {
 
 namespace framing {
 class ChannelCloseBody;
-class AMQP_ServerProxy;
 class AMQMethodBody;
 }
 
@@ -109,7 +108,6 @@ class Channel : public framing::ChannelAdapter,
     u_int16_t prefetch;
     const bool transactional;
     framing::ProtocolVersion version;
-    boost::scoped_ptr<framing::AMQP_ServerProxy> proxy;
 
     void enqueue();
     void retrieve(Message& msg);
@@ -366,17 +364,6 @@ class Channel : public framing::ChannelAdapter,
     void setReturnedMessageHandler(ReturnedMessageHandler* handler);
 
     bool isOpen() const;
-
-    /**
-     * Returns a proxy for the "raw" AMQP broker protocol. Only for use by
-     * protocol experts.
-     */
-    framing::AMQP_ServerProxy& brokerProxy();
-
-    /**
-     * Wait for the next method from the broker.
-     */
-    framing::AMQMethodBody::shared_ptr receive();
 };
 
 }}
