@@ -29,7 +29,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQHeaderBody : virtual public AMQBody
+class AMQHeaderBody :  public AMQBody
 {
     HeaderProperties* properties;
     u_int16_t weight;

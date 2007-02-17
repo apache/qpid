@@ -41,8 +41,9 @@ namespace client {
 
         qpid::framing::BasicHeaderProperties* getHeaderProperties();
 	Message(qpid::framing::AMQHeaderBody::shared_ptr& header);
+        
     public:
-	Message();
+	Message(const std::string& data=std::string());
 	~Message();
 	
         /**
@@ -51,14 +52,15 @@ namespace client {
          * 
          * @return a string representing the data of the message
          */
-	inline std::string getData(){ return data; }
+	std::string getData() const { return data; }
+
         /**
          * Allows the application to set the content of messages to be
          * sent.
          * 
          * @param data a string representing the data of the message
          */
-	inline void setData(const std::string& _data){ data = _data; }
+	void setData(const std::string& _data);
 
         /**
          * @return true if this message was delivered previously (to
@@ -103,10 +105,10 @@ namespace client {
 	void setClusterId(const std::string& clusterId);
 
 
-	friend class Channel;
+        // TODO aconway 2007-02-15: remove friendships.
+      friend class Channel;
     };
 
-}
-}
+}}
 
 #endif  /*!_client_ClientMessage_h*/

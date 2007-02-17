@@ -60,6 +60,9 @@ class AMQMethodBody : public AMQBody
     /** Return request ID or response correlationID */
     virtual RequestId getRequestId() const { return 0; }
 
+    virtual bool isRequest() const { return false; }
+    virtual bool isResponse() const { return false; }
+
   protected:
     static u_int32_t baseSize() { return 4; }
 

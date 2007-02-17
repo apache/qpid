@@ -62,6 +62,7 @@ class AMQRequestBody : public AMQMethodBody
     void setRequestId(RequestId id) { data.requestId=id; }
     void setResponseMark(ResponseId mark) { data.responseMark=mark; }
 
+    bool isRequest()const { return true; }
   protected:
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
     void printPrefix(std::ostream& out) const;

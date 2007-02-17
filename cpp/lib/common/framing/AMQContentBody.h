@@ -28,7 +28,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQContentBody : virtual public AMQBody
+class AMQContentBody : public AMQBody
 {
     string data;
 

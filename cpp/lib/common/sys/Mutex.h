@@ -46,12 +46,23 @@ class ScopedLock
     L& mutex;
 };
 
+template <class L>
+class ScopedUnlock
+{
+  public:
+    ScopedUnlock(L& l) : mutex(l) { l.unlock(); }
+    ~ScopedUnlock() { mutex.lock(); }
+  private:
+    L& mutex;
+};
+    
 /**
  * Mutex lock.
  */
 class Mutex : private boost::noncopyable {
   public:
     typedef ScopedLock<Mutex> ScopedLock;
+    typedef ScopedUnlock<Mutex> ScopedUnlock;
     
     inline Mutex();
     inline ~Mutex();

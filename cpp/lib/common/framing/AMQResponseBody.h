@@ -69,6 +69,7 @@ class AMQResponseBody : public AMQMethodBody
     void setRequestId(RequestId id) { data.requestId = id; }
     void setBatchOffset(BatchOffset id) { data.batchOffset = id; }
 
+    bool isResponse() const { return true; }
   protected:
     static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
     void printPrefix(std::ostream& out) const;

@@ -53,6 +53,7 @@ class ExceptionHolder : public Exception, public boost::shared_ptr<Exception>
     std::string toString() const throw() { return (*this)->toString(); }
     virtual Exception* clone() const throw() { return (*this)->clone(); }
     virtual void throwSelf() const { (*this)->throwSelf(); }
+    virtual void throwIf() const { if (*this) (*this)->throwSelf(); }
 };
 
 } // namespace qpid

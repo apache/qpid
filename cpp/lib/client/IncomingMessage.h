@@ -36,9 +36,7 @@ namespace client {
 	qpid::framing::BasicReturnBody::shared_ptr returned;
 	qpid::framing::BasicGetOkBody::shared_ptr response;
 	qpid::framing::AMQHeaderBody::shared_ptr header;
-	std::vector<qpid::framing::AMQContentBody::shared_ptr> content;
-
-	u_int64_t contentSize();
+	std::string data;
     public:
 	IncomingMessage(qpid::framing::BasicDeliverBody::shared_ptr intro);
 	IncomingMessage(qpid::framing::BasicReturnBody::shared_ptr intro);
@@ -53,7 +51,7 @@ namespace client {
 	const std::string& getConsumerTag();//only relevant if isDelivery()
 	qpid::framing::AMQHeaderBody::shared_ptr& getHeader();
         u_int64_t getDeliveryTag();
-	void getData(std::string& data);
+	std::string getData() const;
     };
 
 }
