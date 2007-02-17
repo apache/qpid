@@ -245,7 +245,7 @@ void Channel::retrieve(Message& msg){
 
     msg.header = retrieved->getHeader();
     msg.deliveryTag = retrieved->getDeliveryTag();
-    retrieved->getData(msg.data);
+    msg.data = retrieved->getData();
     delete retrieved;
     retrieved = 0;
 }
@@ -446,7 +446,7 @@ void Channel::dispatch(){
         if(incomingMsg){
             //Note: msg is currently only valid for duration of this call
             Message msg(incomingMsg->getHeader());
-            incomingMsg->getData(msg.data);
+            msg.data = incomingMsg->getData();
             if(incomingMsg->isReturn()){
                 if(returnsHandler == 0){
                     //print warning to log/console

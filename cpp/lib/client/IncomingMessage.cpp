@@ -36,12 +36,12 @@ void IncomingMessage::setHeader(AMQHeaderBody::shared_ptr _header){
     this->header = _header;
 }
 
-void IncomingMessage::addContent(AMQContentBody::shared_ptr _content){
-    this->content.push_back(_content);
+void IncomingMessage::addContent(AMQContentBody::shared_ptr content){
+    data.append(content->getData());
 }
 
 bool IncomingMessage::isComplete(){
-    return header != 0 && header->getContentSize() == contentSize();
+    return header != 0 && header->getContentSize() == data.size();
 }
 
 bool IncomingMessage::isReturn(){
@@ -70,19 +70,7 @@ AMQHeaderBody::shared_ptr& IncomingMessage::getHeader(){
     return header;
 }
 
-void IncomingMessage::getData(string& s){
-    int count(content.size());
-    for(int i = 0; i < count; i++){
-        if(i == 0) s = content[i]->getData();
-	else s += content[i]->getData();
-    }
+std::string IncomingMessage::getData() const {
+    return data;
 }
 
-u_int64_t IncomingMessage::contentSize(){
-    u_int64_t size(0);
-    u_int64_t count(content.size());
-    for(u_int64_t i = 0; i < count; i++){
-	size += content[i]->size();
-    }
-    return size;
-}

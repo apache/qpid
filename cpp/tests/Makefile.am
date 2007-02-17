@@ -9,15 +9,11 @@ INCLUDES =				\
   -I$(top_srcdir)/lib/common/framing	\
   $(APR_CXXFLAGS)
 
-client_exe_tests =	\
-  client_test		\
-  echo_service		\
-  topic_listener	\
-  topic_publisher
+# Unit tests
 
 broker_tests =		\
   AccumulatedAckTest	\
-  ChannelTest		\
+  BrokerChannelTest 	\
   ConfigurationTest	\
   ExchangeTest		\
   HeadersExchangeTest	\
@@ -34,12 +30,10 @@ broker_tests =		\
   TxBufferTest		\
   TxPublishTest		\
   ValueTest		\
-  MessageHandlerTest 
+  MessageHandlerTest 	
 
-# Tests that use the in-process BrokerSingleton to test client-broker
-# interaction. Not strictly unit tests.
-round_trip_tests =	\
-  RequestResponseTest
+client_tests =		\
+  ClientChannelTest
 
 framing_tests =		\
   FieldTableTest	\
@@ -48,17 +42,25 @@ framing_tests =		\
 
 misc_tests =		\
   ExceptionTest		\
-	  ProducerConsumerTest
+  ProducerConsumerTest
 
 posix_tests =		\
   EventChannelTest	\
   EventChannelThreadsTest
 
 unit_tests =		\
-b  $(broker_tests)	\
+  $(broker_tests)	\
+  $(client_tests)	\
   $(framing_tests)	\
-  $(misc_tests) 	\
-  $(round_trip_tests)
+  $(misc_tests) 	
+
+# Executable client tests
+
+client_exe_tests =	\
+  client_test		\
+  echo_service		\
+  topic_listener	\
+  topic_publisher
 
 noinst_PROGRAMS = $(client_exe_tests)
 

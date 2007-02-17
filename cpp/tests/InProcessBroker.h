@@ -152,19 +152,18 @@ std::ostream& operator<<(
 class InProcessBrokerClient : public qpid::client::Connection {
   public:
     qpid::broker::InProcessBroker broker;
+    qpid::broker::InProcessBroker::Conversation& conversation;
     
     /** Constructor creates broker and opens client connection. */
     InProcessBrokerClient(qpid::framing::ProtocolVersion version=
                           qpid::framing::highestProtocolVersion
-    ) : broker(version)
+    ) : broker(version), conversation(broker.conversation)
     {
         setConnector(broker);
         open("");
     }
 
-    ~InProcessBrokerClient() {
-        close();                // close before broker is deleted.
-    }
+    ~InProcessBrokerClient() {}
 };
 
 #endif // _tests_InProcessBroker_h

@@ -48,9 +48,9 @@ struct MockHandler : ConnectionOutputHandler{
 };
 
 
-class ChannelTest : public CppUnit::TestCase  
+class BrokerChannelTest : public CppUnit::TestCase  
 {
-    CPPUNIT_TEST_SUITE(ChannelTest);
+    CPPUNIT_TEST_SUITE(BrokerChannelTest);
     CPPUNIT_TEST(testConsumerMgmt);
     CPPUNIT_TEST(testDeliveryNoAck);
     CPPUNIT_TEST(testDeliveryAndRecovery);
@@ -142,7 +142,7 @@ class ChannelTest : public CppUnit::TestCase
 
   public:
 
-    ChannelTest() :
+    BrokerChannelTest() :
         broker(Broker::create()),
         connection(&handler, *broker)
     {
@@ -353,4 +353,4 @@ class ChannelTest : public CppUnit::TestCase
 
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(ChannelTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(BrokerChannelTest);

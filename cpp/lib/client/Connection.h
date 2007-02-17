@@ -86,7 +86,7 @@ class Connection : public ConnectionForChannel
 {
     typedef std::map<framing::ChannelId, Channel*> ChannelMap;
 
-    static framing::ChannelId channelIdCounter;
+    framing::ChannelId channelIdCounter;
     static const std::string OK;
 
     framing::ProtocolVersion version;

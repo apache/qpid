@@ -28,7 +28,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQHeartbeatBody : virtual public AMQBody
+class AMQHeartbeatBody :  public AMQBody
 {
 public:
     typedef boost::shared_ptr<AMQHeartbeatBody> shared_ptr;

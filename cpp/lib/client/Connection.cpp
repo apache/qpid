@@ -37,23 +37,19 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-ChannelId Connection::channelIdCounter;
-
 const std::string Connection::OK("OK");
 
 Connection::Connection(
     bool _debug, u_int32_t _max_frame_size,
     framing::ProtocolVersion _version
-) : version(_version), max_frame_size(_max_frame_size),
+) : channelIdCounter(0), version(_version), max_frame_size(_max_frame_size),
     defaultConnector(version, _debug, _max_frame_size),
     isOpen(false), debug(_debug)
 {
     setConnector(defaultConnector);
 }
 
-Connection::~Connection(){
-    close();
-}
+Connection::~Connection(){}
 
 void Connection::setConnector(Connector& con)
 {

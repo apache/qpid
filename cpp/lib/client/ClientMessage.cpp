@@ -23,8 +23,15 @@
 using namespace qpid::client;
 using namespace qpid::framing;
 
-Message::Message(){
-    header = AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC));
+Message::Message(const std::string& d)
+    : header(new AMQHeaderBody(BASIC))
+{
+    setData(d);
+}
+
+void Message::setData(const std::string& d) {
+    data = d;
+    header->setContentSize(d.size());
 }
 
 Message::Message(AMQHeaderBody::shared_ptr& _header) : header(_header){
