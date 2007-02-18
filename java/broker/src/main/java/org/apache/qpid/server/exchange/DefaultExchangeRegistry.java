@@ -85,14 +85,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public Exchange getExchange(AMQShortString name)
     {
 
-        if(name == null || name.length() == 0)
-        {
-            return _defaultExchange;
-        }
-        else
-        {
-            return _exchangeMap.get(name);
-        }
+        return _exchangeMap.get(name);
 
     }
 
