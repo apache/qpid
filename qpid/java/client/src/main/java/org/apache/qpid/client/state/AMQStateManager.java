@@ -59,25 +59,22 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 
 /**
- * The state manager is responsible for managing the state of the protocol session.
- * <p/>
- * For each AMQProtocolHandler there is a separate state manager.
+ * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
+ * there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
     private AMQProtocolSession _protocolSession;
 
-    /**
-     * The current state
-     */
+    /** The current state */
     private AMQState _currentState;
 
     /**
-     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
-     * The class must be a subclass of AMQFrame.
+     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
+     * AMQFrame.
      */
-    private final Map _state2HandlersMap = new HashMap();
+    protected final Map _state2HandlersMap = new HashMap();
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
     private final Object _stateLock = new Object();
@@ -87,7 +84,7 @@ public class AMQStateManager implements AMQMethodListener
     {
         this(null);
     }
-    
+
 
     public AMQStateManager(AMQProtocolSession protocolSession)
     {
@@ -98,7 +95,7 @@ public class AMQStateManager implements AMQMethodListener
     {
         _protocolSession = protocolSession;
         _currentState = state;
-        if(register)
+        if (register)
         {
             registerListeners();
         }
@@ -194,7 +191,7 @@ public class AMQStateManager implements AMQMethodListener
         final Class clazz = frame.getClass();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Looking for state transition handler for frame " + clazz);
+            _logger.debug("Looking for state[" + currentState + "] transition handler for frame " + clazz);
         }
         final Map classToHandlerMap = (Map) _state2HandlersMap.get(currentState);
 
@@ -228,12 +225,12 @@ public class AMQStateManager implements AMQMethodListener
 
     public void attainState(final AMQState s) throws AMQException
     {
-        synchronized(_stateLock)
+        synchronized (_stateLock)
         {
             final long waitUntilTime = System.currentTimeMillis() + MAXIMUM_STATE_WAIT_TIME;
             long waitTime = MAXIMUM_STATE_WAIT_TIME;
 
-            while(_currentState != s && waitTime > 0)
+            while (_currentState != s && waitTime > 0)
             {
                 try
                 {
@@ -243,12 +240,12 @@ public class AMQStateManager implements AMQMethodListener
                 {
                     _logger.warn("Thread interrupted");
                 }
-                if(_currentState != s)
+                if (_currentState != s)
                 {
                     waitTime = waitUntilTime - System.currentTimeMillis();
                 }
             }
-            if(_currentState != s)
+            if (_currentState != s)
             {
                 _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
                 throw new AMQException("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
