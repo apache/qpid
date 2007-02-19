@@ -60,36 +60,41 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
         AMQShortString reason = method.replyText;
 
-        // TODO: check whether channel id of zero is appropriate
-        // Be aware of possible changes to parameter order as versions change.
-        protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short)0, method.getMajor(), method.getMinor()));
-
-        if (errorCode != AMQConstant.REPLY_SUCCESS)
+        try
         {
-            if(errorCode == AMQConstant.NOT_ALLOWED)
+            // TODO: check whether channel id of zero is appropriate
+            // Be aware of possible changes to parameter order as versions change.
+            protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short) 0, method.getMajor(), method.getMinor()));
+
+            if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
-                _logger.info("Authentication Error:"+Thread.currentThread().getName());
+                if (errorCode == AMQConstant.NOT_ALLOWED)
+                {
+                    _logger.info("Authentication Error:" + Thread.currentThread().getName());
 
-                protocolSession.closeProtocolSession();
+                    protocolSession.closeProtocolSession();
 
-                 //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
-                 stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
+                    //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
+                    stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
 
-                throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString());
-            }
-            else
-            {
-                _logger.info("Connection close received with error code " + errorCode);
+                    throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString());
+                }
+                else
+                {
+                    _logger.info("Connection close received with error code " + errorCode);
 
 
-                throw new AMQConnectionClosedException(errorCode, "Error: " + reason);
+                    throw new AMQConnectionClosedException(errorCode, "Error: " + reason);
+                }
             }
         }
+        finally
+        {
+            // this actually closes the connection in the case where it is not an error.
 
-        // this actually closes the connection in the case where it is not an error.
+            protocolSession.closeProtocolSession();
 
-        protocolSession.closeProtocolSession();
-
-        stateManager.changeState(AMQState.CONNECTION_CLOSED);
+            stateManager.changeState(AMQState.CONNECTION_CLOSED);
+        }
     }
 }

@@ -1629,8 +1629,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Message received in session with channel id " + _channelId);
+            _logger.debug("Message[" + (message.getDeliverBody() == null ?
+                                        "B:" + message.getBounceBody() : "D:" + message.getDeliverBody())
+                          + "] received in session with channel id " + _channelId);
         }
+
+        startDistpatcherIfNecessary();
 
         _queue.add(message);
     }
