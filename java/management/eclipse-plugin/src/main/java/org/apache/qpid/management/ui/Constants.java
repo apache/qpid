@@ -67,6 +67,10 @@ public class Constants
     
     public final static String ACTION_ADDSERVER = "New Connection";
     
+    public final static String QUEUE_SORT_BY_NAME = "Queue Name";
+    public final static String QUEUE_SORT_BY_DEPTH = "Queue Depth";
+    public final static String QUEUE_SORT_BY_CONSUMERCOUNT = "Consumer Count";
+    public final static String QUEUE_SHOW_TEMP_QUEUES= "show temporary queues";
     
     public final static String SUBSCRIBE_BUTTON   = "Subscribe";
     public final static String UNSUBSCRIBE_BUTTON = "Unsubscribe";

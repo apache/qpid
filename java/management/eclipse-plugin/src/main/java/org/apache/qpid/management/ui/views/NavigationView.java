@@ -851,7 +851,7 @@ public class NavigationView extends ViewPart
                                     }
                                 }
                                 removeManagedObject(domain, mbean);
-                                serverRegistry.removeManagedObject(mbean);
+                                //serverRegistry.removeManagedObject(mbean);
                             }
                             _treeViewer.refresh();
                         }

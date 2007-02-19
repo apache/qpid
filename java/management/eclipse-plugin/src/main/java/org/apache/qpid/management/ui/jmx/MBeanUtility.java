@@ -59,6 +59,12 @@ import org.apache.qpid.management.ui.views.ViewUtility;
  */
 public class MBeanUtility
 {
+    private static boolean _debug;
+    static
+    {
+        String debug = System.getProperty("debug");
+        _debug = "true".equalsIgnoreCase(debug) ? true : false;
+    }
     /**
      * Retrieves the MBeanInfo from MBeanServer and stores in the application registry
      * @param mbean  managed bean
@@ -428,5 +434,14 @@ public class MBeanUtility
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
         String[] domains = mbsc.getDomains();
         return Arrays.asList(domains);
+    }
+    
+    /**
+     * return true if System property is set to true -Ddebug=true
+     * @return
+     */
+    public static boolean isDebug()
+    {
+        return _debug;
     }
 }
