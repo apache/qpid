@@ -131,7 +131,7 @@ public class JMXServerRegistry extends ServerRegistry
     
     public void addManagedObject(ManagedBean mbean)
     {
-        if (mbean.isQueue() && !mbean.getName().startsWith("tmp_"))
+        if (mbean.isQueue())
         {
             addQueueMBean(mbean);
         }
@@ -149,6 +149,11 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
+        if (MBeanUtility.isDebug())
+        {
+            System.out.println("Removing MBean:" + mbean.getUniqueName());
+        }
+        
         if (mbean.isQueue())
         {
             removeQueueMBean(mbean);
@@ -333,8 +338,7 @@ public class JMXServerRegistry extends ServerRegistry
      */
     public void registerManagedObject(ObjectName objName)
     {
-        JMXManagedObject managedObject = new JMXManagedObject(objName);
-        
+        JMXManagedObject managedObject = new JMXManagedObject(objName);       
         managedObject.setServer(getManagedServer());
         addManagedObject(managedObject);
     }
@@ -347,6 +351,7 @@ public class JMXServerRegistry extends ServerRegistry
     public void unregisterManagedObject(ObjectName objName)
     {
         ManagedBean mbean = _mbeansMap.get(objName.toString());
+        removeManagedObject(mbean);
         // Check if mbean was not available in the map. It can happen if mbean unregistration
         // notification is received and the mbean is not added in the map.
         if (mbean != null)

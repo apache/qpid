@@ -309,65 +309,62 @@ public class ViewUtility
         for (String itemName : itemNames)
         {
             OpenType itemType = data.getCompositeType().getType(itemName);
-            if (compositeHolder.getData(itemName) == null)
-            {
-                Label keyLabel = toolkit.createLabel(compositeHolder, itemName, SWT.TRAIL);
-                GridData layoutData = new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1);
-                layoutData.minimumWidth = 70;
-                keyLabel.setLayoutData(layoutData);
+            Label keyLabel = toolkit.createLabel(compositeHolder, itemName, SWT.TRAIL);
+            GridData layoutData = new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1);
+            layoutData.minimumWidth = 70;
+            keyLabel.setLayoutData(layoutData);
 
-                if (itemType.isArray())
+            if (itemType.isArray())
+            {
+                OpenType type = ((ArrayType)itemType).getElementOpenType();
+                //  If Byte array and mimetype is text, convert to text string
+                if (type.getClassName().equals(Byte.class.getName()))
                 {
-                    OpenType type = ((ArrayType)itemType).getElementOpenType();
-                    //  If Byte array and mimetype is text, convert to text string
-                    if (type.getClassName().equals(Byte.class.getName()))
+                    String mimeType = null; 
+                    String encoding = null;
+                    if (data.containsKey("MimeType"))
                     {
-                        String mimeType = null; 
-                        String encoding = null;
-                        if (data.containsKey("MimeType"))
+                        mimeType = (String)data.get("MimeType");
+                        encoding = (String)data.get("Encoding");
+                        if (encoding == null || encoding.length() == 0)
                         {
-                            mimeType = (String)data.get("MimeType");
-                            encoding = (String)data.get("Encoding");
-                            if (encoding == null || encoding.length() == 0)
-                            {
-                                encoding = Charset.defaultCharset().name();
-                            }
-                            
-                            if (mimeType.equals("text/plain"))
-                            {
-                                displayByteArray(toolkit, compositeHolder, data, itemName, encoding);
-                            }
+                            encoding = Charset.defaultCharset().name();
                         }
-                        else
-                        {
-                            displayNotSupportedDataType(toolkit, compositeHolder);
-                        }                        
                     }
-                    // If array of any other supported type, show as a list of String array
-                    else if (SUPPORTED_ARRAY_DATATYPES.contains(type.getClassName()))
+
+                    if ("text/plain".equals(mimeType))
                     {
-                        displayArrayItem(compositeHolder, data, itemName);
+                        convertByteArray(toolkit, compositeHolder, data, itemName, encoding);
                     }
                     else
                     {
-                        displayNotSupportedDataType(toolkit, compositeHolder);
-                    }
+                        setNotSupportedDataType(toolkit, compositeHolder);
+                    }                        
                 }
-                else if (itemType instanceof TabularType)
+                // If array of any other supported type, show as a list of String array
+                else if (SUPPORTED_ARRAY_DATATYPES.contains(type.getClassName()))
                 {
-                    Composite composite = toolkit.createComposite(compositeHolder, SWT.NONE);
-                    composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
-                    layout = new GridLayout();
-                    layout.marginHeight = 0;
-                    layout.marginWidth = 0;
-                    composite.setLayout(layout);
-                    createTabularDataHolder(toolkit, composite, (TabularDataSupport)data.get(itemName));
+                    convertArrayItemForDisplay(compositeHolder, data, itemName);
                 }
                 else
                 {
-                    Text valueText = toolkit.createText(compositeHolder, String.valueOf(data.get(itemName)), SWT.READ_ONLY | SWT.BORDER);
-                    valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
+                    setNotSupportedDataType(toolkit, compositeHolder);
                 }
+            }
+            else if (itemType instanceof TabularType)
+            {
+                Composite composite = toolkit.createComposite(compositeHolder, SWT.NONE);
+                composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
+                layout = new GridLayout();
+                layout.marginHeight = 0;
+                layout.marginWidth = 0;
+                composite.setLayout(layout);
+                createTabularDataHolder(toolkit, composite, (TabularDataSupport)data.get(itemName));
+            }
+            else
+            {
+                Text valueText = toolkit.createText(compositeHolder, String.valueOf(data.get(itemName)), SWT.READ_ONLY | SWT.BORDER);
+                valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
             }
         }   
         
@@ -376,7 +373,7 @@ public class ViewUtility
     } //end of method
   
     
-    private static void displayByteArray(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
+    private static void convertByteArray(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
     {
         Byte[] arrayItems = (Byte[])data.get(itemName);
         byte[] byteArray = new byte[arrayItems.length];
@@ -486,7 +483,7 @@ public class ViewUtility
      * @param data - containing the array item value
      * @param itemName - item name
      */
-    private static void displayArrayItem(Composite compositeHolder, CompositeData data, String itemName)
+    private static void convertArrayItemForDisplay(Composite compositeHolder, CompositeData data, String itemName)
     {
         Object[] arrayItems = (Object[])data.get(itemName);
         String[] items = new String[arrayItems.length];
@@ -501,9 +498,9 @@ public class ViewUtility
         list.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
     }
     
-    private static void displayNotSupportedDataType(FormToolkit toolkit, Composite compositeHolder)
+    private static void setNotSupportedDataType(FormToolkit toolkit, Composite compositeHolder)
     {
-        Text valueText = toolkit.createText(compositeHolder, "Format is not supported to be displayed", SWT.READ_ONLY);
+        Text valueText = toolkit.createText(compositeHolder, "--- Content can not be displayed ---", SWT.READ_ONLY);
         valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 3, 1));
     }
     

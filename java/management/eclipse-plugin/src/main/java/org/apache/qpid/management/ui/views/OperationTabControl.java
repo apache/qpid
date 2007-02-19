@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.ParameterData;
@@ -91,12 +90,15 @@ public class OperationTabControl extends TabControl
     private HashMap<Text, Text> headerBindingHashMap = null;
     private String _virtualHostName = null;
     
-    public OperationTabControl(TabFolder tabFolder)
+    public OperationTabControl(TabFolder tabFolder, OperationData opData)
     {
         super(tabFolder);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
+        _opData = opData;
+        createComposites();
+        setHeader();
     }
     
     /**
@@ -144,15 +146,6 @@ public class OperationTabControl extends TabControl
     public void refresh(ManagedBean mbean)
     {
         _mbean = mbean;
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(mbean);     
-        _opData = serverRegistry.getOperationModel(mbean).getOperations().get(0);
-        refresh(_mbean, _opData);
-    }
-    
-    public void refresh(ManagedBean mbean, OperationData opData)
-    {
-        _mbean = mbean;
-        _opData = opData;
         _virtualHostName = _mbean.getVirtualHostName();
         
         // Setting the form to be invisible. Just in case the mbean server connection
@@ -160,30 +153,38 @@ public class OperationTabControl extends TabControl
         // instead of having half the widgets displayed.
         _form.setVisible(false);
         
-        ViewUtility.disposeChildren(_form.getBody());        
-        createComposites();
-        setHeader();
+        ViewUtility.disposeChildren(_paramsComposite);
         createParameterWidgets();
         
         // Set button text and add appropriate listener to button.
         // If there are no parameters and it is info operation, then operation gets executed
         // and result is displayed
-        List<ParameterData> params = opData.getParameters();
+        List<ParameterData> params = _opData.getParameters();
         if (params != null && !params.isEmpty())
         {            
             setButton(Constants.BUTTON_EXECUTE);
         }
-        else if (opData.getImpact() == Constants.OPERATION_IMPACT_ACTION)
+        else if (_opData.getImpact() == Constants.OPERATION_IMPACT_ACTION)
         {
             setButton(Constants.BUTTON_EXECUTE);
         }
-        else if (opData.getImpact() == Constants.OPERATION_IMPACT_INFO)
+        else if (_opData.getImpact() == Constants.OPERATION_IMPACT_INFO)
         {
             setButton(Constants.BUTTON_REFRESH);
             executeAndShowResults();
         }
         
         _form.setVisible(true);
+        layout();
+    }
+    
+    public void layout()
+    {
+        _headerComposite.layout();
+        if (_paramsComposite != null && !_paramsComposite.isDisposed())
+        {
+            _paramsComposite.layout();
+        }
         _form.layout();
     }
     
@@ -485,6 +486,7 @@ public class OperationTabControl extends TabControl
         int width = 600;
         int height = 400;
         Shell shell = ViewUtility.createPopupShell(Constants.RESULT, width, height);
+        shell.setImage(ApplicationRegistry.getImage(Constants.CONSOLE_IMAGE));
         ViewUtility.populateCompositeWithData(_toolkit, shell, result);
         
         shell.open();

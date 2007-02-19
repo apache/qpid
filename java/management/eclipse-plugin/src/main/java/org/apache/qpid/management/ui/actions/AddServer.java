@@ -132,6 +132,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
         Display display = Display.getCurrent();
         final Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE);
         shell.setText(Constants.ACTION_ADDSERVER);
+        shell.setImage(ApplicationRegistry.getImage(Constants.CONSOLE_IMAGE));
         shell.setLayout(new GridLayout());
         
         int x = display.getBounds().width;
