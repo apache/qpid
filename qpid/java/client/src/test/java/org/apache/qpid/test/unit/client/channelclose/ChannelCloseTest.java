@@ -36,7 +36,6 @@ import javax.jms.Queue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
@@ -47,7 +46,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
-import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.jms.ConnectionListener;
@@ -156,7 +154,7 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
 
             //Set StateManager to manager that ignores Close-oks
             AMQProtocolSession protocolSession = ((AMQConnection) _connection).getProtocolHandler().getProtocolSession();
-            AMQStateManager newStateManager = new TestCloseStateManager(protocolSession);
+            AMQStateManager newStateManager = new NoCloseOKStateManager(protocolSession);
             newStateManager.changeState(oldStateManager.getCurrentState());
 
             ((AMQConnection) _connection).getProtocolHandler().setStateManager(newStateManager);
