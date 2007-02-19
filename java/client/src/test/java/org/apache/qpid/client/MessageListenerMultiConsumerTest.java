@@ -42,16 +42,13 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 
 /**
- * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
- * <p/>
- * The message delivery process:
- * Mina puts a message on _queue in AMQSession and the dispatcher thread take()s
- * from here and dispatches to the _consumers. If the _consumer1 doesn't have a message listener set at connection start
- * then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple consumers on a
- * session can run in any order and a synchronous put/poll will block the dispatcher).
- * <p/>
- * When setting the message listener later the _synchronousQueue is just poll()'ed and the first message delivered
- * the remaining messages will be left on the queue and lost, subsequent messages on the session will arrive first.
+ * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
+ * queue <p/> The message delivery process: Mina puts a message on _queue in AMQSession and the dispatcher thread
+ * take()s from here and dispatches to the _consumers. If the _consumer1 doesn't have a message listener set at
+ * connection start then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple
+ * consumers on a session can run in any order and a synchronous put/poll will block the dispatcher). <p/> When setting
+ * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
+ * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
 public class MessageListenerMultiConsumerTest extends TestCase
 {
@@ -66,7 +63,6 @@ public class MessageListenerMultiConsumerTest extends TestCase
     private MessageConsumer _consumer1;
     private MessageConsumer _consumer2;
 
-    private boolean _testAsync;
     private final CountDownLatch _allMessagesSent = new CountDownLatch(2); //all messages Sent Lock
 
     protected void setUp() throws Exception
@@ -116,16 +112,10 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
         producerConnection.close();
 
-        _testAsync = false;
     }
 
     protected void tearDown() throws Exception
     {
-        //Should have recieved all async messages
-        if (_testAsync)
-        {
-            assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
-        }
         _clientConnection.close();
 
         super.tearDown();
@@ -161,8 +151,6 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
     public void testAsynchronousRecieve() throws Exception
     {
-        _testAsync = true;
-
         _consumer1.setMessageListener(new MessageListener()
         {
             public void onMessage(Message message)
@@ -173,7 +161,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
                 if (receivedCount1 == MSG_COUNT / 2)
                 {
-                    _allMessagesSent.countDown();
+                    _allMessagesSent.countDown();                    
                 }
 
             }
@@ -198,13 +186,14 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
         try
         {
-            _allMessagesSent.await(2000, TimeUnit.MILLISECONDS);
+            _allMessagesSent.await(4000, TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e)
         {
             //do nothing
         }
 
+        assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
     }
 
 

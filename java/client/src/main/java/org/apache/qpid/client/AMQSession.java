@@ -72,7 +72,6 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -192,7 +191,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private boolean _hasMessageListeners;
 
-
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
 
     private class Dispatcher extends Thread
@@ -275,42 +273,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                     consumer.notifyMessage(message, _channelId);
 
-                }
-            }
-            else
-            {
-                try
-                {
-                    // Bounced message is processed here, away from the mina thread
-                    AbstractJMSMessage bouncedMessage = _messageFactoryRegistry.createMessage(0,
-                                                                                              false,
-                                                                                              message.getBounceBody().exchange,
-                                                                                              message.getBounceBody().routingKey,
-                                                                                              message.getContentHeader(),
-                                                                                              message.getBodies());
-
-                    AMQConstant errorCode = AMQConstant.getConstant(message.getBounceBody().replyCode);
-                    AMQShortString reason = message.getBounceBody().replyText;
-                    _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
-
-                    //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
-                    if (errorCode == AMQConstant.NO_CONSUMERS)
-                    {
-                        _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
-                    }
-                    else if (errorCode == AMQConstant.NO_ROUTE)
-                    {
-                        _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
-                    }
-                    else
-                    {
-                        _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage));
-                    }
-
-                }
-                catch (Exception e)
-                {
-                    _logger.error("Caught exception trying to raise undelivered message exception (dump follows) - ignoring...", e);
                 }
             }
         }
@@ -1384,7 +1346,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         if (topicName.indexOf('/') == -1)
         {
-            return new AMQTopic(getDefaultTopicExchangeName(),new AMQShortString(topicName));
+            return new AMQTopic(getDefaultTopicExchangeName(), new AMQShortString(topicName));
         }
         else
         {
@@ -1474,8 +1436,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             // if the queue is bound to the exchange but NOT for this topic, then the JMS spec
             // says we must trash the subscription.
-            if (isQueueBound(dest.getExchangeName(),dest.getAMQQueueName()) &&
-                !isQueueBound(dest.getExchangeName(),dest.getAMQQueueName(), topicName))
+            if (isQueueBound(dest.getExchangeName(), dest.getAMQQueueName()) &&
+                !isQueueBound(dest.getExchangeName(), dest.getAMQQueueName(), topicName))
             {
                 deleteQueue(dest.getAMQQueueName());
             }
@@ -1634,9 +1596,59 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                           + "] received in session with channel id " + _channelId);
         }
 
-        startDistpatcherIfNecessary();
+        if (message.getDeliverBody() == null)
+        {
+            // Return of the bounced message.
+            returnBouncedMessage(message);
+        }
+        else
+        {
+            _queue.add(message);
+        }
+    }
 
-        _queue.add(message);
+    private void returnBouncedMessage(final UnprocessedMessage message)
+    {
+        _connection.performConnectionTask(
+                new Runnable()
+                {
+                    public void run()
+                    {
+                        try
+                        {
+                            // Bounced message is processed here, away from the mina thread
+                            AbstractJMSMessage bouncedMessage = _messageFactoryRegistry.createMessage(0,
+                                                                                                      false,
+                                                                                                      message.getBounceBody().exchange,
+                                                                                                      message.getBounceBody().routingKey,
+                                                                                                      message.getContentHeader(),
+                                                                                                      message.getBodies());
+
+                            AMQConstant errorCode = AMQConstant.getConstant(message.getBounceBody().replyCode);
+                            AMQShortString reason = message.getBounceBody().replyText;
+                            _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+
+                            //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
+                            if (errorCode == AMQConstant.NO_CONSUMERS)
+                            {
+                                _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
+                            }
+                            else if (errorCode == AMQConstant.NO_ROUTE)
+                            {
+                                _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
+                            }
+                            else
+                            {
+                                _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage));
+                            }
+
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.error("Caught exception trying to raise undelivered message exception (dump follows) - ignoring...", e);
+                        }
+                    }
+                });
     }
 
     /**
@@ -1882,7 +1894,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             throw new javax.jms.InvalidDestinationException("Cannot create a subscription on a temporary topic created in another session");
         }
-        if(!(topic instanceof AMQTopic))
+        if (!(topic instanceof AMQTopic))
         {
             throw new javax.jms.InvalidDestinationException("Cannot create a subscription on topic created for another JMS Provider, class of topic provided is: " + topic.getClass().getName());
         }
@@ -1915,7 +1927,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         return _connection.getTemporaryQueueExchangeName();
     }
-
 
 
     public int getTicket()
