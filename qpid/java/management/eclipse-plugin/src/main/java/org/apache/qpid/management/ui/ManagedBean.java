@@ -118,4 +118,9 @@ public abstract class ManagedBean extends ManagedObject
     {
         return _type.endsWith(Constants.EXCHANGE);
     }
+    
+    public boolean isTempQueue()
+    {
+        return (isQueue() && getName().startsWith("tmp_"));
+    }
 }
