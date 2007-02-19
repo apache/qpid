@@ -521,7 +521,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                            0,    // methodId
                                                                            AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
                                                                            new AMQShortString("JMS client closing channel"));    // replyText
-                    getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class);
+                    
+                    getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
 
