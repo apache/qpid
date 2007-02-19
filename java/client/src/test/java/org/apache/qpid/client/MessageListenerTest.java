@@ -21,6 +21,8 @@
 package org.apache.qpid.client;
 
 import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -38,18 +40,17 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.AMQBindingURL;
 
 /**
- * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
- * <p/>
- * The message delivery process:
- * Mina puts a message on _queue in AMQSession and the dispatcher thread take()s
- * from here and dispatches to the _consumers. If the _consumer doesn't have a message listener set at connection start
- * then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple consumers on a
- * session can run in any order and a synchronous put/poll will block the dispatcher).
- * <p/>
- * When setting the message listener later the _synchronousQueue is just poll()'ed and the first message delivered
- * the remaining messages will be left on the queue and lost, subsequent messages on the session will arrive first.
+ * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
+ * queue <p/> The message delivery process: Mina puts a message on _queue in AMQSession and the dispatcher thread
+ * take()s from here and dispatches to the _consumers. If the _consumer doesn't have a message listener set at
+ * connection start then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple
+ * consumers on a session can run in any order and a synchronous put/poll will block the dispatcher). <p/> When setting
+ * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
+ * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
 public class MessageListenerTest extends TestCase implements MessageListener
 {
@@ -61,7 +62,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
     private int receivedCount = 0;
     private MessageConsumer _consumer;
     private Connection _clientConnection;
-    private boolean _testAsync;
+    private CountDownLatch _awaitMessages = new CountDownLatch(MSG_COUNT);
 
     protected void setUp() throws Exception
     {
@@ -71,9 +72,9 @@ public class MessageListenerTest extends TestCase implements MessageListener
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
-        
+
         env.put("connectionfactory.connection", "amqp://client:client@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "direct://amq.direct//MessageListenerTest");
+        env.put("queue.queue", "MessageListenerTest");
 
         _context = factory.getInitialContext(env);
 
@@ -85,7 +86,6 @@ public class MessageListenerTest extends TestCase implements MessageListener
         _clientConnection.start();
 
         Session clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
 
         _consumer = clientSession.createConsumer(queue);
 
@@ -106,16 +106,10 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
         producerConnection.close();
 
-        _testAsync = false;
     }
 
     protected void tearDown() throws Exception
     {
-        //Should have recieved all async messages
-        if (_testAsync)
-        {
-            assertEquals(MSG_COUNT, receivedCount);
-        }
         _clientConnection.close();
 
         super.tearDown();
@@ -125,7 +119,6 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
     public void testSynchronousRecieve() throws Exception
     {
-
         for (int msg = 0; msg < MSG_COUNT; msg++)
         {
             assertTrue(_consumer.receive(2000) != null);
@@ -134,21 +127,20 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
     public void testAsynchronousRecieve() throws Exception
     {
-        _testAsync = true;
-
         _consumer.setMessageListener(this);
-
 
         _logger.info("Waiting 3 seconds for messages");
 
         try
         {
-            Thread.sleep(2000);
+            _awaitMessages.await(3000, TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e)
         {
             //do nothing
         }
+        //Should have recieved all async messages
+        assertEquals(MSG_COUNT, receivedCount);
 
     }
 
@@ -157,6 +149,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
         _logger.info("Received Message(" + receivedCount + "):" + message);
 
         receivedCount++;
+        _awaitMessages.countDown();
     }
 
     public static junit.framework.Test suite()
