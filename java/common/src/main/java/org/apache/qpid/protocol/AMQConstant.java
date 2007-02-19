@@ -90,6 +90,8 @@ public final class AMQConstant
 
     public static final AMQConstant IN_USE = new AMQConstant(406, "In use", true);
 
+    public static final AMQConstant REQUEST_TIMEOUT = new AMQConstant(408, "Request Timeout", true);
+
     public static final AMQConstant FRAME_ERROR = new AMQConstant(501, "frame error", true);
 
     public static final AMQConstant SYNTAX_ERROR = new AMQConstant(502, "syntax error", true);
@@ -100,7 +102,7 @@ public final class AMQConstant
 
     public static final AMQConstant RESOURCE_ERROR = new AMQConstant(506, "resource error", true);
 
-    public static final AMQConstant NOT_ALLOWED = new AMQConstant(530, "not allowed", true);
+    public static final AMQConstant NOT_ALLOWED = new AMQConstant(507, "not allowed", true);
 
     public static final AMQConstant NOT_IMPLEMENTED = new AMQConstant(540, "not implemented", true);
 

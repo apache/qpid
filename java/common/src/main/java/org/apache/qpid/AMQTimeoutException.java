@@ -20,10 +20,12 @@
  */
 package org.apache.qpid;
 
+import org.apache.qpid.protocol.AMQConstant;
+
 public class AMQTimeoutException extends AMQException
 {
     public AMQTimeoutException(String message)
     {
-        super(message);
+        super(AMQConstant.REQUEST_TIMEOUT, message);
     }
 }
