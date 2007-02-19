@@ -56,9 +56,11 @@ import org.apache.qpid.framing.MainRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -254,12 +256,36 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Method frame received: " + frame);
         }
+
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.getChannel(),
                                                                                     (AMQMethodBody) frame.getBodyFrame());
+
+        //Check that this channel is not closing
+        if (channelAwaitingClosure(frame.getChannel()))
+        {
+            if ((evt.getMethod() instanceof ChannelCloseOkBody))
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + frame.getChannel() + "] awaiting closure - processing close-ok");
+                }
+            }
+            else
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + frame.getChannel() + "] awaiting closure ignoring");
+                }
+                return;
+            }
+        }
+
+
         try
         {
             try
             {
+
                 boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
 
                 if (!_frameListeners.isEmpty())
@@ -277,14 +303,42 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             }
             catch (AMQChannelException e)
             {
-                _logger.error("Closing channel due to: " + e.getMessage());
-                writeFrame(e.getCloseFrame(frame.getChannel()));
-                closeChannel(frame.getChannel());
+                if (getChannel(frame.getChannel()) != null)
+                {
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Closing channel due to: " + e.getMessage());
+                    }
+                    writeFrame(e.getCloseFrame(frame.getChannel()));
+                    closeChannel(frame.getChannel());
+                }
+                else
+                {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("ChannelException occured on non-existent channel:" + e.getMessage());
+                    }
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Closing connection due to: " + e.getMessage());
+                    }
+                    closeSession();
+
+                    AMQConnectionException ce = evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
+                                                                                       AMQConstant.CHANNEL_ERROR.getName().toString());
+
+                    _stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                    writeFrame(ce.getCloseFrame(frame.getChannel()));
+                }
             }
             catch (AMQConnectionException e)
             {
-                _logger.error("Closing connection due to: " + e.getMessage());
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Closing connection due to: " + e.getMessage());
+                }
                 closeSession();
+                _stateManager.changeState(AMQState.CONNECTION_CLOSING);
                 writeFrame(e.getCloseFrame(frame.getChannel()));
             }
         }
@@ -325,8 +379,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content header frame received: " + frame);
         }
-        //fixme what happens if getChannel returns null
-        getChannel(frame.getChannel()).publishContentHeader((ContentHeaderBody) frame.getBodyFrame());
+
+        AMQChannel channel = getChannel(frame.getChannel());
+
+        if (channel == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + frame.getChannel());
+        }
+        else
+        {
+            channel.publishContentHeader((ContentHeaderBody) frame.getBodyFrame());
+        }
     }
 
     private void contentBodyReceived(AMQFrame frame) throws AMQException
@@ -335,8 +398,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             _logger.debug("Content body frame received: " + frame);
         }
-        //fixme what happens if getChannel returns null
-        getChannel(frame.getChannel()).publishContentBody((ContentBody) frame.getBodyFrame(), this);
+        AMQChannel channel = getChannel(frame.getChannel());
+
+        if (channel == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + frame.getChannel());
+        }
+        else
+        {
+            channel.publishContentBody((ContentBody) frame.getBodyFrame(), this);
+        }
     }
 
     /**
