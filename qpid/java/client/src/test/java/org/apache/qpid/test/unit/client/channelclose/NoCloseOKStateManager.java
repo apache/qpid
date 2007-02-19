@@ -27,7 +27,6 @@ import org.apache.qpid.client.handler.ConnectionCloseMethodHandler;
 import org.apache.qpid.client.handler.ConnectionTuneMethodHandler;
 import org.apache.qpid.client.handler.ConnectionSecureMethodHandler;
 import org.apache.qpid.client.handler.ConnectionOpenOkMethodHandler;
-import org.apache.qpid.client.handler.ChannelCloseMethodHandler;
 import org.apache.qpid.client.handler.ChannelCloseOkMethodHandler;
 import org.apache.qpid.client.handler.BasicDeliverMethodHandler;
 import org.apache.qpid.client.handler.BasicReturnMethodHandler;
@@ -91,7 +90,7 @@ public class NoCloseOKStateManager extends AMQStateManager
         //
         frame2handlerMap = new HashMap();
         // Use Test Handler for Close methods to not send Close-OKs
-        frame2handlerMap.put(ChannelCloseBody.class, TestChannelCloseMethodHandlerNoCloseOk.getInstance());
+        frame2handlerMap.put(ChannelCloseBody.class, ChannelCloseMethodHandlerNoCloseOk.getInstance());
 
         frame2handlerMap.put(ChannelCloseOkBody.class, ChannelCloseOkMethodHandler.getInstance());
         frame2handlerMap.put(ConnectionCloseBody.class, ConnectionCloseMethodHandler.getInstance());

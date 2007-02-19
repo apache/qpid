@@ -62,6 +62,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
@@ -143,6 +146,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private AMQShortString _defaultQueueExchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
     private AMQShortString _temporaryTopicExchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
     private AMQShortString _temporaryQueueExchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+
+    /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
+    private final ExecutorService _taskPool = Executors.newCachedThreadPool();
 
     /**
      * @param broker      brokerdetails
@@ -716,8 +722,31 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 try
                 {
+                    long startCloseTime = System.currentTimeMillis();
+
+                    _taskPool.shutdown();
                     closeAllSessions(null, timeout);
+
+                    if (!_taskPool.isTerminated())
+                    {
+                        try
+                        {
+                            //adjust timeout
+                            long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+
+                            _taskPool.awaitTermination(taskPoolTimeout , TimeUnit.MILLISECONDS);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            _logger.info("Interrupted while shutting down connection thread pool.");
+                        }
+                    }
+
+                    //adjust timeout
+                    timeout = adjustTimeout(timeout, startCloseTime);
+
                     _protocolHandler.closeConnection(timeout);
+
                 }
                 catch (AMQException e)
                 {
@@ -725,6 +754,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
         }
+    }
+
+    private long adjustTimeout(long timeout, long startTime)
+    {
+        long now = System.currentTimeMillis();
+        timeout -= now - startTime;
+        if (timeout < 0)
+        {
+            timeout = 0;
+        }
+        return timeout;
     }
 
     /**
@@ -1146,5 +1186,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void setTemporaryQueueExchangeName(AMQShortString temporaryQueueExchangeName)
     {
         _temporaryQueueExchangeName = temporaryQueueExchangeName;
+    }
+
+    public void performConnectionTask(Runnable task)
+    {
+        _taskPool.execute(task);
     }
 }
