@@ -62,7 +62,7 @@ public class AMQBindingURL implements BindingURL
             if (exchangeClass == null)
             {
                 _url = ExchangeDefaults.DIRECT_EXCHANGE_CLASS + "://" +
-                        ExchangeDefaults.DEFAULT_EXCHANGE_NAME + "//" + _url;
+                        "" + "//" + _url;
                 //URLHelper.parseError(-1, "Exchange Class not specified.", _url);
                 parseBindingURL();
                 return;
@@ -78,7 +78,7 @@ public class AMQBindingURL implements BindingURL
             {
                 if(getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
                 {
-                    setExchangeName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
+                    setExchangeName("");
                 }
                 else
                 {
