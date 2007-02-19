@@ -131,7 +131,7 @@ public class DestinationURLTest extends TestCase
         AMQBindingURL dest = new AMQBindingURL(url);
 
         assertTrue(dest.getExchangeClass().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS));
-        assertTrue(dest.getExchangeName().equals(ExchangeDefaults.DEFAULT_EXCHANGE_NAME));
+        assertTrue(dest.getExchangeName().equals(""));
         assertTrue(dest.getDestinationName().equals(""));
         assertTrue(dest.getQueueName().equals("IBMPerfQueue1"));
 

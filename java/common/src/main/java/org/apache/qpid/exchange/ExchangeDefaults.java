@@ -24,7 +24,7 @@ import org.apache.qpid.framing.AMQShortString;
 
 public class ExchangeDefaults
 {
-    public final static AMQShortString DEFAULT_EXCHANGE_NAME = new AMQShortString("");
+    public final static AMQShortString DEFAULT_EXCHANGE_NAME = new AMQShortString("<<default>>");
 
     public final static AMQShortString TOPIC_EXCHANGE_NAME = new AMQShortString("amq.topic");
 
