@@ -725,7 +725,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     long startCloseTime = System.currentTimeMillis();
 
                     _taskPool.shutdown();
-                    closeAllSessions(null, timeout);
+                    closeAllSessions(null, timeout, startCloseTime);
 
                     if (!_taskPool.isTerminated())
                     {
@@ -734,7 +734,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                             //adjust timeout
                             long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
 
-                            _taskPool.awaitTermination(taskPoolTimeout , TimeUnit.MILLISECONDS);
+                            _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
                         }
                         catch (InterruptedException e)
                         {
@@ -791,7 +791,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * @param cause if not null, the error that is causing this shutdown <p/> The caller must hold the failover mutex
      *              before calling this method.
      */
-    private void closeAllSessions(Throwable cause, long timeout) throws JMSException
+    private void closeAllSessions(Throwable cause, long timeout, long starttime) throws JMSException
     {
         final LinkedList sessionCopy = new LinkedList(_sessions.values());
         final Iterator it = sessionCopy.iterator();
@@ -807,6 +807,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 try
                 {
+                    if (starttime != -1)
+                    {
+                        timeout = adjustTimeout(timeout, starttime);
+                    }
+
                     session.close(timeout);
                 }
                 catch (JMSException e)
@@ -1065,7 +1070,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     _logger.info("Closing AMQConnection due to :" + cause.getMessage());
                 }
                 _closed.set(true);
-                closeAllSessions(cause, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
+                closeAllSessions(cause, -1, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
             }
             catch (JMSException e)
             {
