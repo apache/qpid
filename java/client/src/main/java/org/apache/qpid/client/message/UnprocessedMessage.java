@@ -41,10 +41,9 @@ public class UnprocessedMessage
     private boolean redeliveredFlag;
 	private MessageHeaders messageHeaders;
     
-    public UnprocessedMessage(int channelId, long deliveryTag, byte[] referenceId)
+    public UnprocessedMessage(int channelId, byte[] referenceId)
     {
         this.channelId = channelId;
-        this.deliveryTag = deliveryTag;
         this.referenceId = referenceId;
     }
     
@@ -113,11 +112,18 @@ public class UnprocessedMessage
             new String(contents.get(0));
     }
 
-	public void setMessageHeaders(MessageHeaders messageHeaders) {
+    public void setDeliveryTag(long deliveryTag)
+    {
+        this.deliveryTag = deliveryTag;
+    }
+
+	public void setMessageHeaders(MessageHeaders messageHeaders)
+    {
 		this.messageHeaders = messageHeaders;
 	}
 
-	public void setRedeliveredFlag(boolean redeliveredFlag) {
+	public void setRedeliveredFlag(boolean redeliveredFlag)
+    {
 		this.redeliveredFlag = redeliveredFlag;
 	}
 }

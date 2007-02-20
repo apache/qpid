@@ -282,8 +282,10 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
     	msg.addContent(appendBody.bytes);
     }
     
-    public void messageTransferBodyReceivedForReferenceCase(String referenceId,MessageHeaders messageHeaders,boolean redilivered){
+    public void messageTransferBodyReceivedForReferenceCase(String referenceId, long deliveryTag, MessageHeaders messageHeaders, boolean redilivered)
+    {
     	UnprocessedMessage msg = (UnprocessedMessage)_referenceId2UnprocessedMsgMap.get(referenceId);
+        msg.setDeliveryTag(deliveryTag);
     	msg.setMessageHeaders(messageHeaders);
     	msg.setRedeliveredFlag(redilivered);    	
     }

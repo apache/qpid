@@ -140,11 +140,11 @@ public class AMQChannel
     private MessageHandleFactory _messageHandleFactory = new MessageHandleFactory();
 
     private Set<Long> _browsedAcks = new HashSet<Long>();
-
+    
     /**
      * Used in creating unique references. 
      */
-    private byte _refCounter;
+    private static AtomicLong _refIdCounter = new AtomicLong();
 
     // XXX: clean up arguments
     public AMQChannel(int channelId, AMQProtocolSession session, MessageStore messageStore, MessageRouter exchanges, AMQMethodListener methodListener)
@@ -290,32 +290,44 @@ public class AMQChannel
 
     public void addMessageOpen(MessageOpenBody open) throws AMQException
     {
-        try {
+        try
+        {
             createReference(open.reference);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e)
+        {
             throw open.getConnectionException(503, "Reference is already open");
         }
     }
 
     public void addMessageAppend(MessageAppendBody append) throws AMQException
     {
-        try {
+        try
+        {
             AMQReference ref = getReference(append.reference);
-            ref.appendContent(ByteBuffer.wrap(append.bytes));
-        } catch (IllegalArgumentException e) {
+            if (append.bytes != null) // sending an empty string results in a null
+            {
+                ref.appendContent(ByteBuffer.wrap(append.bytes));
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
             throw append.getConnectionException(503, "Reference is not open");
         }
     }
 
     public void addMessageClose(MessageCloseBody close) throws AMQException
     {
-        try {
+        try
+        {
             AMQReference ref = removeReference(close.reference);
             for (AMQMessage msg : ref.getMessageList())
             {
                 routeCurrentMessage(msg);
             }
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e)
+        {
             throw close.getConnectionException(503, "Reference is not open");
         }
     }
@@ -392,8 +404,11 @@ public class AMQChannel
         _session.writeRequest(_channelId, mtb, listener);
     }
 
-    private synchronized byte[] nextRefId() {
-        return new byte[]{_refCounter++};
+    private synchronized byte[] nextRefId()
+    {
+        // clumsy
+        return String.valueOf(_refIdCounter.incrementAndGet()).getBytes();
+        //return new byte[]{_refIdCounter.getAndIncrement()};
     }
     
     public void deliverRef(AMQMessage msg, AMQShortString destination, AMQMethodListener listener)
@@ -471,7 +486,7 @@ public class AMQChannel
         {
             throw new ConsumerTagNotUniqueException();
         }
-
+        acks = acks;
         queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
         _consumerTag2QueueMap.put(tag, queue);
         return tag;

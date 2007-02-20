@@ -35,6 +35,7 @@ import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.ConnectionTuneParameters;
 import org.apache.qpid.client.failover.FailoverHandler;
 import org.apache.qpid.client.failover.FailoverState;
 import org.apache.qpid.client.state.AMQState;
@@ -70,6 +71,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * mapping between connection instances and protocol handler instances.
      */
     private AMQConnection _connection;
+    private ConnectionTuneParameters _params;
 
     /**
      * Used only when determining whether to add the SSL filter or not. This should be made more
@@ -104,9 +106,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     private final long DEFAULT_SYNC_TIMEOUT = 1000 * 30;
 
-    public AMQProtocolHandler(AMQConnection con)
+    public AMQProtocolHandler(AMQConnection con, ConnectionTuneParameters params)
     {
         _connection = con;
+        _params = params;
     }
 
     public boolean isUseSSL()
@@ -156,6 +159,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         }
   
         _protocolSession = new AMQProtocolSession(this, session, _connection, getStateManager());
+        if (_params != null)
+            _protocolSession.setConnectionTuneParameters(_params);
         _protocolSession.init();
     }
 
