@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
@@ -106,6 +107,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     private final boolean _waitUntilSent;
     private static final Content[] NO_CONTENT = new Content[0];
+    
+    private static AtomicLong _refIdCounter;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted,
                                    int channelId, AMQSession session, AMQProtocolHandler protocolHandler,
@@ -126,6 +129,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         _immediate = immediate;
         _mandatory = mandatory;
         _waitUntilSent = waitUntilSent;
+        _refIdCounter = new AtomicLong();
     }
 
     void resubscribe() throws AMQException
@@ -256,19 +260,6 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
     }
 
-    public void sendRef(Message message) throws JMSException
-    {
-        checkPreConditions();
-        checkInitialDestination();
-
-
-        synchronized (_connection.getFailoverMutex())
-        {
-            sendImpl(_destination, message, true, _deliveryMode, _messagePriority, _timeToLive,
-                     _mandatory, _immediate);
-        }
-    }
-
     public void send(Message message, int deliveryMode) throws JMSException
     {
         checkPreConditions();
@@ -371,6 +362,44 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive,
                      mandatory, immediate, waitUntilSent);
         }
+    }
+
+    // Send entire message as a ref
+    public void sendAsRef(Message message) throws JMSException
+    {
+        checkPreConditions();
+        checkInitialDestination();
+
+
+        synchronized (_connection.getFailoverMutex())
+        {
+            sendImpl(_destination, message, true, _deliveryMode, _messagePriority, _timeToLive,
+                     _mandatory, _immediate);
+        }
+    }
+    
+    // Test methods for sending a ref
+    public String openRef() throws JMSException
+    {
+        String referenceId = generateReferenceId();
+        doMessageOpen(referenceId);
+        return referenceId;
+    }
+    
+    public void transferRef(String referenceId, MessageHeaders messageHeaders) throws JMSException
+    {
+        Content content = new Content(Content.TypeEnum.REF_T, referenceId.getBytes()); 
+        doMessageTransfer(messageHeaders, _destination, content, _deliveryMode, _messagePriority, _timeToLive, _mandatory, _immediate, false);
+    }
+    
+    public void appendRef(String referenceId, byte[] content) throws JMSException
+    {
+        doMessageAppend(referenceId, content);
+    }
+    
+    public void closeRef(String referenceId) throws JMSException
+    {
+        doMessageClose(referenceId);
     }
 
 
@@ -526,7 +555,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         	Content data = new Content(Content.TypeEnum.INLINE_T, payload);
 
-        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,mandatory,immediate);
+        	doMessageTransfer(messageHeaders, destination, data, deliveryMode, priority, timeToLive, mandatory, immediate, message.getJMSRedelivered());
         }
         else
         {
@@ -547,8 +576,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         	doMessageOpen(referenceId);
         	
         	// Message.Transfer
-        	Content data = new Content(Content.TypeEnum.REF_T, referenceId.getBytes()); 
-        	doMessageTransfer(messageHeaders,destination,data,message,deliveryMode,priority,timeToLive,mandatory,immediate);
+        	Content data = new Content(Content.TypeEnum.REF_T, referenceId.getBytes());
+        	doMessageTransfer(messageHeaders, destination, data, deliveryMode, priority, timeToLive, mandatory, immediate, message.getJMSRedelivered());
         	
         	//Message.Append
         	for(Iterator it = content.iterator(); it.hasNext();)
@@ -572,8 +601,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     }
     
     private void doMessageTransfer(MessageHeaders messageHeaders, AMQDestination destination, Content content,
-            AbstractJMSMessage message, int deliveryMode, int priority,
-            long timeToLive, boolean mandatory, boolean immediate) throws JMSException
+            int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate,
+            boolean redelivered) throws JMSException
     {
     	try
         {
@@ -583,7 +612,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 _protocolHandler.getProtocolMinorVersion(), // AMQP minor version
                 messageHeaders.getAppId(),      // String appId
                 messageHeaders.getJMSHeaders(), // FieldTable applicationHeaders
-                content,                     // Content body
+                content,                        // Content body
                 messageHeaders.getEncoding(),   // String contentEncoding
                 messageHeaders.getContentType(), // String contentType
                 messageHeaders.getCorrelationId(), // String correlationId
@@ -595,7 +624,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
                 mandatory,                      // boolean mandatory
                 messageHeaders.getMessageId(),  // String messageId
                 (short)priority,                // short priority
-                message.getJMSRedelivered(),    // boolean redelivered
+                redelivered,                    // boolean redelivered
                 messageHeaders.getReplyTo(),    // String replyTo
                 destination.getRoutingKey(),    // String routingKey
                 new String("abc123").getBytes(), // byte[] securityToken
@@ -665,8 +694,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
     }
     
-    private String generateReferenceId(){
-    	return String.valueOf(System.currentTimeMillis());
+    private String generateReferenceId()
+    {
+        return String.valueOf(_refIdCounter.incrementAndGet());
     }
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException

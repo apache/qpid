@@ -1645,10 +1645,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         if (_startedAtLeastOnce.getAndSet(true))
         {
-        	try{
+        	try
+            {
             	//then we stopped this and are restarting, so signal server to resume delivery
         		unsuspendChannel();
-	        }catch(AMQException e){
+	        }
+            catch(AMQException e)
+            {
 	        	_logger.error("Error Un Suspending Channel", e);
 	        }
         }

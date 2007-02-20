@@ -59,9 +59,20 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener
             params = new ConnectionTuneParameters();
         }
 
-        params.setFrameMax(frame.frameMax);        
-        params.setChannelMax(frame.channelMax);
-        params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.heartbeat));
+        // Set frame and channel max to smaller of client or broker size (if client size is set)
+        if (frame.getFrameMax() < params.getFrameMax() || params.getFrameMax() == 0)
+        {
+            params.setFrameMax(frame.getFrameMax());
+        }
+        if (frame.getChannelMax() < params.getChannelMax() || params.getChannelMax() == 0)
+        {
+            params.setChannelMax(frame.getChannelMax());
+        }
+        // Set heartbeat delay to lowest value
+        if (Integer.getInteger("amqj.heartbeat.delay", frame.heartbeat) < params.getHeartbeat() || params.getHeartbeat() == 0)
+        {
+            params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.heartbeat));
+        }
         protocolSession.setConnectionTuneParameters(params);
 
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);

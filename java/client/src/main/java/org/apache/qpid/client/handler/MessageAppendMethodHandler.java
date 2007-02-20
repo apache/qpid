@@ -50,11 +50,13 @@ public class MessageAppendMethodHandler implements StateAwareMethodListener
         {
 			protocolSession.messageAppendBodyReceived((MessageAppendBody)evt.getMethod());
 
+// TODO: Fix this - the MethodOks are never being sent, find a way to send them when the JMS
+// Acknowledgement mode is appropriate.
             // Be aware of possible changes to parameter order as versions change.
-            final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
-                protocolSession.getProtocolMajorVersion(), // AMQP major version
-                protocolSession.getProtocolMinorVersion()); // AMQP minor version
-            protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
+//             final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
+//                 protocolSession.getProtocolMajorVersion(), // AMQP major version
+//                 protocolSession.getProtocolMinorVersion()); // AMQP minor version
+//             protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
 		}
         catch (Exception e)
         {

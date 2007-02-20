@@ -177,10 +177,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public AMQConnection(String broker, String username, String password,
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
     {
+        this(broker, username, password, clientName, virtualHost, null);
+    }
+    public AMQConnection(String broker, String username, String password,
+                         String clientName, String virtualHost, ConnectionTuneParameters params) throws AMQException, URLSyntaxException
+    {
         this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
                                   username + ":" + password + "@" +
                                   (clientName == null ? "" : clientName) + "/" +
-                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"));
+                                  virtualHost + "?brokerlist='" + AMQBrokerDetails.checkTransport(broker) + "'"), params);
     }
 
     public AMQConnection(String host, int port, String username, String password,
@@ -191,6 +196,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public AMQConnection(String host, int port, boolean useSSL, String username, String password,
                          String clientName, String virtualHost) throws AMQException, URLSyntaxException
+    {
+        this(host, port, useSSL, username, password, clientName, virtualHost, null);
+    }
+    
+    public AMQConnection(String host, int port, boolean useSSL, String username, String password,
+                         String clientName, String virtualHost, ConnectionTuneParameters params) throws AMQException, URLSyntaxException
     {
         this(new AMQConnectionURL(useSSL ?
                                   ConnectionURL.AMQ_PROTOCOL + "://" +
@@ -203,15 +214,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                                                                                 (clientName == null ? "" : clientName) +
                                                                                 virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"
                                                                                 + "," + ConnectionURL.OPTIONS_SSL + "='false'"
-        ));
+        ), params);
     }
 
     public AMQConnection(String connection) throws AMQException, URLSyntaxException
     {
-        this(new AMQConnectionURL(connection));
+        this(new AMQConnectionURL(connection), null);
+    }
+
+    public AMQConnection(String connection, ConnectionTuneParameters params) throws AMQException, URLSyntaxException
+    {
+        this(new AMQConnectionURL(connection), params);
     }
 
     public AMQConnection(ConnectionURL connectionURL) throws AMQException
+    {
+        this(connectionURL, null);
+    }
+    public AMQConnection(ConnectionURL connectionURL, ConnectionTuneParameters params) throws AMQException
     {
         _logger.info("Connection:" + connectionURL);
         _ConnectionId.incrementAndGet();
@@ -229,7 +249,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
 
-        _protocolHandler = new AMQProtocolHandler(this);
+        _protocolHandler = new AMQProtocolHandler(this, params);
 
         // We are not currently connected
         _connected = false;

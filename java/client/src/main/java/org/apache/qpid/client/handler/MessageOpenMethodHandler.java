@@ -48,14 +48,16 @@ public class MessageOpenMethodHandler implements StateAwareMethodListener
     public void methodReceived (AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
     {
     	byte[] referenceId = ((MessageOpenBody)evt.getMethod()).getReference();
-    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), evt.getRequestId(), referenceId);
+    	final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), referenceId);
     	protocolSession.unprocessedMessageReceived(new String(referenceId), msg);
 
+// TODO: Fix this - the MethodOks are never being sent, find a way to send them when the JMS
+// Acknowledgement mode is appropriate.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
-            protocolSession.getProtocolMajorVersion(), // AMQP major version
-            protocolSession.getProtocolMinorVersion()); // AMQP minor version
-        protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
+//         final AMQMethodBody methodBody = MessageOkBody.createMethodBody(
+//             protocolSession.getProtocolMajorVersion(), // AMQP major version
+//             protocolSession.getProtocolMinorVersion()); // AMQP minor version
+//         protocolSession.writeResponse(evt.getChannelId(), evt.getRequestId(), methodBody);
     }
 }
 
