@@ -27,9 +27,9 @@ import java.util.List;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
@@ -40,9 +40,9 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 {
     private WeakReference<ContentHeaderBody> _contentHeaderBody;
 
-    private WeakReference<BasicPublishBody> _publishBody;
+    private WeakReference<MessagePublishInfo> _messagePublishInfo;
 
-    private List<WeakReference<ContentBody>> _contentBodies;
+    private List<WeakReference<ContentChunk>> _contentBodies;
 
     private boolean _redelivered;
 
@@ -79,7 +79,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
     {
         _arrivalTime = mmd.getArrivalTime();
         _contentHeaderBody = new WeakReference<ContentHeaderBody>(mmd.getContentHeaderBody());
-        _publishBody = new WeakReference<BasicPublishBody>(mmd.getPublishBody());
+        _messagePublishInfo = new WeakReference<MessagePublishInfo>(mmd.getMessagePublishInfo());
     }
 
     public int getBodyCount(StoreContext context, Long messageId) throws AMQException
@@ -88,10 +88,10 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         {
             MessageMetaData mmd = _messageStore.getMessageMetaData(context, messageId);
             int chunkCount = mmd.getContentChunkCount();
-            _contentBodies = new ArrayList<WeakReference<ContentBody>>(chunkCount);
+            _contentBodies = new ArrayList<WeakReference<ContentChunk>>(chunkCount);
             for (int i = 0; i < chunkCount; i++)
             {
-                _contentBodies.add(new WeakReference<ContentBody>(null));
+                _contentBodies.add(new WeakReference<ContentChunk>(null));
             }
         }
         return _contentBodies.size();
@@ -102,19 +102,19 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return getContentHeaderBody(context, messageId).bodySize;
     }
 
-    public ContentBody getContentBody(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentChunk getContentChunk(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
             throw new IllegalArgumentException("Index " + index + " out of valid range 0 to " +
                                                (_contentBodies.size() - 1));
         }
-        WeakReference<ContentBody> wr = _contentBodies.get(index);
-        ContentBody cb = wr.get();
+        WeakReference<ContentChunk> wr = _contentBodies.get(index);
+        ContentChunk cb = wr.get();
         if (cb == null)
         {
             cb = _messageStore.getContentBodyChunk(context, messageId, index);
-            _contentBodies.set(index, new WeakReference<ContentBody>(cb));
+            _contentBodies.set(index, new WeakReference<ContentChunk>(cb));
         }
         return cb;
     }
@@ -124,35 +124,36 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      *
      * @param storeContext
      * @param messageId
-     * @param contentBody
+     * @param contentChunk
      * @param isLastContentBody
      * @throws AMQException
      */
-    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody) throws AMQException
+    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentChunk, boolean isLastContentBody) throws AMQException
     {
         if (_contentBodies == null && isLastContentBody)
         {
-            _contentBodies = new ArrayList<WeakReference<ContentBody>>(1);
+            _contentBodies = new ArrayList<WeakReference<ContentChunk>>(1);
         }
         else
         {
             if (_contentBodies == null)
             {
-                _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+                _contentBodies = new LinkedList<WeakReference<ContentChunk>>();
             }
         }
-        _contentBodies.add(new WeakReference<ContentBody>(contentBody));
-        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1, contentBody, isLastContentBody);
+        _contentBodies.add(new WeakReference<ContentChunk>(contentChunk));
+        _messageStore.storeContentBodyChunk(storeContext, messageId, _contentBodies.size() - 1,
+                                            contentChunk, isLastContentBody);
     }
 
-    public BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException
+    public MessagePublishInfo getMessagePublishInfo(StoreContext context, Long messageId) throws AMQException
     {
-        BasicPublishBody bpb = (_publishBody != null ? _publishBody.get() : null);
+        MessagePublishInfo bpb = (_messagePublishInfo != null ? _messagePublishInfo.get() : null);
         if (bpb == null)
         {
             MessageMetaData mmd = loadMessageMetaData(context, messageId);
 
-            bpb = mmd.getPublishBody();
+            bpb = mmd.getMessagePublishInfo();
         }
         return bpb;
     }
@@ -182,7 +183,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, MessagePublishInfo publishBody,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
@@ -190,7 +191,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         // create en empty list here
         if (contentHeaderBody.bodySize == 0)
         {
-            _contentBodies = new LinkedList<WeakReference<ContentBody>>();
+            _contentBodies = new LinkedList<WeakReference<ContentChunk>>();
         }
 
         final long arrivalTime = System.currentTimeMillis();

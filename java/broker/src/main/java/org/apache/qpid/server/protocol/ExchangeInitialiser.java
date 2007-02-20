@@ -41,6 +41,9 @@ public class ExchangeInitialiser
     private void define(ExchangeRegistry r, ExchangeFactory f,
                         AMQShortString name, AMQShortString type) throws AMQException
     {
-        r.registerExchange(f.createExchange(name, type, true, false, 0));
+        if(r.getExchange(name)== null)
+        {
+            r.registerExchange(f.createExchange(name, type, true, false, 0));
+        }
     }
 }

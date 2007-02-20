@@ -441,9 +441,24 @@ public class AMQQueue implements Managable, Comparable
         return _deliveryMgr.clearAllMessages(storeContext);
     }
 
-    public void bind(AMQShortString routingKey, Exchange exchange)
+    public void bind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
     {
-        _bindings.addBinding(routingKey, exchange);
+        exchange.registerQueue(routingKey, this, arguments);        
+        if(isDurable() && exchange.isDurable())
+        {
+            _virtualHost.getMessageStore().bindQueue(exchange,routingKey,this,arguments);
+        }
+        _bindings.addBinding(routingKey, arguments, exchange);
+    }
+
+    public void unBind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
+    {
+        exchange.deregisterQueue(routingKey, this, arguments);
+        if(isDurable() && exchange.isDurable())
+        {
+            _virtualHost.getMessageStore().unbindQueue(exchange,routingKey,this,arguments);
+        }
+        _bindings.remove(routingKey, arguments, exchange);
     }
 
 

@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exchange.Exchange;
 
 public interface MessageStore
 {
@@ -51,6 +51,15 @@ public interface MessageStore
 
     void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
 
+    void createExchange(Exchange exchange) throws AMQException;
+
+    void removeExchange(Exchange exchange) throws AMQException;
+
+    void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+
+    void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+
+
     void createQueue(AMQQueue queue) throws AMQException;
 
     void removeQueue(AMQShortString name) throws AMQException;
@@ -68,24 +77,17 @@ public interface MessageStore
     boolean inTran(StoreContext context);
 
     /**
-     * Recreate all queues that were persisted, including re-enqueuing of existing messages
-     * @return
-     * @throws AMQException
-     */
-    List<AMQQueue> createQueues() throws AMQException;
-
-    /**
      * Return a valid, currently unused message id.
      * @return a message id
      */
     Long getNewMessageId();
 
-    void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException;
+    void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException;
 
     void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException;
 
     MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException;
 
-    ContentBody getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
+    ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
 
 }

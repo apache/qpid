@@ -23,6 +23,7 @@ package org.apache.qpid.server.exchange;
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
@@ -149,15 +150,97 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         return headers;
     }
 
-    static BasicPublishBody getPublishRequest(String id)
+
+    static final class MessagePublishInfoImpl implements MessagePublishInfo
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody request = new BasicPublishBody((byte)8, (byte)0,
-                                                       BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                       BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                       null,false,false,new AMQShortString(id),0);
-        
+        private AMQShortString _exchange;
+        private boolean _immediate;
+        private boolean _mandatory;
+        private AMQShortString _routingKey;
+
+
+        public MessagePublishInfoImpl(AMQShortString routingKey)
+        {
+            _routingKey = routingKey;
+        }
+
+        public MessagePublishInfoImpl(AMQShortString exchange, boolean immediate, boolean mandatory, AMQShortString routingKey)
+        {
+            _exchange = exchange;
+            _immediate = immediate;
+            _mandatory = mandatory;
+            _routingKey = routingKey;
+        }
+
+        public AMQShortString getExchange()
+        {
+            return _exchange;
+        }
+
+        public boolean isImmediate()
+        {
+            return _immediate;
+
+        }
+
+        public boolean isMandatory()
+        {
+            return _mandatory;
+        }
+
+        public AMQShortString getRoutingKey()
+        {
+            return _routingKey;
+        }
+
+
+        public void setExchange(AMQShortString exchange)
+        {
+            _exchange = exchange;
+        }
+
+        public void setImmediate(boolean immediate)
+        {
+            _immediate = immediate;
+        }
+
+        public void setMandatory(boolean mandatory)
+        {
+            _mandatory = mandatory;
+        }
+
+        public void setRoutingKey(AMQShortString routingKey)
+        {
+            _routingKey = routingKey;
+        }
+    }
+
+    static MessagePublishInfo getPublishRequest(final String id)
+    {
+        MessagePublishInfo request = new MessagePublishInfo()
+        {
+
+            public AMQShortString getExchange()
+            {
+                return null;
+            }
+
+            public boolean isImmediate()
+            {
+                return false;
+            }
+
+            public boolean isMandatory()
+            {
+                return false;
+            }
+
+            public AMQShortString getRoutingKey()
+            {
+                return new AMQShortString(id);
+            }
+        };
+                                                      
         return request;
     }
 
@@ -221,7 +304,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             this(getPublishRequest(id), getContentHeader(headers), null);
         }
 
-        private Message(BasicPublishBody publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
+        private Message(MessagePublishInfo publish, ContentHeaderBody header, List<ContentBody> bodies) throws AMQException
         {
             super(_messageStore.getNewMessageId(), publish, _txnContext, header);
         }
@@ -265,7 +348,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         {
             try
             {
-                return getPublishBody().routingKey;
+                return getMessagePublishInfo().getRoutingKey();
             }
             catch (AMQException e)
             {

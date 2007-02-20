@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -114,11 +114,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         // Shrink the ContentBodies to their actual size to save memory.
         if (compressBufferOnQueue)
         {
-            Iterator<ContentBody> it = msg.getContentBodyIterator();
+            Iterator<ContentChunk> it = msg.getContentBodyIterator();
             while (it.hasNext())
             {
-                ContentBody cb = it.next();
-                cb.reduceBufferToFit();
+                ContentChunk cb = it.next();
+                cb.reduceToFit();
             }
         }
 
@@ -493,7 +493,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     _log.debug(id() + "Testing Message(" + msg + ") for Queued Delivery");
                 }
-                if (!msg.getPublishBody().immediate)
+                if (!msg.getMessagePublishInfo().isImmediate())
                 {
                     addMessageToQueue(msg);
 

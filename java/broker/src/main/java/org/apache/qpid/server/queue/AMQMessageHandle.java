@@ -21,10 +21,10 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
 /**
  * A pluggable way of getting message data. Implementations can provide intelligent caching for example or
@@ -53,11 +53,11 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentBody getContentBody(StoreContext context, Long messageId, int index) throws IllegalArgumentException, AMQException;
+    ContentChunk getContentChunk(StoreContext context, Long messageId, int index) throws IllegalArgumentException, AMQException;
 
-    void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody) throws AMQException;
+    void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
 
-    BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException;
+    MessagePublishInfo getMessagePublishInfo(StoreContext context, Long messageId) throws AMQException;
 
     boolean isRedelivered();
 
@@ -65,7 +65,7 @@ public interface AMQMessageHandle
 
     boolean isPersistent(StoreContext context, Long messageId) throws AMQException;
 
-    void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
+    void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, MessagePublishInfo messagePublishInfo,
                                         ContentHeaderBody contentHeaderBody)
             throws AMQException;
 

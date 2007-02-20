@@ -1156,6 +1156,41 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
     }
 
+
+    public void createQueue(AMQShortString name, boolean autoDelete, boolean durable, boolean exclusive) throws AMQException
+    {
+        AMQFrame queueDeclare = QueueDeclareBody.createAMQFrame(_channelId,
+                                                                getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
+                                                                null,    // arguments
+                                                                autoDelete,    // autoDelete
+                                                                durable,    // durable
+                                                                exclusive,    // exclusive
+                                                                false,    // nowait
+                                                                false,    // passive
+                                                                name,    // queue
+                                                                getTicket());    // ticket
+
+        getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
+
+    }
+
+
+    public void bindQueue(AMQShortString queueName, AMQShortString routingKey, FieldTable arguments, AMQShortString exchangeName) throws AMQException
+    {
+        // TODO: Be aware of possible changes to parameter order as versions change.
+        AMQFrame queueBind = QueueBindBody.createAMQFrame(_channelId,
+                                                          getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
+                                                          arguments,    // arguments
+                                                          exchangeName,    // exchange
+                                                          false,    // nowait
+                                                          queueName,    // queue
+                                                          routingKey,    // routingKey
+                                                          getTicket());    // ticket
+
+
+        getProtocolHandler().syncWrite(queueBind, QueueBindOkBody.class);
+    }
+
     /**
      * Declare the queue.
      *

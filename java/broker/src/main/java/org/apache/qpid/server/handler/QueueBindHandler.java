@@ -98,8 +98,8 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.exchange + " does not exist.");
         }
         try
-        {
-            exch.registerQueue(body.routingKey, queue, body.arguments);
+        {            
+            queue.bind(body.routingKey, body.arguments, exch);
         }
         catch (AMQInvalidRoutingKeyException rke)
         {
@@ -109,7 +109,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             throw body.getChannelException(AMQConstant.CHANNEL_ERROR, e.toString());
         }
-        queue.bind(body.routingKey, exch);
+
         if (_log.isInfoEnabled())
         {
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + body.routingKey);

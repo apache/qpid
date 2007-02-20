@@ -641,8 +641,7 @@ public class EncodingUtils
 
     public static void writeTimestamp(ByteBuffer buffer, long timestamp)
     {
-        writeUnsignedInteger(buffer, 0/*timestamp msb*/);
-        writeUnsignedInteger(buffer, timestamp);
+        writeLong(buffer, timestamp);
     }
 
     public static boolean[] readBooleans(ByteBuffer buffer)
@@ -765,8 +764,8 @@ public class EncodingUtils
     public static long readTimestamp(ByteBuffer buffer)
     {
         // Discard msb from AMQ timestamp
-        buffer.getUnsignedInt();
-        return buffer.getUnsignedInt();
+        //buffer.getUnsignedInt();
+        return buffer.getLong();
     }
 
 

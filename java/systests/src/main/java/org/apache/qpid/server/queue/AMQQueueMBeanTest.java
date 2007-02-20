@@ -22,6 +22,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -164,20 +165,32 @@ public class AMQQueueMBeanTest extends TestCase
         }
     }
 
-    private AMQMessage message(boolean immediate) throws AMQException
+    private AMQMessage message(final boolean immediate) throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)8,
-                                                        (byte)0,
-                                                        BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                        BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                        null,
-                                                        immediate,
-                                                        false,
-                                                        null,
-                                                        0);
-        
+        MessagePublishInfo publish = new MessagePublishInfo()
+        {
+
+            public AMQShortString getExchange()
+            {
+                return null;
+            }
+
+            public boolean isImmediate()
+            {
+                return immediate;
+            }
+
+            public boolean isMandatory()
+            {
+                return false;
+            }
+
+            public AMQShortString getRoutingKey()
+            {
+                return null;
+            }
+        };
+                              
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = 1000;   // in bytes
         return new AMQMessage(_messageStore.getNewMessageId(), publish, _transactionalContext, contentHeaderBody);
