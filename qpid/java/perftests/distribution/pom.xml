@@ -44,22 +44,28 @@
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-perftests</artifactId>
-			<type>jar</type>
-			<version>${pom.version}</version>
+            <type>jar</type>
+            <version>${pom.version}</version>
         </dependency>
-		        <dependency>
+        <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-perftests</artifactId>
-			<type>test-jar</type>
-			<version>${pom.version}</version>
+            <type>test-jar</type>
+            <version>${pom.version}</version>
         </dependency>
-	<dependency>
-		<groupId>uk.co.thebadgerset</groupId>
-                <artifactId>junit-toolkit</artifactId>
-		<version>0.4</version>
-		<scope>runtime</scope>
+        <dependency>
+            <groupId>uk.co.thebadgerset</groupId>
+            <artifactId>junit-toolkit</artifactId>
+            <version>0.6-SNAPSHOT</version>
+            <scope>runtime</scope>
+            </dependency>
+        <dependency>
+            <groupId>uk.co.thebadgerset</groupId>
+            <artifactId>junit-toolkit-maven-plugin</artifactId>
+            <version>0.5</version>
+            <scope>runtime</scope>
         </dependency>
-	</dependencies>
+    </dependencies>
 
     <build>
         <pluginManagement>
