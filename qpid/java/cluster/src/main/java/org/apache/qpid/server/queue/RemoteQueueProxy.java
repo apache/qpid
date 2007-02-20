@@ -31,8 +31,6 @@ import org.apache.qpid.server.cluster.SimpleSendable;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.concurrent.Executor;
-
 /**
  * TODO: separate out an abstract base class from AMQQueue from which this inherits. It does
  * not require all the functionality currently in AMQQueue.
@@ -81,8 +79,11 @@ public class RemoteQueueProxy extends AMQQueue
 
     void relay(AMQMessage msg) throws AMQException
     {
-        BasicPublishBody publish = msg.getPublishBody();
-        publish.immediate = false; //can't as yet handle the immediate flag in a cluster
+        // TODO FIXME - can no longer update the publish body as it is an opaque wrapper object
+        // if cluster can handle immediate then it should wrap the wrapper...
+        
+//        BasicPublishBody publish = msg.getMessagePublishInfo();
+//        publish.immediate = false; //can't as yet handle the immediate flag in a cluster
 
         // send this on to the broker for which it is acting as proxy:
         _groupMgr.send(_target, new SimpleSendable(msg));

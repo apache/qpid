@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 
 /**
@@ -35,42 +36,55 @@ import org.apache.qpid.server.exchange.Exchange;
  */
 class ExchangeBindings
 {
+    private static final FieldTable EMPTY_ARGUMENTS = new FieldTable();
+
     static class ExchangeBinding
     {
-        private final Exchange exchange;
-        private final AMQShortString routingKey;
+        private final Exchange _exchange;
+        private final AMQShortString _routingKey;
+        private final FieldTable _arguments;
 
         ExchangeBinding(AMQShortString routingKey, Exchange exchange)
         {
-            this.routingKey = routingKey;
-            this.exchange = exchange;
+            this(routingKey, exchange,EMPTY_ARGUMENTS);
+        }
+
+        ExchangeBinding(AMQShortString routingKey, Exchange exchange, FieldTable arguments)
+        {
+            _routingKey = routingKey;
+            _exchange = exchange;
+            _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
         }
 
         void unbind(AMQQueue queue) throws AMQException
         {
-            exchange.deregisterQueue(routingKey, queue);
+            _exchange.deregisterQueue(_routingKey, queue, _arguments);
         }
 
         public Exchange getExchange()
         {
-            return exchange;
+            return _exchange;
         }
 
         public AMQShortString getRoutingKey()
         {
-            return routingKey;
+            return _routingKey;
         }
 
         public int hashCode()
         {
-            return (exchange == null ? 0 : exchange.hashCode()) + (routingKey == null ? 0 : routingKey.hashCode());
+            return (_exchange == null ? 0 : _exchange.hashCode())
+                   + (_routingKey == null ? 0 : _routingKey.hashCode())
+                   + (_arguments == null ? 0 : _arguments.hashCode());
         }
 
         public boolean equals(Object o)
         {
             if (!(o instanceof ExchangeBinding)) return false;
             ExchangeBinding eb = (ExchangeBinding) o;
-            return exchange.equals(eb.exchange) && routingKey.equals(eb.routingKey);
+            return _exchange.equals(eb._exchange)
+                   && _routingKey.equals(eb._routingKey)
+                   && _arguments.equals(eb._arguments);
         }
     }
 
@@ -88,11 +102,18 @@ class ExchangeBindings
      * are being tracked by the instance has been bound to the exchange
      * @param exchange the exchange bound to
      */
-    void addBinding(AMQShortString routingKey, Exchange exchange)
+    void addBinding(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        _bindings.add(new ExchangeBinding(routingKey, exchange));
+        _bindings.add(new ExchangeBinding(routingKey, exchange, arguments ));
     }
 
+
+    public void remove(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
+    {
+        _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments ));
+    }
+
+    
     /**
      * Deregisters this queue from any exchange it has been bound to
      */

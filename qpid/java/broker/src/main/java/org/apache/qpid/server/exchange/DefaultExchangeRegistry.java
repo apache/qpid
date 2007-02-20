@@ -28,6 +28,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -39,23 +41,32 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     private ConcurrentMap<AMQShortString, Exchange> _exchangeMap = new ConcurrentHashMap<AMQShortString, Exchange>();
 
     private Exchange _defaultExchange;
+    private VirtualHost _host;
 
-    public DefaultExchangeRegistry(ExchangeFactory exchangeFactory)
+    public DefaultExchangeRegistry(VirtualHost host)
     {
         //create 'standard' exchanges:
-        try
-        {
-            new ExchangeInitialiser().initialise(exchangeFactory, this);
-        }
-        catch(AMQException e)
-        {
-            _log.error("Failed to initialise exchanges: ", e);
-        }
+        _host = host;
+
     }
 
-    public void registerExchange(Exchange exchange)
+    public void initialise() throws AMQException
+    {
+        new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this);
+    }
+
+    public MessageStore getMessageStore()
+    {
+        return _host.getMessageStore();
+    }
+
+    public void registerExchange(Exchange exchange) throws AMQException
     {
         _exchangeMap.put(exchange.getName(), exchange);
+        if(exchange.isDurable())
+        {
+            getMessageStore().createExchange(exchange);
+        }
     }
 
     public void setDefaultExchange(Exchange exchange)
@@ -74,6 +85,10 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         Exchange e = _exchangeMap.remove(name);
         if (e != null)
         {
+            if(e.isDurable())
+            {
+                getMessageStore().removeExchange(e);
+            }
             e.close();
         }
         else
@@ -102,7 +117,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      */
     public void routeContent(AMQMessage payload) throws AMQException
     {
-        final AMQShortString exchange = payload.getPublishBody().exchange;
+        final AMQShortString exchange = payload.getMessagePublishInfo().getExchange();
         final Exchange exch = getExchange(exchange);
         // there is a small window of opportunity for the exchange to be deleted in between
         // the BasicPublish being received (where the exchange is validated) and the final

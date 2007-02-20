@@ -22,7 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.framing.BasicPublishBody;
 
@@ -55,13 +54,13 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 
         Message m7 = new Message("Message7", "XXXXX");
 
-        BasicPublishBody pb7 = m7.getPublishBody();
-        pb7.mandatory = true;
+        MessagePublishInfoImpl pb7 = (MessagePublishInfoImpl) (m7.getMessagePublishInfo());
+        pb7.setMandatory(true);
         routeAndTest(m7,true);
 
         Message m8 = new Message("Message8", "F0000");
-        BasicPublishBody pb8 = m8.getPublishBody();
-        pb8.mandatory = true;
+        MessagePublishInfoImpl pb8 = (MessagePublishInfoImpl)(m8.getMessagePublishInfo());
+        pb8.setMandatory(true);
         routeAndTest(m8,false,q1);
 
 
@@ -88,10 +87,10 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         bindDefault("F0000");
         Message m1 = new Message("Message1", "XXXXX");
         Message m2 = new Message("Message2", "F0000");
-        BasicPublishBody pb1 = m1.getPublishBody();
-        pb1.mandatory = true;
-        BasicPublishBody pb2 = m2.getPublishBody();
-        pb2.mandatory = true;
+        MessagePublishInfoImpl pb1 = (MessagePublishInfoImpl) (m1.getMessagePublishInfo());
+        pb1.setMandatory(true);
+        MessagePublishInfoImpl pb2 = (MessagePublishInfoImpl) (m2.getMessagePublishInfo());
+        pb2.setMandatory(true);
         routeAndTest(m1,true);
     }
 

@@ -27,6 +27,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
@@ -98,15 +99,29 @@ public class AckTest extends TestCase
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Establish some way to determine the version for the test.
-            BasicPublishBody publishBody = new BasicPublishBody((byte)8,
-                                                                (byte)0,
-                                                                BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                                BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                                new AMQShortString("someExchange"),
-                                                                false,
-                                                                false,
-                                                                new AMQShortString("rk"),
-                                                                0);
+            MessagePublishInfo publishBody = new MessagePublishInfo()
+            {
+
+                public AMQShortString getExchange()
+                {
+                    return new AMQShortString("someExchange");
+                }
+
+                public boolean isImmediate()
+                {
+                    return false;
+                }
+
+                public boolean isMandatory()
+                {
+                    return false;
+                }
+
+                public AMQShortString getRoutingKey()
+                {
+                    return new AMQShortString("rk");
+                }
+            };
             AMQMessage msg = new AMQMessage(_messageStore.getNewMessageId(), publishBody, txnContext);
             if (persistent)
             {

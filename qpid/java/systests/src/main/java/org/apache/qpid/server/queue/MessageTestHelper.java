@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
@@ -57,20 +59,32 @@ class MessageTestHelper extends TestCase
         return message(false);
     }
 
-    AMQMessage message(boolean immediate) throws AMQException
+    AMQMessage message(final boolean immediate) throws AMQException
     {
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)8,
-                                                        (byte)0,
-                                                        BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                        BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                        null,
-                                                        immediate,
-                                                        false,
-                                                        null,
-                                                        0);
-        
+        MessagePublishInfo publish = new MessagePublishInfo()
+        {
+
+            public AMQShortString getExchange()
+            {
+                return null;
+            }
+
+            public boolean isImmediate()
+            {
+                return immediate;
+            }
+
+            public boolean isMandatory()
+            {
+                return false;
+            }
+
+            public AMQShortString getRoutingKey()
+            {
+                return null;
+            }
+        };
+                              
         return new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
                               new ContentHeaderBody());
     }

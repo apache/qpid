@@ -43,6 +43,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -126,8 +127,7 @@ public class DestNameExchange extends AbstractExchange
 
             try
             {
-                registerQueue(new AMQShortString(binding), queue, null);
-                queue.bind(new AMQShortString(binding), DestNameExchange.this);
+                queue.bind(new AMQShortString(binding), null, DestNameExchange.this);
             }
             catch (AMQException ex)
             {
@@ -170,7 +170,7 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;
@@ -184,13 +184,13 @@ public class DestNameExchange extends AbstractExchange
 
     public void route(AMQMessage payload) throws AMQException
     {
-        final BasicPublishBody publishBody = payload.getPublishBody();
-        final AMQShortString routingKey = publishBody.routingKey;
+        final MessagePublishInfo info = payload.getMessagePublishInfo();
+        final AMQShortString routingKey = info.getRoutingKey();
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {
             String msg = "Routing key " + routingKey + " is not known to " + this;
-            if (publishBody.mandatory)
+            if (info.isMandatory())
             {
                 throw new NoRouteException(msg, payload);
             }

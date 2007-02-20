@@ -31,10 +31,12 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exchange.Exchange;
 
 /**
  * A simple message store that stores the messages in a threadsafe structure in memory.
@@ -49,7 +51,7 @@ public class MemoryMessageStore implements MessageStore
 
     protected ConcurrentMap<Long, MessageMetaData> _metaDataMap;
 
-    protected ConcurrentMap<Long, List<ContentBody>> _contentBodyMap;
+    protected ConcurrentMap<Long, List<ContentChunk>> _contentBodyMap;
 
     private final AtomicLong _messageId = new AtomicLong(1);
 
@@ -57,7 +59,7 @@ public class MemoryMessageStore implements MessageStore
     {
         _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash tables");
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(DEFAULT_HASHTABLE_CAPACITY);
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(DEFAULT_HASHTABLE_CAPACITY);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
     public void configure(String base, Configuration config)
@@ -65,7 +67,7 @@ public class MemoryMessageStore implements MessageStore
         int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
         _log.info("Using capacity " + hashtableCapacity + " for hash tables");
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>(hashtableCapacity);
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
     }
 
     public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
@@ -95,6 +97,26 @@ public class MemoryMessageStore implements MessageStore
         }
         _metaDataMap.remove(messageId);
         _contentBodyMap.remove(messageId);
+    }
+
+    public void createExchange(Exchange exchange) throws AMQException
+    {
+
+    }
+
+    public void removeExchange(Exchange exchange) throws AMQException
+    {
+
+    }
+
+    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    {
+
+    }
+
+    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    {
+
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
@@ -147,10 +169,10 @@ public class MemoryMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentBody contentBody, boolean lastContentBody)
+    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody)
             throws AMQException
     {
-        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
+        List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
 
         if(bodyList == null && lastContentBody)
         {
@@ -160,7 +182,7 @@ public class MemoryMessageStore implements MessageStore
         {
             if (bodyList == null)
             {
-                bodyList = new ArrayList<ContentBody>();
+                bodyList = new ArrayList<ContentChunk>();
                 _contentBodyMap.put(messageId, bodyList);
             }
 
@@ -179,9 +201,9 @@ public class MemoryMessageStore implements MessageStore
         return _metaDataMap.get(messageId);
     }
 
-    public ContentBody getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
     {
-        List<ContentBody> bodyList = _contentBodyMap.get(messageId);
+        List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
         return bodyList.get(index);
     }
 }
