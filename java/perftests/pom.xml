@@ -44,7 +44,7 @@
         <pluginRepository>
           <id>junit-toolkit-plugin.snapshots</id>
           <name>JUnit Toolkit SNAPSHOT Repository</name>
-	  <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
+      <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
@@ -85,6 +85,18 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository.
@@ -148,33 +160,31 @@
                   <Ping-Tx>-n Ping-Tx -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>
                   <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=512</Ping-Size>
                   <Ping-Concurrent>-n Ping-Concurrent -s [100] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Concurrent>
-                  <Ping-Many-Queues>
-		      -n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationcount=4
-		  </Ping-Many-Queues>
+                  <Ping-Many-Queues>-n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationscount=4</Ping-Many-Queues>
                   <Ping-Duration>-n Ping-Duration -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Duration>
                   <Ping-Rate>-n Ping-Rate -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=500</Ping-Rate>
-		  <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
-		  <Ping-Many-Topics>
-		      -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationcount=4
-		  </Ping-Many-Topics>
-                  <Ping-Persistent>
-		      -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
-		  </Ping-Persistent>
+                  <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
+                  <Ping-Many-Topics>
+                      -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationscount=4
+                  </Ping-Many-Topics>
+                          <Ping-Persistent>
+                      -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
+                  </Ping-Persistent>
                   <Ping-Batch-Logging>
-		      -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
-		  </Ping-Batch-Logging>
-		  <Ping-Failover-Before-Send> 
-		      -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
-		  </Ping-Failover-Before-Send>
-		  <Ping-Failover-After-Send>
-		      -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
-		  </Ping-Failover-After-Send>
-		  <Ping-Failover-Before-Commit>
-		      -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
-		  </Ping-Failover-Before-Commit>
-		  <Ping-Failover-After-Commit>
-		      -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
-		  </Ping-Failover-After-Commit>
+                      -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
+                  </Ping-Batch-Logging>
+                  <Ping-Failover-Before-Send> 
+                      -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
+                  </Ping-Failover-Before-Send>
+                  <Ping-Failover-After-Send>
+                      -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
+                  </Ping-Failover-After-Send>
+                  <Ping-Failover-Before-Commit>
+                      -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
+                  </Ping-Failover-Before-Commit>
+                  <Ping-Failover-After-Commit>
+                      -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
+                  </Ping-Failover-After-Commit>
 
                 </commands>
               </configuration>
