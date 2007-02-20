@@ -23,6 +23,8 @@ package org.apache.qpid.server.ack;
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -103,16 +105,32 @@ public class TxAckTest extends TestCase
             for(int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;
-                // TODO: fix hardcoded protocol version data
-                TestMessage message = new TestMessage(deliveryTag, i, new BasicPublishBody((byte)8,
-                                                                                           (byte)0,
-                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                                                           null,
-                                                                                           false,
-                                                                                           false,
-                                                                                           null,
-                                                                                           0), txnContext);
+
+                MessagePublishInfo info = new MessagePublishInfo()
+                {
+
+                    public AMQShortString getExchange()
+                    {
+                        return null;
+                    }
+
+                    public boolean isImmediate()
+                    {
+                        return false;
+                    }
+
+                    public boolean isMandatory()
+                    {
+                        return false;
+                    }
+
+                    public AMQShortString getRoutingKey()
+                    {
+                        return null;
+                    }
+                };
+
+                TestMessage message = new TestMessage(deliveryTag, i, info, txnContext);
                 _map.add(deliveryTag, new UnacknowledgedMessage(null, message, null, deliveryTag));
             }
             _acked = acked;
@@ -174,7 +192,7 @@ public class TxAckTest extends TestCase
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag, long messageId, BasicPublishBody publishBody, TransactionalContext txnContext)
+        TestMessage(long tag, long messageId, MessagePublishInfo publishBody, TransactionalContext txnContext)
         {
             super(messageId, publishBody, txnContext);
             _tag = tag;

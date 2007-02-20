@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.framing;
 
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
+
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
@@ -36,10 +38,53 @@ public class VersionSpecificRegistry
 
     private AMQMethodBodyInstanceFactory[][] _registry = new AMQMethodBodyInstanceFactory[DEFAULT_MAX_CLASS_ID][];
 
+    private ProtocolVersionMethodConverter _protocolVersionConverter;
+
     public VersionSpecificRegistry(byte major, byte minor)
     {
         _protocolMajorVersion = major;
         _protocolMinorVersion = minor;
+
+        _protocolVersionConverter = loadProtocolVersionConverters(major, minor);
+    }
+
+    private static ProtocolVersionMethodConverter loadProtocolVersionConverters(byte protocolMajorVersion, byte protocolMinorVersion)
+    {
+        try
+        {
+            Class<ProtocolVersionMethodConverter> versionMethodConverterClass =
+                    (Class<ProtocolVersionMethodConverter>) Class.forName("org.apache.qpid.framing.MethodConverter_"+protocolMajorVersion + "_" + protocolMinorVersion);
+            return versionMethodConverterClass.newInstance();
+
+        }
+        catch (ClassNotFoundException e)
+        {
+            _log.warn("Could not find protocol conversion classes for " + protocolMajorVersion + "-" + protocolMinorVersion);
+            if(protocolMinorVersion != 0)
+            {
+                protocolMinorVersion--;
+                return loadProtocolVersionConverters(protocolMajorVersion, protocolMinorVersion);
+            }
+            else if (protocolMajorVersion != 0)
+            {
+                protocolMajorVersion--;
+                return loadProtocolVersionConverters(protocolMajorVersion, protocolMinorVersion);
+            }
+            else
+            {
+                return null;
+            }
+
+
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new IllegalStateException("Unable to load protocol version converter: ", e);
+        }
+        catch (InstantiationException e)
+        {
+             throw new IllegalStateException("Unable to load protocol version converter: ", e);
+        }
     }
 
     public byte getProtocolMajorVersion()
@@ -137,5 +182,15 @@ public class VersionSpecificRegistry
         return bodyFactory.newInstance(_protocolMajorVersion, _protocolMinorVersion, classID, methodID, in, size);
 
 
+    }
+
+    public ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
+    {
+        return _protocolVersionConverter;
+    }
+
+    public void configure()
+    {
+        _protocolVersionConverter.configure();
     }
 }

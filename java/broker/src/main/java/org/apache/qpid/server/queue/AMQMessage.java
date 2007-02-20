@@ -27,20 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.BasicGetOkBody;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.BasicReturnBody;
-import org.apache.qpid.framing.CompositeAMQDataBlock;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.SmallCompositeAMQDataBlock;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.txn.TransactionalContext;
 
 /**
@@ -98,10 +91,12 @@ public class AMQMessage
         private int _channel;
 
         private int _index = -1;
+        private AMQProtocolSession _protocolSession;
 
-        private BodyFrameIterator(int channel)
+        private BodyFrameIterator(AMQProtocolSession protocolSession, int channel)
         {
             _channel = channel;
+            _protocolSession = protocolSession;
         }
 
         public boolean hasNext()
@@ -121,8 +116,9 @@ public class AMQMessage
         {
             try
             {
-                ContentBody cb = _messageHandle.getContentBody(getStoreContext(),_messageId, ++_index);
-                return ContentBody.createAMQFrame(_channel, cb);
+
+                AMQBody cb = getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(), _messageId, ++_index));
+                return new AMQFrame(_channel, cb);
             }
             catch (AMQException e)
             {
@@ -130,6 +126,11 @@ public class AMQMessage
                 throw new RuntimeException("Error getting content body: " + e, e);
             }
 
+        }
+
+        private ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
+        {
+            return _protocolSession.getRegistry().getProtocolVersionMethodConverter();
         }
 
         public void remove()
@@ -143,7 +144,7 @@ public class AMQMessage
         return _txnContext.getStoreContext();
     }
 
-    private class BodyContentIterator implements Iterator<ContentBody>
+    private class BodyContentIterator implements Iterator<ContentChunk>
     {
 
         private int _index = -1;
@@ -161,11 +162,11 @@ public class AMQMessage
             }
         }
 
-        public ContentBody next()
+        public ContentChunk next()
         {
             try
             {
-                return _messageHandle.getContentBody(getStoreContext(),_messageId, ++_index);
+                return _messageHandle.getContentChunk(getStoreContext(),_messageId, ++_index);
             }
             catch (AMQException e)
             {
@@ -179,13 +180,13 @@ public class AMQMessage
         }
     }
 
-    public AMQMessage(Long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, MessagePublishInfo info,
                       TransactionalContext txnContext)
     {
         _messageId = messageId;
         _txnContext = txnContext;
-        _immediate = publishBody.immediate;
-        _transientMessageData.setPublishBody(publishBody);
+        _immediate = info.isImmediate();
+        _transientMessageData.setMessagePublishInfo(info);
 
         _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
@@ -215,14 +216,14 @@ public class AMQMessage
      * Used in testing only. This allows the passing of the content header immediately
      * on construction.
      * @param messageId
-     * @param publishBody
+     * @param info
      * @param txnContext
      * @param contentHeader
      */
-    public AMQMessage(Long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, MessagePublishInfo info,
                       TransactionalContext txnContext, ContentHeaderBody contentHeader) throws AMQException
     {
-        this(messageId, publishBody, txnContext);
+        this(messageId, info, txnContext);
         setContentHeaderBody(contentHeader);
     }
 
@@ -230,23 +231,23 @@ public class AMQMessage
      * Used in testing only. This allows the passing of the content header and some body fragments on
      * construction.
      * @param messageId
-     * @param publishBody
+     * @param info
      * @param txnContext
      * @param contentHeader
      * @param destinationQueues
      * @param contentBodies
      * @throws AMQException
      */
-    public AMQMessage(Long messageId, BasicPublishBody publishBody,
+    public AMQMessage(Long messageId, MessagePublishInfo info,
                       TransactionalContext txnContext,
                       ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues,
-                      List<ContentBody> contentBodies, MessageStore messageStore, StoreContext storeContext,
+                      List<ContentChunk> contentBodies, MessageStore messageStore, StoreContext storeContext,
                       MessageHandleFactory messageHandleFactory) throws AMQException
     {
-        this(messageId, publishBody, txnContext, contentHeader);
+        this(messageId, info, txnContext, contentHeader);
         _transientMessageData.setDestinationQueues(destinationQueues);
         routingComplete(messageStore, storeContext, messageHandleFactory);
-        for (ContentBody cb : contentBodies)
+        for (ContentChunk cb : contentBodies)
         {
             addContentBodyFrame(storeContext, cb);
         }
@@ -261,12 +262,12 @@ public class AMQMessage
         _transientMessageData = msg._transientMessageData;
     }
 
-    public Iterator<AMQDataBlock> getBodyFrameIterator(int channel)
+    public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
     {
-        return new BodyFrameIterator(channel);
+        return new BodyFrameIterator(protocolSession, channel);
     }
 
-    public Iterator<ContentBody> getContentBodyIterator()
+    public Iterator<ContentChunk> getContentBodyIterator()
     {
         return new BodyContentIterator();
     }
@@ -311,11 +312,11 @@ public class AMQMessage
         }
     }
 
-    public boolean addContentBodyFrame(StoreContext storeContext, ContentBody contentBody) throws AMQException
+    public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk) throws AMQException
     {
-        _transientMessageData.addBodyLength(contentBody.getSize());
+        _transientMessageData.addBodyLength(contentChunk.getSize());
         final boolean allContentReceived = isAllContentReceived();
-        _messageHandle.addContentBodyFrame(storeContext, _messageId, contentBody, allContentReceived);
+        _messageHandle.addContentBodyFrame(storeContext, _messageId, contentChunk, allContentReceived);
         if (allContentReceived)
         {
             deliver(storeContext);
@@ -502,16 +503,16 @@ public class AMQMessage
         }        
     }
 
-    public BasicPublishBody getPublishBody() throws AMQException
+    public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
-        BasicPublishBody pb;
+        MessagePublishInfo pb;
         if (_transientMessageData != null)
         {
-            pb = _transientMessageData.getPublishBody();
+            pb = _transientMessageData.getMessagePublishInfo();
         }
         else
         {
-            pb = _messageHandle.getPublishBody(getStoreContext(),_messageId);
+            pb = _messageHandle.getMessagePublishInfo(getStoreContext(),_messageId);
         }
         return pb;
     }
@@ -554,7 +555,7 @@ public class AMQMessage
         {
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
-            _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId, _transientMessageData.getPublishBody(),
+            _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId, _transientMessageData.getMessagePublishInfo(),
                                                           _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
@@ -598,9 +599,9 @@ public class AMQMessage
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentBody cb = _messageHandle.getContentBody(getStoreContext(),_messageId, 0);
+            ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(),_messageId, 0);
 
-            AMQDataBlock firstContentBody = ContentBody.createAMQFrame(channelId, cb);
+            AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
             CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
             protocolSession.writeFrame(compositeBlock);
@@ -610,8 +611,8 @@ public class AMQMessage
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = _messageHandle.getContentBody(getStoreContext(),_messageId, i);
-                protocolSession.writeFrame(ContentBody.createAMQFrame(channelId, cb));
+                cb = _messageHandle.getContentChunk(getStoreContext(),_messageId, i);
+                protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
 
@@ -641,9 +642,9 @@ public class AMQMessage
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentBody cb = _messageHandle.getContentBody(getStoreContext(),_messageId, 0);
+            ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(),_messageId, 0);
 
-            AMQDataBlock firstContentBody = ContentBody.createAMQFrame(channelId, cb);
+            AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
             CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
             protocolSession.writeFrame(compositeBlock);
@@ -653,8 +654,8 @@ public class AMQMessage
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = _messageHandle.getContentBody(getStoreContext(),_messageId, i);
-                protocolSession.writeFrame(ContentBody.createAMQFrame(channelId, cb));
+                cb = _messageHandle.getContentChunk(getStoreContext(),_messageId, i);
+                protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
 
@@ -667,10 +668,10 @@ public class AMQMessage
     private ByteBuffer createEncodedDeliverFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        BasicPublishBody pb = getPublishBody();
+        MessagePublishInfo pb = getMessagePublishInfo();
         AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, protocolSession.getProtocolMajorVersion(), (byte) 0, consumerTag,
-                                                                deliveryTag, pb.exchange, _messageHandle.isRedelivered(),
-                                                                pb.routingKey);
+                                                                deliveryTag, pb.getExchange(), _messageHandle.isRedelivered(),
+                                                                pb.getRoutingKey());
         ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
         deliverFrame.writePayload(buf);
         buf.flip();
@@ -680,14 +681,14 @@ public class AMQMessage
     private ByteBuffer createEncodedGetOkFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
-        BasicPublishBody pb = getPublishBody();
+        MessagePublishInfo pb = getMessagePublishInfo();
         AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId,
                                                             protocolSession.getProtocolMajorVersion(),
                                                             protocolSession.getProtocolMinorVersion(),
-                                                                deliveryTag, pb.exchange,
+                                                                deliveryTag, pb.getExchange(),
                                                                 queueSize,
                                                                 _messageHandle.isRedelivered(),
-                                                                pb.routingKey);
+                                                                pb.getRoutingKey());
         ByteBuffer buf = ByteBuffer.allocate((int) getOkFrame.getSize()); // XXX: Could cast be a problem?
         getOkFrame.writePayload(buf);
         buf.flip();
@@ -699,9 +700,9 @@ public class AMQMessage
         AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId,
                                                               protocolSession.getProtocolMajorVersion(),
                                                               protocolSession.getProtocolMinorVersion(), 
-                                                              getPublishBody().exchange,
+                                                              getMessagePublishInfo().getExchange(),
                                                               replyCode, replyText,
-                                                              getPublishBody().routingKey);
+                                                              getMessagePublishInfo().getRoutingKey());
         ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
         returnFrame.writePayload(buf);
         buf.flip();
@@ -716,7 +717,7 @@ public class AMQMessage
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       getContentHeaderBody());
 
-        Iterator<AMQDataBlock> bodyFrameIterator = getBodyFrameIterator(channelId);
+        Iterator<AMQDataBlock> bodyFrameIterator = getBodyFrameIterator(protocolSession, channelId);
         //
         // Optimise the case where we have a single content body. In that case we create a composite block
         // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
@@ -767,7 +768,7 @@ public class AMQMessage
     public void restoreTransientMessageData() throws AMQException
     {
         TransientMessageData transientMessageData = new TransientMessageData();
-        transientMessageData.setPublishBody(getPublishBody());
+        transientMessageData.setMessagePublishInfo(getMessagePublishInfo());
         transientMessageData.setContentHeaderBody(getContentHeaderBody());
         transientMessageData.addBodyLength(getContentHeaderBody().getSize());
         _transientMessageData = transientMessageData; 

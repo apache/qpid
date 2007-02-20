@@ -200,10 +200,10 @@ public class HeadersExchange extends AbstractExchange
         _bindings.add(new Registration(new HeadersBinding(args), queue));
     }
 
-    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
-        _bindings.remove(new Registration(null, queue));
+        _bindings.remove(new Registration(new HeadersBinding(args), queue));
     }
 
     public void route(AMQMessage payload) throws AMQException
@@ -232,7 +232,7 @@ public class HeadersExchange extends AbstractExchange
 
             String msg = "Exchange " + getName() + ": message not routable.";
 
-            if (payload.getPublishBody().mandatory)
+            if (payload.getMessagePublishInfo().isMandatory())
             {
                 throw new NoRouteException(msg, payload);
             }

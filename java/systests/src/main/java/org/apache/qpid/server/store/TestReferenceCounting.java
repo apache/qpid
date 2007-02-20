@@ -25,6 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -50,16 +52,32 @@ public class TestReferenceCounting extends TestCase
     public void testMessageGetsRemoved() throws AMQException
     {
         createPersistentContentHeader();
-        // TODO: fix hardcoded protocol version data
-        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
-                                                                                           (byte)0,
-                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                                                           null,
-                                                                                           false,
-                                                                                           false,
-                                                                                           null,
-                                                                                           0),
+
+        MessagePublishInfo info = new MessagePublishInfo()
+        {
+
+            public AMQShortString getExchange()
+            {
+                return null;
+            }
+
+            public boolean isImmediate()
+            {
+                return false;
+            }
+
+            public boolean isMandatory()
+            {
+                return false;
+            }
+
+            public AMQShortString getRoutingKey()
+            {
+                return null;
+            }
+        };
+
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(), info,
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();
@@ -81,16 +99,33 @@ public class TestReferenceCounting extends TestCase
 
     public void testMessageRemains() throws AMQException
     {
-        // TODO: fix hardcoded protocol version data
-        AMQMessage message = new AMQMessage(_store.getNewMessageId(), new BasicPublishBody((byte)8,
-                                                                                           (byte)0,
-                                                                                           BasicPublishBody.getClazz((byte)8,(byte)0),
-                                                                                           BasicPublishBody.getMethod((byte)8,(byte)0),
-                                                                                           null,
-                                                                                           false,
-                                                                                           false,
-                                                                                           null,
-                                                                                           0),
+
+        MessagePublishInfo info = new MessagePublishInfo()
+        {
+
+            public AMQShortString getExchange()
+            {
+                return null;
+            }
+
+            public boolean isImmediate()
+            {
+                return false;
+            }
+
+            public boolean isMandatory()
+            {
+                return false;
+            }
+
+            public AMQShortString getRoutingKey()
+            {
+                return null;
+            }
+        };
+
+        AMQMessage message = new AMQMessage(_store.getNewMessageId(),
+                                            info,
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
         message.incrementReference();

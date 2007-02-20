@@ -154,7 +154,7 @@ public class BasicContentHeaderPropertiesTest extends TestCase
 
     public void testSetGetTimestamp()
     {
-        long timestamp = 999999999;
+        long timestamp = System.currentTimeMillis();
         _testProperties.setTimestamp(timestamp);
         assertEquals(timestamp, _testProperties.getTimestamp());
     }

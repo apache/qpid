@@ -25,9 +25,10 @@ import java.util.List;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.store.StoreContext;
 
 /**
@@ -37,9 +38,9 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     private ContentHeaderBody _contentHeaderBody;
 
-    private BasicPublishBody _publishBody;
+    private MessagePublishInfo _messagePublishInfo;
 
-    private List<ContentBody> _contentBodies = new LinkedList<ContentBody>();
+    private List<ContentChunk> _contentBodies = new LinkedList<ContentChunk>();
 
     private boolean _redelivered;
 
@@ -64,7 +65,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return getContentHeaderBody(context, messageId).bodySize;
     }
 
-    public ContentBody getContentBody(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
+    public ContentChunk getContentChunk(StoreContext context, Long messageId, int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -74,15 +75,15 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _contentBodies.get(index);
     }
 
-    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentBody contentBody, boolean isLastContentBody)
+    public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentBody, boolean isLastContentBody)
             throws AMQException
     {
         _contentBodies.add(contentBody);
     }
 
-    public BasicPublishBody getPublishBody(StoreContext context, Long messageId) throws AMQException
+    public MessagePublishInfo getMessagePublishInfo(StoreContext context, Long messageId) throws AMQException
     {
-        return _publishBody;
+        return _messagePublishInfo;
     }
 
     public boolean isRedelivered()
@@ -106,15 +107,15 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     /**
      * This is called when all the content has been received.
-     * @param publishBody
+     * @param messagePublishInfo
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, BasicPublishBody publishBody,
+    public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId, MessagePublishInfo messagePublishInfo,
                                                ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
-        _publishBody = publishBody;
+        _messagePublishInfo = messagePublishInfo;
         _contentHeaderBody = contentHeaderBody;
         _arrivalTime = System.currentTimeMillis();
     }

@@ -44,6 +44,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
@@ -322,16 +323,16 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("AMQMessage with message id = " + msgId + " is not in the " + _queueName);
         }
         // get message content
-        Iterator<ContentBody> cBodies = msg.getContentBodyIterator();
+        Iterator<ContentChunk> cBodies = msg.getContentBodyIterator();
         List<Byte> msgContent = new ArrayList<Byte>();
         while (cBodies.hasNext())
         {
-            ContentBody body = cBodies.next();
+            ContentChunk body = cBodies.next();
             if (body.getSize() != 0)
             {
                 if (body.getSize() != 0)
                 {
-                    ByteBuffer slice = body.payload.slice();
+                    ByteBuffer slice = body.getData().slice();
                     for (int j = 0; j < slice.limit(); j++)
                     {
                         msgContent.add(slice.get());

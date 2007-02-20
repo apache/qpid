@@ -21,8 +21,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
 /**
@@ -40,7 +40,7 @@ public class TransientMessageData
      * Stored temporarily until the header has been received at which point it is used when
      * constructing the handle
      */
-    private BasicPublishBody _publishBody;
+    private MessagePublishInfo _messagePublishInfo;
 
     /**
      * Also stored temporarily.
@@ -59,14 +59,14 @@ public class TransientMessageData
      */
     private List<AMQQueue> _destinationQueues = new LinkedList<AMQQueue>();
 
-    public BasicPublishBody getPublishBody()
+    public MessagePublishInfo getMessagePublishInfo()
     {
-        return _publishBody;
+        return _messagePublishInfo;
     }
 
-    public void setPublishBody(BasicPublishBody publishBody)
+    public void setMessagePublishInfo(MessagePublishInfo messagePublishInfo)
     {
-        _publishBody = publishBody;
+        _messagePublishInfo = messagePublishInfo;
     }
 
     public List<AMQQueue> getDestinationQueues()

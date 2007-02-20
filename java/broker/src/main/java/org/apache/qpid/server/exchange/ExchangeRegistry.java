@@ -26,7 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
 
 public interface ExchangeRegistry extends MessageRouter
 {
-    void registerExchange(Exchange exchange);
+    void registerExchange(Exchange exchange) throws AMQException;
 
     /**
      * Unregister an exchange
@@ -42,4 +42,6 @@ public interface ExchangeRegistry extends MessageRouter
     void setDefaultExchange(Exchange exchange);
 
     Exchange getDefaultExchange();
+
+    void initialise() throws AMQException;
 }

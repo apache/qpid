@@ -198,11 +198,17 @@ public class VirtualHostConfiguration
                 for(Object routingKeyNameObj : routingKeys)
                 {
                     AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
-                    exchange.registerQueue(routingKey, queue, null);
+                    
 
-                    queue.bind(routingKey, exchange);
+                    queue.bind(routingKey, null, exchange);
+
 
                     _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + exchangeName + " RK:'" + routingKey + "'");
+                }
+
+                if(exchange != virtualHost.getExchangeRegistry().getDefaultExchange())
+                {
+                    queue.bind(queue.getName(), null, virtualHost.getExchangeRegistry().getDefaultExchange());                    
                 }
             }
 
