@@ -48,20 +48,6 @@
             <type>jar</type>
             <version>${pom.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-client</artifactId>
-            <type>jar</type>
-            <version>${pom.version}</version>
-	    <classifier>java1.4</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-common</artifactId>
-            <type>jar</type>
-            <version>${pom.version}</version>
-	    <classifier>java1.4</classifier>
-        </dependency>
     </dependencies>
 
     <build>
@@ -119,7 +105,6 @@
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/assembly/client-bin.xml</descriptor>
-                                <descriptor>src/main/assembly/client-java1.4-bin.xml</descriptor>
                                 <descriptor>src/main/assembly/client-src.xml</descriptor>
                             </descriptors>
                             <finalName>qpid-${pom.version}</finalName>
