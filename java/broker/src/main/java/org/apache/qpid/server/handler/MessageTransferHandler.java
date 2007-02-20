@@ -78,10 +78,10 @@ public class MessageTransferHandler implements StateAwareMethodListener<MessageT
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
             AMQChannel channel = session.getChannel(evt.getChannelId());
-            channel.addMessageTransfer(body, session);
-            session.writeResponse(evt, MessageOkBody.createMethodBody(
-                session.getProtocolMajorVersion(), // AMQP major version
-                session.getProtocolMinorVersion())); // AMQP minor version
+            channel.addMessageTransfer(body, evt.getRequestId(), session);
+            //session.writeResponse(evt, MessageOkBody.createMethodBody(
+            //    session.getProtocolMajorVersion(), // AMQP major version
+            //    session.getProtocolMinorVersion())); // AMQP minor version
         }
     }
 }

@@ -371,25 +371,6 @@ public class AMQQueue implements Managable, Comparable
             setExclusive(true);
         }
 
-        if(incrementSubscriberCount() > 1)
-        {
-            if(isExclusive())
-            {
-                decrementSubscriberCount();
-                throw EXISTING_EXCLUSIVE;
-            }
-            else if(exclusive)
-            {
-                decrementSubscriberCount();
-                throw EXISTING_SUBSCRIPTION;
-            }
-
-        }
-        else if(exclusive)
-        {
-            setExclusive(true);
-        }
-
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);

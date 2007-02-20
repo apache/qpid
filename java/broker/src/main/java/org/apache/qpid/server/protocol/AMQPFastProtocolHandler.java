@@ -168,6 +168,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
             // gsim-python
             //session.closeSessionRequest(200, new AMQShortString(throwable.getMessage()));
             session.closeSession();
+            protocolSession.close();
         }
     }
 

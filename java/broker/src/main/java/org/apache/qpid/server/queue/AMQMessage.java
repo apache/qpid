@@ -80,8 +80,6 @@ public class AMQMessage
         }
     };
 
-    private boolean _redelivered;
-
     private final Long _messageId;
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
@@ -119,6 +117,7 @@ public class AMQMessage
     private boolean _deliveredToConsumer;
     private AtomicBoolean _taken = new AtomicBoolean(false);
 
+    private long _requestId;//the request id of the transfer that this message represents
 
     public AMQMessage(MessageStore messageStore, MessageTransferBody transferBody, TransactionalContext txnContext)
     {
@@ -160,6 +159,16 @@ public class AMQMessage
 
     public long getSize()
     {
+        //based on existing usage, this should return the size of the
+        //data and inline data will already be included in the count
+        //by getBodySize()
+        return getBodySize();
+    }
+
+    public long getFullSize()
+    {
+        //this is used in determining whether a message can be inlined
+        //or not and therefore must include the header size also
         return getHeaderSize() + getBodySize();
     }
 
@@ -300,11 +309,11 @@ public class AMQMessage
         _transferBody.priority = priority;
     }
 
-    // TODO - how does this relate to the _redelivered flag in this class? See other isRedelivered() method below.    
-//     public boolean isRedelivered()
-//     {
-//         return _transferBody.getRedelivered();
-//     }
+
+    public boolean isRedelivered()
+    {
+        return _transferBody.getRedelivered();
+    }
     
     public AMQShortString getReplyTo()
     {
@@ -406,12 +415,6 @@ public class AMQMessage
         //return _bodyLengthReceived == _contentHeaderBody.bodySize;
     }
 
-
-    public boolean isRedelivered()
-    {
-        return _redelivered;
-    }
-
     NoConsumersException getNoConsumersException(String queue)
     {
         return new NoConsumersException(queue, this);
@@ -420,7 +423,6 @@ public class AMQMessage
     public void setRedelivered(boolean redelivered)
     {
         _transferBody.redelivered = redelivered;
-        _redelivered = redelivered;
     }
 
     public long getMessageId()
@@ -636,6 +638,16 @@ public class AMQMessage
     public long getArrivalTime()
     {
         throw new Error("XXX");
+    }
+
+    public void setRequestId(long requestId) 
+    {
+        _requestId = requestId;
+    }
+
+    public long getRequestId() 
+    {
+        return _requestId;
     }
 
 }
