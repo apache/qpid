@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -129,6 +129,11 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Mon Feb 19 2007 Jim Meyering <meyering@redhat.com> - 0.1-4
+- Address http://bugzilla.redhat.com/220630:
+- Remove redundant "cppunit" build-requires.
+- Add --disable-static.
 
 * Thu Jan 25 2007 Alan Conway <aconway@redhat.com> - 0.1-3
 - Applied Jim Meyerings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/%3c87hcugzmyp.fsf@rho.meyering.net%3e
