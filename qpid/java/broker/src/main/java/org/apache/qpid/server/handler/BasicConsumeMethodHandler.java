@@ -22,12 +22,9 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.BasicConsumeOkBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
@@ -106,10 +103,10 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     //now allow queue to start async processing of any backlog of messages
                     queue.deliverAsync();
                 }
-                catch (AMQInvalidSelectorException ise)
+                catch (org.apache.qpid.AMQInvalidArgumentException ise)
                 {
                     _log.info("Closing connection due to invalid selector");
-                    throw body.getChannelException(AMQConstant.INVALID_SELECTOR, ise.getMessage());
+                    throw body.getChannelException(AMQConstant.INVALID_ARGUMENT, ise.getMessage());
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
