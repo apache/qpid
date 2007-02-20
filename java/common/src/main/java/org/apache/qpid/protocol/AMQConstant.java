@@ -74,12 +74,6 @@ public final class AMQConstant
 
     public static final AMQConstant CONTEXT_IN_USE = new AMQConstant(320, "context in use", true);
 
-    public static final AMQConstant CONTEXT_UNKNOWN = new AMQConstant(321, "context unknown", true);
-
-    public static final AMQConstant INVALID_SELECTOR = new AMQConstant(322, "selector invalid", true);
-
-    public static final AMQConstant INVALID_ROUTING_KEY = new AMQConstant(323, "routing key invalid", true);
-
     public static final AMQConstant INVALID_PATH = new AMQConstant(402, "invalid path", true);
 
     public static final AMQConstant ACCESS_REFUSED = new AMQConstant(403, "access refused", true);
@@ -90,7 +84,11 @@ public final class AMQConstant
 
     public static final AMQConstant IN_USE = new AMQConstant(406, "In use", true);
 
+    public static final AMQConstant INVALID_ROUTING_KEY = new AMQConstant(407, "routing key invalid", true);
+
     public static final AMQConstant REQUEST_TIMEOUT = new AMQConstant(408, "Request Timeout", true);
+
+    public static final AMQConstant INVALID_ARGUMENT = new AMQConstant(409, "argument invalid", true);        
 
     public static final AMQConstant FRAME_ERROR = new AMQConstant(501, "frame error", true);
 

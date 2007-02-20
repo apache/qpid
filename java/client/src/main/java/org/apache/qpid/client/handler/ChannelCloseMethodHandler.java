@@ -23,7 +23,6 @@ package org.apache.qpid.client.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
@@ -74,11 +73,11 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             {
                 throw new AMQNoRouteException("Error: " + reason, null);
             }
-            else if (errorCode == AMQConstant.INVALID_SELECTOR)
+            else if (errorCode == AMQConstant.INVALID_ARGUMENT)
             {
-                _logger.debug("Broker responded with Invalid Selector.");
+                _logger.debug("Broker responded with Invalid Argument.");
 
-                throw new AMQInvalidSelectorException(String.valueOf(reason));
+                throw new org.apache.qpid.AMQInvalidArgumentException(String.valueOf(reason));
             }
             else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
             {

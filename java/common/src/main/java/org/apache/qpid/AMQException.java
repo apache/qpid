@@ -23,9 +23,7 @@ package org.apache.qpid;
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.AMQConstant;
 
-/**
- * Generic AMQ exception.
- */
+/** Generic AMQ exception. */
 public class AMQException extends Exception
 {
     private AMQConstant _errorCode;
@@ -78,5 +76,5 @@ public class AMQException extends Exception
     {
         return _errorCode;
     }
- 
+
 }

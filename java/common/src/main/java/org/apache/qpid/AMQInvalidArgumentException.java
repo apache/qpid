@@ -22,10 +22,10 @@ package org.apache.qpid;
 
 import org.apache.qpid.protocol.AMQConstant;
 
-public class AMQInvalidSelectorException extends AMQException
+public class AMQInvalidArgumentException extends AMQException
 {
-    public AMQInvalidSelectorException(String message)
+    public AMQInvalidArgumentException(String message)
     {
-        super(AMQConstant.INVALID_SELECTOR,message);
+        super(AMQConstant.INVALID_ARGUMENT, message);
     }
 }
