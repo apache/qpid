@@ -29,6 +29,7 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
@@ -48,7 +49,6 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener
 {
-
     private static final Logger _log = Logger.getLogger(ConnectionStartMethodHandler.class);
 
     private static final ConnectionStartMethodHandler _instance = new ConnectionStartMethodHandler();
@@ -59,19 +59,23 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     }
 
     private ConnectionStartMethodHandler()
-    {
-    }
+    { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+                        throws AMQException
     {
+        _log.debug("public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, "
+                   + "AMQMethodEvent evt): called");
+
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
         byte major = (byte) body.versionMajor;
         byte minor = (byte) body.versionMinor;
         boolean versionOk = false;
-        // for the purposes of interop, we can make the client accept the broker's version string.
-        // if it does, it then internally records the version as being the latest one that it understands.
-        // it needs to do this since frame lookup is done by version.
+
+        // For the purposes of interop, we can make the client accept the broker's version string.
+        // If it does, it then internally records the version as being the latest one that it understands.
+        // It needs to do this since frame lookup is done by version.
         if (Boolean.getBoolean("qpid.accept.broker.version"))
         {
             versionOk = true;
@@ -90,8 +94,9 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
             try
             {
-                // the mechanism we are going to use
+                // Used to hold the SASL mechanism to authenticate with.
                 String mechanism;
+
                 if (body.mechanisms == null)
                 {
                     throw new AMQException("mechanism not specified in ConnectionStart method frame");
@@ -99,6 +104,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 else
                 {
                     mechanism = chooseMechanism(body.mechanisms);
+                    _log.debug("mechanism = " + mechanism);
                 }
 
                 if (mechanism == null)
@@ -109,15 +115,17 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 byte[] saslResponse;
                 try
                 {
-                    SaslClient sc = Sasl.createSaslClient(new String[]{mechanism},
-                                                          null, "AMQP", "localhost",
-                                                          null,createCallbackHandler(mechanism, protocolSession));
+                    SaslClient sc =
+                        Sasl.createSaslClient(new String[] { mechanism }, null, "AMQP", "localhost", null,
+                                              createCallbackHandler(mechanism, protocolSession));
                     if (sc == null)
                     {
-                        throw new AMQException("Client SASL configuration error: no SaslClient could be created for mechanism " +
-                                               mechanism + ". Please ensure all factories are registered. See DynamicSaslRegistrar for " +
-                                               " details of how to register non-standard SASL client providers.");
+                        throw new AMQException(
+                            "Client SASL configuration error: no SaslClient could be created for mechanism " + mechanism
+                            + ". Please ensure all factories are registered. See DynamicSaslRegistrar for "
+                            + " details of how to register non-standard SASL client providers.");
                     }
+
                     protocolSession.setSaslClient(sc);
                     saslResponse = (sc.hasInitialResponse() ? sc.evaluateChallenge(new byte[0]) : null);
                 }
@@ -131,6 +139,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 {
                     throw new AMQException("Locales is not defined in Connection Start method");
                 }
+
                 final String locales = new String(body.locales, "utf8");
                 final StringTokenizer tokenizer = new StringTokenizer(locales, " ");
                 String selectedLocale = null;
@@ -146,21 +155,24 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
-                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()), protocolSession.getClientID());
-                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()), QpidProperties.getProductName());
-                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()), QpidProperties.getReleaseVersion());
+                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()),
+                                           protocolSession.getClientID());
+                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()),
+                                           QpidProperties.getProductName());
+                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()),
+                                           QpidProperties.getReleaseVersion());
                 clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
 
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
-                    protocolSession.getProtocolMajorVersion(),
-                    protocolSession.getProtocolMinorVersion(),
-                    clientProperties,	// clientProperties
-                    new AMQShortString(selectedLocale),	// locale
-                    new AMQShortString(mechanism),	// mechanism
-                    saslResponse));	// response
+                                                                                protocolSession.getProtocolMajorVersion(),
+                                                                                protocolSession.getProtocolMinorVersion(),
+                                                                                clientProperties, // clientProperties
+                                                                                new AMQShortString(selectedLocale), // locale
+                                                                                new AMQShortString(mechanism), // mechanism
+                                                                                saslResponse)); // response
 
             }
             catch (UnsupportedEncodingException e)
@@ -170,11 +182,8 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         }
         else
         {
-            _log.error("Broker requested Protocol ["
-                        + body.versionMajor
-                        + "-"
-                        + body.versionMinor
-                        + "] which is not supported by this version of the client library");
+            _log.error("Broker requested Protocol [" + body.versionMajor + "-" + body.versionMinor
+                       + "] which is not supported by this version of the client library");
 
             protocolSession.closeProtocolSession();
         }
@@ -185,7 +194,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         byte[][] supportedVersions = ProtocolVersionList.pv;
         boolean supported = false;
         int i = supportedVersions.length;
-        while(i-- != 0 && !supported)
+        while ((i-- != 0) && !supported)
         {
             supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
                         && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
@@ -228,11 +237,12 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 return mech;
             }
         }
+
         return null;
     }
 
     private AMQCallbackHandler createCallbackHandler(String mechanism, AMQProtocolSession protocolSession)
-            throws AMQException
+                                              throws AMQException
     {
         Class mechanismClass = CallbackHandlerRegistry.getInstance().getCallbackHandlerClass(mechanism);
         try
@@ -240,6 +250,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             Object instance = mechanismClass.newInstance();
             AMQCallbackHandler cbh = (AMQCallbackHandler) instance;
             cbh.initialise(protocolSession);
+
             return cbh;
         }
         catch (Exception e)
