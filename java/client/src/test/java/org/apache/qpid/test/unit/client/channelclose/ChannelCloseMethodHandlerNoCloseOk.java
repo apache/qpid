@@ -29,9 +29,9 @@ import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.AMQChannelClosedException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -73,11 +73,11 @@ public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListe
             {
                 throw new AMQNoRouteException("Error: " + reason, null);
             }
-            else if (errorCode == AMQConstant.INVALID_SELECTOR)
+            else if (errorCode == AMQConstant.INVALID_ARGUMENT)
             {
-                _logger.debug("Broker responded with Invalid Selector.");
+                _logger.debug("Broker responded with Invalid Argument.");
 
-                throw new AMQInvalidSelectorException(String.valueOf(reason));
+                throw new AMQInvalidArgumentException(String.valueOf(reason));
             }
             else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
             {

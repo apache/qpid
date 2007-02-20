@@ -56,9 +56,9 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidSelectorException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
@@ -521,7 +521,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                            0,    // methodId
                                                                            AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
                                                                            new AMQShortString("JMS client closing channel"));    // replyText
-                    
+
                     getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
@@ -1049,7 +1049,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     registerConsumer(consumer, false);
                 }
-                catch (AMQInvalidSelectorException ise)
+                catch (AMQInvalidArgumentException ise)
                 {
                     JMSException ex = new InvalidSelectorException(ise.getMessage());
                     ex.setLinkedException(ise);
@@ -1057,7 +1057,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 catch (AMQInvalidRoutingKeyException e)
                 {
-                    throw new InvalidDestinationException(amqd.getRoutingKey().toString());
+                    JMSException ide = new InvalidDestinationException("Invalid routing key:"+amqd.getRoutingKey().toString());
+                    ide.setLinkedException(e);
+                    throw ide;
                 }
                 catch (AMQException e)
                 {

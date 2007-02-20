@@ -26,6 +26,6 @@ public class AMQInvalidRoutingKeyException extends AMQException
 {
     public AMQInvalidRoutingKeyException(String message)
     {
-        super(AMQConstant.INVALID_ROUTING_KEY,message);
+        super(AMQConstant.INVALID_ROUTING_KEY, message);
     }
 }
