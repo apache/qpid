@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,7 +36,7 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
     public TestableMemoryMessageStore()
     {
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>();
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentBody>>();
+        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>();
     }
 
     public ConcurrentMap<Long, MessageMetaData> getMessageMetaDataMap()
@@ -43,7 +44,7 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         return _metaDataMap;
     }
 
-    public ConcurrentMap<Long, List<ContentBody>> getContentBodyMap()
+    public ConcurrentMap<Long, List<ContentChunk>> getContentBodyMap()
     {
         return _contentBodyMap;
     }

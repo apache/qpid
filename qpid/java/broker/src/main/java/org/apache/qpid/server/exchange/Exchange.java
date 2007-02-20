@@ -47,7 +47,7 @@ public interface Exchange
 
     void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-    void deregisterQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException;
+    void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
     void route(AMQMessage message) throws AMQException;
 

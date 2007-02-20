@@ -96,6 +96,8 @@ public class ContentBody extends AMQBody
         }
     }
 
+
+
     public static AMQFrame createAMQFrame(int channelId, ContentBody body)
     {
         final AMQFrame frame = new AMQFrame(channelId, body);

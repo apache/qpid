@@ -24,9 +24,12 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exchange.Exchange;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -54,6 +57,26 @@ public class SkeletonMessageStore implements MessageStore
 
     public void removeMessage(StoreContext s, Long messageId)
     {
+    }
+
+    public void createExchange(Exchange exchange) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void removeExchange(Exchange exchange) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void createQueue(AMQQueue queue) throws AMQException
@@ -87,7 +110,7 @@ public class SkeletonMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext sc, Long messageId, int index, ContentBody contentBody, boolean lastContentBody) throws AMQException
+    public void storeContentBodyChunk(StoreContext sc, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
     {
 
     }
@@ -102,7 +125,7 @@ public class SkeletonMessageStore implements MessageStore
         return null;
     }
 
-    public ContentBody getContentBodyChunk(StoreContext s,Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(StoreContext s,Long messageId, int index) throws AMQException
     {
         return null;
     }

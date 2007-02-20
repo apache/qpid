@@ -27,6 +27,7 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -85,7 +86,8 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
                 throw body.getChannelNotFoundException(evt.getChannelId());
             }
 
-            channel.setPublishFrame(body, session);
+            MessagePublishInfo info = session.getRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
+            channel.setPublishFrame(info, session);
         }
     }
 }

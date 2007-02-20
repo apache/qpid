@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
 /**
  * Encapsulates a publish body and a content header. In the context of the message store these are treated as a
@@ -25,7 +25,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
  */
 public class MessageMetaData
 {
-    private BasicPublishBody _publishBody;
+    private MessagePublishInfo _messagePublishInfo;
 
     private ContentHeaderBody _contentHeaderBody;
 
@@ -33,15 +33,15 @@ public class MessageMetaData
 
     private long _arrivalTime;
 
-    public MessageMetaData(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount)
+    public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount)
     {
         this(publishBody,contentHeaderBody, contentChunkCount, System.currentTimeMillis());
     }
 
-    public MessageMetaData(BasicPublishBody publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount, long arrivalTime)
+    public MessageMetaData(MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody, int contentChunkCount, long arrivalTime)
     {
         _contentHeaderBody = contentHeaderBody;
-        _publishBody = publishBody;
+        _messagePublishInfo = publishBody;
         _contentChunkCount = contentChunkCount;
         _arrivalTime = arrivalTime;
     }
@@ -66,14 +66,14 @@ public class MessageMetaData
         _contentHeaderBody = contentHeaderBody;
     }
 
-    public BasicPublishBody getPublishBody()
+    public MessagePublishInfo getMessagePublishInfo()
     {
-        return _publishBody;
+        return _messagePublishInfo;
     }
 
-    public void setPublishBody(BasicPublishBody publishBody)
+    public void setMessagePublishInfo(MessagePublishInfo messagePublishInfo)
     {
-        _publishBody = publishBody;
+        _messagePublishInfo = messagePublishInfo;
     }
 
     public long getArrivalTime()

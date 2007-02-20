@@ -48,6 +48,8 @@ public class MainRegistry
     static
     {
 %{CLIST}	${reg_map_put_method}
+
+        configure();
     }
     
     public static AMQMethodBody get(short classID, short methodID, byte major, byte minor, ByteBuffer in, long size)
@@ -126,5 +128,26 @@ public class MainRegistry
         
     }
 
+	
+    private static void configure()
+    {
+        for(int i = 0 ; i < _specificRegistries.length; i++)
+        {
+            VersionSpecificRegistry[] registries = _specificRegistries[i];
+            if(registries != null)
+            {
+                for(int j = 0 ; j < registries.length; j++)
+                {
+                    VersionSpecificRegistry registry = registries[j];
+                    
+                    if(registry != null)
+                    {
+                        registry.configure();
+                    }
+                }
+            }
+        }
+        
+    }
     
 }
