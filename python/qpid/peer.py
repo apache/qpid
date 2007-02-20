@@ -146,7 +146,7 @@ class Requester:
     self.write(frame, content)
 
   def receive(self, channel, frame):
-    listener = self.outstanding.pop(frame.id)
+    listener = self.outstanding.pop(frame.request_id)
     listener(channel, frame)
 
 class Responder:
