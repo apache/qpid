@@ -837,6 +837,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
     // Test purposes only - used for testing refs, which cannot be done using JMS interfaces
+    public BasicMessageProducer createBasicProducer(Destination destination) throws JMSException
+    {
+        return (BasicMessageProducer)createProducerImpl(destination, DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
+    }
+
+    // Test purposes only - used for testing refs, which cannot be done using JMS interfaces
     public BasicMessageProducer createBasicProducer(Topic destination) throws JMSException
     {
         return (BasicMessageProducer)createProducerImpl(destination, DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
