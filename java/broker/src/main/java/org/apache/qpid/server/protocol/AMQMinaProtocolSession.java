@@ -610,8 +610,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 task.doTask(this);
             }
         }
-// gsim-python
-//        _minaProtocolSession.close();
     }
 
     /**

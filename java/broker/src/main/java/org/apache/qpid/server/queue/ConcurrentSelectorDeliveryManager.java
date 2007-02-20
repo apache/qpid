@@ -255,7 +255,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         while (msg != null)
         {
             msg.dequeue(storeContext, _queue);
-            count++;
             _totalMessageSize.set(0L);
             count++;
             msg = poll();

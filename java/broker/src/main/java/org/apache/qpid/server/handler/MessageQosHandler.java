@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MessageQosBody;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -46,7 +47,9 @@ public class MessageQosHandler implements StateAwareMethodListener<MessageQosBod
     public void methodReceived (AMQStateManager stateManager, AMQMethodEvent<MessageQosBody> evt) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        session.getChannel(evt.getChannelId()).setPrefetchCount(evt.getMethod().prefetchCount);
+        AMQChannel channel = session.getChannel(evt.getChannelId());
+        channel.setPrefetchCount(evt.getMethod().prefetchCount);
+        channel.setPrefetchSize(evt.getMethod().prefetchSize);
         // Be aware of possible changes to parameter order as versions change.
         session.writeResponse(evt.getChannelId(), evt.getRequestId(), MessageOkBody.createMethodBody(
             session.getProtocolMajorVersion(), // AMQP major version
