@@ -66,7 +66,7 @@ package org.apache.qpid.server.filter.jms.selector;
 import java.io.StringReader;
 import java.util.ArrayList;
 
-import org.apache.qpid.AMQInvalidSelectorException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.ArithmeticExpression;
 import org.apache.qpid.server.filter.BooleanExpression;
 import org.apache.qpid.server.filter.ComparisonExpression;
@@ -87,14 +87,14 @@ public class SelectorParser {
         this(new StringReader(""));
     }
 
-    public BooleanExpression parse(String sql) throws AMQInvalidSelectorException {
+    public BooleanExpression parse(String sql) throws AMQInvalidArgumentException {
         this.ReInit(new StringReader(sql));
 
         try {
             return this.JmsSelector();
         }
         catch (Throwable e) {
-	        throw (AMQInvalidSelectorException)new AMQInvalidSelectorException(sql).initCause(e);
+	        throw (AMQInvalidArgumentException)new AMQInvalidArgumentException(sql).initCause(e);
         }
 
     }
