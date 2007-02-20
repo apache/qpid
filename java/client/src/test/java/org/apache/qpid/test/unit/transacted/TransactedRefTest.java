@@ -90,9 +90,9 @@ public class TransactedRefTest extends TestCase
         prepProducer1.sendAsRef(prepSession.createTextMessage("B" + message));
         prepProducer1.sendAsRef(prepSession.createTextMessage("C" + message));
         
-        producer2.send(session.createTextMessage("X" + message));
-        producer2.send(session.createTextMessage("Y" + message));
-        producer2.send(session.createTextMessage("Z" + message));
+        producer2.sendAsRef(session.createTextMessage("X" + message));
+        producer2.sendAsRef(session.createTextMessage("Y" + message));
+        producer2.sendAsRef(session.createTextMessage("Z" + message));
     }
 
     protected void tearDown() throws Exception
