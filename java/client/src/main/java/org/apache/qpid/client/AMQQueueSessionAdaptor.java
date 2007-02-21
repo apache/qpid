@@ -28,7 +28,7 @@ import java.io.Serializable;
  * Need this adaptor class to conform to JMS spec and throw IllegalStateException
  * from createDurableSubscriber, unsubscribe, createTopic & createTemporaryTopic
  */
-public class AMQQueueSessionAdaptor implements QueueSession
+public class AMQQueueSessionAdaptor implements QueueSession, AMQSessionAdapter
 {
     //holds a session for delegation
     protected final AMQSession _session;
@@ -174,6 +174,11 @@ public class AMQQueueSessionAdaptor implements QueueSession
 
     public void unsubscribe(String string) throws JMSException {
         throw new IllegalStateException("Cannot call unsubscribe from QueueSession");
+    }
+    
+    public AMQSession getSession()
+    {
+    	return _session;
     }
 
 }
