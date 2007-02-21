@@ -222,9 +222,15 @@ void SessionHandlerImpl::ConnectionHandlerImpl::closeOk(u_int16_t /*channel*/){
 void SessionHandlerImpl::ChannelHandlerImpl::open(u_int16_t channel, const string& /*outOfBand*/){
 
     
-    parent->channels[channel] = new Channel(parent->client->getProtocolVersion() , parent->context, channel, parent->framemax, 
-                                            parent->queues->getStore(), parent->settings.stagingThreshold);
-    parent->client->getChannel().openOk(channel);
+    if (parent->channels[channel] == 0) {
+        parent->channels[channel] = new Channel(parent->client->getProtocolVersion() , parent->context, channel, parent->framemax, 
+                                                parent->queues->getStore(), parent->settings.stagingThreshold);
+        parent->client->getChannel().openOk(channel);
+    } else {
+        std::stringstream out;
+        out << "Channel already open: " << channel;
+        throw ConnectionException(504, out.str());
+    }
 } 
         
 void SessionHandlerImpl::ChannelHandlerImpl::flow(u_int16_t /*channel*/, bool /*active*/){}         
