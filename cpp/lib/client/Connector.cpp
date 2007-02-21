@@ -113,14 +113,16 @@ void Connector::handleClosed(){
 
 void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
-         Time t = now() * TIME_MSEC;
+        Time t = now() * TIME_MSEC;
         if(status == Socket::SOCKET_TIMEOUT) {
             if(idleIn && (t - lastIn > idleIn)){
                 timeoutHandler->idleIn();
             }
-        }else if(status == Socket::SOCKET_EOF){
+        }
+        else if(status == 0 || status == Socket::SOCKET_EOF) {
             handleClosed();
-        }else{
+        }
+        else {
             lastIn = t;
         }
         if(idleOut && (t - lastOut > idleOut)){

@@ -75,9 +75,12 @@ ssize_t Socket::recv(void* data, size_t size)
     apr_size_t received = size;
     apr_status_t status =
         apr_socket_recv(socket, reinterpret_cast<char*>(data), &received);
-    if (APR_STATUS_IS_TIMEUP(status)) return SOCKET_TIMEOUT;
+    if (APR_STATUS_IS_TIMEUP(status))
+        return SOCKET_TIMEOUT;
+    if (APR_STATUS_IS_EOF(status))
+        return SOCKET_EOF;
     CHECK_APR_SUCCESS(status);
-     return received;
+    return received;
 }
 
 
