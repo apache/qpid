@@ -155,8 +155,7 @@ class QueueTests(TestBase):
         """
         Test basic queue deletion
         """
-        channel = self.client.channel(1)
-        channel.channel_open()
+        channel = self.channel
 
         #straight-forward case:
         channel.queue_declare(queue="delete-me")
@@ -187,8 +186,7 @@ class QueueTests(TestBase):
         """
         Test that if_empty field of queue_delete is honoured
         """
-        channel = self.client.channel(1)
-        channel.channel_open()
+        channel = self.channel
 
         #create a queue and add a message to it (use default binding):
         channel.queue_declare(queue="delete-me-2")
@@ -227,8 +225,7 @@ class QueueTests(TestBase):
         """
         Test that if_unused field of queue_delete is honoured
         """
-        channel = self.client.channel(1)
-        channel.channel_open()
+        channel = self.channel
 
         #create a queue and register a consumer:
         channel.queue_declare(queue="delete-me-3")
