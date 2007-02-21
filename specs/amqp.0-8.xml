@@ -2513,16 +2513,7 @@ localised reply text
       recipient.  If this bit is 1, the server will attempt to requeue the
       message, potentially then delivering it to an alternative subscriber.
     </doc>
-  </field>
-    <field name = "nowait" type = "bit">
-      do not send a reply method
-      <doc>
-      If set, the server will not respond to the method. The client should
-      not wait for a reply method.  If the server could not complete the
-      method it will raise a channel or connection exception.
-      </doc>
-    </field>
-    
+  </field>    
   <doc name="rule">
     The server MUST set the redelivered flag on all messages that are resent.
   </doc>
