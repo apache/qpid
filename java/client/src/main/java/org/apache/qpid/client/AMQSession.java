@@ -838,7 +838,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             _connection.getProtocolHandler().syncWrite(BasicRecoverBody.createAMQFrame(_channelId,
                                                                                        getProtocolMajorVersion(),
                                                                                        getProtocolMinorVersion(),
-                                                                                       false,    // nowait
                                                                                        false)    // requeue
                     , BasicRecoverOkBody.class);
 
