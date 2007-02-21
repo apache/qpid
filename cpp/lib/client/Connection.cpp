@@ -18,7 +18,9 @@
  * under the License.
  *
  */
+#include <algorithm>
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 
 #include <Connection.h>
 #include <ClientChannel.h>
@@ -27,7 +29,6 @@
 #include <iostream>
 #include <sstream>
 #include <MethodBodyInstances.h>
-#include <boost/bind.hpp>
 #include <functional>
 
 using namespace qpid::framing;
@@ -83,15 +84,17 @@ void Connection::close(
 {
     if(isOpen) {
         // TODO aconway 2007-01-29: Exception handling - could end up
-        // partly closed.
+        // partly closed with threads left unjoined.
         isOpen = false;
         channel0.sendAndReceive<ConnectionCloseOkBody>(
             new ConnectionCloseBody(
                 getVersion(), code, msg, classId, methodId));
-        while(!channels.empty()) {
-            channels.begin()->second->close();
-            channels.erase(channels.begin());
-        }
+
+        using boost::bind;
+        for_each(channels.begin(), channels.end(),
+                 bind(&Channel::closeInternal,
+                             bind(&ChannelMap::value_type::second, _1)));
+        channels.clear();
         connector->close();
     }
 }

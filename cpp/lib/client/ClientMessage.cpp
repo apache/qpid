@@ -19,7 +19,6 @@
  *
  */
 #include <ClientMessage.h>
-
 using namespace qpid::client;
 using namespace qpid::framing;
 
@@ -40,63 +39,63 @@ Message::Message(AMQHeaderBody::shared_ptr& _header) : header(_header){
 Message::~Message(){
 }
 	
-BasicHeaderProperties* Message::getHeaderProperties(){
+BasicHeaderProperties* Message::getHeaderProperties() const {
     return dynamic_cast<BasicHeaderProperties*>(header->getProperties());
 }
 
-const std::string& Message::getContentType(){ 
+const std::string& Message::getContentType() const { 
     return getHeaderProperties()->getContentType(); 
 }
 
-const std::string& Message::getContentEncoding(){ 
+const std::string& Message::getContentEncoding() const { 
     return getHeaderProperties()->getContentEncoding(); 
 }
 
-FieldTable& Message::getHeaders(){ 
+FieldTable& Message::getHeaders() const { 
     return getHeaderProperties()->getHeaders(); 
 }
 
-u_int8_t Message::getDeliveryMode(){ 
+u_int8_t Message::getDeliveryMode() const { 
     return getHeaderProperties()->getDeliveryMode(); 
 }
 
-u_int8_t Message::getPriority(){ 
+u_int8_t Message::getPriority() const { 
     return getHeaderProperties()->getPriority(); 
 }
 
-const std::string& Message::getCorrelationId(){
+const std::string& Message::getCorrelationId() const {
     return getHeaderProperties()->getCorrelationId(); 
 }
 
-const std::string& Message::getReplyTo(){ 
+const std::string& Message::getReplyTo() const { 
     return getHeaderProperties()->getReplyTo(); 
 }
 
-const std::string& Message::getExpiration(){ 
+const std::string& Message::getExpiration() const { 
     return getHeaderProperties()->getExpiration(); 
 }
 
-const std::string& Message::getMessageId(){
+const std::string& Message::getMessageId() const {
     return getHeaderProperties()->getMessageId(); 
 }
 
-u_int64_t Message::getTimestamp(){ 
+u_int64_t Message::getTimestamp() const { 
     return getHeaderProperties()->getTimestamp(); 
 }
 
-const std::string& Message::getType(){ 
+const std::string& Message::getType() const { 
     return getHeaderProperties()->getType(); 
 }
 
-const std::string& Message::getUserId(){ 
+const std::string& Message::getUserId() const { 
     return getHeaderProperties()->getUserId(); 
 }
 
-const std::string& Message::getAppId(){ 
+const std::string& Message::getAppId() const { 
     return getHeaderProperties()->getAppId(); 
 }
 
-const std::string& Message::getClusterId(){ 
+const std::string& Message::getClusterId() const { 
     return getHeaderProperties()->getClusterId(); 
 }
 
@@ -154,4 +153,10 @@ void Message::setAppId(const std::string& appId){
 
 void Message::setClusterId(const std::string& clusterId){ 
     getHeaderProperties()->setClusterId(clusterId); 
+}
+
+
+u_int64_t Message::getDeliveryTag() const {
+    BasicDeliverBody* deliver=dynamic_cast<BasicDeliverBody*>(method.get());
+    return deliver ? deliver->getDeliveryTag() : 0;
 }

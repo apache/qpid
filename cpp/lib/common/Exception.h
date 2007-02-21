@@ -66,6 +66,7 @@ struct ChannelException : public Exception {
     template <class T>
     ChannelException(framing::ReplyCode code_, const T& message)
         : Exception(message), code(code_) {}
+    void throwSelf() const { throw *this; }
 };
 
 struct ConnectionException : public Exception {
@@ -73,8 +74,23 @@ struct ConnectionException : public Exception {
     template <class T>
     ConnectionException(framing::ReplyCode code_, const T& message)
         : Exception(message), code(code_) {}
+    void throwSelf() const { throw *this; }
 };
 
+/**
+ * Exception used to indicate that a thread should shut down.
+ * Does not indicate an error that should be signalled to the user.
+ */
+struct ShutdownException : public Exception {
+    ShutdownException();
+    void throwSelf() const { throw *this; }
+};
+
+/** Exception to indicate empty queue or other empty state */
+struct EmptyException : public Exception {
+    EmptyException();
+    void throwSelf() const { throw *this; }
+};
 
 }
 

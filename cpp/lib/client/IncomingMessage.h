@@ -1,3 +1,6 @@
+#ifndef _IncomingMessage_
+#define _IncomingMessage_
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,43 +22,97 @@
  *
  */
 #include <string>
-#include <vector>
+#include <queue>
 #include <framing/amqp_framing.h>
-
-#ifndef _IncomingMessage_
-#define _IncomingMessage_
-
-#include <ClientMessage.h>
+#include "ExceptionHolder.h"
+#include "ClientMessage.h"
+#include "sys/Mutex.h"
+#include "sys/Condition.h"
 
 namespace qpid {
+
+namespace framing {
+class AMQBody;
+}
+
 namespace client {
+/**
+ * Accumulates incoming message frames into messages.
+ * Client-initiated messages (basic.get) are initiated and made
+ * available to the user thread one at a time.
+ * 
+ * Broker initiated messages (basic.return, basic.deliver) are
+ * queued for handling by the user dispatch thread.
+ */
+class IncomingMessage {
+  public:
+    typedef boost::shared_ptr<framing::AMQBody> BodyPtr;
+    IncomingMessage();
+    
+    /** Expect a new message starting with getOk. Called in user thread.*/
+    void startGet();
 
-    class IncomingMessage{
-        //content will be preceded by one of these method frames
-	qpid::framing::BasicDeliverBody::shared_ptr delivered;
-	qpid::framing::BasicReturnBody::shared_ptr returned;
-	qpid::framing::BasicGetOkBody::shared_ptr response;
-	qpid::framing::AMQHeaderBody::shared_ptr header;
-	std::string data;
-    public:
-	IncomingMessage(qpid::framing::BasicDeliverBody::shared_ptr intro);
-	IncomingMessage(qpid::framing::BasicReturnBody::shared_ptr intro);
-	IncomingMessage(qpid::framing::BasicGetOkBody::shared_ptr intro);
-        ~IncomingMessage();
-	void setHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
-	void addContent(qpid::framing::AMQContentBody::shared_ptr content);
-	bool isComplete();
-	bool isReturn();
-	bool isDelivery();
-	bool isResponse();
-	const std::string& getConsumerTag();//only relevant if isDelivery()
-	qpid::framing::AMQHeaderBody::shared_ptr& getHeader();
-        u_int64_t getDeliveryTag();
-	std::string getData() const;
-    };
+    /** Wait for the message to complete, return the message.
+     * Called in user thread. 
+     *@raises QpidError if there was an error.
+     */
+    bool waitGet(Message&);
 
-}
-}
+    /** Wait for the next broker-initiated message. */
+    Message waitDispatch();
+
+    /** Add a frame body to the message. Called in network thread. */
+    void add(BodyPtr);
+
+    /** Shut down: all further calls to any function throw ex. */
+    void shutdown();
+
+    /** Check if shutdown */
+    bool isShutdown() const;
+
+  private:
+
+    typedef void (IncomingMessage::* ExpectFn)(BodyPtr);
+    typedef void (IncomingMessage::* EndFn)(Exception*);
+    typedef std::queue<Message> MessageQueue;
+    struct Guard;
+  friend struct Guard;
+
+    void reset();
+    template <class T> boost::shared_ptr<T> expectCheck(BodyPtr);
+
+    // State functions - a state machine where each state is
+    // a member function that processes a frame body.
+    void expectGetOk(BodyPtr);
+    void expectHeader(BodyPtr);
+    void expectContent(BodyPtr);
+    void expectRequest(BodyPtr);
+
+    // End functions.
+    void endGet(Exception* ex = 0);
+    void endRequest(Exception* ex);
+
+    // Check for complete message.
+    void checkComplete();
+    
+    mutable sys::Mutex lock;
+    ExpectFn state;
+    EndFn endFn;
+    Message buildMessage;
+    ExceptionHolder shutdownError;
+
+    // For basic.get messages.
+    sys::Condition getReady;
+    ExceptionHolder getError;
+    Message getMessage;
+    enum { GETTING, GOT, EMPTY } getState;
+
+    // For broker-initiated messages
+    sys::Condition dispatchReady;
+    MessageQueue dispatchQueue;
+};
+
+}}
 
 
 #endif

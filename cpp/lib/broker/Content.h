@@ -42,8 +42,6 @@ class Content{
     virtual ~Content(){}
     
     /** Add a block of data to the content */
-    // FIXME aconway 2007-02-07: 
-    // virtual void add(const DataBlock& data) = 0;
     virtual void add(framing::AMQContentBody::shared_ptr data) = 0;
 
     /** Total size of content in bytes */
@@ -54,8 +52,6 @@ class Content{
      * Subdivide blocks if necessary to ensure each block is
      * <= framesize bytes long.
      */
-    // FIXME aconway 2007-02-07: 
-    // virtual void send(SendFn send, u_int32_t framesize) = 0;
     virtual void send(framing::ChannelAdapter& channel, u_int32_t framesize) = 0;
 
     //FIXME aconway 2007-02-07: This is inconsistently implemented

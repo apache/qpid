@@ -34,6 +34,8 @@ namespace framing {
 
 class MethodContext;
 
+// FIXME aconway 2007-02-20: Rename as ChannelBase or just Channel.
+
 /**
  * Base class for client and broker channels.
  *
