@@ -89,19 +89,12 @@ class Channel : public framing::ChannelAdapter,
         u_int64_t lastDeliveryTag;
     };
     typedef std::map<std::string, Consumer> ConsumerMap;
-    typedef std::queue<boost::shared_ptr<framing::AMQMethodBody> > IncomingMethods;
     
-    static const std::string OK;
-        
+    sys::Mutex lock;
     Connection* connection;
     sys::Thread dispatcher;
-    IncomingMethods incomingMethods;
-    IncomingMessage* incoming;
+    IncomingMessage incoming;
     ResponseHandler responses;
-    std::queue<IncomingMessage*> messages;//holds returned messages or those delivered for a consume
-    IncomingMessage* retrieved;//holds response to basic.get
-    sys::Monitor dispatchMonitor;
-    sys::Monitor retrievalMonitor;
     ConsumerMap consumers;
     ReturnedMessageHandler* returnsHandler;
 
@@ -109,10 +102,7 @@ class Channel : public framing::ChannelAdapter,
     const bool transactional;
     framing::ProtocolVersion version;
 
-    void enqueue();
     void retrieve(Message& msg);
-    IncomingMessage* dequeue();
-    void dispatch();
     void deliver(Consumer& consumer, Message& msg);
         
     void handleHeader(framing::AMQHeaderBody::shared_ptr body);
@@ -307,7 +297,8 @@ class Channel : public framing::ChannelAdapter,
      * receive this message on publication, the message will be
      * returned (see setReturnedMessageHandler()).
      */
-    void publish(Message& msg, const Exchange& exchange, const std::string& routingKey, 
+    void publish(const Message& msg, const Exchange& exchange,
+                 const std::string& routingKey, 
                  bool mandatory = false, bool immediate = false);
 
     /**
@@ -352,8 +343,8 @@ class Channel : public framing::ChannelAdapter,
      * Closing a channel that is not open has no effect.
      */
     void close(
-        framing::ReplyCode = 200, const std::string& =OK,
-        framing::ClassId = 0, framing::MethodId  = 0);
+        framing::ReplyCode = 200, const std::string& ="OK",
+         framing::ClassId = 0, framing::MethodId  = 0);
 
     /**
      * Set a handler for this channel that will process any

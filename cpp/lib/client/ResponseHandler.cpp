@@ -59,16 +59,20 @@ void ResponseHandler::receive(ClassId c, MethodId  m) {
     Monitor::ScopedLock l(monitor);
     while (waiting)
 	monitor.wait();
-    if (!response) {
-        THROW_QPID_ERROR(
-            PROTOCOL_ERROR, "Channel closed unexpectedly.");
-    }
-     if(!validate(response->amqpClassId(), response->amqpMethodId())) {
+    getResponse(); // Check for closed.
+    if(!validate(response->amqpClassId(), response->amqpMethodId())) {
 	THROW_QPID_ERROR(
             PROTOCOL_ERROR,
             boost::format("Expected class:method %d:%d, got %d:%d")
             % c % m % response->amqpClassId() % response->amqpMethodId());
     }
+}
+
+framing::AMQMethodBody::shared_ptr ResponseHandler::getResponse() {
+    if (!response) 
+        THROW_QPID_ERROR(
+            PROTOCOL_ERROR, "Channel closed unexpectedly.");
+    return response;
 }
 
 RequestId ResponseHandler::getRequestId() {

@@ -39,4 +39,8 @@ Exception* Exception::clone() const throw() { return new Exception(*this); }
 
 void Exception::throwSelf() const  { throw *this; }
 
+ShutdownException::ShutdownException() : Exception("Shut down.") {}
+
+EmptyException::EmptyException() : Exception("Empty.") {}
+
 } // namespace qpid

@@ -23,9 +23,7 @@
  */
 
 #include <sys/errno.h>
-#include <boost/noncopyable.hpp>
-#include <sys/Mutex.h>
-#include <sys/Time.h>
+#include <sys/Condition.h>
 
 #ifdef USE_APR
 #  include <apr_thread_cond.h>
@@ -37,91 +35,21 @@ namespace sys {
 /**
  * A monitor is a condition variable and a mutex
  */
-class Monitor : public Mutex
-{
+class Monitor : public Mutex, public Condition {
   public:
-    inline Monitor();
-    inline ~Monitor();
+    using Condition::wait;
     inline void wait();
     inline bool wait(const Time& absoluteTime);
-    inline void notify();
-    inline void notifyAll();
-
-  private:
-#ifdef USE_APR
-    apr_thread_cond_t* condition;
-#else
-    pthread_cond_t condition;
-#endif
 };
 
 
-// APR ================================================================
-#ifdef USE_APR
-
-Monitor::Monitor() {
-    CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, APRPool::get()));
-}
-
-Monitor::~Monitor() {
-    CHECK_APR_SUCCESS(apr_thread_cond_destroy(condition));
-}
-
 void Monitor::wait() {
-    CHECK_APR_SUCCESS(apr_thread_cond_wait(condition, mutex));
+    Condition::wait(*this);
 }
 
-bool Monitor::wait(const Time& absoluteTime){
-    // APR uses microseconds.
-    apr_status_t status =
-        apr_thread_cond_timedwait(condition, mutex, absoluteTime/TIME_USEC);
-    if(status != APR_TIMEUP) CHECK_APR_SUCCESS(status);
-    return status == 0;
+bool Monitor::wait(const Time& absoluteTime) {
+    return Condition::wait(*this, absoluteTime);
 }
-
-void Monitor::notify(){
-    CHECK_APR_SUCCESS(apr_thread_cond_signal(condition));
-}
-
-void Monitor::notifyAll(){
-    CHECK_APR_SUCCESS(apr_thread_cond_broadcast(condition));
-}
-
-#else
-// POSIX ================================================================
-
-Monitor::Monitor() {
-    QPID_POSIX_THROW_IF(pthread_cond_init(&condition, 0));
-}
-
-Monitor::~Monitor() {
-    QPID_POSIX_THROW_IF(pthread_cond_destroy(&condition));
-}
-
-void Monitor::wait() {
-    QPID_POSIX_THROW_IF(pthread_cond_wait(&condition, &mutex));
-}
-
-bool Monitor::wait(const Time& absoluteTime){
-    struct timespec ts;
-    toTimespec(ts, absoluteTime);
-    int status = pthread_cond_timedwait(&condition, &mutex, &ts);
-    if (status != 0) {
-        if (status == ETIMEDOUT) return false;
-        throw QPID_POSIX_ERROR(status);
-    }
-    return true;
-}
-
-void Monitor::notify(){
-    QPID_POSIX_THROW_IF(pthread_cond_signal(&condition));
-}
-
-void Monitor::notifyAll(){
-    QPID_POSIX_THROW_IF(pthread_cond_broadcast(&condition));
-}
-#endif  /*USE_APR*/
-
 
 }}
 #endif  /*!_sys_Monitor_h*/

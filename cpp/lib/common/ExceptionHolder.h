@@ -19,11 +19,15 @@
  *
  */
 
+#include <assert.h>
 #include <Exception.h>
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 
+// FIXME aconway 2007-02-20:  Not necessary, a simple
+// Exception::shared_ptr will do the job. Remove
+// 
 /**
  * Holder for a heap-allocated exc eption that can be stack allocated
  * and thrown safely.
@@ -49,11 +53,11 @@ class ExceptionHolder : public Exception, public boost::shared_ptr<Exception>
 
     ~ExceptionHolder() throw() {}
 
-    const char* what() const throw() { return (*this)->what(); }
-    std::string toString() const throw() { return (*this)->toString(); }
-    virtual Exception* clone() const throw() { return (*this)->clone(); }
-    virtual void throwSelf() const { (*this)->throwSelf(); }
-    virtual void throwIf() const { if (*this) (*this)->throwSelf(); }
+    const char* what() const throw() { return get()->what(); }
+    std::string toString() const throw() { return get()->toString(); }
+    Exception* clone() const throw() { return get()->clone(); }
+    void throwIf() const { if (get()) get()->throwSelf(); }
+    void throwSelf() const { assert(get()); get()->throwSelf(); }
 };
 
 } // namespace qpid

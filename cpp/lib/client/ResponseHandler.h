@@ -42,7 +42,7 @@ class ResponseHandler{
     ~ResponseHandler();
     
     bool isWaiting(){ return waiting; }
-    framing::AMQMethodBody::shared_ptr getResponse(){ return response;}
+    framing::AMQMethodBody::shared_ptr getResponse();
     void waitForResponse();
     
     void signalResponse(framing::AMQMethodBody::shared_ptr response);
