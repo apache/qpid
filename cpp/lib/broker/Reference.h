@@ -34,7 +34,6 @@ class MessageAppendBody;
 namespace broker {
 
 class MessageMessage;
-class CompletionHandler;
 class ReferenceRegistry;
 
 /**
@@ -51,21 +50,23 @@ class Reference
 {
   public:
     typedef std::string Id;
+    typedef boost::shared_ptr<Reference> shared_ptr;
     typedef boost::shared_ptr<MessageMessage> MessagePtr;
     typedef std::vector<MessagePtr> Messages;
     typedef boost::shared_ptr<framing::MessageAppendBody> AppendPtr;
     typedef std::vector<AppendPtr> Appends;
 
     Reference(const Id& id_=Id(), ReferenceRegistry* reg=0)
-        : id(id_), registry(reg) {}
+        : id(id_), size(0), registry(reg) {}
     
     const std::string& getId() const { return id; }
+    u_int64_t getSize() const { return size; }
 
     /** Add a message to be completed with this reference */
     void addMessage(MessagePtr message) { messages.push_back(message); }
 
     /** Append more data to the reference */
-    void append(AppendPtr ptr) { appends.push_back(ptr); }
+    void append(AppendPtr ptr);
 
     /** Close the reference, complete each associated message */
     void close();
@@ -74,9 +75,8 @@ class Reference
     const Messages& getMessages() const { return messages; }
     
   private:
-    void complete(MessagePtr message);
-    
     Id id;
+    u_int64_t size;
     ReferenceRegistry* registry;
     Messages messages;
     Appends appends;
@@ -91,17 +91,16 @@ class Reference
  */
 class ReferenceRegistry {
   public:
-    ReferenceRegistry(CompletionHandler& handler_) : handler(handler_) {};
-    Reference& open(const Reference::Id& id);
-    Reference& get(const Reference::Id& id);
+    ReferenceRegistry() {};
+    Reference::shared_ptr open(const Reference::Id& id);
+    Reference::shared_ptr get(const Reference::Id& id);
 
   private:
-    typedef std::map<Reference::Id, Reference> ReferenceMap;
-    CompletionHandler& handler;
+    typedef std::map<Reference::Id, Reference::shared_ptr> ReferenceMap;
     ReferenceMap references;
 
-    // Reference calls references.erase() and uses handler.
-  friend class Reference;
+    // Reference calls references.erase().
+    friend class Reference;
 };
 
 

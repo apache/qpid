@@ -22,12 +22,14 @@
 #include "BrokerMessageMessage.h"
 #include "ChannelAdapter.h"
 #include "MessageTransferBody.h"
+#include "MessageOpenBody.h"
+#include "MessageCloseBody.h"
 #include "MessageAppendBody.h"
 #include "Reference.h"
 #include "framing/FieldTable.h"
 #include "framing/BasicHeaderProperties.h"
 
-#include <iostream>
+#include <algorithm>
 
 using namespace std;
 using namespace qpid::framing;
@@ -36,13 +38,27 @@ namespace qpid {
 namespace broker {
 	
 MessageMessage::MessageMessage(
-    ConnectionToken* publisher, TransferPtr transfer_
+    ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_
 ) : Message(publisher, transfer_->getDestination(),
             transfer_->getRoutingKey(),
             transfer_->getMandatory(),
             transfer_->getImmediate(),
             transfer_),
+    requestId(requestId_),
     transfer(transfer_)
+{}
+
+MessageMessage::MessageMessage(
+    ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_,
+    ReferencePtr reference_
+) : Message(publisher, transfer_->getDestination(),
+            transfer_->getRoutingKey(),
+            transfer_->getMandatory(),
+            transfer_->getImmediate(),
+            transfer_),
+    requestId(requestId_),
+    transfer(transfer_),
+    reference(reference_)
 {}
 
 void MessageMessage::deliver(
@@ -51,6 +67,21 @@ void MessageMessage::deliver(
     u_int64_t /*deliveryTag*/, 
     u_int32_t /*framesize*/)
 {
+	const framing::Content& body = transfer->getBody();
+	
+	// Send any reference data
+	if (!body.isInline()){
+		// Open
+		channel.send(new MessageOpenBody(channel.getVersion(), reference->getId()));
+		// Appends
+		for(Reference::Appends::const_iterator a = reference->getAppends().begin();
+			a != reference->getAppends().end();
+			++a) {
+			channel.send(new MessageAppendBody(*a->get()));
+		}
+	}
+	
+	// The the transfer
     channel.send(
     	new MessageTransferBody(channel.getVersion(), 
                                 transfer->getTicket(),
@@ -74,8 +105,13 @@ void MessageMessage::deliver(
                                 transfer->getTransactionId(),
                                 transfer->getSecurityToken(),
                                 transfer->getApplicationHeaders(),
-                                transfer->getBody(),
+                                body,
                                 transfer->getMandatory()));
+	// Close any reference data
+	if (!body.isInline()){
+		// Close
+		channel.send(new MessageCloseBody(channel.getVersion(), reference->getId()));
+	}
 }
 
 void MessageMessage::sendGetOk(
@@ -120,11 +156,10 @@ bool MessageMessage::isComplete()
 
 u_int64_t MessageMessage::contentSize() const
 {
-	// FIXME astitcher 2007-2-7 only works for inline content
 	if (transfer->getBody().isInline())
 	    return transfer->getBody().getValue().size();
 	else
-    	THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");		 
+    	return reference->getSize();		 
 }
 
 qpid::framing::BasicHeaderProperties* MessageMessage::getHeaderProperties()
