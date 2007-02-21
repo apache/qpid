@@ -100,6 +100,9 @@ import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxRollbackOkBody;
 import org.apache.qpid.framing.QueueBindOkBody;
 import org.apache.qpid.framing.QueueDeclareOkBody;
+import org.apache.qpid.framing.ChannelFlowOkBody;
+import org.apache.qpid.framing.BasicRecoverOkBody;
+import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -190,6 +193,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private boolean _connectionStopped;
 
     private boolean _hasMessageListeners;
+
+    private boolean _suspended;
+
+    private final Object _suspensionLock = new Object();
+
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
 
@@ -285,8 +293,50 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             //fixme awaitTermination
 
         }
-    }
 
+        public void rollback()
+        {
+
+            synchronized (_lock)
+            {
+                boolean isStopped = connectionStopped();
+
+                if (!isStopped)
+                {
+                    setConnectionStopped(true);
+                }
+
+                rejectAllMessages(true);
+
+                _logger.debug("Session Pre Dispatch Queue cleared");
+
+                for (BasicMessageConsumer consumer : _consumers.values())
+                {
+                    consumer.rollback();
+                }
+
+                setConnectionStopped(isStopped);
+            }
+
+        }
+
+        public void rejectPending(AMQShortString consumerTag)
+        {
+            synchronized (_lock)
+            {
+                boolean stopped = connectionStopped();
+
+                _dispatcher.setConnectionStopped(false);
+
+                rejectMessagesForConsumerTag(consumerTag, true);
+
+                if (stopped)
+                {
+                    _dispatcher.setConnectionStopped(stopped);
+                }
+            }
+        }
+    }
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
                MessageFactoryRegistry messageFactoryRegistry)
@@ -328,7 +378,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                               if (_acknowledgeMode == NO_ACKNOWLEDGE)
                                                               {
                                                                   _logger.warn("Above threshold(" + _defaultPrefetchHighMark + ") so suspending channel. Current value is " + currentValue);
-                                                                  suspendChannel();
+                                                                  new Thread(new SuspenderRunner(true)).start();
                                                               }
                                                           }
 
@@ -337,7 +387,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                               if (_acknowledgeMode == NO_ACKNOWLEDGE)
                                                               {
                                                                   _logger.warn("Below threshold(" + _defaultPrefetchLowMark + ") so unsuspending channel. Current value is " + currentValue);
-                                                                  unsuspendChannel();
+                                                                  new Thread(new SuspenderRunner(false)).start();
                                                               }
                                                           }
                                                       });
@@ -480,16 +530,39 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void rollback() throws JMSException
     {
-        checkTransacted();
-        try
+        synchronized (_suspensionLock)
         {
-            // TODO: Be aware of possible changes to parameter order as versions change.
-            getProtocolHandler().syncWrite(
-                    TxRollbackBody.createAMQFrame(_channelId, getProtocolMajorVersion(), getProtocolMinorVersion()), TxRollbackOkBody.class);
-        }
-        catch (AMQException e)
-        {
-            throw(JMSException) (new JMSException("Failed to rollback: " + e).initCause(e));
+            checkTransacted();
+            try
+            {
+                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                // Be aware of possible changes to parameter order as versions change.
+
+                boolean isSuspended = isSuspended();
+
+                if (!isSuspended)
+                {
+//                    suspendChannel(true);
+                }
+
+                _connection.getProtocolHandler().syncWrite(
+                        TxRollbackBody.createAMQFrame(_channelId, getProtocolMajorVersion(), getProtocolMinorVersion()), TxRollbackOkBody.class);
+
+                if (_dispatcher != null)
+                {
+                    _dispatcher.rollback();
+                }
+
+                if (!isSuspended)
+                {
+//                    suspendChannel(false);
+                }
+            }
+            catch (AMQException e)
+            {
+                throw(JMSException) (new JMSException("Failed to rollback: " + e).initCause(e));
+            }
         }
     }
 
@@ -596,6 +669,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
 
     }
+
+
+    public boolean isSuspended()
+    {
+        return _suspended;
+    }
+
 
     /**
      * Called when the server initiates the closure of the session unilaterally.
@@ -737,14 +817,45 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         checkNotTransacted(); // throws IllegalStateException if a transacted session
         // this is set only here, and the before the consumer's onMessage is called it is set to false
         _inRecovery = true;
-        for (BasicMessageConsumer consumer : _consumers.values())
+        try
         {
-            consumer.clearUnackedMessages();
+
+            boolean isSuspended = isSuspended();
+
+//            if (!isSuspended)
+//            {
+//                suspendChannel(true);
+//            }
+
+            for (BasicMessageConsumer consumer : _consumers.values())
+            {
+                consumer.clearUnackedMessages();
+            }
+
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            _connection.getProtocolHandler().syncWrite(BasicRecoverBody.createAMQFrame(_channelId,
+                                                                                       getProtocolMajorVersion(),
+                                                                                       getProtocolMinorVersion(),
+                                                                                       false,    // nowait
+                                                                                       false)    // requeue
+                    , BasicRecoverOkBody.class);
+
+//            if (_dispatcher != null)
+//            {
+//                _dispatcher.rollback();
+//            }
+//
+//            if (!isSuspended)
+//            {
+//                suspendChannel(false);
+//            }
         }
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        getProtocolHandler().writeFrame(BasicRecoverBody.createAMQFrame(_channelId,
-                                                                        getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                        false));    // requeue
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
     }
 
     boolean isInRecovery()
@@ -1057,7 +1168,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 }
                 catch (AMQInvalidRoutingKeyException e)
                 {
-                    JMSException ide = new InvalidDestinationException("Invalid routing key:"+amqd.getRoutingKey().toString());
+                    JMSException ide = new InvalidDestinationException("Invalid routing key:" + amqd.getRoutingKey().toString());
                     ide.setLinkedException(e);
                     throw ide;
                 }
@@ -1731,7 +1842,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return _channelId;
     }
 
-    void start()
+    void start() throws AMQException
     {
         //fixme This should be controlled by _stopped as it pairs with the stop method
         //fixme or check the FlowControlledBlockingQueue _queue to see if we have flow controlled.
@@ -1740,7 +1851,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         if (_startedAtLeastOnce.getAndSet(true))
         {
             //then we stopped this and are restarting, so signal server to resume delivery
-            unsuspendChannel();
+            suspendChannel(false);
         }
 
         if (hasMessageListeners())
@@ -1773,10 +1884,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    void stop()
+    void stop() throws AMQException
     {
         //stop the server delivering messages to this session
-        suspendChannel();
+        suspendChannel(true);
 
         if (_dispatcher != null)
         {
@@ -1837,6 +1948,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     _destinationConsumerCount.remove(dest);
                 }
             }
+
+            //ensure we remove the messages from the consumer even if the dispatcher hasn't started
+            if (_dispatcher == null)
+            {
+                rejectMessagesForConsumerTag(consumer.getConsumerTag(), true);
+            }
         }
     }
 
@@ -1889,35 +2006,54 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    private void suspendChannel()
+    private void suspendChannel(boolean suspend) throws AMQException
     {
-        _logger.warn("Suspending channel");
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
-                                                                   getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                   false);    // active
-        getProtocolHandler().writeFrame(channelFlowFrame);
+        synchronized (_suspensionLock)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Setting channel flow : " + (suspend ? "suspended" : "unsuspended"));
+            }
+
+            _suspended = suspend;
+
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
+                                                                       getProtocolMajorVersion(),
+                                                                       getProtocolMinorVersion(),
+                                                                       !suspend);    // active
+
+            _connection.getProtocolHandler().syncWrite(channelFlowFrame, ChannelFlowOkBody.class);
+        }
     }
 
-    private void unsuspendChannel()
-    {
-        _logger.warn("Unsuspending channel");
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
-                                                                   getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                   true);    // active
-        getProtocolHandler().writeFrame(channelFlowFrame);
-    }
 
     public void confirmConsumerCancelled(AMQShortString consumerTag)
     {
         BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
-        if ((consumer != null) && (consumer.isAutoClose()))
+        if (consumer != null)
         {
-            consumer.closeWhenNoMessages(true);
+            if (consumer.isAutoClose())
+            {
+                consumer.closeWhenNoMessages(true);
+            }
+            else
+            {
+                consumer.rollback();
+            }
+        }
+
+        //Flush any pending messages for this consumerTag
+        if (_dispatcher != null)
+        {
+            _dispatcher.rejectPending(consumerTag);
+        }
+        else
+        {
+            rejectMessagesForConsumerTag(consumerTag, true);
         }
     }
-
 
     /*
      * I could have combined the last 3 methods, but this way it improves readability
@@ -2008,5 +2144,75 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     }
 
+    private class SuspenderRunner implements Runnable
+    {
+        private boolean _suspend;
+
+        public SuspenderRunner(boolean suspend)
+        {
+            _suspend = suspend;
+        }
+
+        public void run()
+        {
+            try
+            {
+                suspendChannel(_suspend);
+            }
+            catch (AMQException e)
+            {
+                _logger.warn("Unable to suspend channel");
+            }
+        }
+    }
+
+
+    private void rejectAllMessages(boolean requeue)
+    {
+        rejectMessagesForConsumerTag(null, requeue);
+    }
+
+    /** @param consumerTag The consumerTag to prune from queue or all if null
+     * @param requeue Should the removed messages be requeued (or discarded. Possibly to DLQ)
+     */
+
+    private void rejectMessagesForConsumerTag(AMQShortString consumerTag, boolean requeue)
+    {
+        Iterator messages = _queue.iterator();
+
+        while (messages.hasNext())
+        {
+            UnprocessedMessage message = (UnprocessedMessage) messages.next();
+
+            if (consumerTag == null || message.getDeliverBody().consumerTag.equals(consumerTag))
+            {
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("Removing message from _queue:" + message);
+                }
+
+                messages.remove();
+
+//                rejectMessage(message.getDeliverBody().deliveryTag, requeue);
+
+                _logger.debug("Rejected the message(" + message.getDeliverBody() + ") for consumer :" + consumerTag);
+            }
+            else
+            {
+                _logger.error("Pruned pending message for consumer:" + consumerTag);
+            }
+        }
+    }
+
+    public void rejectMessage(long deliveryTag, boolean requeue)
+    {
+        AMQFrame basicRejectBody = BasicRejectBody.createAMQFrame(_channelId,
+                                                                  getProtocolMajorVersion(),
+                                                                  getProtocolMinorVersion(),
+                                                                  deliveryTag,
+                                                                  requeue);
+
+        _connection.getProtocolHandler().writeFrame(basicRejectBody);
+    }
 
 }

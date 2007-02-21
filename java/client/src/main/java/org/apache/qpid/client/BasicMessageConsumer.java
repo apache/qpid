@@ -49,9 +49,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);
 
-    /**
-     * The connection being used by this consumer
-     */
+    /** The connection being used by this consumer */
     private AMQConnection _connection;
 
     private String _messageSelector;
@@ -60,33 +58,20 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private AMQDestination _destination;
 
-    /**
-     * When true indicates that a blocking receive call is in progress
-     */
+    /** When true indicates that a blocking receive call is in progress */
     private final AtomicBoolean _receiving = new AtomicBoolean(false);
-    /**
-     * Holds an atomic reference to the listener installed.
-     */
+    /** Holds an atomic reference to the listener installed. */
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
-    /**
-     * The consumer tag allows us to close the consumer by sending a jmsCancel method to the
-     * broker
-     */
+    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
     private AMQShortString _consumerTag;
 
-    /**
-     * We need to know the channel id when constructing frames
-     */
+    /** We need to know the channel id when constructing frames */
     private int _channelId;
 
     /**
-     * Used in the blocking receive methods to receive a message from
-     * the Session thread.
-     * <p/>
-     * Or to notify of errors
-     * <p/>
-     * Argument true indicates we want strict FIFO semantics
+     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
+     * <p/> Argument true indicates we want strict FIFO semantics
      */
     private final ArrayBlockingQueue _synchronousQueue;
 
@@ -96,55 +81,48 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private AMQProtocolHandler _protocolHandler;
 
-    /**
-     * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
-     */
+    /** We need to store the "raw" field table so that we can resubscribe in the event of failover being required */
     private FieldTable _rawSelectorFieldTable;
 
     /**
-     * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of failover
+     * We store the high water prefetch field in order to be able to reuse it when resubscribing in the event of
+     * failover
      */
     private int _prefetchHigh;
 
     /**
-     * We store the low water prefetch field in order to be able to reuse it when resubscribing in the event of failover
+     * We store the low water prefetch field in order to be able to reuse it when resubscribing in the event of
+     * failover
      */
     private int _prefetchLow;
 
-    /**
-     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
-     */
+    /** We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover */
     private boolean _exclusive;
 
     /**
-     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes
-     * per consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
+     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
+     * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
      * implementation.
      */
     private int _acknowledgeMode;
 
-    /**
-     * Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
-     */
+    /** Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode */
     private int _outstanding;
 
-    /**
-     * Tag of last message delievered, whoch should be acknowledged on commit in
-     * transaction mode.
-     */
+    /** Tag of last message delievered, whoch should be acknowledged on commit in transaction mode. */
     private long _lastDeliveryTag;
 
     /**
-     * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode.
-     * Enabled when _outstannding number of msgs >= _prefetchHigh and disabled at < _prefetchLow
+     * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode. Enabled when _outstannding
+     * number of msgs >= _prefetchHigh and disabled at < _prefetchLow
      */
     private boolean _dups_ok_acknowledge_send;
 
     private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
     /**
-     * The thread that was used to call receive(). This is important for being able to interrupt that thread if
-     * a receive() is in progress.
+     * The thread that was used to call receive(). This is important for being able to interrupt that thread if a
+     * receive() is in progress.
      */
     private Thread _receivingThread;
 
@@ -417,13 +395,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     /**
-     * We can get back either a Message or an exception from the queue. This method examines the argument and deals
-     * with it by throwing it (if an exception) or returning it (in any other case).
+     * We can get back either a Message or an exception from the queue. This method examines the argument and deals with
+     * it by throwing it (if an exception) or returning it (in any other case).
      *
      * @param o
+     *
      * @return a message only if o is a Message
-     * @throws JMSException if the argument is a throwable. If it is a JMSException it is rethrown as is, but if not
-     *                      a JMSException is created with the linked exception set appropriately
+     *
+     * @throws JMSException if the argument is a throwable. If it is a JMSException it is rethrown as is, but if not a
+     *                      JMSException is created with the linked exception set appropriately
      */
     private AbstractJMSMessage returnMessageOrThrow(Object o)
             throws JMSException
@@ -488,9 +468,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     /**
-     * Called when you need to invalidate a consumer. Used for example when failover has occurred and the
-     * client has vetoed automatic resubscription.
-     * The caller must hold the failover mutex.
+     * Called when you need to invalidate a consumer. Used for example when failover has occurred and the client has
+     * vetoed automatic resubscription. The caller must hold the failover mutex.
      */
     void markClosed()
     {
@@ -499,8 +478,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     /**
-     * Called from the AMQSession when a message has arrived for this consumer. This methods handles both the case
-     * of a message listener or a synchronous receive() caller.
+     * Called from the AMQSession when a message has arrived for this consumer. This methods handles both the case of a
+     * message listener or a synchronous receive() caller.
      *
      * @param messageFrame the raw unprocessed mesage
      * @param channelId    channel on which this message was sent
@@ -643,9 +622,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    /**
-     * Acknowledge up to last message delivered (if any). Used when commiting.
-     */
+    /** Acknowledge up to last message delivered (if any). Used when commiting. */
     void acknowledgeLastDelivered()
     {
         if (_lastDeliveryTag > 0)
@@ -676,8 +653,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
 
     /**
-     * Perform cleanup to deregister this consumer. This occurs when closing the consumer in both the clean
-     * case and in the case of an error occurring.
+     * Perform cleanup to deregister this consumer. This occurs when closing the consumer in both the clean case and in
+     * the case of an error occurring.
      */
     private void deregisterConsumer()
     {
@@ -728,9 +705,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    /**
-     * Called on recovery to reset the list of delivery tags
-     */
+    /** Called on recovery to reset the list of delivery tags */
     public void clearUnackedMessages()
     {
         _unacknowledgedDeliveryTags.clear();
@@ -760,4 +735,42 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
 
     }
+
+    public void rollback()
+    {
+
+        if (_synchronousQueue.size() > 0)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Rejecting the messages for consumer with tag:" + _consumerTag);
+            }
+            for (Object o : _synchronousQueue)
+            {
+                if (o instanceof AbstractJMSMessage)
+                {
+//                    _session.rejectMessage(((AbstractJMSMessage) o).getDeliveryTag(), true);
+
+                    if (_logger.isTraceEnabled())
+                    {
+                        _logger.trace("Rejected message" + o);
+                    }
+
+                }
+                else
+                {
+                    _logger.error("Queue contained a :" + o.getClass() +
+                                 " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                }
+            }
+
+            if (_synchronousQueue.size() != 0)
+            {
+                _logger.warn("Queue was not empty after rejecting all messages");
+            }
+
+            _synchronousQueue.clear();
+        }
+    }
+
 }

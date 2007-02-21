@@ -2514,6 +2514,15 @@ localised reply text
       message, potentially then delivering it to an alternative subscriber.
     </doc>
   </field>
+    <field name = "nowait" type = "bit">
+      do not send a reply method
+      <doc>
+      If set, the server will not respond to the method. The client should
+      not wait for a reply method.  If the server could not complete the
+      method it will raise a channel or connection exception.
+      </doc>
+    </field>
+    
   <doc name="rule">
     The server MUST set the redelivered flag on all messages that are resent.
   </doc>
@@ -2521,7 +2530,16 @@ localised reply text
     The server MUST raise a channel exception if this is called on a 
     transacted channel.
   </doc>
-</method>
+    <response name="rollback-ok"/>
+  </method>
+  <method name="recover-ok" synchronous="1" index="101">
+	confirm a successful recover
+	<doc>
+	  This method confirms to the client that the recover succeeded.
+  	  Note that if an recover fails, the server raises a channel exception.
+    </doc>
+    <chassis name="client" implement="MUST"/>
+  </method>
 
 </class>
 
