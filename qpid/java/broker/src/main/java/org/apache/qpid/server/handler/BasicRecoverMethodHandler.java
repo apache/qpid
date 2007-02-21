@@ -23,6 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRecoverBody;
+import org.apache.qpid.framing.BasicRecoverOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -43,16 +44,24 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicRecoverBody> evt) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        
+
         _logger.debug("Recover received on protocol session " + session + " and channel " + evt.getChannelId());
         AMQChannel channel = session.getChannel(evt.getChannelId());
         BasicRecoverBody body = evt.getMethod();
-        
+
         if (channel == null)
         {
             throw body.getChannelNotFoundException(evt.getChannelId());
         }
 
         channel.resend(session, body.requeue);
+
+        if (!body.nowait)
+        {
+            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+            // Be aware of possible changes to parameter order as versions change.
+            session.writeFrame(BasicRecoverOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0));
+        }
     }
 }
