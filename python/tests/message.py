@@ -455,7 +455,8 @@ class MessageTests(TestBase):
         
         msg = queue.get(timeout=1)
         self.assertTrue(isinstance(msg.body, ReferenceId))
-        self.assertEquals(data, ch2.references.get(msg.body.id).get_complete())
+        self.assertTrue(msg.reference)
+        self.assertEquals(data, msg.reference.get_complete())
 
     def test_reference_completion(self):
         """
@@ -539,15 +540,15 @@ class MessageTests(TestBase):
         #inline or by reference in any combination
         
         if isinstance(msg1.body, ReferenceId):            
-            self.assertEquals("second message", channel.references.get(msg1.body.id).get_complete())
+            self.assertEquals("second message", msg1.reference.get_complete())
             if isinstance(msg2.body, ReferenceId):
                 if msg1.body != msg2.body:
-                    self.assertEquals("second message", channel.references.get(msg2.body.id).get_complete())
+                    self.assertEquals("second message", msg2.reference.get_complete())
                 #else ok, as same ref as msg1    
         else:
             self.assertEquals("second message", msg1.body)
             if isinstance(msg2.body, ReferenceId):
-                self.assertEquals("second message", channel.references.get(msg2.body.id).get_complete())
+                self.assertEquals("second message", msg2.reference.get_complete())
             else:
                 self.assertEquals("second message", msg2.body)                
 
@@ -644,7 +645,7 @@ class MessageTests(TestBase):
         
     def assertDataEquals(self, channel, msg, expected):
         if isinstance(msg.body, ReferenceId):
-            data = channel.references.get(msg.body.id).get_complete()
+            data = msg.reference.get_complete()
         else:
             data = msg.body
         self.assertEquals(expected, data)
