@@ -532,7 +532,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
                     if (_started)
                     {
-                        session.start();
+                        try
+                        {
+                            session.start();
+                        }
+                        catch (AMQException e)
+                        {
+                            throw new JMSAMQException(e);
+                        }
                     }
                     return session;
                 }
@@ -690,7 +697,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             while (it.hasNext())
             {
                 final AMQSession s = (AMQSession) ((Map.Entry) it.next()).getValue();
-                s.start();
+                try
+                {
+                    s.start();
+                }
+                catch (AMQException e)
+                {
+                    throw new JMSAMQException(e);
+                }
             }
             _started = true;
         }
@@ -703,7 +717,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             for (Iterator i = _sessions.values().iterator(); i.hasNext();)
             {
-                ((AMQSession) i.next()).stop();
+                try
+                {
+                    ((AMQSession) i.next()).stop();
+                }
+                catch (AMQException e)
+                {
+                    throw new JMSAMQException(e);
+                }
             }
             _started = false;
         }

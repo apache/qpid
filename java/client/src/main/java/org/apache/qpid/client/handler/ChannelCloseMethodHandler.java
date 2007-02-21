@@ -64,7 +64,10 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         protocolSession.writeFrame(frame);
         if (errorCode != AMQConstant.REPLY_SUCCESS)
         {
-            _logger.error("Channel close received with errorCode " + errorCode + ", and reason " + reason);
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Channel close received with errorCode " + errorCode + ", and reason " + reason);
+            }
             if (errorCode == AMQConstant.NO_CONSUMERS)
             {
                 throw new AMQNoConsumersException("Error: " + reason, null);
