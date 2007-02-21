@@ -23,7 +23,7 @@
  */
 #include "BrokerMessageBase.h"
 #include "MessageTransferBody.h"
-#include "Reference.h"         
+#include "amqp_types.h"
 
 #include <vector>
 
@@ -31,7 +31,6 @@ namespace qpid {
 
 namespace framing {
 class MessageTransferBody;
-class MessageApppendBody;
 }
 	
 namespace broker {
@@ -42,17 +41,16 @@ class MessageMessage: public Message{
   public:
     typedef boost::shared_ptr<MessageMessage> shared_ptr;
     typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
-    typedef Reference::AppendPtr AppendPtr;
-    typedef Reference::Appends Appends;
+    typedef boost::shared_ptr<Reference> ReferencePtr;
 
-    MessageMessage(ConnectionToken* publisher, TransferPtr transfer);
+    MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer);
+    MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer, ReferencePtr reference);
             
     // Default destructor okay
 
+    framing::RequestId getRequestId() {return requestId; }
     TransferPtr getTransfer() { return transfer; }
-
-    const Appends& getAppends() { return appends; }
-    void setAppends(const Appends& appends_) { appends = appends_; }
+    ReferencePtr getReference() { return reference; }
     
     void deliver(framing::ChannelAdapter& channel, 
                  const std::string& consumerTag, 
@@ -78,9 +76,9 @@ class MessageMessage: public Message{
     u_int64_t expectedContentSize();
 
   private:
-
+    framing::RequestId requestId;
     const TransferPtr transfer;
-    Appends appends;
+    const ReferencePtr reference;
 };
 
 }}

@@ -33,22 +33,11 @@ namespace broker {
 using namespace framing;
 
 MessageHandlerImpl::MessageHandlerImpl(CoreRefs& parent)
-    : HandlerImplType(parent), references(channel) {}
+    : HandlerImplType(parent) {}
 
 //
 // Message class method handlers
 //
-void
-MessageHandlerImpl::append(const MethodContext& context,
-                           const string& reference,
-                           const string& /*bytes*/ )
-{
-    references.get(reference).append(
-        boost::shared_polymorphic_downcast<MessageAppendBody>(
-            context.methodBody));
-    client.ok(context.getRequestId());
-}
-
 
 void
 MessageHandlerImpl::cancel(const MethodContext& context,
@@ -59,20 +48,69 @@ MessageHandlerImpl::cancel(const MethodContext& context,
 }
 
 void
-MessageHandlerImpl::checkpoint(const MethodContext&,
-                               const string& /*reference*/,
-                               const string& /*identifier*/ )
+MessageHandlerImpl::open(const MethodContext& context,
+                         const string& reference)
 {
-    // FIXME astitcher 2007-01-11: 0-9 feature
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
+    references.open(reference);
+    client.ok(context.getRequestId());
+}
+
+void
+MessageHandlerImpl::append(const MethodContext& context,
+                           const string& reference,
+                           const string& /*bytes*/ )
+{
+    references.get(reference)->append(
+        boost::shared_polymorphic_downcast<MessageAppendBody>(
+            context.methodBody));
+    client.ok(context.getRequestId());
 }
 
 void
 MessageHandlerImpl::close(const MethodContext& context,
                           const string& reference)
 {
-    references.get(reference).close();
+	Reference::shared_ptr ref = references.get(reference);
     client.ok(context.getRequestId());
+    
+    // Send any transfer messages to their correct exchanges and okay them
+    const Reference::Messages& msgs = ref->getMessages();
+    for (Reference::Messages::const_iterator m = msgs.begin(); m != msgs.end(); ++m) {
+        channel.handleInlineTransfer(*m);
+    	client.ok((*m)->getRequestId());
+    }
+    ref->close();
+}
+
+void
+MessageHandlerImpl::checkpoint(const MethodContext& context,
+                               const string& /*reference*/,
+                               const string& /*identifier*/ )
+{
+    // Initial implementation (which is conforming) is to do nothing here
+    // and return offset zero for the resume
+    client.ok(context.getRequestId());
+}
+
+void
+MessageHandlerImpl::resume(const MethodContext& context,
+                           const string& reference,
+                           const string& /*identifier*/ )
+{
+    // Initial (null) implementation
+    // open reference and return 0 offset
+    references.open(reference);
+    client.offset(0, context.getRequestId());
+}
+
+void
+MessageHandlerImpl::offset(const MethodContext&,
+                           u_int64_t /*value*/ )
+{
+    // Shouldn't ever receive this as it is reponse to resume
+    // which is never sent
+    // TODO astitcher 2007-02-16 What is the correct exception to throw here?    
+    THROW_QPID_ERROR(INTERNAL_ERROR, "impossible");
 }
 
 void
@@ -98,14 +136,6 @@ MessageHandlerImpl::consume(const MethodContext& context,
 }
 
 void
-MessageHandlerImpl::empty( const MethodContext& )
-{
-    // Shouldn't ever receive this as it is a response to get
-    // TODO astitcher 2007-02-09 What is the correct exception to throw here?
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Impossible");
-}
-
-void
 MessageHandlerImpl::get( const MethodContext& context,
                          u_int16_t /*ticket*/,
                          const string& queueName,
@@ -122,25 +152,18 @@ MessageHandlerImpl::get( const MethodContext& context,
 }
 
 void
-MessageHandlerImpl::offset(const MethodContext&,
-                           u_int64_t /*value*/ )
+MessageHandlerImpl::empty( const MethodContext& )
 {
-    // FIXME astitcher 2007-01-11: 0-9 feature
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
+    // Shouldn't ever receive this as it is a response to get
+    // which is never sent
+    // TODO astitcher 2007-02-09 What is the correct exception to throw here?
+    THROW_QPID_ERROR(INTERNAL_ERROR, "Impossible");
 }
 
 void
 MessageHandlerImpl::ok(const MethodContext& /*context*/)
 {
     channel.ack();
-}
-
-void
-MessageHandlerImpl::open(const MethodContext& context,
-                         const string& reference)
-{
-    references.open(reference);
-    client.ok(context.getRequestId());
 }
 
 void
@@ -167,15 +190,6 @@ void
 MessageHandlerImpl::reject(const MethodContext&,
                            u_int16_t /*code*/,
                            const string& /*text*/ )
-{
-    // FIXME astitcher 2007-01-11: 0-9 feature
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
-}
-
-void
-MessageHandlerImpl::resume(const MethodContext&,
-                           const string& /*reference*/,
-                           const string& /*identifier*/ )
 {
     // FIXME astitcher 2007-01-11: 0-9 feature
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
@@ -210,14 +224,19 @@ MessageHandlerImpl::transfer(const MethodContext& context,
     MessageTransferBody::shared_ptr transfer(
         boost::shared_polymorphic_downcast<MessageTransferBody>(
             context.methodBody));
-    MessageMessage::shared_ptr message(
-        new MessageMessage(&connection, transfer));
+    RequestId requestId = context.getRequestId();
     
-    if (body.isInline()) 
+    if (body.isInline()) {
+	    MessageMessage::shared_ptr message(
+	        new MessageMessage(&connection, requestId, transfer));
         channel.handleInlineTransfer(message);
-    else 
-        references.get(body.getValue()).addMessage(message);
-    client.ok(context.getRequestId());
+	    client.ok(requestId);
+    } else { 
+        Reference::shared_ptr ref(references.get(body.getValue()));
+	    MessageMessage::shared_ptr message(
+	        new MessageMessage(&connection, requestId, transfer, ref));
+        ref->addMessage(message);
+    }
 }
 
 

@@ -20,36 +20,35 @@
 #include "Reference.h"
 #include "BrokerMessageMessage.h"
 #include "QpidError.h"
+#include "MessageAppendBody.h"
 #include "CompletionHandler.h"
 
 namespace qpid {
 namespace broker {
 
-Reference&  ReferenceRegistry::open(const Reference::Id& id) {
+Reference::shared_ptr  ReferenceRegistry::open(const Reference::Id& id) {
     ReferenceMap::iterator i = references.find(id);
     // TODO aconway 2007-02-05: should we throw Channel or Connection
     // exceptions here?
     if (i != references.end())
         throw ConnectionException(503, "Attempt to re-open reference " +id);
-    return references[id] = Reference(id, this);
+    return references[id] = Reference::shared_ptr(new Reference(id, this));
 }
 
-Reference&  ReferenceRegistry::get(const Reference::Id& id) {
+Reference::shared_ptr  ReferenceRegistry::get(const Reference::Id& id) {
     ReferenceMap::iterator i = references.find(id);
     if (i == references.end()) 
         throw ConnectionException(503, "Attempt to use non-existent reference "+id);
     return i->second;
 }
 
-void  Reference::close() {
-    for_each(messages.begin(), messages.end(),
-             boost::bind(&Reference::complete, this, _1));
-    registry->references.erase(getId());
+void Reference::append(AppendPtr ptr) {
+	 appends.push_back(ptr);
+	 size += ptr->getBytes().length();
 }
 
-void Reference::complete(MessagePtr message) {
-    message->setAppends(appends);
-    registry->handler.complete(message);
+void Reference::close() {
+    registry->references.erase(getId());
 }
 
 }} // namespace qpid::broker

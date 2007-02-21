@@ -631,7 +631,7 @@ class MessageTests(TestBase):
         channel.channel_open()
         channel.message_consume(queue = "q", destination = "consumer")
         offset = channel.message_resume(reference="my-ref", identifier="my-checkpoint").value
-        self.assertEquals(offset, 16)
+        self.assertTrue(offset<=16)
         channel.message_append(reference="my-ref", bytes="qrstuvwxyz")
         channel.synchronous = False
         channel.message_transfer(routing_key="q-one", message_id="abcd", body=ReferenceId("my-ref"))
