@@ -122,7 +122,11 @@ Options:
         self._parseargs(args)
         runner = unittest.TextTestRunner(descriptions=False,
                                          verbosity=self.verbose)
-        result = runner.run(self.testSuite())
+        try:
+            result = runner.run(self.testSuite())
+        except:
+            print "Unhandled error in test:", sys.exc_info()
+            
         if (self.ignore):
             print "======================================="
             print "NOTE: the following tests were ignored:"
@@ -167,14 +171,18 @@ class TestBase(unittest.TestCase):
         self.channel.channel_open()
 
     def tearDown(self):
-        for ch, q in self.queues:
-            ch.queue_delete(queue=q)
-        for ch, ex in self.exchanges:
-            ch.exchange_delete(exchange=ex)
+        try:
+            for ch, q in self.queues:
+                ch.queue_delete(queue=q)
+            for ch, ex in self.exchanges:
+                ch.exchange_delete(exchange=ex)
+        except:
+            print "Error on tearDown:", sys.exc_info()
 
         if not self.client.closed:    
             self.client.channel(0).connection_close(reply_code=200)
-        del self.client    
+        else:    
+            self.client.close()
 
     def connect(self, *args, **keys):
         """Create a new connction, return the Client object"""

@@ -53,6 +53,9 @@ class SockIO:
   def flush(self):
     pass
 
+  def close(self):
+    self.sock.shutdown(socket.SHUT_RDWR)
+
 def connect(host, port):
   sock = socket.socket()
   sock.connect((host, port))
