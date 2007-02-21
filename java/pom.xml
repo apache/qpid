@@ -143,6 +143,8 @@ under the License.
         <module>systests</module>
         <module>perftests</module>
         <module>management/eclipse-plugin</module>
+		<module>client/example</module>
+		<module>client-java14</module>
     </modules>
 
     <build>
