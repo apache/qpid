@@ -76,7 +76,8 @@ class Client:
     self.locale = locale
     self.tune_params = tune_params
 
-    self.conn = Connection(connect(self.host, self.port), self.spec)
+    self.socket = connect(self.host, self.port)
+    self.conn = Connection(self.socket, self.spec)
     self.peer = Peer(self.conn, ClientDelegate(self), self.opened)
 
     self.conn.init()
@@ -89,6 +90,9 @@ class Client:
 
   def opened(self, ch):
     ch.references = References()
+
+  def close(self):
+    self.socket.close()
 
 class ClientDelegate(Delegate):
 
