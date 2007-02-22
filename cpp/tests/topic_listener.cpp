@@ -71,7 +71,7 @@ public:
 class Args{
     string host;
     int port;
-    int ackMode;
+    AckMode ackMode;
     bool transactional;
     int prefetch;
     bool trace;
@@ -81,13 +81,13 @@ public:
     void parse(int argc, char** argv);
     void usage();
 
-    inline const string& getHost() const { return host;}
-    inline int getPort() const { return port; }
-    inline int getAckMode(){ return ackMode; }
-    inline bool getTransactional() const { return transactional; }
-    inline int getPrefetch(){ return prefetch; }
-    inline bool getTrace() const { return trace; }
-    inline bool getHelp() const { return help; }
+    const string& getHost() const { return host;}
+    int getPort() const { return port; }
+    AckMode getAckMode(){ return ackMode; }
+    bool getTransactional() const { return transactional; }
+    int getPrefetch(){ return prefetch; }
+    bool getTrace() const { return trace; }
+    bool getHelp() const { return help; }
 };
 
 /**
@@ -119,9 +119,9 @@ int main(int argc, char** argv){
             //set up listener
             Listener listener(&channel, response.getName(), args.getTransactional());
             string tag;
-            channel.consume(control, tag, &listener, args.getAckMode());
+            channel.getBasic().consume(control, tag, &listener, args.getAckMode());
             cout << "topic_listener: Consuming." << endl;
-            channel.run();
+            channel.getBasic().run();
             connection.close();
             cout << "topic_listener: normal exit" << endl;
             return 0;
@@ -166,7 +166,7 @@ void Listener::report(){
               << time/TIME_MSEC << " ms.";
     Message msg(reportstr.str());
     msg.getHeaders().setString("TYPE", "REPORT");
-    channel->publish(msg, string(), responseQueue);
+    channel->getBasic().publish(msg, string(), responseQueue);
     if(transactional){
         channel->commit();
     }
@@ -184,7 +184,7 @@ void Args::parse(int argc, char** argv){
         }else if("-port" == name){
             port = atoi(argv[++i]);
         }else if("-ack_mode" == name){
-            ackMode = atoi(argv[++i]);
+            ackMode = AckMode(atoi(argv[++i]));
         }else if("-transactional" == name){
             transactional = true;
         }else if("-prefetch" == name){

@@ -112,7 +112,8 @@ class Message {
     { return method; }
         
     void setMethod(framing::AMQMethodBody::shared_ptr m) { method=m; }
-    boost::shared_ptr<framing::AMQHeaderBody> getHeader();
+    boost::shared_ptr<framing::AMQHeaderBody> getHeader() const
+    { return header; }
 
     // TODO aconway 2007-02-15: remove friendships.
   friend class IncomingMessage;

@@ -80,7 +80,7 @@ class Args{
     int port;
     int messages;
     int subscribers;
-    int ackMode;
+    AckMode ackMode;
     bool transactional;
     int prefetch;
     int batches;
@@ -96,18 +96,18 @@ public:
     void parse(int argc, char** argv);
     void usage();
 
-    inline const string& getHost() const { return host;}
-    inline int getPort() const { return port; }
-    inline int getMessages() const { return messages; }
-    inline int getSubscribers() const { return subscribers; }
-    inline int getAckMode(){ return ackMode; }
-    inline bool getTransactional() const { return transactional; }
-    inline int getPrefetch(){ return prefetch; }
-    inline int getBatches(){ return batches; }
-    inline int getDelay(){ return delay; }
-    inline int getSize(){ return size; }
-    inline bool getTrace() const { return trace; }
-    inline bool getHelp() const { return help; }
+    const string& getHost() const { return host;}
+    int getPort() const { return port; }
+    int getMessages() const { return messages; }
+    int getSubscribers() const { return subscribers; }
+    AckMode getAckMode(){ return ackMode; }
+    bool getTransactional() const { return transactional; }
+    int getPrefetch(){ return prefetch; }
+    int getBatches(){ return batches; }
+    int getDelay(){ return delay; }
+    int getSize(){ return size; }
+    bool getTrace() const { return trace; }
+    bool getHelp() const { return help; }
 };
 
 int main(int argc, char** argv) {
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             //set up listener
             Publisher publisher(&channel, "topic_control", args.getTransactional());
             std::string tag("mytag");
-            channel.consume(response, tag, &publisher, args.getAckMode());
+            channel.getBasic().consume(response, tag, &publisher, args.getAckMode());
             channel.start();
 
             int batchSize(args.getBatches());
@@ -187,12 +187,12 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
-            channel->publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+            channel->getBasic().publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         }
         //send report request
         Message reportRequest;
         reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
-        channel->publish(reportRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+        channel->getBasic().publish(reportRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         if(transactional){
             channel->commit();
         }
@@ -216,7 +216,7 @@ void Publisher::terminate(){
     //send termination request
     Message terminationRequest;
     terminationRequest.getHeaders().setString("TYPE", "TERMINATION_REQUEST");
-    channel->publish(terminationRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+    channel->getBasic().publish(terminationRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
     if(transactional){
         channel->commit();
     }
@@ -237,7 +237,7 @@ void Args::parse(int argc, char** argv){
         }else if("-subscribers" == name){
             subscribers = atoi(argv[++i]);
         }else if("-ack_mode" == name){
-            ackMode = atoi(argv[++i]);
+            ackMode = AckMode(atoi(argv[++i]));
         }else if("-transactional" == name){
             transactional = true;
         }else if("-prefetch" == name){
