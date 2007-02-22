@@ -44,7 +44,7 @@
 
 using namespace qpid::client;
 using namespace qpid::sys;
-using std::string;
+using namespace std;
 
 /**
  * A message listener implementation in which the runtime logic is
@@ -52,7 +52,7 @@ using std::string;
  */
 class Listener : public MessageListener{    
     Channel* const channel;
-    const std::string responseQueue;
+    const string responseQueue;
     const bool transactional;
     bool init;
     int count;
@@ -61,7 +61,7 @@ class Listener : public MessageListener{
     void shutdown();
     void report();
 public:
-    Listener(Channel* channel, const std::string& reponseQueue, bool tx);
+    Listener(Channel* channel, const string& reponseQueue, bool tx);
     virtual void received(Message& msg);
 };
 
@@ -102,6 +102,7 @@ int main(int argc, char** argv){
         args.usage();
     }else{
         try{
+            cout << "topic_listener: Started." << endl;
             Connection connection(args.getTrace());
             connection.open(args.getHost(), args.getPort());
             Channel channel(args.getTransactional(), args.getPrefetch());
@@ -117,19 +118,21 @@ int main(int argc, char** argv){
             channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
             //set up listener
             Listener listener(&channel, response.getName(), args.getTransactional());
-            std::string tag;
+            string tag;
             channel.consume(control, tag, &listener, args.getAckMode());
+            cout << "topic_listener: Consuming." << endl;
             channel.run();
             connection.close();
+            cout << "topic_listener: normal exit" << endl;
             return 0;
         }catch(qpid::QpidError error){
-            std::cout << error.what() << std::endl;
+            cout << "topic_listener: " << error.what() << endl;
         }
     }
     return 1;
 }
 
-Listener::Listener(Channel* _channel, const std::string& _responseq, bool tx) : 
+Listener::Listener(Channel* _channel, const string& _responseq, bool tx) : 
     channel(_channel), responseQueue(_responseq), transactional(tx), init(false), count(0){}
 
 void Listener::received(Message& message){
@@ -138,7 +141,7 @@ void Listener::received(Message& message){
         count = 0;
         init = true;
     }
-    std::string type(message.getHeaders().getString("TYPE"));
+    string type(message.getHeaders().getString("TYPE"));
 
     if(type == "TERMINATION_REQUEST"){
         shutdown();
@@ -147,7 +150,7 @@ void Listener::received(Message& message){
         report();
         init = false;
     }else if (++count % 100 == 0){        
-        std::cout <<"Received " << count << " messages." << std::endl;
+        cout <<"Received " << count << " messages." << endl;
     }
 }
 
@@ -158,11 +161,11 @@ void Listener::shutdown(){
 void Listener::report(){
     Time finish = now();
     Time time = finish - start;
-    std::stringstream reportstr;
+    stringstream reportstr;
     reportstr << "Received " << count << " messages in "
               << time/TIME_MSEC << " ms.";
-    Message msg;
-    msg.setData(reportstr.str());
+    Message msg(reportstr.str());
+    msg.getHeaders().setString("TYPE", "REPORT");
     channel->publish(msg, string(), responseQueue);
     if(transactional){
         channel->commit();
@@ -189,26 +192,26 @@ void Args::parse(int argc, char** argv){
         }else if("-trace" == name){
             trace = true;
         }else{
-            std::cout << "Warning: unrecognised option " << name << std::endl;
+            cout << "Warning: unrecognised option " << name << endl;
         }
     }
 }
 
 void Args::usage(){
-    std::cout << "Options:" << std::endl;
-    std::cout << "    -help" << std::endl;
-    std::cout << "            Prints this usage message" << std::endl;
-    std::cout << "    -host <host>" << std::endl;
-    std::cout << "            Specifies host to connect to (default is localhost)" << std::endl;
-    std::cout << "    -port <port>" << std::endl;
-    std::cout << "            Specifies port to conect to (default is 5762)" << std::endl;
-    std::cout << "    -ack_mode <mode>" << std::endl;
-    std::cout << "            Sets the acknowledgement mode" << std::endl;
-    std::cout << "            0=NO_ACK (default), 1=AUTO_ACK, 2=LAZY_ACK" << std::endl;
-    std::cout << "    -transactional" << std::endl;
-    std::cout << "            Indicates the client should use transactions" << std::endl;
-    std::cout << "    -prefetch <count>" << std::endl;
-    std::cout << "            Specifies the prefetch count (default is 1000)" << std::endl;
-    std::cout << "    -trace" << std::endl;
-    std::cout << "            Indicates that the frames sent and received should be logged" << std::endl;
+    cout << "Options:" << endl;
+    cout << "    -help" << endl;
+    cout << "            Prints this usage message" << endl;
+    cout << "    -host <host>" << endl;
+    cout << "            Specifies host to connect to (default is localhost)" << endl;
+    cout << "    -port <port>" << endl;
+    cout << "            Specifies port to conect to (default is 5762)" << endl;
+    cout << "    -ack_mode <mode>" << endl;
+    cout << "            Sets the acknowledgement mode" << endl;
+    cout << "            0=NO_ACK (default), 1=AUTO_ACK, 2=LAZY_ACK" << endl;
+    cout << "    -transactional" << endl;
+    cout << "            Indicates the client should use transactions" << endl;
+    cout << "    -prefetch <count>" << endl;
+    cout << "            Specifies the prefetch count (default is 1000)" << endl;
+    cout << "    -trace" << endl;
+    cout << "            Indicates that the frames sent and received should be logged" << endl;
 }
