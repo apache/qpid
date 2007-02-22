@@ -76,21 +76,21 @@ class ClientChannelTest : public CppUnit::TestCase
     void testPublishGet() {
         Message pubMsg(data);
         pubMsg.getHeaders().setString("hello", "world");
-        channel.publish(pubMsg, exchange, qname);
+        channel.getBasic().publish(pubMsg, exchange, qname);
         Message getMsg;
-        CPPUNIT_ASSERT(channel.get(getMsg, queue));
+        CPPUNIT_ASSERT(channel.getBasic().get(getMsg, queue));
         CPPUNIT_ASSERT_EQUAL(data, getMsg.getData());
         CPPUNIT_ASSERT_EQUAL(string("world"),
                              getMsg.getHeaders().getString("hello"));
-        CPPUNIT_ASSERT(!channel.get(getMsg, queue)); // Empty queue
+        CPPUNIT_ASSERT(!channel.getBasic().get(getMsg, queue)); // Empty queue
     }
 
     void testGetNoContent() {
         Message pubMsg;
         pubMsg.getHeaders().setString("hello", "world");
-        channel.publish(pubMsg, exchange, qname);
+        channel.getBasic().publish(pubMsg, exchange, qname);
         Message getMsg;
-        CPPUNIT_ASSERT(channel.get(getMsg, queue));
+        CPPUNIT_ASSERT(channel.getBasic().get(getMsg, queue));
         CPPUNIT_ASSERT(getMsg.getData().empty());
         CPPUNIT_ASSERT_EQUAL(string("world"),
                              getMsg.getHeaders().getString("hello"));
@@ -98,10 +98,10 @@ class ClientChannelTest : public CppUnit::TestCase
 
     void testConsumeCancel() {
         string tag;             // Broker assigned
-        channel.consume(queue, tag, &listener);
+        channel.getBasic().consume(queue, tag, &listener);
         channel.start();
         CPPUNIT_ASSERT_EQUAL(size_t(0), listener.messages.size());
-        channel.publish(Message("a"), exchange, qname);
+        channel.getBasic().publish(Message("a"), exchange, qname);
         {
             Mutex::ScopedLock l(listener.monitor);
             Time deadline(now() + 1*TIME_SEC);
@@ -112,8 +112,8 @@ class ClientChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(size_t(1), listener.messages.size());
         CPPUNIT_ASSERT_EQUAL(string("a"), listener.messages[0].getData());
             
-        channel.publish(Message("b"), exchange, qname);
-        channel.publish(Message("c"), exchange, qname);
+        channel.getBasic().publish(Message("b"), exchange, qname);
+        channel.getBasic().publish(Message("c"), exchange, qname);
         {
             Mutex::ScopedLock l(listener.monitor);
             while (listener.messages.size() != 3) {
@@ -124,15 +124,15 @@ class ClientChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(string("b"), listener.messages[1].getData());
         CPPUNIT_ASSERT_EQUAL(string("c"), listener.messages[2].getData());
     
-        channel.cancel(tag);
-        channel.publish(Message("d"), exchange, qname);
+        channel.getBasic().cancel(tag);
+        channel.getBasic().publish(Message("d"), exchange, qname);
         CPPUNIT_ASSERT_EQUAL(size_t(3), listener.messages.size());
         {
             Mutex::ScopedLock l(listener.monitor);
             CPPUNIT_ASSERT(!listener.monitor.wait(TIME_SEC/2));
         }
         Message msg;
-        CPPUNIT_ASSERT(channel.get(msg, queue));
+        CPPUNIT_ASSERT(channel.getBasic().get(msg, queue));
         CPPUNIT_ASSERT_EQUAL(string("d"), msg.getData());
     }
 
@@ -140,9 +140,9 @@ class ClientChannelTest : public CppUnit::TestCase
     void testConsumePublished() {
         Message pubMsg("x");
         pubMsg.getHeaders().setString("y", "z");
-        channel.publish(pubMsg, exchange, qname);
+        channel.getBasic().publish(pubMsg, exchange, qname);
         string tag;
-        channel.consume(queue, tag, &listener);
+        channel.getBasic().consume(queue, tag, &listener);
         CPPUNIT_ASSERT_EQUAL(size_t(0), listener.messages.size());
         channel.start();
         {

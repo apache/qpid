@@ -33,7 +33,6 @@ template <class T, class ContainerType=std::deque<T> >
 class ThreadSafeQueue
 {
   public:
-    struct QueueStoppedException : public Exception {};
 
     ThreadSafeQueue() {}
 
@@ -47,7 +46,7 @@ class ThreadSafeQueue
     }
 
     /** Pop a value from the front of the queue. Waits till value is available.
-     *@throw QueueStoppedException if queue is stopped while waiting.
+     *@throw ShutdownException if queue is stopped while waiting.
      */
     T pop() {
         ProducerConsumer::ConsumerLock consumer(pc);
@@ -57,7 +56,7 @@ class ThreadSafeQueue
             container.pop_front();
             return value;
         }
-        throw QueueStoppedException();
+        throw ShutdownException();
     }
 
     /**
