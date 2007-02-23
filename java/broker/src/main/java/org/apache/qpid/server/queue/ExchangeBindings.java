@@ -44,6 +44,7 @@ class ExchangeBindings
         {
             this.routingKey = routingKey;
             this.exchange = exchange;
+            if(exchange == null) throw new NullPointerException("Can't create binding for null exchange");
         }
 
         void unbind(AMQQueue queue) throws AMQException
@@ -70,7 +71,8 @@ class ExchangeBindings
         {
             if (!(o instanceof ExchangeBinding)) return false;
             ExchangeBinding eb = (ExchangeBinding) o;
-            return exchange.equals(eb.exchange) && routingKey.equals(eb.routingKey);
+            return exchange.equals(eb.exchange) 
+                && (routingKey == null ? eb.routingKey == null : routingKey.equals(eb.routingKey));            
         }
     }
 
@@ -91,6 +93,15 @@ class ExchangeBindings
     void addBinding(AMQShortString routingKey, Exchange exchange)
     {
         _bindings.add(new ExchangeBinding(routingKey, exchange));
+    }
+
+    void unbind(AMQShortString routingKey, Exchange exchange) throws AMQException
+    {
+        ExchangeBinding b = new ExchangeBinding(routingKey, exchange);
+        if (_bindings.remove(b)) 
+        {
+            b.unbind(_queue);
+        }
     }
 
     /**

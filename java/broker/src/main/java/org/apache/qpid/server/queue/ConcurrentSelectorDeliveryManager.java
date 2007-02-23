@@ -25,6 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.util.ConcurrentLinkedQueueAtomicSize;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MessageGetBody;
+import org.apache.qpid.protocol.RequestToken;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.AMQChannel;
@@ -185,8 +187,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    public boolean performGet(AMQProtocolSession protocolSession, AMQChannel channel, boolean acks) throws AMQException
+    public boolean performGet(RequestToken<MessageGetBody> request, AMQChannel channel) throws AMQException
     {
+        final boolean acks = !request.getRequest().noAck;
         AMQMessage msg = getNextMessage();
         if(msg == null)
         {
@@ -223,7 +226,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         channel.addUnacknowledgedMessage(msg, deliveryTag, null, _queue);
                     }
 
-                    msg.writeGetOk(protocolSession, channel.getChannelId(), deliveryTag, _queue.getMessageCount());
+                    channel.deliverGet(request, deliveryTag, msg);
                     _totalMessageSize.addAndGet(-msg.getSize());
                 }
             }

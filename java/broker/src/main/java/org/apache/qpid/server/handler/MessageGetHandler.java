@@ -28,6 +28,7 @@ import org.apache.qpid.framing.MessageEmptyBody;
 import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.RequestToken;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -89,13 +90,11 @@ public class MessageGetHandler implements StateAwareMethodListener<MessageGetBod
             {
                 try
                 {
-                    if(queue.performGet(session, channel, !body.noAck))
-                    {
-                        session.writeResponse(evt, MessageOkBody.createMethodBody(
-                            session.getProtocolMajorVersion(), // AMQP major version
-                            session.getProtocolMinorVersion())); // AMQP minor version
-                    }
-                    else
+                    RequestToken<MessageGetBody> request = 
+                        new RequestToken<MessageGetBody>(session, evt, 
+                                                         session.getProtocolMajorVersion(), 
+                                                         session.getProtocolMinorVersion());
+                    if(!queue.performGet(request, channel))
                     {
                         session.writeResponse(evt, MessageEmptyBody.createMethodBody(
                             session.getProtocolMajorVersion(), // AMQP major version

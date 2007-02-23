@@ -626,14 +626,7 @@ public class AMQMessage
     {
         throw new Error("XXX");
     }
-    public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
-    {
-        throw new Error("XXX");
-    }
-    private ByteBuffer createEncodedGetOkFrame(int channelId, long deliveryTag, int queueSize)
-    {
-        throw new Error("XXX");
-    }
+
     // Robert Godfrey added these in r503604
     public long getArrivalTime()
     {
