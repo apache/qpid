@@ -55,6 +55,7 @@ import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxSelectBody;
+import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.handler.BasicAckMethodHandler;
@@ -82,8 +83,9 @@ import org.apache.qpid.server.handler.QueueDeclareHandler;
 import org.apache.qpid.server.handler.QueueDeleteHandler;
 import org.apache.qpid.server.handler.QueuePurgeHandler;
 import org.apache.qpid.server.handler.TxCommitHandler;
-import org.apache.qpid.server.handler.TxRollbackHandler;
+import org.apache.qpid.server.handler.BasicRejectMethodHandler;
 import org.apache.qpid.server.handler.TxSelectHandler;
+import org.apache.qpid.server.handler.TxRollbackHandler;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -173,6 +175,7 @@ public class AMQStateManager implements AMQMethodListener
         frame2handlerMap.put(TxSelectBody.class, TxSelectHandler.getInstance());
         frame2handlerMap.put(TxCommitBody.class, TxCommitHandler.getInstance());
         frame2handlerMap.put(TxRollbackBody.class, TxRollbackHandler.getInstance());
+        frame2handlerMap.put(BasicRejectBody.class, BasicRejectMethodHandler.getInstance());
 
         _state2HandlersMap.put(AMQState.CONNECTION_OPEN, frame2handlerMap);
 

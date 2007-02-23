@@ -63,10 +63,9 @@ public class TransactedTest extends TestCase
         super.setUp();
         TransportConnection.createVMBroker(1);
         con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
-        session = con.createSession(true, 0);
+        session = con.createSession(true, Session.SESSION_TRANSACTED);
         queue1 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
         queue2 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q2"), false);
-
 
 
         consumer1 = session.createConsumer(queue1);
@@ -80,7 +79,6 @@ public class TransactedTest extends TestCase
         prepSession = prepCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         prepProducer1 = prepSession.createProducer(queue1);
         prepCon.start();
-
 
         //add some messages
         prepProducer1.send(prepSession.createTextMessage("A"));
@@ -127,24 +125,33 @@ public class TransactedTest extends TestCase
 
     public void testRollback() throws Exception
     {
+        _logger.info("Sending X Y Z");
         producer2.send(session.createTextMessage("X"));
         producer2.send(session.createTextMessage("Y"));
         producer2.send(session.createTextMessage("Z"));
+        _logger.info("Receiving A B");
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
-        expect("C", consumer1.receive(1000));
+        //Don't consume 'C' leave it in the prefetch cache to ensure rollback removes it.
 
         //rollback
+        _logger.info("rollback");
         session.rollback();
 
+        _logger.info("Receiving A B C");
         //ensure sent messages are not visible and received messages are requeued
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
         expect("C", consumer1.receive(1000));
+
+        _logger.info("Starting new connection");
         testCon.start();
         testConsumer1 = testSession.createConsumer(queue1);
+        _logger.info("Testing we have no messages left");
         assertTrue(null == testConsumer1.receive(1000));
         assertTrue(null == testConsumer2.receive(1000));
+
+        session.commit();
     }
 
     public void testResendsMsgsAfterSessionClose() throws Exception
@@ -152,7 +159,7 @@ public class TransactedTest extends TestCase
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
 
         Session consumerSession = con.createSession(true, Session.CLIENT_ACKNOWLEDGE);
-        AMQQueue queue3 = new AMQQueue(consumerSession.getDefaultQueueExchangeName(),new AMQShortString("Q3"), false);
+        AMQQueue queue3 = new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q3"), false);
         MessageConsumer consumer = consumerSession.createConsumer(queue3);
         //force synch to ensure the consumer has resulted in a bound queue
         ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
@@ -225,8 +232,9 @@ public class TransactedTest extends TestCase
 
     private void expect(String text, Message msg) throws JMSException
     {
-        assertTrue(msg instanceof TextMessage);
-        assertEquals(text, ((TextMessage) msg).getText());
+        assertNotNull("Message should not be null", msg);
+        assertTrue("Message should be a text message", msg instanceof TextMessage);
+        assertEquals("Message content does not match expected", text, ((TextMessage) msg).getText());
     }
 
     public static junit.framework.Test suite()

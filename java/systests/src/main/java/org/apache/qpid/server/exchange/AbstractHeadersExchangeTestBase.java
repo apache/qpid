@@ -272,9 +272,10 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * not invoked. It is unnecessary since for this test we only care to know whether the message was
          * sent to the queue; the queue processing logic is not being tested.
          * @param msg
+         * @param deliverFirst
          * @throws AMQException
          */
-        public void process(StoreContext context, AMQMessage msg) throws AMQException
+        public void process(StoreContext context, AMQMessage msg, boolean deliverFirst) throws AMQException
         {
             messages.add(new HeadersExchangeTest.Message(msg));
         }

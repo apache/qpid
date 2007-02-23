@@ -34,21 +34,15 @@ import org.apache.qpid.server.queue.NoConsumersException;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
-/**
- * @author Apache Software Foundation
- */
+/** @author Apache Software Foundation */
 public class NonTransactionalContext implements TransactionalContext
 {
     private static final Logger _log = Logger.getLogger(NonTransactionalContext.class);
 
-    /**
-     * Channel is useful for logging
-     */
+    /** Channel is useful for logging */
     private final AMQChannel _channel;
 
-    /**
-     * Where to put undeliverable messages
-     */
+    /** Where to put undeliverable messages */
     private final List<RequiredDeliveryException> _returnMessages;
 
     private Set<Long> _browsedAcks;
@@ -57,9 +51,7 @@ public class NonTransactionalContext implements TransactionalContext
 
     private StoreContext _storeContext;
 
-    /**
-     * Whether we are in a transaction
-     */
+    /** Whether we are in a transaction */
     private boolean _inTran;
 
     public NonTransactionalContext(MessageStore messageStore, StoreContext storeContext, AMQChannel channel,
@@ -97,12 +89,12 @@ public class NonTransactionalContext implements TransactionalContext
         // Does not apply to this context
     }
 
-    public void deliver(AMQMessage message, AMQQueue queue) throws AMQException
+    public void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException
     {
         try
         {
             message.incrementReference();
-            queue.process(_storeContext, message);
+            queue.process(_storeContext, message, deliverFirst);
             //following check implements the functionality
             //required by the 'immediate' flag:
             message.checkDeliveredToConsumer();
