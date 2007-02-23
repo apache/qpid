@@ -67,12 +67,22 @@ public class SubscriptionTestHelper implements Subscription
         return isSuspended;
     }
 
-	public boolean wouldSuspend(AMQMessage msg)
+    public boolean wouldSuspend(AMQMessage msg)
     {
         return isSuspended;
     }
 
-	
+    public void addToResendQueue(AMQMessage msg)
+    {
+        //no-op
+    }
+
+    public Object getSendLock()
+    {
+        return new Object();
+    }
+
+
     public void queueDeleted(AMQQueue queue)
     {
     }
@@ -92,7 +102,17 @@ public class SubscriptionTestHelper implements Subscription
         return null;
     }
 
-    public void enqueueForPreDelivery(AMQMessage msg)
+    public Queue<AMQMessage> getResendQueue()
+    {
+        return null;
+    }
+
+    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    {
+        return messages;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst)
     {
         //no-op
     }
@@ -107,9 +127,14 @@ public class SubscriptionTestHelper implements Subscription
         //no-op
     }
 
+    public boolean isClosed()
+    {
+        return false;
+    }
+
     public boolean isBrowser()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public int hashCode()

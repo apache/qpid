@@ -31,9 +31,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
-/**
- * A transactional context that only supports local transactions.
- */
+/** A transactional context that only supports local transactions. */
 public class LocalTransactionalContext implements TransactionalContext
 {
     private static final Logger _log = Logger.getLogger(LocalTransactionalContext.class);
@@ -62,12 +60,14 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         public AMQMessage message;
         public AMQQueue queue;
+        private boolean deliverFirst;
 
 
-        public DeliveryDetails(AMQMessage message, AMQQueue queue)
+        public DeliveryDetails(AMQMessage message, AMQQueue queue, boolean deliverFirst)
         {
             this.message = message;
             this.queue = queue;
+            this.deliverFirst = deliverFirst;
         }
     }
 
@@ -89,9 +89,10 @@ public class LocalTransactionalContext implements TransactionalContext
     public void rollback() throws AMQException
     {
         _txnBuffer.rollback(_storeContext);
+        _postCommitDeliveryList.clear();
     }
 
-    public void deliver(AMQMessage message, AMQQueue queue) throws AMQException
+    public void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException
     {
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
@@ -100,7 +101,7 @@ public class LocalTransactionalContext implements TransactionalContext
         // enqueued. Finally a cleanup op will be added to decrement
         // the reference associated with the routing.
         message.incrementReference();
-        _postCommitDeliveryList.add(new DeliveryDetails(message, queue));
+        _postCommitDeliveryList.add(new DeliveryDetails(message, queue, deliverFirst));
         _messageDelivered = true;
         /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));
         if (_log.isDebugEnabled())
@@ -225,7 +226,7 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             for (DeliveryDetails dd : _postCommitDeliveryList)
             {
-                dd.queue.process(_storeContext, dd.message);
+                dd.queue.process(_storeContext, dd.message, dd.deliverFirst);
             }
         }
         finally

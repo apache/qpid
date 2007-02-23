@@ -38,7 +38,7 @@ public interface TransactionalContext
 
     void rollback() throws AMQException;
 
-    void deliver(AMQMessage message, AMQQueue queue) throws AMQException;
+    void deliver(AMQMessage message, AMQQueue queue, boolean deliverFirst) throws AMQException;
 
     void acknowledgeMessage(long deliveryTag, long lastDeliveryTag, boolean multiple,
                             UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException;

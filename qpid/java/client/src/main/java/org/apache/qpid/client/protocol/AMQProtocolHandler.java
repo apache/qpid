@@ -65,15 +65,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     private static final Logger _logger = Logger.getLogger(AMQProtocolHandler.class);
 
     /**
-     * The connection that this protocol handler is associated with. There is a 1-1
-     * mapping between connection instances and protocol handler instances.
+     * The connection that this protocol handler is associated with. There is a 1-1 mapping between connection instances
+     * and protocol handler instances.
      */
     private AMQConnection _connection;
 
-    /**
-     * Our wrapper for a protocol session that provides access to session values
-     * in a typesafe manner.
-     */
+    /** Our wrapper for a protocol session that provides access to session values in a typesafe manner. */
     private volatile AMQProtocolSession _protocolSession;
 
     private AMQStateManager _stateManager = new AMQStateManager();
@@ -120,8 +117,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         // we only add the SSL filter where we have an SSL connection
         if (_connection.getSSLConfiguration() != null)
         {
-        	SSLConfiguration sslConfig = _connection.getSSLConfiguration();
-        	SSLContextFactory sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType()); 
+            SSLConfiguration sslConfig = _connection.getSSLConfiguration();
+            SSLContextFactory sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
             SSLFilter sslFilter = new SSLFilter(sslFactory.buildClientContext());
             sslFilter.setUseClientMode(true);
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
@@ -139,7 +136,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         {
             e.printStackTrace();
         }
-  
+
         _protocolSession = new AMQProtocolSession(this, session, _connection, getStateManager());
         _protocolSession.init();
     }
@@ -154,6 +151,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * sessionClosed() depending on whether we were trying to send data at the time of failure.
      *
      * @param session
+     *
      * @throws Exception
      */
     public void sessionClosed(IoSession session) throws Exception
@@ -208,9 +206,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _logger.info("Protocol Session [" + this + "] closed");
     }
 
-    /**
-     * See {@link FailoverHandler} to see rationale for separate thread.
-     */
+    /** See {@link FailoverHandler} to see rationale for separate thread. */
     private void startFailoverThread()
     {
         Thread failoverThread = new Thread(_failoverHandler);
@@ -267,10 +263,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     }
 
     /**
-     * There are two cases where we have other threads potentially blocking for events to be handled by this
-     * class. These are for the state manager (waiting for a state change) or a frame listener (waiting for a
-     * particular type of frame to arrive). When an error occurs we need to notify these waiters so that they can
-     * react appropriately.
+     * There are two cases where we have other threads potentially blocking for events to be handled by this class.
+     * These are for the state manager (waiting for a state change) or a frame listener (waiting for a particular type
+     * of frame to arrive). When an error occurs we need to notify these waiters so that they can react appropriately.
      *
      * @param e the exception to propagate
      */
@@ -306,13 +301,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
         HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
 
-        switch(bodyFrame.getFrameType())
+        switch (bodyFrame.getFrameType())
         {
             case AMQMethodBody.TYPE:
 
                 if (debug)
                 {
-                    _logger.debug("Method frame received: " + frame);
+                    _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
                 }
 
                 final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
@@ -362,10 +357,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 _protocolSession.messageContentBodyReceived(frame.getChannel(),
                                                             (ContentBody) bodyFrame);
                 break;
-            
+
             case HeartbeatBody.TYPE:
 
-                if(debug)
+                if (debug)
                 {
                     _logger.debug("Received heartbeat");
                 }
@@ -413,8 +408,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     }
 
     /**
-     * Convenience method that writes a frame to the protocol session. Equivalent
-     * to calling getProtocolSession().write().
+     * Convenience method that writes a frame to the protocol session. Equivalent to calling
+     * getProtocolSession().write().
      *
      * @param frame the frame to write
      */
@@ -429,30 +424,28 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     }
 
     /**
-     * Convenience method that writes a frame to the protocol session and waits for
-     * a particular response. Equivalent to calling getProtocolSession().write() then
-     * waiting for the response.
+     * Convenience method that writes a frame to the protocol session and waits for a particular response. Equivalent to
+     * calling getProtocolSession().write() then waiting for the response.
      *
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
     public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
-                                                            BlockingMethodFrameListener listener)
+                                                           BlockingMethodFrameListener listener)
             throws AMQException
     {
         return writeCommandFrameAndWaitForReply(frame, listener, DEFAULT_SYNC_TIMEOUT);
     }
 
     /**
-     * Convenience method that writes a frame to the protocol session and waits for
-     * a particular response. Equivalent to calling getProtocolSession().write() then
-     * waiting for the response.
+     * Convenience method that writes a frame to the protocol session and waits for a particular response. Equivalent to
+     * calling getProtocolSession().write() then waiting for the response.
      *
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
     public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame,
-                                                            BlockingMethodFrameListener listener, long timeout)
+                                                           BlockingMethodFrameListener listener, long timeout)
             throws AMQException
     {
         try
@@ -477,17 +470,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     }
 
-    /**
-     * More convenient method to write a frame and wait for it's response.
-     */
+    /** More convenient method to write a frame and wait for it's response. */
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass) throws AMQException
     {
         return syncWrite(frame, responseClass, DEFAULT_SYNC_TIMEOUT);
     }
 
-    /**
-     * More convenient method to write a frame and wait for it's response.
-     */
+    /** More convenient method to write a frame and wait for it's response. */
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass, long timeout) throws AMQException
     {
         return writeCommandFrameAndWaitForReply(frame,
@@ -495,9 +484,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     }
 
     /**
-     * Convenience method to register an AMQSession with the protocol handler. Registering
-     * a session with the protocol handler will ensure that messages are delivered to the
-     * consumer(s) on that session.
+     * Convenience method to register an AMQSession with the protocol handler. Registering a session with the protocol
+     * handler will ensure that messages are delivered to the consumer(s) on that session.
      *
      * @param channelId the channel id of the session
      * @param session   the session instance.
@@ -555,17 +543,13 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     }
 
-    /**
-     * @return the number of bytes read from this protocol session
-     */
+    /** @return the number of bytes read from this protocol session */
     public long getReadBytes()
     {
         return _protocolSession.getIoSession().getReadBytes();
     }
 
-    /**
-     * @return the number of bytes written to this protocol session
-     */
+    /** @return the number of bytes written to this protocol session */
     public long getWrittenBytes()
     {
         return _protocolSession.getIoSession().getWrittenBytes();
