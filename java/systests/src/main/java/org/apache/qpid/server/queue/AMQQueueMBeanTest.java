@@ -19,7 +19,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -151,7 +150,7 @@ public class AMQQueueMBeanTest extends TestCase
         AMQMessage msg = message(false);
         long id = msg.getMessageId();
         _queue.clearQueue(_storeContext);
-        _queue.process(_storeContext, msg);
+        _queue.process(_storeContext, msg, false);
         msg.routingComplete(_messageStore, _storeContext, new MessageHandleFactory());
         _queueMBean.viewMessageContent(id);
         try
@@ -216,7 +215,7 @@ public class AMQQueueMBeanTest extends TestCase
         }
         for (int i = 0; i < messageCount; i++)
         {
-            _queue.process(_storeContext, messages[i]);
+            _queue.process(_storeContext, messages[i], false);
         }
 
         for (int i = 0; i < messages.length; i++)

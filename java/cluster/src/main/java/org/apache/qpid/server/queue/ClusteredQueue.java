@@ -32,7 +32,6 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 
 /**
  * Represents a shared queue in a cluster. The key difference is that as well as any
@@ -56,10 +55,10 @@ public class ClusteredQueue extends AMQQueue
     }
 
 
-    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
         _logger.info(new LogMessage("{0} delivered to clustered queue {1}", msg, this));
-        super.process(storeContext, msg);
+        super.process(storeContext, msg, deliverFirst);
     }
 
     protected void autodelete() throws AMQException

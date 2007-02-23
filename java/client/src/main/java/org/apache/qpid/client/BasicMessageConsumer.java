@@ -745,28 +745,32 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 _logger.debug("Rejecting the messages for consumer with tag:" + _consumerTag);
             }
-            for (Object o : _synchronousQueue)
+            Iterator iterator = _synchronousQueue.iterator();
+            while (iterator.hasNext())
             {
+                Object o = iterator.next();
+
                 if (o instanceof AbstractJMSMessage)
                 {
-//                    _session.rejectMessage(((AbstractJMSMessage) o).getDeliveryTag(), true);
+                    _session.rejectMessage(((AbstractJMSMessage) o).getDeliveryTag(), true);
 
                     if (_logger.isTraceEnabled())
                     {
                         _logger.trace("Rejected message" + o);
+                        iterator.remove();
                     }
 
                 }
                 else
                 {
                     _logger.error("Queue contained a :" + o.getClass() +
-                                 " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                                  " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
                 }
             }
 
             if (_synchronousQueue.size() != 0)
             {
-                _logger.warn("Queue was not empty after rejecting all messages");
+                _logger.warn("Queue was not empty after rejecting all messages Remaining:" + _synchronousQueue.size());
             }
 
             _synchronousQueue.clear();

@@ -255,13 +255,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             return _connectionStopped;
         }
 
-        void setConnectionStopped(boolean connectionStopped)
+        boolean setConnectionStopped(boolean connectionStopped)
         {
+            boolean currently;
             synchronized (_lock)
             {
+                currently = _connectionStopped;
                 _connectionStopped = connectionStopped;
                 _lock.notify();
             }
+            return currently;
         }
 
         private void dispatchMessage(UnprocessedMessage message)
@@ -543,7 +546,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 if (!isSuspended)
                 {
-//                    suspendChannel(true);
+                    suspendChannel(true);
                 }
 
                 _connection.getProtocolHandler().syncWrite(
@@ -556,7 +559,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 if (!isSuspended)
                 {
-//                    suspendChannel(false);
+                    suspendChannel(false);
                 }
             }
             catch (AMQException e)
@@ -822,10 +825,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             boolean isSuspended = isSuspended();
 
-//            if (!isSuspended)
-//            {
-//                suspendChannel(true);
-//            }
+            if (!isSuspended)
+            {
+                suspendChannel(true);
+            }
 
             for (BasicMessageConsumer consumer : _consumers.values())
             {
@@ -841,15 +844,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                                        false)    // requeue
                     , BasicRecoverOkBody.class);
 
-//            if (_dispatcher != null)
-//            {
-//                _dispatcher.rollback();
-//            }
-//
-//            if (!isSuspended)
-//            {
-//                suspendChannel(false);
-//            }
+            if (_dispatcher != null)
+            {
+                _dispatcher.rollback();
+            }
+
+            if (!isSuspended)
+            {
+                suspendChannel(false);
+            }
         }
         catch (AMQException e)
         {
@@ -1952,7 +1955,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             if (_dispatcher == null)
             {
                 rejectMessagesForConsumerTag(consumer.getConsumerTag(), true);
-            }
+            }// if the dispatcher is running we have to do the clean up in the Ok Handler.
         }
     }
 
@@ -2171,8 +2174,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         rejectMessagesForConsumerTag(null, requeue);
     }
 
-    /** @param consumerTag The consumerTag to prune from queue or all if null
-     * @param requeue Should the removed messages be requeued (or discarded. Possibly to DLQ)
+    /**
+     * @param consumerTag The consumerTag to prune from queue or all if null
+     * @param requeue     Should the removed messages be requeued (or discarded. Possibly to DLQ)
      */
 
     private void rejectMessagesForConsumerTag(AMQShortString consumerTag, boolean requeue)
@@ -2192,7 +2196,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 messages.remove();
 
-//                rejectMessage(message.getDeliverBody().deliveryTag, requeue);
+                rejectMessage(message.getDeliverBody().deliveryTag, requeue);
 
                 _logger.debug("Rejected the message(" + message.getDeliverBody() + ") for consumer :" + consumerTag);
             }

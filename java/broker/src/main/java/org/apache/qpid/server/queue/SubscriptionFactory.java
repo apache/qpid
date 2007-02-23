@@ -26,16 +26,16 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 /**
- * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This
- * factory primarily assists testing although in future more sophisticated subscribers may need a different
- * subscription implementation.
+ * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This factory
+ * primarily assists testing although in future more sophisticated subscribers may need a different subscription
+ * implementation.
  *
  * @see org.apache.qpid.server.queue.AMQQueue
  */
 public interface SubscriptionFactory
 {
     Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag, boolean acks,
-                                    FieldTable filters, boolean noLocal) throws AMQException;
+                                    FieldTable filters, boolean noLocal, AMQQueue queue) throws AMQException;
 
 
     Subscription createSubscription(int channel, AMQProtocolSession protocolSession, AMQShortString consumerTag)
