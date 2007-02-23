@@ -49,7 +49,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i], false);
         }
 
         SubscriptionTestHelper s1 = new SubscriptionTestHelper("1");
@@ -59,7 +59,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i], false);
         }
 
         assertTrue(s1.getMessages().isEmpty());
@@ -97,7 +97,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
 
         for (int i = 0; i < batch; i++)
         {
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i], false);
         }
 
         assertEquals(batch, s1.getMessages().size());
@@ -111,7 +111,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         s1.setSuspended(true);
         for (int i = batch; i < messages.length; i++)
         {
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i]);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, messages[i], false);
         }
 
         _mgr.processAsync(new OnCurrentThreadExecutor());
@@ -133,7 +133,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
         try
         {
             AMQMessage msg = message(true);
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg, false);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }
@@ -155,7 +155,7 @@ abstract public class DeliveryManagerTest extends MessageTestHelper
             _subscriptions.addSubscriber(s);
             s.setSuspended(true);
             AMQMessage msg = message(true);
-            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg);
+            _mgr.deliver(_storeContext, DEFAULT_QUEUE_NAME, msg, false);
             msg.checkDeliveredToConsumer();
             fail("expected exception did not occur");
         }

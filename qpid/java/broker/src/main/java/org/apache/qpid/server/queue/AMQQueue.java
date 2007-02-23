@@ -45,13 +45,11 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
- * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like
- * that. It is described fully in RFC 006.
+ * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like that. It is described
+ * fully in RFC 006.
  */
 public class AMQQueue implements Managable, Comparable
 {
-
-
     public static final class ExistingExclusiveSubscription extends AMQException
     {
 
@@ -74,26 +72,19 @@ public class AMQQueue implements Managable, Comparable
     private static final ExistingSubscriptionPreventsExclusive EXISTING_SUBSCRIPTION = new ExistingSubscriptionPreventsExclusive();
 
 
-
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
     private final AMQShortString _name;
 
-    /**
-     * null means shared
-     */
+    /** null means shared */
     private final AMQShortString _owner;
 
     private final boolean _durable;
 
-    /**
-     * If true, this queue is deleted when the last subscriber is removed
-     */
+    /** If true, this queue is deleted when the last subscriber is removed */
     private final boolean _autoDelete;
 
-    /**
-     * Holds subscribers to the queue.
-     */
+    /** Holds subscribers to the queue. */
     private final SubscriptionSet _subscribers;
 
     private final SubscriptionFactory _subscriptionFactory;
@@ -106,20 +97,13 @@ public class AMQQueue implements Managable, Comparable
 
     private List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
 
-    /**
-     * Manages message delivery.
-     */
+    /** Manages message delivery. */
     private final DeliveryManager _deliveryMgr;
 
-    /**
-     * Used to track bindings to exchanges so that on deletion they can easily
-     * be cancelled.
-     */
+    /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
     private final ExchangeBindings _bindings = new ExchangeBindings(this);
 
-    /**
-     * Executor on which asynchronous delivery will be carriedout where required
-     */
+    /** Executor on which asynchronous delivery will be carriedout where required */
     private final Executor _asyncDelivery;
 
     private final AMQQueueMBean _managedObject;
@@ -127,39 +111,27 @@ public class AMQQueue implements Managable, Comparable
     private final VirtualHost _virtualHost;
 
 
-    /**
-     * max allowed size(KB) of a single message
-     */
+    /** max allowed size(KB) of a single message */
     @Configured(path = "maximumMessageSize", defaultValue = "0")
     public long _maximumMessageSize;
 
-    /**
-     * max allowed number of messages on a queue.
-     */
+    /** max allowed number of messages on a queue. */
     @Configured(path = "maximumMessageCount", defaultValue = "0")
     public int _maximumMessageCount;
 
-    /**
-     * max queue depth for the queue
-     */
+    /** max queue depth for the queue */
     @Configured(path = "maximumQueueDepth", defaultValue = "0")
     public long _maximumQueueDepth;
 
-    /**
-     * maximum message age before alerts occur
-     */
+    /** maximum message age before alerts occur */
     @Configured(path = "maximumMessageAge", defaultValue = "0")
     public long _maximumMessageAge;
 
-    /**
-     * the minimum interval between sending out consequetive alerts of the same type
-     */
+    /** the minimum interval between sending out consequetive alerts of the same type */
     @Configured(path = "minimumAlertRepeatGap", defaultValue = "0")
     public long _minimumAlertRepeatGap;
 
-    /**
-     * total messages received by the queue since startup.
-     */
+    /** total messages received by the queue since startup. */
     public AtomicLong _totalMessagesReceived = new AtomicLong();
 
     public int compareTo(Object o)
@@ -174,7 +146,6 @@ public class AMQQueue implements Managable, Comparable
         this(name, durable, owner, autoDelete, virtualHost,
              AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionSet(), new SubscriptionImpl.Factory());
     }
-
 
 
     protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
@@ -211,7 +182,7 @@ public class AMQQueue implements Managable, Comparable
 
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
-		_deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
+        _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
     }
 
     private AMQQueueMBean createMBean() throws AMQException
@@ -251,17 +222,13 @@ public class AMQQueue implements Managable, Comparable
         return _autoDelete;
     }
 
-    /**
-     * @return no of messages(undelivered) on the queue.
-     */
+    /** @return no of messages(undelivered) on the queue. */
     public int getMessageCount()
     {
         return _deliveryMgr.getQueueMessageCount();
     }
 
-    /**
-     * @return List of messages(undelivered) on the queue.
-     */
+    /** @return List of messages(undelivered) on the queue. */
     public List<AMQMessage> getMessagesOnTheQueue()
     {
         return _deliveryMgr.getMessages();
@@ -275,6 +242,7 @@ public class AMQQueue implements Managable, Comparable
 
     /**
      * @param messageId
+     *
      * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
      */
     public AMQMessage getMessageOnTheQueue(long messageId)
@@ -294,13 +262,12 @@ public class AMQQueue implements Managable, Comparable
     }
 
     /**
-     * moves messages from this queue to another queue. to do this the approach is following-
-     * - setup the queue for moving messages (hold the lock and stop the async delivery)
-     * - get all the messages available in the given message id range
-     * - setup the other queue for moving messages (hold the lock and stop the async delivery)
-     * - send these available messages to the other queue (enqueue in other queue)
-     * - Once sending to other Queue is successful, remove messages from this queue
-     * - remove locks from both queues and start async delivery
+     * moves messages from this queue to another queue. to do this the approach is following- - setup the queue for
+     * moving messages (hold the lock and stop the async delivery) - get all the messages available in the given message
+     * id range - setup the other queue for moving messages (hold the lock and stop the async delivery) - send these
+     * available messages to the other queue (enqueue in other queue) - Once sending to other Queue is successful,
+     * remove messages from this queue - remove locks from both queues and start async delivery
+     *
      * @param fromMessageId
      * @param toMessageId
      * @param queueName
@@ -316,7 +283,7 @@ public class AMQQueue implements Managable, Comparable
             startMovingMessages();
             List<AMQMessage> list = getMessagesOnTheQueue();
             List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
-            int maxMessageCountToBeMoved = (int)(toMessageId - fromMessageId + 1);
+            int maxMessageCountToBeMoved = (int) (toMessageId - fromMessageId + 1);
 
             // Run this loop till you find all the messages or the list has no more messages
             for (AMQMessage message : list)
@@ -344,7 +311,7 @@ public class AMQQueue implements Managable, Comparable
         {
             // remove the lock and start the async delivery
             anotherQueue.stopMovingMessages();
-            stopMovingMessages();   
+            stopMovingMessages();
         }
     }
 
@@ -364,10 +331,8 @@ public class AMQQueue implements Managable, Comparable
         _deliveryMgr.stopMovingMessages();
         _deliveryMgr.processAsync(_asyncDelivery);
     }
-    
-    /**
-     * @return MBean object associated with this Queue
-     */
+
+    /** @return MBean object associated with this Queue */
     public ManagedObject getManagedObject()
     {
         return _managedObject;
@@ -422,20 +387,16 @@ public class AMQQueue implements Managable, Comparable
     public long getOldestMessageArrivalTime()
     {
         return _deliveryMgr.getOldestMessageArrival();
-        
+
     }
 
-    /**
-     * Removes the AMQMessage from the top of the queue.
-     */
+    /** Removes the AMQMessage from the top of the queue. */
     public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _deliveryMgr.removeAMessageFromTop(storeContext);
     }
 
-    /**
-     * removes all the messages from the queue.
-     */
+    /** removes all the messages from the queue. */
     public synchronized long clearQueue(StoreContext storeContext) throws AMQException
     {
         return _deliveryMgr.clearAllMessages(storeContext);
@@ -443,10 +404,10 @@ public class AMQQueue implements Managable, Comparable
 
     public void bind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
     {
-        exchange.registerQueue(routingKey, this, arguments);        
-        if(isDurable() && exchange.isDurable())
+        exchange.registerQueue(routingKey, this, arguments);
+        if (isDurable() && exchange.isDurable())
         {
-            _virtualHost.getMessageStore().bindQueue(exchange,routingKey,this,arguments);
+            _virtualHost.getMessageStore().bindQueue(exchange, routingKey, this, arguments);
         }
         _bindings.addBinding(routingKey, arguments, exchange);
     }
@@ -454,9 +415,9 @@ public class AMQQueue implements Managable, Comparable
     public void unBind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
     {
         exchange.deregisterQueue(routingKey, this, arguments);
-        if(isDurable() && exchange.isDurable())
+        if (isDurable() && exchange.isDurable())
         {
-            _virtualHost.getMessageStore().unbindQueue(exchange,routingKey,this,arguments);
+            _virtualHost.getMessageStore().unbindQueue(exchange, routingKey, this, arguments);
         }
         _bindings.remove(routingKey, arguments, exchange);
     }
@@ -466,30 +427,31 @@ public class AMQQueue implements Managable, Comparable
                                         FieldTable filters, boolean noLocal, boolean exclusive)
             throws AMQException
     {
-        if(incrementSubscriberCount() > 1)
+        if (incrementSubscriberCount() > 1)
         {
-            if(isExclusive())
+            if (isExclusive())
             {
                 decrementSubscriberCount();
                 throw EXISTING_EXCLUSIVE;
             }
-            else if(exclusive)
+            else if (exclusive)
             {
                 decrementSubscriberCount();
                 throw EXISTING_SUBSCRIPTION;
             }
 
         }
-        else if(exclusive)
+        else if (exclusive)
         {
             setExclusive(true);
         }
 
         debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal);
+        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks,
+                                                                            filters, noLocal, this);
 
-        if(subscription.hasFilters())
+        if (subscription.hasFilters())
         {
             if (_deliveryMgr.hasQueuedMessages())
             {
@@ -537,9 +499,9 @@ public class AMQQueue implements Managable, Comparable
                                    " and protocol session key " + ps.getKey() + " not registered with queue " + this);
         }
 
+        removedSubscription.close();
         setExclusive(false);
         decrementSubscriberCount();
-
 
         // if we are eligible for auto deletion, unregister from the queue registry
         if (_autoDelete && _subscribers.isEmpty())
@@ -583,13 +545,13 @@ public class AMQQueue implements Managable, Comparable
 
     public void delete() throws AMQException
     {
-        if(!_deleted.getAndSet(true))
+        if (!_deleted.getAndSet(true))
         {
             _subscribers.queueDeleted(this);
             _bindings.deregister();
             _virtualHost.getQueueRegistry().unregisterQueue(_name);
             _managedObject.unregister();
-            for(Task task : _deleteTaskList)
+            for (Task task : _deleteTaskList)
             {
                 task.doTask(this);
             }
@@ -605,7 +567,8 @@ public class AMQQueue implements Managable, Comparable
 
     public void processGet(StoreContext storeContext, AMQMessage msg) throws AMQException
     {
-        _deliveryMgr.deliver(storeContext, getName(), msg);
+        //fixme not sure what this is doing. should we be passing deliverFirst through here?
+        _deliveryMgr.deliver(storeContext, getName(), msg, false);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -620,9 +583,9 @@ public class AMQQueue implements Managable, Comparable
     }
 
 
-    public void process(StoreContext storeContext, AMQMessage msg) throws AMQException
+    public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
-        _deliveryMgr.deliver(storeContext, getName(), msg);
+        _deliveryMgr.deliver(storeContext, getName(), msg, deliverFirst);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -731,7 +694,7 @@ public class AMQQueue implements Managable, Comparable
 
     public static interface Task
     {
-        public void doTask(AMQQueue queue) throws AMQException;        
+        public void doTask(AMQQueue queue) throws AMQException;
     }
 
     public void addQueueDeleteTask(Task task)
@@ -759,4 +722,8 @@ public class AMQQueue implements Managable, Comparable
         _maximumMessageAge = maximumMessageAge;
     }
 
+    public void subscriberHasPendingResend(boolean hasContent, SubscriptionImpl subscription, AMQMessage msg)
+    {
+        _deliveryMgr.subscriberHasPendingResend(hasContent, subscription, msg);
+    }
 }

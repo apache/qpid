@@ -32,8 +32,8 @@ import org.apache.qpid.server.store.StoreContext;
 interface DeliveryManager
 {
     /**
-     * Determines whether there are queued messages. Sets _queueing to false if
-     * there are no queued messages. This needs to be atomic.
+     * Determines whether there are queued messages. Sets _queueing to false if there are no queued messages. This needs
+     * to be atomic.
      *
      * @return true if there are queued messages
      */
@@ -43,34 +43,34 @@ interface DeliveryManager
      * This method should not be used to determin if there are messages in the queue.
      *
      * @return int The number of messages in the queue
+     *
      * @use hasQueuedMessages() for all controls relating to having messages on the queue.
      */
     int getQueueMessageCount();
 
     /**
-     * Requests that the delivery manager start processing the queue asynchronously
-     * if there is work that can be done (i.e. there are messages queued up and
-     * subscribers that can receive them.
-     * <p/>
-     * This should be called when subscribers are added, but only after the consume-ok
-     * message has been returned as message delivery may start immediately. It should also
-     * be called after unsuspending a client.
-     * <p/>
+     * Requests that the delivery manager start processing the queue asynchronously if there is work that can be done
+     * (i.e. there are messages queued up and subscribers that can receive them. <p/> This should be called when
+     * subscribers are added, but only after the consume-ok message has been returned as message delivery may start
+     * immediately. It should also be called after unsuspending a client. <p/>
      *
      * @param executor the executor on which the delivery should take place
      */
     void processAsync(Executor executor);
 
     /**
-     * Handles message delivery. The delivery manager is always in one of two modes;
-     * it is either queueing messages for asynchronous delivery or delivering
-     * directly.
+     * Handles message delivery. The delivery manager is always in one of two modes; it is either queueing messages for
+     * asynchronous delivery or delivering directly.
      *
-     * @param name the name of the entity on whose behalf we are delivering the message
-     * @param msg  the message to deliver
-     * @throws org.apache.qpid.server.queue.FailedDequeueException if the message could not be dequeued
+     * @param storeContext
+     * @param name         the name of the entity on whose behalf we are delivering the message
+     * @param msg          the message to deliver
+     * @param deliverFirst
+     *
+     * @throws org.apache.qpid.server.queue.FailedDequeueException
+     *          if the message could not be dequeued
      */
-    void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg) throws FailedDequeueException, AMQException;
+    void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg, boolean deliverFirst) throws FailedDequeueException, AMQException;
 
     void removeAMessageFromTop(StoreContext storeContext) throws AMQException;
 
@@ -93,4 +93,6 @@ interface DeliveryManager
     long getTotalMessageSize();
 
     long getOldestMessageArrival();
+
+    void subscriberHasPendingResend(boolean hasContent, Subscription subscription, AMQMessage msg);
 }

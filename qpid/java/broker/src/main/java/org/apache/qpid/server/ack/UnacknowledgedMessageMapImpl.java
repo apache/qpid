@@ -85,7 +85,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             for (UnacknowledgedMessage msg : msgs)
             {
                 remove(msg.deliveryTag);
-
             }
         }
     }

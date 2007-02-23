@@ -117,7 +117,17 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
         return null;
     }
 
-    public void enqueueForPreDelivery(AMQMessage msg)
+    public Queue<AMQMessage> getResendQueue()
+    {
+        return null;
+    }
+
+    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    {
+        return messages;
+    }
+
+    public void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst)
     {
         //no-op -- if selectors are implemented on RemoteSubscriptions then look at SubscriptionImpl
     }
@@ -132,6 +142,11 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
         //no-op
     }
 
+    public boolean isClosed()
+    {
+        return false;
+    }
+
     public boolean isBrowser()
     {
         return false;
@@ -140,6 +155,16 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
     public boolean wouldSuspend(AMQMessage msg)
     {
         return _suspended;
+    }
+
+    public void addToResendQueue(AMQMessage msg)
+    {
+        //no-op
+    }
+
+    public Object getSendLock()
+    {
+        return new Object();
     }
 
 }

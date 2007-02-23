@@ -46,6 +46,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.Subscription;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
@@ -74,28 +75,20 @@ public class AMQChannel
      */
     private AtomicLong _deliveryTag = new AtomicLong(0);
 
-    /**
-     * A channel has a default queue (the last declared) that is used when no queue name is
-     * explictily set
-     */
+    /** A channel has a default queue (the last declared) that is used when no queue name is explictily set */
     private AMQQueue _defaultQueue;
 
-    /**
-     * This tag is unique per subscription to a queue. The server returns this in response to a
-     * basic.consume request.
-     */
+    /** This tag is unique per subscription to a queue. The server returns this in response to a basic.consume request. */
     private int _consumerTag;
 
     /**
-     * The current message - which may be partial in the sense that not all frames have been received yet -
-     * which has been received by this channel. As the frames are received the message gets updated and once all
-     * frames have been received the message can then be routed.
+     * The current message - which may be partial in the sense that not all frames have been received yet - which has
+     * been received by this channel. As the frames are received the message gets updated and once all frames have been
+     * received the message can then be routed.
      */
     private AMQMessage _currentMessage;
 
-    /**
-     * Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue.
-     */
+    /** Maps from consumer tag to queue instance. Allows us to unsubscribe from a queue. */
     private final Map<AMQShortString, AMQQueue> _consumerTag2QueueMap = new HashMap<AMQShortString, AMQQueue>();
 
     private final MessageStore _messageStore;
@@ -109,8 +102,8 @@ public class AMQChannel
     private TransactionalContext _txnContext;
 
     /**
-     * A context used by the message store enabling it to track context for a given channel even across
-     * thread boundaries
+     * A context used by the message store enabling it to track context for a given channel even across thread
+     * boundaries
      */
     private final StoreContext _storeContext;
 
@@ -121,7 +114,6 @@ public class AMQChannel
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
     private final AMQProtocolSession _session;
-
 
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
@@ -138,9 +130,7 @@ public class AMQChannel
         _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
     }
 
-    /**
-     * Sets this channel to be part of a local transaction
-     */
+    /** Sets this channel to be part of a local transaction */
     public void setLocalTransactional()
     {
         _txnContext = new LocalTransactionalContext(_messageStore, _storeContext, _returnMessages);
@@ -293,17 +283,17 @@ public class AMQChannel
     }
 
     /**
-     * Subscribe to a queue. We register all subscriptions in the channel so that
-     * if the channel is closed we can clean up all subscriptions, even if the
-     * client does not explicitly unsubscribe from all queues.
+     * Subscribe to a queue. We register all subscriptions in the channel so that if the channel is closed we can clean
+     * up all subscriptions, even if the client does not explicitly unsubscribe from all queues.
      *
-     * @param tag     the tag chosen by the client (if null, server will generate one)
-     * @param queue   the queue to subscribe to
-     * @param session the protocol session of the subscriber
+     * @param tag       the tag chosen by the client (if null, server will generate one)
+     * @param queue     the queue to subscribe to
+     * @param session   the protocol session of the subscriber
      * @param noLocal
      * @param exclusive
-     * @return the consumer tag. This is returned to the subscriber and used in
-     *         subsequent unsubscribe requests
+     *
+     * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
+     *
      * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
@@ -335,7 +325,7 @@ public class AMQChannel
     }
 
     /**
-     * Called from the protocol session to close this channel and clean up.
+     * Called from the protocol session to close this channel and clean up. T
      *
      * @throws AMQException if there is an error during closure
      */
@@ -344,8 +334,6 @@ public class AMQChannel
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
         requeue();
-        _txnContext.commit();
-
     }
 
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
@@ -362,8 +350,8 @@ public class AMQChannel
      * Add a message to the channel-based list of unacknowledged messages
      *
      * @param message     the message that was delivered
-     * @param deliveryTag the delivery tag used when delivering the message (see protocol spec for description of
-     *                    the delivery tag)
+     * @param deliveryTag the delivery tag used when delivering the message (see protocol spec for description of the
+     *                    delivery tag)
      * @param queue       the queue from which the message was delivered
      */
     public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, AMQShortString consumerTag, AMQQueue queue)
@@ -376,8 +364,8 @@ public class AMQChannel
     }
 
     /**
-     * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel.
-     * May result in delivery to this same channel or to other subscribers.
+     * Called to attempt re-enqueue all outstanding unacknowledged messages on the channel. May result in delivery to
+     * this same channel or to other subscribers.
      *
      * @throws org.apache.qpid.AMQException if the requeue fails
      */
@@ -386,23 +374,75 @@ public class AMQChannel
         // we must create a new map since all the messages will get a new delivery tag when they are redelivered
         Collection<UnacknowledgedMessage> messagesToBeDelivered = _unacknowledgedMessageMap.cancelAllMessages();
 
+        TransactionalContext nontransacted = null;
+        if (!(_txnContext instanceof NonTransactionalContext))
+        {
+            nontransacted = new NonTransactionalContext(_messageStore, _storeContext, this,
+                                                        _returnMessages, _browsedAcks);
+        }
+
+
         for (UnacknowledgedMessage unacked : messagesToBeDelivered)
         {
             if (unacked.queue != null)
             {
-                _txnContext.deliver(unacked.message, unacked.queue);
+                // Deliver these messages out of the transaction as their delivery was never
+                // part of the transaction only the receive.
+                if (!(_txnContext instanceof NonTransactionalContext))
+                {
+                    nontransacted.deliver(unacked.message, unacked.queue, false);
+                }
+                else
+                {
+                    _txnContext.deliver(unacked.message, unacked.queue, false);
+                }
             }
         }
 
     }
 
+    public void requeue(long deliveryTag) throws AMQException
+    {
+        UnacknowledgedMessage unacked = _unacknowledgedMessageMap.remove(deliveryTag);
 
-    /**
-     * Called to resend all outstanding unacknowledged messages to this same channel.
-     */
+        if (unacked != null)
+        {
+            TransactionalContext nontransacted = null;
+            if (!(_txnContext instanceof NonTransactionalContext))
+            {
+                nontransacted = new NonTransactionalContext(_messageStore, _storeContext, this,
+                                                            _returnMessages, _browsedAcks);
+            }
+
+            if (!(_txnContext instanceof NonTransactionalContext))
+            {
+                nontransacted.deliver(unacked.message, unacked.queue, false);
+            }
+            else
+            {
+                _txnContext.deliver(unacked.message, unacked.queue, false);
+            }
+            unacked.message.decrementReference(_storeContext);
+        }
+        else
+        {
+            _log.error("Requested requeue of message:" + deliveryTag + " but no such delivery tag exists");
+        }
+
+
+    }
+
+
+    /** Called to resend all outstanding unacknowledged messages to this same channel. */
     public void resend(final AMQProtocolSession session, final boolean requeue) throws AMQException
     {
         final List<UnacknowledgedMessage> msgToRequeue = new LinkedList<UnacknowledgedMessage>();
+        final List<UnacknowledgedMessage> msgToResend = new LinkedList<UnacknowledgedMessage>();
+
+        if (_log.isInfoEnabled())
+        {
+            _log.info("unacked map contains " + _unacknowledgedMessageMap.size());
+        }
 
         _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
         {
@@ -412,21 +452,40 @@ public class AMQChannel
                 AMQShortString consumerTag = message.consumerTag;
                 AMQMessage msg = message.message;
                 msg.setRedelivered(true);
-                if((consumerTag != null) && _consumerTag2QueueMap.containsKey(consumerTag) && !isSuspended())
+                if (consumerTag != null)
                 {
-                    msg.writeDeliver(session, _channelId, deliveryTag, consumerTag);
+                    // Consumer exists
+                    if (_consumerTag2QueueMap.containsKey(consumerTag))
+                    {
+                        msgToResend.add(message);
+                    }
+                    else // consumer has gone
+                    {
+                        msgToRequeue.add(message);
+                    }
                 }
                 else
                 {
                     // Message has no consumer tag, so was "delivered" to a GET
                     // or consumer no longer registered
                     // cannot resend, so re-queue.
-                    if (message.queue != null && (consumerTag == null || requeue))
+                    if (message.queue != null)
                     {
-                        msgToRequeue.add(message);                         
+                        if (requeue)
+                        {
+                            msgToRequeue.add(message);
+                        }
+                        else
+                        {
+                            _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
+                        }
+                    }
+                    else
+                    {
+                        _log.info("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
                     }
                 }
-                
+
                 // false means continue processing
                 return false;
             }
@@ -436,21 +495,112 @@ public class AMQChannel
             }
         });
 
-        for(UnacknowledgedMessage message : msgToRequeue)
+        // Process Messages to Resend
+        if (_log.isInfoEnabled())
         {
-            _txnContext.deliver(message.message, message.queue);
+            if (!msgToResend.isEmpty())
+            {
+                _log.info("Preparing (" + msgToResend.size() + ") message to resend to.");
+            }
+        }
+        for (UnacknowledgedMessage message : msgToResend)
+        {
+            AMQMessage msg = message.message;
+
+            // Our Java Client will always suspend the channel when resending!!
+//            if (isSuspended())
+//            {
+//                _log.info("Channel is suspended so requeuing");
+//                //move this message to requeue
+//                msgToRequeue.add(message);
+//            }
+//            else
+            {
+                //release to allow it to be delivered
+                msg.release();
+
+                // Without any details from the client about what has been processed we have to mark
+                // all messages in the unacked map as redelivered.
+                msg.setRedelivered(true);
+
+
+                Subscription sub = msg.getDeliveredSubscription();
+
+                if (sub != null)
+                {
+                    synchronized (sub.getSendLock())
+                    {
+                        if (sub.isClosed())
+                        {
+                            _log.info("Subscription closed during resend so requeuing message");
+                            //move this message to requeue
+                            msgToRequeue.add(message);
+                        }
+                        else
+                        {
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug("Requeuing (" + System.identityHashCode(msg) + ") for resend");
+                            }
+                            // Will throw an exception if the sub is closed
+                            sub.addToResendQueue(msg);
+                            _unacknowledgedMessageMap.remove(message.deliveryTag);
+                            // Don't decrement as we are bypassing the normal deliver which increments
+                            // this is what there is a decrement on the Requeue as deliver will increment.
+                            // msg.decrementReference(_storeContext);
+                        }
+                    }
+                }
+                else
+                {
+                    _log.info("DeliveredSubscription not recorded so just requeueing to prevent loss");
+                    //move this message to requeue
+                    msgToRequeue.add(message);
+                }
+            }
+        }
+
+        if (_log.isInfoEnabled())
+        {
+            if (!msgToRequeue.isEmpty())
+            {
+                _log.info("Preparing (" + msgToRequeue.size() + ") message to requeue to.");
+            }
+        }
+
+        TransactionalContext nontransacted = null;
+        if (!(_txnContext instanceof NonTransactionalContext))
+        {
+            nontransacted = new NonTransactionalContext(_messageStore, _storeContext, this,
+                                                        _returnMessages, _browsedAcks);
+        }
+
+        // Process Messages to Requeue at the front of the queue
+        for (UnacknowledgedMessage message : msgToRequeue)
+        {
+            // Deliver these messages out of the transaction as their delivery was never
+            // part of the transaction only the receive.
+            if (!(_txnContext instanceof NonTransactionalContext))
+            {
+                nontransacted.deliver(message.message, message.queue, true);
+            }
+            else
+            {
+                _txnContext.deliver(message.message, message.queue, true);
+            }
+
             _unacknowledgedMessageMap.remove(message.deliveryTag);
             message.message.decrementReference(_storeContext);
         }
     }
 
     /**
-     * Callback indicating that a queue has been deleted. We must update the structure of unacknowledged
-     * messages to remove the queue reference and also decrement any message reference counts, without
-     * actually removing the item since we may get an ack for a delivery tag that was generated from the
-     * deleted queue.
+     * Callback indicating that a queue has been deleted. We must update the structure of unacknowledged messages to
+     * remove the queue reference and also decrement any message reference counts, without actually removing the item
+     * since we may get an ack for a delivery tag that was generated from the deleted queue.
      *
      * @param queue the queue that has been deleted
+     *
      * @throws org.apache.qpid.AMQException if there is an error processing the unacked messages
      */
     public void queueDeleted(final AMQQueue queue) throws AMQException
@@ -487,6 +637,7 @@ public class AMQChannel
      * @param deliveryTag the last delivery tag
      * @param multiple    if true will acknowledge all messages up to an including the delivery tag. if false only
      *                    acknowledges the single message specified by the delivery tag
+     *
      * @throws AMQException if the delivery tag is unknown (e.g. not outstanding) on this channel
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
@@ -517,10 +668,10 @@ public class AMQChannel
     private void checkSuspension()
     {
         boolean suspend;
-        
-        suspend = ((_prefetch_HighWaterMark != 0) &&  _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark)
-                 || ((_prefetchSize != 0) && _prefetchSize < _unacknowledgedMessageMap.getUnacknowledgeBytes());
-        
+
+        suspend = ((_prefetch_HighWaterMark != 0) && _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark)
+                  || ((_prefetchSize != 0) && _prefetchSize < _unacknowledgedMessageMap.getUnacknowledgeBytes());
+
         setSuspended(suspend);
     }
 
@@ -570,8 +721,6 @@ public class AMQChannel
     public void rollback() throws AMQException
     {
         _txnContext.rollback();
-
-
     }
 
     public String toString()
@@ -617,8 +766,8 @@ public class AMQChannel
         }
         else
         {
-            boolean willSuspend = ((_prefetch_HighWaterMark != 0) &&  _unacknowledgedMessageMap.size() + 1 > _prefetch_HighWaterMark);
-            if(!willSuspend)
+            boolean willSuspend = ((_prefetch_HighWaterMark != 0) && _unacknowledgedMessageMap.size() + 1 > _prefetch_HighWaterMark);
+            if (!willSuspend)
             {
                 final long unackedSize = _unacknowledgedMessageMap.getUnacknowledgeBytes();
 
@@ -626,12 +775,17 @@ public class AMQChannel
             }
 
 
-            if(willSuspend)
+            if (willSuspend)
             {
                 setSuspended(true);
             }
             return willSuspend;
         }
 
+    }
+
+    public TransactionalContext getTransactionalContext()
+    {
+        return _txnContext;
     }
 }

@@ -38,13 +38,23 @@ public interface Subscription
 
     Queue<AMQMessage> getPreDeliveryQueue();
 
-    void enqueueForPreDelivery(AMQMessage msg);
+    Queue<AMQMessage> getResendQueue();
+
+    Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages);    
+
+    void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst);
 
     boolean isAutoClose();
 
     void close();
 
+    boolean isClosed();
+
     boolean isBrowser();
 
     boolean wouldSuspend(AMQMessage msg);
+
+    void addToResendQueue(AMQMessage msg);
+
+    Object getSendLock();
 }

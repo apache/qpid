@@ -87,17 +87,17 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         switch (contentType)
         {
 
-        case AMQDestination.QUEUE_TYPE:
-            dest = new AMQQueue(exchange, routingKey, routingKey);
-            break;
+            case AMQDestination.QUEUE_TYPE:
+                dest = new AMQQueue(exchange, routingKey, routingKey);
+                break;
 
-        case AMQDestination.TOPIC_TYPE:
-            dest = new AMQTopic(exchange, routingKey, null);
-            break;
+            case AMQDestination.TOPIC_TYPE:
+                dest = new AMQTopic(exchange, routingKey, null);
+                break;
 
-        default:
-            dest = new AMQUndefinedDestination(exchange, routingKey, null);
-            break;
+            default:
+                dest = new AMQUndefinedDestination(exchange, routingKey, null);
+                break;
         }
         //Destination dest = AMQDestination.createDestination(url);
         setJMSDestination(dest);
@@ -203,7 +203,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (!(destination instanceof AMQDestination))
         {
             throw new IllegalArgumentException(
-                "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
+                    "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
         }
 
         final AMQDestination amqd = (AMQDestination) destination;
@@ -495,8 +495,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     public abstract void clearBodyImpl() throws JMSException;
 
     /**
-     * Get a String representation of the body of the message. Used in the
-     * toString() method which outputs this before message properties.
+     * Get a String representation of the body of the message. Used in the toString() method which outputs this before
+     * message properties.
      */
     public abstract String toBodyString() throws JMSException;
 
@@ -519,7 +519,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             buf.append("\nJMS priority: ").append(getJMSPriority());
             buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
             buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
+            buf.append("\nJMS Redelivered: ").append(_redelivered);
+            buf.append("\nJMS Destination: ").append(getJMSDestination());
+            buf.append("\nJMS Type: ").append(getJMSType());
+            buf.append("\nJMS MessageID: ").append(getJMSMessageID());
             buf.append("\nAMQ message number: ").append(_deliveryTag);
+
             buf.append("\nProperties:");
             if (getJmsHeaders().isEmpty())
             {

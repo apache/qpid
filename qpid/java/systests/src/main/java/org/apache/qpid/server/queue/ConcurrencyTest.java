@@ -194,7 +194,7 @@ public class ConcurrencyTest extends MessageTestHelper
             AMQMessage msg = nextMessage();
             if (msg != null)
             {
-                _deliveryMgr.deliver(null, new AMQShortString(toString()), msg);
+                _deliveryMgr.deliver(null, new AMQShortString(toString()), msg, false);
             }
         }
     }
