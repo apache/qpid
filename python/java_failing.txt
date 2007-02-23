@@ -12,14 +12,7 @@ tests.basic.BasicTests.test_recover_requeue
 tests.exchange.RecommendedTypesRuleTests.testTopic
 tests.exchange.RequiredInstancesRuleTests.testAmqTopic
 
-
-tests.message.MessageTests.test_get
 tests.message.MessageTests.test_checkpoint
 tests.message.MessageTests.test_reject
-
-tests.queue.QueueTests.test_unbind_direct
-tests.queue.QueueTests.test_unbind_topic
-tests.queue.QueueTests.test_unbind_headers
-tests.queue.QueueTests.test_unbind_fanout
 
 tests.broker.BrokerTests.test_ping_pong
