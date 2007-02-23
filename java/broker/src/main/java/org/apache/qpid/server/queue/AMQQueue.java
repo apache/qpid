@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MessageGetBody;
+import org.apache.qpid.protocol.RequestToken;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -349,6 +351,11 @@ public class AMQQueue implements Managable, Comparable
         _bindings.addBinding(routingKey, exchange);
     }
 
+    public void unbind(AMQShortString routingKey, Exchange exchange) throws AMQException
+    {
+        _bindings.unbind(routingKey, exchange);
+    }
+
     public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks,
                                         FieldTable filters, boolean noLocal, boolean exclusive)
             throws AMQException
@@ -598,9 +605,9 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException
+    public boolean performGet(RequestToken<MessageGetBody> request, AMQChannel channel) throws AMQException
     {
-        return _deliveryMgr.performGet(session, channel, acks);
+        return _deliveryMgr.performGet(request, channel);
     }
 
     public QueueRegistry getQueueRegistry()

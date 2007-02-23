@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MessageGetBody;
+import org.apache.qpid.protocol.RequestToken;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -81,7 +83,7 @@ interface DeliveryManager
 
     void populatePreDeliveryQueue(Subscription subscription);
 
-    boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException;
+    boolean performGet(RequestToken<MessageGetBody> request, AMQChannel channel) throws AMQException;
 
     long getTotalMessageSize();
 }

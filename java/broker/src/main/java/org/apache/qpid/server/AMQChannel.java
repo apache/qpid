@@ -22,7 +22,6 @@ package org.apache.qpid.server;
 
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.MessageOkBody;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
@@ -32,12 +31,15 @@ import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.framing.MessageCloseBody;
+import org.apache.qpid.framing.MessageGetBody;
 import org.apache.qpid.framing.MessageOpenBody;
+import org.apache.qpid.framing.MessageOkBody;
 import org.apache.qpid.framing.MessageTransferBody;
 import org.apache.qpid.framing.RequestManager;
 import org.apache.qpid.framing.ResponseManager;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQProtocolWriter;
+import org.apache.qpid.protocol.RequestToken;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
@@ -349,6 +351,12 @@ public class AMQChannel
                                _session.getProtocolMinorVersion()
                            );
         _session.writeResponse(_channelId, msg.getRequestId(), ok);
+    }
+
+    public void deliverGet(RequestToken<MessageGetBody> request, long deliveryTag, AMQMessage msg)
+    {                            
+        request.respond(MessageOkBody.createMethodBody(request.getMajor(), request.getMinor()));
+        deliver(msg, request.getRequest().destination, deliveryTag);
     }
 
     public void deliver(AMQMessage msg, AMQShortString destination, final long deliveryTag)
