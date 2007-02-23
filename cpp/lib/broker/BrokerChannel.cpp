@@ -233,7 +233,6 @@ void Channel::complete(Message::shared_ptr msg) {
     }
 }
 
-// TODO astitcher 2007-02-08 This only deals correctly with non batched responses
 void Channel::ack(){
 	ack(getFirstAckRequest(), getLastAckRequest());
 }
@@ -248,8 +247,7 @@ void Channel::ack(u_int64_t deliveryTag, bool multiple){
 
 void Channel::ack(u_int64_t firstTag, u_int64_t lastTag){
     if(transactional){
-    	//FIXME astitcher This only works for Basic style acks
-        accumulatedAck.update(lastTag, lastTag);
+        accumulatedAck.update(firstTag, lastTag);
 
         //TODO: I think the outstanding prefetch size & count should be updated at this point...
         //TODO: ...this may then necessitate dispatching to consumers
