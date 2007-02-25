@@ -45,7 +45,7 @@ import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
@@ -59,7 +59,8 @@ import org.apache.qpid.url.URLSyntaxException;
  * Main entry point for AMQPD.
  *
  */
-public class Main implements ProtocolVersionList
+@SuppressWarnings({"AccessStaticViaInstance"})
+public class Main
 {
     private static final Logger _logger = Logger.getLogger(Main.class);
 
@@ -143,12 +144,21 @@ public class Main implements ProtocolVersionList
         else if (commandLine.hasOption("v"))
         {
             String ver = "Qpid 0.9.0.0";
-            String protocol = "AMQP version(s) [major.minor]: ";
-            for (int i=0; i<pv.length; i++)
+            StringBuilder protocol = new StringBuilder("AMQP version(s) [major.minor]: ");
+
+            boolean first = true;
+            for (ProtocolVersion pv : ProtocolVersion.getSupportedProtocolVersions())
             {
-                if (i > 0)
-                    protocol += ", ";
-                protocol += pv[i][PROTOCOL_MAJOR] + "." + pv[i][PROTOCOL_MINOR];
+                if(first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    protocol.append(", ");
+                }
+                protocol.append(pv.getMajorVersion()).append('-').append(pv.getMinorVersion());
+
             }
             System.out.println(ver + " (" + protocol + ")");
         }

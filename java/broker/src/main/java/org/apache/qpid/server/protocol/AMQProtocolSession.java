@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
@@ -161,5 +162,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     void addSessionCloseTask(Task task);
 
     void removeSessionCloseTask(Task task);
+
+    public ProtocolOutputConverter getProtocolOutputConverter();
 
 }

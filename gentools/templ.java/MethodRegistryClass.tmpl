@@ -69,6 +69,11 @@ public class MainRegistry
 	    
     }
 	
+    
+	public static VersionSpecificRegistry getVersionSpecificRegistry(ProtocolVersion pv)
+	{
+        return getVersionSpecificRegistry(pv.getMajorVersion(), pv.getMinorVersion());
+    }
 	public static VersionSpecificRegistry getVersionSpecificRegistry(byte major, byte minor)
 	{
 		try

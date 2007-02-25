@@ -41,9 +41,9 @@ import javax.management.openmbean.TabularType;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -344,12 +344,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         try
         {
             // Create header attributes list
-            BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) msg.getContentHeaderBody().properties;
+            CommonContentHeaderProperties headerProperties = (CommonContentHeaderProperties) msg.getContentHeaderBody().properties;
             String mimeType = null, encoding = null;
             if (headerProperties != null)
             {
-                mimeType = headerProperties.getContentType();
-                encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding();
+                AMQShortString mimeTypeShortSting = headerProperties.getContentType();
+                mimeType = mimeTypeShortSting == null ? null : mimeTypeShortSting.toString();
+                encoding = headerProperties.getEncoding() == null ? "" : headerProperties.getEncoding().toString();
             }
             Object[] itemValues = {msgId, mimeType, encoding, msgContent.toArray(new Byte[0])};
             return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
@@ -382,7 +383,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                 AMQMessage msg = list.get(i - 1);
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
-                BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.properties;
+                CommonContentHeaderProperties headerProperties = (CommonContentHeaderProperties) headerBody.properties;
                 String[] headerAttributes = headerProperties.toString().split(",");
                 Object[] itemValues = {msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered()};
                 CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);

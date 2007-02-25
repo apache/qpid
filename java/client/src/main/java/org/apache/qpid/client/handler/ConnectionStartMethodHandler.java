@@ -44,7 +44,7 @@ import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener
@@ -69,28 +69,21 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
-        byte major = (byte) body.versionMajor;
-        byte minor = (byte) body.versionMinor;
-        boolean versionOk = false;
+        ProtocolVersion pv = new ProtocolVersion((byte) body.versionMajor,(byte) body.versionMinor);
+
 
         // For the purposes of interop, we can make the client accept the broker's version string.
         // If it does, it then internally records the version as being the latest one that it understands.
         // It needs to do this since frame lookup is done by version.
-        if (Boolean.getBoolean("qpid.accept.broker.version"))
+        if (Boolean.getBoolean("qpid.accept.broker.version") && !pv.isSupported())
         {
-            versionOk = true;
-            int lastIndex = ProtocolVersionList.pv.length - 1;
-            major = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MAJOR];
-            minor = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MINOR];
-        }
-        else
-        {
-            versionOk = checkVersionOK(major, minor);
+
+            pv = ProtocolVersion.getLatestSupportedVersion();
         }
 
-        if (versionOk)
+        if (pv.isSupported())
         {
-            protocolSession.setProtocolVersion(major, minor);
+            protocolSession.setProtocolVersion(pv.getMajorVersion(), pv.getMinorVersion());
 
             try
             {
@@ -189,20 +182,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         }
     }
 
-    private boolean checkVersionOK(byte versionMajor, byte versionMinor)
-    {
-        byte[][] supportedVersions = ProtocolVersionList.pv;
-        boolean supported = false;
-        int i = supportedVersions.length;
-        while ((i-- != 0) && !supported)
-        {
-            supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
-                        && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
-        }
-
-        return supported;
-    }
-
+  
     private String getFullSystemInfo()
     {
         StringBuffer fullSystemInfo = new StringBuffer();
