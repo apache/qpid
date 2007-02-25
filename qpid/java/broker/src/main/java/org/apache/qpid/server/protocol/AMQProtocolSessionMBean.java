@@ -24,6 +24,7 @@ import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.NotCompliantMBeanException;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -65,7 +66,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
-    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
+    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
     {
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
@@ -74,6 +75,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
         init();
     }
+
+
     static
     {
         try
@@ -94,7 +97,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     {
 
         _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
-                _channelAtttibuteNames, _channelAttributeTypes);
+                                         _channelAtttibuteNames, _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
     }
 

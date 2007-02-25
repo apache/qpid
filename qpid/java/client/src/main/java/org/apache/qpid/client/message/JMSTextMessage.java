@@ -116,7 +116,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 _data.limit(text.length()) ;
                 //_data.sweep();
                 _data.setAutoExpand(true);
-                final String encoding = getContentHeaderProperties().getEncoding();
+                final String encoding = getContentHeaderProperties().getEncodingAsString();
                 if (encoding == null)
                 {
                     _data.put(text.getBytes());
@@ -155,11 +155,11 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
             {
                 return null;
             }
-            if (getContentHeaderProperties().getEncoding() != null)
+            if (getContentHeaderProperties().getEncodingAsString() != null)
             {
                 try
                 {
-                    _decodedValue = _data.getString(Charset.forName(getContentHeaderProperties().getEncoding()).newDecoder());
+                    _decodedValue = _data.getString(Charset.forName(getContentHeaderProperties().getEncodingAsString()).newDecoder());
                 }
                 catch (CharacterCodingException e)
                 {

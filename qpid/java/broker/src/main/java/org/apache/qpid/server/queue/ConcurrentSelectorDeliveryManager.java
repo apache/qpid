@@ -270,7 +270,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         channel.addUnacknowledgedMessage(msg, deliveryTag, null, _queue);
                     }
 
-                    msg.writeGetOk(protocolSession, channel.getChannelId(), deliveryTag, _queue.getMessageCount());
+                    protocolSession.getProtocolOutputConverter().writeGetOk(msg, channel.getChannelId(),
+                                                                            deliveryTag, _queue.getMessageCount());
                     _totalMessageSize.addAndGet(-msg.getSize());
                 }
             }
