@@ -25,25 +25,50 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.qpid.AMQException;
 
+import java.io.UnsupportedEncodingException;
+
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
-    public char[] header = new char[]{'A','M','Q','P'};
+
     // TODO: generate these constants automatically from the xml protocol spec file
+    public static final byte[] AMQP_HEADER = new byte[]{(byte)'A',(byte)'M',(byte)'Q',(byte)'P'};
 
-    private static byte CURRENT_PROTOCOL_CLASS = 1;
-    private static final int CURRENT_PROTOCOL_INSTANCE = 1;
+    private static final byte CURRENT_PROTOCOL_CLASS = 1;
+    private static final byte TCP_PROTOCOL_INSTANCE = 1;
 
-    public byte protocolClass = CURRENT_PROTOCOL_CLASS;
-    public byte protocolInstance = CURRENT_PROTOCOL_INSTANCE;
-    public byte protocolMajor;
-    public byte protocolMinor;
+    public final byte[] _protocolHeader;
+    public final byte _protocolClass;
+    public final byte _protocolInstance;
+    public final byte _protocolMajor;
+    public final byte _protocolMinor;
+
 
 //    public ProtocolInitiation() {}
 
-    public ProtocolInitiation(byte major, byte minor)
+    public ProtocolInitiation(byte[] protocolHeader, byte protocolClass, byte protocolInstance, byte protocolMajor, byte protocolMinor)
     {
-        protocolMajor = major;
-        protocolMinor = minor;
+        _protocolHeader = protocolHeader;
+        _protocolClass = protocolClass;
+        _protocolInstance = protocolInstance;
+        _protocolMajor = protocolMajor;
+        _protocolMinor = protocolMinor;
+    }
+
+    public ProtocolInitiation(ProtocolVersion pv)
+    {
+        this(AMQP_HEADER, CURRENT_PROTOCOL_CLASS, TCP_PROTOCOL_INSTANCE, pv.getMajorVersion(), pv.getMinorVersion());
+    }
+
+
+    public ProtocolInitiation(ByteBuffer in)
+    {
+        _protocolHeader = new byte[4];
+        in.get(_protocolHeader);
+
+        _protocolClass = in.get();
+        _protocolInstance = in.get();
+        _protocolMajor = in.get();
+        _protocolMinor = in.get();
     }
 
     public long getSize()
@@ -53,19 +78,12 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
 
     public void writePayload(ByteBuffer buffer)
     {
-        for (int i = 0; i < header.length; i++)
-        {
-            buffer.put((byte) header[i]);
-        }
-        buffer.put(protocolClass);
-        buffer.put(protocolInstance);
-        buffer.put(protocolMajor);
-        buffer.put(protocolMinor);
-    }
 
-    public void populateFromBuffer(ByteBuffer buffer) throws AMQException
-    {
-        throw new AMQException("Method not implemented");
+        buffer.put(_protocolHeader);
+        buffer.put(_protocolClass);
+        buffer.put(_protocolInstance);
+        buffer.put(_protocolMajor);
+        buffer.put(_protocolMinor);
     }
 
     public boolean equals(Object o)
@@ -76,36 +94,36 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         }
 
         ProtocolInitiation pi = (ProtocolInitiation) o;
-        if (pi.header == null)
+        if (pi._protocolHeader == null)
         {
             return false;
         }
 
-        if (header.length != pi.header.length)
+        if (_protocolHeader.length != pi._protocolHeader.length)
         {
             return false;
         }
 
-        for (int i = 0; i < header.length; i++)
+        for (int i = 0; i < _protocolHeader.length; i++)
         {
-            if (header[i] != pi.header[i])
+            if (_protocolHeader[i] != pi._protocolHeader[i])
             {
                 return false;
             }
         }
 
-        return (protocolClass == pi.protocolClass &&
-                protocolInstance == pi.protocolInstance &&
-                protocolMajor == pi.protocolMajor &&
-                protocolMinor == pi.protocolMinor);
+        return (_protocolClass == pi._protocolClass &&
+                _protocolInstance == pi._protocolInstance &&
+                _protocolMajor == pi._protocolMajor &&
+                _protocolMinor == pi._protocolMinor);
     }
 
     public static class Decoder //implements MessageDecoder
     {
         /**
          *
-         * @param session
-         * @param in
+         * @param session the session
+         * @param in input buffer
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
          */
@@ -115,63 +133,62 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         }
 
         public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out)
-            throws Exception
         {
-            byte[] theHeader = new byte[4];
-            in.get(theHeader);
-            ProtocolInitiation pi = new ProtocolInitiation((byte)0, (byte)0);
-            pi.header = new char[]{(char) theHeader[0],(char) theHeader[CURRENT_PROTOCOL_INSTANCE],(char) theHeader[2], (char) theHeader[3]};
-            String stringHeader = new String(pi.header);
-            if (!"AMQP".equals(stringHeader))
-            {
-                throw new AMQProtocolHeaderException("Invalid protocol header - read " + stringHeader);
-            }
-            pi.protocolClass = in.get();
-            pi.protocolInstance = in.get();
-            pi.protocolMajor = in.get();
-            pi.protocolMinor = in.get();
+            ProtocolInitiation pi = new ProtocolInitiation(in);
             out.write(pi);
         }
     }
 
-    public void checkVersion(ProtocolVersionList pvl) throws AMQException
+    public void checkVersion() throws AMQException
     {
-        if (protocolClass != CURRENT_PROTOCOL_CLASS)
+
+        if(_protocolHeader.length != 4)
         {
-            throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
-                    protocolClass);
+            throw new AMQProtocolHeaderException("Protocol header should have exactly four octets");
         }
-        if (protocolInstance != CURRENT_PROTOCOL_INSTANCE)
+        for(int i = 0; i < 4; i++)
         {
-            throw new AMQProtocolInstanceException("Protocol instance " + CURRENT_PROTOCOL_INSTANCE + " was expected; received " +
-                    protocolInstance);
-        }
-        
-        /* Look through list of available protocol versions */
-        boolean found = false;
-        for (int i=0; i<pvl.pv.length; i++)
-        {
-            if (pvl.pv[i][pvl.PROTOCOL_MAJOR] == protocolMajor &&
-                pvl.pv[i][pvl.PROTOCOL_MINOR] == protocolMinor)
+            if(_protocolHeader[i] != AMQP_HEADER[i])
             {
-                found = true;
+                try
+                {
+                    throw new AMQProtocolHeaderException("Protocol header is not correct: Got " + new String(_protocolHeader,"ISO-8859-1") + " should be: " + new String(AMQP_HEADER, "ISO-8859-1"));
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    
+                }
             }
         }
-        if (!found)
+        if (_protocolClass != CURRENT_PROTOCOL_CLASS)
+        {
+            throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
+                                                _protocolClass);
+        }
+        if (_protocolInstance != TCP_PROTOCOL_INSTANCE)
+        {
+            throw new AMQProtocolInstanceException("Protocol instance " + TCP_PROTOCOL_INSTANCE + " was expected; received " +
+                                                   _protocolInstance);
+        }
+
+        ProtocolVersion pv = new ProtocolVersion(_protocolMajor, _protocolMinor);
+        
+
+        if (!pv.isSupported())
         {
             // TODO: add list of available versions in list to msg...
             throw new AMQProtocolVersionException("Protocol version " +
-                protocolMajor + "." +  protocolMinor + " not found in protocol version list.");
+                                                  _protocolMajor + "." + _protocolMinor + " not suppoerted by this version of the Qpid broker.");
         }
     }
 
     public String toString()
     {
-        StringBuffer buffer = new StringBuffer(new String(header));
-        buffer.append(Integer.toHexString(protocolClass));
-        buffer.append(Integer.toHexString(protocolInstance));
-        buffer.append(Integer.toHexString(protocolMajor));
-        buffer.append(Integer.toHexString(protocolMinor));
+        StringBuffer buffer = new StringBuffer(new String(_protocolHeader));
+        buffer.append(Integer.toHexString(_protocolClass));
+        buffer.append(Integer.toHexString(_protocolInstance));
+        buffer.append(Integer.toHexString(_protocolMajor));
+        buffer.append(Integer.toHexString(_protocolMinor));
         return buffer.toString();
     }
 }

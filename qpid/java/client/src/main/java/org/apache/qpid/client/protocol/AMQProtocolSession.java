@@ -45,8 +45,8 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MainRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -56,7 +56,7 @@ import org.apache.qpid.protocol.AMQConstant;
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
-public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareProtocolSession
+public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
 
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
@@ -104,7 +104,7 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
 
     private byte _protocolMinorVersion;
     private byte _protocolMajorVersion;
-    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length-1][PROTOCOL_MAJOR],pv[pv.length-1][PROTOCOL_MINOR]);
+    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
 
 
     /**
@@ -147,11 +147,8 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-        /* Find last protocol version in protocol version list. Make sure last protocol version
-        listed in the build file (build-module.xml) is the latest version which will be used
-        here. */
-        int i = pv.length - 1;
-        _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+        
+        _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
     }
 
     public String getClientID()

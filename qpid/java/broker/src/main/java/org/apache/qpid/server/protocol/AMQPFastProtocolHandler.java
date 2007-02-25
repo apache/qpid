@@ -39,7 +39,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
@@ -53,7 +53,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
  * the state for the connection.
  *
  */
-public class AMQPFastProtocolHandler extends IoHandlerAdapter implements ProtocolVersionList
+public class AMQPFastProtocolHandler extends IoHandlerAdapter
 {
     private static final Logger _logger = Logger.getLogger(AMQPFastProtocolHandler.class);
 
@@ -162,12 +162,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         AMQProtocolSession session = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
         if (throwable instanceof AMQProtocolHeaderException)
         {
-            /* Find last protocol version in protocol version list. Make sure last protocol version
-            listed in the build file (build-module.xml) is the latest version which will be returned
-            here. */
-            int i = pv.length - 1;
-            protocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+
+            protocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
+
             protocolSession.close();
+
             _logger.error("Error in protocol initiation " + session + ": " + throwable.getMessage(), throwable);
         }
         else if(throwable instanceof IOException)
@@ -176,8 +175,6 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter implements Protoco
         }
         else
         {
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
             	session.getProtocolMajorVersion(),

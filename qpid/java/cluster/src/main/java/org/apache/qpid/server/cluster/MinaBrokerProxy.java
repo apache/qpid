@@ -39,7 +39,7 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.ConnectionRedirectBody;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -138,7 +138,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
     }
 
-    public void send(AMQDataBlock data) throws AMQException
+    public void send(AMQDataBlock data) throws AMQConnectionWaitException
     {
         if (_session == null)
         {
@@ -146,9 +146,9 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             {
                 _connectionMonitor.waitUntilOpen();
             }
-            catch (Exception e)
+            catch (InterruptedException e)
             {
-                throw new AMQException("Failed to send " + data + ": " + e, e);
+                throw new AMQConnectionWaitException("Failed to send " + data + ": " + e, e);
             }
         }
         _session.write(data);
@@ -207,7 +207,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
         else
         {
-            throw new AMQException("Client only expects method body, got: " + body);
+            throw new AMQUnexpectedBodyTypeException(AMQMethodBody.class, body);
         }
     }
 
@@ -216,7 +216,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         return "MinaBrokerProxy[" + (_session == null ? super.toString() : _session.getRemoteAddress()) + "]";
     }
 
-    private class MinaBinding extends IoHandlerAdapter implements ProtocolVersionList
+    private class MinaBinding extends IoHandlerAdapter
     {
         public void sessionCreated(IoSession session) throws Exception
         {
@@ -228,8 +228,8 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             /* Find last protocol version in protocol version list. Make sure last protocol version
             listed in the build file (build-module.xml) is the latest version which will be used
             here. */
-            int i = pv.length - 1;
-            session.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+
+            session.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
         }
 
         public void sessionOpened(IoSession session) throws Exception
@@ -260,7 +260,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             }
             else
             {
-                throw new AMQException("Received message of unrecognised type: " + object);
+                throw new AMQUnexpectedFrameTypeException("Received message of unrecognised type: " + object);
             }
         }
 
