@@ -121,12 +121,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getJMSMessageID() throws JMSException
     {
-        if (getContentHeaderProperties().getMessageId() == null)
+        if (getContentHeaderProperties().getMessageIdAsString() == null)
         {
             getContentHeaderProperties().setMessageId("ID:" + _deliveryTag);
         }
 
-        return getContentHeaderProperties().getMessageId();
+        return getContentHeaderProperties().getMessageIdAsString();
     }
 
     public void setJMSMessageID(String messageId) throws JMSException
@@ -146,7 +146,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public byte[] getJMSCorrelationIDAsBytes() throws JMSException
     {
-        return getContentHeaderProperties().getCorrelationId().getBytes();
+        return getContentHeaderProperties().getCorrelationIdAsString().getBytes();
     }
 
     public void setJMSCorrelationIDAsBytes(byte[] bytes) throws JMSException
@@ -161,12 +161,12 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getJMSCorrelationID() throws JMSException
     {
-        return getContentHeaderProperties().getCorrelationId();
+        return getContentHeaderProperties().getCorrelationIdAsString();
     }
 
     public Destination getJMSReplyTo() throws JMSException
     {
-        String replyToEncoding = getContentHeaderProperties().getReplyTo();
+        String replyToEncoding = getContentHeaderProperties().getReplyToAsString();
         if (replyToEncoding == null)
         {
             return null;
@@ -250,7 +250,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getJMSType() throws JMSException
     {
-        return getContentHeaderProperties().getType();
+        return getContentHeaderProperties().getTypeAsString();
     }
 
     public void setJMSType(String string) throws JMSException

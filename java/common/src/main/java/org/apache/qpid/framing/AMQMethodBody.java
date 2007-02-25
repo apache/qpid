@@ -86,9 +86,9 @@ public abstract class AMQMethodBody extends AMQBody
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer(getClass().toString());
-        buf.append(" Class: ").append(getClazz());
-        buf.append(" Method: ").append(getMethod());
+        StringBuffer buf = new StringBuffer(getClass().getName());
+        buf.append("[ Class: ").append(getClazz());
+        buf.append(" Method: ").append(getMethod()).append(']');
         return buf.toString();
     }
 

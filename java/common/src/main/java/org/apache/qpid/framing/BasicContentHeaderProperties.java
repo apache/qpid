@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
 
-public class BasicContentHeaderProperties implements ContentHeaderProperties
+public class BasicContentHeaderProperties implements CommonContentHeaderProperties
 {
     private static final Logger _logger = Logger.getLogger(BasicContentHeaderProperties.class);
 
@@ -421,14 +421,14 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         }
     }
 
-    public AMQShortString getContentTypeShortString()
+    public AMQShortString getContentType()
     {
         decodeContentTypeIfNecessary();
         return _contentType;
     }
 
 
-    public String getContentType()
+    public String getContentTypeAsString()
     {
         decodeContentTypeIfNecessary();
         return _contentType == null ? null : _contentType.toString();
@@ -444,15 +444,19 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
     public void setContentType(String contentType)
     {
-        clearEncodedForm();
-        _propertyFlags |= (1 << 15);
-        _contentType = contentType == null ? null : new AMQShortString(contentType);
+        setContentType(contentType == null ? null : new AMQShortString(contentType));
     }
 
-    public String getEncoding()
+    public String getEncodingAsString()
+    {
+        
+        return getEncoding() == null ? null : getEncoding().toString();
+    }
+
+    public AMQShortString getEncoding()
     {
         decodeIfNecessary();
-        return _encoding == null ? null : _encoding.toString();
+        return _encoding;
     }
 
     public void setEncoding(String encoding)
@@ -461,6 +465,14 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         _propertyFlags |= (1 << 14);
         _encoding = encoding == null ? null : new AMQShortString(encoding);
     }
+
+    public void setEncoding(AMQShortString encoding)
+    {
+        clearEncodedForm();
+        _propertyFlags |= (1 << 14);
+        _encoding = encoding;
+    }
+
 
     public FieldTable getHeaders()
     {
@@ -508,7 +520,13 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         _priority = priority;
     }
 
-    public String getCorrelationId()
+    public AMQShortString getCorrelationId()
+    {
+        decodeIfNecessary();
+        return _correlationId;
+    }
+
+    public String getCorrelationIdAsString()
     {
         decodeIfNecessary();
         return _correlationId == null ? null : _correlationId.toString();
@@ -516,18 +534,23 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
 
     public void setCorrelationId(String correlationId)
     {
-        clearEncodedForm();
-        _propertyFlags |= (1 << 10);
-        _correlationId = correlationId == null ? null : new AMQShortString(correlationId);
+        setCorrelationId(correlationId == null ? null : new AMQShortString(correlationId));
     }
 
-    public String getReplyTo()
+    public void setCorrelationId(AMQShortString correlationId)
+    {
+        clearEncodedForm();
+        _propertyFlags |= (1 << 10);
+        _correlationId = correlationId;
+    }
+
+    public String getReplyToAsString()
     {
         decodeIfNecessary();
         return _replyTo == null ? null : _replyTo.toString();
     }
 
-    public AMQShortString getReplyToAsShortString()
+    public AMQShortString getReplyTo()
     {
         decodeIfNecessary();
         return _replyTo;
@@ -561,7 +584,13 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
     }
 
 
-    public String getMessageId()
+    public AMQShortString getMessageId()
+    {
+        decodeIfNecessary();
+        return _messageId;
+    }
+
+    public String getMessageIdAsString()
     {
         decodeIfNecessary();
         return _messageId == null ? null : _messageId.toString();
@@ -573,6 +602,14 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         _propertyFlags |= (1 << 7);
         _messageId = messageId == null ? null : new AMQShortString(messageId);
     }
+
+    public void setMessageId(AMQShortString messageId)
+    {
+        clearEncodedForm();
+        _propertyFlags |= (1 << 7);
+        _messageId = messageId;
+    }
+
 
     public long getTimestamp()
     {
@@ -587,56 +624,102 @@ public class BasicContentHeaderProperties implements ContentHeaderProperties
         _timestamp = timestamp;
     }
 
-    public String getType()
+    public String getTypeAsString()
     {
         decodeIfNecessary();
         return _type == null ? null : _type.toString();
     }
 
+
+    public AMQShortString getType()
+    {
+        decodeIfNecessary();
+        return _type;
+    }
+
+
     public void setType(String type)
+    {
+        setType(type == null ? null : new AMQShortString(type));
+    }
+
+    public void setType(AMQShortString type)
     {
         clearEncodedForm();
         _propertyFlags |= (1 << 5);
-        _type = type == null ? null : new AMQShortString(type);
+        _type = type;
     }
 
-    public String getUserId()
+    public String getUserIdAsString()
     {
         decodeIfNecessary();
         return _userId == null ? null : _userId.toString();
     }
 
+    public AMQShortString getUserId()
+    {
+        decodeIfNecessary();
+        return _userId;
+    }
+
     public void setUserId(String userId)
+    {
+        setUserId(userId == null ? null : new AMQShortString(userId));
+    }
+
+    public void setUserId(AMQShortString userId)
     {
         clearEncodedForm();
         _propertyFlags |= (1 << 4);
-        _userId = userId == null ? null : new AMQShortString(userId);
+        _userId = userId;
     }
 
-    public String getAppId()
+    public String getAppIdAsString()
     {
         decodeIfNecessary();
         return _appId == null ? null : _appId.toString();
     }
 
+    public AMQShortString getAppId()
+    {
+        decodeIfNecessary();
+        return _appId;
+    }
+
     public void setAppId(String appId)
+    {
+        setAppId(appId == null ? null : new AMQShortString(appId));        
+    }
+
+    public void setAppId(AMQShortString appId)
     {
         clearEncodedForm();
         _propertyFlags |= (1 << 3);
-        _appId = appId == null ? null : new AMQShortString(appId);
+        _appId = appId;
     }
 
-    public String getClusterId()
+    public String getClusterIdAsString()
     {
         decodeIfNecessary();
         return _clusterId == null ? null : _clusterId.toString();
     }
 
+    public AMQShortString getClusterId()
+    {
+        decodeIfNecessary();
+        return _clusterId;
+    }
+
     public void setClusterId(String clusterId)
+    {
+        setClusterId(clusterId == null ? null : new AMQShortString(clusterId));
+    }
+
+    public void setClusterId(AMQShortString clusterId)
     {
         clearEncodedForm();
         _propertyFlags |= (1 << 2);
-        _clusterId = clusterId == null ? null : new AMQShortString(clusterId);
+        _clusterId = clusterId;
     }
 
     public String toString()
