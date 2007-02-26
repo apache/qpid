@@ -505,6 +505,9 @@ public class AMQQueue implements Managable, Comparable
 
     protected void updateReceivedMessageCount(AMQMessage msg)
     {
+        if (msg.isRedelivered())
+            return;
+
         _totalMessagesReceived++;
         _managedObject.checkForNotification(msg);
     }

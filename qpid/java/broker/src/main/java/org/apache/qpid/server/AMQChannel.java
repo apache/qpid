@@ -420,7 +420,7 @@ public class AMQChannel
                 unacked.message.setTxnBuffer(null);
 
                 unacked.message.release();
-
+                unacked.message.setRedelivered(true);
                 unacked.queue.deliver(unacked.message);
             }
         }
@@ -479,7 +479,7 @@ public class AMQChannel
                     unacked.message.setTxnBuffer(null);
 
                     unacked.message.release();
-
+                    unacked.message.setRedelivered(true);
                     unacked.queue.deliver(unacked.message);
                 }
             }
