@@ -67,19 +67,19 @@
     <xsl:param name="f"/>
     <xsl:choose>
         <xsl:when test="$f/@type='char'">
-            <xsl:value-of select="concat('buffer.put(', $f/@name, ')')"/>
+            <xsl:value-of select="concat('buffer.Put(', $f/@name, ')')"/>
         </xsl:when>
         <xsl:when test="$f/@type='octet'">
-            <xsl:value-of select="concat('buffer.put(', $f/@name, ')')"/>
+            <xsl:value-of select="concat('buffer.Put(', $f/@name, ')')"/>
         </xsl:when>
 	<xsl:when test="$f/@type='short'">
-            <xsl:value-of select="concat('buffer.put(', $f/@name, ')')"/>
+            <xsl:value-of select="concat('buffer.Put(', $f/@name, ')')"/>
         </xsl:when>
         <xsl:when test="$f/@type='long'">
-            <xsl:value-of select="concat('buffer.put(', $f/@name, ')')"/>
+            <xsl:value-of select="concat('buffer.Put(', $f/@name, ')')"/>
         </xsl:when>
         <xsl:when test="$f/@type='longlong'">
-            <xsl:value-of select="concat('buffer.put(', $f/@name, ')')"/>
+            <xsl:value-of select="concat('buffer.Put(', $f/@name, ')')"/>
         </xsl:when>
 	<xsl:when test="$f/@type='shortstr'">
             <xsl:value-of select="concat('EncodingUtils.WriteShortStringBytes(buffer, ', $f/@name, ')')"/>
@@ -108,16 +108,16 @@
             <xsl:value-of select="concat($f/@name, ' = buffer.GetChar()')"/>
         </xsl:when>
         <xsl:when test="$f/@type='octet'">
-            <xsl:value-of select="concat($f/@name, ' = buffer.get()')"/>
+            <xsl:value-of select="concat($f/@name, ' = buffer.GetByte()')"/>
         </xsl:when>
         <xsl:when test="$f/@type='short'">
-            <xsl:value-of select="concat($f/@name, ' = buffer.GetUnsignedShort()')"/>
+            <xsl:value-of select="concat($f/@name, ' = buffer.GetUInt16()')"/>
         </xsl:when>
         <xsl:when test="$f/@type='long'">
-            <xsl:value-of select="concat($f/@name, ' = buffer.GetUnsignedInt()')"/>
+            <xsl:value-of select="concat($f/@name, ' = buffer.GetUInt32()')"/>
         </xsl:when>
         <xsl:when test="$f/@type='longlong'">
-            <xsl:value-of select="concat($f/@name, ' = buffer.GetUnsignedLong()')"/>
+            <xsl:value-of select="concat($f/@name, ' = buffer.GetUInt64()')"/>
         </xsl:when>
         <xsl:when test="$f/@type='shortstr'">
             <xsl:value-of select="concat($f/@name, ' = EncodingUtils.ReadShortString(buffer)')"/>

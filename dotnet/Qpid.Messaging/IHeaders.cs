@@ -32,6 +32,9 @@ namespace Qpid.Messaging
         byte GetByte(string name);
         void SetByte(string name, byte value);
 
+        //sbyte GetSByte(string name);
+        //void SetSByte(string name, sbyte value);
+
         short GetShort(string name);
         void SetShort(string name, short value);
 

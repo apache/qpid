@@ -72,12 +72,12 @@ namespace Qpid.Framing
         {
             foreach (char c in Header)
             {
-                buffer.put((byte) c);
+                buffer.Put((byte) c);
             }
-            buffer.put(ProtocolClass);
-            buffer.put(ProtocolInstance);
-            buffer.put(ProtocolMajor);
-            buffer.put(ProtocolMinor);
+            buffer.Put(ProtocolClass);
+            buffer.Put(ProtocolInstance);
+            buffer.Put(ProtocolMajor);
+            buffer.Put(ProtocolMinor);
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Qpid.Framing
                 {
                     return MessageDecoderResult.NOT_OK;
                 }
-                if (inbuf.remaining() < 8)
+                if (inbuf.Remaining < 8)
                 {
                     return MessageDecoderResult.NEED_DATA;
                 }
@@ -108,7 +108,7 @@ namespace Qpid.Framing
                     char[] expected = new char[]{'A', 'M', 'Q', 'P'};
                     for (int i = 0; i < 4; i++)
                     {
-                        if (((char) inbuf.get()) != expected[i])
+                        if (((char) inbuf.GetByte()) != expected[i])
                         {
                             return MessageDecoderResult.NOT_OK;
                         }
@@ -120,21 +120,19 @@ namespace Qpid.Framing
             /// <summary>
             /// Decodes the specified session.
             /// </summary>
-            /// <param name="session">The session.</param>
             /// <param name="inbuf">The inbuf.</param>
-            /// <param name="outbuf">The outbuf.</param>
+            /// <param name="output">The protocol output.</param>
             /// <returns></returns>
-            /// <exception cref="ProtocolViolationException">thrown if the frame violates the protocol</exception>
             public MessageDecoderResult Decode(ByteBuffer inbuf, IProtocolDecoderOutput output)
             {
                 byte[] header = new byte[4];
-                inbuf.get(header);
+                inbuf.GetBytes(header);
                 ProtocolInitiation pi = new ProtocolInitiation();
                 pi.Header = new char[]{'A','M','Q','P'};
-                pi.ProtocolClass = inbuf.get();
-                pi.ProtocolInstance = inbuf.get();
-                pi.ProtocolMajor = inbuf.get();
-                pi.ProtocolMinor = inbuf.get();
+                pi.ProtocolClass = inbuf.GetByte();
+                pi.ProtocolInstance = inbuf.GetByte();
+                pi.ProtocolMajor = inbuf.GetByte();
+                pi.ProtocolMinor = inbuf.GetByte();
                 output.Write(pi);
                 return MessageDecoderResult.OK;
             }

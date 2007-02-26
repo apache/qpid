@@ -73,19 +73,19 @@ namespace Qpid.Framing
 
         public void WritePayload(ByteBuffer buffer)
         {
-            buffer.put(ClassId);
-            buffer.put(Weight);
-            buffer.put(BodySize);
-            buffer.put(Properties.PropertyFlags);
+            buffer.Put(ClassId);
+            buffer.Put(Weight);
+            buffer.Put(BodySize);
+            buffer.Put(Properties.PropertyFlags);
             Properties.WritePropertyListPayload(buffer);
         }
 
         public void PopulateFromBuffer(ByteBuffer buffer, uint size)
         {     
-            ClassId = buffer.GetUnsignedShort();
-            Weight = buffer.GetUnsignedShort();
-            BodySize = buffer.GetUnsignedLong();
-            ushort propertyFlags = buffer.GetUnsignedShort();
+            ClassId = buffer.GetUInt16();
+            Weight = buffer.GetUInt16();
+            BodySize = buffer.GetUInt64();
+            ushort propertyFlags = buffer.GetUInt16();
             ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.GetInstance();
             Properties = factory.CreateContentHeaderProperties(ClassId, propertyFlags, buffer);    
         }

@@ -62,8 +62,8 @@ namespace Qpid.Client.Message
             ContentHeaderProperties.ContentType = MIME_TYPE;
             if (data == null)
             {
-                _data = ByteBuffer.allocate(DEFAULT_BUFFER_INITIAL_SIZE);
-                _data.setAutoExpand(true);
+                _data = ByteBuffer.Allocate(DEFAULT_BUFFER_INITIAL_SIZE);
+                _data.IsAutoExpand = true;
             }
         }
 
@@ -76,7 +76,7 @@ namespace Qpid.Client.Message
 
         public override void ClearBodyImpl()
         {
-            _data.clear();
+            _data.Clear();
         }
 
         public override string ToBodyString()
@@ -99,19 +99,19 @@ namespace Qpid.Client.Message
             {
                 return null;
             }
-            int pos = _data.position();
-            _data.rewind();
+            int pos = _data.Position;
+            _data.Rewind();
             // one byte left is for the end of frame marker
-            if (_data.remaining() == 0)
+            if (_data.Remaining == 0)
             {
                 // this is really redundant since pos must be zero
-                _data.position(pos);
+                _data.Position = pos;
                 return null;
             }
             else
             {
-                byte[] data = new byte[_data.remaining()];
-                _data.get(data);
+                byte[] data = new byte[_data.Remaining];
+                _data.GetBytes(data);
                 return Encoding.UTF8.GetString(data);
             }
         }
@@ -129,7 +129,7 @@ namespace Qpid.Client.Message
             get
             {
                 CheckReadable();
-                return _data.limit();
+                return _data.Limit;
             }
         }
 
@@ -145,63 +145,63 @@ namespace Qpid.Client.Message
         {
             CheckReadable();
             CheckAvailable(1);
-            return _data.get() != 0;
+            return _data.GetByte() != 0;
         }
 
         public byte ReadByte()
         {
             CheckReadable();
             CheckAvailable(1);
-            return _data.get();
+            return _data.GetByte();
         }
 
         public short ReadSignedByte()
         {
             CheckReadable();
             CheckAvailable(1);
-            return _data.get();
+            return _data.GetSByte();
         }
 
         public short ReadShort()
         {
             CheckReadable();
             CheckAvailable(2);
-            return _data.getShort();
+            return _data.GetInt16();
         }
 
         public char ReadChar()
         {
             CheckReadable();
             CheckAvailable(2);
-            return _data.getChar();
+            return _data.GetChar();
         }
 
         public int ReadInt()
         {
             CheckReadable();
             CheckAvailable(4);
-            return _data.getInt();
+            return _data.GetInt32();
         }
 
         public long ReadLong()
         {
             CheckReadable();
             CheckAvailable(8);
-            return _data.getLong();
+            return _data.GetInt64();
         }
 
         public float ReadFloat()
         {
             CheckReadable();
             CheckAvailable(4);
-            return _data.getFloat();
+            return _data.GetFloat();
         }
 
         public double ReadDouble()
         {
             CheckReadable();
             CheckAvailable(8);
-            return _data.getDouble();
+            return _data.GetDouble();
         }
 
         public string ReadUTF()
@@ -212,8 +212,8 @@ namespace Qpid.Client.Message
             CheckAvailable(1);
             try
             {
-                byte[] data = new byte[_data.remaining()];
-                _data.get(data);
+                byte[] data = new byte[_data.Remaining];
+                _data.GetBytes(data);
                 return Encoding.UTF8.GetString(data);                
             }
             catch (IOException e)
@@ -229,14 +229,14 @@ namespace Qpid.Client.Message
                 throw new ArgumentNullException("bytes");
             }
             CheckReadable();
-            int count = (_data.remaining() >= bytes.Length ? bytes.Length : _data.remaining());
+            int count = (_data.Remaining >= bytes.Length ? bytes.Length : _data.Remaining);
             if (count == 0)
             {
                 return -1;
             }
             else
             {
-                _data.get(bytes, 0, count);
+                _data.GetBytes(bytes, 0, count);
                 return count;
             }
         }
@@ -252,14 +252,14 @@ namespace Qpid.Client.Message
                 throw new ArgumentOutOfRangeException("maxLength must be >= 0");
             }
             CheckReadable();
-            int count = (_data.remaining() >= maxLength ? maxLength : _data.remaining());
+            int count = (_data.Remaining >= maxLength ? maxLength : _data.Remaining);
             if (count == 0)
             {
                 return -1;
             }
             else
             {
-                _data.get(bytes, 0, count);
+                _data.GetBytes(bytes, 0, count);
                 return count;
             }
         }
@@ -267,80 +267,80 @@ namespace Qpid.Client.Message
         public void WriteBoolean(bool b)
         {
             CheckWritable();
-            _data.put(b ? (byte)1 : (byte)0);
+            _data.Put(b ? (byte)1 : (byte)0);
         }
 
         public void WriteByte(byte b)
         {
             CheckWritable();
-            _data.put(b);
+            _data.Put(b);
         }
 
         public void WriteShort(short i)
         {
             CheckWritable();
-            _data.putShort(i);
+            _data.Put(i);
         }
 
         public void WriteChar(char c)
         {
             CheckWritable();
-            _data.putChar(c);
+            _data.Put(c);
         }
 
         public void WriteSignedByte(short value)
         {
             CheckWritable();
-            _data.put((byte)value);
+            _data.Put(value);
         }
 
         public void WriteDouble(double value)
         {
             CheckWritable();
-            _data.putDouble(value);
+            _data.Put(value);
         }
 
         public void WriteFloat(float value)
         {
             CheckWritable();
-            _data.putFloat(value);
+            _data.Put(value);
         }
 
         public void WriteInt(int value)
         {
             CheckWritable();
-            _data.putInt(value);
+            _data.Put(value);
         }
 
         public void WriteLong(long value)
         {
             CheckWritable();
-            _data.putLong(value);
+            _data.Put(value);
         }        
 
         public void WriteUTF(string value)
         {
             CheckWritable();
             byte[] encodedData = Encoding.UTF8.GetBytes(value);
-            _data.put(encodedData);
+            _data.Put(encodedData);
         }
 
         public void WriteBytes(byte[] bytes)
         {
             CheckWritable();
-            _data.put(bytes);
+            _data.Put(bytes);
         }
 
         public void WriteBytes(byte[] bytes, int offset, int length)
         {
             CheckWritable();
-            _data.put(bytes, offset, length);
+            _data.Put(bytes, offset, length);
         }
 
         protected override void Reset()
         {
             base.Reset();
-            _data.flip();
+            _data.Flip();
         }
 
         void IBytesMessage.Reset()
@@ -356,7 +356,7 @@ namespace Qpid.Client.Message
          */
         private void CheckAvailable(int len)
         {
-            if (_data.remaining() < len)
+            if (_data.Remaining < len)
             {
                 throw new MessageEOFException("Unable to read " + len + " bytes");
             }

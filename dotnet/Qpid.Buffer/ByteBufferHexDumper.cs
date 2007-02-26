@@ -49,7 +49,7 @@ namespace Qpid.Buffer
         
         public static string GetHexDump(ByteBuffer input)
         {
-            int size = input.limit() - input.position();
+            int size = input.Remaining;
             if (size == 0)
             {
                 return "empty";
@@ -57,7 +57,7 @@ namespace Qpid.Buffer
             
             StringBuilder output = new StringBuilder(size * 3 - 1);
 
-            byte[] data = input.array();
+            byte[] data = input.Array;
             int byteValue = data[0] & 0xFF;
             output.Append((char) highDigits[byteValue]);
             output.Append((char) lowDigits[byteValue]);            
@@ -74,4 +74,5 @@ namespace Qpid.Buffer
         }
     }
 }
+
 

@@ -89,6 +89,7 @@
     <Compile Include="generated\BasicQosBody.cs" />
     <Compile Include="generated\BasicQosOkBody.cs" />
     <Compile Include="generated\BasicRecoverBody.cs" />
+    <Compile Include="generated\BasicRecoverOkBody.cs" />
     <Compile Include="generated\BasicRejectBody.cs" />
     <Compile Include="generated\BasicReturnBody.cs" />
     <Compile Include="generated\ChannelAlertBody.cs" />

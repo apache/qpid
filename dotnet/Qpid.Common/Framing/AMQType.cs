@@ -63,7 +63,7 @@ namespace Qpid.Framing
       /// <param name="buffer">Buffer to write to</param>
       public void WriteToBuffer(object value, ByteBuffer buffer)
       {
-         buffer.put(Identifier);
+         buffer.Put(Identifier);
          WriteValueImpl(value, buffer);
       }
 
@@ -163,7 +163,7 @@ namespace Qpid.Framing
 
       sealed class AMQUInt32Type : AMQType
       {
-         public AMQUInt32Type() : base('I')
+         public AMQUInt32Type() : base('i')
          {
          }
 
@@ -560,7 +560,7 @@ namespace Qpid.Framing
 
       sealed class AMQInt32Type : AMQType
       {
-         public AMQInt32Type() : base('i')
+         public AMQInt32Type() : base('I')
          {
          }
 

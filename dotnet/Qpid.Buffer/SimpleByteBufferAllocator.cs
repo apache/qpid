@@ -18,171 +18,40 @@
  * under the License.
  *
  */
-using System;
-using System.Runtime.CompilerServices;
 
 namespace Qpid.Buffer
 {
-    /// <summary>
-    /// A simplistic <see cref="ByteBufferAllocator"/> which simply allocates a new
-    /// buffer every time
-    /// </summary>
-    public class SimpleByteBufferAllocator : IByteBufferAllocator
-    {
-        private const int MINIMUM_CAPACITY = 1;
+   /// <summary>
+   /// Allocates <see cref="ByteBuffer"/>'s and manages them. 
+   /// This is a simple implementation that just returns buffers
+   /// as they are. Buffers are not reused or refcounted
+   /// </summary>
+   public class SimpleByteBufferAllocator : IByteBufferAllocator
+   {
+      #region IByteBufferAllocator Members
 
-        public SimpleByteBufferAllocator()
-        {
-        }
-        
-        public ByteBuffer Allocate( int capacity, bool direct )
-        {
-            FixedByteBuffer nioBuffer;
-            if( direct )
-            {
-                nioBuffer = FixedByteBuffer.allocateDirect( capacity );            
-            }
-            else
-            {
-                nioBuffer = FixedByteBuffer.allocate( capacity );            
-            }
-            return new SimpleByteBuffer( nioBuffer );
-        }
-        
-        public ByteBuffer Wrap( FixedByteBuffer nioBuffer )
-        {
-            return new SimpleByteBuffer( nioBuffer );
-        }
+      public ByteBuffer Allocate(int capacity)
+      {
+         return new SimpleByteBuffer(capacity);
+      }
 
-        public void Dispose()
-        {
-        }
+      public ByteBuffer Wrap(byte[] src)
+      {
+         return new SimpleByteBuffer(src);
+      }
 
-        private class SimpleByteBuffer : BaseByteBuffer
-        {
-            private FixedByteBuffer _buf;
-            private int refCount = 1;
+      #endregion
 
-            internal SimpleByteBuffer( FixedByteBuffer buf )
-            {
-                this._buf = buf;
-                buf.order( ByteOrder.BigEndian );
-                refCount = 1;
-            }
+      #region IDisposable Members
 
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            public override void acquire()
-            {
-                if( refCount <= 0 )
-                {
-                    throw new InvalidOperationException("Already released buffer.");
-                }
+      public void Dispose()
+      {
+         // no need to do anaything
+      }
 
-                refCount ++;
-            }
+      #endregion
 
-            public override void release()
-            {
-                lock( this )
-                {
-                    if( refCount <= 0 )
-                    {
-                        refCount = 0;
-                        throw new InvalidOperationException(
-                                "Already released buffer.  You released the buffer too many times." );
-                    }
-
-                    refCount --;
-                    if( refCount > 0)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            public override FixedByteBuffer buf()
-            {
-                return _buf;
-            }
-
-            public override bool isPooled()
-            {
-                return false;
-            }
-
-            public override void setPooled(bool pooled)
-            {
-            }
-
-            protected override void capacity0(int requestedCapacity)
-            {
-                int newCapacity = MINIMUM_CAPACITY;
-                while( newCapacity < requestedCapacity )
-                {
-                    newCapacity <<= 1;
-                }
-                
-                FixedByteBuffer oldBuf = this._buf;
-                FixedByteBuffer newBuf;
-                if( isDirect() )
-                {
-                    newBuf = FixedByteBuffer.allocateDirect( newCapacity );
-                }
-                else
-                {
-                    newBuf = FixedByteBuffer.allocate( newCapacity );
-                }
-
-                newBuf.clear();
-                oldBuf.clear();
-                newBuf.put( oldBuf );
-                this._buf = newBuf;
-            }
-
-            public override ByteBuffer duplicate() {
-                return new SimpleByteBuffer( this._buf.duplicate() );
-            }
-
-            public override ByteBuffer slice()
-            {
-                return new SimpleByteBuffer( this._buf.slice() );
-            }
-
-            public override ByteBuffer asReadOnlyBuffer()
-            {
-                return new SimpleByteBuffer( this._buf.asReadOnlyBuffer() );
-            }
-
-            public override byte[] array()
-            {
-                return _buf.array();
-            }
-
-            public override int arrayOffset()
-            {
-                return _buf.arrayOffset();
-            }
-
-            public override void put(ushort value)
-            {
-                _buf.put(value);
-            }
-
-            public override void put(uint max)
-            {
-                _buf.put(max);
-            }
-
-            public override void put(ulong tag)
-            {
-                _buf.put(tag);
-            }
-
-            public override ulong GetUnsignedLong()
-            {
-                return _buf.getUnsignedLong();
-            }
-
-        }
-    }   
+   } // class SimpleByteBufferAllocator
 }
+
+

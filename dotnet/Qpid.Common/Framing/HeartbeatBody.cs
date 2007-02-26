@@ -52,7 +52,7 @@ namespace Qpid.Framing
         if (size > 0)
         {
             //allow other implementations to have a payload, but ignore it:
-            buffer.skip((int) size);
+            buffer.Skip((int) size);
         }
     }
 
