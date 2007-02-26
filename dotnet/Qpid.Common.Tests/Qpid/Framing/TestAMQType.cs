@@ -34,12 +34,12 @@ namespace Qpid.Framing.Tests
        public void LONG_STRING_ReadWrite()
        {
           AMQType type = AMQType.LONG_STRING;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const string VALUE = "simple string 1";
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -75,12 +75,12 @@ namespace Qpid.Framing.Tests
        public void UINT32_ReadWrite()
        {
           AMQType type = AMQType.UINT32;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const uint VALUE = 0xFFEEDDCC;
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -113,11 +113,11 @@ namespace Qpid.Framing.Tests
        public void VOID_ReadWrite()
        {
           AMQType type = AMQType.VOID;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
 
           type.WriteToBuffer(null, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(null, value.Value);
        }
@@ -152,11 +152,11 @@ namespace Qpid.Framing.Tests
        public void BOOLEAN_ReadWrite()
        {
           AMQType type = AMQType.BOOLEAN;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
 
           type.WriteToBuffer(true, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(true, value.Value);
        }
@@ -167,24 +167,24 @@ namespace Qpid.Framing.Tests
        public void INT16_ReadWrite()
        {
           AMQType type = AMQType.INT16;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const short VALUE = -32765;
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
        //public void UINT16_ReadWrite()
        //{
        //   AMQType type = AMQType.UINT16;
-       //   ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+       //   ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
        //   const ushort VALUE = 64321;
 
        //   type.WriteToBuffer(VALUE, buffer);
-       //   buffer.flip();
-       //   buffer.position(0);
+       //   buffer.Flip();
+       //   buffer.Rewind();
        //   AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
        //   Assert.AreEqual(VALUE, value.Value);
        //}
@@ -195,12 +195,12 @@ namespace Qpid.Framing.Tests
        public void INT32_ReadWrite()
        {
           AMQType type = AMQType.INT32;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const int VALUE = -39273563;
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -211,12 +211,12 @@ namespace Qpid.Framing.Tests
        public void INT64_ReadWrite()
        {
           AMQType type = AMQType.INT64;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const long VALUE = -(2^43+1233123);
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -224,12 +224,12 @@ namespace Qpid.Framing.Tests
        public void UINT64_ReadWrite()
        {
           AMQType type = AMQType.UINT64;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const ulong VALUE = (2 ^ 61 + 1233123);
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -240,12 +240,12 @@ namespace Qpid.Framing.Tests
        public void FLOAT_ReadWrite()
        {
           AMQType type = AMQType.FLOAT;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const float VALUE = 1.2345000E-035f;
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }
@@ -256,12 +256,12 @@ namespace Qpid.Framing.Tests
        public void DOUBLE_ReadWrite()
        {
           AMQType type = AMQType.DOUBLE;
-          ByteBuffer buffer = (new SimpleByteBufferAllocator()).Allocate(0x1000, false);
+          ByteBuffer buffer = ByteBuffer.Allocate(0x1000);
           const double VALUE = 1.2345000E-045;
 
           type.WriteToBuffer(VALUE, buffer);
-          buffer.flip();
-          buffer.position(0);
+          buffer.Flip();
+          buffer.Rewind();
           AMQTypedValue value = AMQTypedValue.ReadFromBuffer(buffer);
           Assert.AreEqual(VALUE, value.Value);
        }

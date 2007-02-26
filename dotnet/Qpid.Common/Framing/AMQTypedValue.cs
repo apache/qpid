@@ -64,7 +64,7 @@ namespace Qpid.Framing
       
       public static AMQTypedValue ReadFromBuffer(ByteBuffer buffer)
       {
-         AMQType type = AMQTypeMap.GetType(buffer.get());
+         AMQType type = AMQTypeMap.GetType(buffer.GetByte());
          return new AMQTypedValue(type, buffer);
       }
 

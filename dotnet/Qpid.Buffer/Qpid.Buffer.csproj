@@ -38,18 +38,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseByteBuffer.cs" />
-    <Compile Include="BufferDataException.cs" />
     <Compile Include="BufferOverflowException.cs" />
     <Compile Include="BufferUnderflowException.cs" />
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="ByteBufferHexDumper.cs" />
-    <Compile Include="ByteBufferProxy.cs" />
-    <Compile Include="FixedByteBuffer.cs" />
-    <Compile Include="HeapByteBuffer.cs" />
     <Compile Include="IByteBufferAllocator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SimpleByteBuffer.cs" />
     <Compile Include="SimpleByteBufferAllocator.cs" />
+    <Compile Include="SlicedByteBuffer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

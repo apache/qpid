@@ -53,7 +53,7 @@ namespace Qpid.Client.Message
         {
             if (_data != null)
             {
-                _data.release();
+                _data.Release();
             }
             _data = null;
             _decodedValue = null;
@@ -86,11 +86,11 @@ namespace Qpid.Client.Message
                 }
                 else
                 {
-                    _data.rewind();
+                    _data.Rewind();
 
                     // Read remaining bytes.
-                    byte[] bytes = new byte[_data.remaining()];
-                    _data.get(bytes);
+                    byte[] bytes = new byte[_data.Remaining];
+                    _data.GetBytes(bytes);
 
                     // Convert to string based on encoding.
                     if (ContentHeaderProperties.Encoding != null)
@@ -118,7 +118,7 @@ namespace Qpid.Client.Message
                     // throw ArgumentException if the encoding is not supported
                     bytes = Encoding.GetEncoding(ContentHeaderProperties.Encoding).GetBytes(value);
                 }
-                _data = ByteBuffer.wrap(bytes);
+                _data = ByteBuffer.Wrap(bytes);
                 _decodedValue = value;
             }
         }

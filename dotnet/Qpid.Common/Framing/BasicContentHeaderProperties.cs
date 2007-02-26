@@ -41,7 +41,7 @@ namespace Qpid.Framing
 
         public string CorrelationId;
 
-        public uint Expiration;
+        public long Expiration;
 
         public string ReplyTo;
 
@@ -102,13 +102,13 @@ namespace Qpid.Framing
             EncodingUtils.WriteShortStringBytes(buffer, ContentType);
             EncodingUtils.WriteShortStringBytes(buffer, Encoding);
             EncodingUtils.WriteFieldTableBytes(buffer, Headers);
-            buffer.put(DeliveryMode);
-            buffer.put(Priority);
+            buffer.Put(DeliveryMode);
+            buffer.Put(Priority);
             EncodingUtils.WriteShortStringBytes(buffer, CorrelationId);
             EncodingUtils.WriteShortStringBytes(buffer, ReplyTo);
             EncodingUtils.WriteShortStringBytes(buffer, String.Format("{0:D}", Expiration));
             EncodingUtils.WriteShortStringBytes(buffer, MessageId);            
-            buffer.put(Timestamp);            
+            buffer.Put(Timestamp);            
             EncodingUtils.WriteShortStringBytes(buffer, Type);
             EncodingUtils.WriteShortStringBytes(buffer, UserId);
             EncodingUtils.WriteShortStringBytes(buffer, AppId);
@@ -125,19 +125,19 @@ namespace Qpid.Framing
             if ((propertyFlags & (1 << 13)) > 0)
                 Headers = EncodingUtils.ReadFieldTable(buffer);
             if ((propertyFlags & (1 << 12)) > 0)
-                DeliveryMode = buffer.get();
+                DeliveryMode = buffer.GetByte();
             if ((propertyFlags & (1 << 11)) > 0)
-                Priority = buffer.get();
+                Priority = buffer.GetByte();
             if ((propertyFlags & (1 << 10)) > 0)
                 CorrelationId = EncodingUtils.ReadShortString(buffer);
             if ((propertyFlags & (1 << 9)) > 0)
                 ReplyTo = EncodingUtils.ReadShortString(buffer);
             if ((propertyFlags & (1 << 8)) > 0)
-                Expiration = UInt32.Parse(EncodingUtils.ReadShortString(buffer));
+                Expiration = EncodingUtils.ReadLongAsShortString(buffer);
             if ((propertyFlags & (1 << 7)) > 0)
                 MessageId = EncodingUtils.ReadShortString(buffer);
-            if ((propertyFlags & (1 << 6)) > 0)                                            
-                Timestamp = buffer.GetUnsignedLong();            
+            if ((propertyFlags & (1 << 6)) > 0)
+                Timestamp = buffer.GetUInt64();            
             if ((propertyFlags & (1 << 5)) > 0)
                 Type = EncodingUtils.ReadShortString(buffer);
             if ((propertyFlags & (1 << 4)) > 0)

@@ -50,10 +50,10 @@ namespace Qpid.Framing
         /// <exception cref="AMQFrameDecodingException">if there is an error decoding the table</exception>
         public FieldTable(ByteBuffer buffer, uint length) : this()
         {
-           _encodedForm = buffer.slice();
-           _encodedForm.limit((int)length);
+           _encodedForm = buffer.Slice();
+           _encodedForm.Limit = (int)length;
            _encodedSize = length;
-           buffer.skip((int)length);
+           buffer.Skip((int)length);
         }
 
         /// <summary>
@@ -312,6 +312,7 @@ namespace Qpid.Framing
         /// <returns>The enumerator object</returns>
         public IEnumerator GetEnumerator()
         {
+           InitMapIfNecessary();
            return _properties.GetEnumerator();
         }
 
@@ -322,6 +323,7 @@ namespace Qpid.Framing
         /// <returns>True if the property exists</returns>
         public bool Contains(string s)
         {
+           InitMapIfNecessary();
            return _properties.Contains(s);
         }
         
@@ -332,6 +334,7 @@ namespace Qpid.Framing
         /// <returns>The internal dictionary</returns>
         public IDictionary AsDictionary()
         {
+           InitMapIfNecessary();
            return _properties;
         }
 
@@ -381,11 +384,11 @@ namespace Qpid.Framing
         /// <returns>An array of bytes</returns>
         public byte[] GetDataAsBytes()
         {
-           ByteBuffer buffer = ByteBuffer.allocate((int)_encodedSize);
+           ByteBuffer buffer = ByteBuffer.Allocate((int)_encodedSize);
            WritePayload(buffer);
            byte[] result = new byte[_encodedSize];
-           buffer.flip();
-           buffer.get(result);
+           buffer.Flip();
+           buffer.GetBytes(result);
            //buffer.Release();
            return result;
         }
@@ -527,7 +530,7 @@ namespace Qpid.Framing
            bool trace = _log.IsDebugEnabled;
            if ( length > 0 )
            {
-              int expectedRemaining = buffer.remaining() - (int)length;
+              int expectedRemaining = buffer.Remaining - (int)length;
               _properties = new LinkedHashtable();
 
               do
@@ -540,7 +543,7 @@ namespace Qpid.Framing
                  }
                  _properties.Add(key, value);
 
-              } while ( buffer.remaining() > expectedRemaining );
+              } while ( buffer.Remaining > expectedRemaining );
               _encodedSize = length;
            }
            if ( trace )
@@ -595,7 +598,7 @@ namespace Qpid.Framing
         {
            if ( _encodedForm != null )
            {
-              buffer.put(_encodedForm);
+              buffer.Put(_encodedForm);
            } else if ( _properties != null )
            {
               foreach ( DictionaryEntry de in _properties )
@@ -609,8 +612,8 @@ namespace Qpid.Framing
                        _log.Debug("Writing Property:" + key +
                                   " Type:" + value.Type +
                                   " Value:" + value.Value);
-                       _log.Debug("Buffer Position:" + buffer.position() +
-                                  " Remaining:" + buffer.remaining());
+                       _log.Debug("Buffer Position:" + buffer.Position +
+                                  " Remaining:" + buffer.Remaining);
                     }
                     //Write the actual parameter name
                     EncodingUtils.WriteShortStringBytes(buffer, key);
@@ -623,8 +626,8 @@ namespace Qpid.Framing
                        _log.Debug("Writing Property:" + key +
                                   " Type:" + value.Type +
                                   " Value:" + value.Value);
-                       _log.Debug("Buffer Position:" + buffer.position() +
-                                  " Remaining:" + buffer.remaining());
+                       _log.Debug("Buffer Position:" + buffer.Position +
+                                  " Remaining:" + buffer.Remaining);
                     }
                  }
               }

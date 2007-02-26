@@ -62,8 +62,8 @@ namespace Qpid.Framing
 
         public void WritePayload(ByteBuffer buffer)
         {
-            buffer.put(Clazz);
-            buffer.put(Method);
+            buffer.Put(Clazz);
+            buffer.Put(Method);
             WriteMethodPayload(buffer);
         }
 

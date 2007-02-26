@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Globalization;
 using System.Text;
 using Qpid.Buffer;
 
@@ -52,13 +53,13 @@ namespace Qpid.Framing
                encodedString = DEFAULT_ENCODER.GetBytes(s);
             }
             // TODO: check length fits in an unsigned byte
-            buffer.put((byte)encodedString.Length);
-            buffer.put(encodedString);
+            buffer.Put((byte)encodedString.Length);
+            buffer.Put(encodedString);
 
          } else
          {
             // really writing out unsigned byte
-            buffer.put((byte)0);
+            buffer.Put((byte)0);
          }
       }
 
@@ -103,14 +104,14 @@ namespace Qpid.Framing
       }
       public static string ReadLongString(ByteBuffer buffer, Encoding encoding)
       {
-         uint length = buffer.getUnsignedInt();
+         uint length = buffer.GetUInt32();
          if ( length == 0 )
          {
             return null;
          } else
          {
             byte[] data = new byte[length];
-            buffer.get(data);
+            buffer.GetBytes(data);
             lock ( encoding )
             {
                return encoding.GetString(data);
@@ -132,14 +133,13 @@ namespace Qpid.Framing
          {
             lock ( encoding )
             {
-               byte[] encodedString = null;
-               encodedString = encoding.GetBytes(s);
-               buffer.put((uint)encodedString.Length);
-               buffer.put(encodedString);
+               byte[] encodedString = encoding.GetBytes(s);
+               buffer.Put((uint)encodedString.Length);
+               buffer.Put(encodedString);
             }
          } else
          {
-            buffer.put((uint)0);
+            buffer.Put((uint)0);
          }
       }
 
@@ -156,14 +156,14 @@ namespace Qpid.Framing
       }
       public static byte[] ReadLongstr(ByteBuffer buffer)
       {
-         uint length = buffer.getUnsignedInt();
+         uint length = buffer.GetUInt32();
          if ( length == 0 )
          {
             return null;
          } else
          {
             byte[] result = new byte[length];
-            buffer.get(result);
+            buffer.GetBytes(result);
             return result;
          }
       }
@@ -171,18 +171,18 @@ namespace Qpid.Framing
       {
          if ( data != null )
          {
-            buffer.put((uint)data.Length);
-            buffer.put(data);
+            buffer.Put((uint)data.Length);
+            buffer.Put(data);
          } else
          {
-            buffer.put((uint)0);
+            buffer.Put((uint)0);
          }
       }
 
       // BOOLEANS
       public static bool[] ReadBooleans(ByteBuffer buffer)
       {
-         byte packedValue = buffer.get();
+         byte packedValue = buffer.GetByte();
          bool[] result = new bool[8];
 
          for ( int i = 0; i < 8; i++ )
@@ -202,7 +202,7 @@ namespace Qpid.Framing
             }
          }
 
-         buffer.put(packedValue);
+         buffer.Put(packedValue);
       }
 
       // FIELD TABLES
@@ -226,7 +226,7 @@ namespace Qpid.Framing
       /// <exception cref="AMQFrameDecodingException">if the buffer does not contain a decodable field table</exception>
       public static FieldTable ReadFieldTable(ByteBuffer buffer)
       {
-         uint length = buffer.GetUnsignedInt();
+         uint length = buffer.GetUInt32();
          if ( length == 0 )
          {
             return null;
@@ -242,7 +242,7 @@ namespace Qpid.Framing
             table.WriteToBuffer(buffer);
          } else
          {
-            buffer.put((uint)0);
+            buffer.Put((uint)0);
          }
       }
 
@@ -255,14 +255,14 @@ namespace Qpid.Framing
       /// <exception cref="AMQFrameDecodingException">if the buffer does not contain a decodable short string</exception>
       public static string ReadShortString(ByteBuffer buffer)
       {
-         byte length = buffer.get();
+         byte length = buffer.GetByte();
          if ( length == 0 )
          {
             return null;
          } else
          {
             byte[] data = new byte[length];
-            buffer.get(data);
+            buffer.GetBytes(data);
 
             lock ( DEFAULT_ENCODER )
             {
@@ -280,12 +280,12 @@ namespace Qpid.Framing
       }
       public static bool ReadBoolean(ByteBuffer buffer)
       {
-         byte packedValue = buffer.get();
+         byte packedValue = buffer.GetByte();
          return (packedValue == 1);
       }
       public static void WriteBoolean(ByteBuffer buffer, bool value)
       {
-         buffer.put((byte)(value ? 1 : 0));
+         buffer.Put((byte)(value ? 1 : 0));
       }
 
 
@@ -296,11 +296,11 @@ namespace Qpid.Framing
       }
       public static char ReadChar(ByteBuffer buffer)
       {
-         return (char)buffer.get();
+         return (char)buffer.GetByte();
       }
       public static void WriteChar(ByteBuffer buffer, char value)
       {
-         buffer.put((byte)value);
+         buffer.Put((byte)value);
       }
 
       // BYTE
@@ -310,11 +310,11 @@ namespace Qpid.Framing
       }
       public static byte ReadByte(ByteBuffer buffer)
       {
-         return buffer.get();
+         return buffer.GetByte();
       }
       public static void WriteByte(ByteBuffer buffer, byte value)
       {
-         buffer.put(value);
+         buffer.Put(value);
       }
 
       // SBYTE
@@ -324,11 +324,11 @@ namespace Qpid.Framing
       }
       public static sbyte ReadSByte(ByteBuffer buffer)
       {
-         return (sbyte)buffer.get();
+         return buffer.GetSByte();
       }
       public static void WriteSByte(ByteBuffer buffer, sbyte value)
       {
-         buffer.put((byte)value);
+         buffer.Put(value);
       }
 
       // INT16
@@ -339,11 +339,11 @@ namespace Qpid.Framing
 
       public static short ReadShort(ByteBuffer buffer)
       {
-         return buffer.getShort();
+         return buffer.GetInt16();
       }
       public static void WriteShort(ByteBuffer buffer, short value)
       {
-         buffer.putShort(value);
+         buffer.Put(value);
       }
 
       // UINT16
@@ -354,11 +354,11 @@ namespace Qpid.Framing
 
       public static ushort ReadUnsignedShort(ByteBuffer buffer)
       {
-         return buffer.GetUnsignedShort();
+         return buffer.GetUInt16();
       }
       public static void WriteUnsignedShort(ByteBuffer buffer, ushort value)
       {
-         buffer.put(value);
+         buffer.Put(value);
       }
 
 
@@ -369,11 +369,11 @@ namespace Qpid.Framing
       }
       public static int ReadInteger(ByteBuffer buffer)
       {
-         return buffer.getInt();
+         return buffer.GetInt32();
       }
       public static void WriteInteger(ByteBuffer buffer, int value)
       {
-         buffer.putInt(value);
+         buffer.Put(value);
       }
 
       // UINT32
@@ -383,11 +383,11 @@ namespace Qpid.Framing
       }
       public static void WriteUnsignedInteger(ByteBuffer buffer, uint value)
       {
-         buffer.put(value);
+         buffer.Put(value);
       }
       public static uint ReadUnsignedInteger(ByteBuffer buffer)
       {
-         return buffer.getUnsignedInt();
+         return buffer.GetUInt32();
       }
 
       // INT64
@@ -397,11 +397,11 @@ namespace Qpid.Framing
       }
       public static ulong ReadUnsignedLong(ByteBuffer buffer)
       {
-         return buffer.GetUnsignedLong();
+         return buffer.GetUInt64();
       }
       public static void WriteUnsignedLong(ByteBuffer buffer, ulong value)
       {
-         buffer.put(value);
+         buffer.Put(value);
       }
       
       // UINT64
@@ -411,11 +411,11 @@ namespace Qpid.Framing
       }
       public static long ReadLong(ByteBuffer buffer)
       {
-         return buffer.getLong();
+         return buffer.GetInt64();
       }
       public static void WriteLong(ByteBuffer buffer, long value)
       {
-         buffer.putLong(value);
+         buffer.Put(value);
       }
 
       // FLOAT
@@ -425,11 +425,11 @@ namespace Qpid.Framing
       }
       public static void WriteFloat(ByteBuffer buffer, float value)
       {
-         buffer.putFloat(value);
+         buffer.Put(value);
       }
       public static float ReadFloat(ByteBuffer buffer)
       {
-         return buffer.getFloat();
+         return buffer.GetFloat();
       }
 
       // DOUBLE
@@ -439,11 +439,20 @@ namespace Qpid.Framing
       }
       public static void WriteDouble(ByteBuffer buffer, double value)
       {
-         buffer.putDouble(value);
+         buffer.Put(value);
       }
       public static double ReadDouble(ByteBuffer buffer)
       {
-         return buffer.getDouble();
+         return buffer.GetDouble();
+      }
+
+      // OTHER
+      public static long ReadLongAsShortString(ByteBuffer buffer)
+      {
+         string value = ReadShortString(buffer);
+         if ( value == null || value.Length == 0 )
+            return 0L;
+         return Convert.ToInt64(value, CultureInfo.InvariantCulture);
       }
 
    }

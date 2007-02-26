@@ -217,8 +217,8 @@ namespace Qpid.Codec.Demux
                     for (int i = decoders.Length - 1; i >= 0; i --) 
                     {
                         IMessageDecoder decoder = decoders[i];
-                        int limit = input.limit();
-                        int pos = input.position();
+                        int limit = input.Limit;
+                        int pos = input.Position;
                         
                         try
                         {
@@ -226,8 +226,8 @@ namespace Qpid.Codec.Demux
                         }
                         finally
                         {
-                            input.position(pos);
-                            input.limit(limit);
+                            input.Position = pos;
+                            input.Limit = limit;
                         }
                         
                         if (result == MessageDecoderResult.OK)
@@ -248,9 +248,9 @@ namespace Qpid.Codec.Demux
                     if (undecodables == _decoders.Length)
                     {
                         // Throw an exception if all decoders cannot decode data.
-                        input.position(input.limit()); // Skip data
+                        input.Position = input.Limit; // Skip data
                         throw new ProtocolDecoderException(
-                            "No appropriate message decoder: " + input.HexDump);
+                            "No appropriate message decoder: " + input.GetHexDump());
                     }
                     
                     if (_currentDecoder == null)
@@ -382,4 +382,5 @@ namespace Qpid.Codec.Demux
         }
     }
 }
+
 

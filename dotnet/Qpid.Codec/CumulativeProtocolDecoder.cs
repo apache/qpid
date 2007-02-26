@@ -33,8 +33,8 @@ namespace Qpid.Codec
         /// </summary>
         protected CumulativeProtocolDecoder()
         {
-            _remaining = ByteBuffer.allocate(4096);
-            _remaining.setAutoExpand(true);
+            _remaining = ByteBuffer.Allocate(4096);
+            _remaining.IsAutoExpand = true;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Qpid.Codec
         /// </exception>
         public void Decode(ByteBuffer input, IProtocolDecoderOutput output)
         {
-            if (_remaining.position() != 0) // If there were remaining undecoded bytes
+            if (_remaining.Position != 0) // If there were remaining undecoded bytes
             {
                 DecodeRemainingAndInput(input, output);
             }
@@ -67,9 +67,9 @@ namespace Qpid.Codec
             }
             finally
             {
-                if (input.hasRemaining())
+                if (input.HasRemaining)
                 {
-                    _remaining.put(input);
+                    _remaining.Put(input);
                 }
             }
         }
@@ -77,8 +77,8 @@ namespace Qpid.Codec
         private void DecodeRemainingAndInput(ByteBuffer input, IProtocolDecoderOutput output)
         {
             // Concatenate input buffer with left-over bytes.
-            _remaining.put(input);
-            _remaining.flip();
+            _remaining.Put(input);
+            _remaining.Flip();
 
             try
             {
@@ -86,7 +86,7 @@ namespace Qpid.Codec
             }
             finally
             {
-                _remaining.compact();
+                _remaining.Compact();
             }
         }
 
@@ -94,17 +94,17 @@ namespace Qpid.Codec
         {
             for (;;)
             {
-                int oldPos = buf.position();
+                int oldPos = buf.Position;
                 bool decoded = DoDecode(buf, output);
                 if (decoded)
                 {                        
-                    if (buf.position() == oldPos)
+                    if (buf.Position == oldPos)
                     {
                         throw new Exception(
                             "doDecode() can't return true when buffer is not consumed.");
                     }
 
-                    if (!buf.hasRemaining())
+                    if (!buf.HasRemaining)
                     {
                         break;
                     }

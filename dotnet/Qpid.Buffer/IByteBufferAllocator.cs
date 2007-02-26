@@ -19,32 +19,31 @@
  *
  */
 
+using System;
+
 namespace Qpid.Buffer
 {
    /// <summary>
    /// Allocates <see cref="ByteBuffer"/>'s and manages them. Please 
    /// implement this interface if you need more advanced memory management scheme
    /// </summary>
-   public interface IByteBufferAllocator
+   public interface IByteBufferAllocator : IDisposable
    {
       /// <summary>
       /// Returns the buffer which is capable of the specified size.
       /// </summary>
       /// <param name="capacity">The capacity of the buffer</param>
-      /// <param name="direct">true to get a direct buffer, false to get a heap buffer</param>
-      ByteBuffer Allocate(int capacity, bool direct);
+      /// <returns>A new buffer</returns>
+      ByteBuffer Allocate(int capacity);
 
       /// <summary>
-      /// Wraps the specified buffer
+      /// Wrap the specified byte array in a new buffer
       /// </summary>
-      /// <param name="nioBuffer">fixed byte buffer</param>
-      /// <returns>The wrapped buffer</returns>
-      ByteBuffer Wrap(FixedByteBuffer nioBuffer);
+      /// <param name="src">Source array</param>
+      /// <returns>A new buffer</returns>
+      ByteBuffer Wrap(byte[] src);
 
-
-      /// <summary>
-      /// Dispose of this allocator.
-      /// </summary>
-      void Dispose();
-   }
+   } // interface IByteBufferAllocator
 }
+
+

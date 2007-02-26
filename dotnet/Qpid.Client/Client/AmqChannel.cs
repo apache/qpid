@@ -815,8 +815,8 @@ namespace Qpid.Client
             byte[] payload = null;
             if (buf != null)
             {
-                payload = new byte[buf.remaining()];
-                buf.get(payload);
+                payload = new byte[buf.Remaining];
+                buf.GetBytes(payload);
             }
             BasicContentHeaderProperties contentHeaderProperties = message.ContentHeaderProperties;
 
@@ -824,7 +824,7 @@ namespace Qpid.Client
             {
                 if (!disableTimestamps)
                 {
-                    contentHeaderProperties.Expiration = (uint)currentTime + timeToLive;
+                    contentHeaderProperties.Expiration = currentTime + timeToLive;
                 }
             }
             else
