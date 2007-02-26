@@ -43,20 +43,20 @@ namespace Qpid.Client.Message
             if (bodies != null && bodies.Count == 1)
             {
                 _logger.Debug("Non-fragmented message body (bodySize=" + contentHeader.BodySize +")");
-                data = ByteBuffer.wrap(((ContentBody)bodies[0]).Payload);
+                data = ByteBuffer.Wrap(((ContentBody)bodies[0]).Payload);
             }
             else
             {
                 _logger.Debug("Fragmented message body (" + bodies.Count + " frames, bodySize=" + contentHeader.BodySize + ")");
-                data = ByteBuffer.allocate((int)contentHeader.BodySize); // XXX: Is cast a problem?
+                data = ByteBuffer.Allocate((int)contentHeader.BodySize); // XXX: Is cast a problem?
                 foreach (ContentBody body in bodies) {
-                    data.put(body.Payload);
+                    data.Put(body.Payload);
                     //body.Payload.Release();
                 }
 
-                data.flip();
+                data.Flip();
             }
-            _logger.Debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
+            _logger.Debug("Creating message from buffer with position=" + data.Position + " and remaining=" + data.Remaining);
 
             return CreateMessage(messageNbr, data, contentHeader);
         }

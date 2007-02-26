@@ -36,33 +36,38 @@ namespace Qpid.Client.Message
 
         protected ByteBuffer _data;
         protected bool _readableMessage = false;
+        private QpidHeaders _headers;
 
 #region new_java_ctrs
 
         protected AbstractQmsMessage(ByteBuffer data)
             : base(new BasicContentHeaderProperties())
         {
-            _data = data;
-            if (_data != null)
-            {
-                _data.acquire();
-            }
-            _readableMessage = (data != null);
+           Init(data);
         }
 
         protected AbstractQmsMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             : this(contentHeader, deliveryTag)
         {
-            _data = data;
-            if (_data != null)
-            {
-                _data.acquire();
-            }
-            _readableMessage = data != null;
+           Init(data);
         }
 
         protected AbstractQmsMessage(BasicContentHeaderProperties contentHeader, long deliveryTag) : base(contentHeader, deliveryTag)
         {
+           Init(null);
+        }
+
+        private void Init(ByteBuffer data)
+        {
+           _data = data;
+           if ( _data != null )
+           {
+              _data.Acquire();
+           }
+           _readableMessage = (data != null);
+           if ( ContentHeaderProperties.Headers == null )
+              ContentHeaderProperties.Headers = new FieldTable();
+           _headers = new QpidHeaders(ContentHeaderProperties.Headers);
         }
 
 #endregion
@@ -269,7 +274,7 @@ namespace Qpid.Client.Message
             }
             set
             {
-                ContentHeaderProperties.Expiration = (uint) value;
+                ContentHeaderProperties.Expiration = value;
             }
         }
 
@@ -314,7 +319,7 @@ namespace Qpid.Client.Message
 
         public IHeaders Headers
         {
-            get { return new QpidHeaders(this); }
+            get { return _headers; }
         }
 
         public abstract void ClearBodyImpl();
@@ -345,13 +350,13 @@ namespace Qpid.Client.Message
                 {
                     if (!_readableMessage)
                     {
-                        _data.flip();
+                        _data.Flip();
                     }
                     else
                     {
                         // Make sure we rewind the data just in case any method has moved the
                         // position beyond the start.
-                        _data.rewind();
+                        _data.Rewind();
                     }
                 }
                 return _data;
