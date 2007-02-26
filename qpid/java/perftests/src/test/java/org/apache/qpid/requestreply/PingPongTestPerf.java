@@ -111,6 +111,8 @@ public class PingPongTestPerf extends AsymptoticTestCase
                                               PingPongProducer.DEFAULT_FAIL_BEFORE_SEND);
         ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_ONCE_PROPNAME, PingPongProducer.DEFAULT_FAIL_ONCE);
         ParsedProperties.setSysPropertyIfNull(PingPongProducer.UNIQUE_PROPNAME, Boolean.toString(PingPongProducer.DEFAULT_UNIQUE));
+        ParsedProperties.setSysPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME,
+                                              Integer.toString(PingPongProducer.DEFAULT_ACK_MODE));
     }
 
     /**
@@ -188,6 +190,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
             int batchSize = testParameters.getPropertyAsInteger(PingPongProducer.COMMIT_BATCH_SIZE_PROPNAME);
             Boolean failOnce = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_ONCE_PROPNAME);
             boolean unique = testParameters.getPropertyAsBoolean(PingPongProducer.UNIQUE_PROPNAME);
+            int ackMode = testParameters.getPropertyAsInteger(PingPongProducer.ACK_MODE_PROPNAME);
 
             synchronized (this)
             {
@@ -205,7 +208,8 @@ public class PingPongTestPerf extends AsymptoticTestCase
                                                                         destinationName, selector, transacted, persistent,
                                                                         messageSize, verbose, failAfterCommit,
                                                                         failBeforeCommit, failAfterSend, failBeforeSend,
-                                                                        failOnce, batchSize, 0, rate, pubsub, unique);
+                                                                        failOnce, batchSize, 0, rate, pubsub,
+                                                                        unique, ackMode);
                 perThreadSetup._testPingProducer.getConnection().start();
             }
 

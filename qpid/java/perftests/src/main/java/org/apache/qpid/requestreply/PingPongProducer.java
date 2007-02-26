@@ -144,6 +144,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     public static final String UNIQUE_PROPNAME = "uniqueDests";
 
+    public static final String ACK_MODE_PROPNAME = "ackMode";
+
     /** Used to set up a default message size. */
     public static final int DEFAULT_MESSAGE_SIZE = 0;
 
@@ -218,6 +220,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     public static final boolean DEFAULT_UNIQUE = true;
 
+    public static final int DEFAULT_ACK_MODE = Session.NO_ACKNOWLEDGE;
+
     /** Holds the name of the property to store nanosecond timestamps in ping messages with. */
     public static final String MESSAGE_TIMESTAMP_PROPNAME = "timestamp";
 
@@ -247,6 +251,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     /** Determines whether this producer sends persistent messages. */
     protected boolean _persistent;
+
+    private int _ackMode = Session.NO_ACKNOWLEDGE;
 
     /** Determines what size of messages this producer sends. */
     protected int _messageSize;
@@ -347,7 +353,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                             String destinationName, String selector, boolean transacted, boolean persistent, int messageSize,
                             boolean verbose, boolean afterCommit, boolean beforeCommit, boolean afterSend,
                             boolean beforeSend, boolean failOnce, int txBatchSize, int noOfDestinations, int rate,
-                            boolean pubsub, boolean unique) throws Exception
+                            boolean pubsub, boolean unique, int ackMode) throws Exception
     {
         _logger.debug("public PingPongProducer(String brokerDetails = " + brokerDetails + ", String username = " + username
                       + ", String password = " + password + ", String virtualpath = " + virtualpath
@@ -357,7 +363,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                       + afterCommit + ", boolean beforeCommit = " + beforeCommit + ", boolean afterSend = " + afterSend
                       + ", boolean beforeSend = " + beforeSend + ", boolean failOnce = " + failOnce + ", int txBatchSize = "
                       + txBatchSize + ", int noOfDestinations = " + noOfDestinations + ", int rate = " + rate
-                      + ", boolean pubsub = " + pubsub + ", boolean unique = " + unique + "): called");
+                      + ", boolean pubsub = " + pubsub + ", boolean unique = " + unique
+                      + ", ackMode = " + ackMode + "): called");
 
         // Keep all the relevant options.
         _persistent = persistent;
@@ -371,6 +378,10 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _txBatchSize = txBatchSize;
         _isPubSub = pubsub;
         _isUnique = unique;
+        if (ackMode != 0)
+        {
+            _ackMode = ackMode;
+        }
 
         // Check that one or more destinations were specified.
         if (noOfDestinations < 1)
@@ -385,8 +396,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _connection = new AMQConnection(brokerDetails, username, password, clientID, virtualpath);
 
         // Create transactional or non-transactional sessions, based on the command line arguments.
-        _producerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
-        _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
+        _producerSession = (Session) getConnection().createSession(transacted, _ackMode);
+        _consumerSession = (Session) getConnection().createSession(transacted, _ackMode);
 
         // Set up a throttle to control the send rate, if a rate > 0 is specified.
         if (rate > 0)
@@ -484,7 +495,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         PingPongProducer pingProducer =
                 new PingPongProducer(brokerDetails, DEFAULT_USERNAME, DEFAULT_PASSWORD, virtualpath, destName, selector,
                                      transacted, persistent, messageSize, verbose, afterCommit, beforeCommit, afterSend,
-                                     beforeSend, failOnce, batchSize, destCount, rate, pubsub, false);
+                                     beforeSend, failOnce, batchSize, destCount, rate, pubsub, false, 0);
 
         pingProducer.getConnection().start();
 
@@ -574,31 +585,31 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         {
             AMQDestination destination;
 
-            int id;
+            String id;
 
             // Generate an id, unique within this pinger or to the whole JVM depending on the unique flag.
             if (unique)
             {
                 _logger.debug("Creating unique destinations.");
-                id = _queueJVMSequenceID.incrementAndGet();
+                id = "_" + _queueJVMSequenceID.incrementAndGet() + "_" + _connection.getClientID();
             }
             else
             {
                 _logger.debug("Creating shared destinations.");
-                id = _queueSharedId.incrementAndGet();
+                id = "_" + _queueSharedId.incrementAndGet();
             }
 
             // Check if this is a pub/sub pinger, in which case create topics.
             if (_isPubSub)
             {
-                _logger.debug("Creating topics.");
                 destination = new AMQTopic(rootName + id);
+                _logger.debug("Creating topic " + destination);
             }
             // Otherwise this is a p2p pinger, in which case create queues.
             else
             {
-                _logger.debug("Creating queues.");
                 destination = new AMQQueue(rootName + id);
+                _logger.debug("Creating queue " + destination);
             }
 
             // Keep the destination.
