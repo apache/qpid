@@ -51,14 +51,14 @@ namespace Qpid.Framing
         {
             IDataBlock frame = (IDataBlock) message;
             int frameSize = (int)frame.Size; // TODO: sort out signed/unsigned
-            ByteBuffer buffer = ByteBuffer.allocate(frameSize);
+            ByteBuffer buffer = ByteBuffer.Allocate(frameSize);
             frame.WritePayload(buffer);
             
             if (_logger.IsDebugEnabled)
             {                
                 _logger.Debug("Encoded frame byte-buffer is '" + ByteBufferHexDumper.GetHexDump(buffer) + "'");
             }
-            buffer.flip();
+            buffer.Flip();
             output.Write(buffer);
         }
     }

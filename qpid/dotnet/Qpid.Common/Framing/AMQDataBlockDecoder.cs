@@ -51,11 +51,11 @@ namespace Qpid.Framing
             }
             // final +1 represents the command end which we know we must require even
             // if there is an empty body
-            if (input.remaining() < 1)
+            if (input.Remaining < 1)
             {
                 return MessageDecoderResult.NEED_DATA;
             }
-            byte type = input.get();
+            byte type = input.GetByte();
 
             // we have to check this isn't a protocol initiation frame here - we can't tell later on and we end up
             // waiting for more data. This could be improved if MINA supported some kind of state awareness when decoding
@@ -65,13 +65,13 @@ namespace Qpid.Framing
                 return MessageDecoderResult.NOT_OK;
             }
             // zero, channel, body size and end byte
-            if (input.remaining() < (1 + 2 + 4 + 1))
+            if (input.Remaining < (1 + 2 + 4 + 1))
             {
                 return MessageDecoderResult.NEED_DATA;
             }
-            
-            int channel = input.GetUnsignedShort();
-            long bodySize = input.GetUnsignedInt();            
+
+            int channel = input.GetUInt16();
+            long bodySize = input.GetUInt32();            
 
             // bodySize can be zero
             if (type <= 0 || channel < 0 || bodySize < 0)
@@ -80,7 +80,7 @@ namespace Qpid.Framing
                 return MessageDecoderResult.NOT_OK;
             }
 
-            if (input.remaining() < (bodySize + 1))
+            if (input.Remaining < (bodySize + 1))
             {
                 return MessageDecoderResult.NEED_DATA;
             }
@@ -116,9 +116,9 @@ namespace Qpid.Framing
 
         protected Object CreateAndPopulateFrame(ByteBuffer input)
         {
-            byte type = input.get();            
-            ushort channel = input.GetUnsignedShort();
-            uint bodySize = input.GetUnsignedInt();
+            byte type = input.GetByte();
+            ushort channel = input.GetUInt16();
+            uint bodySize = input.GetUInt32();
 
             IBodyFactory bodyFactory = (IBodyFactory)_supportedBodies[type];
             if (bodyFactory == null)
@@ -129,7 +129,7 @@ namespace Qpid.Framing
 
             frame.PopulateFromBuffer(input, channel, bodySize, bodyFactory);
 
-            byte marker = input.get();
+            byte marker = input.GetByte();
             if (marker != 0xCE) {
            		throw new FormatException("marker is not 0xCE"); 	
             }

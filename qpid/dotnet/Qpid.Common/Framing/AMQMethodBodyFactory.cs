@@ -39,7 +39,7 @@ namespace Qpid.Framing
         /// <exception>AMQFrameDecodingException</exception>
         public IBody CreateBody(ByteBuffer inbuf)
         {
-            return MethodBodyDecoderRegistry.Get(inbuf.GetUnsignedShort(), inbuf.GetUnsignedShort());
+           return MethodBodyDecoderRegistry.Get(inbuf.GetUInt16(), inbuf.GetUInt16());
         }
     }
 }

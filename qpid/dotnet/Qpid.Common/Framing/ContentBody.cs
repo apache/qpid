@@ -54,7 +54,7 @@ namespace Qpid.Framing
         {
             if (Payload != null)
             {
-                buffer.put(Payload);
+                buffer.Put(Payload);
             }
         }
 
@@ -63,7 +63,7 @@ namespace Qpid.Framing
             if (size > 0)
             {
                 Payload = new byte[size];
-                buffer.get(Payload);
+                buffer.GetBytes(Payload);
             }
         }
 
