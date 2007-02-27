@@ -47,6 +47,7 @@
     <Compile Include="AMQUndeliveredException.cs" />
     <Compile Include="AssemblySettings.cs" />
     <Compile Include="Collections\LinkedHashtable.cs" />
+    <Compile Include="Collections\ConsumerProducerQueue.cs" />
     <Compile Include="Framing\AMQDataBlockDecoder.cs" />
     <Compile Include="Framing\AMQDataBlockEncoder.cs" />
     <Compile Include="Framing\AMQFrame.cs" />
