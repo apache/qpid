@@ -100,9 +100,9 @@ namespace Qpid.Client
 
         /// <summary>
         /// Used in the blocking receive methods to receive a message from
-        /// the Channel thread. Argument true indicates we want strict FIFO semantics
+        /// the Channel thread. 
         /// </summary>
-        private readonly SynchronousQueue _synchronousQueue = new SynchronousQueue(true);
+        private readonly ConsumerProducerQueue _messageQueue = new ConsumerProducerQueue();
 
         private MessageFactoryRegistry _messageFactory;
 
@@ -188,17 +188,8 @@ namespace Qpid.Client
 
             try
             {
-                object o;
-                if (delay > 0)
-                {
-                    //o = _synchronousQueue.Poll(l, TimeUnit.MILLISECONDS);
-                    throw new NotImplementedException("Need to implement synchronousQueue.Poll(timeout");
-                }
-                else
-                {
-                    o = _synchronousQueue.DequeueBlocking();
-                }
-
+                object o = _messageQueue.Dequeue(delay);
+                
                 return ReturnMessageOrThrowAndPostDeliver(o);
             }
             finally
@@ -222,42 +213,12 @@ namespace Qpid.Client
 
         public IMessage Receive()
         {
-            return Receive(0);
+            return Receive(Timeout.Infinite);
         }
 
         public IMessage ReceiveNoWait()
         {
-            CheckNotClosed();
-
-            lock (_syncLock)
-            {
-                // If someone is already receiving
-                if (_receiving)
-                {
-                    throw new InvalidOperationException("Another thread is already receiving (possibly asynchronously)...");
-                }
-
-                _receiving = true;
-            }
-
-            try
-            {
-                if (_synchronousQueue.Count > 0)
-                {
-                    return ReturnMessageOrThrowAndPostDeliver(_synchronousQueue.Dequeue());
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            finally
-            {
-                lock (_syncLock)
-                {
-                    _receiving = false;
-                }
-            }
+           return Receive(0);
         }
 
         #endregion
@@ -359,7 +320,7 @@ namespace Qpid.Client
                 }
                 else
                 {
-                    _synchronousQueue.Enqueue(jmsMessage);
+                    _messageQueue.Enqueue(jmsMessage);
                 }
             }
             catch (Exception e)
@@ -380,10 +341,8 @@ namespace Qpid.Client
                 if (_messageListener == null)
                 {
                     // offer only succeeds if there is a thread waiting for an item from the queue
-                    if (_synchronousQueue.EnqueueNoThrow(cause))
-                    {
-                        _logger.Debug("Passed exception to synchronous queue for propagation to receive()");
-                    }
+                   _messageQueue.Enqueue(cause);
+                    _logger.Debug("Passed exception to synchronous queue for propagation to receive()");
                 }
                 DeregisterConsumer();
             }
