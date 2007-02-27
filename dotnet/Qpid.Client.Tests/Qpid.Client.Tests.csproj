@@ -55,6 +55,7 @@
     <Compile Include="requestreply1\ServiceProvidingClient.cs" />
     <Compile Include="requestreply1\ServiceRequestingClient.cs" />
     <Compile Include="Security\CallbackHandlerRegistryTests.cs" />
+    <Compile Include="SimpleConsumer\TestSyncConsumer.cs" />
     <Compile Include="undeliverable\UndeliverableTest.cs" />
     <Compile Include="url\ConnectionUrlTest.cs" />
   </ItemGroup>
