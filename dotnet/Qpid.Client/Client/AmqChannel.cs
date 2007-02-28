@@ -33,9 +33,9 @@ namespace Qpid.Client
 {
     public class AmqChannel : Closeable, IChannel
     {
-        private const int BASIC_CONTENT_TYPE = 60;
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(AmqChannel));
 
-        private static readonly ILog _logger = LogManager.GetLogger(typeof (AmqChannel));
+        private const int BASIC_CONTENT_TYPE = 60;
 
         private static int _nextSessionNumber = 0;
 
@@ -110,7 +110,7 @@ namespace Qpid.Client
                     DispatchMessage(message);
                 }                
 
-                _logger.Info("Dispatcher thread terminating for channel " + _containingChannel._channelId);
+                _logger.Debug("Dispatcher thread terminating for channel " + _containingChannel._channelId);
             }
 
             private void DispatchMessage(UnprocessedMessage message)
@@ -405,14 +405,14 @@ namespace Qpid.Client
         /// </summary>
         private void CloseProducers()
         {
-            _logger.Info("Closing producers on session " + this);
+            _logger.Debug("Closing producers on session " + this);
             // we need to clone the list of producers since the close() method updates the _producers collection
             // which would result in a concurrent modification exception
             ArrayList clonedProducers = new ArrayList(_producers.Values);
             
             foreach (BasicMessageProducer prod in clonedProducers)
             {
-                _logger.Info("Closing producer " + prod);
+                _logger.Debug("Closing producer " + prod);
                 prod.Close();
             }
             // at this point the _producers map is empty
