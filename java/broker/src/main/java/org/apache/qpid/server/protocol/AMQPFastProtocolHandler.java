@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
@@ -90,7 +91,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
                 getConfiguredObject(ConnectorConfiguration.class);
         if (connectorConfig.enableExecutorPool)
         {
-            if (connectorConfig.enableSSL)
+            if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
             	String keystorePath = connectorConfig.keystorePath;
             	String keystorePassword = connectorConfig.keystorePassword;
@@ -104,7 +105,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         else
         {
         	protocolSession.getFilterChain().addLast("protocolFilter", pcf);
-            if (connectorConfig.enableSSL)
+            if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
             	String keystorePath = connectorConfig.keystorePath;
             	String keystorePassword = connectorConfig.keystorePassword;
@@ -227,5 +228,12 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         {
             _logger.debug("Message sent: " + object);
         }
+    }
+    
+    protected boolean isSSLClient(ConnectorConfiguration connectionConfig,
+    		IoSession protocolSession) 
+    {
+    	InetSocketAddress addr = (InetSocketAddress) protocolSession.getLocalAddress();
+    	return addr.getPort() == connectionConfig.sslPort;
     }
 }

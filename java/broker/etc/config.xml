@@ -28,6 +28,7 @@
              to enable SSL support
         <ssl>
             <enabled>true</enabled>
+            <sslOnly>true</sslOnly>
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
