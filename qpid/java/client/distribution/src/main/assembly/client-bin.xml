@@ -69,8 +69,8 @@
           <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
           <unpack>false</unpack>
           <excludes>
-             <exclude>org.apache.qpid:qpid-client:jar:java1.4</exclude>
-             <exclude>org.apache.qpid:qpid-common:jar:java1.4</exclude>
+             <exclude>org.apache.qpid:qpid-client:jar:java14</exclude>
+             <exclude>org.apache.qpid:qpid-common:jar:java14</exclude>
              <exclude>org.apache.qpid:qpid-client-distribution</exclude>
           </excludes>
       </dependencySet>

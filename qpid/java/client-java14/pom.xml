@@ -46,6 +46,36 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jms_1.1_spec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+
         <!-- Use the java 1.4 retrotranslated client. -->
         <dependency>
             <groupId>org.apache.qpid</groupId>
@@ -64,8 +94,18 @@
             <classifier>java14</classifier>
         </dependency>
 
+        <!-- Use the java 1.4 retrotranslated integration tests. -->
         <dependency>
-            <groupId>net.sf.retrotranslator</groupId>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-integrationtests</artifactId>
+            <type>jar</type>
+            <version>${pom.version}</version>
+            <classifier>java14</classifier>
+            <!--<scope>test</scope>-->
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>                
             <artifactId>retrotranslator-runtime</artifactId>
             <scope>package</scope>
         </dependency>
@@ -97,17 +137,44 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${assembly.version}</version>
-                <goals>
-                    <goal>single</goal>
-                </goals>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assembly/client-java14-bin.xml</descriptor>
-                    </descriptors>
-                    <finalName>qpid-${pom.version}</finalName>
-                    <outputDirectory>${qpid.targetDir}</outputDirectory>
-                    <tarLongFileMode>gnu</tarLongFileMode>
-                </configuration>
+
+                <executions>
+
+                    <!-- Produces the distribution. -->
+                    <execution>
+                        <id>assembly-dist</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>assembly</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/client-java14-bin.xml</descriptor>
+                            </descriptors>
+                            <finalName>qpid-${pom.version}</finalName>
+                            <outputDirectory>${qpid.targetDir}</outputDirectory>
+                            <tarLongFileMode>gnu</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                    
+                    <!-- Produces a jar with all test dependencies in it. For convenience in running tests from command line. -->
+                    <!-- Todo: Replace this with a manifest only jar, its much quicker to build that. -->
+                    <execution>
+                        <id>assembly-alltestdeps</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>assembly</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/jar-with-dependencies.xml</descriptor>
+                            </descriptors>
+                            <outputDirectory>target</outputDirectory>
+                            <workDirectory>target/assembly/work</workDirectory>
+                        </configuration>              
+                    </execution>
+
+                </executions>
             </plugin>
 
             <!-- Sets up surefire to run during the integration-test phase instead of the test phase. -->

@@ -47,18 +47,14 @@ import org.apache.qpid.exchange.ExchangeDefaults;
  * The publisher then send a message (on the same topic), with the header text field "TYPE", value "TERMINATION_REQUEST",
  * which the listener should close its connection and terminate upon receipt of.
  *
- * @deprecated Use PingPongBouncer instead once the below todo is completed.
- *
- * @todo Make the functionality of this class available through PingPongBouncer. Rename PingPongBouncer to
- *       PingListener and make its bouncing functionality optional, either through a switch or as an extending class
- *       called PingBouncer. Want to have as few ping classes as possible with configurable behaviour, re-using code
- *       accross p2p and topic style tests in almost all cases.
+ * @todo I've added lots of field table types in the report message, just to check if the other end can decode them
+ *       correctly. Not really the right place to test this, so remove them from
+ *       {@link #createReportResponseMessage(String)} once a better test exists.
  */
 public class Listener implements MessageListener
 {
     private static Logger log = Logger.getLogger(Listener.class);
 
-    private static final char[] DATA = "abcdefghijklmnopqrstuvwxyz".toCharArray();
     public static final String CONTROL_TOPIC = "topic_control";
     public static final String RESPONSE_QUEUE = "response";
 
@@ -66,8 +62,6 @@ public class Listener implements MessageListener
     //private final Topic _control;
 
     private final Queue _response;
-
-    private final byte[] _payload;
 
     /** Holds the connection to listen on. */
     private final Connection _connection;
@@ -107,15 +101,6 @@ public class Listener implements MessageListener
             _topic = _session.createTopic(CONTROL_TOPIC);
             //_control = _session.createTopic(CONTROL_TOPIC);
             _response = _session.createQueue(RESPONSE_QUEUE);
-        }
-
-        int size = 256;
-
-        _payload = new byte[size];
-
-        for (int i = 0; i < size; i++)
-        {
-            _payload[i] = (byte) DATA[i % DATA.length];
         }
 
         //register for events
@@ -182,15 +167,19 @@ public class Listener implements MessageListener
                   + ", String value = " + value + "): called");
 
         String comp = m.getStringProperty(fieldName);
+        log.debug("comp = " + comp);
 
-        return (comp != null) && comp.equals(value);
+        boolean result = (comp != null) && comp.equals(value);
+        log.debug("result = " + result);
+
+        return result;
     }
 
     public void onMessage(Message message)
     {
         NDC.push(clientId);
 
-        log.debug("public void onMessage(Message message): called");
+        log.debug("public void onMessage(Message message = " + message + "): called");
 
         if (!init)
         {
@@ -203,11 +192,14 @@ public class Listener implements MessageListener
         {
             if (isShutdown(message))
             {
+                log.debug("Got a shutdown message.");
                 shutdown();
             }
             else if (isReport(message))
             {
-                //send a report:
+                log.debug("Got a report request message.");
+
+                // Send the report.
                 report();
                 init = false;
             }
@@ -224,14 +216,26 @@ public class Listener implements MessageListener
 
     Message createReportResponseMessage(String msg) throws JMSException
     {
-        return _session.createTextMessage(msg);
+        Message message = _session.createTextMessage(msg);
+
+        // Shove some more field table type in the message just to see if the other end can handle it.
+        message.setBooleanProperty("BOOLEAN", true);
+        message.setByteProperty("BYTE", (byte) 5);
+        message.setDoubleProperty("DOUBLE", Math.PI);
+        message.setFloatProperty("FLOAT", 1.0f);
+        message.setIntProperty("INT", 1);
+        message.setShortProperty("SHORT", (short) 1);
+        message.setLongProperty("LONG", (long) 1827361278);
+        message.setStringProperty("STRING", "hello");
+
+        return message;
     }
 
     boolean isShutdown(Message m) throws JMSException
     {
         boolean result = checkTextField(m, "TYPE", "TERMINATION_REQUEST");
 
-        log.debug("isShutdown = " + result);
+        //log.debug("isShutdown = " + result);
 
         return result;
     }
@@ -240,7 +244,7 @@ public class Listener implements MessageListener
     {
         boolean result = checkTextField(m, "TYPE", "REPORT_REQUEST");
 
-        log.debug("isReport = " + result);
+        //log.debug("isReport = " + result);
 
         return result;
     }
@@ -276,11 +280,13 @@ public class Listener implements MessageListener
 
     private void report()
     {
+        log.debug("private void report(): called");
+
         try
         {
             String msg = getReport();
             _controller.send(createReportResponseMessage(msg));
-            System.out.println("Sent report: " + msg);
+            log.debug("Sent report: " + msg);
         }
         catch (Exception e)
         {
