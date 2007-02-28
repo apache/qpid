@@ -20,6 +20,17 @@
  */
 namespace Qpid.Messaging
 {
+    /// <summary>
+    /// IHeaders represents the header fields of an AMQ message and provides methods to access those fields. There are accessor methods to
+    /// get and set each header field for each supported header field data type.
+    /// 
+    /// <para/><table id="crc"><caption>CRC Card</caption>
+    /// <tr><th>Responsibilities</th></tr>
+    /// <tr><td>Provide accessors for all supported header field types.</td></tr>
+    /// <tr><td>Check if a set of headers contains a named property.</td></tr>
+    /// </table>
+    /// 
+    /// </summary>
     public interface IHeaders
     {
         bool Contains(string name);

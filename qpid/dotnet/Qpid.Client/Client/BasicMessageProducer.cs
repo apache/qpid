@@ -196,7 +196,7 @@ namespace Qpid.Client
 
         public override void Close()
         {
-            _logger.Info("Closing producer " + this);
+            _logger.Debug("Closing producer " + this);
             Interlocked.Exchange(ref _closed, CLOSED);
             _channel.DeregisterProducer(_producerId);
         }

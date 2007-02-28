@@ -251,11 +251,9 @@ namespace Qpid.Client.Tests
             }
         }
 
-        /// <summary>
-        /// Returns a field table containing patterns to match the test header exchange against.
-        /// </summary>
+        /// <summary> Returns a field table containing patterns to match the test header exchange against. </summary>
         /// 
-        ///  <returns>A field table containing test patterns.</returns>
+        /// <returns> A field table containing test patterns. </returns>
         private FieldTable CreatePatternAsFieldTable()
         {
             FieldTable matchTable = new FieldTable();
