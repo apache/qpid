@@ -41,11 +41,7 @@ public class ConnectorConfiguration
     @Configured(path = "connector.bind",
                 defaultValue = "wildcard")
     public String bindAddress;
-
-    @Configured(path = "connector.sslport",
-                defaultValue = SSL_PORT)
-    public int sslPort;
-
+    
     @Configured(path = "connector.socketReceiveBuffer",
                 defaultValue = "32767")
     public int socketReceiveBufferSize;
@@ -73,6 +69,14 @@ public class ConnectorConfiguration
     @Configured(path = "connector.ssl.enabled",
                 defaultValue = "false")
     public boolean enableSSL;
+    
+    @Configured(path = "connector.ssl.sslOnly",
+    		    defaultValue = "true")
+    public boolean sslOnly;
+    
+    @Configured(path = "connector.ssl.port",
+            defaultValue = SSL_PORT)
+    public int sslPort;    
     
     @Configured(path = "connector.ssl.keystorePath",
     			defaultValue = "none")

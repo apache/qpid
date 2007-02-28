@@ -68,9 +68,6 @@ public class Main
 
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
 
-    
-    private static Main _instance;
-
     protected static class InitException extends Exception
     {
         InitException(String msg)
@@ -333,8 +330,8 @@ public class Main
             {
                 sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
             }
-
-            if (!connectorConfig.enableSSL)
+            
+            if (!connectorConfig.enableSSL || !connectorConfig.sslOnly)
             {
                 AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
                 InetSocketAddress bindAddress;
@@ -350,7 +347,7 @@ public class Main
                 _logger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
 
-            else
+            if (connectorConfig.enableSSL)
             {
                 AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
                 try
@@ -374,7 +371,7 @@ public class Main
     public static void main(String[] args)
     {
 
-        _instance = new Main(args);
+        new Main(args);
     }
 
     private byte[] parseIP(String address) throws Exception
