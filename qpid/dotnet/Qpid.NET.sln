@@ -20,6 +20,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Sasl.Tests", "Qpid.Sas
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qpid.Buffer.Tests", "Qpid.Buffer.Tests\Qpid.Buffer.Tests.csproj", "{74640962-99D0-4D06-B57A-9CD66517CF52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicPublisher", "TopicPublisher\TopicPublisher.csproj", "{A06C9FFD-22FF-4654-856D-897C230978AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicListener", "TopicListener\TopicListener.csproj", "{9A112DF2-146F-4CF4-919B-9D3BE7D088E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +70,14 @@ Global
 		{74640962-99D0-4D06-B57A-9CD66517CF52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74640962-99D0-4D06-B57A-9CD66517CF52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74640962-99D0-4D06-B57A-9CD66517CF52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A06C9FFD-22FF-4654-856D-897C230978AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A06C9FFD-22FF-4654-856D-897C230978AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A06C9FFD-22FF-4654-856D-897C230978AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A06C9FFD-22FF-4654-856D-897C230978AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A112DF2-146F-4CF4-919B-9D3BE7D088E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A112DF2-146F-4CF4-919B-9D3BE7D088E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A112DF2-146F-4CF4-919B-9D3BE7D088E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A112DF2-146F-4CF4-919B-9D3BE7D088E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
