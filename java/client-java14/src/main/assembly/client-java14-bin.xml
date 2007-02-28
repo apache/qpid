@@ -53,14 +53,19 @@
       <dependencySet>
           <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
           <unpack>false</unpack>
+          
           <excludes>
-              <!-- Exclude the Java 5 built client and common. The java 1.4 retrotranslated versions are used instead. -->
+             <!-- Exclude the Java 5 built client and common. The java 1.4 retrotranslated versions are used instead. -->
              <exclude>org.apache.qpid:qpid-client:jar</exclude>
              <exclude>org.apache.qpid:qpid-common:jar</exclude>
+
+             <!-- Exclude the retrotranslated integration tests from the distriubtion. -->
+             <exclude>org.apache.qpid:qpid-integrationtests:jar:java14</exclude>
 
              <!-- Mina SSL support only available in Java 5. No SSL on 1.4. -->
              <exclude>org.apache.mina:mina-java5</exclude>
              <exclude>org.apache.mina:mina-filter-ssl</exclude>
+
           </excludes>         
       </dependencySet>
   </dependencySets>

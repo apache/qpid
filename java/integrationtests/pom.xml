@@ -1,0 +1,127 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-integrationtests</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-incubating-M2-SNAPSHOT</version>
+    <name>Qpid Integration Tests</name>
+
+    <parent>
+        <groupId>org.apache.qpid</groupId>
+        <artifactId>qpid</artifactId>
+        <version>1.0-incubating-M2-SNAPSHOT</version>
+    </parent>
+
+    <properties>
+        <topDirectoryLocation>..</topDirectoryLocation>
+    </properties>
+
+    <dependencies>
+
+        <!-- These tests depend on the client API only. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-client</artifactId>
+        </dependency>
+
+        <!-- Test dependencies. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <!-- Backports the module to Java 1.4. This is done during the packaging phase as a transformation of the Jar. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>retrotranslator-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>retro-client</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>translate</goal>
+                        </goals>
+                        <configuration>
+                            <!--<destdir>${project.build.directory}/retro-classes</destdir>-->
+                            <destjar>${project.build.directory}/${project.build.finalName}-java14.jar</destjar>
+                            <verify>${retrotranslator.verify}</verify>
+                            <verifyClasspath>
+                                <element>${retrotranslator.1.4-rt-path}</element>
+                                <element>${retrotranslator.1.4-jce-path}</element>
+                                <element>${retrotranslator.1.4-jsse-path}</element>
+                                <element>${retrotranslator.1.4-sasl-path}</element>
+                            </verifyClasspath>
+                            <failonwarning>false</failonwarning>
+                            <includes>
+                                <include>
+                                    <directory>${project.build.directory}</directory>
+                                    <pattern>${project.build.finalName}.jar</pattern>
+                                </include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- This identifies the backported java 1.4 jars and attaches them as jar (classified as java14) build artifacts. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${project.build.directory}/${project.build.finalName}-java14.jar</file>
+                                    <type>jar</type>
+                                    <classifier>java14</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+        <resources>
+        </resources>
+
+    </build>
+
+</project>
