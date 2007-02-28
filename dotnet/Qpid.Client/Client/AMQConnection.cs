@@ -127,9 +127,9 @@ namespace Qpid.Client
             {
                 throw new ArgumentException("ConnectionInfo must be specified");
             }
-            _log.Info("ConnectionInfo: " + connectionInfo);
+            _log.Debug("ConnectionInfo: " + connectionInfo);
             _connectionInfo = connectionInfo;
-            _log.Info("password = " + _connectionInfo.Password);
+            _log.Debug("password = " + _connectionInfo.Password);
             _failoverPolicy = new FailoverPolicy(connectionInfo);
 
             // We are not currently connected.
@@ -141,7 +141,7 @@ namespace Qpid.Client
                 try
                 {
                     IBrokerInfo brokerInfo = _failoverPolicy.GetNextBrokerInfo();
-                    _log.Info("Connecting to " + brokerInfo);
+                    _log.Debug("Connecting to " + brokerInfo);
                     MakeBrokerConnection(brokerInfo);
                     break;
                 }
@@ -185,7 +185,7 @@ namespace Qpid.Client
 
             foreach (Type type in assembly.GetTypes())
             {
-                _log.Info(String.Format("type = {0}", type));
+                _log.Debug(String.Format("type = {0}", type));
             }
 
             Type transport = assembly.GetType(transportType);
@@ -197,13 +197,13 @@ namespace Qpid.Client
                 
             }
 
-            _log.Info("transport = " + transport);
-            _log.Info("ctors = " + transport.GetConstructors());
+            _log.Debug("transport = " + transport);
+            _log.Debug("ctors = " + transport.GetConstructors());
 
             ConstructorInfo info = transport.GetConstructors()[0];
             ITransport result = (ITransport)info.Invoke(new object[] { host, port, this });
 
-            _log.Info("transport = " + result);
+            _log.Debug("transport = " + result);
 
             return result;
         }*/
@@ -441,11 +441,11 @@ namespace Qpid.Client
         /// </summary>
         private void CloseAllSessions(Exception cause)
         {
-            _log.Info("Closing all session in connection " + this);
+            _log.Debug("Closing all session in connection " + this);
             ICollection sessions = new ArrayList(_sessions.Values);
             foreach (AmqChannel channel in sessions)
             {
-                _log.Info("Closing channel " + channel);
+                _log.Debug("Closing channel " + channel);
                 if (cause != null)
                 {
                     channel.ClosedWithException(cause);
@@ -462,7 +462,7 @@ namespace Qpid.Client
                     }
                 }
             }
-            _log.Info("Done closing all sessions in connection " + this);
+            _log.Debug("Done closing all sessions in connection " + this);
         }
 
         public int MaximumChannelCount
@@ -685,7 +685,7 @@ namespace Qpid.Client
             }
             catch (Exception e)
             {
-                _log.Info("Unable to connect to broker at " + bd, e);
+                _log.Debug("Unable to connect to broker at " + bd, e);
                 AttemptReconnection();
             }
             return false;
@@ -747,11 +747,11 @@ namespace Qpid.Client
                 {
                     if (!(e is AMQException))
                     {
-                        _log.Info("Unable to connect to broker at " + _failoverPolicy.GetCurrentBrokerInfo(), e);
+                        _log.Debug("Unable to connect to broker at " + _failoverPolicy.GetCurrentBrokerInfo(), e);
                     }
                     else
                     {
-                        _log.Info(e.Message + ":Unable to connect to broker at " + _failoverPolicy.GetCurrentBrokerInfo());
+                        _log.Debug(e.Message + ":Unable to connect to broker at " + _failoverPolicy.GetCurrentBrokerInfo());
                     }
                 }
             }
@@ -767,7 +767,7 @@ namespace Qpid.Client
         public void ResubscribeChannels()
         {
             ArrayList channels = new ArrayList(_sessions.Values);
-            _log.Info(String.Format("Resubscribing sessions = {0} sessions.size={1}", channels, channels.Count));
+            _log.Debug(String.Format("Resubscribing sessions = {0} sessions.size={1}", channels, channels.Count));
             foreach (AmqChannel channel in channels)
             {
                 _protocolSession.AddSessionByChannel(channel.ChannelId, channel);
@@ -778,7 +778,7 @@ namespace Qpid.Client
 
         private void ReopenChannel(ushort channelId, ushort prefetch, bool transacted)
         {
-            _log.Info(string.Format("Reopening channel id={0} prefetch={1} transacted={2}",
+            _log.Debug(string.Format("Reopening channel id={0} prefetch={1} transacted={2}",
                 channelId, prefetch, transacted));
             try
             {
@@ -843,7 +843,7 @@ namespace Qpid.Client
                     // TODO: Can we optimise this so that heartbeats are only written when we haven't sent anything recently to the broker?
                     _protocolWriter.Write(HeartbeatBody.FRAME);
                 }
-                _log.Info("Heatbeat thread stopped");
+                _log.Debug("Heatbeat thread stopped");
             }
             
             public void Stop()
@@ -854,7 +854,7 @@ namespace Qpid.Client
         
         public void StartHeartBeatThread(int heartbeatSeconds)
         {
-            _log.Info("Starting new heartbeat thread");
+            _log.Debug("Starting new heartbeat thread");
             _heartBeatRunner = new HeartBeatThread(ProtocolWriter, heartbeatSeconds * 1000);
             _heartBeatThread = new Thread(new ThreadStart(_heartBeatRunner.Run));
             _heartBeatThread.Name = "HeartBeat";
@@ -865,7 +865,7 @@ namespace Qpid.Client
         {
             if (_heartBeatRunner != null)
             {
-                _log.Info("Stopping old heartbeat thread");
+                _log.Debug("Stopping old heartbeat thread");
                 _heartBeatRunner.Stop();
             }
         }

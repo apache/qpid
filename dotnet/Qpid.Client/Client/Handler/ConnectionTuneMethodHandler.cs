@@ -42,7 +42,7 @@ namespace Qpid.Client.Handler
                 parameters = new ConnectionTuneParameters();
             }
 
-            _logger.Info(String.Format("ConnectionTune.heartbeat = {0}.", frame.Heartbeat));
+            _logger.Debug(String.Format("ConnectionTune.heartbeat = {0}.", frame.Heartbeat));
 
             parameters.FrameMax = frame.FrameMax;
             parameters.FrameMax = 65535;

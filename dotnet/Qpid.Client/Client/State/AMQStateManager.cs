@@ -122,7 +122,7 @@ namespace Qpid.Client.State
         {
             if (InfoLoggingHack)
             {
-                _logger.Info("State changing to " + newState + " from old state " + _currentState);
+                _logger.Debug("State changing to " + newState + " from old state " + _currentState);
             }
             _logger.Debug("State changing to " + newState + " from old state " + _currentState);
             AMQState oldState = _currentState;
