@@ -148,7 +148,7 @@ namespace Qpid.Client.Protocol
             {
                 if (_failoverState == FailoverState.NOT_STARTED)
                 {
-                    if (!(cause is AMQUndeliveredException))
+                    if (cause is AMQConnectionClosedException)
                     {
                         WhenClosed();
                     }
@@ -195,7 +195,7 @@ namespace Qpid.Client.Protocol
                     if (_failoverState == FailoverState.NOT_STARTED)
                     {
                         _failoverState = FailoverState.IN_PROGRESS;
-                        startFailoverThread();
+                        StartFailoverThread();
                     }
                     else
                     {
@@ -273,10 +273,10 @@ namespace Qpid.Client.Protocol
             _failoverHandler.setHost(host);
             _failoverHandler.setPort(port);
             // see javadoc for FailoverHandler to see rationale for separate thread
-            startFailoverThread();
+            StartFailoverThread();
         }
 
-        private void startFailoverThread()
+        private void StartFailoverThread()
         {
             Thread failoverThread = new Thread(new ThreadStart(_failoverHandler.Run));
             failoverThread.Name = "Failover";
