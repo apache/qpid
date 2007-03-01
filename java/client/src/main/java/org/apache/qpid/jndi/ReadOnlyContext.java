@@ -1,21 +1,23 @@
-/**
+/*
  *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
  */
-
 package org.apache.qpid.jndi;
 
 import java.io.Serializable;
@@ -58,17 +60,15 @@ import javax.naming.spi.NamingManager;
  * String envEntry = (String) componentContext.lookup("env/myEntry");
  * String envEntry2 = (String) componentContext.lookup("env/myEntry2");
  * </code>
- *
- * @version $Revision$ $Date$
  */
 public class ReadOnlyContext implements Context, Serializable
 {
     private static final long serialVersionUID = -5754338187296859149L;
     protected static final NameParser nameParser = new NameParserImpl();
 
-    protected final Hashtable environment;        // environment for this context
-    protected final Map bindings;         // bindings at my level
-    protected final Map treeBindings;     // all bindings under me
+    protected final Hashtable environment; // environment for this context
+    protected final Map bindings; // bindings at my level
+    protected final Map treeBindings; // all bindings under me
 
     private boolean frozen = false;
     private String nameInNamespace = "";
@@ -91,6 +91,7 @@ public class ReadOnlyContext implements Context, Serializable
         {
             this.environment = new Hashtable(env);
         }
+
         this.bindings = Collections.EMPTY_MAP;
         this.treeBindings = Collections.EMPTY_MAP;
     }
@@ -105,6 +106,7 @@ public class ReadOnlyContext implements Context, Serializable
         {
             this.environment = new Hashtable(environment);
         }
+
         this.bindings = bindings;
         treeBindings = new HashMap();
         frozen = true;
@@ -154,8 +156,8 @@ public class ReadOnlyContext implements Context, Serializable
      */
     protected Map internalBind(String name, Object value) throws NamingException
     {
-        assert name != null && name.length() > 0;
-        assert!frozen;
+        assert (name != null) && (name.length() > 0);
+        assert !frozen;
 
         Map newBindings = new HashMap();
         int pos = name.indexOf('/');
@@ -165,6 +167,7 @@ public class ReadOnlyContext implements Context, Serializable
             {
                 throw new NamingException("Something already bound at " + name);
             }
+
             bindings.put(name, value);
             newBindings.put(name, value);
         }
@@ -172,7 +175,7 @@ public class ReadOnlyContext implements Context, Serializable
         {
             String segment = name.substring(0, pos);
             assert segment != null;
-            assert!segment.equals("");
+            assert !segment.equals("");
             Object o = treeBindings.get(segment);
             if (o == null)
             {
@@ -185,6 +188,7 @@ public class ReadOnlyContext implements Context, Serializable
             {
                 throw new NamingException("Something already bound where a subcontext should go");
             }
+
             ReadOnlyContext readOnlyContext = (ReadOnlyContext) o;
             String remainder = name.substring(pos + 1);
             Map subBindings = readOnlyContext.internalBind(remainder, value);
@@ -197,6 +201,7 @@ public class ReadOnlyContext implements Context, Serializable
                 newBindings.put(subName, bound);
             }
         }
+
         return newBindings;
     }
 
@@ -226,11 +231,13 @@ public class ReadOnlyContext implements Context, Serializable
         {
             return this;
         }
+
         Object result = treeBindings.get(name);
         if (result == null)
         {
             result = bindings.get(name);
         }
+
         if (result == null)
         {
             int pos = name.indexOf(':');
@@ -242,6 +249,7 @@ public class ReadOnlyContext implements Context, Serializable
                 {
                     throw new NamingException("scheme " + scheme + " not recognized");
                 }
+
                 return ctx.lookup(name);
             }
             else
@@ -262,20 +270,23 @@ public class ReadOnlyContext implements Context, Serializable
                     {
                         throw new NameNotFoundException(name);
                     }
-                    else if (obj instanceof Context && path.size() > 1)
+                    else if ((obj instanceof Context) && (path.size() > 1))
                     {
                         Context subContext = (Context) obj;
                         obj = subContext.lookup(path.getSuffix(1));
                     }
+
                     return obj;
                 }
             }
         }
+
         if (result instanceof LinkRef)
         {
             LinkRef ref = (LinkRef) result;
             result = lookup(ref.getLinkName());
         }
+
         if (result instanceof Reference)
         {
             try
@@ -288,9 +299,10 @@ public class ReadOnlyContext implements Context, Serializable
             }
             catch (Exception e)
             {
-                throw(NamingException) new NamingException("could not look up : " + name).initCause(e);
+                throw (NamingException) new NamingException("could not look up : " + name).initCause(e);
             }
         }
+
         if (result instanceof ReadOnlyContext)
         {
             String prefix = getNameInNamespace();
@@ -298,8 +310,10 @@ public class ReadOnlyContext implements Context, Serializable
             {
                 prefix = prefix + SEPARATOR;
             }
+
             result = new ReadOnlyContext((ReadOnlyContext) result, environment, prefix + name);
         }
+
         return result;
     }
 
@@ -317,6 +331,7 @@ public class ReadOnlyContext implements Context, Serializable
     {
         Name result = (Name) prefix.clone();
         result.addAll(name);
+
         return result;
     }
 
@@ -324,6 +339,7 @@ public class ReadOnlyContext implements Context, Serializable
     {
         CompositeName result = new CompositeName(prefix);
         result.addAll(new CompositeName(name));
+
         return result.toString();
     }
 
@@ -476,8 +492,7 @@ public class ReadOnlyContext implements Context, Serializable
         }
 
         public void close() throws NamingException
-        {
-        }
+        { }
     }
 
     private class ListEnumeration extends LocalNamingEnumeration
@@ -490,6 +505,7 @@ public class ReadOnlyContext implements Context, Serializable
         public Object nextElement()
         {
             Map.Entry entry = getNext();
+
             return new NameClassPair((String) entry.getKey(), entry.getValue().getClass().getName());
         }
     }
@@ -504,6 +520,7 @@ public class ReadOnlyContext implements Context, Serializable
         public Object nextElement()
         {
             Map.Entry entry = getNext();
+
             return new Binding((String) entry.getKey(), entry.getValue());
         }
     }
