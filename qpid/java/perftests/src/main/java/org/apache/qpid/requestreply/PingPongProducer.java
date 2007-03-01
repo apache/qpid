@@ -146,6 +146,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     public static final String ACK_MODE_PROPNAME = "ackMode";
 
+    public static final String PAUSE_AFTER_BATCH_PROPNAME = "pausetimeAfterEachBatch";
+
     /** Used to set up a default message size. */
     public static final int DEFAULT_MESSAGE_SIZE = 0;
 
@@ -186,7 +188,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     public static final String DEFAULT_BROKER = "tcp://localhost:5672";
 
     /** Holds the default virtual path for the test. */
-    public static final String DEFAULT_VIRTUAL_PATH = "test";
+    public static final String DEFAULT_VIRTUAL_PATH = "/test";
 
     /** Holds the pub/sub mode default, true means ping a topic, false means ping a queue. */
     public static final boolean DEFAULT_PUBSUB = false;
@@ -314,6 +316,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the number of sends that should be performed in every transaction when using transactions. */
     protected int _txBatchSize = 1;
 
+    private static long _pausetimeAfterEachBatch = 0;
+
     /**
      * Holds the number of consumers that will be attached to each topic.
      * Each pings will result in a reply from each of the attached clients
@@ -353,7 +357,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                             String destinationName, String selector, boolean transacted, boolean persistent, int messageSize,
                             boolean verbose, boolean afterCommit, boolean beforeCommit, boolean afterSend,
                             boolean beforeSend, boolean failOnce, int txBatchSize, int noOfDestinations, int rate,
-                            boolean pubsub, boolean unique, int ackMode) throws Exception
+                            boolean pubsub, boolean unique, int ackMode, long pause) throws Exception
     {
         _logger.debug("public PingPongProducer(String brokerDetails = " + brokerDetails + ", String username = " + username
                       + ", String password = " + password + ", String virtualpath = " + virtualpath
@@ -378,6 +382,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _txBatchSize = txBatchSize;
         _isPubSub = pubsub;
         _isUnique = unique;
+        _pausetimeAfterEachBatch = pause;
         if (ackMode != 0)
         {
             _ackMode = ackMode;
@@ -435,7 +440,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         }
 
         String brokerDetails = config.getHost() + ":" + config.getPort();
-        String virtualpath = "/test";
+        String virtualpath = DEFAULT_VIRTUAL_PATH;
         String selector = (config.getSelector() == null) ? DEFAULT_SELECTOR : config.getSelector();
         boolean verbose = true;
         boolean transacted = config.isTransacted();
@@ -495,7 +500,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         PingPongProducer pingProducer =
                 new PingPongProducer(brokerDetails, DEFAULT_USERNAME, DEFAULT_PASSWORD, virtualpath, destName, selector,
                                      transacted, persistent, messageSize, verbose, afterCommit, beforeCommit, afterSend,
-                                     beforeSend, failOnce, batchSize, destCount, rate, pubsub, false, 0);
+                                     beforeSend, failOnce, batchSize, destCount, rate, pubsub, false, 0, 0);
 
         pingProducer.getConnection().start();
 
@@ -732,6 +737,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         return pingAndWaitForReply(message, numPings, timeout, messageCorrelationId);
     }
 
+    public int pingAndWaitForReply(int numPings, long timeout, String messageCorrelationId)
+            throws JMSException, InterruptedException
+    {
+        return pingAndWaitForReply(null, numPings, timeout, messageCorrelationId);   
+    }
+
     /**
      * Sends the specified number of ping message and then waits for all correlating replies. If the wait times out
      * before a reply arrives, then a null reply is returned from this method. This method allows the caller to specify
@@ -834,6 +845,11 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _logger.debug("public void pingNoWaitForReply(Message message, int numPings = " + numPings
                       + ", String messageCorrelationId = " + messageCorrelationId + "): called");
 
+        if (message == null)
+        {
+            message = getTestMessage(getReplyDestinations().get(0), _messageSize, _persistent);
+        }
+
         message.setJMSCorrelationID(messageCorrelationId);
 
         // Set up a committed flag to detect uncommitted messages at the end of the send loop. This may occurr if the
@@ -865,6 +881,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             {
                 commitTx(_producerSession);
                 committed = true;
+                /* This pause is required for some cases. eg in load testing when sessions are non-transacted the
+                   Mina IO layer can't clear the cache in time. So this pause gives enough time for mina to clear
+                   the cache (without this mina throws OutOfMemoryError). pause() will check if time is != 0
+                */
+                pause(_pausetimeAfterEachBatch);
+                //_logger.info("committed " + _txBatchSize + " " + i);
             }
 
             // Spew out per message timings on every message sonly in verbose mode.
@@ -909,10 +931,10 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         }
     }
 
-    /*public Destination getReplyDestination()
+    public Destination getReplyDestination()
     {
-        return _replyDestination;
-    }*/
+        return getReplyDestinations().get(0);
+    }
 
     /**
      * Sets a chained message listener. The message listener on this pinger, chains all its messages to the one set
@@ -1095,7 +1117,9 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                     doFailover();
                 }
 
+                long l = System.currentTimeMillis();
                 session.commit();
+                _logger.debug("Time taken to commit :" + (System.currentTimeMillis() - l) + " ms" );
 
                 if (_failAfterCommit)
                 {

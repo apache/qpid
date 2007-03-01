@@ -158,30 +158,16 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
         perCorrelationId._tc = tc;
         perCorrelationId._expectedCount = pingClient.getExpectedNumPings(numPings);
         perCorrelationIds.put(perThreadSetup._correlationId, perCorrelationId);
-        
-        // Attach the chained message listener to the ping producer to listen asynchronously for the replies to these
-        // messages.
-        //pingClient.setChainedMessageListener(batchedResultsListener);
-
-        // Generate a sample message of the specified size.
-        perThreadSetup._message =
-                pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                          testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                          testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
-
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
-        int numReplies = pingClient.pingAndWaitForReply(perThreadSetup._message, numPings, timeout, perThreadSetup._correlationId);
+        int numReplies = pingClient.pingAndWaitForReply(numPings, timeout, perThreadSetup._correlationId);
 
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < perCorrelationId._expectedCount)
         {
             perCorrelationId._tc.completeTest(false, numPings - perCorrelationId._expectedCount);
         }
-
-        // Remove the chained message listener from the ping producer.
-        //pingClient.removeChainedMessageListener();
 
         // Remove the expected count and timing controller for the message correlation id, to ensure they are cleaned up.
         perCorrelationIds.remove(perThreadSetup._correlationId);

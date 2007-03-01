@@ -177,7 +177,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     public Long getMaximumQueueDepth()
     {
-        return _queue.getMaximumQueueDepth();
+        long queueDepthInBytes = _queue.getMaximumQueueDepth();
+        return queueDepthInBytes >> 10;
     }
 
     public void setMaximumQueueDepth(Long value)

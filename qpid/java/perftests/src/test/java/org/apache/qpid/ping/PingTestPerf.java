@@ -108,6 +108,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
         testParameters.setPropertyIfNull(PingPongProducer.UNIQUE_PROPNAME, PingPongProducer.DEFAULT_UNIQUE);
         testParameters.setSysPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME,
                                               Integer.toString(PingPongProducer.DEFAULT_ACK_MODE));
+        testParameters.setSysPropertyIfNull(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME, 0l);
     }
 
     /**
@@ -192,6 +193,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
             Boolean failOnce = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_ONCE_PROPNAME);
             boolean unique = testParameters.getPropertyAsBoolean(PingPongProducer.UNIQUE_PROPNAME);
             int ackMode = testParameters.getPropertyAsInteger(PingPongProducer.ACK_MODE_PROPNAME);
+            int pausetime = testParameters.getPropertyAsInteger(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME);
 
             // Extract the test set up paramaeters.
             int destinationscount =
@@ -206,7 +208,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                                                             selector, transacted, persistent, messageSize, verbose,
                                                             failAfterCommit, failBeforeCommit, failAfterSend, failBeforeSend,
                                                             failOnce, batchSize, destinationscount, rate, pubsub,
-                                                            unique, ackMode);
+                                                            unique, ackMode, pausetime);
             }
             // Start the client connection
             perThreadSetup._pingClient.getConnection().start();
@@ -256,7 +258,6 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
          * Holds the test ping client.
          */
         protected PingClient _pingClient;
-        protected Message _message;
         protected String _correlationId;
     }
 }

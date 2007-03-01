@@ -79,7 +79,7 @@ public class AMQQueue implements Managable, Comparable
 
     /** max allowed number of messages on a queue. */
     @Configured(path = "maximumMessageCount", defaultValue = "0")
-    public int _maximumMessageCount;
+    public int _maximumMessageCount = 5000;
 
     /** max queue depth for the queue */
     @Configured(path = "maximumQueueDepth", defaultValue = "0")
@@ -89,7 +89,7 @@ public class AMQQueue implements Managable, Comparable
     * maximum message age before alerts occur
     */
     @Configured(path = "maximumMessageAge", defaultValue = "0")
-    public long _maximumMessageAge = 30000; //0
+    public long _maximumMessageAge = 30000;
 
     /*
      * the minimum interval between sending out consequetive alerts of the same type
@@ -506,10 +506,10 @@ public class AMQQueue implements Managable, Comparable
 
     protected void updateReceivedMessageCount(AMQMessage msg)
     {
-        if (msg.isRedelivered())
-            return;
-
-        _totalMessagesReceived++;
+        if (!msg.isRedelivered())
+        {
+            _totalMessagesReceived++;
+        }
         _managedObject.checkForNotification(msg);
     }
 

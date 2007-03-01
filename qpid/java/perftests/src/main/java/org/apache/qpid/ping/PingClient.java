@@ -74,11 +74,11 @@ public class PingClient extends PingPongProducer
                       String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
                       boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
                       int txBatchSize, int noOfDestinations, int rate, boolean pubsub, boolean unique,
-                      int ackMode) throws Exception
+                      int ackMode, long pausetime) throws Exception
     {
         super(brokerDetails, username, password, virtualpath, destinationName, selector, transacted, persistent, messageSize,
               verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, txBatchSize, noOfDestinations, rate,
-              pubsub, unique, ackMode);
+              pubsub, unique, ackMode, pausetime);
 
         _pingClientCount++;
     }
