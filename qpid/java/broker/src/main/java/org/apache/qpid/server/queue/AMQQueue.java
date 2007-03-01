@@ -74,6 +74,7 @@ public class AMQQueue implements Managable, Comparable
     private final AMQQueueMBean _managedObject;
 
     /** max allowed size(KB) of a single message */
+    @Configured(path = "maximumMessageSize", defaultValue = "0")
     private long _maximumMessageSize = 10000;
 
     /** max allowed number of messages on a queue. */

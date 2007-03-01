@@ -46,11 +46,12 @@
             </queue>
         </localhost>
     </virtualhost>
-	<virtualhost>
+    <virtualhost>
         <name>development</name>
+        
+        <development>
         <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
         <maximumMessageCount>5000</maximumMessageCount>
-        <development>
             <queue>
                 <name>queue</name>
                 <queue>
@@ -71,11 +72,12 @@
             </queue>
         </development>
     </virtualhost>
-		<virtualhost>
+        <virtualhost>
             <name>test</name>
+            
+            <test>
             <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
             <maximumMessageCount>5000</maximumMessageCount>
-            <test>
                 <queue>
                     <name>queue</name>
                     <queue>
