@@ -1,19 +1,22 @@
-/**
+/*
  *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
  */
 package org.apache.qpid.server.filter;
 //
@@ -31,200 +34,268 @@ import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * An expression which performs an operation on two expression values
- * 
- * @version $Revision$
  */
-public abstract class UnaryExpression implements Expression {
+public abstract class UnaryExpression implements Expression
+{
 
     private static final BigDecimal BD_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE);
     protected Expression right;
 
-    public static Expression createNegate(Expression left) {
-        return new UnaryExpression(left) {
+    public static Expression createNegate(Expression left)
+    {
+        return new UnaryExpression(left)
+        {
             public Object evaluate(AMQMessage message) throws AMQException
             {
                 Object rvalue = right.evaluate(message);
-                if (rvalue == null) {
+                if (rvalue == null)
+                {
                     return null;
                 }
-                if (rvalue instanceof Number) {
+
+                if (rvalue instanceof Number)
+                {
                     return negate((Number) rvalue);
                 }
+
                 return null;
             }
 
-            public String getExpressionSymbol() {
+            public String getExpressionSymbol()
+            {
                 return "-";
             }
         };
     }
 
-    public static BooleanExpression createInExpression(PropertyExpression right, List elements, final boolean not) {
-    	
-    	// Use a HashSet if there are many elements.
-    	Collection t;
-		if( elements.size()==0 )
-    		t=null;
-    	else if( elements.size() < 5 )
-    		t = elements;
-    	else {
-    		t = new HashSet(elements);
-    	}
-    	final Collection inList = t;
-    	
-        return new BooleanUnaryExpression(right) {
-            public Object evaluate(AMQMessage message) throws AMQException {
-            	
+    public static BooleanExpression createInExpression(PropertyExpression right, List elements, final boolean not)
+    {
+
+        // Use a HashSet if there are many elements.
+        Collection t;
+        if (elements.size() == 0)
+        {
+            t = null;
+        }
+        else if (elements.size() < 5)
+        {
+            t = elements;
+        }
+        else
+        {
+            t = new HashSet(elements);
+        }
+
+        final Collection inList = t;
+
+        return new BooleanUnaryExpression(right)
+        {
+            public Object evaluate(AMQMessage message) throws AMQException
+            {
+
                 Object rvalue = right.evaluate(message);
-                if (rvalue == null) {
+                if (rvalue == null)
+                {
                     return null;
                 }
-                if( rvalue.getClass()!=String.class )
-                	return null;
-                
-                if( (inList!=null && inList.contains(rvalue)) ^ not ) {
-                	return Boolean.TRUE;
-                } else {
-                	return Boolean.FALSE;                	
+
+                if (rvalue.getClass() != String.class)
+                {
+                    return null;
                 }
-                
+
+                if (((inList != null) && inList.contains(rvalue)) ^ not)
+                {
+                    return Boolean.TRUE;
+                }
+                else
+                {
+                    return Boolean.FALSE;
+                }
+
             }
 
-            public String toString() {
-            	StringBuffer answer = new StringBuffer();
-            	answer.append(right);
-            	answer.append(" ");
-            	answer.append(getExpressionSymbol());
-            	answer.append(" ( ");
+            public String toString()
+            {
+                StringBuffer answer = new StringBuffer();
+                answer.append(right);
+                answer.append(" ");
+                answer.append(getExpressionSymbol());
+                answer.append(" ( ");
 
-            	int count=0;
-            	for (Iterator i = inList.iterator(); i.hasNext();) {
-					Object o = (Object) i.next();
-					if( count!=0 ) {
-		            	answer.append(", ");				
-					}
-	            	answer.append(o);				
-	            	count++;
-				}
-            	
-            	answer.append(" )");				
+                int count = 0;
+                for (Iterator i = inList.iterator(); i.hasNext();)
+                {
+                    Object o = (Object) i.next();
+                    if (count != 0)
+                    {
+                        answer.append(", ");
+                    }
+
+                    answer.append(o);
+                    count++;
+                }
+
+                answer.append(" )");
+
                 return answer.toString();
-			}
-			
-            public String getExpressionSymbol() {
-            	if( not )
-            		return "NOT IN";
-            	else 
-            		return "IN";
+            }
+
+            public String getExpressionSymbol()
+            {
+                if (not)
+                {
+                    return "NOT IN";
+                }
+                else
+                {
+                    return "IN";
+                }
             }
         };
     }
 
-    abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression {
-        public BooleanUnaryExpression(Expression left) {        	
+    abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression
+    {
+        public BooleanUnaryExpression(Expression left)
+        {
             super(left);
         }
 
-        public boolean matches(AMQMessage message) throws AMQException {
+        public boolean matches(AMQMessage message) throws AMQException
+        {
             Object object = evaluate(message);
-            return object!=null && object==Boolean.TRUE;            
-        }
-    };
 
-        
-    public static BooleanExpression createNOT(BooleanExpression left) {
-        return new BooleanUnaryExpression(left) {
-            public Object evaluate(AMQMessage message) throws AMQException {
+            return (object != null) && (object == Boolean.TRUE);
+        }
+    }
+    ;
+
+    public static BooleanExpression createNOT(BooleanExpression left)
+    {
+        return new BooleanUnaryExpression(left)
+        {
+            public Object evaluate(AMQMessage message) throws AMQException
+            {
                 Boolean lvalue = (Boolean) right.evaluate(message);
-                if (lvalue == null) {
+                if (lvalue == null)
+                {
                     return null;
                 }
+
                 return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
             }
 
-            public String getExpressionSymbol() {
+            public String getExpressionSymbol()
+            {
                 return "NOT";
             }
         };
     }
-    
-    public static BooleanExpression createXPath(final String xpath) {
+
+    public static BooleanExpression createXPath(final String xpath)
+    {
         return new XPathExpression(xpath);
     }
 
-    public static BooleanExpression createXQuery(final String xpath) {
+    public static BooleanExpression createXQuery(final String xpath)
+    {
         return new XQueryExpression(xpath);
     }
 
-    public static BooleanExpression createBooleanCast(Expression left) {
-        return new BooleanUnaryExpression(left) {
-            public Object evaluate(AMQMessage message) throws AMQException {
+    public static BooleanExpression createBooleanCast(Expression left)
+    {
+        return new BooleanUnaryExpression(left)
+        {
+            public Object evaluate(AMQMessage message) throws AMQException
+            {
                 Object rvalue = right.evaluate(message);
-                if (rvalue == null) 
+                if (rvalue == null)
+                {
                     return null;
-                if (!rvalue.getClass().equals(Boolean.class)) 
+                }
+
+                if (!rvalue.getClass().equals(Boolean.class))
+                {
                     return Boolean.FALSE;
-                return ((Boolean)rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
+                }
+
+                return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
             }
 
-            public String toString() {
+            public String toString()
+            {
                 return right.toString();
             }
 
-            public String getExpressionSymbol() {
+            public String getExpressionSymbol()
+            {
                 return "";
             }
         };
     }
 
-    private static Number negate(Number left) {
-    	Class clazz = left.getClass();
-        if (clazz == Integer.class) {
+    private static Number negate(Number left)
+    {
+        Class clazz = left.getClass();
+        if (clazz == Integer.class)
+        {
             return new Integer(-left.intValue());
         }
-        else if (clazz == Long.class) {
+        else if (clazz == Long.class)
+        {
             return new Long(-left.longValue());
         }
-        else if (clazz ==  Float.class) {
+        else if (clazz == Float.class)
+        {
             return new Float(-left.floatValue());
         }
-        else if (clazz == Double.class) {
+        else if (clazz == Double.class)
+        {
             return new Double(-left.doubleValue());
         }
-        else if (clazz == BigDecimal.class) {
-        	// We ussually get a big deciamal when we have Long.MIN_VALUE constant in the 
-        	// Selector.  Long.MIN_VALUE is too big to store in a Long as a positive so we store it 
-        	// as a Big decimal.  But it gets Negated right away.. to here we try to covert it back
-        	// to a Long.        	
-        	BigDecimal bd = (BigDecimal)left;
-        	bd = bd.negate();
-        	
-        	if( BD_LONG_MIN_VALUE.compareTo(bd)==0  ) {
-        		return new Long(Long.MIN_VALUE);
-        	}
+        else if (clazz == BigDecimal.class)
+        {
+            // We ussually get a big deciamal when we have Long.MIN_VALUE constant in the
+            // Selector.  Long.MIN_VALUE is too big to store in a Long as a positive so we store it
+            // as a Big decimal.  But it gets Negated right away.. to here we try to covert it back
+            // to a Long.
+            BigDecimal bd = (BigDecimal) left;
+            bd = bd.negate();
+
+            if (BD_LONG_MIN_VALUE.compareTo(bd) == 0)
+            {
+                return new Long(Long.MIN_VALUE);
+            }
+
             return bd;
         }
-        else {
-            throw new RuntimeException("Don't know how to negate: "+left);
+        else
+        {
+            throw new RuntimeException("Don't know how to negate: " + left);
         }
     }
 
-    public UnaryExpression(Expression left) {
+    public UnaryExpression(Expression left)
+    {
         this.right = left;
     }
 
-    public Expression getRight() {
+    public Expression getRight()
+    {
         return right;
     }
 
-    public void setRight(Expression expression) {
+    public void setRight(Expression expression)
+    {
         right = expression;
     }
 
     /**
      * @see java.lang.Object#toString()
      */
-    public String toString() {
+    public String toString()
+    {
         return "(" + getExpressionSymbol() + " " + right.toString() + ")";
     }
 
@@ -233,7 +304,8 @@ public abstract class UnaryExpression implements Expression {
      *
      * @see java.lang.Object#hashCode()
      */
-    public int hashCode() {
+    public int hashCode()
+    {
         return toString().hashCode();
     }
 
@@ -242,11 +314,14 @@ public abstract class UnaryExpression implements Expression {
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
 
-        if (o == null || !this.getClass().equals(o.getClass())) {
+        if ((o == null) || !this.getClass().equals(o.getClass()))
+        {
             return false;
         }
+
         return toString().equals(o.toString());
 
     }
@@ -257,6 +332,6 @@ public abstract class UnaryExpression implements Expression {
      *
      * @return
      */
-    abstract public String getExpressionSymbol();
+    public abstract String getExpressionSymbol();
 
 }

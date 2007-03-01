@@ -1,19 +1,22 @@
-/**
+/*
  *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
  */
 package org.apache.qpid.server.filter;
 //
@@ -27,8 +30,6 @@ import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * Represents a constant expression
- *
- * @version $Revision$
  */
 public class ConstantExpression implements Expression
 {
@@ -43,7 +44,8 @@ public class ConstantExpression implements Expression
         public boolean matches(AMQMessage message) throws AMQException
         {
             Object object = evaluate(message);
-            return object != null && object == Boolean.TRUE;
+
+            return (object != null) && (object == Boolean.TRUE);
         }
     }
 
@@ -74,10 +76,11 @@ public class ConstantExpression implements Expression
         }
 
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
         {
             value = new Integer(value.intValue());
         }
+
         return new ConstantExpression(value);
     }
 
@@ -85,10 +88,11 @@ public class ConstantExpression implements Expression
     {
         Number value = new Long(Long.parseLong(text.substring(2), 16));
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
         {
             value = new Integer(value.intValue());
         }
+
         return new ConstantExpression(value);
     }
 
@@ -96,16 +100,18 @@ public class ConstantExpression implements Expression
     {
         Number value = new Long(Long.parseLong(text, 8));
         long l = value.longValue();
-        if (Integer.MIN_VALUE <= l && l <= Integer.MAX_VALUE)
+        if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
         {
             value = new Integer(value.intValue());
         }
+
         return new ConstantExpression(value);
     }
 
     public static ConstantExpression createFloat(String text)
     {
         Number value = new Double(text);
+
         return new ConstantExpression(value);
     }
 
@@ -133,14 +139,17 @@ public class ConstantExpression implements Expression
         {
             return "NULL";
         }
+
         if (value instanceof Boolean)
         {
             return ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
         }
+
         if (value instanceof String)
         {
             return encodeString((String) value);
         }
+
         return value.toString();
     }
 
@@ -162,14 +171,14 @@ public class ConstantExpression implements Expression
     public boolean equals(Object o)
     {
 
-        if (o == null || !this.getClass().equals(o.getClass()))
+        if ((o == null) || !this.getClass().equals(o.getClass()))
         {
             return false;
         }
+
         return toString().equals(o.toString());
 
     }
-
 
     /**
      * Encodes the value of string so that it looks like it would look like
@@ -189,9 +198,12 @@ public class ConstantExpression implements Expression
             {
                 b.append(c);
             }
+
             b.append(c);
         }
+
         b.append('\'');
+
         return b.toString();
     }
 
