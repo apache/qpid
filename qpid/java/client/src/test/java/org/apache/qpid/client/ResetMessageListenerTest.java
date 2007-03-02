@@ -248,7 +248,7 @@ public class ResetMessageListenerTest extends TestCase
         }
         catch (JMSException e)
         {
-            _logger.error("Unable to send additional messages", e);
+            _logger.info("Unable to send additional messages", e);
         }
 
         _logger.info("Waiting upto 2 seconds for messages");
