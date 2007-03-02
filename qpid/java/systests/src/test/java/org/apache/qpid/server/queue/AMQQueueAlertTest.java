@@ -26,13 +26,11 @@ import org.apache.qpid.framing.ContentHeaderBody;
 
 import javax.management.Notification;
 
-/**
- * This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters
- */
+/** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
 {
-    private final static int MAX_MESSAGE_COUNT = 50; 
-    private final static long MAX_MESSAGE_AGE = 2000;   // 2 sec
+    private final static int MAX_MESSAGE_COUNT = 50;
+    private final static long MAX_MESSAGE_AGE = 250;   // 0.25 sec
     private final static long MAX_MESSAGE_SIZE = 2000;  // 2 KB
     private final static long MAX_QUEUE_DEPTH = 10000;  // 10 KB
     private AMQQueue _queue;
@@ -42,19 +40,20 @@ public class AMQQueueAlertTest extends TestCase
 
     /**
      * Tests if the alert gets thrown when message count increases the threshold limit
+     *
      * @throws Exception
      */
     public void testMessageCountAlert() throws Exception
     {
         _queue = new AMQQueue("testQueue1", false, "AMQueueAlertTest", false, _queueRegistry);
-        _queueMBean = (AMQQueueMBean)_queue.getManagedObject();
+        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
 
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
 
         sendMessages(MAX_MESSAGE_COUNT, 256l);
         assertTrue(_queueMBean.getMessageCount() == MAX_MESSAGE_COUNT);
 
-        Notification lastNotification= _queueMBean.getLastNotification();
+        Notification lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
 
         String notificationMsg = lastNotification.getMessage();
@@ -63,19 +62,20 @@ public class AMQQueueAlertTest extends TestCase
 
     /**
      * Tests if the Message Size alert gets thrown when message of higher than threshold limit is sent
+     *
      * @throws Exception
      */
     public void testMessageSizeAlert() throws Exception
     {
         _queue = new AMQQueue("testQueue2", false, "AMQueueAlertTest", false, _queueRegistry);
-        _queueMBean = (AMQQueueMBean)_queue.getManagedObject();
+        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageSize(MAX_MESSAGE_SIZE);
 
         sendMessages(1, MAX_MESSAGE_SIZE * 2);
         assertTrue(_queueMBean.getMessageCount() == 1);
 
-        Notification lastNotification= _queueMBean.getLastNotification();
+        Notification lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
 
         String notificationMsg = lastNotification.getMessage();
@@ -84,12 +84,13 @@ public class AMQQueueAlertTest extends TestCase
 
     /**
      * Tests if Queue Depth alert is thrown when queue depth reaches the threshold value
+     *
      * @throws Exception
      */
     public void testQueueDepthAlert() throws Exception
     {
         _queue = new AMQQueue("testQueue3", false, "AMQueueAlertTest", false, _queueRegistry);
-        _queueMBean = (AMQQueueMBean)_queue.getManagedObject();
+        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
@@ -98,7 +99,7 @@ public class AMQQueueAlertTest extends TestCase
             sendMessages(1, MAX_MESSAGE_SIZE);
         }
 
-        Notification lastNotification= _queueMBean.getLastNotification();
+        Notification lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
 
         String notificationMsg = lastNotification.getMessage();
@@ -106,23 +107,27 @@ public class AMQQueueAlertTest extends TestCase
     }
 
     /**
-     * Tests if MESSAGE AGE alert is thrown, when a message is in the queue for time higher than
-     * threshold value of message age
+     * Tests if MESSAGE AGE alert is thrown, when a message is in the queue for time higher than threshold value of
+     * message age
+     *
      * @throws Exception
      */
     public void testMessageAgeAlert() throws Exception
     {
         _queue = new AMQQueue("testQueue4", false, "AMQueueAlertTest", false, _queueRegistry);
-        _queueMBean = (AMQQueueMBean)_queue.getManagedObject();
+        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageAge(MAX_MESSAGE_AGE);
 
         sendMessages(1, MAX_MESSAGE_SIZE);
-        Thread.sleep(MAX_MESSAGE_AGE);
+
+        // Ensure message sits on queue long enough to age.
+        Thread.sleep(MAX_MESSAGE_AGE * 2);
+
         sendMessages(1, MAX_MESSAGE_SIZE);
         assertTrue(_queueMBean.getMessageCount() == 2);
 
-        Notification lastNotification= _queueMBean.getLastNotification();
+        Notification lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
 
         String notificationMsg = lastNotification.getMessage();
@@ -133,7 +138,7 @@ public class AMQQueueAlertTest extends TestCase
     {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Establish some way to determine the version for the test.
-        BasicPublishBody publish = new BasicPublishBody((byte)8, (byte)0);
+        BasicPublishBody publish = new BasicPublishBody((byte) 8, (byte) 0);
         publish.immediate = immediate;
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = size;   // in bytes

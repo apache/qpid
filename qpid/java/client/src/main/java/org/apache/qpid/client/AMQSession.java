@@ -338,7 +338,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     _queue.add(msg);
                 }
-                
+
                 if (stopped)
                 {
                     _dispatcher.setConnectionStopped(stopped);
@@ -648,6 +648,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void close() throws JMSException
     {
+        close(-1);
+    }
+
+    public void close(long timeout) throws JMSException
+    {
         // We must close down all producers and consumers in an orderly fashion. This is the only method
         // that can be called from a different thread of control from the one controlling the session
         synchronized (_connection.getFailoverMutex())
@@ -657,7 +662,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             {
 
                 // we pass null since this is not an error case
-                closeProducersAndConsumers(null);                
+                closeProducersAndConsumers(null);
 
                 try
                 {
@@ -671,7 +676,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                            0,    // methodId
                                                                            AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
                                                                            "JMS client closing channel");    // replyText
-                    _connection.getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class);
+
+                    _connection.getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
 
@@ -696,8 +702,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @param amqe the exception, may be null to indicate no error has occurred
      */
-    private void closeProducersAndConsumers(AMQException amqe)
+    private void closeProducersAndConsumers(AMQException amqe) throws JMSException
     {
+        JMSException jmse = null;
+
         try
         {
             closeProducers();
@@ -705,6 +713,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         catch (JMSException e)
         {
             _logger.error("Error closing session: " + e, e);
+            jmse = e;
         }
         try
         {
@@ -713,6 +722,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         catch (JMSException e)
         {
             _logger.error("Error closing session: " + e, e);
+            if (jmse == null)
+            {
+                jmse = e;
+            }
+        }
+
+        if (jmse != null)
+        {
+            throw jmse;
         }
     }
 
@@ -727,7 +745,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @param e the exception that caused this session to be closed. Null causes the
      */
-    public void closed(Throwable e)
+    public void closed(Throwable e) throws JMSException
     {
         synchronized (_connection.getFailoverMutex())
         {

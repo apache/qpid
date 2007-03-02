@@ -64,23 +64,23 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 {
     private static final Logger _logger = Logger.getLogger(AMQConnection.class);
 
+    private static final long MAXIMUM_WAIT_TIME = 30000l;
+
     private AtomicInteger _idFactory = new AtomicInteger(0);
 
     /**
-     * This is the "root" mutex that must be held when doing anything that could be impacted by failover.
-     * This must be held by any child objects of this connection such as the session, producers and consumers.
+     * This is the "root" mutex that must be held when doing anything that could be impacted by failover. This must be
+     * held by any child objects of this connection such as the session, producers and consumers.
      */
     private final Object _failoverMutex = new Object();
 
     /**
-     * A channel is roughly analogous to a session. The server can negotiate the maximum number of channels
-     * per session and we must prevent the client from opening too many. Zero means unlimited.
+     * A channel is roughly analogous to a session. The server can negotiate the maximum number of channels per session
+     * and we must prevent the client from opening too many. Zero means unlimited.
      */
     private long _maximumChannelCount;
 
-    /**
-     * The maximum size of frame supported by the server
-     */
+    /** The maximum size of frame supported by the server */
     private long _maximumFrameSize;
 
     /**
@@ -90,26 +90,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     private AMQProtocolHandler _protocolHandler;
 
-    /**
-     * Maps from session id (Integer) to AMQSession instance
-     */
+    /** Maps from session id (Integer) to AMQSession instance */
     private final Map _sessions = new LinkedHashMap(); //fixme this is map is replicated in amqprotocolsession as _channelId2SessionMap    
 
     private String _clientName;
 
-    /**
-     * The user name to use for authentication
-     */
+    /** The user name to use for authentication */
     private String _username;
 
-    /**
-     * The password to use for authentication
-     */
+    /** The password to use for authentication */
     private String _password;
 
-    /**
-     * The virtual path to connect to on the AMQ server
-     */
+    /** The virtual path to connect to on the AMQ server */
     private String _virtualHost;
 
     private ExceptionListener _exceptionListener;
@@ -119,14 +111,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private ConnectionURL _connectionURL;
 
     /**
-     * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for
-     * message publication.
+     * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for message
+     * publication.
      */
     private boolean _started;
 
-    /**
-     * Policy dictating how to failover
-     */
+    /** Policy dictating how to failover */
     private FailoverPolicy _failoverPolicy;
 
     /*
@@ -353,8 +343,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /**
      * Get the details of the currently active broker
      *
-     * @return null if no broker is active (i.e. no successful connection has been made, or
-     *         the BrokerDetail instance otherwise
+     * @return null if no broker is active (i.e. no successful connection has been made, or the BrokerDetail instance
+     *         otherwise
      */
     public BrokerDetails getActiveBrokerDetails()
     {
@@ -507,12 +497,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * Returns an AMQQueueSessionAdaptor which wraps an AMQSession and throws IllegalStateExceptions
-     * where specified in the JMS spec
+     * Returns an AMQQueueSessionAdaptor which wraps an AMQSession and throws IllegalStateExceptions where specified in
+     * the JMS spec
      *
      * @param transacted
      * @param acknowledgeMode
+     *
      * @return QueueSession
+     *
      * @throws JMSException
      */
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
@@ -521,12 +513,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * Returns an AMQTopicSessionAdapter which wraps an AMQSession and throws IllegalStateExceptions
-     * where specified in the JMS spec
+     * Returns an AMQTopicSessionAdapter which wraps an AMQSession and throws IllegalStateExceptions where specified in
+     * the JMS spec
      *
      * @param transacted
      * @param acknowledgeMode
+     *
      * @return TopicSession
+     *
      * @throws JMSException
      */
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
@@ -623,14 +617,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close() throws JMSException
     {
+        close(-1);
+    }
+
+    public void close(long timeout) throws JMSException
+    {
         synchronized (getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
             {
                 try
                 {
-                    closeAllSessions(null);
-                    _protocolHandler.closeConnection();
+                    closeAllSessions(null, timeout);
+                    _protocolHandler.closeConnection(timeout);
                 }
                 catch (AMQException e)
                 {
@@ -641,11 +640,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * Marks all sessions and their children as closed without sending any protocol messages. Useful when
-     * you need to mark objects "visible" in userland as closed after failover or other significant event that
-     * impacts the connection.
-     * <p/>
-     * The caller must hold the failover mutex before calling this method.
+     * Marks all sessions and their children as closed without sending any protocol messages. Useful when you need to
+     * mark objects "visible" in userland as closed after failover or other significant event that impacts the
+     * connection. <p/> The caller must hold the failover mutex before calling this method.
      */
     private void markAllSessionsClosed()
     {
@@ -663,11 +660,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /**
      * Close all the sessions, either due to normal connection closure or due to an error occurring.
      *
-     * @param cause if not null, the error that is causing this shutdown
-     *              <p/>
-     *              The caller must hold the failover mutex before calling this method.
+     * @param cause if not null, the error that is causing this shutdown <p/> The caller must hold the failover mutex
+     *              before calling this method.
      */
-    private void closeAllSessions(Throwable cause) throws JMSException
+    private void closeAllSessions(Throwable cause, long timeout) throws JMSException
     {
         final LinkedList sessionCopy = new LinkedList(_sessions.values());
         final Iterator it = sessionCopy.iterator();
@@ -683,7 +679,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 try
                 {
-                    session.close();
+                    session.close(timeout);
                 }
                 catch (JMSException e)
                 {
@@ -788,7 +784,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _protocolHandler;
     }
-    
+
     public boolean started()
     {
         return _started;
@@ -814,6 +810,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * Fire the preFailover event to the registered connection listener (if any)
      *
      * @param redirect true if this is the result of a redirect request rather than a connection error
+     *
      * @return true if no listener or listener does not veto change
      */
     public boolean firePreFailover(boolean redirect)
@@ -827,10 +824,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * Fire the preResubscribe event to the registered connection listener (if any). If the listener
-     * vetoes resubscription then all the sessions are closed.
+     * Fire the preResubscribe event to the registered connection listener (if any). If the listener vetoes
+     * resubscription then all the sessions are closed.
      *
      * @return true if no listener or listener does not veto resubscription.
+     *
      * @throws JMSException
      */
     public boolean firePreResubscribe() throws JMSException
@@ -850,9 +848,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    /**
-     * Fires a failover complete event to the registered connection listener (if any).
-     */
+    /** Fires a failover complete event to the registered connection listener (if any). */
     public void fireFailoverComplete()
     {
         if (_connectionListener != null)
@@ -862,8 +858,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * In order to protect the consistency of the connection and its child sessions, consumers and producers,
-     * the "failover mutex" must be held when doing any operations that could be corrupted during failover.
+     * In order to protect the consistency of the connection and its child sessions, consumers and producers, the
+     * "failover mutex" must be held when doing any operations that could be corrupted during failover.
      *
      * @return a mutex. Guaranteed never to change for the lifetime of this connection even if failover occurs.
      */
@@ -873,8 +869,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * If failover is taking place this will block until it has completed. If failover
-     * is not taking place it will return immediately.
+     * If failover is taking place this will block until it has completed. If failover is not taking place it will
+     * return immediately.
      *
      * @throws InterruptedException
      */
@@ -884,10 +880,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * Invoked by the AMQProtocolSession when a protocol session exception has occurred.
-     * This method sends the exception to a JMS exception listener, if configured, and
-     * propagates the exception to sessions, which in turn will propagate to consumers.
-     * This allows synchronous consumers to have exceptions thrown to them.
+     * Invoked by the AMQProtocolSession when a protocol session exception has occurred. This method sends the exception
+     * to a JMS exception listener, if configured, and propagates the exception to sessions, which in turn will
+     * propagate to consumers. This allows synchronous consumers to have exceptions thrown to them.
      *
      * @param cause the exception
      */
@@ -937,7 +932,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 _logger.info("Closing AMQConnection due to :" + cause.getMessage());
                 _closed.set(true);
-                closeAllSessions(cause); // FIXME: when doing this end up with RejectedExecutionException from executor.
+                closeAllSessions(cause, MAXIMUM_WAIT_TIME); // FIXME: when doing this end up with RejectedExecutionException from executor.
             }
             catch (JMSException e)
             {

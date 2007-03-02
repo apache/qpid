@@ -21,6 +21,7 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.AMQMethodBody;
 
@@ -33,8 +34,8 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     private final Object _lock = new Object();
 
     /**
-     * This is set if there is an exception thrown from processCommandFrame and the
-     * exception is rethrown to the caller of blockForFrame()
+     * This is set if there is an exception thrown from processCommandFrame and the exception is rethrown to the caller
+     * of blockForFrame()
      */
     private volatile Exception _error;
 
@@ -48,11 +49,13 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     }
 
     /**
-     * This method is called by the MINA dispatching thread. Note that it could
-     * be called before blockForFrame() has been called.
+     * This method is called by the MINA dispatching thread. Note that it could be called before blockForFrame() has
+     * been called.
      *
      * @param evt the frame event
+     *
      * @return true if the listener has dealt with this frame
+     *
      * @throws AMQException
      */
     public boolean methodReceived(AMQMethodEvent evt) throws AMQException
@@ -85,10 +88,8 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         }
     }
 
-    /**
-     * This method is called by the thread that wants to wait for a frame.
-     */
-    public AMQMethodEvent blockForFrame() throws AMQException
+    /** This method is called by the thread that wants to wait for a frame. */
+    public AMQMethodEvent blockForFrame(long timeout) throws AMQException
     {
         synchronized (_lock)
         {
@@ -96,7 +97,20 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             {
                 try
                 {
-                    _lock.wait();
+                     if (timeout == -1)
+                    {
+                        _lock.wait();
+                    }
+                    else
+                    {
+
+                        _lock.wait(timeout);
+                        if (!_ready)
+                        {
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion");
+                            _ready = true;
+                        }
+                    }
                 }
                 catch (InterruptedException e)
                 {
@@ -125,8 +139,8 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     }
 
     /**
-     * This is a callback, called by the MINA dispatcher thread only. It is also called from within this
-     * class to avoid code repetition but again is only called by the MINA dispatcher thread.
+     * This is a callback, called by the MINA dispatcher thread only. It is also called from within this class to avoid
+     * code repetition but again is only called by the MINA dispatcher thread.
      *
      * @param e
      */

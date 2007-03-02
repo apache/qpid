@@ -82,6 +82,8 @@ public final class AMQConstant
 
     public static final AMQConstant NOT_FOUND = new AMQConstant(404, "not found", true);
 
+    public static final AMQConstant REQUEST_TIMEOUT = new AMQConstant(408, "Request Timeout", true);    
+
     public static final AMQConstant FRAME_ERROR = new AMQConstant(501, "frame error", true);
 
     public static final AMQConstant SYNTAX_ERROR = new AMQConstant(502, "syntax error", true);

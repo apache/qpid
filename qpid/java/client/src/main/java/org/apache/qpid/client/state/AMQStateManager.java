@@ -33,22 +33,19 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * The state manager is responsible for managing the state of the protocol session.
- * <p/>
- * For each AMQProtocolHandler there is a separate state manager.
+ * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
+ * there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
 
-    /**
-     * The current state
-     */
+    /** The current state */
     private AMQState _currentState;
 
     /**
-     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
-     * The class must be a subclass of AMQFrame.
+     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
+     * AMQFrame.
      */
     private final Map _state2HandlersMap = new HashMap();
 
@@ -159,14 +156,13 @@ public class AMQStateManager implements AMQMethodListener
         final Class clazz = frame.getClass();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Looking for state transition handler for frame " + clazz);
+            _logger.debug("Looking for state[" + currentState + "] transition handler for frame " + clazz);
         }
         final Map classToHandlerMap = (Map) _state2HandlersMap.get(currentState);
 
         if (classToHandlerMap == null)
         {
-            // if no specialised per state handler is registered look for a
-            // handler registered for "all" states
+            _logger.debug("no specialised per state handler is registered look for a handler registered for 'all' states");
             return findStateTransitionHandler(null, frame);
         }
         final StateAwareMethodListener handler = (StateAwareMethodListener) classToHandlerMap.get(clazz);
@@ -174,13 +170,12 @@ public class AMQStateManager implements AMQMethodListener
         {
             if (currentState == null)
             {
-                _logger.debug("No state transition handler defined for receiving frame " + frame);
+                _logger.debug("No state[" + currentState + "] transition handler defined for receiving frame " + frame);
                 return null;
             }
             else
             {
-                // if no specialised per state handler is registered look for a
-                // handler registered for "all" states
+                _logger.debug("No specialised per state handler is registered look for a handler registered for 'all' states");
                 return findStateTransitionHandler(null, frame);
             }
         }
@@ -214,7 +209,7 @@ public class AMQStateManager implements AMQMethodListener
             }
             if (_currentState != s)
             {
-                _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);                
+                _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
                 throw new AMQException("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
             }
         }

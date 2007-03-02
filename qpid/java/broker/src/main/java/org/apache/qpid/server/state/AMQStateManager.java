@@ -35,23 +35,19 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * The state manager is responsible for managing the state of the protocol session.
- * <p/>
- * For each AMQProtocolHandler there is a separate state manager.
- *
+ * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
+ * there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
 
-    /**
-     * The current state
-     */
+    /** The current state */
     private AMQState _currentState;
 
     /**
-     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
-     * The class must be a subclass of AMQFrame.
+     * Maps from an AMQState instance to a Map from Class to StateTransitionHandler. The class must be a subclass of
+     * AMQFrame.
      */
     private final Map<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
             new HashMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>();
@@ -159,9 +155,9 @@ public class AMQStateManager implements AMQMethodListener
     }
 
     public <B extends AMQMethodBody> boolean methodReceived(AMQMethodEvent<B> evt,
-                           AMQProtocolSession protocolSession,
-                           QueueRegistry queueRegistry,
-                           ExchangeRegistry exchangeRegistry) throws AMQException
+                                                            AMQProtocolSession protocolSession,
+                                                            QueueRegistry queueRegistry,
+                                                            ExchangeRegistry exchangeRegistry) throws AMQException
     {
         StateAwareMethodListener<B> handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
@@ -173,20 +169,19 @@ public class AMQStateManager implements AMQMethodListener
     }
 
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
-                                                                                             B frame)
+                                                                                               B frame)
             throws IllegalStateTransitionException
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Looking for state transition handler for frame " + frame.getClass());
+            _logger.debug("Looking for state[" + currentState + "] transition handler for frame " + frame.getClass());
         }
         final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>
                 classToHandlerMap = _state2HandlersMap.get(currentState);
 
         if (classToHandlerMap == null)
         {
-            // if no specialised per state handler is registered look for a
-            // handler registered for "all" states
+            _logger.debug("No specialised per state handler is registered look for a handler registered for 'all' states");
             return findStateTransitionHandler(null, frame);
         }
         final StateAwareMethodListener<B> handler = (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
@@ -199,8 +194,7 @@ public class AMQStateManager implements AMQMethodListener
             }
             else
             {
-                // if no specialised per state handler is registered look for a
-                // handler registered for "all" states
+                _logger.debug("No specialised per state handler is registered look for a handler registered for 'all' states");
                 return findStateTransitionHandler(null, frame);
             }
         }

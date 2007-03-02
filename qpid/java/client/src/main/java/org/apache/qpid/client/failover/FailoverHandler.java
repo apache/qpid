@@ -31,13 +31,11 @@ import org.apache.log4j.Logger;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * When failover is required, we need a separate thread to handle the establishment of the new connection and
- * the transfer of subscriptions.
- * </p>
- * The reason this needs to be a separate thread is because you cannot do this work inside the MINA IO processor
- * thread. One significant task is the connection setup which involves a protocol exchange until a particular state
- * is achieved. However if you do this in the MINA thread, you have to block until the state is achieved which means
- * the IO processor is not able to do anything at all.
+ * When failover is required, we need a separate thread to handle the establishment of the new connection and the
+ * transfer of subscriptions. </p> The reason this needs to be a separate thread is because you cannot do this work
+ * inside the MINA IO processor thread. One significant task is the connection setup which involves a protocol exchange
+ * until a particular state is achieved. However if you do this in the MINA thread, you have to block until the state is
+ * achieved which means the IO processor is not able to do anything at all.
  */
 public class FailoverHandler implements Runnable
 {
@@ -46,14 +44,10 @@ public class FailoverHandler implements Runnable
     private final IoSession _session;
     private AMQProtocolHandler _amqProtocolHandler;
 
-    /**
-     * Used where forcing the failover host
-     */
+    /** Used where forcing the failover host */
     private String _host;
 
-    /**
-     * Used where forcing the failover port
-     */
+    /** Used where forcing the failover port */
     private int _port;
 
     public FailoverHandler(AMQProtocolHandler amqProtocolHandler, IoSession session)
@@ -82,8 +76,6 @@ public class FailoverHandler implements Runnable
         // client code which runs in a separate thread.
         synchronized (_amqProtocolHandler.getConnection().getFailoverMutex())
         {
-            _logger.info("Starting failover process");
-
             // We switch in a new state manager temporarily so that the interaction to get to the "connection open"
             // state works, without us having to terminate any existing "state waiters". We could theoretically
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
@@ -92,6 +84,8 @@ public class FailoverHandler implements Runnable
             _amqProtocolHandler.setStateManager(new AMQStateManager());
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
+                _logger.info("Starting failover process");
+
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 if (_host != null)
                 {
@@ -105,6 +99,9 @@ public class FailoverHandler implements Runnable
                 _amqProtocolHandler.setFailoverLatch(null);
                 return;
             }
+
+            _logger.info("Starting failover process");
+
             boolean failoverSucceeded;
             // when host is non null we have a specified failover host otherwise we all the client to cycle through
             // all specified hosts
@@ -123,7 +120,7 @@ public class FailoverHandler implements Runnable
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 _amqProtocolHandler.getConnection().exceptionReceived(
                         new AMQDisconnectedException("Server closed connection and no failover " +
-                                "was successful"));
+                                                     "was successful"));
             }
             else
             {
