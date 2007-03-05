@@ -66,7 +66,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
     ThreadLocal<PerThreadSetup> threadSetup = new ThreadLocal<PerThreadSetup>();
 
     /** Holds a property reader to extract the test parameters from. */
-    protected ParsedProperties testParameters = new TestContextProperties(System.getProperties());
+    protected ParsedProperties testParameters = new ParsedProperties(System.getProperties());
 
     public PingTestPerf(String name)
     {
@@ -107,6 +107,9 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                                          PingPongProducer.DEFAULT_FAIL_BEFORE_SEND);
         testParameters.setPropertyIfNull(PingPongProducer.FAIL_ONCE_PROPNAME, PingPongProducer.DEFAULT_FAIL_ONCE);
         testParameters.setPropertyIfNull(PingPongProducer.UNIQUE_PROPNAME, PingPongProducer.DEFAULT_UNIQUE);
+        testParameters.setSysPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME,
+                                              Integer.toString(PingPongProducer.DEFAULT_ACK_MODE));
+        testParameters.setSysPropertyIfNull(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME, 0l);
     }
 
     /**
@@ -141,11 +144,11 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
         ObjectMessage msg =
-            perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                                      testParameters.getPropertyAsInteger(
-                                                          PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                                      testParameters.getPropertyAsBoolean(
-                                                          PingPongProducer.PERSISTENT_MODE_PROPNAME));
+                perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                                          testParameters.getPropertyAsInteger(
+                                                                  PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                                          testParameters.getPropertyAsBoolean(
+                                                                  PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // start the test
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
@@ -190,10 +193,12 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
             int batchSize = testParameters.getPropertyAsInteger(PingPongProducer.COMMIT_BATCH_SIZE_PROPNAME);
             Boolean failOnce = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_ONCE_PROPNAME);
             boolean unique = testParameters.getPropertyAsBoolean(PingPongProducer.UNIQUE_PROPNAME);
+            int ackMode = testParameters.getPropertyAsInteger(PingPongProducer.ACK_MODE_PROPNAME);
+            int pausetime = testParameters.getPropertyAsInteger(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME);
 
             // Extract the test set up paramaeters.
             int destinationscount =
-                Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
+                    Integer.parseInt(testParameters.getProperty(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME));
 
             // This is synchronized because there is a race condition, which causes one connection to sleep if
             // all threads try to create connection concurrently.
@@ -203,7 +208,8 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                 perThreadSetup._pingClient = new PingClient(brokerDetails, username, password, virtualPath, destinationName,
                                                             selector, transacted, persistent, messageSize, verbose,
                                                             failAfterCommit, failBeforeCommit, failAfterSend, failBeforeSend,
-                                                            failOnce, batchSize, destinationscount, rate, pubsub, unique);
+                                                            failOnce, batchSize, destinationscount, rate, pubsub,
+                                                            unique, ackMode, pausetime);
             }
             // Start the client connection
             perThreadSetup._pingClient.getConnection().start();
@@ -255,5 +261,6 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
          * Holds the test ping client.
          */
         protected PingClient _pingClient;
+        protected String _correlationId;
     }
 }
