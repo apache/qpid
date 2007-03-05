@@ -445,6 +445,7 @@ void SessionHandlerImpl::BasicHandlerImpl::reject(u_int16_t /*channel*/, u_int64
         
 void SessionHandlerImpl::BasicHandlerImpl::recover(u_int16_t channel, bool requeue){
     parent->getChannel(channel)->recover(requeue);
+    parent->client->getBasic().recoverOk(channel);
 } 
 
 void SessionHandlerImpl::TxHandlerImpl::select(u_int16_t channel){
