@@ -76,6 +76,10 @@ class MessageMessage: public Message{
     u_int64_t expectedContentSize();
 
   private:
+  	void transferMessage(framing::ChannelAdapter& channel, 
+    					 const std::string& consumerTag, 
+    					 u_int32_t framesize);
+  
     framing::RequestId requestId;
     const TransferPtr transfer;
     const ReferencePtr reference;
