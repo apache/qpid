@@ -632,7 +632,11 @@ public class AMQQueue implements Managable, Comparable
 
     protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
-        _totalMessagesReceived.incrementAndGet();
+        if (!msg.isRedelivered())
+        {
+            _totalMessagesReceived.incrementAndGet();
+        }
+        
         try
         {
             _managedObject.checkForNotification(msg);
