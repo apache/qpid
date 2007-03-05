@@ -187,12 +187,12 @@ MessageHandlerImpl::recover(const MethodContext& context,
 }
 
 void
-MessageHandlerImpl::reject(const MethodContext&,
+MessageHandlerImpl::reject(const MethodContext& /*context*/,
                            u_int16_t /*code*/,
                            const string& /*text*/ )
 {
-    // FIXME astitcher 2007-01-11: 0-9 feature
-    THROW_QPID_ERROR(INTERNAL_ERROR, "Unimplemented ");
+    channel.ack();
+    // channel.requeue();
 }
 
 void
