@@ -209,7 +209,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     public Long getMaximumQueueDepth()
     {
-        return _queue.getMaximumQueueDepth();
+        long queueDepthInBytes = _queue.getMaximumQueueDepth();
+        return queueDepthInBytes >> 10 ;
     }
 
     public void setMaximumQueueDepth(Long value)
@@ -222,29 +223,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
      */
     public Long getQueueDepth() throws JMException
     {
-        return getQueueDepthKb();
-    }
-
-    public long getQueueDepthKb()
-    {
         long queueBytesSize = _queue.getQueueDepth();
         return queueBytesSize >> 10 ;
     }
-
-    /**
-     * returns size of message in bytes
-     */
-    private long getMessageSize(AMQMessage msg) throws AMQException
-    {
-        if (msg == null)
-        {
-            return 0l;
-        }
-
-        return msg.getContentHeaderBody().bodySize;
-    }
-
-
 
     /**
      * Checks if there is any notification to be send to the listeners

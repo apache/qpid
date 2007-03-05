@@ -69,9 +69,9 @@
     <virtualhost>
         <name>development</name>
         <development>
-            <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-            <maximumMessageCount>5000</maximumMessageCount>
             <queues>
+                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                <maximumMessageCount>5000</maximumMessageCount>
                 <queue>
                     <name>queue</name>
                     <queue>
@@ -95,10 +95,10 @@
     </virtualhost>
         <virtualhost>
             <name>test</name>
-            <test>
-                <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
-                <maximumMessageCount>5000</maximumMessageCount>
+            <test>                
                 <queues>
+                    <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                    <maximumMessageCount>5000</maximumMessageCount>
                     <queue>
                         <name>queue</name>
                         <queue>
