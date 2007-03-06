@@ -43,7 +43,8 @@ import javax.jms.TextMessage;
 public class CommitRollbackTest extends TestCase
 {
     protected AMQConnection conn;
-    protected final String queue = "direct://amq.direct//Qpid.Client.Transacted.CommitRollback.queue";
+    protected String queue = "direct://amq.direct//Qpid.Client.Transacted.CommitRollback.queue";
+    protected static int testMethod = 0;
     protected String payload = "xyzzy";
     private Session _session;
     private MessageProducer _publisher;
@@ -57,6 +58,11 @@ public class CommitRollbackTest extends TestCase
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
+
+        testMethod++;
+        queue += testMethod;
+
+
         newConnection();
     }
 
@@ -84,7 +90,11 @@ public class CommitRollbackTest extends TestCase
         TransportConnection.killVMBroker(1);
     }
 
-    /** PUT a text message, disconnect before commit, confirm it is gone. */
+    /**
+     * PUT a text message, disconnect before commit, confirm it is gone.
+     *
+     * @throws Exception On error
+     */
     public void testPutThenDisconnect() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -109,7 +119,11 @@ public class CommitRollbackTest extends TestCase
         assertNull("test message was put and disconnected before commit, but is still present", result);
     }
 
-    /** PUT a text message, disconnect before commit, confirm it is gone. */
+    /**
+     * PUT a text message, disconnect before commit, confirm it is gone.
+     *
+     * @throws Exception On error
+     */
     public void testPutThenCloseDisconnect() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -140,6 +154,8 @@ public class CommitRollbackTest extends TestCase
     /**
      * PUT a text message, rollback, confirm message is gone. The consumer is on the same connection but different
      * session as producer
+     *
+     * @throws Exception On error
      */
     public void testPutThenRollback() throws Exception
     {
@@ -160,7 +176,11 @@ public class CommitRollbackTest extends TestCase
         assertNull("test message was put and rolled back, but is still present", result);
     }
 
-    /** GET a text message, disconnect before commit, confirm it is still there. The consumer is on a new connection */
+    /**
+     * GET a text message, disconnect before commit, confirm it is still there. The consumer is on a new connection
+     *
+     * @throws Exception On error
+     */
     public void testGetThenDisconnect() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -194,6 +214,8 @@ public class CommitRollbackTest extends TestCase
     /**
      * GET a text message, close consumer, disconnect before commit, confirm it is still there. The consumer is on the
      * same connection but different session as producer
+     *
+     * @throws Exception On error
      */
     public void testGetThenCloseDisconnect() throws Exception
     {
@@ -230,6 +252,8 @@ public class CommitRollbackTest extends TestCase
     /**
      * GET a text message, rollback, confirm it is still there. The consumer is on the same connection but differnt
      * session to the producer
+     *
+     * @throws Exception On error
      */
     public void testGetThenRollback() throws Exception
     {
@@ -266,6 +290,8 @@ public class CommitRollbackTest extends TestCase
     /**
      * GET a text message, close message producer, rollback, confirm it is still there. The consumer is on the same
      * connection but different session as producer
+     *
+     * @throws Exception On error
      */
     public void testGetThenCloseRollback() throws Exception
     {
@@ -304,7 +330,11 @@ public class CommitRollbackTest extends TestCase
     }
 
 
-    /** Test that rolling back a session purges the dispatcher queue, and the messages arrive in the correct order */
+    /**
+     * Test that rolling back a session purges the dispatcher queue, and the messages arrive in the correct order
+     *
+     * @throws Exception On error
+     */
     public void testSend2ThenRollback() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -339,37 +369,41 @@ public class CommitRollbackTest extends TestCase
 
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
-//        assertTrue("session is not transacted", _session.getTransacted());
-//        assertTrue("session is not transacted", _pubSession.getTransacted());
-//
-//        _logger.info("sending two test messages");
-//        _publisher.send(_pubSession.createTextMessage("1"));
-//        _publisher.send(_pubSession.createTextMessage("2"));
-//        _pubSession.commit();
-//
-//        _logger.info("getting test message");
-//        assertEquals("1", ((TextMessage) _consumer.receive(1000)).getText());
-//
-//        _consumer.close();
-//
-//        _consumer = _session.createConsumer(_jmsQueue);
-//
-//        _logger.info("receiving result");
-//        Message result = _consumer.receive(1000);
-//        _logger.error("1:" + result);
-////        assertNotNull("test message was consumed and rolled back, but is gone", result);
-////        assertEquals("1" , ((TextMessage) result).getText());
-////        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
-//
-//        result = _consumer.receive(1000);
-//        _logger.error("2" + result);
-////        assertNotNull("test message was consumed and rolled back, but is gone", result);
-////        assertEquals("2", ((TextMessage) result).getText());
-////        assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
-//
-//        result = _consumer.receive(1000);
-//        _logger.error("3" + result);
-//        assertNull("test message should be null:" + result, result);
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending two test messages");
+        _publisher.send(_pubSession.createTextMessage("1"));
+        _publisher.send(_pubSession.createTextMessage("2"));
+        _pubSession.commit();
+
+        _logger.info("getting test message");
+        Message result = _consumer.receive(1000);
+
+        assertNotNull("Message received should not be null", result);
+        assertEquals("1", ((TextMessage) result).getText());
+        assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
+
+
+        _logger.info("Closing Consumer");
+        _consumer.close();
+
+        _logger.info("Creating New consumer");
+        _consumer = _session.createConsumer(_jmsQueue);
+
+        _logger.info("receiving result");
+        result = _consumer.receive(1000);
+        assertNotNull("test message was consumed and rolled back, but is gone", result);
+        assertEquals("1", ((TextMessage) result).getText());
+        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+
+        result = _consumer.receive(1000);
+        assertNotNull("test message was consumed and rolled back, but is gone", result);
+        assertEquals("2", ((TextMessage) result).getText());
+        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+
+        result = _consumer.receive(1000);
+        assertNull("test message should be null:" + result, result);
     }
 
 }

@@ -30,13 +30,11 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
 /**
- * This class contains everything needed to process a JMS message. It assembles the
- * deliver body, the content header and the content body/ies.
+ * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and
+ * the content body/ies.
  *
- * Note that the actual work of creating a JMS message for the client code's use is done
- * outside of the MINA dispatcher thread in order to minimise the amount of work done in
- * the MINA dispatcher thread.
- *
+ * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
+ * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
 public class UnprocessedMessage
 {
@@ -47,9 +45,7 @@ public class UnprocessedMessage
     private final int _channelId;
     private ContentHeaderBody _contentHeader;
 
-    /**
-     * List of ContentBody instances. Due to fragmentation you don't know how big this will be in general
-     */
+    /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ContentBody> _bodies;
 
     public UnprocessedMessage(int channelId, BasicDeliverBody deliverBody)
@@ -74,9 +70,9 @@ public class UnprocessedMessage
         {
             final long payloadSize = body.payload.remaining();
 
-            if(_bodies == null)
+            if (_bodies == null)
             {
-                if(payloadSize == getContentHeader().bodySize)
+                if (payloadSize == getContentHeader().bodySize)
                 {
                     _bodies = Collections.singletonList(body);
                 }

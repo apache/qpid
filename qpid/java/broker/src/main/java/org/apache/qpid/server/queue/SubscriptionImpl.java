@@ -46,6 +46,8 @@ import org.apache.qpid.util.ConcurrentLinkedMessageQueueAtomicSize;
  */
 public class SubscriptionImpl implements Subscription
 {
+
+    private static final Logger _suspensionlogger = Logger.getLogger("Suspension");
     private static final Logger _logger = Logger.getLogger(SubscriptionImpl.class);
 
     public final AMQChannel channel;
@@ -258,6 +260,12 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
+
+            if (_sendLock.get())
+            {
+                _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
+            }
+
             protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
         }
     }
@@ -265,56 +273,56 @@ public class SubscriptionImpl implements Subscription
     private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
             throws AMQException
     {
-        try
+        // if we do not need to wait for client acknowledgements
+        // we can decrement the reference count immediately.
+
+        // By doing this _before_ the send we ensure that it
+        // doesn't get sent if it can't be dequeued, preventing
+        // duplicate delivery on recovery.
+
+        // The send may of course still fail, in which case, as
+        // the message is unacked, it will be lost.
+        if (!_acks)
         {
-            // if we do not need to wait for client acknowledgements
-            // we can decrement the reference count immediately.
-
-            // By doing this _before_ the send we ensure that it
-            // doesn't get sent if it can't be dequeued, preventing
-            // duplicate delivery on recovery.
-
-            // The send may of course still fail, in which case, as
-            // the message is unacked, it will be lost.
-            if (!_acks)
+            if (_logger.isDebugEnabled())
             {
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
-                }
-                queue.dequeue(storeContext, msg);
+                _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
             }
-            synchronized (channel)
-            {
-                long deliveryTag = channel.getNextDeliveryTag();
-
-                if (_acks)
-                {
-                    channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
-                    msg.decrementReference(storeContext);
-                }
-
-                protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
-
-            }
+            queue.dequeue(storeContext, msg);
         }
-        finally
+        synchronized (channel)
         {
+            long deliveryTag = channel.getNextDeliveryTag();
+
+            if (_sendLock.get())
+            {
+                _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
+            }
+
+            if (_acks)
+            {
+                channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                msg.decrementReference(storeContext);
+            }
+
+            protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
+            //Only set delivered if it actually was writen successfully..
+            // using a try->finally would set it even if an error occured. 
             msg.setDeliveredToConsumer();
         }
     }
 
     public boolean isSuspended()
     {
-        if (_logger.isTraceEnabled())
+        if (_suspensionlogger.isInfoEnabled())
         {
             if (channel.isSuspended())
             {
-                _logger.trace("Subscription(" + System.identityHashCode(this) + ") channel's is susupended");
+                _suspensionlogger.info("Subscription(" + debugIdentity() + ") channel's is susupended");
             }
             if (_sendLock.get())
             {
-                _logger.trace("Subscription(" + System.identityHashCode(this) + ") has sendLock set so closing.");
+                _suspensionlogger.info("Subscription(" + debugIdentity() + ") has sendLock set so closing.");
             }
         }
         return channel.isSuspended() || _sendLock.get();
@@ -323,7 +331,7 @@ public class SubscriptionImpl implements Subscription
     /**
      * Callback indicating that a queue has been deleted.
      *
-     * @param queue
+     * @param queue The queue to delete
      */
     public void queueDeleted(AMQQueue queue) throws AMQException
     {
@@ -337,9 +345,18 @@ public class SubscriptionImpl implements Subscription
 
     public boolean hasInterest(AMQMessage msg)
     {
+        //check that the message hasn't been rejected
+        if (msg.isRejectedBy(this))
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Subscription:" + debugIdentity() + " rejected message:" + msg.debugIdentity());
+            }
+//            return false;
+        }
+
         if (_noLocal)
         {
-            boolean isLocal;
             // We don't want local messages so check to see if message is one we sent
             Object localInstance;
             Object msgInstance;
@@ -350,12 +367,12 @@ public class SubscriptionImpl implements Subscription
                 if ((msg.getPublisher().getClientProperties() != null) &&
                     (msgInstance = msg.getPublisher().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                 {
-                    if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
+                    if (localInstance == msgInstance || localInstance.equals(msgInstance))
                     {
                         if (_logger.isTraceEnabled())
                         {
-                            _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
-                                          System.identityHashCode(msg) + ")");
+                            _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+                                          msg.debugIdentity() + ")");
                         }
                         return false;
                     }
@@ -369,8 +386,8 @@ public class SubscriptionImpl implements Subscription
                 {
                     if (_logger.isTraceEnabled())
                     {
-                        _logger.trace("(" + System.identityHashCode(this) + ") has no interest as it is a local message(" +
-                                      System.identityHashCode(msg) + ")");
+                        _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+                                      msg.debugIdentity() + ")");
                     }
                     return false;
                 }
@@ -383,10 +400,17 @@ public class SubscriptionImpl implements Subscription
 
         if (_logger.isTraceEnabled())
         {
-            _logger.trace("(" + System.identityHashCode(this) + ") checking filters for message (" + System.identityHashCode(msg));
+            _logger.trace("(" + debugIdentity() + ") checking filters for message (" + msg.debugIdentity());
         }
         return checkFilters(msg);
 
+    }
+
+    private String id = String.valueOf(System.identityHashCode(this));
+
+    private String debugIdentity()
+    {
+        return id;
     }
 
     private boolean checkFilters(AMQMessage msg)
@@ -395,7 +419,7 @@ public class SubscriptionImpl implements Subscription
         {
             if (_logger.isTraceEnabled())
             {
-                _logger.trace("(" + System.identityHashCode(this) + ") has filters.");
+                _logger.trace("(" + debugIdentity() + ") has filters.");
             }
             return _filters.allAllow(msg);
         }
@@ -403,7 +427,7 @@ public class SubscriptionImpl implements Subscription
         {
             if (_logger.isTraceEnabled())
             {
-                _logger.trace("(" + System.identityHashCode(this) + ") has no filters");
+                _logger.trace("(" + debugIdentity() + ") has no filters");
             }
 
             return true;
@@ -445,15 +469,19 @@ public class SubscriptionImpl implements Subscription
             }
 
             _sendLock.set(true);
-
         }
+
         if (_logger.isInfoEnabled())
         {
-            _logger.info("Closing subscription (" + System.identityHashCode(this) + "):" + this);
+            _logger.info("Closing subscription (" + debugIdentity() + "):" + this);
         }
 
         if (_resendQueue != null && !_resendQueue.isEmpty())
         {
+            if (_logger.isInfoEnabled())
+            {
+                _logger.info("Requeuing closing subscription (" + debugIdentity() + "):" + this);
+            }
             requeue();
         }
 
@@ -486,6 +514,11 @@ public class SubscriptionImpl implements Subscription
             {
                 AMQMessage resent = _resendQueue.poll();
 
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("Removed for resending:" + resent.debugIdentity());
+                }
+
                 resent.release();
                 _queue.subscriberHasPendingResend(false, this, resent);
 
@@ -495,7 +528,7 @@ public class SubscriptionImpl implements Subscription
                 }
                 catch (AMQException e)
                 {
-                    _logger.error("Unable to re-deliver messages", e);
+                    _logger.error("MESSAGE LOSS : Unable to re-deliver messages", e);
                 }
             }
 

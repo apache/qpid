@@ -63,6 +63,8 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
         }
 
         session.closeChannel(channelId);
+        // Client requested closure so we don't wait for ok we send it
+        stateManager.getProtocolSession().closeChannelOk(channelId);
 
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

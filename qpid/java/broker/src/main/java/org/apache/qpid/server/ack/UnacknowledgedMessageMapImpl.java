@@ -196,25 +196,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             }
         }
     }
-
-    public void resendMessages(AMQProtocolSession protocolSession, int channelId) throws AMQException
-    {
-        synchronized (_lock)
-        {
-            for (Map.Entry<Long, UnacknowledgedMessage> entry : _map.entrySet())
-            {
-                long deliveryTag = entry.getKey();
-                AMQShortString consumerTag = entry.getValue().consumerTag;
-                AMQMessage msg = entry.getValue().message;
-
-                if(consumerTag != null)
-                {
-                    protocolSession.getProtocolOutputConverter().writeDeliver(msg, channelId, deliveryTag, consumerTag);
-                }
-            }
-        }
-    }
-
+    
     public UnacknowledgedMessage get(long key)
     {
         synchronized (_lock)

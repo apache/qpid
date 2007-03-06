@@ -109,6 +109,10 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
             }
             catch (AMQException e)
             {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Exception occured was:" + e.getErrorCode());
+                }
                 assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
 
                 _connection = newConnection();
@@ -315,15 +319,15 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
         }
         catch (JMSException e)
         {
-            fail("Creating new connection when:"+e.getMessage());
+            fail("Creating new connection when:" + e.getMessage());
         }
         catch (AMQException e)
         {
-            fail("Creating new connection when:"+e.getMessage());
+            fail("Creating new connection when:" + e.getMessage());
         }
         catch (URLSyntaxException e)
         {
-            fail("Creating new connection when:"+e.getMessage());
+            fail("Creating new connection when:" + e.getMessage());
         }
 
 
