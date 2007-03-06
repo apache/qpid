@@ -57,13 +57,14 @@ class TestRunner:
 run-tests [options] [test*]
 The name of a test is package.module.ClassName.testMethod
 Options:
-  -?/-h/--help         : this message
-  -s/--spec <spec.xml> : file containing amqp XML spec 
+  -?/-h/--help             : this message
+  -s/--spec <spec.xml>     : file containing amqp XML spec
+  -e/--errata <errata.xml> : file containing amqp XML errata
   -b/--broker [<user>[/<password>]@]<host>[:<port>] : broker to connect to
-  -v/--verbose         : verbose - lists tests as they are run.
-  -d/--debug           : enable debug logging.
-  -i/--ignore <test>   : ignore the named test.
-  -I/--ignore-file     : file containing patterns to ignore.
+  -v/--verbose             : verbose - lists tests as they are run.
+  -d/--debug               : enable debug logging.
+  -i/--ignore <test>       : ignore the named test.
+  -I/--ignore-file         : file containing patterns to ignore.
   """
         sys.exit(1)
 
@@ -81,10 +82,10 @@ Options:
     def __init__(self):
         # Defaults
         self.setBroker("localhost")
-        self.spec = "../specs/amqp.0-9.xml"
-        self.errata = "../specs/amqp-errata.0-9.xml"
         self.verbose = 1
         self.ignore = []
+        self.spec = None
+        self.errata = []
 
     def ignoreFile(self, filename):
         f = file(filename)
@@ -99,12 +100,20 @@ Options:
         for opt, value in opts:
             if opt in ("-?", "-h", "--help"): self._die()
             if opt in ("-s", "--spec"): self.spec = value
+            if opt in ("-e", "--errata"): self.errata.append(value)
             if opt in ("-b", "--broker"): self.setBroker(value)
             if opt in ("-v", "--verbose"): self.verbose = 2
             if opt in ("-d", "--debug"): logging.basicConfig(level=logging.DEBUG)
             if opt in ("-i", "--ignore"): self.ignore.append(value)
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
 
+        # Default spec and errata.
+        if (self.spec == None):
+            if (len(self.errata)>0):
+                self._die("Specified errata with no spec.")
+            self.spec = "../specs/amqp.0-9.xml"
+            self.errata = ["../specs/amqp-errata.0-9.xml"]
+        # Default to running all tests.
         if len(self.tests) == 0: self.tests=findmodules("tests")
 
     def testSuite(self):
@@ -142,7 +151,7 @@ Options:
         errata = errata or self.errata
         user = user or self.user
         password = password or self.password
-        client = qpid.client.Client(host, port, qpid.spec.load(spec, errata))
+        client = qpid.client.Client(host, port, qpid.spec.load(spec, *errata))
         client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
         return client
 

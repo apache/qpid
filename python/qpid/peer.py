@@ -183,8 +183,8 @@ class Channel:
     self.requester = Requester(self.write)
     self.responder = Responder(self.write)
 
-    # XXX: better switch
-    self.reliable = True
+    # Use reliable framing if version >= 0-9.
+    self.reliable = (spec.major >= 0 and spec.minor >= 9)
     self.synchronous = True
 
   def close(self, reason):
