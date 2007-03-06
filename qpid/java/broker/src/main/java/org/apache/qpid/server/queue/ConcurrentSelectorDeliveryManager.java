@@ -388,7 +388,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return count;
     }
 
-    public synchronized AMQMessage getNextMessage() throws AMQException
+    private AMQMessage getNextMessage() throws AMQException
     {
         return getNextMessage(_messages, null);
     }
