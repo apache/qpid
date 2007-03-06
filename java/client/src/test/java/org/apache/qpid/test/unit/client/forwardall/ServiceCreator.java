@@ -20,10 +20,15 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
+import org.apache.log4j.Logger;
+
 import javax.jms.JMSException;
 
 public class ServiceCreator implements Runnable
 {
+    private static final Logger _logger = Logger.getLogger(ServiceCreator.class);
+
+
     private static Thread[] threads;
     private static ServiceCreator[] _services;
 
@@ -73,7 +78,7 @@ public class ServiceCreator implements Runnable
         _services = new ServiceCreator[services];
         ServiceCreator runner = new ServiceCreator(broker);
         //start services
-        System.out.println("Starting " + services + " services...");
+        _logger.info("Starting " + services + " services...");
         for (int i = 0; i < services; i++)
         {
             threads[i] = new Thread(runner);

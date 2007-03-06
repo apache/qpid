@@ -33,9 +33,12 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.log4j.Logger;
 
 public class MultipleConnectionTest extends TestCase
 {
+    private static final Logger _logger = Logger.getLogger(MultipleConnectionTest.class);
+
     public static final String _defaultBroker = "vm://:1";
     public String _connectionString = _defaultBroker;
 
@@ -208,7 +211,7 @@ public class MultipleConnectionTest extends TestCase
         try
         {
             waitForCompletion(messages, 5000, receivers);
-            System.out.println("All receivers received all expected messages");
+            _logger.info("All receivers received all expected messages");
         }
         finally
         {

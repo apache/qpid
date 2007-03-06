@@ -44,9 +44,12 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.log4j.Logger;
 
 public class BytesMessageTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(BytesMessageTest.class);
+
     private Connection _connection;
     private Destination _destination;
     private Session _session;
@@ -89,7 +92,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
             send(_count);
             waitFor(_count);
             check();
-            System.out.println("Completed without failure");
+            _logger.info("Completed without failure");
         }
         finally
         {

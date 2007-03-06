@@ -27,6 +27,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.log4j.Logger;
 
 /**
  * Declare a private temporary response queue,
@@ -36,6 +37,9 @@ import org.apache.qpid.framing.AMQShortString;
  */
 public class Client implements MessageListener
 {
+
+    private static final Logger _logger = Logger.getLogger(Client.class);
+
     private final AMQConnection _connection;
     private final AMQSession _session;
     private final int _expected;
@@ -69,7 +73,7 @@ public class Client implements MessageListener
     public synchronized void onMessage(Message response)
     {
        
-        System.out.println("Received " + (++_count) + " of " + _expected  + " responses.");
+        _logger.info("Received " + (++_count) + " of " + _expected  + " responses.");
         if(_count == _expected)
         {
 
