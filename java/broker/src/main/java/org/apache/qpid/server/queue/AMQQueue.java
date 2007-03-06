@@ -50,6 +50,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public class AMQQueue implements Managable, Comparable
 {
+
     public static final class ExistingExclusiveSubscription extends AMQException
     {
 
@@ -446,7 +447,11 @@ public class AMQQueue implements Managable, Comparable
             setExclusive(true);
         }
 
-        debug("Registering protocol session {0} with channel {1} and consumer tag {2} with {3}", ps, channel, consumerTag, this);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("Registering protocol session {0} with channel {1} and " +
+                                               "consumer tag {2} with {3}", ps, channel, consumerTag, this));
+        }
 
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks,
                                                                             filters, noLocal, this);
@@ -486,8 +491,11 @@ public class AMQQueue implements Managable, Comparable
 
     public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
-        debug("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
-              this);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
+                                               this));
+        }
 
         Subscription removedSubscription;
         if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel,
@@ -506,6 +514,10 @@ public class AMQQueue implements Managable, Comparable
         // if we are eligible for auto deletion, unregister from the queue registry
         if (_autoDelete && _subscribers.isEmpty())
         {
+            if (_logger.isInfoEnabled())
+            {
+                _logger.warn("Auto-deleteing queue:" + this);
+            }
             autodelete();
             // we need to manually fire the event to the removed subscription (which was the last one left for this
             // queue. This is because the delete method uses the subscription set which has just been cleared
@@ -561,14 +573,18 @@ public class AMQQueue implements Managable, Comparable
 
     protected void autodelete() throws AMQException
     {
-        debug("autodeleting {0}", this);
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(MessageFormat.format("autodeleting {0}", this));
+        }
         delete();
     }
 
-    public void processGet(StoreContext storeContext, AMQMessage msg) throws AMQException
+    public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
         //fixme not sure what this is doing. should we be passing deliverFirst through here?
-        _deliveryMgr.deliver(storeContext, getName(), msg, false);
+        // This code is not used so when it is perhaps it should
+        _deliveryMgr.deliver(storeContext, getName(), msg, deliverFirst);
         try
         {
             msg.checkDeliveredToConsumer();
@@ -582,6 +598,10 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
+//    public DeliveryManager getDeliveryManager()
+//    {
+//        return _deliveryMgr;
+//    }
 
     public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
@@ -671,14 +691,6 @@ public class AMQQueue implements Managable, Comparable
     public String toString()
     {
         return "Queue(" + _name + ")@" + System.identityHashCode(this);
-    }
-
-    private void debug(String msg, Object... args)
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug(MessageFormat.format(msg, args));
-        }
     }
 
     public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException

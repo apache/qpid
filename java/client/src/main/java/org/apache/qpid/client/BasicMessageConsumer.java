@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -109,9 +110,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /** Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode */
     private int _outstanding;
 
-    /** Tag of last message delievered, whoch should be acknowledged on commit in transaction mode. */
-    private long _lastDeliveryTag;
-
     /**
      * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode. Enabled when _outstannding
      * number of msgs >= _prefetchHigh and disabled at < _prefetchLow
@@ -119,6 +117,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     private boolean _dups_ok_acknowledge_send;
 
     private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
+
+    /** List of tags delievered, The last of which which should be acknowledged on commit in transaction mode. */    
+    private ConcurrentLinkedQueue<Long> _receivedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
     /**
      * The thread that was used to call receive(). This is important for being able to interrupt that thread if a
@@ -432,6 +433,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close(boolean sendClose) throws JMSException
     {
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Closing consumer:" + debugIdentity());
+        }
+
         synchronized (_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
@@ -448,6 +454,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     try
                     {
                         _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
+
+                        if (_logger.isDebugEnabled())
+                        {
+                            _logger.debug("CancelOk'd for consumer:" + debugIdentity());
+                        }
+
                     }
                     catch (AMQException e)
                     {
@@ -456,11 +468,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                 }
 
-                deregisterConsumer();
-                _unacknowledgedDeliveryTags.clear();
+                //done in BasicCancelOK Handler
+                //deregisterConsumer();
                 if (_messageListener != null && _receiving.get())
                 {
-                    _logger.info("Interrupting thread: " + _receivingThread);
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Interrupting thread: " + _receivingThread);
+                    }
                     _receivingThread.interrupt();
                 }
             }
@@ -616,7 +631,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
                 else
                 {
-                    _lastDeliveryTag = msg.getDeliveryTag();
+                    _receivedDeliveryTags.add(msg.getDeliveryTag());
                 }
                 break;
         }
@@ -625,10 +640,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     /** Acknowledge up to last message delivered (if any). Used when commiting. */
     void acknowledgeLastDelivered()
     {
-        if (_lastDeliveryTag > 0)
+        if (!_receivedDeliveryTags.isEmpty())
         {
-            _session.acknowledgeMessage(_lastDeliveryTag, true);
-            _lastDeliveryTag = -1;
+            long lastDeliveryTag = _receivedDeliveryTags.poll();
+
+            while (!_receivedDeliveryTags.isEmpty())
+            {
+                lastDeliveryTag = _receivedDeliveryTags.poll();
+            }
+
+            _session.acknowledgeMessage(lastDeliveryTag, true);
         }
     }
 
@@ -738,43 +759,76 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void rollback()
     {
+        clearUnackedMessages();
 
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Rejecting received messages");
+        }
+
+        //rollback received but not committed messages
+        while (!_receivedDeliveryTags.isEmpty())
+        {
+            Long tag = _receivedDeliveryTags.poll();
+
+            if (tag != null)
+            {
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
+                }
+
+                _session.rejectMessage(tag, true);
+            }
+        }
+
+        //rollback pending messages
         if (_synchronousQueue.size() > 0)
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting the messages for consumer with tag:" + _consumerTag);
+                _logger.debug("Rejecting the messages(" + _synchronousQueue.size() + ")" +
+                              "for consumer with tag:" + _consumerTag);
             }
             Iterator iterator = _synchronousQueue.iterator();
+
             while (iterator.hasNext())
             {
-                Object o = iterator.next();
 
+                Object o = iterator.next();
                 if (o instanceof AbstractJMSMessage)
                 {
-                    _session.rejectMessage(((AbstractJMSMessage) o).getDeliveryTag(), true);
+                    _session.rejectMessage(((AbstractJMSMessage) o), true);
 
                     if (_logger.isTraceEnabled())
                     {
-                        _logger.trace("Rejected message" + o);
-                        iterator.remove();
+                        _logger.trace("Rejected message:" + ((AbstractJMSMessage) o).getDeliveryTag());
                     }
+                    iterator.remove();
 
                 }
                 else
                 {
                     _logger.error("Queue contained a :" + o.getClass() +
                                   " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                    iterator.remove();
                 }
             }
 
             if (_synchronousQueue.size() != 0)
             {
                 _logger.warn("Queue was not empty after rejecting all messages Remaining:" + _synchronousQueue.size());
+                rollback();
             }
 
             _synchronousQueue.clear();
         }
+    }
+
+
+    public String debugIdentity()
+    {
+        return String.valueOf(_consumerTag);
     }
 
 }
