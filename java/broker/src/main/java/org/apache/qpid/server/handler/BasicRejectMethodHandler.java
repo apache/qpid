@@ -23,6 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -49,20 +50,67 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        _logger.info("FIXME: Rejecting:" + evt.getMethod().deliveryTag + ": Requeue:" + evt.getMethod().requeue);
-
         int channelId = evt.getChannelId();
-        UnacknowledgedMessage message = session.getChannel(channelId).getUnacknowledgedMessageMap().get(evt.getMethod().deliveryTag);
 
-        _logger.info("Need to reject message:" + message);
-//        if (evt.getMethod().requeue)
-//        {
-//          session.getChannel(channelId).requeue(evt.getMethod().deliveryTag);
-//        }
-//        else
-//       {
-//           // session.getChannel(channelId).resend(message);
-//       }
+        if (_logger.isTraceEnabled())
+        {
+            _logger.trace("Rejecting:" + evt.getMethod().deliveryTag +
+                          ": Requeue:" + evt.getMethod().requeue +
+//                              ": Resend:" + evt.getMethod().resend +                          
+                          " on channel:" + channelId);
+        }
 
+        AMQChannel channel = session.getChannel(channelId);
+
+        if (channel == null)
+        {
+            throw evt.getMethod().getChannelNotFoundException(channelId);
+        }
+
+        if (_logger.isTraceEnabled())
+        {
+            _logger.trace("Rejecting:" + evt.getMethod().deliveryTag +
+                          ": Requeue:" + evt.getMethod().requeue +
+//                              ": Resend:" + evt.getMethod().resend +
+                          " on channel:" + channel.debugIdentity());
+        }
+
+        long deliveryTag = evt.getMethod().deliveryTag;
+
+        UnacknowledgedMessage message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
+
+        if (message == null)
+        {
+            _logger.warn("Dropping reject request as message is null for tag:" + deliveryTag);
+//            throw evt.getMethod().getChannelException(AMQConstant.NOT_FOUND, "Delivery Tag(" + deliveryTag + ")not known");
+        }
+        else
+        {
+
+            if (_logger.isTraceEnabled())
+            {
+                _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.message.debugIdentity() +
+                              ": Requeue:" + evt.getMethod().requeue +
+//                              ": Resend:" + evt.getMethod().resend +
+                              " on channel:" + channel.debugIdentity());
+            }
+
+            // If we haven't requested message to be resent to this consumer then reject it from ever getting it.
+//            if (!evt.getMethod().resend)
+            {
+                message.message.reject(message.message.getDeliveredSubscription());
+            }
+
+            if (evt.getMethod().requeue)
+            {
+                channel.requeue(deliveryTag);
+            }
+            else
+            {
+                _logger.warn("Dropping message as requeue not required and there is no dead letter queue");
+//                message.queue = channel.getDefaultDeadLetterQueue();
+//                channel.requeue(deliveryTag);
+            }
+        }
     }
 }

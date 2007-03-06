@@ -28,27 +28,29 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-/**
- * @author Apache Software Foundation
- */
 public class BasicCancelOkMethodHandler implements StateAwareMethodListener
 {
-     private static final Logger _logger = Logger.getLogger(BasicCancelOkMethodHandler.class);
-     private static final BasicCancelOkMethodHandler _instance = new BasicCancelOkMethodHandler();
+    private static final Logger _logger = Logger.getLogger(BasicCancelOkMethodHandler.class);
+    private static final BasicCancelOkMethodHandler _instance = new BasicCancelOkMethodHandler();
 
-     public static BasicCancelOkMethodHandler getInstance()
-     {
-         return _instance;
-     }
+    public static BasicCancelOkMethodHandler getInstance()
+    {
+        return _instance;
+    }
 
-     private BasicCancelOkMethodHandler()
-     {
-     }
+    private BasicCancelOkMethodHandler()
+    {
+    }
 
-     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-     {
-         _logger.debug("New BasicCancelOk method received");
-         BasicCancelOkBody body = (BasicCancelOkBody) evt.getMethod();
-         protocolSession.confirmConsumerCancelled(evt.getChannelId(), body.consumerTag);                  
-     }
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    {
+        BasicCancelOkBody body = (BasicCancelOkBody) evt.getMethod();
+
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("New BasicCancelOk method received for consumer:" + body.consumerTag);
+        }
+
+        protocolSession.confirmConsumerCancelled(evt.getChannelId(), body.consumerTag);
+    }
 }

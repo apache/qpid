@@ -523,8 +523,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         {
             try
             {
-                markChannelawaitingCloseOk(channelId);
                 channel.close(this);
+                markChannelawaitingCloseOk(channelId);
             }
             finally
             {
@@ -546,7 +546,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     /**
      * In our current implementation this is used by the clustering code.
      *
-     * @param channelId
+     * @param channelId The channel to remove
      */
     public void removeChannel(int channelId)
     {

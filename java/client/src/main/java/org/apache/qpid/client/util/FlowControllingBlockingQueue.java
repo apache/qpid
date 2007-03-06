@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.client.util;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.log4j.Logger;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

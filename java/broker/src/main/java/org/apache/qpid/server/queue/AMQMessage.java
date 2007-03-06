@@ -85,9 +85,16 @@ public class AMQMessage
 
     private Subscription _takenBySubcription;
 
+    private Set<Subscription> _rejectedBy = null;
+
     public boolean isTaken()
     {
         return _taken.get();
+    }
+
+    public String debugIdentity()
+    {
+        return "(HC:" + System.identityHashCode(this) + " ID:" + _messageId + ")";
     }
 
     /**
@@ -199,7 +206,7 @@ public class AMQMessage
         _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
         {
-            _log.debug("Message created with id " + messageId);
+            _log.debug("Message(" + System.identityHashCode(this) + ") created with id " + messageId);
         }
     }
 
@@ -452,7 +459,9 @@ public class AMQMessage
 
     public void release()
     {
+        _log.trace("Releasing Message:" + debugIdentity());
         _taken.set(false);
+        _takenBySubcription = null;
     }
 
     public boolean checkToken(Object token)
@@ -511,7 +520,7 @@ public class AMQMessage
      * @throws NoConsumersException if the message is marked for immediate delivery but has not been marked as delivered
      *                              to a consumer
      */
-    public void checkDeliveredToConsumer() throws NoConsumersException, AMQException
+    public void checkDeliveredToConsumer() throws NoConsumersException
     {
 
         if (_immediate && !_deliveredToConsumer)
@@ -580,7 +589,8 @@ public class AMQMessage
 
             for (AMQQueue q : destinationQueues)
             {
-                _txnContext.deliver(this, q, true);
+                //normal deliver so add this message at the end.
+                _txnContext.deliver(this, q, false);
             }
         }
         finally
@@ -801,12 +811,43 @@ public class AMQMessage
 
     public String toString()
     {
-        return "Message: " + _messageId + "; ref count: " + _referenceCount + "; taken: " +
+        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken: " +
                _taken + " by:" + _takenBySubcription;
     }
 
     public Subscription getDeliveredSubscription()
     {
         return _takenBySubcription;
+    }
+
+    public void reject(Subscription subscription)
+    {
+        if (subscription != null)
+        {
+            if (_rejectedBy == null)
+            {
+                _rejectedBy = new HashSet<Subscription>();
+            }
+
+            _rejectedBy.add(subscription);
+        }
+        else
+        {
+            _log.warn("Requesting rejection by null subscriber:" + debugIdentity());
+        }
+    }
+
+    public boolean isRejectedBy(Subscription subscription)
+    {
+        boolean rejected = _rejectedBy != null;
+
+        if (rejected)  // We have subscriptions that rejected this message
+        {
+            return _rejectedBy.contains(subscription);
+        }
+        else // This messasge hasn't been rejected yet.
+        {
+            return rejected;
+        }
     }
 }

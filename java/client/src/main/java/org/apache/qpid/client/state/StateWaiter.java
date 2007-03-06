@@ -58,6 +58,7 @@ public class StateWaiter implements StateListener
                 {
                     _logger.debug("State " + _state + " not achieved so waiting...");
                     _monitor.wait(TIME_OUT);
+                    //fixme this won't cause the timeout to exit the loop. need to set _throwable
                 }
                 catch (InterruptedException e)
                 {
