@@ -37,7 +37,7 @@ public class SimpleClusterTest extends TestCase
         AMQConnection con = new AMQConnection("localhost:9000", "guest", "guest", "test", "/test");
         AMQSession session = (AMQSession) con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         System.out.println("Session created");
-        session.declareExchange(new AMQShortString("my_exchange"), new AMQShortString("direct"));
+        session.declareExchange(new AMQShortString("my_exchange"), new AMQShortString("direct"), true);
         System.out.println("Exchange declared");
         con.close();
         System.out.println("Connection closed");

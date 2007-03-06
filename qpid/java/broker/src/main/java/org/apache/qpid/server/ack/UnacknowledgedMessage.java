@@ -42,6 +42,21 @@ public class UnacknowledgedMessage
         message.incrementReference();
     }
 
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Q:");
+        sb.append(queue);
+        sb.append(" M:");
+        sb.append(message);
+        sb.append(" CT:");
+        sb.append(consumerTag);
+        sb.append(" DT:");
+        sb.append(deliveryTag);
+
+        return sb.toString();
+    }
+
     public void discard(StoreContext storeContext) throws AMQException
     {
         if (queue != null)

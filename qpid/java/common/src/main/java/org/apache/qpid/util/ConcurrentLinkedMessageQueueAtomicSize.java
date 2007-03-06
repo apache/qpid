@@ -41,6 +41,11 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
         return super.size() + _messageHeadSize.get();
     }
 
+    public int headSize()
+    {
+        return _messageHeadSize.get();
+    }
+
     @Override
     public E poll()
     {
@@ -50,9 +55,13 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
         }
         else
         {
-            _logger.debug("Providing item from message head");
-
             E e = _messageHead.poll();
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Providing item(" + e + ")from message head");
+            }
+
 
             if (e != null)
             {
@@ -159,8 +168,12 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
         }
         else
         {
-            _logger.debug("Providing item from message head");
-            return _messageHead.peek();
+            E o = _messageHead.peek();
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Peeking item (" + o + ") from message head");
+            }
+            return o;
         }
 
     }
@@ -186,7 +199,10 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
 
     public boolean pushHead(E o)
     {
-        _logger.debug("Adding item to head of queue");
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Adding item(" + o + ") to head of queue");
+        }
         if (_messageHead.offer(o))
         {
             _messageHeadSize.incrementAndGet();
