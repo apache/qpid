@@ -61,7 +61,7 @@ public class SelectorTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(connection,randomize("SessionStartTest"), true));
+        init(connection, new AMQQueue(connection, randomize("SessionStartTest"), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception
@@ -92,7 +92,7 @@ public class SelectorTest extends TestCase implements MessageListener
             _logger.info("Sending Message:" + msg);
 
             ((BasicMessageProducer) _session.createProducer(_destination)).send(msg, DeliveryMode.NON_PERSISTENT);
-            System.out.println("Message sent, waiting for response...");
+            _logger.info("Message sent, waiting for response...");
             wait(1000);
 
             if (count > 0)

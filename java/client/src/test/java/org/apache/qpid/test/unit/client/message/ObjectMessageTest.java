@@ -38,9 +38,12 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.log4j.Logger;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(ObjectMessageTest.class);
+
     private AMQConnection connection;
     private AMQDestination destination;
     private AMQSession session;
@@ -98,7 +101,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             send();
             waitUntilReceived(data.length);
             check();
-            System.out.println("All " + data.length + " items matched.");
+            _logger.info("All " + data.length + " items matched.");
         }
         catch (Exception e)
         {
@@ -247,7 +250,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             }
             else
             {
-                System.out.println("ERROR: Got " + message.getClass().getName() + " not ObjectMessage");
+                _logger.error("ERROR: Got " + message.getClass().getName() + " not ObjectMessage");
                 items.add(message);
             }
         }

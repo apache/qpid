@@ -97,7 +97,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
         send(count);
         waitFor(count);
         check();
-        System.out.println("Completed without failure");
+        _logger.info("Completed without failure");
         _connection.close();
     }
 
@@ -132,7 +132,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             }
             else
             {
-                q = new AMQQueue(_connection,"TestReply");
+                q = new AMQQueue(_connection, "TestReply");
             }
 
             m.setJMSReplyTo(q);
@@ -157,7 +157,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {
@@ -248,7 +248,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             received.add((JMSTextMessage) message);
             received.notify();
