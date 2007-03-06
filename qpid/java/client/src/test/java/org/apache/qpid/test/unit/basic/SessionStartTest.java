@@ -32,9 +32,12 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.log4j.Logger;
 
 public class SessionStartTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(SessionStartTest.class);
+
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
@@ -54,7 +57,7 @@ public class SessionStartTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(connection.getDefaultQueueExchangeName(),new AMQShortString(randomize("SessionStartTest")), true));
+        init(connection, new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("SessionStartTest")), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception
@@ -72,11 +75,11 @@ public class SessionStartTest extends TestCase implements MessageListener
         try
         {
             _session.createProducer(_destination).send(_session.createTextMessage("Message"));
-            System.out.println("Message sent, waiting for response...");
+            _logger.info("Message sent, waiting for response...");
             wait(1000);
             if (count > 0)
             {
-                System.out.println("Got message");
+                _logger.info("Got message");
             }
             else
             {

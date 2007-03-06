@@ -39,9 +39,12 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.log4j.Logger;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
+    private static final Logger _logger = Logger.getLogger(ObjectMessageTest.class);
+
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
@@ -92,7 +95,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         send(count);
         waitFor(count);
         check();
-        System.out.println("Completed without failure");
+        _logger.info("Completed without failure");
         _connection.close();
     }
 

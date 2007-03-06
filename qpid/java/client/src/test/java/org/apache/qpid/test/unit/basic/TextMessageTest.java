@@ -96,7 +96,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         send(count);
         waitFor(count);
         check();
-        System.out.println("Completed without failure");
+        _logger.info("Completed without failure");
         _connection.close();
     }
 
