@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
@@ -190,7 +190,7 @@ public class NavigationView extends ViewPart
         }
         
         // Server connection is successful. Now add the server in the tree
-        TreeObject serverNode = new TreeObject(serverAddress, Constants.SERVER);
+        TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
         serverNode.setUrl(url);
         serverNode.setManagedObject(managedServer);
         _serversRootNode.addChild(serverNode);
@@ -241,9 +241,9 @@ public class NavigationView extends ViewPart
         String domain = server.getDomain();
         try
         {
-            if (!domain.equals(Constants.ALL))
+            if (!domain.equals(ALL))
             {
-                TreeObject domainNode = new TreeObject(domain, Constants.DOMAIN);
+                TreeObject domainNode = new TreeObject(domain, NODE_TYPE_DOMAIN);
                 domainNode.setParent(serverNode);
 
                 populateDomain(domainNode); 
@@ -254,7 +254,7 @@ public class NavigationView extends ViewPart
                 List<String> domains = MBeanUtility.getAllDomains(server);;           
                 for (String domainName : domains)
                 {       
-                    TreeObject domainNode = new TreeObject(domainName, Constants.DOMAIN);
+                    TreeObject domainNode = new TreeObject(domainName, NODE_TYPE_DOMAIN);
                     domainNode.setParent(serverNode);
 
                     domainList.add(domainNode);
@@ -299,7 +299,7 @@ public class NavigationView extends ViewPart
         // This will add the default nodes to the domain node
         for (TreeObject child : domain.getChildren())
         {
-            if (!child.getName().startsWith(Constants.VIRTUAL_HOST))
+            if (!child.getName().startsWith(VIRTUAL_HOST))
             {
                 addDefaultNodes(domain);
             }
@@ -315,13 +315,13 @@ public class NavigationView extends ViewPart
      */
     private void addDefaultNodes(TreeObject parent)
     {
-        TreeObject typeChild = new TreeObject(Constants.CONNECTION, Constants.NODE_TYPE_MBEANTYPE);
+        TreeObject typeChild = new TreeObject(CONNECTION, NODE_TYPE_MBEANTYPE);
         typeChild.setParent(parent);
         typeChild.setVirtualHost(parent.getVirtualHost());
-        typeChild = new TreeObject(Constants.EXCHANGE, Constants.NODE_TYPE_MBEANTYPE);
+        typeChild = new TreeObject(EXCHANGE, NODE_TYPE_MBEANTYPE);
         typeChild.setParent(parent);
         typeChild.setVirtualHost(parent.getVirtualHost());
-        typeChild = new TreeObject(Constants.QUEUE, Constants.NODE_TYPE_MBEANTYPE);
+        typeChild = new TreeObject(QUEUE, NODE_TYPE_MBEANTYPE);
         typeChild.setParent(parent);
         typeChild.setVirtualHost(parent.getVirtualHost());
     }
@@ -338,7 +338,7 @@ public class NavigationView extends ViewPart
         List<TreeObject> childNodes = parent.getChildren();
         for (TreeObject child : childNodes)
         {
-            if ((Constants.NODE_TYPE_MBEANTYPE.equals(child.getType()) || Constants.TYPE_INSTANCE.equals(child.getType())) &&
+            if ((NODE_TYPE_MBEANTYPE.equals(child.getType()) || NODE_TYPE_TYPEINSTANCE.equals(child.getType())) &&
                  typeName.equals(child.getName()))
                 return child;
         }
@@ -350,7 +350,7 @@ public class NavigationView extends ViewPart
         List<TreeObject> childNodes = typeNode.getChildren();
         for (TreeObject child : childNodes)
         {
-            if (Constants.MBEAN.equals(child.getType()) && mbeanName.equals(child.getName()))
+            if (MBEAN.equals(child.getType()) && mbeanName.equals(child.getName()))
                 return true;
         }
         return false;
@@ -401,7 +401,7 @@ public class NavigationView extends ViewPart
                 typeNode.setVirtualHost(mbean.getVirtualHostName());
                 
                 // Create default nodes for VHost instances
-                if (type.equals(Constants.VIRTUAL_HOST))
+                if (type.equals(VIRTUAL_HOST))
                 {
                     addDefaultNodes(typeNode);
                 }
@@ -422,20 +422,20 @@ public class NavigationView extends ViewPart
         
         // Add notification node
         // TODO: show this only if the mbean sends any notification
-        TreeObject notificationNode = new TreeObject(Constants.NOTIFICATION, Constants.NOTIFICATION);
+        TreeObject notificationNode = new TreeObject(NOTIFICATION, NOTIFICATION);
         notificationNode.setParent(mbeanNode);
     }
     
     private TreeObject createTypeNode(TreeObject parent, String name)
     {
-        TreeObject typeNode = new TreeObject(name, Constants.NODE_TYPE_MBEANTYPE);
+        TreeObject typeNode = new TreeObject(name, NODE_TYPE_MBEANTYPE);
         typeNode.setParent(parent);
         return typeNode;
     }
     
     private TreeObject createTypeInstanceNode(TreeObject parent, String name)
     {
-        TreeObject typeNode = new TreeObject(name, Constants.TYPE_INSTANCE);
+        TreeObject typeNode = new TreeObject(name, NODE_TYPE_TYPEINSTANCE);
         typeNode.setParent(parent);
         return typeNode;
     }
@@ -466,7 +466,7 @@ public class NavigationView extends ViewPart
         TreeObject objectToRemove = null;
         for (TreeObject child : list)
         {
-            if (Constants.MBEAN.equals(child.getType()))
+            if (MBEAN.equals(child.getType()))
             {
                 String name = mbean.getName() != null ? mbean.getName() : mbean.getType();
                 if (child.getName().equals(name))
@@ -589,7 +589,7 @@ public class NavigationView extends ViewPart
     {
         IStructuredSelection ss = (IStructuredSelection)_treeViewer.getSelection();
         TreeObject selectedNode = (TreeObject)ss.getFirstElement();
-        if (ss.isEmpty() || selectedNode == null || (!selectedNode.getType().equals(Constants.SERVER)))
+        if (ss.isEmpty() || selectedNode == null || (!selectedNode.getType().equals(NODE_TYPE_SERVER)))
         {
             throw new InfoRequiredException("Please select the server");
         }
@@ -612,7 +612,7 @@ public class NavigationView extends ViewPart
         
         createTreeViewer(composite);
         _rootNode = new TreeObject("ROOT", "ROOT");
-        _serversRootNode = new TreeObject(Constants.NAVIGATION_ROOT, "ROOT");
+        _serversRootNode = new TreeObject(NAVIGATION_ROOT, "ROOT");
         _serversRootNode.setParent(_rootNode);
         
         _treeViewer.setInput(_rootNode);
@@ -633,7 +633,7 @@ public class NavigationView extends ViewPart
                     String url = getRMIURL(serverAddress);
                     ManagedServer managedServer = new ManagedServer(url, "org.apache.qpid");
                     managedServer.setName(serverAddress);
-                    TreeObject serverNode = new TreeObject(serverAddress, Constants.SERVER);
+                    TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
                     serverNode.setUrl(url);
                     serverNode.setManagedObject(managedServer);
                     _serversRootNode.addChild(serverNode);
@@ -711,28 +711,28 @@ public class NavigationView extends ViewPart
         public Image getImage(Object element)
         {
             TreeObject node = (TreeObject)element;
-            if (node.getType().equals(Constants.NOTIFICATION))
+            if (node.getType().equals(NOTIFICATION))
             {
-                return ApplicationRegistry.getImage(Constants.NOTIFICATION_IMAGE);
+                return ApplicationRegistry.getImage(NOTIFICATION_IMAGE);
             }
-            else if (!node.getType().equals(Constants.MBEAN))
+            else if (!node.getType().equals(MBEAN))
             {
                if (_treeViewer.getExpandedState(node))
-                   return ApplicationRegistry.getImage(Constants.OPEN_FOLDER_IMAGE);
+                   return ApplicationRegistry.getImage(OPEN_FOLDER_IMAGE);
                else
-                   return ApplicationRegistry.getImage(Constants.CLOSED_FOLDER_IMAGE);
+                   return ApplicationRegistry.getImage(CLOSED_FOLDER_IMAGE);
                    
             }
             else
             {
-                return ApplicationRegistry.getImage(Constants.MBEAN_IMAGE);
+                return ApplicationRegistry.getImage(MBEAN_IMAGE);
             }
         }
         
         public String getText(Object element)
         {
             TreeObject node = (TreeObject)element;
-            if (node.getType().equals(Constants.NODE_TYPE_MBEANTYPE))
+            if (node.getType().equals(NODE_TYPE_MBEANTYPE))
             {
                 return node.getName() + "s";
             }
@@ -745,14 +745,14 @@ public class NavigationView extends ViewPart
         public Font getFont(Object element)
         {
             TreeObject node = (TreeObject)element;
-            if (node.getType().equals(Constants.SERVER))
+            if (node.getType().equals(NODE_TYPE_SERVER))
             {
                 if (node.getChildren().isEmpty())
-                    return ApplicationRegistry.getFont(Constants.FONT_NORMAL);
+                    return ApplicationRegistry.getFont(FONT_NORMAL);
                 else
-                    return ApplicationRegistry.getFont(Constants.FONT_BOLD);
+                    return ApplicationRegistry.getFont(FONT_BOLD);
             }
-            return ApplicationRegistry.getFont(Constants.FONT_NORMAL);
+            return ApplicationRegistry.getFont(FONT_NORMAL);
         }
     } // End of LabelProviderImpl
     
@@ -762,7 +762,7 @@ public class NavigationView extends ViewPart
         public int category(Object element)
         {
             TreeObject node = (TreeObject)element;
-            if (node.getType().equals(Constants.MBEAN))
+            if (node.getType().equals(MBEAN))
                 return 1;
             return 2;
         }
