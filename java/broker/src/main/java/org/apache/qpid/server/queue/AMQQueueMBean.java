@@ -81,8 +81,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private final static String[] _msgContentAttributes = {"AMQ MessageId", "MimeType", "Encoding", "Content"};
     private static OpenType[] _msgContentAttributeTypes = new OpenType[4];
 
-
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
+    private Notification _lastNotification = null;
 
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
@@ -256,11 +256,17 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         // important : add log to the log file - monitoring tools may be looking for this
         _logger.info(notification.name() + " On Queue " + queue.getName() + " - " + notificationMsg);
-
-        Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
+        notificationMsg = notification.name() + " " + notificationMsg;
+        
+        _lastNotification = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
                 ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
 
-        _broadcaster.sendNotification(n);
+        _broadcaster.sendNotification(_lastNotification);
+    }
+
+    public Notification getLastNotification()
+    {
+        return _lastNotification;
     }
 
     /**
