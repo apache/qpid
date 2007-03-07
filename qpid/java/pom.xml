@@ -145,7 +145,10 @@ under the License.
         <module>integrationtests</module>
         <module>management/eclipse-plugin</module>
 		<module>client/example</module>
-		<module>client-java14</module>
+
+        <!-- Commented out for the moment, some wacky dependency stuff going on here that needs a better solution. -->
+		<!--<module>client-java14</module>-->
+
     </modules>
 
     <build>
