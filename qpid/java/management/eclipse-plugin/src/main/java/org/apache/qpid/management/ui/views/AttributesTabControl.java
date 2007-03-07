@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -158,10 +158,10 @@ public class AttributesTabControl extends TabControl
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(gridData);
         
-        for (int i = 0; i < Constants.ATTRIBUTE_TABLE_TITLES.length; ++i)
+        for (int i = 0; i < ATTRIBUTE_TABLE_TITLES.length; ++i)
         {
             final TableColumn column = new TableColumn(_table, SWT.NONE);
-            column.setText(Constants.ATTRIBUTE_TABLE_TITLES[i]);
+            column.setText(ATTRIBUTE_TABLE_TITLES[i]);
             column.setWidth(tableWidths[i]);
             column.setResizable(false);
         }
@@ -177,7 +177,7 @@ public class AttributesTabControl extends TabControl
     {
         _tableViewer = new TableViewer(_table);
         _tableViewer.setUseHashlookup(true);
-        _tableViewer.setColumnProperties(Constants.ATTRIBUTE_TABLE_TITLES);
+        _tableViewer.setColumnProperties(ATTRIBUTE_TABLE_TITLES);
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(new ViewerSorterImpl());
@@ -194,8 +194,8 @@ public class AttributesTabControl extends TabControl
     private void addDetailsButton()
     {
         // Create and configure the button for attribute details
-        _detailsButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_DETAILS, SWT.PUSH | SWT.CENTER);
-        _detailsButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _detailsButton = _toolkit.createButton(_buttonsComposite, BUTTON_DETAILS, SWT.PUSH | SWT.CENTER);
+        _detailsButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _detailsButton.setLayoutData(gridData);
@@ -219,8 +219,8 @@ public class AttributesTabControl extends TabControl
     private void addEditButton()
     {
         // Create and configure the button for editing attribute
-        _editButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_EDIT_ATTRIBUTE, SWT.PUSH | SWT.CENTER);
-        _editButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _editButton = _toolkit.createButton(_buttonsComposite, BUTTON_EDIT_ATTRIBUTE, SWT.PUSH | SWT.CENTER);
+        _editButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _editButton.setLayoutData(gridData);
@@ -241,8 +241,8 @@ public class AttributesTabControl extends TabControl
      */ 
     private void addGraphButton()
     {
-        _graphButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_GRAPH, SWT.PUSH | SWT.CENTER);
-        _graphButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _graphButton = _toolkit.createButton(_buttonsComposite, BUTTON_GRAPH, SWT.PUSH | SWT.CENTER);
+        _graphButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _graphButton.setLayoutData(gridData);
@@ -263,9 +263,9 @@ public class AttributesTabControl extends TabControl
      */
     private void addRefreshButton()
     {    
-        _refreshButton = _toolkit.createButton(_buttonsComposite, Constants.BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
+        _refreshButton = _toolkit.createButton(_buttonsComposite, BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
 
-        _refreshButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _refreshButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
         gridData.widthHint = 80;
         _refreshButton.setLayoutData(gridData);
@@ -425,7 +425,7 @@ public class AttributesTabControl extends TabControl
         }
         
         Display display = Display.getCurrent();
-        Shell shell = ViewUtility.createPopupShell(Constants.ATTRIBUTE, width, height);
+        Shell shell = ViewUtility.createPopupShell(ATTRIBUTE, width, height);
         createDetailsPopupContents(shell, data);
 
         shell.open();
@@ -484,7 +484,7 @@ public class AttributesTabControl extends TabControl
 
         // Name
         Label label = new Label(parent, SWT.NONE);               
-        label.setText(Constants.ATTRIBUTE_TABLE_TITLES[0]);
+        label.setText(ATTRIBUTE_TABLE_TITLES[0]);
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
         Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
@@ -494,7 +494,7 @@ public class AttributesTabControl extends TabControl
         
         // Description
         label = new Label(parent, SWT.NONE);
-        label.setText(Constants.DESCRIPTION);
+        label.setText(DESCRIPTION);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
         value.setText(attribute.getDescription());
@@ -502,7 +502,7 @@ public class AttributesTabControl extends TabControl
         
         // value
         label = new Label(parent, SWT.NONE);
-        label.setText(Constants.ATTRIBUTE_TABLE_TITLES[1]);
+        label.setText(ATTRIBUTE_TABLE_TITLES[1]);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         if (!attribute.isReadable())
@@ -582,9 +582,9 @@ public class AttributesTabControl extends TabControl
     {
         final Button updateButton = new Button(parent, SWT.PUSH | SWT.CENTER);
         // set the data to access in the listener
-        parent.setData(Constants.BUTTON_UPDATE, updateButton);
+        parent.setData(BUTTON_UPDATE, updateButton);
         
-        updateButton.setText(Constants.BUTTON_UPDATE);
+        updateButton.setText(BUTTON_UPDATE);
         GridData gridData = new GridData (SWT.CENTER, SWT.BOTTOM, true, true, 2, 1);
         gridData.widthHint = 100;
         updateButton.setLayoutData(gridData);
@@ -642,7 +642,9 @@ public class AttributesTabControl extends TabControl
         }
         _tableViewer.setInput(attributesList);
         checkForEnablingButtons(getSelectionAttribute());
-        _form.layout();
+        
+        _form.layout(true);
+        _form.getBody().layout(true, true);
     }
     
     /**
@@ -679,7 +681,8 @@ public class AttributesTabControl extends TabControl
         else
         {
             _editButton.setEnabled(false);
-            if (attribute.isNumber())
+            // Currently only Queues are having attributes, which are suitable for a graph
+            if (attribute.isNumber() && _mbean.isQueue())
             {
                 _graphButton.setEnabled(true);
             }
@@ -770,7 +773,7 @@ public class AttributesTabControl extends TabControl
             try
             {
                 animate(canvas, data);
-                Display.getCurrent().timerExec(Constants.TIMER_INTERVAL, this);
+                Display.getCurrent().timerExec(TIMER_INTERVAL, this);
             }
             catch(Exception ex)
             {
@@ -780,7 +783,7 @@ public class AttributesTabControl extends TabControl
         };
 
         // Launch the timer
-        display.timerExec(Constants.TIMER_INTERVAL, runnable);
+        display.timerExec(TIMER_INTERVAL, runnable);
         
         while (!shell.isDisposed())
         {
@@ -915,7 +918,7 @@ public class AttributesTabControl extends TabControl
         
         public Font getFont(Object element)
         {
-            return ApplicationRegistry.getFont(Constants.FONT_TABLE_CELL);
+            return ApplicationRegistry.getFont(FONT_TABLE_CELL);
         }
         
         public Color getForeground(Object element)

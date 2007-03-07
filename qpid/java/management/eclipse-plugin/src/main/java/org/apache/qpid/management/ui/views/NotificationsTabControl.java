@@ -23,8 +23,8 @@ package org.apache.qpid.management.ui.views;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -142,7 +142,7 @@ public class NotificationsTabControl extends TabControl
         composite.setLayout(new FormLayout());
         
         Label label = _toolkit.createLabel(composite, "Select the notification to subscribe or unsubscribe");
-        label.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
+        label.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         FormData formData = new FormData();
         formData.top = new FormAttachment(0, 10);
         formData.left = new FormAttachment(0, 10);
@@ -165,8 +165,8 @@ public class NotificationsTabControl extends TabControl
         typesCombo.addSelectionListener(comboListener);
         
         _subscribeButton = new Button(composite, SWT.PUSH | SWT.CENTER);
-        _subscribeButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        _subscribeButton.setText(Constants.SUBSCRIBE_BUTTON);
+        _subscribeButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
+        _subscribeButton.setText(SUBSCRIBE_BUTTON);
         formData = new FormData();
         formData.top = new FormAttachment(label, 10);
         formData.left = new FormAttachment(65, 10);
@@ -175,8 +175,8 @@ public class NotificationsTabControl extends TabControl
         _subscribeButton.addSelectionListener(selectionListener);
         
         _unsubscribeButton = new Button(composite, SWT.PUSH | SWT.CENTER);
-        _unsubscribeButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
-        _unsubscribeButton.setText(Constants.UNSUBSCRIBE_BUTTON);
+        _unsubscribeButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
+        _unsubscribeButton.setText(UNSUBSCRIBE_BUTTON);
         formData = new FormData();
         formData.top = new FormAttachment(label, 10);
         formData.left = new FormAttachment(_subscribeButton, 10);
@@ -189,8 +189,8 @@ public class NotificationsTabControl extends TabControl
         formData.top = new FormAttachment(notificationNameCombo, 5);
         formData.left = new FormAttachment(0, 10);
         fixedLabel.setLayoutData(formData);
-        fixedLabel.setText(Constants.DESCRIPTION + " : ");
-        fixedLabel.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
+        fixedLabel.setText(DESCRIPTION + " : ");
+        fixedLabel.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         
         descriptionLabel = _toolkit.createLabel(composite, "");
         formData = new FormData();
@@ -199,7 +199,7 @@ public class NotificationsTabControl extends TabControl
         formData.right = new FormAttachment(100);
         descriptionLabel.setLayoutData(formData);
         descriptionLabel.setText("      ");
-        descriptionLabel.setFont(ApplicationRegistry.getFont(Constants.FONT_ITALIC));
+        descriptionLabel.setFont(ApplicationRegistry.getFont(FONT_ITALIC));
     }
     
     /**
@@ -212,8 +212,8 @@ public class NotificationsTabControl extends TabControl
         composite.setLayout(new GridLayout(2, true));
         
         // Add Clear Button
-        _clearButton = _toolkit.createButton(composite, Constants.BUTTON_CLEAR, SWT.PUSH | SWT.CENTER);
-        _clearButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _clearButton = _toolkit.createButton(composite, BUTTON_CLEAR, SWT.PUSH | SWT.CENTER);
+        _clearButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData gridData = new GridData(SWT.LEAD, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _clearButton.setLayoutData(gridData);
@@ -231,8 +231,8 @@ public class NotificationsTabControl extends TabControl
             });
         
         // Add Refresh Button
-        _refreshButton = _toolkit.createButton(composite, Constants.BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
-        _refreshButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _refreshButton = _toolkit.createButton(composite, BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
+        _refreshButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         gridData = new GridData(SWT.TRAIL, SWT.TOP, true, false);
         gridData.widthHint = 80;
         _refreshButton.setLayoutData(gridData);
@@ -427,7 +427,8 @@ public class NotificationsTabControl extends TabControl
         
         populateNotificationInfo();        
         workerRunning = true;
-        _form.layout();       
+        _form.layout(true);   
+        _form.getBody().layout(true, true);
     }
     
     private void refresh()

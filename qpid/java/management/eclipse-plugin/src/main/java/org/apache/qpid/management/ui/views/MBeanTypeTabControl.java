@@ -3,8 +3,8 @@ package org.apache.qpid.management.ui.views;
 import java.util.Collections;
 import java.util.HashMap;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.AttributeData;
@@ -135,11 +135,11 @@ public abstract class MBeanTypeTabControl
         _labelName = _toolkit.createLabel(_headerComposite, "Type:", SWT.NONE);
         GridData gridData = new GridData(SWT.CENTER, SWT.TOP, true, false);
         _labelName.setLayoutData(gridData);
-        _labelName.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
+        _labelName.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         
         _labelDesc = _toolkit.createLabel(_headerComposite, " ", SWT.NONE);
         _labelDesc.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false));
-        _labelDesc.setFont(ApplicationRegistry.getFont(Constants.FONT_ITALIC));
+        _labelDesc.setFont(ApplicationRegistry.getFont(FONT_ITALIC));
         
         _headerComposite.layout();
     }
@@ -203,7 +203,7 @@ public abstract class MBeanTypeTabControl
      */
     protected void createRefreshButton(Composite parentComposite)
     {
-        Button _refreshButton = _toolkit.createButton(parentComposite, Constants.BUTTON_REFRESH, SWT.PUSH);
+        Button _refreshButton = _toolkit.createButton(parentComposite, BUTTON_REFRESH, SWT.PUSH);
         GridData gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
         gridData.widthHint = 120;
         _refreshButton.setLayoutData(gridData);
@@ -241,7 +241,7 @@ public abstract class MBeanTypeTabControl
         _labelList = _toolkit.createLabel(_listComposite, " ", SWT.CENTER);
         gridData = new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1);
         _labelList.setLayoutData(gridData);
-        _labelList.setFont(ApplicationRegistry.getFont(Constants.FONT_NORMAL));
+        _labelList.setFont(ApplicationRegistry.getFont(FONT_NORMAL));
         
         _list = new List(_listComposite, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true,1, 1);
@@ -271,10 +271,8 @@ public abstract class MBeanTypeTabControl
     
     public void layout()
     {
-        _headerComposite.layout();
-        _listComposite.layout();
-        _composite.layout();
-        _form.layout();
+        _form.layout(true);
+        _form.getBody().layout(true, true);
     }
     
     // sets the map with appropriate mbean and name
