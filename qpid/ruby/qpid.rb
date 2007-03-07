@@ -17,19 +17,8 @@
 # under the License.
 #
 
-require "qpid/client"
+require "qpid/queue"
+require "qpid/codec"
+require "qpid/connection"
+require "qpid/peer"
 require "qpid/spec"
-
-def die(msg)
-  puts msg
-  exit(1)
-end
-
-specfile = $*[0]
-die("usage: test.rb <spec file>") if specfile.nil?
-
-c = Qpid::Client.new("0.0.0.0", 5672, Spec.load($*[0]))
-c.start({"LOGIN" => "guest", "PASSWORD" => "guest"})
-ch = c.channel(1)
-p ch.channel_open()
-p ch.queue_declare()
