@@ -39,13 +39,17 @@
         <java.source.version>1.4</java.source.version>
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
-        <qpid.root>${basedir}/..</qpid.root>
+        <!--<qpid.root>${basedir}/..</qpid.root>-->
         <sasl.properties>${basedir}/etc/sasl.properties</sasl.properties>
+
+        <!-- This is a dummy value to ensure this property exists, override in your settings.xml to your real 1.4 jdk location to run tests. -->
         <jvm.1.4.bin>path/to/java1.4</jvm.1.4.bin>
     </properties>
 
     <dependencies>
 
+        <!-- These dependencies have to be re-declared here, because exluding the normal (non 1.4) client and common from the distribution takes out
+             these transitive dependencies too. -->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -192,7 +196,7 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
-                            <skip>false</skip>
+                            <skip>true</skip>
                             <forkMode>once</forkMode>
                             <jvm>${jvm.1.4.bin}</jvm>
                             <systemProperties>

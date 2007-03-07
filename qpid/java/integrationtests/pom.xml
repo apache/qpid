@@ -45,10 +45,11 @@
             <artifactId>qpid-client</artifactId>
         </dependency>
 
-        <!-- Test dependencies. -->
+        <!-- JUnit is a compile and runtime dependancy for these tests, not just a test time dependency. -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
@@ -82,12 +83,12 @@
                                 <element>${retrotranslator.1.4-sasl-path}</element>
                             </verifyClasspath>
                             <failonwarning>false</failonwarning>
-                            <includes>
-                                <include>
-                                    <directory>${project.build.directory}</directory>
-                                    <pattern>${project.build.finalName}.jar</pattern>
-                                </include>
-                            </includes>
+                            <jarfileset>
+                                <basedir>${project.build.directory}</basedir>>
+                                <includes>
+                                    <include>${project.build.finalName}.jar</include>
+                                </includes>
+                            </jarfileset>
                         </configuration>
                     </execution>
                 </executions>
