@@ -1,0 +1,4 @@
+#!/usr/bin/ruby
+
+require "tests/channel"
+require "tests/basic"
