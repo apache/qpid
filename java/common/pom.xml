@@ -85,12 +85,12 @@
                                 <element>${retrotranslator.1.4-sasl-path}</element>
                             </verifyClasspath>
                             <failonwarning>false</failonwarning>
-                            <includes>
-                                <include>
-                                    <directory>${project.build.directory}</directory>
-                                    <pattern>${project.build.finalName}.jar</pattern>
-                                </include>
-                            </includes>
+                            <jarfileset>
+                                <basedir>${project.build.directory}</basedir>>
+                                <includes>
+                                    <include>${project.build.finalName}.jar</include>
+                                </includes>
+                            </jarfileset>
                         </configuration>
                     </execution>
 
