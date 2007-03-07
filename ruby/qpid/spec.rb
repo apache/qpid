@@ -55,14 +55,16 @@ module Spec
   class Root
     fields(:major, :minor, :classes, :constants, :domains)
 
-    def ruby_method(name)
+    def find_method(name)
       classes.each do |c|
         c.methods.each do |m|
-          if name == m.ruby_name
+          if name == m.qname
             return m
           end
         end
       end
+
+      return nil
     end
   end
 
@@ -91,17 +93,13 @@ module Spec
     def response?; @response end
     def response=(b); @response = b end
 
-    def ruby_name
-      Spec.rubyize(:"#{parent.name}_#{name}")
+    def qname
+      :"#{parent.name}_#{name}"
     end
   end
 
   class Field
     fields(:name, :id, :type, :docs)
-
-    def ruby_name
-      Spec.rubyize(name)
-    end
 
     def default
       case type
@@ -205,24 +203,28 @@ module Spec
       value.intern() unless value.nil?
     end
 
+    def parse_name(value)
+      value.gsub(/[\s-]/, '_').intern() unless value.nil?
+    end
+
     def load_amqp()
       Root.new(attr("major", :int), attr("minor", :int), load("class"),
                load("constant"), load("domain"))
     end
 
     def load_class()
-      Class.new(attr("name", :symbol), attr("index", :int), attr("handler", :symbol),
+      Class.new(attr("name", :name), attr("index", :int), attr("handler", :name),
                 load("field"), load("method"), load("doc"))
     end
 
     def load_method()
-      Method.new(attr("name", :symbol), attr("index", :int),
+      Method.new(attr("name", :name), attr("index", :int),
                  attr("content", :bool), load("response"),
                  attr("synchronous", :bool), load("field"), load("docs"))
     end
 
     def load_response()
-      name = attr("name", :symbol)
+      name = attr("name", :name)
       Reference.new {|spec, klass|
         response = klass.methods[name]
         if response.nil?
@@ -233,23 +235,23 @@ module Spec
     end
 
     def load_field()
-      type = attr("type", :symbol)
+      type = attr("type", :name)
       if type.nil?
-        domain = attr("domain", :symbol)
+        domain = attr("domain", :name)
         type = Reference.new {|spec, klass|
           spec.domains[domain].type
         }
       end
-      Field.new(attr("name", :symbol), @index, type, load("docs"))
+      Field.new(attr("name", :name), @index, type, load("docs"))
     end
 
     def load_constant()
-      Constant.new(attr("name", :symbol), attr("value", :int), attr("class", :symbol),
+      Constant.new(attr("name", :name), attr("value", :int), attr("class", :name),
                    load("doc"))
     end
 
     def load_domain()
-      Domain.new(attr("name", :symbol), attr("type", :symbol))
+      Domain.new(attr("name", :name), attr("type", :name))
     end
 
     def load_doc()
@@ -282,12 +284,6 @@ module Spec
       end
     end
     spec
-  end
-
-  private
-
-  def Spec.rubyize(name)
-    name.to_s.gsub(/[\s-]/, '_').intern()
   end
 
 end

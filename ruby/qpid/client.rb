@@ -24,11 +24,11 @@ require "qpid/queue"
 module Qpid
 
   class Client
-    def initialize(host, port, spec, vhost = nil)
+    def initialize(host, port, spec, vhost = "/")
       @host = host
       @port = port
       @spec = spec
-      @vhost = if vhost.nil?; host else vhost end
+      @vhost = vhost
 
       @mechanism = nil
       @response = nil
@@ -38,6 +38,7 @@ module Qpid
       @mutex = Mutex.new()
 
       @closed = false
+      @code = nil
       @started = ConditionVariable.new()
 
       @conn = Connection.new(@host, @port, @spec)
@@ -47,6 +48,8 @@ module Qpid
     attr_reader :mechanism, :response, :locale
 
     def closed?; @closed end
+    def closed=(value); @closed = value end
+    def code; @code end
 
     def wait()
       @mutex.synchronize do
@@ -85,6 +88,12 @@ module Qpid
     def channel(id)
       return @peer.channel(id)
     end
+
+    def close(msg = nil)
+      @closed = true
+      @code = msg
+      @peer.close()
+    end
   end
 
   class ClientDelegate
@@ -104,6 +113,23 @@ module Qpid
       ch.connection_tune_ok(*msg.fields)
       @client.signal_start()
     end
+
+    def connection_close(ch, msg)
+      puts "CONNECTION CLOSED: #{msg.args.join(", ")}"
+      @client.close(msg)
+    end
+
+    def channel_close(ch, msg)
+      puts "CHANNEL[#{ch.id}] CLOSED: #{msg.args.join(", ")}"
+      ch.channel_close_ok()
+      ch.close()
+    end
+
+    def basic_deliver(ch, msg)
+      queue = @client.queue(msg.consumer_tag)
+      queue << msg
+    end
+
   end
 
 end
