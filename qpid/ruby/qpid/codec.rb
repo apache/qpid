@@ -67,11 +67,10 @@ module Codec
     end
 
     def longlong(l)
-      # is this the right byte order?
       lower = l & 0xffffffff
       upper = (l & ~0xffffffff) >> 32
-      long(lower)
       long(upper)
+      long(lower)
     end
 
     def shortstr(s)
@@ -116,6 +115,7 @@ module Codec
     def write(str)
       flushbits()
       @out.write(str)
+#      puts "OUT #{str.inspect()}"
     end
 
     def pack(fmt, *args)
@@ -238,6 +238,7 @@ module Codec
       if result.nil? or result.empty?
         raise EOF.new()
       else
+#        puts " IN #{result.inspect()}"
         return result
       end
     end

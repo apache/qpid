@@ -48,6 +48,7 @@ module Qpid
     end
 
     def write(frame)
+#      puts "OUT #{frame.inspect()}"
       @out.octet(@spec.constants[frame.payload.type].id)
       @out.short(frame.channel)
       frame.payload.encode(@out)
@@ -62,13 +63,15 @@ module Qpid
       if oct != frame_end
         raise Exception.new("framing error: expected #{frame_end}, got #{oct}")
       end
-      Frame.new(channel, payload)
+      frame = Frame.new(channel, payload)
+#      puts " IN #{frame.inspect}"
+      return frame
     end
 
     private
 
     def frame_end
-      @spec.constants[:"frame end"].id
+      @spec.constants[:"frame_end"].id
     end
 
   end
@@ -113,9 +116,7 @@ module Qpid
 
     attr_reader(:method, :args)
 
-    def Method.type
-      :"frame method"
-    end
+    def Method.type; :frame_method end
 
     def type; Method.type end
 
@@ -125,6 +126,7 @@ module Qpid
       enc.short(@method.parent.id)
       enc.short(@method.id)
       @method.fields.zip(self.args).each {|f, a|
+        if a.nil?; a = f.default end
         enc.encode(f.type, a)
       }
       enc.flush()
@@ -138,6 +140,113 @@ module Qpid
       meth = klass.methods[dec.short()]
       args = meth.fields.map {|f| dec.decode(f.type)}
       return Method.new(meth, args)
+    end
+
+    def inspect(); "#{method.qname}(#{args.join(", ")})" end
+
+  end
+
+  class Header < Payload
+
+    def Header.type; :frame_header end
+
+    def initialize(klass, weight, size, properties)
+      @klass = klass
+      @weight = weight
+      @size = size
+      @properties = properties
+    end
+
+    attr_reader :weight, :size, :properties
+
+    def type; Header.type end
+
+    def encode(encoder)
+      buf = StringWriter.new()
+      enc = Encoder.new(buf)
+      enc.short(@klass.id)
+      enc.short(@weight)
+      enc.longlong(@size)
+
+      # property flags
+      nprops = @klass.fields.size
+      flags = 0
+      0.upto(nprops - 1) do |i|
+        f = @klass.fields[i]
+        flags <<= 1
+        flags |= 1 unless @properties[f.name].nil?
+        # the last bit indicates more flags
+        if i > 0 and (i % 15) == 0
+          flags <<= 1
+          if nprops > (i + 1)
+            flags |= 1
+            enc.short(flags)
+            flags = 0
+          end
+        end
+      end
+      flags <<= ((16 - (nprops % 15)) % 16)
+      enc.short(flags)
+
+      # properties
+      @klass.fields.each do |f|
+        v = @properties[f.name]
+        enc.encode(f.type, v) unless v.nil?
+      end
+      enc.flush()
+      encoder.longstr(buf.to_s)
+    end
+
+    def Header.decode(spec, decoder)
+      dec = Decoder.new(StringReader.new(decoder.longstr()))
+      klass = spec.classes[dec.short()]
+      weight = dec.short()
+      size = dec.longlong()
+
+      # property flags
+      bits = []
+      while true
+        flags = dec.short()
+        15.downto(1) do |i|
+          if flags >> i & 0x1 != 0
+            bits << true
+          else
+            bits << false
+          end
+        end
+        break if flags & 0x1 == 0
+      end
+
+      # properties
+      properties = {}
+      bits.zip(klass.fields).each do |b, f|
+        properties[f.name] = dec.decode(f.type) if b
+      end
+      return Header.new(klass, weight, size, properties)
+    end
+
+    def inspect(); "#{@klass.name}(#{@properties.inspect()})" end
+
+  end
+
+  class Body < Payload
+
+    def Body.type; :frame_body end
+
+    def type; Body.type end
+
+    def initialize(content)
+      @content = content
+    end
+
+    attr_reader :content
+
+    def encode(enc)
+      enc.longstr(@content)
+    end
+
+    def Body.decode(spec, dec)
+      return Body.new(dec.longstr())
     end
 
   end
