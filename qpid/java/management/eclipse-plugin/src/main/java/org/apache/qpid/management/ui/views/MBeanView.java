@@ -22,8 +22,8 @@ package org.apache.qpid.management.ui.views;
 
 import java.util.HashMap;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
@@ -91,7 +91,7 @@ public class MBeanView extends ViewPart
             // an mbeantype. For mbeantype selection(eg Connection, Queue, Exchange) _mbean will remain null.
             _mbean = null;
             setInvisible();
-            _form.setText(Constants.APPLICATION_NAME);
+            _form.setText(APPLICATION_NAME);
             
             // If a selected node(mbean) gets unregistered from mbena server, mbenaview should should 
             // make the tabfolber for that mbean invisible
@@ -99,22 +99,38 @@ public class MBeanView extends ViewPart
                 return;
             
             setServer();
-            try
+            refreshMBeanView();
+        }
+    }
+    
+    public void refreshMBeanView()
+    {
+        try
+        {
+            if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
+                NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
             {
-                if (Constants.NODE_TYPE_MBEANTYPE.equals(_selectedNode.getType()))
-                {
-                    refreshTypeTabFolder(_selectedNode.getName());
-                }
-                else
-                {
-                    showSelectedMBean();
-                }
-                _form.layout();
+                return;
             }
-            catch(Exception ex)
+            else if (NODE_TYPE_TYPEINSTANCE.equals(_selectedNode.getType()))
             {
-                MBeanUtility.handleException(_mbean, ex);
+                // An virtual host instance is selected
+                refreshTypeTabFolder(typeTabFolder.getItem(0));
             }
+            else if (NODE_TYPE_MBEANTYPE.equals(_selectedNode.getType()))
+            {
+                refreshTypeTabFolder(_selectedNode.getName());
+            } 
+            else
+            {
+                showSelectedMBean();
+            }
+            _form.layout(true);
+            _form.getBody().layout(true, true);
+        }
+        catch(Exception ex)
+        {
+            MBeanUtility.handleException(_mbean, ex);
         }
     }
 
@@ -126,7 +142,8 @@ public class MBeanView extends ViewPart
      */
     private void setServer()
     {
-        if (Constants.SERVER.equals(_selectedNode.getType()))
+        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
+            NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
         {
             _server = (ManagedServer)_selectedNode.getManagedObject();
             _virtualHostName = null;
@@ -134,12 +151,12 @@ public class MBeanView extends ViewPart
         else
         {
             TreeObject parent = _selectedNode.getParent();
-            while (parent != null && !parent.getType().equals(Constants.SERVER))
+            while (parent != null && !parent.getType().equals(NODE_TYPE_SERVER))
             {
                 parent = parent.getParent();
             }
             
-            if (parent != null && parent.getType().equals(Constants.SERVER))
+            if (parent != null && parent.getType().equals(NODE_TYPE_SERVER))
                 _server = (ManagedServer)parent.getManagedObject();
             
             _virtualHostName = _selectedNode.getVirtualHost();
@@ -158,11 +175,11 @@ public class MBeanView extends ViewPart
     
     private void showSelectedMBean() throws Exception
     {     
-        if (Constants.NOTIFICATION.equals(_selectedNode.getType()))
+        if (NOTIFICATION.equals(_selectedNode.getType()))
         {
             _mbean = (ManagedBean)_selectedNode.getParent().getManagedObject();                
         }
-        else if (Constants.MBEAN.equals(_selectedNode.getType()))
+        else if (MBEAN.equals(_selectedNode.getType()))
         {
             _mbean = (ManagedBean)_selectedNode.getManagedObject();                
         }
@@ -203,7 +220,7 @@ public class MBeanView extends ViewPart
         }
         _form.setText(text);
         int tabIndex = 0;
-        if (Constants.NOTIFICATION.equals(_selectedNode.getType()))
+        if (NOTIFICATION.equals(_selectedNode.getType()))
         {
             tabIndex = tabFolder.getItemCount() -1;
         }
@@ -222,7 +239,7 @@ public class MBeanView extends ViewPart
         _toolkit = new FormToolkit(parent.getDisplay());
         _form = _toolkit.createForm(parent);
         _form.getBody().setLayout(new FormLayout());
-        _form.setText(Constants.APPLICATION_NAME);
+        _form.setText(APPLICATION_NAME);
         
         // Add selection listener for selection events in the Navigation view
         getSite().getPage().addSelectionListener(NavigationView.ID, selectionListener); 
@@ -230,35 +247,6 @@ public class MBeanView extends ViewPart
         // Add mbeantype TabFolder. This will list all the mbeans under a mbeantype (eg Queue, Exchange).
         // Using this list mbeans will be added in the navigation view
         createMBeanTypeTabFolder();
-    }
-    
-    public void refreshMBeanView() throws Exception
-    {
-        int tabIndex = 0;
-        TabItem tab = null;
-        if (_mbean == null)
-        {
-            tabIndex = typeTabFolder.getSelectionIndex();
-            if (tabIndex == -1)
-                return;
-
-            tab = typeTabFolder.getItem(tabIndex);
-            refreshTypeTabFolder(tab);
-        }
-        else
-        {
-            TabFolder tabFolder = tabFolderMap.get(_mbean.getType());
-            if (tabFolder == null)
-                return;
-
-            tabIndex = tabFolder.getSelectionIndex();
-            tab = tabFolder.getItem(tabIndex);
-            if (tab == null)
-                return;
-
-            refreshTab(tab);
-        }
-        _form.layout();
     }
     
     private TabFolder createMBeanTabFolder()
@@ -325,7 +313,7 @@ public class MBeanView extends ViewPart
         }
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);
-        tab.setText(Constants.ATTRIBUTES);
+        tab.setText(ATTRIBUTES);
         AttributesTabControl controller = new AttributesTabControl(tabFolder);
         tab.setControl(controller.getControl());
         tab.setData(CONTROLLER, controller);
@@ -357,7 +345,7 @@ public class MBeanView extends ViewPart
         NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);
-        tab.setText(Constants.NOTIFICATION);
+        tab.setText(NOTIFICATION);
         tab.setData(CONTROLLER, controller);
         tab.setControl(controller.getControl());
     }
@@ -410,19 +398,19 @@ public class MBeanView extends ViewPart
         typeTabFolder.setVisible(false);
               
         TabItem tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.CONNECTION); 
+        tab.setText(CONNECTION); 
         MBeanTypeTabControl controller = new ConnectionTypeTabControl(typeTabFolder);
         tab.setData(CONTROLLER, controller);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.EXCHANGE);      
+        tab.setText(EXCHANGE);      
         controller = new ExchangeTypeTabControl(typeTabFolder);
         tab.setData(CONTROLLER, controller);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(typeTabFolder, SWT.NONE);
-        tab.setText(Constants.QUEUE);  
+        tab.setText(QUEUE);  
         controller = new QueueTypeTabControl(typeTabFolder);
         tab.setData(CONTROLLER, controller);
         tab.setControl(controller.getControl());
@@ -464,15 +452,15 @@ public class MBeanView extends ViewPart
     
     private void refreshTypeTabFolder(String type) throws Exception
     {
-        if (Constants.CONNECTION.equals(type))
+        if (CONNECTION.equals(type))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(0));
         }
-        else if (Constants.EXCHANGE.equals(type))
+        else if (EXCHANGE.equals(type))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(1));
         }
-        else if (Constants.QUEUE.equals(type))
+        else if (QUEUE.equals(type))
         {
             refreshTypeTabFolder(typeTabFolder.getItem(2));
         }
