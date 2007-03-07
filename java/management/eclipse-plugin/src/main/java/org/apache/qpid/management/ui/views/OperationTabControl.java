@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.OperationData;
@@ -121,8 +121,8 @@ public class OperationTabControl extends TabControl
             _paramsComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
             _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         }
-        _executionButton = _toolkit.createButton(_form.getBody(), Constants.BUTTON_EXECUTE, SWT.PUSH | SWT.CENTER);
-        _executionButton.setFont(ApplicationRegistry.getFont(Constants.FONT_BUTTON));
+        _executionButton = _toolkit.createButton(_form.getBody(), BUTTON_EXECUTE, SWT.PUSH | SWT.CENTER);
+        _executionButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
         GridData layoutData = new GridData(SWT.CENTER, SWT.TOP, true, false);
         layoutData.verticalIndent = 20;
         _executionButton.setLayoutData(layoutData);
@@ -162,15 +162,15 @@ public class OperationTabControl extends TabControl
         List<ParameterData> params = _opData.getParameters();
         if (params != null && !params.isEmpty())
         {            
-            setButton(Constants.BUTTON_EXECUTE);
+            setButton(BUTTON_EXECUTE);
         }
-        else if (_opData.getImpact() == Constants.OPERATION_IMPACT_ACTION)
+        else if (_opData.getImpact() == OPERATION_IMPACT_ACTION)
         {
-            setButton(Constants.BUTTON_EXECUTE);
+            setButton(BUTTON_EXECUTE);
         }
-        else if (_opData.getImpact() == Constants.OPERATION_IMPACT_INFO)
+        else if (_opData.getImpact() == OPERATION_IMPACT_INFO)
         {
-            setButton(Constants.BUTTON_REFRESH);
+            setButton(BUTTON_REFRESH);
             executeAndShowResults();
         }
         
@@ -180,12 +180,8 @@ public class OperationTabControl extends TabControl
     
     public void layout()
     {
-        _headerComposite.layout();
-        if (_paramsComposite != null && !_paramsComposite.isDisposed())
-        {
-            _paramsComposite.layout();
-        }
-        _form.layout();
+        _form.layout(true);
+        _form.getBody().layout(true, true);
     }
     
     /**
@@ -196,12 +192,12 @@ public class OperationTabControl extends TabControl
         _form.setText(ViewUtility.getDisplayText(_opData.getName()));
         _headerComposite.setLayout(new GridLayout(2, false));
         //operation description
-        Label label = _toolkit.createLabel(_headerComposite,  Constants.DESCRIPTION + " : ");
-        label.setFont(ApplicationRegistry.getFont(Constants.FONT_BOLD));
+        Label label = _toolkit.createLabel(_headerComposite,  DESCRIPTION + " : ");
+        label.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         label.setLayoutData(new GridData(SWT.LEAD, SWT.TOP, false, false));
         
         label = _toolkit.createLabel(_headerComposite,  _opData.getDescription());
-        label.setFont(ApplicationRegistry.getFont(Constants.FONT_NORMAL));
+        label.setFont(ApplicationRegistry.getFont(FONT_NORMAL));
         label.setLayoutData(new GridData(SWT.LEAD, SWT.TOP, true, false));
         
         _headerComposite.layout();
@@ -220,8 +216,8 @@ public class OperationTabControl extends TabControl
         
         // Customised parameter widgets        
         if (_mbean.isExchange() &&
-            Constants.EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(Constants.EXCHANGE_TYPE)) &&
-            _opData.getName().equalsIgnoreCase(Constants.OPERATION_CREATE_BINDING))
+            EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
+            _opData.getName().equalsIgnoreCase(OPERATION_CREATE_BINDING))
         {                                  
             customCreateNewBinding(); 
             return;
@@ -254,24 +250,24 @@ public class OperationTabControl extends TabControl
             formData.left = new FormAttachment(label, 5);
             formData.right = new FormAttachment(valueWidth);
             String[] items = null;
-            if (param.getName().equals(Constants.QUEUE))
+            if (param.getName().equals(QUEUE))
             {
                 List<String> qList = ApplicationRegistry.getServerRegistry(_mbean).getQueueNames(_virtualHostName);
-                // Customization for AMQQueueMBean method Constants.OPERATION_MOVE_MESSAGES
-                if (_opData.getName().equals(Constants.OPERATION_MOVE_MESSAGES))
+                // Customization for AMQQueueMBean method OPERATION_MOVE_MESSAGES
+                if (_opData.getName().equals(OPERATION_MOVE_MESSAGES))
                 {
                     qList.remove(_mbean.getName());    
                 }
                 // End of Customization
                 items = qList.toArray(new String[0]);
             }
-            else if (param.getName().equals(Constants.EXCHANGE))
+            else if (param.getName().equals(EXCHANGE))
             {
                 items = ApplicationRegistry.getServerRegistry(_mbean).getExchangeNames(_virtualHostName);
             }
-            else if (param.getName().equals(Constants.EXCHANGE_TYPE))
+            else if (param.getName().equals(EXCHANGE_TYPE))
             {
-                items = Constants.EXCHANGE_TYPE_VALUES;
+                items = EXCHANGE_TYPE_VALUES;
             }
             
             if (items != null)
@@ -466,7 +462,7 @@ public class OperationTabControl extends TabControl
         _executionButton.removeSelectionListener(refreshListener);
         _executionButton.removeSelectionListener(operationExecutionListener);
         
-        if (Constants.BUTTON_EXECUTE.equals(text))
+        if (BUTTON_EXECUTE.equals(text))
         {
             _executionButton.addSelectionListener(operationExecutionListener);    
         }
@@ -485,8 +481,8 @@ public class OperationTabControl extends TabControl
         Display display = Display.getCurrent();
         int width = 600;
         int height = 400;
-        Shell shell = ViewUtility.createPopupShell(Constants.RESULT, width, height);
-        shell.setImage(ApplicationRegistry.getImage(Constants.CONSOLE_IMAGE));
+        Shell shell = ViewUtility.createPopupShell(RESULT, width, height);
+        shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
         ViewUtility.populateCompositeWithData(_toolkit, shell, result);
         
         shell.open();
@@ -554,8 +550,8 @@ public class OperationTabControl extends TabControl
                     if (param.getValue() == null || param.getValue().toString().length() == 0)
                     {
                         // Customized check, because for this parameter null is allowed
-                        if (param.getName().equals(Constants.ATTRIBUTE_QUEUE_OWNER) &&
-                            _opData.getName().equals(Constants.OPERATION_CREATE_QUEUE))
+                        if (param.getName().equals(ATTRIBUTE_QUEUE_OWNER) &&
+                            _opData.getName().equals(OPERATION_CREATE_QUEUE))
                         {
                             continue;
                         }
@@ -569,7 +565,7 @@ public class OperationTabControl extends TabControl
                 }
             }
             
-            if (_opData.getImpact() == Constants.OPERATION_IMPACT_ACTION)
+            if (_opData.getImpact() == OPERATION_IMPACT_ACTION)
             {
                 String bean = _mbean.getName() == null ? _mbean.getType() : _mbean.getName();
                 int response = ViewUtility.popupConfirmationMessage(bean, 

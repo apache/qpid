@@ -30,11 +30,11 @@ public class Constants
     public final static String APPLICATION_NAME = "Qpid Management Console";
     public final static String VALUE = "value";
     public final static String TYPE  = "type";
-    public final static String SERVER     = "server";
-    public final static String DOMAIN     = "domain";
+    public final static String NODE_TYPE_SERVER    = "server";
+    public final static String NODE_TYPE_DOMAIN    = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
     // currently used only for virtual host instances, but will work as general also
-    public final static String TYPE_INSTANCE = "mbeantype_instance";
+    public final static String NODE_TYPE_TYPEINSTANCE = "mbeantype_instance";
     public final static String MBEAN      = "mbean";
     public final static String ATTRIBUTE = "Attribute";
     public final static String ATTRIBUTES = "Attributes";
