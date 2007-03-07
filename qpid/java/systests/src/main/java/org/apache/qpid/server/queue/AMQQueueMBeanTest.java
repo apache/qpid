@@ -42,6 +42,7 @@ import java.util.HashSet;
  */
 public class AMQQueueMBeanTest extends TestCase
 {
+    private static long MESSAGE_SIZE = 1000;
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
     private QueueRegistry _queueRegistry;
@@ -61,7 +62,8 @@ public class AMQQueueMBeanTest extends TestCase
         sendMessages(messageCount);
         assertTrue(_queueMBean.getMessageCount() == messageCount);
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
-        assertTrue(_queueMBean.getQueueDepth() == 10);
+        long queueDepth = (messageCount * MESSAGE_SIZE) >> 10;
+        assertTrue(_queueMBean.getQueueDepth() == queueDepth);
 
         _queueMBean.deleteMessageFromTop();
         assertTrue(_queueMBean.getMessageCount() == messageCount - 1);
@@ -101,13 +103,14 @@ public class AMQQueueMBeanTest extends TestCase
 
     public void testGeneralProperties()
     {
+        long maxQueueDepth = 1000; // in bytes
         _queueMBean.setMaximumMessageCount(50000);
         _queueMBean.setMaximumMessageSize(2000l);
-        _queueMBean.setMaximumQueueDepth(1000l);
+        _queueMBean.setMaximumQueueDepth(maxQueueDepth);
 
         assertTrue(_queueMBean.getMaximumMessageCount() == 50000);
         assertTrue(_queueMBean.getMaximumMessageSize() == 2000);
-        assertTrue(_queueMBean.getMaximumQueueDepth() == 1000);
+        assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth >> 10));
 
         assertTrue(_queueMBean.getName().equals("testQueue"));
         assertTrue(_queueMBean.getOwner().equals("AMQueueMBeanTest"));
@@ -150,8 +153,10 @@ public class AMQQueueMBeanTest extends TestCase
         AMQMessage msg = message(false);
         long id = msg.getMessageId();
         _queue.clearQueue(_storeContext);
-        _queue.process(_storeContext, msg, false);
+
+        msg.enqueue(_queue);
         msg.routingComplete(_messageStore, _storeContext, new MessageHandleFactory());
+        _queue.process(_storeContext, msg, false);
         _queueMBean.viewMessageContent(id);
         try
         {
@@ -212,15 +217,12 @@ public class AMQQueueMBeanTest extends TestCase
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false);
+            messages[i].enqueue(_queue);
+            messages[i].routingComplete(_messageStore, _storeContext, new MessageHandleFactory());
         }
         for (int i = 0; i < messageCount; i++)
         {
             _queue.process(_storeContext, messages[i], false);
-        }
-
-        for (int i = 0; i < messages.length; i++)
-        {
-            messages[i].routingComplete(_messageStore, _storeContext, new MessageHandleFactory());
         }
     }
 }

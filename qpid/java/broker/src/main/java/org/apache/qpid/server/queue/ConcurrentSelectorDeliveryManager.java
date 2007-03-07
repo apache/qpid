@@ -354,14 +354,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     public void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _lock.lock();
-        AMQMessage msg = getNextMessage();
-        if (msg != null)
-        {
-            // mark this message as taken and get it removed
-            msg.taken(null);
-            _queue.dequeue(storeContext, msg);
-            getNextMessage();
-        }
+        
+        AMQMessage message = _messages.poll();
+        _totalMessageSize.addAndGet(-message.getSize());
 
         _lock.unlock();
     }
