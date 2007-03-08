@@ -15,7 +15,7 @@
     KIND, either express or implied. See the License for the
     specific language governing permissions and limitations
     under the License.
-  -->
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -42,12 +42,12 @@
     <!-- Temporary local maven repo, whilst JUnit Toolkit is still reaching stable version to add to central maven repository. -->
     <pluginRepositories>
         <pluginRepository>
-          <id>junit-toolkit-plugin.snapshots</id>
-          <name>JUnit Toolkit SNAPSHOT Repository</name>
-      <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
+            <id>junit-toolkit-plugin.snapshots</id>
+            <name>JUnit Toolkit SNAPSHOT Repository</name>
+            <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </pluginRepository>
     </pluginRepositories>
 
@@ -100,129 +100,131 @@
             </plugin>
 
             <!-- The JUnit Toolkit maven2 plugin is in the process of being added to the maven repository.
-
+                 
                  Configures the toolkit test runner for performance testing. These can be run from within maven, or by using the generated
                  scripts.
-
+                 
                  To run from within maven:
-
+                 
                  mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tktest
-
+                 
                  To run from the command line (after doing assembly:assembly goal):
-
+                 
                  java -cp target/test_jar-jar-with-dependencies.jar uk.co.thebadgerset.junit.extensions.TKTestRunner -s 1 -r 100000 
-                      -o target org.apache.qpid.requestreply.PingPongTestPerf
-
+                 -o target org.apache.qpid.requestreply.PingPongTestPerf
+                 
                  To generate the scripts do:
-
+                 
                  mvn uk.co.thebadgerset:junit-toolkit-maven-plugin:tkscriptgen
-
+                 
                  Then to run the scripts, in the target directory do (after doing assembly:assembly goal):
-
+                 
                  ./script_name.sh
-
+                 
                  These scripts can find everything in the 'all test dependencies' jar created by the assembly:assembly goal.
-                 -->
+            -->
             <plugin>
-              <groupId>uk.co.thebadgerset</groupId>
-              <artifactId>junit-toolkit-maven-plugin</artifactId>
+                <groupId>uk.co.thebadgerset</groupId>
+                <artifactId>junit-toolkit-maven-plugin</artifactId>
 
-              <configuration>
-                <scriptOutDirectory>target</scriptOutDirectory>
-                <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
+                <configuration>
+                    <scriptOutDirectory>target</scriptOutDirectory>
+                    <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
 
-                <systemproperties>
-                  <property>
-                    <name>log4j.configuration</name>
-                    <value>${log4j.perftests}</value>
-                  </property>
-                  <property>
-                    <name>amqj.logging.level</name>
-                    <value>warn</value>
-                  </property>
-                  <property><!-- Turn off most logging messages from the junit-toolkit test tool itself. -->
-                    <name>badger.level</name>
-                    <value>warn</value>
-                  </property>
-                  <property>
-                    <name>amqj.test.logging.level</name>
-                    <value>info</value>
-                  </property>
-                </systemproperties>
+                    <systemproperties>
+                        <property>
+                            <name>log4j.configuration</name>
+                            <value>${log4j.perftests}</value>
+                        </property>
+                        <property>
+                            <name>amqj.logging.level</name>
+                            <value>warn</value>
+                        </property>
+                        <property><!-- Turn off most logging messages from the junit-toolkit test tool itself. -->
+                            <name>badger.level</name>
+                            <value>warn</value>
+                        </property>
+                        <property>
+                            <name>amqj.test.logging.level</name>
+                            <value>info</value>
+                        </property>
+                    </systemproperties>
 
-                <commands>
-                  <!-- Single pings. These can be scaled up by overriding the parameters when calling the test script. -->
-                  <Ping-Once>-n Ping-Once -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</Ping-Once>
-                  <Ping-Once-Async>-n Ping-Once-Async -s [1] -r 1 -t testAsyncPingOk -o . org.apache.qpid.ping.PingAsyncTestPerf</Ping-Once-Async>
-                  <Ping-Latency>-n Ping-Latency -s [1000] -d 10S -t testPingLatency -o . org.apache.qpid.ping.PingLatencyTestPerf</Ping-Latency>
+                    <commands>
+                        <!-- Single pings. These can be scaled up by overriding the parameters when calling the test script. -->
+                        <Ping-Once>-n Ping-Once -s [1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</Ping-Once>
+                        <Ping-Once-Async>-n Ping-Once-Async -s [1] -r 1 -t testAsyncPingOk -o . org.apache.qpid.ping.PingAsyncTestPerf</Ping-Once-Async>
+                        <Ping-Latency>-n Ping-Latency -s [1000] -d 10S -t testPingLatency -o . org.apache.qpid.ping.PingLatencyTestPerf</Ping-Latency>
 
-                  <!-- More example Tests. These are examples to exercise all the features of the test harness. Can scale up with option overrides. -->
-                  <Ping-Tx>-n Ping-Tx -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>
-                  <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=512</Ping-Size>
-                  <Ping-Concurrent>-n Ping-Concurrent -s [100] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Concurrent>
-                  <Ping-Many-Queues>-n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationscount=4</Ping-Many-Queues>
-                  <Ping-Duration>-n Ping-Duration -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Duration>
-                  <Ping-Rate>-n Ping-Rate -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=500</Ping-Rate>
-                  <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
-                  <Ping-Many-Topics>
-                      -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationscount=4
-                  </Ping-Many-Topics>
-                          <Ping-Persistent>
-                      -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
-                  </Ping-Persistent>
-                  <Ping-Batch-Logging>
-                      -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
-                  </Ping-Batch-Logging>
-                  <Ping-Failover-Before-Send> 
-                      -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
-                  </Ping-Failover-Before-Send>
-                  <Ping-Failover-After-Send>
-                      -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
-                  </Ping-Failover-After-Send>
-                  <Ping-Failover-Before-Commit>
-                      -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
-                  </Ping-Failover-Before-Commit>
-                  <Ping-Failover-After-Commit>
-                      -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
-                  </Ping-Failover-After-Commit>
+                        <!-- More example Tests. These are examples to exercise all the features of the test harness. Can scale up with option overrides. -->
+                        <Ping-Tx>-n Ping-Tx -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>
+                        <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=512</Ping-Size>
+                        <Ping-Concurrent>-n Ping-Concurrent -s [100] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Concurrent>
+                        <Ping-Many-Queues>-n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationscount=4</Ping-Many-Queues>
+                        <Ping-Duration>-n Ping-Duration -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Duration>
+                        <Ping-Rate>-n Ping-Rate -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=500</Ping-Rate>
+                        <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
+                        <Ping-Many-Topics>
+                            -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationscount=4
+                        </Ping-Many-Topics>
+                        <Ping-Persistent>
+                            -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
+                        </Ping-Persistent>
+                        <Ping-Batch-Logging>
+                            -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
+                        </Ping-Batch-Logging>
+                        <Ping-Failover-Before-Send> 
+                            -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
+                        </Ping-Failover-Before-Send>
+                        <Ping-Failover-After-Send>
+                            -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
+                        </Ping-Failover-After-Send>
+                        <Ping-Failover-Before-Commit>
+                            -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
+                        </Ping-Failover-Before-Commit>
+                        <Ping-Failover-After-Commit>
+                            -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
+                        </Ping-Failover-After-Commit>
 
-                </commands>
-              </configuration>
+                    </commands>
+                </configuration>
 
-              <executions>
-                <execution>
-                  <phase>test</phase>
-                  <!--<goals>
-                    <goal>tktest</goal>
-                  </goals>-->
-                </execution>
-              </executions>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <!--<goals>
+                            <goal>tktest</goal>
+                            </goals>-->
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Bundles all the dependencies, fully expanded into a single jar, required to run the tests.
-
+                 Also builds all thescripts and this jar into distributable .zip and .tar.gz files.
+                 
                  Usefull when bundling system, integration or performance tests into a convenient
                  package to hand over to testers. To use it run:
-
+                 
                  java -cp target/your_app_name-all-test-deps.jar path.to.your.Class
-
+                 
                  or often:
-
+                 
                  java -cp target/your_app_name-all-test-deps.jar junit.framework.textui.TestRunner path.to.your.test.Class
-
+                 
                  or other JUnit test runner invocations.
-                 -->
+            -->
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-assembly-plugin</artifactId>
-              <version>2.2-SNAPSHOT</version>
-              <configuration>
-                <descriptors>
-                  <descriptor>jar-with-dependencies.xml</descriptor>
-                </descriptors>
-                <outputDirectory>target</outputDirectory>
-                <workDirectory>target/assembly/work</workDirectory>
-              </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-SNAPSHOT</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>jar-with-dependencies.xml</descriptor>
+                        <descriptor>dist-zip.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>target</outputDirectory>
+                    <workDirectory>target/assembly/work</workDirectory>
+                </configuration>
             </plugin>
 
         </plugins>
