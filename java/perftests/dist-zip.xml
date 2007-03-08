@@ -1,0 +1,27 @@
+<!-- This is an assembly descriptor that produces a zip containing all the test scripts and
+     the all dependencies jar. -->
+<assembly>
+  <id>perftests</id>
+  <formats>
+    <format>zip</format>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory>PerformanceTests</outputDirectory>
+      <includes>
+          <include>qpid-perftests-${qpid.version}-all-test-deps.jar</include>
+          <include>*.sh</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>etc/scripts</directory>
+      <outputDirectory>PerformanceTests</outputDirectory>
+      <includes>
+          <include>*.sh</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>
