@@ -61,6 +61,7 @@ MessageMessage::MessageMessage(
     reference(reference_)
 {}
 
+// TODO: astitcher 1-Mar-2007: This code desperately needs better factoring
 void MessageMessage::transferMessage(
     framing::ChannelAdapter& channel, 
     const std::string& consumerTag, 
@@ -76,7 +77,19 @@ void MessageMessage::transferMessage(
 		for(Reference::Appends::const_iterator a = reference->getAppends().begin();
 			a != reference->getAppends().end();
 			++a) {
-			channel.send(new MessageAppendBody(*a->get()));
+			u_int32_t sizeleft = (*a)->size();
+			const string& content = (*a)->getBytes();
+			// Calculate overhead bytes
+			// Assume that the overhead is constant as the reference name doesn't change
+			u_int32_t overhead = sizeleft - content.size();
+			string::size_type contentStart = 0;
+			while (sizeleft) {
+				string::size_type contentSize = sizeleft <= framesize ? sizeleft : framesize-overhead;
+				channel.send(new MessageAppendBody(channel.getVersion(), reference->getId(),
+						string(content, contentStart, contentSize)));
+					sizeleft -= contentSize;
+					contentStart += contentSize;
+			}
 		}
 	}
 	
@@ -109,8 +122,7 @@ void MessageMessage::transferMessage(
                                 transfer->getMandatory()));
 	} else {
 		// Thing to do here is to construct a simple reference message then deliver that instead
-		// fragmentmentation will be taken care of in the delivery
-		// if necessary; problem is to invent a reference name to use
+		// fragmentation will be taken care of in the delivery if necessary;
 		string content = body.getValue();
 		string refname = "dummy";
 		TransferPtr newTransfer(
