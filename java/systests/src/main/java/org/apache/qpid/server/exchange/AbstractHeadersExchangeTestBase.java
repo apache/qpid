@@ -158,7 +158,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
         private boolean _mandatory;
         private AMQShortString _routingKey;
 
-
         public MessagePublishInfoImpl(AMQShortString routingKey)
         {
             _routingKey = routingKey;
@@ -217,31 +216,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     static MessagePublishInfo getPublishRequest(final String id)
     {
-        MessagePublishInfo request = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return new AMQShortString(id);
-            }
-        };
-                                                      
-        return request;
+        return new MessagePublishInfoImpl(null, false, false, new AMQShortString(id));
     }
 
     static ContentHeaderBody getContentHeader(FieldTable headers)
