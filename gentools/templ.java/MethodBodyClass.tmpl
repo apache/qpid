@@ -153,28 +153,16 @@ public class ${CLASS}${METHOD}Body extends AMQMethodBody implements EncodableAMQ
         return buf.toString();
     }
 
-    public static ${CLASS}${METHOD}Body createMethodBody(byte major, byte minor
+    public static AMQFrame createAMQFrame(int _channelId, byte major, byte minor
 %{FLIST}    ${mb_field_parameter_list}
                                          )
     {
-        return createMethodBody(major, minor, getClazz(major, minor), getMethod(major, minor)
-%{FLIST}    ${mb_field_passed_parameter_list}
-        );
-    }
-
-    public static ${CLASS}${METHOD}Body createMethodBody(byte major, byte minor, int clazzID, int methodID
-%{FLIST}    ${mb_field_parameter_list}
-                                         )
-    {
-        return new ${CLASS}${METHOD}Body(major, minor, clazzID, methodID
-%{FLIST}    ${mb_field_passed_parameter_list}
-        );
-    }
-
-    public ${CLASS}${METHOD}Body copy()
-    {
-        return new ${CLASS}${METHOD}Body(major, minor, getClazz(major, minor), getMethod(major, minor)
-%{FLIST}    ${mb_field_passed_parameter_list}
-        );
+        ${CLASS}${METHOD}Body body = new ${CLASS}${METHOD}Body(major, minor);
+%{FLIST}    ${mb_field_body_initialize}
+        		 
+        AMQFrame frame = new AMQFrame();
+        frame.channel = _channelId;
+        frame.bodyFrame = body;
+        return frame;
     }
 }
