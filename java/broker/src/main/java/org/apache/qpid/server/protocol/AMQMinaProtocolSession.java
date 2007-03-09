@@ -253,14 +253,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
                 String locales = "en_US";
                 // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-                AMQMethodBody connectionStartBody = ConnectionStartBody.createMethodBody
-                    ((byte)_major, (byte)_minor,	// AMQP version (major, minor)
-                     locales.getBytes(),	// locales
-                     mechanisms.getBytes(),	// mechanisms
-                     null,	// serverProperties
-                     (short)_major,	// versionMajor
-                     (short)_minor);	// versionMinor
-                writeRequest(0, connectionStartBody, _stateManager);
+                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
+            		_major, _minor,	// AMQP version (major, minor)
+                    locales.getBytes(),	// locales
+                    mechanisms.getBytes(),	// mechanisms
+                    null,	// serverProperties
+                	(short)_major,	// versionMajor
+                    (short)_minor);	// versionMinor
+                _minaProtocolSession.write(response);
             }
             catch (AMQException e)
             {
