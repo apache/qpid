@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
@@ -173,7 +174,7 @@ public class MockProtocolSession implements AMQProtocolSession
 
     public ProtocolOutputConverter getProtocolOutputConverter()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return ProtocolOutputConverterRegistry.getConverter(this);
     }
 
     public byte getProtocolMajorVersion()
