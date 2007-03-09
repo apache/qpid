@@ -7,8 +7,9 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 lib_LTLIBRARIES = libqpidclient.la
+libqpidclient_la_LIBADD = ../common/libqpidcommon.la
 libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-libqpidclient_la_SOURCES =				\
+libqpidclient_la_SOURCES =			\
   ClientChannel.cpp				\
   ClientExchange.cpp				\
   ClientMessage.cpp				\
@@ -20,7 +21,7 @@ libqpidclient_la_SOURCES =				\
   MessageListener.cpp				\
   ResponseHandler.cpp				\
   ReturnedMessageHandler.cpp
-pkginclude_HEADERS =	 			\
+pkginclude_HEADERS =				\
   ClientChannel.h				\
   ClientExchange.h				\
   ClientMessage.h				\
