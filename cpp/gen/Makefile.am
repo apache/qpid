@@ -11,7 +11,7 @@ DISTCLEANFILES = $(BUILT_SOURCES) timestamp gen-src.mk
 # Don't attempt to run the code generator unless configure has set
 # CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
 # to run the code generator are available.
-# 
+#
 if CAN_GENERATE_CODE
 
 gentools_dir = $(srcdir)/../../gentools
