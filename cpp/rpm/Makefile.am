@@ -10,22 +10,17 @@ RPMOPTS=--define "_sourcedir ${abs_top_srcdir}" --define "_topdir ${abs_builddir
 clean:
 	rm -rf BUILD  RPMS  SOURCES  SPECS  SRPMS
 
-.PHONY: rpm srpm dist dirs
+.PHONY: rpm srpm dist
 
 # Build source and binary RPMs.
-rpm: dist dirs
+rpm: dist 
 	rpmbuild $(RPMOPTS) -ba $(SPEC)
 
 # Source RPM only.
-srpm: dist dirs
+srpm: dist 
 	rpmbuild $(RPMOPTS) -bs $(SPEC)
 
-# Build source distribution.
+# Build source distribution and create required subdirs.
 dist:
 	cd .. && $(MAKE) $(AM_MAKEFLAGS) dist
-
-# Create build directories.
-dirs: BUILD  RPMS  SOURCES  SPECS  SRPMS
-BUILD  RPMS  SOURCES  SPECS  SRPMS:
-	$(MKDIR_P) BUILD  RPMS  SOURCES  SPECS  SRPMS
-
+	mkdir -p BUILD  RPMS  SOURCES  SPECS  SRPMS
