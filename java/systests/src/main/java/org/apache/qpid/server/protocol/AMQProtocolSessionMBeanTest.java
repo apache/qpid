@@ -24,10 +24,7 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
@@ -42,14 +39,10 @@ import javax.management.JMException;
  */
 public class AMQProtocolSessionMBeanTest   extends TestCase
 {
-    private IoSession _mockIOSession;
     private MessageStore _messageStore = new SkeletonMessageStore();
     private AMQMinaProtocolSession _protocolSession;
     private AMQChannel _channel;
-    private QueueRegistry _queueRegistry;
-    private ExchangeRegistry _exchangeRegistry;
     private AMQProtocolSessionMBean _mbean;
-    private VirtualHost _virtualHost;
 
     public void testChannels() throws Exception
     {
@@ -57,7 +50,10 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         int channelCount = _mbean.channels().size();
         assertTrue(channelCount == 1);
         AMQQueue queue = new org.apache.qpid.server.queue.AMQQueue(new AMQShortString("testQueue_" + System.currentTimeMillis()),
-                                                            false, new AMQShortString("test"), true, _virtualHost);
+                                                                   false,
+                                                                   new AMQShortString("test"),
+                                                                   true,
+                                                                   _protocolSession.getVirtualHost());
         AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore, null);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);
@@ -111,11 +107,11 @@ public class AMQProtocolSessionMBeanTest   extends TestCase
         super.setUp();
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _virtualHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _queueRegistry = _virtualHost.getQueueRegistry();
-        _exchangeRegistry = _virtualHost.getExchangeRegistry();
-        _mockIOSession = new MockIoSession();
-        _protocolSession = new AMQMinaProtocolSession(_mockIOSession, appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true));
+        _protocolSession = new AMQMinaProtocolSession(new MockIoSession(),
+                                                      appRegistry.getVirtualHostRegistry(),
+                                                      new AMQCodecFactory(true),
+                                                      null);
+        _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
         _channel = new AMQChannel(_protocolSession,1, _messageStore, null);
         _protocolSession.addChannel(_channel);
         _mbean = (AMQProtocolSessionMBean)_protocolSession.getManagedObject();
