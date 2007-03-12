@@ -20,7 +20,11 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.SkeletonMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.protocol.TestMinaProtocolSession;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
@@ -36,7 +40,7 @@ public class AMQQueueAlertTest extends TestCase
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
     private QueueRegistry _queueRegistry;
-    private MessageStore _messageStore = new SkeletonMessageStore();
+    private MessageStore _messageStore = new MemoryMessageStore();
 
     /**
      * Tests if the alert gets thrown when message count increases the threshold limit
@@ -87,11 +91,11 @@ public class AMQQueueAlertTest extends TestCase
      *
      * @throws Exception
      */
-    public void testQueueDepthAlert() throws Exception
+    public void testQueueDepthAlertNoSubscribers() throws Exception
     {
         _queue = new AMQQueue("testQueue3", false, "AMQueueAlertTest", false, _queueRegistry);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
-        _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
+        _queueMBean.setMaximumMessageCount(9999);   // Set a high value, because this is not being tested
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
         while (_queue.getQueueDepth() < MAX_QUEUE_DEPTH)
@@ -104,6 +108,69 @@ public class AMQQueueAlertTest extends TestCase
 
         String notificationMsg = lastNotification.getMessage();
         assertTrue(notificationMsg.startsWith(NotificationCheck.QUEUE_DEPTH_ALERT.name()));
+    }
+
+    /*
+     This test sends some messages to the queue with subscribers needing message to be acknowledged.
+     The messages will not be acknowledged and will be required twice. Why we are checking this is because
+     the bug reported said that the queueDepth keeps increasing when messages are requeued.
+     The QueueDepth should decrease when messages are delivered from the queue (QPID-408)
+    */
+    public void testQueueDepthAlertWithSubscribers() throws Exception
+    {
+        AMQChannel channel = new AMQChannel(2, _messageStore, null);
+        AMQMinaProtocolSession protocolSession = new TestMinaProtocolSession();
+        protocolSession.addChannel(channel);
+
+        // Create queue
+        _queue = new AMQQueue("testQueue" + Math.random(), false, "AMQueueAlertTest", false, _queueRegistry);
+        _queue.registerProtocolSession(protocolSession, channel.getChannelId(), "consumer_tag", true, null);
+        _queue.deliverAsync();
+        _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
+        _queueMBean.setMaximumMessageCount(9999);   // Set a high value, because this is not being tested
+        _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
+
+        // Send messages(no of message to be little more than what can cause a Queue_Depth alert)
+        int messageCount = Math.round(MAX_QUEUE_DEPTH/MAX_MESSAGE_SIZE) + 10;
+        long totalSize = (messageCount * MAX_MESSAGE_SIZE) >> 10;
+        sendMessages(messageCount, MAX_MESSAGE_SIZE);
+
+        // Check queueDepth. There should be no messages on the queue and as the subscriber is listening
+        // so there should be no Queue_Deoth alert raised
+        assertTrue(_queueMBean.getQueueDepth() == 0);
+        Notification lastNotification = _queueMBean.getLastNotification();
+        assertNull(lastNotification);
+
+        // Kill the subscriber and check for the queue depth values.
+        // Messages are unacknowledged, so those should get requeued. All messages should be on the Queue
+        _queue.unregisterProtocolSession(protocolSession, channel.getChannelId(), "consumer_tag");
+        channel.requeue();
+
+        assertTrue(_queueMBean.getQueueDepth() == totalSize);
+
+        lastNotification = _queueMBean.getLastNotification();
+        assertNotNull(lastNotification);
+        String notificationMsg = lastNotification.getMessage();
+        assertTrue(notificationMsg.startsWith(NotificationCheck.QUEUE_DEPTH_ALERT.name()));
+
+
+        // Connect a consumer again and check QueueDepth values. The queue should get emptied.
+        // Messages will get delivered but still are unacknowledged.
+        _queue.registerProtocolSession(protocolSession, channel.getChannelId(), "consumer_tag", true, null);
+        _queue.deliverAsync();
+        while (_queue.getMessageCount() != 0)
+        {
+            Thread.sleep(100);
+        }
+        assertTrue(_queueMBean.getQueueDepth() == 0);
+
+        // Kill the subscriber again. Now those messages should get requeued again. Check if the queue depth
+        // value is correct.
+        _queue.unregisterProtocolSession(protocolSession, channel.getChannelId(), "consumer_tag");
+        channel.requeue();
+
+        assertTrue(_queueMBean.getQueueDepth() == totalSize);
+        channel.commit();
     }
 
     /**
@@ -151,7 +218,7 @@ public class AMQQueueAlertTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queueRegistry = new DefaultQueueRegistry();
+        _queueRegistry = ApplicationRegistry.getInstance().getQueueRegistry();
     }
 
     private void sendMessages(int messageCount, long size) throws AMQException

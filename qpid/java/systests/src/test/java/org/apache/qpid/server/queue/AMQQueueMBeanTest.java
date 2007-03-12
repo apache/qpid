@@ -32,6 +32,7 @@ import javax.management.JMException;
  */
 public class AMQQueueMBeanTest extends TestCase
 {
+    private static final long MESSAGE_SIZE = 1000; // bytes
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
     private QueueRegistry _queueRegistry;
@@ -45,7 +46,8 @@ public class AMQQueueMBeanTest extends TestCase
         sendMessages(messageCount);
         assertTrue(_queueMBean.getMessageCount() == messageCount);
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
-        assertTrue(_queueMBean.getQueueDepth() == 10);
+        long queueDepth = (messageCount * MESSAGE_SIZE) >> 10;
+        assertTrue(_queueMBean.getQueueDepth() == queueDepth);
 
         _queueMBean.deleteMessageFromTop();
         assertTrue(_queueMBean.getMessageCount() == messageCount - 1);
@@ -84,13 +86,14 @@ public class AMQQueueMBeanTest extends TestCase
 
     public void testGeneralProperties()
     {
+        long maxQueueDepth = 1000; // in bytes
         _queueMBean.setMaximumMessageCount(50000);
         _queueMBean.setMaximumMessageSize(2000l);
-        _queueMBean.setMaximumQueueDepth(1000l);
+        _queueMBean.setMaximumQueueDepth(maxQueueDepth);
 
         assertTrue(_queueMBean.getMaximumMessageCount() == 50000);
         assertTrue(_queueMBean.getMaximumMessageSize() == 2000);
-        assertTrue(_queueMBean.getMaximumQueueDepth() == 1000);
+        assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth >> 10));
 
         assertTrue(_queueMBean.getName().equals("testQueue"));
         assertTrue(_queueMBean.getOwner().equals("AMQueueMBeanTest"));
@@ -153,7 +156,7 @@ public class AMQQueueMBeanTest extends TestCase
         BasicPublishBody publish = new BasicPublishBody((byte)8, (byte)0);
         publish.immediate = immediate;
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.bodySize = 1000;   // in bytes       
+        contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes       
         return new AMQMessage(_messageStore, publish, contentHeaderBody, null);
     }
 
@@ -172,7 +175,6 @@ public class AMQQueueMBeanTest extends TestCase
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false);
-            ;
         }
         for (int i = 0; i < messageCount; i++)
         {

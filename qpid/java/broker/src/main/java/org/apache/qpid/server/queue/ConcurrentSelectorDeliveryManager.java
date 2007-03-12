@@ -271,6 +271,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             //remove sent message from our queue.
             messageQueue.poll();
+            // (QPID-408) If the queue is not resend Queue, then the message size on the queue
+            // should also be decreased becasue the message from the queue is being polled
+            // The messageQueue being polled can be either resend queue, predelivery queue or main queue  
+            if (messageQueue != sub.getResendQueue())
+            {
+                _totalMessageSize.addAndGet(-message.getSize());
+            }
 
             //If we don't remove the message from _messages
             // Otherwise the Async send will never end            
@@ -381,7 +388,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     }
                     for (Subscription sub : _subscriptions.getSubscriptions())
                     {
-
                         // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
                         if (_queue.isShared() && msg.getDeliveredToConsumer())
                         {
