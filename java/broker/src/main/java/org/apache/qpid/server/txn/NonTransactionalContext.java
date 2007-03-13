@@ -93,7 +93,6 @@ public class NonTransactionalContext implements TransactionalContext
     {
         try
         {
-            message.incrementReference();
             queue.process(_storeContext, message, deliverFirst);
             //following check implements the functionality
             //required by the 'immediate' flag:
@@ -128,6 +127,8 @@ public class NonTransactionalContext implements TransactionalContext
                             {
                                 _log.debug("Discarding message: " + message.message.getMessageId());
                             }
+
+                            //Message has been ack so discard it. This will dequeue and decrement the reference.
                             message.discard(_storeContext);
                         }
                         else
@@ -160,6 +161,8 @@ public class NonTransactionalContext implements TransactionalContext
                         {
                             _log.debug("Discarding message: " + msg.message.getMessageId());
                         }
+
+                        //Message has been ack so discard it. This will dequeue and decrement the reference.
                         msg.discard(_storeContext);
                     }
                     else
@@ -181,7 +184,22 @@ public class NonTransactionalContext implements TransactionalContext
                 throw new AMQException("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
                                        _channel.getChannelId());
             }
-            msg.discard(_storeContext);
+
+            if (!_browsedAcks.contains(deliveryTag))
+            {
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Discarding message: " + msg.message.getMessageId());
+                }
+
+                //Message has been ack so discard it. This will dequeue and decrement the reference.
+                msg.discard(_storeContext);
+            }
+            else
+            {
+                _browsedAcks.remove(deliveryTag);
+            }
+
             if (_log.isDebugEnabled())
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +

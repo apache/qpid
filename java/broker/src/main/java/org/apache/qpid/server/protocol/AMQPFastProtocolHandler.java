@@ -176,6 +176,8 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         }
         else
         {
+            _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
+            
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
             	session.getProtocolMajorVersion(),
@@ -185,7 +187,6 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
                 200,	// replyCode
                 new AMQShortString(throwable.getMessage())	// replyText
                 ));
-            _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
             protocolSession.close();
         }
     }

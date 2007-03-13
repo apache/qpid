@@ -181,8 +181,37 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
     @Override
     public Iterator<E> iterator()
     {
-        throw new RuntimeException("Not Implemented");
+        final Iterator<E> mainMessageIterator = super.iterator();
+        return new Iterator<E>()
+        {
+            final Iterator<E> _headIterator = _messageHead.iterator();
+            final Iterator<E> _mainIterator = mainMessageIterator;
 
+            Iterator<E> last;
+
+            public boolean hasNext()
+            {
+                return _headIterator.hasNext() || _mainIterator.hasNext();
+            }
+
+            public E next()
+            {
+                if (_headIterator.hasNext())
+                {
+                    last = _headIterator;
+                    return _headIterator.next();
+                }
+                else
+                {
+                    last = _mainIterator;
+                    return _mainIterator.next();
+                }
+            }
+            public void remove()
+            {
+                last.remove();
+            }
+        };
     }
 
     @Override

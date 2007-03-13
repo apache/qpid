@@ -39,8 +39,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.testutil.VMBrokerSetup;
 
 public class PropertyValueTest extends TestCase implements MessageListener
 {
@@ -59,19 +59,13 @@ public class PropertyValueTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        try
-        {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
-        }
-        catch (Exception e)
-        {
-            fail("Unable to initialilse connection: " + e);
-        }
+        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killVMBroker(1);
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -91,14 +85,48 @@ public class PropertyValueTest extends TestCase implements MessageListener
         connection.start();
     }
 
-    public void test() throws Exception
+    public void testOnce()
     {
-        int count = _count;
-        send(count);
-        waitFor(count);
-        check();
-        _logger.info("Completed without failure");
-        _connection.close();
+        runBatch(1);
+    }
+
+    public void test50()
+    {
+        runBatch(50);
+    }
+
+    private void runBatch(int runSize)
+    {
+        try
+        {
+            int run = 0;
+            while (run < runSize)
+            {
+                _logger.error("Run Number:" + run++);
+                try
+                {
+                    init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+                }
+                catch (Exception e)
+                {
+                    fail("Unable to initialilse connection: " + e);
+                }
+
+                int count = _count;
+                send(count);
+                waitFor(count);
+                check();
+                _logger.info("Completed without failure");
+                _connection.close();
+
+                _logger.error("End Run Number:" + (run - 1));
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.error(e.getMessage(), e);
+            e.printStackTrace();
+        }
     }
 
     void send(int count) throws JMSException
@@ -138,7 +166,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             m.setJMSReplyTo(q);
             m.setStringProperty("TempQueue", q.toString());
 
-            _logger.info("Message:" + m);
+            _logger.trace("Message:" + m);
 
             Assert.assertEquals("Check temp queue has been set correctly",
                                 m.getJMSReplyTo().toString(), m.getStringProperty("TempQueue"));
@@ -150,7 +178,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             m.setShortProperty("Short", (short) Short.MAX_VALUE);
             m.setStringProperty("String", "Test");
 
-            _logger.info("Sending Msg:" + m);
+            _logger.debug("Sending Msg:" + m);
             producer.send(m);
         }
     }
@@ -206,8 +234,11 @@ public class PropertyValueTest extends TestCase implements MessageListener
             Assert.assertEquals("Check String properties are correctly transported",
                                 "Test", m.getStringProperty("String"));
         }
+        received.clear();
 
         assertEqual(messages.iterator(), actual.iterator());
+
+        messages.clear();
     }
 
     private static void assertEqual(Iterator expected, Iterator actual)
@@ -269,11 +300,11 @@ public class PropertyValueTest extends TestCase implements MessageListener
         {
             test._count = Integer.parseInt(argv[1]);
         }
-        test.test();
+        test.testOnce();
     }
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(PropertyValueTest.class));
+        return new junit.framework.TestSuite(PropertyValueTest.class);
     }
 }

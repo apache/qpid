@@ -25,20 +25,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
-/**
- * Provides support for orderly shutdown of an object.
- */
+/** Provides support for orderly shutdown of an object. */
 public abstract class Closeable
 {
     /**
-     * We use an atomic boolean so that we do not have to synchronized access to this flag. Synchronizing
-     * access to this flag would mean have a synchronized block in every method.
+     * We use an atomic boolean so that we do not have to synchronized access to this flag. Synchronizing access to this
+     * flag would mean have a synchronized block in every method.
      */
     protected final AtomicBoolean _closed = new AtomicBoolean(false);
 
     protected void checkNotClosed() throws JMSException
     {
-        if (_closed.get())
+        if (isClosed())
         {
             throw new IllegalStateException("Object " + toString() + " has been closed");
         }
@@ -46,7 +44,10 @@ public abstract class Closeable
 
     public boolean isClosed()
     {
-        return _closed.get();
+//        synchronized (_closed)
+        {
+            return _closed.get();
+        }
     }
 
     public abstract void close() throws JMSException;

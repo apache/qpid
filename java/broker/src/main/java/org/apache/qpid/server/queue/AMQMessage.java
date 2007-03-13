@@ -45,9 +45,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Combines the information that make up a deliverable message into a more manageable form.
- */
+/** Combines the information that make up a deliverable message into a more manageable form. */
 public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -92,9 +90,10 @@ public class AMQMessage
         return _taken.get();
     }
 
+    private final int hashcode = System.identityHashCode(this);
     public String debugIdentity()
     {
-        return "(HC:" + System.identityHashCode(this) + " ID:" + _messageId + ")";
+        return "(HC:" + hashcode + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
     }
 
     /**
@@ -206,7 +205,7 @@ public class AMQMessage
         _taken = new AtomicBoolean(false);
         if (_log.isDebugEnabled())
         {
-            _log.debug("Message(" + System.identityHashCode(this) + ") created with id " + messageId);
+            _log.debug("Message(" + System.identityHashCode(this) + ") created (" + debugIdentity()+")");
         }
     }
 
@@ -363,7 +362,7 @@ public class AMQMessage
         if (_log.isDebugEnabled())
         {
 
-            _log.debug("Ref count on message " + _messageId + " incremented to " + _referenceCount + "   " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(0, 4));
+            _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
 
         }
     }
@@ -374,6 +373,7 @@ public class AMQMessage
      *
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
+     * @param storeContext
      */
     public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
@@ -387,9 +387,7 @@ public class AMQMessage
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug("Ref count on message " + _messageId + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(0, 4));
-
-
+                    _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
                 }
 
                 // must check if the handle is null since there may be cases where we decide to throw away a message
@@ -410,7 +408,7 @@ public class AMQMessage
         {
             if (_log.isDebugEnabled())
             {
-                _log.debug("Ref count is now " + _referenceCount + " for message id " + _messageId + "\n" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(0, 4));
+                _log.debug("Decremented ref count is now " + _referenceCount + " for message id " + debugIdentity() + "\n" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 5));
                 if (_referenceCount.get() < 0)
                 {
                     Thread.dumpStack();
@@ -418,7 +416,7 @@ public class AMQMessage
             }
             if (_referenceCount.get() < 0)
             {
-                throw new MessageCleanupException("Reference count for message id " + _messageId + " has gone below 0.");
+                throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.");
             }
         }
     }
@@ -459,7 +457,10 @@ public class AMQMessage
 
     public void release()
     {
-        _log.trace("Releasing Message:" + debugIdentity());
+        if (_log.isTraceEnabled())
+        {
+            _log.trace("Releasing Message:" + debugIdentity());
+        }
         _taken.set(false);
         _takenBySubcription = null;
     }
@@ -572,7 +573,7 @@ public class AMQMessage
         List<AMQQueue> destinationQueues = _transientMessageData.getDestinationQueues();
         if (_log.isDebugEnabled())
         {
-            _log.debug("Delivering message " + _messageId + " to " + destinationQueues);
+            _log.debug("Delivering message " + debugIdentity() + " to " + destinationQueues);
         }
         try
         {
@@ -589,6 +590,8 @@ public class AMQMessage
 
             for (AMQQueue q : destinationQueues)
             {
+                //Increment the references to this message for each queue delivery.
+                incrementReference();                
                 //normal deliver so add this message at the end.
                 _txnContext.deliver(this, q, false);
             }
@@ -596,6 +599,7 @@ public class AMQMessage
         finally
         {
             destinationQueues.clear();
+            // Remove refence for routing process . Reference count should now == delivered queue count
             decrementReference(storeContext);
         }
     }

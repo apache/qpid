@@ -49,6 +49,7 @@ public class AMQQueueBrowser implements QueueBrowser
         _session = session;
         _queue = queue;
         _messageSelector = (messageSelector == null) || (messageSelector.trim().length() == 0) ? null : messageSelector;
+        // Create Consumer to verify message selector.
         BasicMessageConsumer consumer = (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
         consumer.close();        
     }

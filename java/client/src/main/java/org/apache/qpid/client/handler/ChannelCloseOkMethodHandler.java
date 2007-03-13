@@ -42,6 +42,6 @@ public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
     {
         _logger.info("Received channel-close-ok for channel-id " + evt.getChannelId());
 
-        //todo this should do the closure
+        //todo this should do the local closure
     }
 }

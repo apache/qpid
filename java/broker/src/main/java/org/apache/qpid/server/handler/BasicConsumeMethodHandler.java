@@ -25,6 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.BasicConsumeOkBody;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
@@ -67,12 +69,22 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         }
         else
         {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("BasicConsume: from '" + body.queue +
+                           "' for:" + body.consumerTag +
+                           " nowait:" + body.nowait +
+                           " args:" + body.arguments);
+            }
 
             AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
 
             if (queue == null)
             {
-                _log.info("No queue for '" + body.queue + "'");
+                if (_log.isTraceEnabled())
+                {
+                    _log.trace("No queue for '" + body.queue + "'");
+                }
                 if (body.queue != null)
                 {
                     String msg = "No such queue, '" + body.queue + "'";
@@ -105,14 +117,34 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 }
                 catch (org.apache.qpid.AMQInvalidArgumentException ise)
                 {
-                    _log.info("Closing connection due to invalid selector");
-                    throw body.getChannelException(AMQConstant.INVALID_ARGUMENT, ise.getMessage());
+                    _log.debug("Closing connection due to invalid selector");
+                    // Why doesn't this ChannelException work.
+//                    throw body.getChannelException(AMQConstant.INVALID_ARGUMENT, ise.getMessage());
+                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    session.writeFrame(ChannelCloseBody.createAMQFrame(channelId,
+                                                                       (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                       BasicConsumeBody.getClazz((byte) 8, (byte) 0),    // classId
+                                                                       BasicConsumeBody.getMethod((byte) 8, (byte) 0),    // methodId
+                                                                       AMQConstant.INVALID_ARGUMENT.getCode(),    // replyCode
+                                                                       new AMQShortString(ise.getMessage())));        // replyText
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
                     AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.consumerTag + "'");
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Non-unique consumer tag, '" + body.consumerTag + "'");
+                    // If the above doesn't work then perhaps this is wrong too.
+//                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+//                                                      "Non-unique consumer tag, '" + body.consumerTag + "'");
+                                        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId,
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
+                        BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
+                        AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
+                        msg));	// replyText
                 }
                 catch (AMQQueue.ExistingExclusiveSubscription e)
                 {

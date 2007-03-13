@@ -101,6 +101,8 @@ public class TxAck implements TxnOp
         for (UnacknowledgedMessage msg : _unacked)
         {
             msg.restoreTransientMessageData();
+
+            //Message has been ack so discard it. This will dequeue and decrement the reference.
             msg.discard(storeContext);
         }
     }
@@ -124,7 +126,7 @@ public class TxAck implements TxnOp
         _map.remove(_unacked);
         for (UnacknowledgedMessage msg : _unacked)
         {
-            msg.clearTransientMessageData();        
+            msg.clearTransientMessageData();
         }
 
     }

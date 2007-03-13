@@ -44,6 +44,10 @@ public class FlowControllingBlockingQueue
     /** We require a separate count so we can track whether we have reached the threshold */
     private int _count;
 
+    public boolean isEmpty()
+    {
+        return _queue.isEmpty();
+    }
 
     public interface ThresholdListener
     {
