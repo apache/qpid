@@ -121,7 +121,7 @@ under the License.
         <site.version>2.0-beta-5</site.version>
         <surefire-report.version>2.1-SNAPSHOT</surefire-report.version>
         <surefire.version>2.2</surefire.version>
-        <retrotranslator.plugin.version>1.0-alpha-2-20070305.224908-2</retrotranslator.plugin.version>
+        <retrotranslator.plugin.version>1.0-alpha-2-SNAPSHOT</retrotranslator.plugin.version>
         <build-helper.plugin.version>1.0</build-helper.plugin.version>
         <eclipse.workspace.dir>${basedir}/${topDirectoryLocation}/../workspace</eclipse.workspace.dir>
         <clover.license.pathname>/set/clover/license/path/here</clover.license.pathname>
