@@ -27,10 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
 
-/**
- * Holds a list of TxnOp instance representing transactional
- * operations.
- */
+/** Holds a list of TxnOp instance representing transactional operations. */
 public class TxnBuffer
 {
     private final List<TxnOp> _ops = new ArrayList<TxnOp>();
@@ -42,6 +39,11 @@ public class TxnBuffer
 
     public void commit(StoreContext context) throws AMQException
     {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Committing " + _ops.size() + " ops to commit.:" + _ops.toArray());
+        }
+
         if (prepare(context))
         {
             for (TxnOp op : _ops)
@@ -64,7 +66,7 @@ public class TxnBuffer
             catch (Exception e)
             {
                 //compensate previously prepared ops
-                for(int j = 0; j < i; j++)
+                for (int j = 0; j < i; j++)
                 {
                     _ops.get(j).undoPrepare();
                 }

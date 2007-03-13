@@ -52,13 +52,13 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
         int channelId = evt.getChannelId();
 
-        if (_logger.isTraceEnabled())
-        {
-            _logger.trace("Rejecting:" + evt.getMethod().deliveryTag +
-                          ": Requeue:" + evt.getMethod().requeue +
-//                              ": Resend:" + evt.getMethod().resend +                          
-                          " on channel:" + channelId);
-        }
+//        if (_logger.isDebugEnabled())
+//        {
+//            _logger.debug("Rejecting:" + evt.getMethod().deliveryTag +
+//                          ": Requeue:" + evt.getMethod().requeue +
+////                              ": Resend:" + evt.getMethod().resend +
+//                          " on channel:" + channelId);
+//        }
 
         AMQChannel channel = session.getChannel(channelId);
 
@@ -67,9 +67,9 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             throw evt.getMethod().getChannelNotFoundException(channelId);
         }
 
-        if (_logger.isTraceEnabled())
+        if (_logger.isDebugEnabled())
         {
-            _logger.trace("Rejecting:" + evt.getMethod().deliveryTag +
+            _logger.debug("Rejecting:" + evt.getMethod().deliveryTag +
                           ": Requeue:" + evt.getMethod().requeue +
 //                              ": Resend:" + evt.getMethod().resend +
                           " on channel:" + channel.debugIdentity());

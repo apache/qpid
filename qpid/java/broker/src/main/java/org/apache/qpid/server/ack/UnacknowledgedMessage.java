@@ -39,7 +39,6 @@ public class UnacknowledgedMessage
         this.message = message;
         this.consumerTag = consumerTag;
         this.deliveryTag = deliveryTag;
-        message.incrementReference();
     }
 
     public String toString()
@@ -63,6 +62,7 @@ public class UnacknowledgedMessage
         {
             message.dequeue(storeContext, queue);
         }
+        //if the queue is null then the message is waiting to be acked, but has been removed.
         message.decrementReference(storeContext);
     }
 
