@@ -30,7 +30,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<ConnectionCloseBody>
+public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
 {
     private static final Logger _logger = Logger.getLogger(ConnectionCloseMethodHandler.class);
 
@@ -49,8 +49,11 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionCloseBody body = evt.getMethod();
-        _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
-                     body.replyText +  " for " + session);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
+                         body.replyText + " for " + session);
+        }
         try
         {
             session.closeSession();
@@ -62,7 +65,7 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
+        final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0);
         session.writeFrame(response);
     }
 }

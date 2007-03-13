@@ -51,10 +51,8 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
- * Wrapper for protocol session that provides type-safe access to session attributes.
- * <p/>
- * The underlying protocol session is still available but clients should not
- * use it to obtain session attributes.
+ * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
+ * session is still available but clients should not use it to obtain session attributes.
  */
 public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
@@ -78,27 +76,23 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected WriteFuture _lastWriteFuture;
 
     /**
-     * The handler from which this session was created and which is used to handle protocol events.
-     * We send failover events to the handler.
+     * The handler from which this session was created and which is used to handle protocol events. We send failover
+     * events to the handler.
      */
     protected final AMQProtocolHandler _protocolHandler;
 
-    /**
-     * Maps from the channel id to the AMQSession that it represents.
-     */
+    /** Maps from the channel id to the AMQSession that it represents. */
     protected ConcurrentMap _channelId2SessionMap = new ConcurrentHashMap();
 
     protected ConcurrentMap _closingChannels = new ConcurrentHashMap();
 
     /**
-     * Maps from a channel id to an unprocessed message. This is used to tie together the
-     * JmsDeliverBody (which arrives first) with the subsequent content header and content bodies.
+     * Maps from a channel id to an unprocessed message. This is used to tie together the JmsDeliverBody (which arrives
+     * first) with the subsequent content header and content bodies.
      */
     protected ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
 
-    /**
-     * Counter to ensure unique queue names
-     */
+    /** Counter to ensure unique queue names */
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
 
@@ -108,8 +102,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
 
     /**
-     * No-arg constructor for use by test subclass - has to initialise final vars
-     * NOT intended for use other then for test
+     * No-arg constructor for use by test subclass - has to initialise final vars NOT intended for use other then for
+     * test
      */
     public AMQProtocolSession()
     {
@@ -147,7 +141,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-        
+
         _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
     }
 
@@ -207,8 +201,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     /**
      * Store the SASL client currently being used for the authentication handshake
      *
-     * @param client if non-null, stores this in the session. if null clears any existing client
-     *               being stored
+     * @param client if non-null, stores this in the session. if null clears any existing client being stored
      */
     public void setSaslClient(SaslClient client)
     {
@@ -237,10 +230,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     }
 
     /**
-     * Callback invoked from the BasicDeliverMethodHandler when a message has been received.
-     * This is invoked on the MINA dispatcher thread.
+     * Callback invoked from the BasicDeliverMethodHandler when a message has been received. This is invoked on the MINA
+     * dispatcher thread.
      *
      * @param message
+     *
      * @throws AMQException if this was not expected
      */
     public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
@@ -295,8 +289,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     }
 
     /**
-     * Deliver a message to the appropriate session, removing the unprocessed message
-     * from our map
+     * Deliver a message to the appropriate session, removing the unprocessed message from our map
      *
      * @param channelId the channel id the message should be delivered to
      * @param msg       the message
@@ -309,8 +302,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     }
 
     /**
-     * Convenience method that writes a frame to the protocol session. Equivalent
-     * to calling getProtocolSession().write().
+     * Convenience method that writes a frame to the protocol session. Equivalent to calling
+     * getProtocolSession().write().
      *
      * @param frame the frame to write
      */
@@ -377,15 +370,14 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     }
 
     /**
-     * Called from the ChannelClose handler when a channel close frame is received.
-     * This method decides whether this is a response or an initiation. The latter
-     * case causes the AMQSession to be closed and an exception to be thrown if
+     * Called from the ChannelClose handler when a channel close frame is received. This method decides whether this is
+     * a response or an initiation. The latter case causes the AMQSession to be closed and an exception to be thrown if
      * appropriate.
      *
      * @param channelId the id of the channel (session)
-     * @return true if the client must respond to the server, i.e. if the server
-     *         initiated the channel close, false if the channel close is just the server
-     *         responding to the client's earlier request to close the channel.
+     *
+     * @return true if the client must respond to the server, i.e. if the server initiated the channel close, false if
+     *         the channel close is just the server responding to the client's earlier request to close the channel.
      */
     public boolean channelClosed(int channelId, AMQConstant code, String text) throws AMQException
     {
@@ -450,9 +442,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return new AMQShortString("tmp_" + localAddress + "_" + id);
     }
 
-    /**
-     * @param delay delay in seconds (not ms)
-     */
+    /** @param delay delay in seconds (not ms) */
     void initHeartbeats(int delay)
     {
         if (delay > 0)
@@ -475,7 +465,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         _protocolMajorVersion = versionMajor;
         _protocolMinorVersion = versionMinor;
-        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);        
+        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
     }
 
     public byte getProtocolMinorVersion()

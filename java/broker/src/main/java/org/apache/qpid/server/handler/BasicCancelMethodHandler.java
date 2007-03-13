@@ -29,9 +29,12 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
+import org.apache.log4j.Logger;
 
 public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicCancelBody>
 {
+    private static final Logger _log = Logger.getLogger(BasicCancelMethodHandler.class);
+
     private static final BasicCancelMethodHandler _instance = new BasicCancelMethodHandler();
 
     public static BasicCancelMethodHandler getInstance()
@@ -53,6 +56,12 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
         if (channel == null)
         {
             throw body.getChannelNotFoundException(evt.getChannelId());
+        }
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("BasicCancel: for:" + body.consumerTag +
+                       " nowait:" + body.nowait);
         }
 
         channel.unsubscribeConsumer(protocolSession, body.consumerTag);

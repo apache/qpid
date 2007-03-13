@@ -38,12 +38,10 @@ import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 
 /**
- * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up
- * the underlying connector, which currently always uses TCP/IP sockets. It creates the
- * "protocol handler" which deals with MINA protocol events.
- * <p/>
- * Could be extended in future to support different transport types by turning this into concrete class/interface
- * combo.
+ * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up the underlying
+ * connector, which currently always uses TCP/IP sockets. It creates the "protocol handler" which deals with MINA
+ * protocol events. <p/> Could be extended in future to support different transport types by turning this into concrete
+ * class/interface combo.
  */
 public class TransportConnection
 {
@@ -60,22 +58,6 @@ public class TransportConnection
     private static Logger _logger = Logger.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
-
-    static
-    {
-        _acceptor = new VmPipeAcceptor();
-
-        IoServiceConfig config = _acceptor.getDefaultConfig();
-
-        config.setThreadModel(ReadWriteThreadModel.getInstance());
-    }
-
-    public static ITransportConnection getInstance() throws AMQTransportConnectionException
-    {
-        AMQBrokerDetails details = new AMQBrokerDetails();
-        details.setTransport(BrokerDetails.TCP);
-        return getInstance(details);
-    }
 
     public static ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
     {
@@ -182,7 +164,14 @@ public class TransportConnection
 
     public static void createVMBroker(int port) throws AMQVMBrokerCreationException
     {
+        if (_acceptor == null)
+        {
+            _acceptor = new VmPipeAcceptor();
 
+            IoServiceConfig config = _acceptor.getDefaultConfig();
+
+            config.setThreadModel(ReadWriteThreadModel.getInstance());
+        }
 
         if (!_inVmPipeAddress.containsKey(port))
         {

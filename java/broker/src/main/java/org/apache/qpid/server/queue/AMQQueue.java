@@ -516,7 +516,7 @@ public class AMQQueue implements Managable, Comparable
         {
             if (_logger.isInfoEnabled())
             {
-                _logger.warn("Auto-deleteing queue:" + this);
+                _logger.info("Auto-deleteing queue:" + this);
             }
             autodelete();
             // we need to manually fire the event to the removed subscription (which was the last one left for this
@@ -624,7 +624,6 @@ public class AMQQueue implements Managable, Comparable
         try
         {
             msg.dequeue(storeContext, this);
-            msg.decrementReference(storeContext);
         }
         catch (MessageCleanupException e)
         {

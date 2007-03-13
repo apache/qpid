@@ -256,10 +256,10 @@ public class SubscriptionImpl implements Subscription
 
             // We don't need to add the message to the unacknowledgedMap as we don't need to know if the client
             // received the message. If it is lost in transit that is not important.
-            if (_acks)
-            {
-                channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
-            }
+//            if (_acks)
+//            {
+//                channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
+//            }
 
             if (_sendLock.get())
             {
@@ -273,41 +273,49 @@ public class SubscriptionImpl implements Subscription
     private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
             throws AMQException
     {
-        // if we do not need to wait for client acknowledgements
-        // we can decrement the reference count immediately.
+        try
+        { // if we do not need to wait for client acknowledgements
+            // we can decrement the reference count immediately.
 
-        // By doing this _before_ the send we ensure that it
-        // doesn't get sent if it can't be dequeued, preventing
-        // duplicate delivery on recovery.
+            // By doing this _before_ the send we ensure that it
+            // doesn't get sent if it can't be dequeued, preventing
+            // duplicate delivery on recovery.
 
-        // The send may of course still fail, in which case, as
-        // the message is unacked, it will be lost.
-        if (!_acks)
-        {
-            if (_logger.isDebugEnabled())
+            // The send may of course still fail, in which case, as
+            // the message is unacked, it will be lost.
+            if (!_acks)
             {
-                _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                }
+                queue.dequeue(storeContext, msg);
             }
-            queue.dequeue(storeContext, msg);
+
+            synchronized (channel)
+            {
+                long deliveryTag = channel.getNextDeliveryTag();
+
+                if (_sendLock.get())
+                {
+                    _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
+                }
+
+                if (_acks)
+                {
+                    channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                }
+
+                protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
+
+            }
         }
-        synchronized (channel)
+        finally
         {
-            long deliveryTag = channel.getNextDeliveryTag();
-
-            if (_sendLock.get())
-            {
-                _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
-            }
-
-            if (_acks)
-            {
-                channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
-                msg.decrementReference(storeContext);
-            }
-
-            protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
             //Only set delivered if it actually was writen successfully..
-            // using a try->finally would set it even if an error occured. 
+            // using a try->finally would set it even if an error occured.
+            // Is this what we want? 
+
             msg.setDeliveredToConsumer();
         }
     }
@@ -461,14 +469,25 @@ public class SubscriptionImpl implements Subscription
 
     public void close()
     {
+        boolean closed = false;
         synchronized (_sendLock)
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Setting SendLock true");
+                _logger.debug("Setting SendLock true:" + debugIdentity());
             }
 
-            _sendLock.set(true);
+            closed = _sendLock.getAndSet(true);
+        }
+
+        if (closed)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Called close() on a closed subscription");
+            }
+
+            return;
         }
 
         if (_logger.isInfoEnabled())
@@ -488,16 +507,36 @@ public class SubscriptionImpl implements Subscription
         //remove references in PDQ
         if (_messages != null)
         {
+            if (_logger.isInfoEnabled())
+            {
+                _logger.info("Clearing PDQ (" + debugIdentity() + "):" + this);
+            }
+
             _messages.clear();
         }
+    }
+
+    private void autoclose()
+    {
+        close();
 
         if (_autoClose && !_sentClose)
         {
-            _logger.info("Closing autoclose subscription:" + this);
+            _logger.info("Closing autoclose subscription (" + debugIdentity() + "):" + this);
+
             ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
             converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
-
             _sentClose = true;
+
+            //fixme JIRA do this better
+            try
+            {
+                channel.unsubscribeConsumer(protocolSession, consumerTag);
+            }
+            catch (AMQException e)
+            {
+                // Occurs if we cannot find the subscriber in the channel with protocolSession and consumerTag.
+            }
         }
     }
 
@@ -590,7 +629,7 @@ public class SubscriptionImpl implements Subscription
             {
                 if (_messages.isEmpty())
                 {
-                    close();
+                    autoclose();
                     return null;
                 }
             }
