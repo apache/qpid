@@ -169,12 +169,10 @@
                 <executions>
                     <execution>
                         <id>retro-client</id>
-                        <phase>package</phase>
                         <goals>
-                            <goal>translate</goal>
+                            <goal>translate-project</goal>
                         </goals>
                         <configuration>
-                            <!--<destdir>${project.build.directory}/retro-classes</destdir>-->
                             <destjar>${project.build.directory}/${project.build.finalName}-java14.jar</destjar>
                             <verify>${retrotranslator.verify}</verify>
                             <verifyClasspath>
@@ -184,41 +182,13 @@
                                 <element>${retrotranslator.1.4-sasl-path}</element>
                             </verifyClasspath>
                             <failonwarning>false</failonwarning>
-                            <jarfileset>
-                                <basedir>${project.build.directory}</basedir>>
-                                <includes>
-                                    <include>${project.build.finalName}.jar</include>
-                                </includes>
-                            </jarfileset>
+                            <classifier>java14</classifier>
+                            <attach>true</attach>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             
-            <!-- This identifies the backported java 1.4 jars and attaches them as jar (classified as java14) build artifacts. -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-artifacts</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>attach-artifact</goal>
-                        </goals>
-                        <configuration>
-                            <artifacts>
-                                <artifact>
-                                    <file>${project.build.directory}/${project.build.finalName}-java14.jar</file>
-                                    <type>jar</type>
-                                    <classifier>java14</classifier>
-                                </artifact>
-                            </artifacts>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
 
         <testResources>
