@@ -37,7 +37,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
     public:
         void testGeneral()
         {
-            AccumulatedAck ack;
+            AccumulatedAck ack(0);
             ack.clear();
             ack.update(3,3);
             ack.update(7,7);
@@ -63,8 +63,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
 
         void testCovers()
         {
-            AccumulatedAck ack;
-            ack.range = 5;
+            AccumulatedAck ack(5);
             ack.individual.push_back(7);
             ack.individual.push_back(9);
             
@@ -83,8 +82,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
 
         void testUpdateAndConsolidate()
         {
-            AccumulatedAck ack;
-            ack.clear();
+            AccumulatedAck ack(0);
             ack.update(1, 1);
             ack.update(3, 3);
             ack.update(10, 10);

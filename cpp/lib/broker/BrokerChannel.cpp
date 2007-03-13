@@ -60,6 +60,7 @@ Channel::Channel(
     prefetchCount(0),
     framesize(_framesize),
     tagGenerator("sgen"),
+    accumulatedAck(0),
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
     opened(id == 0),//channel 0 is automatically open, other must be explicitly opened
