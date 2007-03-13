@@ -90,6 +90,9 @@ EXTRA_DIST =		\
   topictest		\
   APRBaseTest.cpp
 
+CLEANFILES=qpidd.log
+DISTCLEANFILES=gen.mk
+
 include gen.mk
 
 abs_builddir = @abs_builddir@
