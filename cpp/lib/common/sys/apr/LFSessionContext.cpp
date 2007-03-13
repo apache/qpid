@@ -58,9 +58,15 @@ void LFSessionContext::read(){
     in.flip();
     if(initiated){
         AMQFrame frame;
-        while(frame.decode(in)){
-            if(debug) log("RECV", &frame);
-            handler->received(&frame);
+        try{
+            while(frame.decode(in)){
+                if(debug) log("RECV", &frame);
+                handler->received(&frame);
+            }
+        }catch(QpidError error){
+            std::cout << "Error [" << error.code << "] " << error.msg
+                      << " (" << error.location.file << ":" << error.location.line
+                      << ")" << std::endl;
         }
     }else{
         ProtocolInitiation protocolInit;
