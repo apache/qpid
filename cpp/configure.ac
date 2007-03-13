@@ -120,6 +120,22 @@ if test "$enable_APR" = yes; then
   USE_APR=1
 fi
 
+AC_ARG_ENABLE(valgrind,
+  [  --enable-valgrind   enable testing via valgrind, if available (recommended)
+     --disable-valgrind  do not use valgrind],
+  [case $enableval in
+     yes|no) enable_VALGRIND=$enableval;;
+     *) AC_MSG_ERROR([invalid valgrind enable/disable value: $enableval]);;
+    esac],
+  [enable_VALGRIND=no]  # no option given, default
+  )
+
+# We use valgrind for the tests.  See if it's available.
+# Check for it unconditionally, so we don't have to duplicate its
+# use of AC_SUBST([VALGRIND]).
+AC_CHECK_PROG([VALGRIND], [valgrind], [valgrind])
+test "$enable_VALGRIND" = no && VALGRIND=
+
 AC_CONFIG_FILES([
   Makefile
   gen/Makefile
