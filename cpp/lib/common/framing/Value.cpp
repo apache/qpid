@@ -85,6 +85,11 @@ std::auto_ptr<Value> Value::decode_value(Buffer& buffer)
       case 'F':
         value.reset(new FieldTableValue());
 	break;
+
+      //non-standard types, introduced in java client for JMS compliance
+      case 'x':
+        value.reset(new BinaryValue());
+	break;
       default:
         std::stringstream out;
         out << "Unknown field table value type: " << type;
