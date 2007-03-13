@@ -65,7 +65,7 @@ void LFSessionContext::read(){
             }
         }catch(QpidError error){
             std::cout << "Error [" << error.code << "] " << error.msg
-                      << " (" << error.location.file << ":" << error.location.line
+                      << " (" << error.loc.file << ":" << error.loc.line
                       << ")" << std::endl;
         }
     }else{
