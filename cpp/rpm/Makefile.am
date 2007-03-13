@@ -7,8 +7,8 @@
 SPEC=${top_srcdir}/qpidc.spec
 RPMOPTS=--define "_sourcedir ${abs_top_srcdir}" --define "_topdir ${abs_builddir}"
 
-clean:
-	rm -rf BUILD  RPMS  SOURCES  SPECS  SRPMS
+clean-local:
+	-rm -rf BUILD  RPMS  SOURCES  SPECS  SRPMS
 
 .PHONY: rpm srpm dist
 

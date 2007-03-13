@@ -1,3 +1,5 @@
+= Qpid C++ =
+
 Qpid C++ is a C++ implementation of the AMQP protcol  described at
 http://amqp.org/
 
