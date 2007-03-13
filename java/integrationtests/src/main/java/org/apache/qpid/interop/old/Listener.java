@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.interop;
+package org.apache.qpid.interop.old;
 
 import java.util.Random;
 
@@ -37,13 +37,13 @@ import org.apache.qpid.url.URLSyntaxException;
 
 /**
  * Listener implements the listening end of the Qpid interop tests. It is capable of being run as a standalone listener
- * that responds to the test messages send by the publishing end of the tests implemented by {@link Publisher}.
+ * that responds to the test messages send by the publishing end of the tests implemented by {@link org.apache.qpid.interop.old.Publisher}.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Count messages received on a topic. <td> {@link Publisher}
- * <tr><td> Send reports on messages received, when requested to. <td> {@link Publisher}
- * <tr><td> Shutdown, when requested to. <td> {@link Publisher}
+ * <tr><td> Count messages received on a topic. <td> {@link org.apache.qpid.interop.old.Publisher}
+ * <tr><td> Send reports on messages received, when requested to. <td> {@link org.apache.qpid.interop.old.Publisher}
+ * <tr><td> Shutdown, when requested to. <td> {@link org.apache.qpid.interop.old.Publisher}
  * <tr><td>
  *
  * @todo This doesn't implement the interop test spec yet. Its a port of the old topic tests but has been adapted with
