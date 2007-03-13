@@ -1,7 +1,11 @@
 AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
-EXTRA_DIST = README README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 etc/qpidd
+EXTRA_DIST = \
+  README README-dev DESIGN LICENSE.txt NOTICE.txt README.rhel3 \
+  etc/qpidd \
+  $(PACKAGE).spec \
+  $(PACKAGE).spec.in
 
 SUBDIRS = gen lib src docs/api docs/man rpm tests
 
@@ -9,7 +13,14 @@ SUBDIRS = gen lib src docs/api docs/man rpm tests
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
 
-.PHONY: rpm srpm
+# This cannot be done by AC_CONFIG_FILES, because automake's
+# make distcheck target does not like auto-generated files
+# being included in the distributed archive.
+qpidc.spec: %: %.in
+	sed 's/@''PACKAGE@/@PACKAGE@/;s/@''VERSION@/@VERSION@/' $< > $@-tmp
+	mv $@-tmp $@
+MAINTAINERCLEANFILES = $(PACKAGE).spec
 
+.PHONY: rpm srpm
 rpm srpm:
 	cd rpm && $(MAKE) $(MAKEFLAGS_AM) $@
