@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.interop;
+package org.apache.qpid.interop.old;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +33,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 /**
  * Publisher is the sending end of Qpid interop tests. It is capable of being run as a standalone publisher
- * that sends test messages to the listening end of the tests implemented by {@link Listener}.
+ * that sends test messages to the listening end of the tests implemented by {@link org.apache.qpid.interop.old.Listener}.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
