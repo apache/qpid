@@ -220,7 +220,12 @@ public class AMQQueueAlertTest extends TestCase
 
         assertTrue(_queueMBean.getQueueDepth() == totalSize);
         protocolSession.closeSession();
+
+        // Check the clear queue
+        _queueMBean.clearQueue();
+        assertTrue(_queueMBean.getQueueDepth() == 0);
     }
+
     protected AMQMessage message(final boolean immediate, long size) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
