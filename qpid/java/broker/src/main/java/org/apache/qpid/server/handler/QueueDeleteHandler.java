@@ -34,7 +34,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
 
-public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDeleteBody>
+public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
     private static final QueueDeleteHandler _instance = new QueueDeleteHandler();
 
@@ -56,7 +56,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
 
     }
 
-    public void methodReceived(AMQStateManager stateManager,  AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
@@ -65,9 +65,9 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
 
         QueueDeleteBody body = evt.getMethod();
         AMQQueue queue;
-        if(body.queue == null)
+        if (body.queue == null)
         {
-             AMQChannel channel = session.getChannel(evt.getChannelId());
+            AMQChannel channel = session.getChannel(evt.getChannelId());
 
             if (channel == null)
             {
@@ -82,35 +82,40 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
             queue = queueRegistry.getQueue(body.queue);
         }
 
-        if(queue == null)
+        if (queue == null)
         {
-            if(_failIfNotFound)
+            if (_failIfNotFound)
             {
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
             }
         }
         else
         {
-            if(body.ifEmpty && !queue.isEmpty())
+            if (body.ifEmpty && !queue.isEmpty())
             {
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is not empty." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is not empty.");
             }
-            else if(body.ifUnused && !queue.isUnused())
-            {                
+            else if (body.ifUnused && !queue.isUnused())
+            {
                 // TODO - Error code
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is still used." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is still used.");
 
             }
             else
             {
                 int purged = queue.delete(body.ifUnused, body.ifEmpty);
-                store.removeQueue(queue.getName());
+
+                if (queue.isDurable())
+                {
+                    store.removeQueue(queue.getName());
+                }
+                
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 session.writeFrame(QueueDeleteOkBody.createAMQFrame(evt.getChannelId(),
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    purged));	// messageCount
+                                                                    (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                    purged));    // messageCount
             }
         }
     }
