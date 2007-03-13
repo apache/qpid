@@ -13,11 +13,12 @@ clean-local:
 .PHONY: rpm srpm dist
 
 # Build source and binary RPMs.
-rpm: dist 
-	rpmbuild $(RPMOPTS) -ba $(SPEC)
+rpm: dist
+	rpmbuild $(RPMOPTS) $(RPMEXTRAOPTS) -ba $(SPEC)
+	rpmlint RPMS/*.rpm	
 
-# Source RPM only.
-srpm: dist 
+# Build source RPM only.
+srpm: dist
 	rpmbuild $(RPMOPTS) -bs $(SPEC)
 
 # Build source distribution and create required subdirs.
