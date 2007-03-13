@@ -378,6 +378,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 msg = getNextMessage();
                 count++;
             }
+            _totalMessageSize.set(0L);
         }
         _lock.unlock();
         return count;
