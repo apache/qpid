@@ -100,7 +100,7 @@ public class LocalTransactionalContext implements TransactionalContext
         // be added for every queue onto which the message is
         // enqueued. Finally a cleanup op will be added to decrement
         // the reference associated with the routing.
-        message.incrementReference();
+//        message.incrementReference();
         _postCommitDeliveryList.add(new DeliveryDetails(message, queue, deliverFirst));
         _messageDelivered = true;
         /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));

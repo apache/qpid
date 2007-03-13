@@ -383,6 +383,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return count;
     }
 
+    /**
+        This can only be used to clear the _messages queue. Any subscriber resend queue will not be purged. 
+     */
     private AMQMessage getNextMessage() throws AMQException
     {
         return getNextMessage(_messages, null);
@@ -392,13 +395,14 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     {
         AMQMessage message = messages.peek();
 
-        while (message != null && ((sub != null && sub.isBrowser()) || message.taken(sub)))
+        //while (we have a message) && (The subscriber is not a browser or we are clearing) && (Check message is taken.)
+        while (message != null && (sub != null && !sub.isBrowser() || sub == null) && message.taken(sub))
         {
             //remove the already taken message
             AMQMessage removed = messages.poll();
 
             assert removed == message;
-            
+
             _totalMessageSize.addAndGet(-message.getSize());
 
             if (_log.isTraceEnabled())
@@ -494,7 +498,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                 _extraMessages.decrementAndGet();
             }
-            else if (messageQueue == sub.getPreDeliveryQueue())
+            else if (messageQueue == sub.getPreDeliveryQueue() && !sub.isBrowser())
             {
                 if (_log.isInfoEnabled())
                 {
@@ -695,7 +699,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     if (_log.isDebugEnabled())
                     {
-                        _log.debug(debugIdentity() + " Message(" + msg.debugIdentity() +
+                        _log.debug(debugIdentity() + " Message(" + msg.toString() +
                                    ") has been taken so disregarding deliver request to Subscriber:" +
                                    System.identityHashCode(s));
                     }
