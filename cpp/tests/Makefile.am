@@ -10,6 +10,11 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 # Unit tests
+client_tests =		\
+  client_test		\
+  echo_service		\
+  topic_listener	\
+  topic_publisher
 
 broker_tests =		\
   AccumulatedAckTest	\
@@ -64,16 +69,26 @@ client_exe_tests =	\
 
 noinst_PROGRAMS = $(client_exe_tests)
 
+TESTS_ENVIRONMENT =			\
+  VALGRIND=$(VALGRIND)			\
+  abs_builddir='$(abs_builddir)'	\
+  PATH="$(abs_builddir)/../src$(PATH_SEPARATOR)$$PATH" \
+  abs_srcdir='$(abs_srcdir)'
+
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
 
 EXTRA_DIST =		\
   $(TESTS) 		\
-  topictest		\
-  qpid_test_plugin.h	\
-  MockConnectionInputHandler.h \
+  .vg-supp		\
+  InProcessBroker.h	\
   MockChannel.h		\
-  InProcessBroker.h
+  MockConnectionInputHandler.h \
+  qpid_test_plugin.h	\
+  setup			\
+  topicall		\
+  topictest		\
+  APRBaseTest.cpp
 
 include gen.mk
 
