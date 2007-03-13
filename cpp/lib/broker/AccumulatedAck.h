@@ -31,7 +31,8 @@ namespace qpid {
          * Keeps an accumulated record of acked messages (by delivery
          * tag).
          */
-        struct AccumulatedAck{
+        class AccumulatedAck {
+	public:
             /**
              * If not zero, then everything up to this value has been
              * acked.
@@ -43,6 +44,7 @@ namespace qpid {
              */
             std::list<u_int64_t> individual;
 
+            AccumulatedAck(u_int64_t r) : range(r) {}
             void update(u_int64_t firstTag, u_int64_t lastTag);
             void consolidate();
             void clear();
