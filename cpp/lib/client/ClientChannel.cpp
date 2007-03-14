@@ -149,7 +149,7 @@ void Channel::declareQueue(Queue& queue, bool synch){
         new QueueDeclareBody(
             version, 0, name, false/*passive*/, queue.isDurable(),
             queue.isExclusive(), queue.isAutoDelete(), !synch, args));        
-    if (synch) {
+    if(synch){
         if(queue.getName().length() == 0){
             QueueDeclareOkBody::shared_ptr response = 
                 shared_polymorphic_downcast<QueueDeclareOkBody>(
