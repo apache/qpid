@@ -10,12 +10,6 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 # Unit tests
-client_tests =		\
-  client_test		\
-  echo_service		\
-  topic_listener	\
-  topic_publisher
-
 broker_tests =		\
   AccumulatedAckTest	\
   BrokerChannelTest 	\
