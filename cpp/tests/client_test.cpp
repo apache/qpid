@@ -72,8 +72,9 @@ int main(int argc, char**)
  	
 	Connection con(verbose);
 	string host("localhost");	
-	con.open(host);
-	if (verbose) std::cout << "Opened connection." << std::endl;
+	con.open(host, 5672, "guest", "guest", "/test");
+	if (verbose)
+	    std::cout << "Opened connection." << std::endl;
 
         //Create and open a channel on the connection through which
         //most functionality is exposed

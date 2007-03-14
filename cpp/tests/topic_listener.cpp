@@ -104,7 +104,7 @@ int main(int argc, char** argv){
         try{
             cout << "topic_listener: Started." << endl;
             Connection connection(args.getTrace());
-            connection.open(args.getHost(), args.getPort());
+            connection.open(args.getHost(), args.getPort(), "guest", "guest", "/test");
             Channel channel(args.getTransactional(), args.getPrefetch());
             connection.openChannel(channel);
         
