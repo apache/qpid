@@ -151,6 +151,7 @@ under the License.
 
     </modules>
 
+
     <build>
         <resources>
             <resource>
@@ -582,6 +583,14 @@ under the License.
              </snapshots>
              </repository>
         -->
+       <repository>
+           <id>junit-toolkit.snapshots</id>
+           <name>JUnit Toolkit SNAPSHOT Repository</name>
+           <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
+           <snapshots>
+               <enabled>true</enabled>
+           </snapshots>
+       </repository>
     </repositories>
 
     <pluginRepositories>
@@ -602,6 +611,7 @@ under the License.
                 <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
+
     </pluginRepositories>
 
     <profiles>
