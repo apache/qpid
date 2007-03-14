@@ -103,18 +103,18 @@ AC_SUBST(CPPUNIT_CXXFLAGS)
 AC_ARG_ENABLE(apr,
 [  --enable-apr   use the Apache Portable Runtime library (default)
    --disable-apr  do not use the Apache Portable Runtime library],
-[case $enable_APR in
+[case $enableval in
    yes|no) ;;
-   *)      AC_MSG_ERROR([invalid APR enable/disable value: $enable_APR]) ;;
+   *)      AC_MSG_ERROR([invalid APR enable/disable value: $enableval]) ;;
   esac],
-[enable_APR=yes])
+[enableval=yes])
 
 APR_MINIMUM_VERSION=1.2.2
 AC_SUBST(APR_MINIMUM_VERSION)
 AC_SUBST(APR_CXXFLAGS)
 AC_SUBST(USE_APR)
 
-if test "$enable_APR" = yes; then
+if test "$enableval" = yes; then
   PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
   APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
   USE_APR=1
