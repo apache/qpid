@@ -9,8 +9,8 @@ Release:        3%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
-URL:            http://people.apache.org/dist/incubator/qpid/M1-incubating/cpp/
-Source0:        http://people.apache.org/dist/incubator/qpid/M1-incubating/cpp/%{name}-%{version}.tar.gz
+URL:            http://rhm.et.redhat.com/qpidc/
+Source0:        http://rhm.et.redhat.com/download/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtool
