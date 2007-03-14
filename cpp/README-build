@@ -11,7 +11,7 @@ Redhat Linux 3, will almost certainly require some packages to be upgraded.
 
 Qpid can be built using the gcc compiler:
 
- # gcc     <http://gcc.gnu.org/>            (3.2.3)
+ * gcc     <http://gcc.gnu.org/>            (3.2.3)
 
 Qpid is compiled against libraries:
 
@@ -108,6 +108,7 @@ Installing and building packages not as root:
  the path. For example:
 
  # export PATH=~/jdk1.5.0_11/bin:$PATH
+ # export JAVA_HOME=~/jdk1.5.0_11/
 
 == Obtaining a source code checkout from subversion. ==
 
