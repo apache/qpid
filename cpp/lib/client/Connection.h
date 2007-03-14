@@ -145,7 +145,7 @@ class Connection : public ConnectionForChannel
     void open(const std::string& host, int port = 5672, 
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
-              const std::string& virtualhost = "");
+              const std::string& virtualhost = "/");
 
     /**
      * Close the connection with optional error information for the peer.
