@@ -30,7 +30,8 @@ fi
 automake
 autoconf
 
-if [ "$1" = "-build" ] ; then
+
+if [ "$1" = "-build" -o "$1" = "--build" ] ; then
     shift
     ./configure "$@"
     make
