@@ -20,12 +20,22 @@
  */
 package org.apache.qpid.interop.testclient;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
-import javax.jms.Message;
-import javax.jms.MessageListener;
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
+import org.apache.qpid.util.PropertiesUtils;
 
 /**
  * Implements a test client as described in the interop testing spec
@@ -49,76 +59,26 @@ import org.apache.qpid.util.CommandLineParser;
  */
 public class TestClient implements MessageListener
 {
+    private static Logger log = Logger.getLogger(TestClient.class);
+
     /** Holds the URL of the broker to run the tests on. */
     String brokerUrl;
 
     /** Holds the virtual host to run the tests on. If <tt>null</tt>, then the default virtual host is used. */
     String virtualHost;
 
-    /** Defines an enumeration of the control message types and handling behaviour for each. */
-    protected enum ControlMessages implements MessageListener
-    {
-        INVITE_COMPULSORY
-        {
-            public void onMessage(Message message)
-            {
-                // Reply with the client name in an Enlist message.
-            }
-        },
-        INVITE
-        {
-            public void onMessage(Message message)
-            {
-                // Extract the test properties.
+    /** Holds all the test cases loaded from the classpath. */
+    Map<String, InteropClientTestCase> testCases = new HashMap<String, InteropClientTestCase>();
 
-                // Check if the requested test case is available.
-                {
-                    // Make the requested test case the current test case.
+    InteropClientTestCase currentTestCase;
 
-                    // Reply by accepting the invite in an Enlist message.
-                }
-            }
-        },
-        ASSIGN_ROLE
-        {
-            public void onMessage(Message message)
-            {
-                // Extract the test properties.
+    public static final String CONNECTION_PROPERTY = "connectionfactory.broker";
+    public static final String CONNECTION_NAME = "broker";
+    public static final String CLIENT_NAME = "java";
+    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/client/connection.properties";
 
-                // Reply by accepting the role in an Accept Role message.
-            }
-        },
-        START
-        {
-            public void onMessage(Message message)
-            {
-                // Start the current test case.
-
-                // Generate the report from the test case and reply with it as a Report message.
-            }
-        },
-        STATUS_REQUEST
-        {
-            public void onMessage(Message message)
-            {
-                // Generate the report from the test case and reply with it as a Report message.
-            }
-        },
-        UNKNOWN
-        {
-            public void onMessage(Message message)
-            {
-                // Log a warning about this but otherwise ignore it.
-            }
-        };
-
-        /**
-         * Handles control messages appropriately depending on the message type.
-         *
-         * @param message The incoming message to handle.
-         */
-        public abstract void onMessage(Message message);
-    }
+    private MessageProducer producer;
+    private Session session;
 
     public TestClient(String brokerUrl, String virtualHost)
     {
@@ -172,20 +132,106 @@ public class TestClient implements MessageListener
 
         // Create a test client and start it running.
         TestClient client = new TestClient(brokerUrl, virtualHost);
-        client.start();
+
+        try
+        {
+            client.start();
+        }
+        catch (Exception e)
+        {
+            log.error("The test client was unable to start.", e);
+            System.exit(1);
+        }
     }
 
-    private void start()
+    private void start() throws JMSException
     {
         // Use a class path scanner to find all the interop test case implementations.
+        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
+            ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
 
         // Create all the test case implementations and index them by the test names.
+        for (Class<? extends InteropClientTestCase> nextClass : testCaseClasses)
+        {
+            try
+            {
+                InteropClientTestCase testCase = nextClass.newInstance();
+                testCases.put(testCase.getName(), testCase);
+            }
+            catch (InstantiationException e)
+            {
+                log.warn("Could not instantiate test case class: " + nextClass.getName(), e);
+                // Ignored.
+            }
+            catch (IllegalAccessException e)
+            {
+                log.warn("Could not instantiate test case class due to illegal access: " + nextClass.getName(), e);
+                // Ignored.
+            }
+        }
 
         // Open a connection to communicate with the coordinator on.
+        Connection connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
+
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Set this up to listen for control messages.
+        MessageConsumer consumer = session.createConsumer(session.createTopic("iop.control." + CLIENT_NAME));
+        consumer.setMessageListener(this);
 
         // Create a producer to send replies with.
+        producer = session.createProducer(null);
+
+        // Start listening for incoming control messages.
+        connection.start();
+    }
+
+    /**
+     * Establishes a JMS connection using a properties file and qpids built in JNDI implementation. This is a simple
+     * convenience method for code that does anticipate handling connection failures. All exceptions that indicate
+     * that the connection has failed, are wrapped as rutime exceptions, preumably handled by a top level failure
+     * handler.
+     *
+     * @todo Make username/password configurable. Allow multiple urls for fail over. Once it feels right, move it
+     *       to a Utils library class.
+     *
+     * @param connectionPropsResource The name of the connection properties file.
+     * @param brokerUrl               The broker url to connect to, <tt>null</tt> to use the default from the properties.
+     * @param virtualHost             The virtual host to connectio to, <tt>null</tt> to use the default.
+     *
+     * @return A JMS conneciton.
+     */
+    private static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
+    {
+        try
+        {
+            Properties connectionProps =
+                PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
+                                                  connectionPropsResource));
+
+            String connectionString =
+                "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
+            connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
+
+            Context ctx = new InitialContext(connectionProps);
+
+            ConnectionFactory cf = (ConnectionFactory) ctx.lookup(CONNECTION_NAME);
+            Connection connection = cf.createConnection();
+
+            return connection;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (NamingException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (JMSException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -195,19 +241,90 @@ public class TestClient implements MessageListener
      */
     public void onMessage(Message message)
     {
-        // Delegate the message handling to the message type specific handler.
-        extractMessageType(message).onMessage(message);
-    }
+        try
+        {
+            String controlType = message.getStringProperty("CONTROL_TYPE");
+            String testName = message.getStringProperty("TEST_NAME");
 
-    /**
-     * Determines the control messsage type of incoming messages.
-     *
-     * @param message The message to determine the type of.
-     *
-     * @return The control message type of the message.
-     */
-    protected ControlMessages extractMessageType(Message message)
-    {
-        return null;
+            // Check if the message is a test invite.
+            if ("INVITE".equals(controlType))
+            {
+                String testCaseName = message.getStringProperty("TEST_NAME");
+
+                // Flag used to indicate that an enlist should be sent. Only enlist to compulsory invites or invites
+                // for which test cases exist.
+                boolean enlist = false;
+
+                if (testCaseName != null)
+                {
+                    // Check if the requested test case is available.
+                    InteropClientTestCase testCase = testCases.get(testCaseName);
+
+                    if (testCase != null)
+                    {
+                        // Make the requested test case the current test case.
+                        currentTestCase = testCase;
+                        enlist = true;
+                    }
+                }
+                else
+                {
+                    enlist = true;
+                }
+
+                if (enlist)
+                {
+                    // Reply with the client name in an Enlist message.
+                    Message enlistMessage = session.createMessage();
+                    enlistMessage.setStringProperty("CONTROL_TYPE", "ENLIST");
+                    enlistMessage.setStringProperty("CLIENT_NAME", CLIENT_NAME);
+                    enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + CLIENT_NAME);
+                    enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                    producer.send(message.getJMSReplyTo(), enlistMessage);
+                }
+            }
+            else if ("ASSIGN_ROLE".equals(controlType))
+            {
+                // Assign the role to the current test case.
+                String roleName = message.getStringProperty("");
+                InteropClientTestCase.Roles role = Enum.valueOf(InteropClientTestCase.Roles.class, roleName);
+
+                currentTestCase.assignRole(role, message);
+
+                // Reply by accepting the role in an Accept Role message.
+                Message acceptRoleMessage = session.createMessage();
+                acceptRoleMessage.setStringProperty("CONTROL_TYPE", "ACCEPT_ROLE");
+                acceptRoleMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                producer.send(message.getJMSReplyTo(), acceptRoleMessage);
+            }
+            else if ("START".equals(controlType) || "STATUS_REQUEST".equals(controlType))
+            {
+                if ("START".equals(controlType))
+                {
+                    // Start the current test case.
+                    currentTestCase.start();
+                }
+
+                // Generate the report from the test case and reply with it as a Report message.
+                Message reportMessage = currentTestCase.getReport(session);
+                reportMessage.setStringProperty("CONTROL_TYPE", "REPORT");
+                reportMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                producer.send(message.getJMSReplyTo(), reportMessage);
+            }
+            else
+            {
+                // Log a warning about this but otherwise ignore it.
+                log.warn("Got an unknown control message: " + message);
+            }
+        }
+        catch (JMSException e)
+        {
+            // Log a warning about this, but otherwise ignore it.
+            log.warn("A JMSException occurred whilst handling a message.");
+            log.debug("Got JMSException whilst handling message: " + message, e);
+        }
     }
 }

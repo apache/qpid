@@ -67,8 +67,8 @@ public abstract class CoordinatingTestCase extends TestCase
      * @param allClients     The list of all possible test clients that may accept the invitation.
      * @param testProperties The test case definition.
      */
-    public CoordinatingTestCase(TestClientDetails sender, TestClientDetails receiver,
-                                Collection<TestClientDetails> allClients, Properties testProperties)
+    public void TestCase(TestClientDetails sender, TestClientDetails receiver, Collection<TestClientDetails> allClients,
+                         Properties testProperties)
     { }
 
     /**
@@ -83,8 +83,7 @@ public abstract class CoordinatingTestCase extends TestCase
      *
      * @return The test results from the senders and receivers.
      */
-    protected Object[] sequenceTest(TestClientDetails sender, TestClientDetails receiver,
-                                    Collection<TestClientDetails> allParticipatingClients, Properties testProperties)
+    protected Object[] sequenceTest(TestClientDetails sender, TestClientDetails receiver, Properties testProperties)
     {
         // Check if the sender and recevier did not accept the invite to this test.
         {
