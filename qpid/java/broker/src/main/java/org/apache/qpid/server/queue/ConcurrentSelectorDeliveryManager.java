@@ -527,7 +527,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         _lock.lock();
         for (AMQMessage msg : movedMessageList)
         {
-            addMessageToQueue(msg, true);
+            addMessageToQueue(msg, false);
         }
 
         // enqueue on the pre delivery queues
