@@ -116,7 +116,7 @@ public class TxAck implements TxnOp
         for (UnacknowledgedMessage msg : _unacked)
         {
             msg.clearTransientMessageData();
-            msg.message.incrementReference();
+            msg.message.takeReference();
         }
     }
 
