@@ -80,7 +80,8 @@ public class TestReferenceCounting extends TestCase
         AMQMessage message = new AMQMessage(_store.getNewMessageId(), info,
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
-        message.incrementReference();
+        message = message.takeReference();
+
         // we call routing complete to set up the handle
         message.routingComplete(_store, _storeContext, new MessageHandleFactory());
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
@@ -128,11 +129,12 @@ public class TestReferenceCounting extends TestCase
                                             info,
                                             new NonTransactionalContext(_store, _storeContext, null, null, null),
                                             createPersistentContentHeader());
-        message.incrementReference();
+        
+        message = message.takeReference();
         // we call routing complete to set up the handle
         message.routingComplete(_store, _storeContext, new MessageHandleFactory());
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
-        message.incrementReference();
+        message = message.takeReference();
         message.decrementReference(_storeContext);
         assertTrue(_store.getMessageMetaDataMap().size() == 1);
     }

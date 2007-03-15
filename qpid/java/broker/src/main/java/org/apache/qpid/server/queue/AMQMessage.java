@@ -355,15 +355,22 @@ public class AMQMessage
         return _messageId;
     }
 
+    /**
+     * Creates a long-lived reference to this message, and increments the count of such references, as an atomic operation.
+     */
+    public AMQMessage takeReference()
+    {
+        _referenceCount.incrementAndGet();
+	return this;
+    }
+
     /** Threadsafe. Increment the reference count on the message. */
-    public void incrementReference()
+    protected void incrementReference()
     {
         _referenceCount.incrementAndGet();
         if (_log.isDebugEnabled())
         {
-
             _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-
         }
     }
 
@@ -377,11 +384,13 @@ public class AMQMessage
      */
     public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
+        int count = _referenceCount.decrementAndGet();
+
         // note that the operation of decrementing the reference count and then removing the message does not
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
         // the message has been passed to all queues. i.e. we are
         // not relying on the all the increments having taken place before the delivery manager decrements.
-        if (_referenceCount.decrementAndGet() == 0)
+        if (count == 0)
         {
             try
             {
@@ -408,13 +417,13 @@ public class AMQMessage
         {
             if (_log.isDebugEnabled())
             {
-                _log.debug("Decremented ref count is now " + _referenceCount + " for message id " + debugIdentity() + "\n" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 5));
-                if (_referenceCount.get() < 0)
+                _log.debug("Decremented ref count is now " + count + " for message id " + debugIdentity() + "\n" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 5));
+                if (count < 0)
                 {
                     Thread.dumpStack();
                 }
             }
-            if (_referenceCount.get() < 0)
+            if (count < 0)
             {
                 throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.");
             }

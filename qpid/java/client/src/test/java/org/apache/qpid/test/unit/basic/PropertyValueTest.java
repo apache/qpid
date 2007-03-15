@@ -117,6 +117,8 @@ public class PropertyValueTest extends TestCase implements MessageListener
                 waitFor(count);
                 check();
                 _logger.info("Completed without failure");
+
+	        Thread.sleep(10);
                 _connection.close();
 
                 _logger.error("End Run Number:" + (run - 1));
