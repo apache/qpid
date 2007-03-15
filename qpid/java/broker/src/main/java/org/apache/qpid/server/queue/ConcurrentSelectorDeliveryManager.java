@@ -208,13 +208,59 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-
+    /**
+     * Returns all the messages in the Queue
+     * @return List of messages
+     */
     public List<AMQMessage> getMessages()
     {
         _lock.lock();
-        ArrayList<AMQMessage> list = new ArrayList<AMQMessage>(_messages);
+        List<AMQMessage> list = new ArrayList<AMQMessage>();
+
+        for (AMQMessage message : _messages)
+        {
+            list.add(message);
+        }
         _lock.unlock();
+        
         return list;
+    }
+
+    /**
+     * Returns messages within the range of given messageIds
+     * @param fromMessageId
+     * @param toMessageId
+     * @return
+     */
+    public List<AMQMessage> getMessages(long fromMessageId, long toMessageId)
+    {
+        if (fromMessageId <= 0 || toMessageId <= 0)
+        {
+            return null;
+        }
+
+        long maxMessageCount = toMessageId - fromMessageId + 1;
+
+        _lock.lock();
+        
+        List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
+
+        for (AMQMessage message : _messages)
+        {
+            long msgId = message.getMessageId();
+            if (msgId >= fromMessageId && msgId <= toMessageId)
+            {
+                foundMessagesList.add(message);
+            }
+            // break if the no of messages are found
+            if (foundMessagesList.size() == maxMessageCount)
+            {
+                break;
+            }
+        }
+        _lock.unlock();
+
+        return foundMessagesList;
     }
 
     public void populatePreDeliveryQueue(Subscription subscription)
@@ -294,7 +340,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      */
     public void startMovingMessages()
     {
-        _lock.lock();
         _movingMessages.set(true);
     }
 
