@@ -34,6 +34,7 @@ import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -44,6 +45,7 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.commons.configuration.Configuration;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
@@ -192,6 +194,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         }
 
+        Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
+        if (virtualHostDefaultQueueConfiguration != null)
+        {
+            Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
+        }
+        
         return queue;
     }
 }
