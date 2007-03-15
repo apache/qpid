@@ -106,6 +106,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>uk.co.thebadgerset</groupId>
+            <artifactId>junit-toolkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- These need to be included at compile time only, for the retrotranslator verification to find them. -->
         <dependency>
             <groupId>net.sf.retrotranslator</groupId>
