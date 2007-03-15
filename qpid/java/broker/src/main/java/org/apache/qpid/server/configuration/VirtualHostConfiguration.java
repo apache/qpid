@@ -43,7 +43,7 @@ public class VirtualHostConfiguration
 {
     private static final Logger _logger = Logger.getLogger(VirtualHostConfiguration.class);
 
-    XMLConfiguration _config;
+    private static XMLConfiguration _config;
 
     private static final String VIRTUALHOST_PROPERTY_BASE = "virtualhost.";
 
@@ -126,6 +126,27 @@ public class VirtualHostConfiguration
             }
 
         }
+    }
+
+    public static CompositeConfiguration getDefaultQueueConfiguration(AMQQueue queue)
+    {
+        CompositeConfiguration queueConfiguration = null;
+        if (_config == null)
+            return null;
+
+        Configuration vHostConfiguration = _config.subset(VIRTUALHOST_PROPERTY_BASE + queue.getVirtualHost().getName());
+
+        if (vHostConfiguration == null)
+            return null;
+
+        Configuration defaultQueueConfiguration = vHostConfiguration.subset("queues");
+        if (defaultQueueConfiguration != null)
+        {
+            queueConfiguration = new CompositeConfiguration();
+            queueConfiguration.addConfiguration(defaultQueueConfiguration);
+        }
+
+        return queueConfiguration;
     }
 
     private void configureQueue(VirtualHost virtualHost, String queueNameString, Configuration configuration) throws AMQException, ConfigurationException
