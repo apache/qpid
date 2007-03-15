@@ -22,6 +22,10 @@ package org.apache.qpid.util;
 
 import java.io.File;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
 
 /**
  * An ClasspathScanner scans the classpath for classes that implement an interface or extend a base class and have names
@@ -38,10 +42,12 @@ import java.util.*;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Find all classes matching type and name pattern on the classpath.
  * </table>
+ *
+ * @todo Add logic to scan jars as well as directories.
  */
 public class ClasspathScanner
 {
-    static final int SUFFIX_LENGTH = ".class".length();
+    private static final Logger log = Logger.getLogger(ClasspathScanner.class);
 
     /**
      * Scans the classpath and returns all classes that extend a specified class and match a specified name.
@@ -49,58 +55,124 @@ public class ClasspathScanner
      * that have a default constructor).
      *
      * @param matchingClass  The class or interface to match.
-     * @param matchingRegexp The reular expression to match against the class name.
+     * @param matchingRegexp The regular expression to match against the class name.
      * @param beanOnly       Flag to indicate that onyl classes with default constructors should be matched.
      *
      * @return All the classes that match this collector.
      */
-    public static Collection<Class<?>> getMatches(Class<?> matchingClass, String matchingRegexp, boolean beanOnly)
+    public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass, String matchingRegexp,
+                                                                boolean beanOnly)
     {
-        String classPath = System.getProperty("java.class.path");
-        Map result = new HashMap();
+        // Build a compiled regular expression from the pattern to match.
+        Pattern matchPattern = Pattern.compile(matchingRegexp);
 
+        String classPath = System.getProperty("java.class.path");
+        Map<String, Class<? extends T>> result = new HashMap<String, Class<? extends T>>();
+
+        // Find matching classes starting from all roots in the classpath.
         for (String path : splitClassPath(classPath))
         {
-            gatherFiles(new File(path), "", result);
+            gatherFiles(new File(path), "", result, matchPattern, matchingClass);
         }
 
         return result.values();
     }
 
-    private static void gatherFiles(File classRoot, String classFileName, Map result)
+    /**
+     * Finds all matching classes rooted at a given location in the file system. If location is a directory it
+     * is recursively examined.
+     *
+     * @param classRoot     The root of the current point in the file system being examined.
+     * @param classFileName The name of the current file or directory to examine.
+     * @param result        The accumulated mapping from class names to classes that match the scan.
+     *
+     * @todo Recursion ok as file system depth is not likely to exhaust the stack. Might be better to replace with
+     *       iteration.
+     */
+    private static <T> void gatherFiles(File classRoot, String classFileName, Map<String, Class<? extends T>> result,
+                                        Pattern matchPattern, Class<? extends T> matchClass)
     {
         File thisRoot = new File(classRoot, classFileName);
 
+        // If the current location is a file, check if it is a matching class.
         if (thisRoot.isFile())
         {
-            if (matchesName(classFileName))
+            // Check that the file has a matching name.
+            if (matchesName(classFileName, matchPattern))
             {
                 String className = classNameFromFile(classFileName);
-                result.put(className, className);
+
+                // Check that the class has matching type.
+                try
+                {
+                    Class<?> candidateClass = Class.forName(className);
+
+                    Class matchedClass = matchesClass(candidateClass, matchClass);
+
+                    if (matchedClass != null)
+                    {
+                        result.put(className, matchedClass);
+                    }
+                }
+                catch (ClassNotFoundException e)
+                {
+                    // Ignore this. The matching class could not be loaded.
+                    log.debug("Got ClassNotFoundException, ignoring.", e);
+                }
             }
 
             return;
         }
-
-        String[] contents = thisRoot.list();
-
-        if (contents != null)
+        // Otherwise the current location is a directory, so examine all of its contents.
+        else
         {
-            for (String content : contents)
+            String[] contents = thisRoot.list();
+
+            if (contents != null)
             {
-                gatherFiles(classRoot, classFileName + File.separatorChar + content, result);
+                for (String content : contents)
+                {
+                    gatherFiles(classRoot, classFileName + File.separatorChar + content, result, matchPattern, matchClass);
+                }
             }
         }
     }
 
-    private static boolean matchesName(String classFileName)
+    /**
+     * Checks if the specified class file name corresponds to a class with name matching the specified regular expression.
+     *
+     * @param classFileName The class file name.
+     * @param matchPattern  The regular expression pattern to match.
+     *
+     * @return <tt>true</tt> if the class name matches, <tt>false</tt> otherwise.
+     */
+    private static boolean matchesName(String classFileName, Pattern matchPattern)
     {
-        return classFileName.endsWith(".class") && (classFileName.indexOf('$') < 0) && (classFileName.indexOf("Test") > 0);
+        String className = classNameFromFile(classFileName);
+        Matcher matcher = matchPattern.matcher(className);
+
+        return matcher.matches();
     }
 
-    private static boolean matchesInterface()
+    /**
+     * Checks if the specified class to compare extends the base class being scanned for.
+     *
+     * @param matchingClass The base class to match against.
+     * @param toMatch       The class to match against the base class.
+     *
+     * @return The class to check, cast as an instance of the class to match if the class extends the base class, or
+     *         <tt>null</tt> otherwise.
+     */
+    private static <T> Class<? extends T> matchesClass(Class<?> matchingClass, Class<? extends T> toMatch)
     {
-        return false;
+        try
+        {
+            return matchingClass.asSubclass(toMatch);
+        }
+        catch (ClassCastException e)
+        {
+            return null;
+        }
     }
 
     /**
@@ -125,17 +197,22 @@ public class ClasspathScanner
     }
 
     /**
-     * convert /a/b.class to a.b
+     * Translates from the filename of a class to its fully qualified classname. Files are named using forward slash
+     * seperators and end in ".class", whereas fully qualified class names use "." sperators and no ".class" ending.
      *
-     * @param classFileName
+     * @param classFileName The filename of the class to translate to a class name.
      *
-     * @return
+     * @return The fully qualified class name.
      */
     private static String classNameFromFile(String classFileName)
     {
+        // Remove the .class ending.
+        String s = classFileName.substring(0, classFileName.length() - ".class".length());
 
-        String s = classFileName.substring(0, classFileName.length() - SUFFIX_LENGTH);
+        // Turn / seperators in . seperators.
         String s2 = s.replace(File.separatorChar, '.');
+
+        // Knock off any leading . caused by a leading /.
         if (s2.startsWith("."))
         {
             return s2.substring(1);
