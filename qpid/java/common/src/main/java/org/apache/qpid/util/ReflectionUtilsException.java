@@ -18,20 +18,27 @@
  * under the License.
  *
  */
-package org.apache.qpid.interop.coordinator;
+package org.apache.qpid.util;
 
 /**
- * <p><table id="crc"><caption>CRC Card</caption>
+ * Wraps a checked exception that occurs when {@link ReflectionUtils} encounters checked exceptions using standard
+ * Java reflection methods.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Wrap a checked reflection exception.
  * </table>
  */
-public class TestClientDetails
+public class ReflectionUtilsException extends RuntimeException
 {
-    /** The test clients name. */
-    public String clientName;
-
-    /* The test clients unqiue sequence number. Not currently used. */
-
-    /** The routing key of the test clients control topic. */
-    public String privateControlKey;
+    /**
+     * Creates a runtime reflection exception, from a checked one.
+     *
+     * @param message The message.
+     * @param cause   The causing exception.
+     */
+    public ReflectionUtilsException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }
