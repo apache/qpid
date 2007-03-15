@@ -97,9 +97,12 @@ class Peer:
       self.fatal()
 
   def close(self, reason):
+    # We must close the delegate first because closing channels
+    # may wake up waiting threads and we don't want them to see
+    # the delegate as open.
+    self.delegate.close(reason)
     for ch in self.channels.values():
       ch.close(reason)
-    self.delegate.close(reason)
 
   def writer(self):
     try:
