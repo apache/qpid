@@ -30,22 +30,22 @@ namespace qpid {
             static const std::string maxCountKey;
             static const std::string maxSizeKey;
 
-            const u_int32_t maxCount;
-            const u_int64_t maxSize;
-            u_int32_t count;
-            u_int64_t size;
+            const uint32_t maxCount;
+            const uint64_t maxSize;
+            uint32_t count;
+            uint64_t size;
             
             static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
 
         public:
-            QueuePolicy(u_int32_t maxCount, u_int64_t maxSize);
+            QueuePolicy(uint32_t maxCount, uint64_t maxSize);
             QueuePolicy(const qpid::framing::FieldTable& settings);
-            void enqueued(u_int64_t size);
-            void dequeued(u_int64_t size);
+            void enqueued(uint64_t size);
+            void dequeued(uint64_t size);
             void update(qpid::framing::FieldTable& settings);
             bool limitExceeded();
-            u_int32_t getMaxCount() const { return maxCount; }
-            u_int64_t getMaxSize() const { return maxSize; }           
+            uint32_t getMaxCount() const { return maxCount; }
+            uint64_t getMaxSize() const { return maxSize; }           
         };
     }
 }

@@ -25,7 +25,7 @@ namespace framing {
 
 ProtocolInitiation::ProtocolInitiation(){}
 
-ProtocolInitiation::ProtocolInitiation(u_int8_t _major, u_int8_t _minor) : version(_major, _minor) {}
+ProtocolInitiation::ProtocolInitiation(uint8_t _major, uint8_t _minor) : version(_major, _minor) {}
 
 ProtocolInitiation::ProtocolInitiation(ProtocolVersion p) : version(p) {}
 

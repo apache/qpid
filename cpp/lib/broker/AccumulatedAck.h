@@ -37,18 +37,18 @@ namespace qpid {
              * If not zero, then everything up to this value has been
              * acked.
              */
-            u_int64_t range;
+            uint64_t range;
             /**
              * List of individually acked messages that are not
              * included in the range marked by 'range'.
              */
-            std::list<u_int64_t> individual;
+            std::list<uint64_t> individual;
 
-            AccumulatedAck(u_int64_t r) : range(r) {}
-            void update(u_int64_t firstTag, u_int64_t lastTag);
+            AccumulatedAck(uint64_t r) : range(r) {}
+            void update(uint64_t firstTag, uint64_t lastTag);
             void consolidate();
             void clear();
-            bool covers(u_int64_t tag) const;
+            bool covers(uint64_t tag) const;
         };
     }
 }

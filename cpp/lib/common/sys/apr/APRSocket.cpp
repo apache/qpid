@@ -63,7 +63,7 @@ bool APRSocket::isOpen() const {
     return !closed;
 }
 
-u_int8_t APRSocket::read(){
+uint8_t APRSocket::read(){
     char data[1];
     apr_size_t bytes = 1;
     apr_status_t s = apr_socket_recv(socket, data, &bytes);

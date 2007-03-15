@@ -70,7 +70,7 @@ class QueueTest : public CppUnit::TestCase
         queue->consume(&c1);
         queue->consume(&c2);
 
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(2), queue->getConsumerCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(2), queue->getConsumerCount());
         
         //Test basic delivery:
         Message::shared_ptr msg1 = message("e", "A");
@@ -88,9 +88,9 @@ class QueueTest : public CppUnit::TestCase
     
         //Test cancellation:
         queue->cancel(&c1);
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(1), queue->getConsumerCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(1), queue->getConsumerCount());
         queue->cancel(&c2);
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getConsumerCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getConsumerCount());
     }
 
     void testBinding(){
@@ -138,25 +138,25 @@ class QueueTest : public CppUnit::TestCase
         queue->deliver(msg2);
         queue->deliver(msg3);
 
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(3), queue->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(3), queue->getMessageCount());
         
         received = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(2), queue->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(2), queue->getMessageCount());
 
         received = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg2.get(), received.get());
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(1), queue->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(1), queue->getMessageCount());
 
         TestConsumer consumer; 
         queue->consume(&consumer);
         queue->dispatch();
         CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer.last.get());
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
 
         received = queue->dequeue();
         CPPUNIT_ASSERT(!received);
-        CPPUNIT_ASSERT_EQUAL(u_int32_t(0), queue->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
         
     }
 };

@@ -41,7 +41,7 @@ namespace client {
 const std::string Connection::OK("OK");
 
 Connection::Connection(
-    bool _debug, u_int32_t _max_frame_size,
+    bool _debug, uint32_t _max_frame_size,
     framing::ProtocolVersion _version
 ) : channelIdCounter(0), version(_version), max_frame_size(_max_frame_size),
     defaultConnector(version, _debug, _max_frame_size),

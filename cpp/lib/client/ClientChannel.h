@@ -65,7 +65,7 @@ class Channel : public framing::ChannelAdapter
     sys::Thread basicDispatcher;
     ResponseHandler responses;
 
-    u_int16_t prefetch;
+    uint16_t prefetch;
     const bool transactional;
     framing::ProtocolVersion version;
 
@@ -122,7 +122,7 @@ class Channel : public framing::ChannelAdapter
      * messages the channel is willing to have sent to it
      * asynchronously
      */
-    Channel(bool transactional = false, u_int16_t prefetch = 500);
+    Channel(bool transactional = false, uint16_t prefetch = 500);
     ~Channel();
 
     /**
@@ -221,9 +221,9 @@ class Channel : public framing::ChannelAdapter
     /**
      * Change the prefetch in use.
      */
-    void setPrefetch(u_int16_t prefetch);
+    void setPrefetch(uint16_t prefetch);
 
-    u_int16_t getPrefetch() { return prefetch; }
+    uint16_t getPrefetch() { return prefetch; }
 
     /**
      * Start message dispatching on a new thread

@@ -31,18 +31,18 @@ class FieldTable;
 
 class Buffer
 {
-    const u_int32_t size;
+    const uint32_t size;
     const bool owner;//indicates whether the data is owned by this instance
     char* data;
-    u_int32_t position;
-    u_int32_t limit;
-    u_int32_t r_position;
-    u_int32_t r_limit;
+    uint32_t position;
+    uint32_t limit;
+    uint32_t r_position;
+    uint32_t r_limit;
 
 public:
 
-    Buffer(u_int32_t size);
-    Buffer(char* data, u_int32_t size);
+    Buffer(uint32_t size);
+    Buffer(char* data, uint32_t size);
     ~Buffer();
 
     void flip();
@@ -50,19 +50,19 @@ public:
     void compact();
     void record();
     void restore();
-    u_int32_t available();
+    uint32_t available();
     char* start();
-    void move(u_int32_t bytes);
+    void move(uint32_t bytes);
     
-    void putOctet(u_int8_t i);
-    void putShort(u_int16_t i);
-    void putLong(u_int32_t i);
-    void putLongLong(u_int64_t i);
+    void putOctet(uint8_t i);
+    void putShort(uint16_t i);
+    void putLong(uint32_t i);
+    void putLongLong(uint64_t i);
 
-    u_int8_t getOctet();
-    u_int16_t getShort(); 
-    u_int32_t getLong();
-    u_int64_t getLongLong();
+    uint8_t getOctet();
+    uint16_t getShort(); 
+    uint32_t getLong();
+    uint64_t getLongLong();
 
     void putShortString(const string& s);
     void putLongString(const string& s);
@@ -76,7 +76,7 @@ public:
     void getContent(Content& c);
 
     void putRawData(const string& s);
-    void getRawData(string& s, u_int32_t size);
+    void getRawData(string& s, uint32_t size);
 
 };
 

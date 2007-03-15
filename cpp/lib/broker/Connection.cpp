@@ -45,7 +45,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
 {}
 
 
-Queue::shared_ptr Connection::getQueue(const string& name, u_int16_t channel){
+Queue::shared_ptr Connection::getQueue(const string& name, uint16_t channel){
     Queue::shared_ptr queue;
     if (name.empty()) {
         queue = getChannel(channel).getDefaultQueue();
@@ -105,7 +105,7 @@ void Connection::closed(){
     }
 }
 
-void Connection::closeChannel(u_int16_t id) {
+void Connection::closeChannel(uint16_t id) {
     ChannelMap::iterator i = channels.find(id);
     if (i != channels.end())
         i->close();

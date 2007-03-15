@@ -55,11 +55,11 @@ FieldTable& Message::getHeaders() const {
     return getHeaderProperties()->getHeaders(); 
 }
 
-u_int8_t Message::getDeliveryMode() const { 
+uint8_t Message::getDeliveryMode() const { 
     return getHeaderProperties()->getDeliveryMode(); 
 }
 
-u_int8_t Message::getPriority() const { 
+uint8_t Message::getPriority() const { 
     return getHeaderProperties()->getPriority(); 
 }
 
@@ -79,7 +79,7 @@ const std::string& Message::getMessageId() const {
     return getHeaderProperties()->getMessageId(); 
 }
 
-u_int64_t Message::getTimestamp() const { 
+uint64_t Message::getTimestamp() const { 
     return getHeaderProperties()->getTimestamp(); 
 }
 
@@ -111,11 +111,11 @@ void Message::setHeaders(const FieldTable& headers){
     getHeaderProperties()->setHeaders(headers); 
 }
 
-void Message::setDeliveryMode(u_int8_t mode){ 
+void Message::setDeliveryMode(uint8_t mode){ 
     getHeaderProperties()->setDeliveryMode(mode); 
 }
 
-void Message::setPriority(u_int8_t priority){ 
+void Message::setPriority(uint8_t priority){ 
     getHeaderProperties()->setPriority(priority); 
 }
 
@@ -135,7 +135,7 @@ void Message::setMessageId(const std::string& messageId){
     getHeaderProperties()->setMessageId(messageId); 
 }
 
-void Message::setTimestamp(u_int64_t timestamp){ 
+void Message::setTimestamp(uint64_t timestamp){ 
     getHeaderProperties()->setTimestamp(timestamp); 
 }
 
@@ -156,7 +156,7 @@ void Message::setClusterId(const std::string& clusterId){
 }
 
 
-u_int64_t Message::getDeliveryTag() const {
+uint64_t Message::getDeliveryTag() const {
     BasicDeliverBody* deliver=dynamic_cast<BasicDeliverBody*>(method.get());
     return deliver ? deliver->getDeliveryTag() : 0;
 }

@@ -55,7 +55,7 @@ public:
     }
 
 
-    void refragment(size_t inCount, string* in, size_t outCount, string* out, u_int32_t framesize = 5)
+    void refragment(size_t inCount, string* in, size_t outCount, string* out, uint32_t framesize = 5)
     {
         InMemoryContent content;
         MockChannel channel(3);

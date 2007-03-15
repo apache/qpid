@@ -82,13 +82,13 @@ class Message {
     // Accessors
     const std::string& getRoutingKey() const { return routingKey; }
     const std::string& getExchange() const { return exchange; }
-    u_int64_t getPersistenceId() const { return persistenceId; }
+    uint64_t getPersistenceId() const { return persistenceId; }
     bool getRedelivered() const { return redelivered; }
     AMQMethodBodyPtr getRespondTo() const { return respondTo; }
     
     void setRouting(const std::string& _exchange, const std::string& _routingKey)
     { exchange = _exchange; routingKey = _routingKey; } 
-    void setPersistenceId(u_int64_t _persistenceId) { persistenceId = _persistenceId; } // XXXX: Only used in tests?
+    void setPersistenceId(uint64_t _persistenceId) { persistenceId = _persistenceId; } // XXXX: Only used in tests?
     void redeliver() { redelivered = true; }
 
     /**
@@ -96,20 +96,20 @@ class Message {
      */
     virtual void deliver(framing::ChannelAdapter& channel,
                          const std::string& consumerTag, 
-                         u_int64_t deliveryTag, 
-                         u_int32_t framesize) = 0;
+                         uint64_t deliveryTag, 
+                         uint32_t framesize) = 0;
     /**
      * Used to return a message in response to a get from a queue
      */
     virtual void sendGetOk(const framing::MethodContext& context,
     					   const std::string& destination,
-                           u_int32_t messageCount,
-                           u_int64_t deliveryTag, 
-                           u_int32_t framesize) = 0;
+                           uint32_t messageCount,
+                           uint64_t deliveryTag, 
+                           uint32_t framesize) = 0;
             
     virtual bool isComplete() = 0;
             
-    virtual u_int64_t contentSize() const = 0;
+    virtual uint64_t contentSize() const = 0;
     // FIXME aconway 2007-02-06: Get rid of BasicHeaderProperties
     // at this level. Expose only generic properties available from both
     // message types (e.g. getApplicationHeaders below).
@@ -130,7 +130,7 @@ class Message {
      * 
      * XXXX: Only used in tests?
      */
-    virtual u_int32_t encodedSize() = 0;
+    virtual uint32_t encodedSize() = 0;
     /**
      * @returns the size of the buffer needed to encode the
      * 'header' of this message (not just the header frame,
@@ -138,17 +138,17 @@ class Message {
      * 
      * XXXX: Only used in tests?
      */
-    virtual u_int32_t encodedHeaderSize() = 0;
+    virtual uint32_t encodedHeaderSize() = 0;
     /**
      * @returns the size of the buffer needed to encode the
      * (possibly partial) content held by this message
      */
-    virtual u_int32_t encodedContentSize() = 0;
+    virtual uint32_t encodedContentSize() = 0;
     /**
      * If headers have been received, returns the expected
      * content size else returns 0.
      */
-    virtual u_int64_t expectedContentSize() = 0;
+    virtual uint64_t expectedContentSize() = 0;
             
     // TODO: AMS 29/1/2007 Don't think these are really part of base class
             
@@ -173,7 +173,7 @@ class Message {
     std::string routingKey;
     const bool mandatory;
     const bool immediate;
-    u_int64_t persistenceId;
+    uint64_t persistenceId;
     bool redelivered;
     AMQMethodBodyPtr respondTo;
 };

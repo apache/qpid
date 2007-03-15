@@ -29,8 +29,8 @@ namespace framing {
 
 FieldTable::~FieldTable() {}
 
-u_int32_t FieldTable::size() const {
-    u_int32_t len(4);
+uint32_t FieldTable::size() const {
+    uint32_t len(4);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
         // 2 = shortstr_len_byyte + type_char_byte
 	len += 2 + (i->first).size() + (i->second)->size();
@@ -68,7 +68,7 @@ void FieldTable::setInt(const std::string& name, int value){
     values[name] = ValuePtr(new IntegerValue(value));
 }
 
-void FieldTable::setTimestamp(const std::string& name, u_int64_t value){
+void FieldTable::setTimestamp(const std::string& name, uint64_t value){
     values[name] = ValuePtr(new TimeValue(value));
 }
 
@@ -79,7 +79,7 @@ void FieldTable::setTable(const std::string& name, const FieldTable& value){
 namespace {
 template <class T> T default_value() { return T(); }
 template <> int default_value<int>() { return 0; }
-template <> u_int64_t default_value<u_int64_t>() { return 0; }
+template <> uint64_t default_value<uint64_t>() { return 0; }
 }
 
 template <class T>
@@ -99,8 +99,8 @@ int FieldTable::getInt(const std::string& name) const {
     return getValue<int>(name);
 }
 
-u_int64_t FieldTable::getTimestamp(const std::string& name) const {
-    return getValue<u_int64_t>(name);
+uint64_t FieldTable::getTimestamp(const std::string& name) const {
+    return getValue<uint64_t>(name);
 }
 
 void FieldTable::getTable(const std::string& name, FieldTable& value) const {
@@ -117,11 +117,11 @@ void FieldTable::encode(Buffer& buffer) const{
 }
 
 void FieldTable::decode(Buffer& buffer){
-    u_int32_t len = buffer.getLong();
-    u_int32_t available = buffer.available();
+    uint32_t len = buffer.getLong();
+    uint32_t available = buffer.available();
     if (available < len)
         THROW_QPID_ERROR(FRAMING_ERROR, "Not enough data for  field table.");
-    u_int32_t leftover = available - len;
+    uint32_t leftover = available - len;
     while(buffer.available() > leftover){
         std::string name;
         buffer.getShortString(name);

@@ -38,8 +38,8 @@ class QueuePolicyTest : public CppUnit::TestCase
         QueuePolicy policy(5, 0);
         CPPUNIT_ASSERT(!policy.limitExceeded());
         for (int i = 0; i < 5; i++) policy.enqueued(10);
-        CPPUNIT_ASSERT_EQUAL((u_int64_t) 0, policy.getMaxSize());
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 5, policy.getMaxCount());
+        CPPUNIT_ASSERT_EQUAL((uint64_t) 0, policy.getMaxSize());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 5, policy.getMaxCount());
         CPPUNIT_ASSERT(!policy.limitExceeded());
         policy.enqueued(10);
         CPPUNIT_ASSERT(policy.limitExceeded());

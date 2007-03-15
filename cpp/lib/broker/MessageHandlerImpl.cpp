@@ -105,7 +105,7 @@ MessageHandlerImpl::resume(const MethodContext& context,
 
 void
 MessageHandlerImpl::offset(const MethodContext&,
-                           u_int64_t /*value*/ )
+                           uint64_t /*value*/ )
 {
     // Shouldn't ever receive this as it is reponse to resume
     // which is never sent
@@ -115,7 +115,7 @@ MessageHandlerImpl::offset(const MethodContext&,
 
 void
 MessageHandlerImpl::consume(const MethodContext& context,
-                            u_int16_t /*ticket*/,
+                            uint16_t /*ticket*/,
                             const string& queueName,
                             const string& destination,
                             bool noLocal,
@@ -137,7 +137,7 @@ MessageHandlerImpl::consume(const MethodContext& context,
 
 void
 MessageHandlerImpl::get( const MethodContext& context,
-                         u_int16_t /*ticket*/,
+                         uint16_t /*ticket*/,
                          const string& queueName,
                          const string& destination,
                          bool noAck )
@@ -168,8 +168,8 @@ MessageHandlerImpl::ok(const MethodContext& /*context*/)
 
 void
 MessageHandlerImpl::qos(const MethodContext& context,
-                        u_int32_t prefetchSize,
-                        u_int16_t prefetchCount,
+                        uint32_t prefetchSize,
+                        uint16_t prefetchCount,
                         bool /*global*/ )
 {
     //TODO: handle global
@@ -188,7 +188,7 @@ MessageHandlerImpl::recover(const MethodContext& context,
 
 void
 MessageHandlerImpl::reject(const MethodContext& /*context*/,
-                           u_int16_t /*code*/,
+                           uint16_t /*code*/,
                            const string& /*text*/ )
 {
     channel.ack();
@@ -197,15 +197,15 @@ MessageHandlerImpl::reject(const MethodContext& /*context*/,
 
 void
 MessageHandlerImpl::transfer(const MethodContext& context,
-                             u_int16_t /*ticket*/,
+                             uint16_t /*ticket*/,
                              const string& /* destination */,
                              bool /*redelivered*/,
                              bool /*immediate*/,
-                             u_int64_t /*ttl*/,
-                             u_int8_t /*priority*/,
-                             u_int64_t /*timestamp*/,
-                             u_int8_t /*deliveryMode*/,
-                             u_int64_t /*expiration*/,
+                             uint64_t /*ttl*/,
+                             uint8_t /*priority*/,
+                             uint64_t /*timestamp*/,
+                             uint8_t /*deliveryMode*/,
+                             uint64_t /*expiration*/,
                              const string& /*exchangeName*/,
                              const string& /*routingKey*/,
                              const string& /*messageId*/,

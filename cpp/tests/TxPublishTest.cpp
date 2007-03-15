@@ -111,10 +111,10 @@ public:
     {
         //ensure messages are delivered to queue
         op.commit();
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 1, queue1->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
         CPPUNIT_ASSERT_EQUAL(msg, queue1->dequeue());
 
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 1, queue2->getMessageCount());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue2->getMessageCount());
         CPPUNIT_ASSERT_EQUAL(msg, queue2->dequeue());            
     }
 };

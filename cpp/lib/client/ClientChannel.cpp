@@ -36,7 +36,7 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-Channel::Channel(bool _transactional, u_int16_t _prefetch) :
+Channel::Channel(bool _transactional, uint16_t _prefetch) :
     basic(*this),
     connection(0), 
     prefetch(_prefetch), 
@@ -87,7 +87,7 @@ void Channel::protocolInit(
              version, responses.getRequestId(), proposal->getChannelMax(), connection->getMaxFrameSize(),
              proposal->getHeartbeat()));
     
-    u_int16_t heartbeat = proposal->getHeartbeat();
+    uint16_t heartbeat = proposal->getHeartbeat();
     connection->connector->setReadTimeout(heartbeat * 2);
     connection->connector->setWriteTimeout(heartbeat);
 
@@ -119,7 +119,7 @@ void Channel::setQos() {
     // FIXME aconway 2007-02-22: message
 }
 
-void Channel::setPrefetch(u_int16_t _prefetch){
+void Channel::setPrefetch(uint16_t _prefetch){
     prefetch = _prefetch;
     setQos();
 }
@@ -243,7 +243,7 @@ void Channel::start(){
 
 // Close called by local application.
 void Channel::close(
-    u_int16_t code, const std::string& text,
+    uint16_t code, const std::string& text,
     ClassId classId, MethodId methodId)
 {
     if (isOpen()) {

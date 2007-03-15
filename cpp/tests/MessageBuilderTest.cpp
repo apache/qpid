@@ -47,7 +47,7 @@ class MessageBuilderTest : public CppUnit::TestCase
     {
         Buffer* header;
         Buffer* content;
-        const u_int32_t contentBufferSize;
+        const uint32_t contentBufferSize;
         
       public:
 
@@ -99,7 +99,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         }
         
         //dont care about any of the other methods:
-        TestMessageStore(u_int32_t _contentBufferSize) : NullMessageStore(), header(0), content(0), 
+        TestMessageStore(uint32_t _contentBufferSize) : NullMessageStore(), header(0), content(0), 
                                                          contentBufferSize(_contentBufferSize) {}
         ~TestMessageStore(){}
     };
@@ -216,7 +216,7 @@ class MessageBuilderTest : public CppUnit::TestCase
             CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getMessageId(), restored->getHeaderProperties()->getMessageId());
             CPPUNIT_ASSERT_EQUAL(message->getHeaderProperties()->getHeaders().getString("abc"), 
                                  restored->getHeaderProperties()->getHeaders().getString("abc"));
-            CPPUNIT_ASSERT_EQUAL((u_int64_t) 14, restored->contentSize());
+            CPPUNIT_ASSERT_EQUAL((uint64_t) 14, restored->contentSize());
         }
     }
 };

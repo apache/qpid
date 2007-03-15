@@ -29,7 +29,7 @@ using std::auto_ptr;
 
 MessageBuilder::MessageBuilder(CompletionHandler* _handler,
                                MessageStore* const _store,
-                               u_int64_t _stagingThreshold
+                               uint64_t _stagingThreshold
 ) : 
     handler(_handler),
     store(_store),

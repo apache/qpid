@@ -60,13 +60,13 @@ class Connection : public sys::ConnectionInputHandler,
     sys::ConnectionOutputHandler& getOutput() const { return *out; }
     framing::ProtocolVersion getVersion() const { return version; }
 
-    u_int32_t getFrameMax() const { return framemax; }
-    u_int16_t getHeartbeat() const { return heartbeat; }
-    u_int32_t getTimeout() const { return timeout; }
-    u_int64_t getStagingThreshold() const { return stagingThreshold; }
+    uint32_t getFrameMax() const { return framemax; }
+    uint16_t getHeartbeat() const { return heartbeat; }
+    uint32_t getTimeout() const { return timeout; }
+    uint64_t getStagingThreshold() const { return stagingThreshold; }
 
-    void setFrameMax(u_int32_t fm) { framemax = fm; }
-    void setHeartbeat(u_int16_t hb) { heartbeat = hb; }
+    void setFrameMax(uint32_t fm) { framemax = fm; }
+    void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     
     /**
      * Get named queue, never returns 0.
@@ -74,7 +74,7 @@ class Connection : public sys::ConnectionInputHandler,
      * @exception: ChannelException if no queue of that name is found.
      * @exception: ConnectionException if name="" and channel has no default.
      */
-    Queue::shared_ptr getQueue(const string& name, u_int16_t channel);
+    Queue::shared_ptr getQueue(const string& name, uint16_t channel);
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;
@@ -95,11 +95,11 @@ class Connection : public sys::ConnectionInputHandler,
     framing::ProtocolVersion version;
     ChannelMap channels;
     sys::ConnectionOutputHandler* out;
-    u_int32_t framemax;
-    u_int16_t heartbeat;
+    uint32_t framemax;
+    uint16_t heartbeat;
     framing::AMQP_ClientProxy::Connection* client;
-    const u_int32_t timeout; //timeout for auto-deleted queues (in ms)
-    const u_int64_t stagingThreshold;
+    const uint32_t timeout; //timeout for auto-deleted queues (in ms)
+    const uint64_t stagingThreshold;
 
 };
 

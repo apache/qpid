@@ -42,7 +42,7 @@ namespace qpid {
             void stage(Message* const msg);
             void destroy(Message* const msg);
             void appendContent(Message* const msg, const std::string& data);
-            void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length);
+            void loadContent(Message* const msg, std::string& data, uint64_t offset, uint32_t length);
             void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
             void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
             void prepared(const std::string * const xid);

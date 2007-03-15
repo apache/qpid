@@ -14,14 +14,14 @@ enum discriminator_types { INLINE = 0, REFERENCE = 1 };
  */
 class Content
 {
-    u_int8_t discriminator;
+    uint8_t discriminator;
     string value;
 
     void validate();
 
  public:
     Content();
-    Content(u_int8_t _discriminator, const string& _value);
+    Content(uint8_t _discriminator, const string& _value);
     ~Content();
   
     void encode(Buffer& buffer) const;

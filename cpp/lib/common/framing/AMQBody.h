@@ -34,10 +34,10 @@ namespace qpid {
             typedef boost::shared_ptr<AMQBody> shared_ptr;
 
             virtual ~AMQBody();
-            virtual u_int32_t size() const = 0;
-            virtual u_int8_t type() const = 0;
+            virtual uint32_t size() const = 0;
+            virtual uint8_t type() const = 0;
             virtual void encode(Buffer& buffer) const = 0;
-            virtual void decode(Buffer& buffer, u_int32_t size) = 0;
+            virtual void decode(Buffer& buffer, uint32_t size) = 0;
 
             virtual void print(std::ostream& out) const = 0;
         };

@@ -25,8 +25,8 @@
 qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(0), priority(0), timestamp(0){}
 qpid::framing::BasicHeaderProperties::~BasicHeaderProperties(){}
 
-u_int32_t qpid::framing::BasicHeaderProperties::size() const{
-    u_int32_t bytes = 2;//flags
+uint32_t qpid::framing::BasicHeaderProperties::size() const{
+    uint32_t bytes = 2;//flags
     if(contentType.length() > 0) bytes += contentType.length() + 1;
     if(contentEncoding.length() > 0) bytes += contentEncoding.length() + 1;
     if(headers.count() > 0) bytes += headers.size();
@@ -46,7 +46,7 @@ u_int32_t qpid::framing::BasicHeaderProperties::size() const{
 }
 
 void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer) const{
-    u_int16_t flags = getFlags();
+    uint16_t flags = getFlags();
     buffer.putShort(flags);
     
     if(contentType.length() > 0) buffer.putShortString(contentType);
@@ -65,8 +65,8 @@ void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer)
     if(clusterId.length() > 0) buffer.putShortString(clusterId);    
 }
 
-void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer, u_int32_t /*size*/){
-    u_int16_t flags = buffer.getShort();
+void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer, uint32_t /*size*/){
+    uint16_t flags = buffer.getShort();
     if(flags & (1 << 15)) buffer.getShortString(contentType);
     if(flags & (1 << 14)) buffer.getShortString(contentEncoding);
     if(flags & (1 << 13)) buffer.getFieldTable(headers);
@@ -83,8 +83,8 @@ void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer,
     if(flags & (1 <<  2)) buffer.getShortString(clusterId);    
 }
 
-u_int16_t qpid::framing::BasicHeaderProperties::getFlags() const{
-    u_int16_t flags(0);
+uint16_t qpid::framing::BasicHeaderProperties::getFlags() const{
+    uint16_t flags(0);
     if(contentType.length() > 0)     flags |= (1 << 15);
     if(contentEncoding.length() > 0) flags |= (1 << 14);
     if(headers.count() > 0)          flags |= (1 << 13);

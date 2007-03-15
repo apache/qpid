@@ -92,12 +92,12 @@ class AccumulatedAckTest : public CppUnit::TestCase
             ack.update(2, 2);
             ack.update(0, 5);
             ack.consolidate();
-            CPPUNIT_ASSERT_EQUAL((u_int64_t) 6, ack.range);
+            CPPUNIT_ASSERT_EQUAL((uint64_t) 6, ack.range);
             CPPUNIT_ASSERT_EQUAL((size_t) 2, ack.individual.size());
-            list<u_int64_t>::iterator i = ack.individual.begin();
-            CPPUNIT_ASSERT_EQUAL((u_int64_t) 8, *i);
+            list<uint64_t>::iterator i = ack.individual.begin();
+            CPPUNIT_ASSERT_EQUAL((uint64_t) 8, *i);
             i++;
-            CPPUNIT_ASSERT_EQUAL((u_int64_t) 10, *i);
+            CPPUNIT_ASSERT_EQUAL((uint64_t) 10, *i);
         }
 };
 

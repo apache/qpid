@@ -30,7 +30,7 @@ namespace framing {
 
 Content::Content() : discriminator(0) {}
 
-Content::Content(u_int8_t _discriminator, const string& _value): discriminator(_discriminator), value(_value) {
+Content::Content(uint8_t _discriminator, const string& _value): discriminator(_discriminator), value(_value) {
     validate();
 }
 

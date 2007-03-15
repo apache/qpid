@@ -42,11 +42,11 @@ class AMQMethodBody : public AMQBody
         AMQP_MethodVersionMap& map, ProtocolVersion version, Buffer& buf);
 
     ProtocolVersion version;    
-    u_int8_t type() const { return METHOD_BODY; }
-    AMQMethodBody(u_int8_t major, u_int8_t minor) : version(major, minor) {}
+    uint8_t type() const { return METHOD_BODY; }
+    AMQMethodBody(uint8_t major, uint8_t minor) : version(major, minor) {}
     AMQMethodBody(ProtocolVersion ver) : version(ver) {}
     virtual ~AMQMethodBody() {}
-    void decode(Buffer&, u_int32_t);
+    void decode(Buffer&, uint32_t);
 
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
@@ -64,11 +64,11 @@ class AMQMethodBody : public AMQBody
     virtual bool isResponse() const { return false; }
 
   protected:
-    static u_int32_t baseSize() { return 4; }
+    static uint32_t baseSize() { return 4; }
 
     struct ClassMethodId {
-        u_int16_t classId;
-        u_int16_t methodId;
+        uint16_t classId;
+        uint16_t methodId;
         void decode(Buffer& b);
     };
     

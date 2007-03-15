@@ -41,9 +41,9 @@ class AMQResponseBody : public AMQMethodBody
         void encode(Buffer&) const;
         void decode(Buffer&);
 
-        u_int64_t responseId;
-        u_int64_t requestId;
-        u_int32_t batchOffset;
+        uint64_t responseId;
+        uint64_t requestId;
+        uint32_t batchOffset;
     };
 
     static Data& getData(const AMQBody::shared_ptr& body) {
@@ -58,7 +58,7 @@ class AMQResponseBody : public AMQMethodBody
         ProtocolVersion v, ResponseId id=0, RequestId req=0, BatchOffset off=0)
         : AMQMethodBody(v), data(id, req, off) {}
 
-    u_int8_t type() const { return RESPONSE_BODY; }
+    uint8_t type() const { return RESPONSE_BODY; }
     void encode(Buffer& buffer) const;
 
     Data& getData() { return data; }
@@ -71,7 +71,7 @@ class AMQResponseBody : public AMQMethodBody
 
     bool isResponse() const { return true; }
   protected:
-    static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
+    static const uint32_t baseSize() { return AMQMethodBody::baseSize()+20; }
     void printPrefix(std::ostream& out) const;
 
   private:

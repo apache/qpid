@@ -33,7 +33,7 @@ qpid::framing::AMQHeaderBody::~AMQHeaderBody(){
     delete properties;
 }
 
-u_int32_t qpid::framing::AMQHeaderBody::size() const{
+uint32_t qpid::framing::AMQHeaderBody::size() const{
     return 12 + properties->size();
 }
 
@@ -44,8 +44,8 @@ void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {
     properties->encode(buffer);
 }
 
-void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, u_int32_t bufSize){
-    u_int16_t classId = buffer.getShort();
+void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t bufSize){
+    uint16_t classId = buffer.getShort();
     weight = buffer.getShort();
     contentSize = buffer.getLongLong();
     createProperties(classId);

@@ -29,10 +29,10 @@
 #include <string>
 #ifdef _WINDOWS
 #include "windows.h"
-typedef unsigned char  u_int8_t;
-typedef unsigned short u_int16_t;
-typedef unsigned int   u_int32_t;
-typedef unsigned __int64 u_int64_t;
+typedef unsigned char  uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int   uint32_t;
+typedef unsigned __int64 uint64_t;
 #endif
 #ifndef _WINDOWS
 #include "stdint.h"
@@ -42,13 +42,13 @@ namespace qpid {
 namespace framing {
 
 using std::string;
-typedef u_int16_t ChannelId;
-typedef u_int64_t RequestId;
-typedef u_int64_t ResponseId;
-typedef u_int32_t BatchOffset;
-typedef u_int16_t ClassId;
-typedef u_int16_t MethodId;
-typedef u_int16_t ReplyCode;
+typedef uint16_t ChannelId;
+typedef uint64_t RequestId;
+typedef uint64_t ResponseId;
+typedef uint32_t BatchOffset;
+typedef uint16_t ClassId;
+typedef uint16_t MethodId;
+typedef uint16_t ReplyCode;
 
 // Types represented by classes.
 class Content;

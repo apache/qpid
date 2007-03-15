@@ -53,7 +53,7 @@ class AMQRequestBody : public AMQMethodBody
     AMQRequestBody(ProtocolVersion v, RequestId id=0, ResponseId mark=0)
         : AMQMethodBody(v), data(id, mark) {}
 
-    u_int8_t type() const { return REQUEST_BODY; }
+    uint8_t type() const { return REQUEST_BODY; }
     void encode(Buffer& buffer) const;
 
     Data& getData() { return data; }
@@ -64,7 +64,7 @@ class AMQRequestBody : public AMQMethodBody
 
     bool isRequest()const { return true; }
   protected:
-    static const u_int32_t baseSize() { return AMQMethodBody::baseSize()+20; }
+    static const uint32_t baseSize() { return AMQMethodBody::baseSize()+20; }
     void printPrefix(std::ostream& out) const;
     
   private:

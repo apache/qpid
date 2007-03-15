@@ -58,7 +58,7 @@ void MessageStoreModule::appendContent(Message* const msg, const std::string& da
     store->appendContent(msg, data);
 }
 
-void MessageStoreModule::loadContent(Message* const msg, string& data, u_int64_t offset, u_int32_t length)
+void MessageStoreModule::loadContent(Message* const msg, string& data, uint64_t offset, uint32_t length)
 {
     store->loadContent(msg, data, offset, length);
 }

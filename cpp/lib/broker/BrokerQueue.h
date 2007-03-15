@@ -58,7 +58,7 @@ namespace qpid {
             typedef std::queue<Message::shared_ptr> Messages;
             
             const string name;
-            const u_int32_t autodelete;
+            const uint32_t autodelete;
             MessageStore* const store;
             const ConnectionToken* const owner;
             Consumers consumers;
@@ -70,7 +70,7 @@ namespace qpid {
             mutable qpid::sys::Mutex lock;
             int64_t lastUsed;
             Consumer* exclusive;
-            mutable u_int64_t persistenceId;
+            mutable uint64_t persistenceId;
             std::auto_ptr<QueuePolicy> policy;            
 
             void pop();
@@ -85,7 +85,7 @@ namespace qpid {
 
             typedef std::vector<shared_ptr> vector;
 	    
-            Queue(const string& name, u_int32_t autodelete = 0, 
+            Queue(const string& name, uint32_t autodelete = 0, 
                   MessageStore* const store = 0, 
                   const ConnectionToken* const owner = 0);
             ~Queue();
@@ -121,14 +121,14 @@ namespace qpid {
             void dispatch();
             void consume(Consumer* c, bool exclusive = false);
             void cancel(Consumer* c);
-            u_int32_t purge();
-            u_int32_t getMessageCount() const;
-            u_int32_t getConsumerCount() const;
+            uint32_t purge();
+            uint32_t getMessageCount() const;
+            uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
-            inline u_int64_t getPersistenceId() const { return persistenceId; }
-            inline void setPersistenceId(u_int64_t _persistenceId) const { persistenceId = _persistenceId; }
+            inline uint64_t getPersistenceId() const { return persistenceId; }
+            inline void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
             bool canAutoDelete() const;
 

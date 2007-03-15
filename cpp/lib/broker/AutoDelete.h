@@ -34,7 +34,7 @@ namespace qpid {
             qpid::sys::Monitor monitor;            
             std::queue<Queue::shared_ptr> queues;
             QueueRegistry* const registry;
-            u_int32_t period;
+            uint32_t period;
             volatile bool stopped;
             qpid::sys::Thread runner;
             
@@ -43,7 +43,7 @@ namespace qpid {
             virtual void run();
 
         public:
-            AutoDelete(QueueRegistry* const registry, u_int32_t period);
+            AutoDelete(QueueRegistry* const registry, uint32_t period);
             void add(Queue::shared_ptr const);
             void start();
             void stop();

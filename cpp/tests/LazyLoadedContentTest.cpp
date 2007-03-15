@@ -50,7 +50,7 @@ class LazyLoadedContentTest : public CppUnit::TestCase
     public:
         TestMessageStore(const string& _content) : content(_content) {}
 
-        void loadContent(Message* const, string& data, u_int64_t offset, u_int32_t length)
+        void loadContent(Message* const, string& data, uint64_t offset, uint32_t length)
         {
             if (offset + length <= content.size()) {
                 data = content.substr(offset, length);
@@ -67,7 +67,7 @@ public:
     void testFragmented()
     {
         string data = "abcdefghijklmnopqrstuvwxyz";
-        u_int32_t framesize = 5;
+        uint32_t framesize = 5;
         string out[] = {"abcde", "fghij", "klmno", "pqrst", "uvwxy", "z"};
         load(data, 6, out, framesize);
     }
@@ -75,7 +75,7 @@ public:
     void testWhole()
     {
         string data = "abcdefghijklmnopqrstuvwxyz";
-        u_int32_t framesize = 50;
+        uint32_t framesize = 50;
         string out[] = {data};
         load(data, 1, out, framesize);
     }
@@ -83,12 +83,12 @@ public:
     void testHalved()
     {
         string data = "abcdefghijklmnopqrstuvwxyz";
-        u_int32_t framesize = 13;
+        uint32_t framesize = 13;
         string out[] = {"abcdefghijklm", "nopqrstuvwxyz"};
         load(data, 2, out, framesize);
     }
 
-    void load(string& in, size_t outCount, string* out, u_int32_t framesize)
+    void load(string& in, size_t outCount, string* out, uint32_t framesize)
     {
         TestMessageStore store(in);
         LazyLoadedContent content(&store, 0, in.size());

@@ -27,7 +27,7 @@ using std::string;
 DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
                                Queue::shared_ptr _queue, 
                                const string _consumerTag, 
-                               const u_int64_t _deliveryTag) : msg(_msg), 
+                               const uint64_t _deliveryTag) : msg(_msg), 
                                                                queue(_queue), 
                                                                consumerTag(_consumerTag),
                                                                deliveryTag(_deliveryTag),
@@ -35,7 +35,7 @@ DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg,
 
 DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
                                Queue::shared_ptr _queue, 
-                               const u_int64_t _deliveryTag) : msg(_msg), 
+                               const uint64_t _deliveryTag) : msg(_msg), 
                                                                queue(_queue), 
                                                                consumerTag(""),
                                                                deliveryTag(_deliveryTag),
@@ -50,7 +50,7 @@ void DeliveryRecord::discard() const{
     discard(0, 0);
 }
 
-bool DeliveryRecord::matches(u_int64_t tag) const{
+bool DeliveryRecord::matches(uint64_t tag) const{
     return deliveryTag == tag;
 }
 

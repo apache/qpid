@@ -31,7 +31,7 @@ void InMemoryContent::add(AMQContentBody::shared_ptr data)
     content.push_back(data);
 }
 
-u_int32_t InMemoryContent::size()
+uint32_t InMemoryContent::size()
 {
     int sum(0);
     for (content_iterator i = content.begin(); i != content.end(); i++) {
@@ -41,17 +41,17 @@ u_int32_t InMemoryContent::size()
 }
 
 // FIXME aconway 2007-02-01: Remove version parameter.
-void InMemoryContent::send(ChannelAdapter& channel, u_int32_t framesize)
+void InMemoryContent::send(ChannelAdapter& channel, uint32_t framesize)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {
         if ((*i)->size() > framesize) {
-            u_int32_t offset = 0;
+            uint32_t offset = 0;
             for (int chunk = (*i)->size() / framesize; chunk > 0; chunk--) {
                 string data = (*i)->getData().substr(offset, framesize);
                 channel.send(new AMQContentBody(data)); 
                 offset += framesize;
             }
-            u_int32_t remainder = (*i)->size() % framesize;
+            uint32_t remainder = (*i)->size() % framesize;
             if (remainder) {
                 string data = (*i)->getData().substr(offset, remainder);
                 channel.send(new AMQContentBody(data)); 
