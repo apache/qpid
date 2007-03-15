@@ -86,6 +86,8 @@ interface DeliveryManager
 
     List<AMQMessage> getMessages();
 
+    List<AMQMessage> getMessages(long fromMessageId, long toMessageId);
+
     void populatePreDeliveryQueue(Subscription subscription);
 
     boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException;

@@ -235,37 +235,40 @@ public class AMQQueue implements Managable, Comparable
         return _deliveryMgr.getMessages();
     }
 
+    /**
+     * Returns messages within the given range of message Ids
+     * @param fromMessageId
+     * @param toMessageId
+     * @return List of messages
+     */
+    public List<AMQMessage> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
+    {
+        return _deliveryMgr.getMessages(fromMessageId, toMessageId);
+    }
+
     public long getQueueDepth()
     {
         return _deliveryMgr.getTotalMessageSize();
     }
 
-
     /**
      * @param messageId
-     *
      * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
      */
     public AMQMessage getMessageOnTheQueue(long messageId)
     {
-        List<AMQMessage> list = getMessagesOnTheQueue();
-        AMQMessage msg = null;
-        for (AMQMessage message : list)
+        List<AMQMessage> list = getMessagesOnTheQueue(messageId, messageId);
+        if (list == null || list.size() == 0)
         {
-            if (message.getMessageId() == messageId)
-            {
-                msg = message;
-                break;
-            }
+            return null;
         }
-
-        return msg;
+        return list.get(0);
     }
 
     /**
      * moves messages from this queue to another queue. to do this the approach is following- - setup the queue for
-     * moving messages (hold the lock and stop the async delivery) - get all the messages available in the given message
-     * id range - setup the other queue for moving messages (hold the lock and stop the async delivery) - send these
+     * moving messages (stop the async delivery) - get all the messages available in the given message
+     * id range - setup the other queue for moving messages (stop the async delivery) - send these
      * available messages to the other queue (enqueue in other queue) - Once sending to other Queue is successful,
      * remove messages from this queue - remove locks from both queues and start async delivery
      *
@@ -282,24 +285,7 @@ public class AMQQueue implements Managable, Comparable
         try
         {
             startMovingMessages();
-            List<AMQMessage> list = getMessagesOnTheQueue();
-            List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
-            int maxMessageCountToBeMoved = (int) (toMessageId - fromMessageId + 1);
-
-            // Run this loop till you find all the messages or the list has no more messages
-            for (AMQMessage message : list)
-            {
-                long msgId = message.getMessageId();
-                if (msgId >= fromMessageId && msgId <= toMessageId)
-                {
-                    foundMessagesList.add(message);
-                }
-                // break the loop as soon as messages to be removed are found
-                if (foundMessagesList.size() == maxMessageCountToBeMoved)
-                {
-                    break;
-                }
-            }
+            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
 
             // move messages to another queue
             anotherQueue.startMovingMessages();
