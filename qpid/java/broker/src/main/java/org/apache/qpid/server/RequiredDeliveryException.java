@@ -36,12 +36,14 @@ public abstract class RequiredDeliveryException extends AMQException
     public RequiredDeliveryException(String message, AMQMessage payload)
     {
         super(message);
-        _amqMessage = payload;
+
         // Increment the reference as this message is in the routing phase
         // and so will have the ref decremented as routing fails.
         // we need to keep this message around so we can return it in the
-        // handler. So increment here. 
-        payload.incrementReference();
+        // handler. So increment here.  
+	_amqMessage = payload.takeReference();
+ 
+        //payload.incrementReference();
     }
 
     public AMQMessage getAMQMessage()
