@@ -60,7 +60,7 @@ class Reference
         : id(id_), size(0), registry(reg) {}
     
     const std::string& getId() const { return id; }
-    u_int64_t getSize() const { return size; }
+    uint64_t getSize() const { return size; }
 
     /** Add a message to be completed with this reference */
     void addMessage(MessagePtr message) { messages.push_back(message); }
@@ -76,7 +76,7 @@ class Reference
     
   private:
     Id id;
-    u_int64_t size;
+    uint64_t size;
     ReferenceRegistry* registry;
     Messages messages;
     Appends appends;

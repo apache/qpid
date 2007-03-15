@@ -50,16 +50,16 @@ class FieldTable
     typedef std::map<std::string, ValuePtr> ValueMap;
 
     ~FieldTable();
-    u_int32_t size() const;
+    uint32_t size() const;
     int count() const;
     void setString(const std::string& name, const std::string& value);
     void setInt(const std::string& name, int value);
-    void setTimestamp(const std::string& name, u_int64_t value);
+    void setTimestamp(const std::string& name, uint64_t value);
     void setTable(const std::string& name, const FieldTable& value);
     //void setDecimal(string& name, xxx& value);
     std::string getString(const std::string& name) const;
     int getInt(const std::string& name) const;
-    u_int64_t getTimestamp(const std::string& name) const;
+    uint64_t getTimestamp(const std::string& name) const;
     void getTable(const std::string& name, FieldTable& value) const;
     //void getDecimal(string& name, xxx& value);
     void erase(const std::string& name);

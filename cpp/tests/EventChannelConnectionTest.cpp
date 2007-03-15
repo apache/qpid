@@ -74,8 +74,8 @@ class EventChannelConnectionTest : public CppUnit::TestCase
         // Send a heartbeat frame, verify connection got it.
         connection->send(new AMQFrame(42, new AMQHeartbeatBody()));
         AMQFrame frame = factory.handler->waitForFrame();
-        CPPUNIT_ASSERT_EQUAL(u_int16_t(42), frame.getChannel());
-        CPPUNIT_ASSERT_EQUAL(u_int8_t(HEARTBEAT_BODY),
+        CPPUNIT_ASSERT_EQUAL(uint16_t(42), frame.getChannel());
+        CPPUNIT_ASSERT_EQUAL(uint8_t(HEARTBEAT_BODY),
                              frame.getBody()->type());
         threads->shutdown();
     }

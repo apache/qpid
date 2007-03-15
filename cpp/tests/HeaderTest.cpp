@@ -53,13 +53,13 @@ public:
     void testAllSpecificProperties(){
 	string contentType("text/html");
 	string contentEncoding("UTF8");
-	u_int8_t deliveryMode(2);
-	u_int8_t priority(3);
+	uint8_t deliveryMode(2);
+	uint8_t priority(3);
 	string correlationId("abc");
 	string replyTo("no-address");
 	string expiration("why is this a string?");
 	string messageId("xyz");
-	u_int64_t timestamp(0xabcd);
+	uint64_t timestamp(0xabcd);
 	string type("eh?");
 	string userId("guest");
 	string appId("just testing");
@@ -106,10 +106,10 @@ public:
 
     void testSomeSpecificProperties(){
         string contentType("application/octet-stream");
-        u_int8_t deliveryMode(5);
-        u_int8_t priority(6);
+        uint8_t deliveryMode(5);
+        uint8_t priority(6);
         string expiration("Z");
-        u_int64_t timestamp(0xabe4a34a);
+        uint64_t timestamp(0xabe4a34a);
 
         AMQHeaderBody body(BASIC);
         BasicHeaderProperties* properties = 

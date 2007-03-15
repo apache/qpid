@@ -27,13 +27,13 @@ qpid::framing::AMQContentBody::AMQContentBody(){
 qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
 }
 
-u_int32_t qpid::framing::AMQContentBody::size() const{
+uint32_t qpid::framing::AMQContentBody::size() const{
     return data.size();
 }
 void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
     buffer.putRawData(data);
 }
-void qpid::framing::AMQContentBody::decode(Buffer& buffer, u_int32_t _size){
+void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
     buffer.getRawData(data, _size);
 }
 

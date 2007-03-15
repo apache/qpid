@@ -32,7 +32,7 @@ using namespace qpid::sys;
 using namespace qpid::framing;
 using boost::format;
 
-Queue::Queue(const string& _name, u_int32_t _autodelete, 
+Queue::Queue(const string& _name, uint32_t _autodelete, 
              MessageStore* const _store,
              const ConnectionToken* const _owner) :
 
@@ -166,7 +166,7 @@ Message::shared_ptr Queue::dequeue(){
     return msg;
 }
 
-u_int32_t Queue::purge(){
+uint32_t Queue::purge(){
     Mutex::ScopedLock locker(lock);
     int count = messages.size();
     while(!messages.empty()) pop();
@@ -189,12 +189,12 @@ void Queue::push(Message::shared_ptr& msg){
     }
 }
 
-u_int32_t Queue::getMessageCount() const{
+uint32_t Queue::getMessageCount() const{
     Mutex::ScopedLock locker(lock);
     return messages.size();
 }
 
-u_int32_t Queue::getConsumerCount() const{
+uint32_t Queue::getConsumerCount() const{
     Mutex::ScopedLock locker(lock);
     return consumers.size();
 }

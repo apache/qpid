@@ -168,7 +168,7 @@ class Basic : public sys::Runnable
         MessageListener* listener;
         AckMode ackMode;
         int count;
-        u_int64_t lastDeliveryTag;
+        uint64_t lastDeliveryTag;
     };
 
     typedef std::map<std::string, Consumer> ConsumerMap;

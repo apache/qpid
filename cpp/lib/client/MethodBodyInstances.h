@@ -61,7 +61,7 @@ public:
 	const qpid::framing::TxRollbackOkBody		tx_rollback_ok;
 	const qpid::framing::TxSelectOkBody		tx_select_ok;
 
-    MethodBodyInstances(u_int8_t major, u_int8_t minor) :
+    MethodBodyInstances(uint8_t major, uint8_t minor) :
     	version(major, minor),
         basic_cancel_ok(version),
         basic_consume_ok(version),

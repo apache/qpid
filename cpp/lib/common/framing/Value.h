@@ -36,10 +36,10 @@ class Buffer;
  * No arithmetic functionality for now, we only care about encoding/decoding.
  */
 struct Decimal {
-    u_int32_t value;
-    u_int8_t decimals;
+    uint32_t value;
+    uint8_t decimals;
 
-    Decimal(u_int32_t value_=0, u_int8_t decimals_=0) : value(value_), decimals(decimals_) {}
+    Decimal(uint32_t value_=0, uint8_t decimals_=0) : value(value_), decimals(decimals_) {}
     bool operator==(const Decimal& d) const {
         return decimals == d.decimals && value == d.value;
     }
@@ -54,7 +54,7 @@ std::ostream& operator<<(std::ostream& out, const Decimal& d);
 class Value {
   public:
     virtual ~Value();
-    virtual u_int32_t size() const = 0;
+    virtual uint32_t size() const = 0;
     virtual char getType() const = 0;
     virtual void encode(Buffer& buffer) = 0;
     virtual void decode(Buffer& buffer) = 0;
@@ -97,7 +97,7 @@ class StringValue : public ValueOps<std::string> {
   public:
     StringValue(const std::string& v) : ValueOps<std::string>(v) {}
     StringValue() {}
-    virtual u_int32_t size() const { return 4 + value.length(); }
+    virtual uint32_t size() const { return 4 + value.length(); }
     virtual char getType() const { return 'S'; }
     virtual void encode(Buffer& buffer);
     virtual void decode(Buffer& buffer);
@@ -107,17 +107,17 @@ class IntegerValue : public ValueOps<int> {
   public:
     IntegerValue(int v) : ValueOps<int>(v) {}
     IntegerValue(){}
-    virtual u_int32_t size() const { return 4; }
+    virtual uint32_t size() const { return 4; }
     virtual char getType() const { return 'I'; }
     virtual void encode(Buffer& buffer);
     virtual void decode(Buffer& buffer);
 };
 
-class TimeValue : public ValueOps<u_int64_t> {
+class TimeValue : public ValueOps<uint64_t> {
   public:
-    TimeValue(u_int64_t v) : ValueOps<u_int64_t>(v){}
+    TimeValue(uint64_t v) : ValueOps<uint64_t>(v){}
     TimeValue(){}
-    virtual u_int32_t size() const { return 8; }
+    virtual uint32_t size() const { return 8; }
     virtual char getType() const { return 'T'; }
     virtual void encode(Buffer& buffer);
     virtual void decode(Buffer& buffer);
@@ -126,9 +126,9 @@ class TimeValue : public ValueOps<u_int64_t> {
 class DecimalValue : public ValueOps<Decimal> {
   public:
     DecimalValue(const Decimal& d) : ValueOps<Decimal>(d) {} 
-    DecimalValue(u_int32_t value_=0, u_int8_t decimals_=0) :
+    DecimalValue(uint32_t value_=0, uint8_t decimals_=0) :
         ValueOps<Decimal>(Decimal(value_, decimals_)){}
-    virtual u_int32_t size() const { return 5; }
+    virtual uint32_t size() const { return 5; }
     virtual char getType() const { return 'D'; }
     virtual void encode(Buffer& buffer);
     virtual void decode(Buffer& buffer);
@@ -139,7 +139,7 @@ class FieldTableValue : public ValueOps<FieldTable> {
   public:
     FieldTableValue(const FieldTable& v) : ValueOps<FieldTable>(v){}
     FieldTableValue(){}
-    virtual u_int32_t size() const { return 4 + value.size(); }
+    virtual uint32_t size() const { return 4 + value.size(); }
     virtual char getType() const { return 'F'; }
     virtual void encode(Buffer& buffer);
     virtual void decode(Buffer& buffer);
@@ -148,7 +148,7 @@ class FieldTableValue : public ValueOps<FieldTable> {
 class EmptyValue : public Value {
   public:
     ~EmptyValue();
-    virtual u_int32_t size() const { return 0; }
+    virtual uint32_t size() const { return 0; }
     virtual char getType() const { return 0; }
     virtual void encode(Buffer& ) {}
     virtual void decode(Buffer& ) {}

@@ -50,8 +50,8 @@ class Connector : public framing::OutputHandler,
     int64_t lastIn;
     int64_t lastOut;
     int64_t timeout;
-    u_int32_t idleIn;
-    u_int32_t idleOut;
+    uint32_t idleIn;
+    uint32_t idleOut;
 
     sys::TimeoutHandler* timeoutHandler;
     sys::ShutdownHandler* shutdownHandler;
@@ -78,7 +78,7 @@ class Connector : public framing::OutputHandler,
   friend class Channel;
   public:
     Connector(framing::ProtocolVersion pVersion,
-              bool debug = false, u_int32_t buffer_size = 1024);
+              bool debug = false, uint32_t buffer_size = 1024);
     virtual ~Connector();
     virtual void connect(const std::string& host, int port);
     virtual void init();
@@ -88,8 +88,8 @@ class Connector : public framing::OutputHandler,
     virtual void setShutdownHandler(sys::ShutdownHandler* handler);
     virtual framing::OutputHandler* getOutputHandler();
     virtual void send(framing::AMQFrame* frame);
-    virtual void setReadTimeout(u_int16_t timeout);
-    virtual void setWriteTimeout(u_int16_t timeout);
+    virtual void setReadTimeout(uint16_t timeout);
+    virtual void setWriteTimeout(uint16_t timeout);
 };
 
 }}

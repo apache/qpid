@@ -30,8 +30,8 @@ namespace qpid {
          * (i.e. pushed) messages that have acks outstanding.
          */
         struct Prefetch{
-            u_int32_t size;
-            u_int16_t count;
+            uint32_t size;
+            uint16_t count;
 
             void reset() { size = 0; count = 0; }
         };

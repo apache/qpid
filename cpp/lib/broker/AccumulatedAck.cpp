@@ -26,12 +26,12 @@ using std::less_equal;
 using std::bind2nd;
 using namespace qpid::broker;
 
-void AccumulatedAck::update(u_int64_t firstTag, u_int64_t lastTag){
+void AccumulatedAck::update(uint64_t firstTag, uint64_t lastTag){
     assert(firstTag<=lastTag);
     if (firstTag <= range + 1) {
         if (lastTag > range) range = lastTag;
     } else {
-    	for (u_int64_t tag = firstTag; tag<=lastTag; tag++)
+    	for (uint64_t tag = firstTag; tag<=lastTag; tag++)
             individual.push_back(tag);
     }
 }
@@ -39,7 +39,7 @@ void AccumulatedAck::update(u_int64_t firstTag, u_int64_t lastTag){
 void AccumulatedAck::consolidate(){
     individual.sort();
     //remove any individual tags that are covered by range
-    individual.remove_if(bind2nd(less_equal<u_int64_t>(), range));
+    individual.remove_if(bind2nd(less_equal<uint64_t>(), range));
     //update range if possible (using <= allows for duplicates from overlapping ranges)
     while (individual.front() <= range + 1) {
         range = individual.front();
@@ -52,6 +52,6 @@ void AccumulatedAck::clear(){
     individual.clear();
 }
 
-bool AccumulatedAck::covers(u_int64_t tag) const{
+bool AccumulatedAck::covers(uint64_t tag) const{
     return tag <= range || find(individual.begin(), individual.end(), tag) != individual.end();
 }

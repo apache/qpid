@@ -39,17 +39,17 @@ version(_version)
      assert(version != ProtocolVersion(0,0));
  }
 
-AMQFrame::AMQFrame(ProtocolVersion _version, u_int16_t _channel, AMQBody* _body) :
+AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, AMQBody* _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
-AMQFrame::AMQFrame(ProtocolVersion _version, u_int16_t _channel, const AMQBody::shared_ptr& _body) :
+AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, const AMQBody::shared_ptr& _body) :
 version(_version), channel(_channel), body(_body)
 {}
 
 AMQFrame::~AMQFrame() {}
 
-u_int16_t AMQFrame::getChannel(){
+uint16_t AMQFrame::getChannel(){
     return channel;
 }
 
@@ -66,7 +66,7 @@ void AMQFrame::encode(Buffer& buffer)
     buffer.putOctet(0xCE);
 }
 
-u_int32_t AMQFrame::size() const{
+uint32_t AMQFrame::size() const{
     assert(body.get());
     return 1/*type*/ + 2/*channel*/ + 4/*body size*/ + body->size()
         + 1/*0xCE*/;
@@ -77,18 +77,18 @@ bool AMQFrame::decode(Buffer& buffer)
     if(buffer.available() < 7)
         return false;
     buffer.record();
-    u_int32_t frameSize = decodeHead(buffer);
+    uint32_t frameSize = decodeHead(buffer);
     if(buffer.available() < frameSize + 1){
         buffer.restore();
         return false;
     }
     decodeBody(buffer, frameSize);
-    u_int8_t end = buffer.getOctet();
+    uint8_t end = buffer.getOctet();
     if(end != 0xCE) THROW_QPID_ERROR(FRAMING_ERROR, "Frame end not found");
     return true;
 }
 
-u_int32_t AMQFrame::decodeHead(Buffer& buffer){    
+uint32_t AMQFrame::decodeHead(Buffer& buffer){    
     type = buffer.getOctet();
     channel = buffer.getShort();
     return buffer.getLong();

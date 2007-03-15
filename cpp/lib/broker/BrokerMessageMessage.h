@@ -54,31 +54,31 @@ class MessageMessage: public Message{
     
     void deliver(framing::ChannelAdapter& channel, 
                  const std::string& consumerTag, 
-                 u_int64_t deliveryTag, 
-                 u_int32_t framesize);
+                 uint64_t deliveryTag, 
+                 uint32_t framesize);
     
     void sendGetOk(const framing::MethodContext& context, 
 				   const std::string& destination,
-                   u_int32_t messageCount,
-                   u_int64_t deliveryTag, 
-                   u_int32_t framesize);
+                   uint32_t messageCount,
+                   uint64_t deliveryTag, 
+                   uint32_t framesize);
 
     bool isComplete();
 
-    u_int64_t contentSize() const;
+    uint64_t contentSize() const;
     framing::BasicHeaderProperties* getHeaderProperties();
     const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
             
-    u_int32_t encodedSize();
-    u_int32_t encodedHeaderSize();
-    u_int32_t encodedContentSize();
-    u_int64_t expectedContentSize();
+    uint32_t encodedSize();
+    uint32_t encodedHeaderSize();
+    uint32_t encodedContentSize();
+    uint64_t expectedContentSize();
 
   private:
   	void transferMessage(framing::ChannelAdapter& channel, 
     					 const std::string& consumerTag, 
-    					 u_int32_t framesize);
+    					 uint32_t framesize);
   
     framing::RequestId requestId;
     const TransferPtr transfer;

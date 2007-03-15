@@ -24,7 +24,7 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-AutoDelete::AutoDelete(QueueRegistry* const _registry, u_int32_t _period)
+AutoDelete::AutoDelete(QueueRegistry* const _registry, uint32_t _period)
     : registry(_registry), period(_period), stopped(true) { }
 
 void AutoDelete::add(Queue::shared_ptr const queue){

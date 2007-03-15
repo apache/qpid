@@ -55,7 +55,7 @@ class MessageHandlerImpl :
                 const std::string& reference );
 
     void consume(const framing::MethodContext&,
-                  u_int16_t ticket,
+                  uint16_t ticket,
                   const std::string& queue,
                   const std::string& destination,
                   bool noLocal,
@@ -66,13 +66,13 @@ class MessageHandlerImpl :
     void empty( const framing::MethodContext& );
 
     void get(const framing::MethodContext&,
-              u_int16_t ticket,
+              uint16_t ticket,
               const std::string& queue,
               const std::string& destination,
               bool noAck );
 
     void offset(const framing::MethodContext&,
-                 u_int64_t value );
+                 uint64_t value );
 
     void ok( const framing::MethodContext& );
 
@@ -80,15 +80,15 @@ class MessageHandlerImpl :
                const std::string& reference );
 
     void qos(const framing::MethodContext&,
-              u_int32_t prefetchSize,
-              u_int16_t prefetchCount,
+              uint32_t prefetchSize,
+              uint16_t prefetchCount,
               bool global );
 
     void recover(const framing::MethodContext&,
                   bool requeue );
 
     void reject(const framing::MethodContext&,
-                 u_int16_t code,
+                 uint16_t code,
                  const std::string& text );
 
     void resume(const framing::MethodContext&,
@@ -96,15 +96,15 @@ class MessageHandlerImpl :
                  const std::string& identifier );
 
     void transfer(const framing::MethodContext&,
-                   u_int16_t ticket,
+                   uint16_t ticket,
                    const std::string& destination,
                    bool redelivered,
                    bool immediate,
-                   u_int64_t ttl,
-                   u_int8_t priority,
-                   u_int64_t timestamp,
-                   u_int8_t deliveryMode,
-                   u_int64_t expiration,
+                   uint64_t ttl,
+                   uint8_t priority,
+                   uint64_t timestamp,
+                   uint8_t deliveryMode,
+                   uint64_t expiration,
                    const std::string& exchange,
                    const std::string& routingKey,
                    const std::string& messageId,

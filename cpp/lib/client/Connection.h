@@ -91,7 +91,7 @@ class Connection : public ConnectionForChannel
     static const std::string OK;
 
     framing::ProtocolVersion version;
-    const u_int32_t max_frame_size;
+    const uint32_t max_frame_size;
     ChannelMap channels;
     Connector defaultConnector;
     Connector* connector;
@@ -121,7 +121,7 @@ class Connection : public ConnectionForChannel
      * @param max_frame_size the maximum frame size that the
      * client will accept. Optional and defaults to 65536.
      */
-    Connection(bool debug = false, u_int32_t max_frame_size = 65536,
+    Connection(bool debug = false, uint32_t max_frame_size = 65536,
                framing::ProtocolVersion=framing::highestProtocolVersion);
     ~Connection();
 
@@ -182,7 +182,7 @@ class Connection : public ConnectionForChannel
     /**
      * @return the maximum frame size in use on this connection
      */
-    inline u_int32_t getMaxFrameSize(){ return max_frame_size; }
+    inline uint32_t getMaxFrameSize(){ return max_frame_size; }
 
     /** @return protocol version in use on this connection. */ 
     framing::ProtocolVersion getVersion() const { return version; }

@@ -37,7 +37,7 @@ namespace qpid {
         public:
             MessageBuilder(CompletionHandler* _handler,
                            MessageStore* const store = 0,
-                           u_int64_t stagingThreshold = 0);
+                           uint64_t stagingThreshold = 0);
             void initialise(Message::shared_ptr& msg);
             void setHeader(framing::AMQHeaderBody::shared_ptr& header);
             void addContent(framing::AMQContentBody::shared_ptr& content);
@@ -46,7 +46,7 @@ namespace qpid {
             Message::shared_ptr message;
             CompletionHandler* handler;
             MessageStore* const store;
-            const u_int64_t stagingThreshold;
+            const uint64_t stagingThreshold;
 
             void route();
         };

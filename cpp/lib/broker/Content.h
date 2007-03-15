@@ -45,14 +45,14 @@ class Content{
     virtual void add(framing::AMQContentBody::shared_ptr data) = 0;
 
     /** Total size of content in bytes */
-    virtual u_int32_t size() = 0;
+    virtual uint32_t size() = 0;
 
     /**
      * Iterate over the content calling SendFn for each block.
      * Subdivide blocks if necessary to ensure each block is
      * <= framesize bytes long.
      */
-    virtual void send(framing::ChannelAdapter& channel, u_int32_t framesize) = 0;
+    virtual void send(framing::ChannelAdapter& channel, uint32_t framesize) = 0;
 
     //FIXME aconway 2007-02-07: This is inconsistently implemented
     //find out what is needed.

@@ -63,8 +63,8 @@ void BrokerAdapter::ConnectionHandlerImpl::secureOk(
     const MethodContext&, const string& /*response*/){}
         
 void BrokerAdapter::ConnectionHandlerImpl::tuneOk(
-    const MethodContext&, u_int16_t /*channelmax*/,
-    u_int32_t framemax, u_int16_t heartbeat)
+    const MethodContext&, uint16_t /*channelmax*/,
+    uint32_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
     connection.setHeartbeat(heartbeat);
@@ -80,8 +80,8 @@ void BrokerAdapter::ConnectionHandlerImpl::open(
 }
         
 void BrokerAdapter::ConnectionHandlerImpl::close(
-    const MethodContext& context, u_int16_t /*replyCode*/, const string& /*replyText*/, 
-    u_int16_t /*classId*/, u_int16_t /*methodId*/)
+    const MethodContext& context, uint16_t /*replyCode*/, const string& /*replyText*/, 
+    uint16_t /*classId*/, uint16_t /*methodId*/)
 {
     client.closeOk(context.getRequestId());
     connection.getOutput().close();
@@ -103,9 +103,9 @@ void BrokerAdapter::ChannelHandlerImpl::flow(const MethodContext&, bool /*active
 void BrokerAdapter::ChannelHandlerImpl::flowOk(const MethodContext&, bool /*active*/){} 
         
 void BrokerAdapter::ChannelHandlerImpl::close(
-    const MethodContext& context, u_int16_t /*replyCode*/,
+    const MethodContext& context, uint16_t /*replyCode*/,
     const string& /*replyText*/,
-    u_int16_t /*classId*/, u_int16_t /*methodId*/)
+    uint16_t /*classId*/, uint16_t /*methodId*/)
 {
     client.closeOk(context.getRequestId());
     // FIXME aconway 2007-01-18: Following line will "delete this". Ugly.
@@ -116,7 +116,7 @@ void BrokerAdapter::ChannelHandlerImpl::closeOk(const MethodContext&){}
               
 
 
-void BrokerAdapter::ExchangeHandlerImpl::declare(const MethodContext& context, u_int16_t /*ticket*/, const string& exchange, const string& type, 
+void BrokerAdapter::ExchangeHandlerImpl::declare(const MethodContext& context, uint16_t /*ticket*/, const string& exchange, const string& type, 
                                                  bool passive, bool /*durable*/, bool /*autoDelete*/, bool /*internal*/, bool nowait, 
                                                  const FieldTable& /*arguments*/){
 
@@ -143,7 +143,7 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(const MethodContext& context, u
     }
 }
                 
-void BrokerAdapter::ExchangeHandlerImpl::delete_(const MethodContext& context, u_int16_t /*ticket*/, 
+void BrokerAdapter::ExchangeHandlerImpl::delete_(const MethodContext& context, uint16_t /*ticket*/, 
                                                  const string& exchange, bool /*ifUnused*/, bool nowait){
 
     //TODO: implement unused
@@ -151,7 +151,7 @@ void BrokerAdapter::ExchangeHandlerImpl::delete_(const MethodContext& context, u
     if(!nowait) client.deleteOk(context.getRequestId());
 } 
 
-void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, u_int16_t /*ticket*/, const string& name, 
+void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint16_t /*ticket*/, const string& name, 
                                               bool passive, bool durable, bool exclusive, 
                                               bool autoDelete, bool nowait, const qpid::framing::FieldTable& arguments){
     Queue::shared_ptr queue;
@@ -193,7 +193,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, u_in
     }
 } 
         
-void BrokerAdapter::QueueHandlerImpl::bind(const MethodContext& context, u_int16_t /*ticket*/, const string& queueName, 
+void BrokerAdapter::QueueHandlerImpl::bind(const MethodContext& context, uint16_t /*ticket*/, const string& queueName, 
                                            const string& exchangeName, const string& routingKey, bool nowait, 
                                            const FieldTable& arguments){
 
@@ -212,7 +212,7 @@ void BrokerAdapter::QueueHandlerImpl::bind(const MethodContext& context, u_int16
 void 
 BrokerAdapter::QueueHandlerImpl::unbind(
     const MethodContext& context,
-    u_int16_t /*ticket*/,
+    uint16_t /*ticket*/,
     const string& queueName,
     const string& exchangeName,
     const string& routingKey,
@@ -229,14 +229,14 @@ BrokerAdapter::QueueHandlerImpl::unbind(
     client.unbindOk(context.getRequestId());    
 }
         
-void BrokerAdapter::QueueHandlerImpl::purge(const MethodContext& context, u_int16_t /*ticket*/, const string& queueName, bool nowait){
+void BrokerAdapter::QueueHandlerImpl::purge(const MethodContext& context, uint16_t /*ticket*/, const string& queueName, bool nowait){
 
     Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());
     int count = queue->purge();
     if(!nowait) client.purgeOk( count, context.getRequestId());
 } 
         
-void BrokerAdapter::QueueHandlerImpl::delete_(const MethodContext& context, u_int16_t /*ticket*/, const string& queue, 
+void BrokerAdapter::QueueHandlerImpl::delete_(const MethodContext& context, uint16_t /*ticket*/, const string& queue, 
                                               bool ifUnused, bool ifEmpty, bool nowait){
     ChannelException error(0, "");
     int count(0);
@@ -263,7 +263,7 @@ void BrokerAdapter::QueueHandlerImpl::delete_(const MethodContext& context, u_in
         
 
 
-void BrokerAdapter::BasicHandlerImpl::qos(const MethodContext& context, u_int32_t prefetchSize, u_int16_t prefetchCount, bool /*global*/){
+void BrokerAdapter::BasicHandlerImpl::qos(const MethodContext& context, uint32_t prefetchSize, uint16_t prefetchCount, bool /*global*/){
     //TODO: handle global
     channel.setPrefetchSize(prefetchSize);
     channel.setPrefetchCount(prefetchCount);
@@ -271,7 +271,7 @@ void BrokerAdapter::BasicHandlerImpl::qos(const MethodContext& context, u_int32_
 } 
         
 void BrokerAdapter::BasicHandlerImpl::consume(
-    const MethodContext& context, u_int16_t /*ticket*/, 
+    const MethodContext& context, uint16_t /*ticket*/, 
     const string& queueName, const string& consumerTag, 
     bool noLocal, bool noAck, bool exclusive, 
     bool nowait, const FieldTable& fields)
@@ -299,7 +299,7 @@ void BrokerAdapter::BasicHandlerImpl::cancel(const MethodContext& context, const
 } 
         
 void BrokerAdapter::BasicHandlerImpl::publish(
-    const MethodContext& context, u_int16_t /*ticket*/, 
+    const MethodContext& context, uint16_t /*ticket*/, 
     const string& exchangeName, const string& routingKey, 
     bool mandatory, bool immediate)
 {
@@ -316,7 +316,7 @@ void BrokerAdapter::BasicHandlerImpl::publish(
     }
 } 
         
-void BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, u_int16_t /*ticket*/, const string& queueName, bool noAck){
+void BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, uint16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());    
     if(!connection.getChannel(channel.getId()).get(queue, "", !noAck)){
         string clusterId;//not used, part of an imatix hack
@@ -325,11 +325,11 @@ void BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, u_int16_
     }
 } 
         
-void BrokerAdapter::BasicHandlerImpl::ack(const MethodContext&, u_int64_t deliveryTag, bool multiple){
+void BrokerAdapter::BasicHandlerImpl::ack(const MethodContext&, uint64_t deliveryTag, bool multiple){
 	channel.ack(deliveryTag, multiple);
 } 
         
-void BrokerAdapter::BasicHandlerImpl::reject(const MethodContext&, u_int64_t /*deliveryTag*/, bool /*requeue*/){} 
+void BrokerAdapter::BasicHandlerImpl::reject(const MethodContext&, uint64_t /*deliveryTag*/, bool /*requeue*/){} 
         
 void BrokerAdapter::BasicHandlerImpl::recover(const MethodContext&, bool requeue){
     channel.recover(requeue);

@@ -34,10 +34,10 @@ namespace framing {
 	
     public:
 	inline virtual ~HeaderProperties(){}
-	virtual u_int8_t classId() = 0;
-	virtual u_int32_t size() const = 0;
+	virtual uint8_t classId() = 0;
+	virtual uint32_t size() const = 0;
 	virtual void encode(Buffer& buffer) const = 0;
-	virtual void decode(Buffer& buffer, u_int32_t size) = 0;
+	virtual void decode(Buffer& buffer, uint32_t size) = 0;
     };
 }
 }

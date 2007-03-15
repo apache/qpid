@@ -50,7 +50,7 @@ BasicMessage::BasicMessage(
 {}
 
 // FIXME aconway 2007-02-01: remove.
-// BasicMessage::BasicMessage(Buffer& buffer, bool headersOnly, u_int32_t contentChunkSize) : 
+// BasicMessage::BasicMessage(Buffer& buffer, bool headersOnly, uint32_t contentChunkSize) : 
 //     publisher(0), size(0)
 // {
 
@@ -80,8 +80,8 @@ bool BasicMessage::isComplete(){
 }
 
 void BasicMessage::deliver(ChannelAdapter& channel, 
-                           const string& consumerTag, u_int64_t deliveryTag, 
-                           u_int32_t framesize)
+                           const string& consumerTag, uint64_t deliveryTag, 
+                           uint32_t framesize)
 {
     // CCT -- TODO - Update code generator to take pointer/ not
     // instance to avoid extra contruction
@@ -94,9 +94,9 @@ void BasicMessage::deliver(ChannelAdapter& channel,
 
 void BasicMessage::sendGetOk(const MethodContext& context,
     					     const std::string& /*destination*/,
-                             u_int32_t messageCount,
-                             u_int64_t deliveryTag, 
-                             u_int32_t framesize)
+                             uint32_t messageCount,
+                             uint64_t deliveryTag, 
+                             uint32_t framesize)
 {
     // CCT -- TODO - Update code generator to take pointer/ not
     // instance to avoid extra contruction
@@ -110,7 +110,7 @@ void BasicMessage::sendGetOk(const MethodContext& context,
 }
 
 void BasicMessage::sendContent(
-    ChannelAdapter& channel, u_int32_t framesize)
+    ChannelAdapter& channel, uint32_t framesize)
 {
     channel.send(header);
     Mutex::ScopedLock locker(contentLock);
@@ -134,7 +134,7 @@ bool BasicMessage::isPersistent()
     return props && props->getDeliveryMode() == PERSISTENT;
 }
 
-void BasicMessage::decode(Buffer& buffer, bool headersOnly, u_int32_t contentChunkSize)
+void BasicMessage::decode(Buffer& buffer, bool headersOnly, uint32_t contentChunkSize)
 {
     decodeHeader(buffer);
     if (!headersOnly) decodeContent(buffer, contentChunkSize);
@@ -149,15 +149,15 @@ void BasicMessage::decodeHeader(Buffer& buffer)
     buffer.getShortString(routingKey);
     setRouting(exchange, routingKey);
     
-    u_int32_t headerSize = buffer.getLong();
+    uint32_t headerSize = buffer.getLong();
     AMQHeaderBody::shared_ptr headerBody(new AMQHeaderBody());
     headerBody->decode(buffer, headerSize);
     setHeader(headerBody);
 }
 
-void BasicMessage::decodeContent(Buffer& buffer, u_int32_t chunkSize)
+void BasicMessage::decodeContent(Buffer& buffer, uint32_t chunkSize)
 {    
-    u_int64_t expected = expectedContentSize();
+    uint64_t expected = expectedContentSize();
     if (expected != buffer.available()) {
         std::cout << "WARN: Expected " << expectedContentSize() << " bytes, got " << buffer.available() << std::endl;
         throw Exception("Cannot decode content, buffer not large enough.");
@@ -167,9 +167,9 @@ void BasicMessage::decodeContent(Buffer& buffer, u_int32_t chunkSize)
         chunkSize = expected;
     }
 
-    u_int64_t total = 0;
+    uint64_t total = 0;
     while (total < expectedContentSize()) {
-        u_int64_t remaining =  expected - total;
+        uint64_t remaining =  expected - total;
         AMQContentBody::shared_ptr contentBody(new AMQContentBody());        
         contentBody->decode(buffer, remaining < chunkSize ? remaining : chunkSize);
         addContent(contentBody);
@@ -197,25 +197,25 @@ void BasicMessage::encodeContent(Buffer& buffer)
     if (content.get()) content->encode(buffer);
 }
 
-u_int32_t BasicMessage::encodedSize()
+uint32_t BasicMessage::encodedSize()
 {
     return  encodedHeaderSize() + encodedContentSize();
 }
 
-u_int32_t BasicMessage::encodedContentSize()
+uint32_t BasicMessage::encodedContentSize()
 {
     Mutex::ScopedLock locker(contentLock);
     return content.get() ? content->size() : 0;
 }
 
-u_int32_t BasicMessage::encodedHeaderSize()
+uint32_t BasicMessage::encodedHeaderSize()
 {
     return getExchange().size() + 1
         + getRoutingKey().size() + 1
         + header->size() + 4;//4 extra bytes for size
 }
 
-u_int64_t BasicMessage::expectedContentSize()
+uint64_t BasicMessage::expectedContentSize()
 {
     return header.get() ? header->getContentSize() : 0;
 }

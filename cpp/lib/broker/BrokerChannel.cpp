@@ -49,8 +49,8 @@ using namespace qpid::sys;
 
 Channel::Channel(
     Connection& con, ChannelId id,
-    u_int32_t _framesize, MessageStore* const _store,
-    u_int64_t _stagingThreshold
+    uint32_t _framesize, MessageStore* const _store,
+    uint64_t _stagingThreshold
 ) :
     ChannelAdapter(id, &con.getOutput(), con.getVersion()),
     connection(con),
@@ -130,7 +130,7 @@ void Channel::deliver(
     Mutex::ScopedLock locker(deliveryLock);
 
 	// Key the delivered messages to the id of the request in which they're sent 
-    u_int64_t deliveryTag = getNextSendRequestId();
+    uint64_t deliveryTag = getNextSendRequestId();
     
     if(ackExpected){
         unacked.push_back(DeliveryRecord(msg, queue, consumerTag, deliveryTag));
@@ -239,14 +239,14 @@ void Channel::ack(){
 }
 
 // Used by Basic
-void Channel::ack(u_int64_t deliveryTag, bool multiple){
+void Channel::ack(uint64_t deliveryTag, bool multiple){
 	if (multiple)
 		ack(0, deliveryTag);
 	else
 		ack(deliveryTag, deliveryTag);
 }
 
-void Channel::ack(u_int64_t firstTag, u_int64_t lastTag){
+void Channel::ack(uint64_t firstTag, uint64_t lastTag){
     if(transactional){
         accumulatedAck.update(firstTag, lastTag);
 
@@ -300,7 +300,7 @@ bool Channel::get(Queue::shared_ptr queue, const string& destination, bool ackEx
     Message::shared_ptr msg = queue->dequeue();
     if(msg){
         Mutex::ScopedLock locker(deliveryLock);
-        u_int64_t myDeliveryTag = getNextSendRequestId();
+        uint64_t myDeliveryTag = getNextSendRequestId();
         msg->sendGetOk(MethodContext(this, msg->getRespondTo()),
         			   destination,
                        queue->getMessageCount() + 1, myDeliveryTag,
@@ -315,7 +315,7 @@ bool Channel::get(Queue::shared_ptr queue, const string& destination, bool ackEx
 }
 
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag,
-                      u_int64_t deliveryTag)
+                      uint64_t deliveryTag)
 {
     msg->deliver(*this, consumerTag, deliveryTag, framesize);
 }

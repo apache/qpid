@@ -72,18 +72,18 @@ class Message {
     bool isRedelivered(){ return redelivered; }
     void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
 
-    u_int64_t getDeliveryTag() const;
+    uint64_t getDeliveryTag() const;
 
     const std::string& getContentType() const;
     const std::string& getContentEncoding() const;
     qpid::framing::FieldTable& getHeaders() const;
-    u_int8_t getDeliveryMode() const;
-    u_int8_t getPriority() const;
+    uint8_t getDeliveryMode() const;
+    uint8_t getPriority() const;
     const std::string& getCorrelationId() const;
     const std::string& getReplyTo() const;
     const std::string& getExpiration() const;
     const std::string& getMessageId() const;
-    u_int64_t getTimestamp() const;
+    uint64_t getTimestamp() const;
     const std::string& getType() const;
     const std::string& getUserId() const;
     const std::string& getAppId() const;
@@ -95,13 +95,13 @@ class Message {
     /**
      * Sets the delivery mode. 1 = non-durable, 2 = durable.
      */
-    void setDeliveryMode(u_int8_t mode);
-    void setPriority(u_int8_t priority);
+    void setDeliveryMode(uint8_t mode);
+    void setPriority(uint8_t priority);
     void setCorrelationId(const std::string& correlationId);
     void setReplyTo(const std::string& replyTo);
     void setExpiration(const std::string&  expiration);
     void setMessageId(const std::string& messageId);
-    void setTimestamp(u_int64_t timestamp);
+    void setTimestamp(uint64_t timestamp);
     void setType(const std::string& type);
     void setUserId(const std::string& userId);
     void setAppId(const std::string& appId);

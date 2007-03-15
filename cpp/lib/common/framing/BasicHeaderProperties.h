@@ -36,39 +36,39 @@ namespace framing {
 	string contentType;
 	string contentEncoding;
 	FieldTable headers;
-	u_int8_t deliveryMode;
-	u_int8_t priority;
+	uint8_t deliveryMode;
+	uint8_t priority;
 	string correlationId;
 	string replyTo;
 	string expiration;
 	string messageId;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	string type;
 	string userId;
 	string appId;
 	string clusterId;
 	
-	u_int16_t getFlags() const;
+	uint16_t getFlags() const;
 
     public:
 	BasicHeaderProperties();
 	virtual ~BasicHeaderProperties();
-	virtual u_int32_t size() const;
+	virtual uint32_t size() const;
 	virtual void encode(Buffer& buffer) const;
-	virtual void decode(Buffer& buffer, u_int32_t size);
+	virtual void decode(Buffer& buffer, uint32_t size);
 
-	inline virtual u_int8_t classId() { return BASIC; }
+	inline virtual uint8_t classId() { return BASIC; }
 
 	inline const string& getContentType() const { return contentType; }
 	inline const string& getContentEncoding() const { return contentEncoding; }
 	inline FieldTable& getHeaders() { return headers; }
-	inline u_int8_t getDeliveryMode() const { return deliveryMode; }
-	inline u_int8_t getPriority() const { return priority; }
+	inline uint8_t getDeliveryMode() const { return deliveryMode; }
+	inline uint8_t getPriority() const { return priority; }
 	inline const string& getCorrelationId() const {return correlationId; }
 	inline const string& getReplyTo() const { return replyTo; }
 	inline const string& getExpiration() const { return expiration; }
 	inline const string& getMessageId() const {return messageId; }
-	inline u_int64_t getTimestamp() const { return timestamp; }
+	inline uint64_t getTimestamp() const { return timestamp; }
 	inline const string& getType() const { return type; }
 	inline const string& getUserId() const { return userId; }
 	inline const string& getAppId() const { return appId; }
@@ -77,13 +77,13 @@ namespace framing {
 	void inline setContentType(const string& _type){ contentType = _type; }
 	void inline setContentEncoding(const string& encoding){ contentEncoding = encoding; }
 	void inline setHeaders(const FieldTable& _headers){ headers = _headers; }
-	void inline setDeliveryMode(u_int8_t mode){ deliveryMode = mode; }
-	void inline setPriority(u_int8_t _priority){ priority = _priority; }
+	void inline setDeliveryMode(uint8_t mode){ deliveryMode = mode; }
+	void inline setPriority(uint8_t _priority){ priority = _priority; }
 	void inline setCorrelationId(const string& _correlationId){ correlationId = _correlationId; }
 	void inline setReplyTo(const string& _replyTo){ replyTo = _replyTo;}
 	void inline setExpiration(const string&  _expiration){ expiration = _expiration; }
 	void inline setMessageId(const string& _messageId){ messageId = _messageId; }
-	void inline setTimestamp(u_int64_t _timestamp){ timestamp = _timestamp; }
+	void inline setTimestamp(uint64_t _timestamp){ timestamp = _timestamp; }
 	void inline setType(const string& _type){ type = _type; }
 	void inline setUserId(const string& _userId){ userId = _userId; }
 	void inline setAppId(const string& _appId){appId = _appId; }

@@ -37,7 +37,7 @@ void StringValue::decode(Buffer& buffer){
 }
 
 void IntegerValue::encode(Buffer& buffer){
-    buffer.putLong((u_int32_t) value);
+    buffer.putLong((uint32_t) value);
 }
 void IntegerValue::decode(Buffer& buffer){
     value = buffer.getLong();
@@ -68,7 +68,7 @@ void FieldTableValue::decode(Buffer& buffer){
 std::auto_ptr<Value> Value::decode_value(Buffer& buffer)
 {
     std::auto_ptr<Value> value;
-    u_int8_t type = buffer.getOctet();
+    uint8_t type = buffer.getOctet();
     switch(type){
       case 'S':
         value.reset(new StringValue());

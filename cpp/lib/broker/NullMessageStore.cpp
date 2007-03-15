@@ -60,7 +60,7 @@ void NullMessageStore::appendContent(Message* const, const string&)
     if (warn) std::cout << "WARNING: Can't append content. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::loadContent(Message* const, string&, u_int64_t, u_int32_t)
+void NullMessageStore::loadContent(Message* const, string&, uint64_t, uint32_t)
 {
     if (warn) std::cout << "WARNING: Can't load content. Persistence not enabled." << std::endl;
 }

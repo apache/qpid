@@ -23,20 +23,20 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-QueuePolicy::QueuePolicy(u_int32_t _maxCount, u_int64_t _maxSize) : 
+QueuePolicy::QueuePolicy(uint32_t _maxCount, uint64_t _maxSize) : 
     maxCount(_maxCount), maxSize(_maxSize), count(0), size(0) {}
 
 QueuePolicy::QueuePolicy(const FieldTable& settings) :
     maxCount(getInt(settings, maxCountKey, 0)), 
     maxSize(getInt(settings, maxSizeKey, 0)), count(0), size(0) {}
 
-void QueuePolicy::enqueued(u_int64_t _size)
+void QueuePolicy::enqueued(uint64_t _size)
 {
     if (maxCount) count++;
     if (maxSize) size += _size;
 }
 
-void QueuePolicy::dequeued(u_int64_t _size)
+void QueuePolicy::dequeued(uint64_t _size)
 {
     if (maxCount) count--;
     if (maxSize) size -= _size;

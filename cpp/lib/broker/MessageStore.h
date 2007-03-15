@@ -36,7 +36,7 @@ namespace qpid {
              * disk as it arrives) and will load their data lazily. On
              * recovery therefore, only the headers should be loaded.
              */
-            u_int64_t stagingThreshold;
+            uint64_t stagingThreshold;
         };
         /**
          * An abstraction of the persistent storage for messages. (In
@@ -91,7 +91,7 @@ namespace qpid {
              * content should be loaded, not the headers or related
              * meta-data).
              */
-            virtual void loadContent(Message* const msg, std::string& data, u_int64_t offset, u_int32_t length) = 0;
+            virtual void loadContent(Message* const msg, std::string& data, uint64_t offset, uint32_t length) = 0;
 
             /**
              * Enqueues a message, storing the message if it has not

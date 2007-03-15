@@ -65,7 +65,7 @@ MessageMessage::MessageMessage(
 void MessageMessage::transferMessage(
     framing::ChannelAdapter& channel, 
     const std::string& consumerTag, 
-    u_int32_t framesize)
+    uint32_t framesize)
 {	
 	const framing::Content& body = transfer->getBody();
 
@@ -77,11 +77,11 @@ void MessageMessage::transferMessage(
 		for(Reference::Appends::const_iterator a = reference->getAppends().begin();
 			a != reference->getAppends().end();
 			++a) {
-			u_int32_t sizeleft = (*a)->size();
+			uint32_t sizeleft = (*a)->size();
 			const string& content = (*a)->getBytes();
 			// Calculate overhead bytes
 			// Assume that the overhead is constant as the reference name doesn't change
-			u_int32_t overhead = sizeleft - content.size();
+			uint32_t overhead = sizeleft - content.size();
 			string::size_type contentStart = 0;
 			while (sizeleft) {
 				string::size_type contentSize = sizeleft <= framesize ? sizeleft : framesize-overhead;
@@ -167,8 +167,8 @@ void MessageMessage::transferMessage(
 void MessageMessage::deliver(
     framing::ChannelAdapter& channel, 
     const std::string& consumerTag, 
-    u_int64_t /*deliveryTag*/, 
-    u_int32_t framesize)
+    uint64_t /*deliveryTag*/, 
+    uint32_t framesize)
 {
 	transferMessage(channel, consumerTag, framesize);
 }
@@ -176,9 +176,9 @@ void MessageMessage::deliver(
 void MessageMessage::sendGetOk(
     const framing::MethodContext& context,
 	const std::string& destination,
-    u_int32_t /*messageCount*/,
-    u_int64_t /*deliveryTag*/, 
-    u_int32_t framesize)
+    uint32_t /*messageCount*/,
+    uint64_t /*deliveryTag*/, 
+    uint32_t framesize)
 {
 	framing::ChannelAdapter* channel = context.channel;
 	transferMessage(*channel, destination, framesize);
@@ -189,7 +189,7 @@ bool MessageMessage::isComplete()
     return true;
 }
 
-u_int64_t MessageMessage::contentSize() const
+uint64_t MessageMessage::contentSize() const
 {
 	if (transfer->getBody().isInline())
 	    return transfer->getBody().getValue().size();
@@ -211,25 +211,25 @@ bool MessageMessage::isPersistent()
     return transfer->getDeliveryMode() == PERSISTENT;
 }
 
-u_int32_t MessageMessage::encodedSize()
+uint32_t MessageMessage::encodedSize()
 {
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
-u_int32_t MessageMessage::encodedHeaderSize()
+uint32_t MessageMessage::encodedHeaderSize()
 {
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
-u_int32_t MessageMessage::encodedContentSize()
+uint32_t MessageMessage::encodedContentSize()
 {
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 
 }
 
-u_int64_t MessageMessage::expectedContentSize()
+uint64_t MessageMessage::expectedContentSize()
 {
     THROW_QPID_ERROR(INTERNAL_ERROR, "Unfinished");
     return 0;               // FIXME aconway 2007-02-05: 

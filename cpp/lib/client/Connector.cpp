@@ -31,7 +31,7 @@ using namespace qpid::framing;
 using qpid::QpidError;
 
 Connector::Connector(
-    ProtocolVersion ver, bool _debug, u_int32_t buffer_size
+    ProtocolVersion ver, bool _debug, uint32_t buffer_size
 ) : debug(_debug),
     receive_buffer_size(buffer_size),
     send_buffer_size(buffer_size),
@@ -131,7 +131,7 @@ void Connector::checkIdle(ssize_t status){
     }
 }
 
-void Connector::setReadTimeout(u_int16_t t){
+void Connector::setReadTimeout(uint16_t t){
     idleIn = t * 1000;//t is in secs
     if(idleIn && (!timeout || idleIn < timeout)){
         timeout = idleIn;
@@ -140,7 +140,7 @@ void Connector::setReadTimeout(u_int16_t t){
 
 }
 
-void Connector::setWriteTimeout(u_int16_t t){
+void Connector::setWriteTimeout(uint16_t t){
     idleOut = t * 1000;//t is in secs
     if(idleOut && (!timeout || idleOut < timeout)){
         timeout = idleOut;

@@ -163,17 +163,17 @@ class BrokerChannelTest : public CppUnit::TestCase
         string tagB;
         channel.consume(tagA, queue, false, false, owner);
         channel.consume(tagB, queue, false, false, owner);
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 3, queue->getConsumerCount());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 3, queue->getConsumerCount());
         CPPUNIT_ASSERT(channel.exists("my_consumer"));
         CPPUNIT_ASSERT(channel.exists(tagA));
         CPPUNIT_ASSERT(channel.exists(tagB));
         channel.cancel(tagA);
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 2, queue->getConsumerCount());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 2, queue->getConsumerCount());
         CPPUNIT_ASSERT(channel.exists("my_consumer"));
         CPPUNIT_ASSERT(!channel.exists(tagA));
         CPPUNIT_ASSERT(channel.exists(tagB));
         channel.close();
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 0, queue->getConsumerCount());        
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, queue->getConsumerCount());        
     }
 
     void testDeliveryNoAck(){
@@ -261,7 +261,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         exchange->bind(queue, "", 0);
 
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        u_int64_t contentSize(0);
+        uint64_t contentSize(0);
         for (int i = 0; i < 3; i++) {
             contentSize += data[i].size();
         }
@@ -315,13 +315,13 @@ class BrokerChannelTest : public CppUnit::TestCase
         
         Message::shared_ptr next = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg1, next);
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) data1.size(), next->encodedContentSize());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) data1.size(), next->encodedContentSize());
         next = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg2, next);
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) data2.size(), next->encodedContentSize());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) data2.size(), next->encodedContentSize());
         next = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg3, next);
-        CPPUNIT_ASSERT_EQUAL((u_int32_t) 0, next->encodedContentSize());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, next->encodedContentSize());
 
         next.reset();
         msg1.reset();
@@ -332,7 +332,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         store.check();
     }
 
-    Message* createMessage(const string& exchange, const string& routingKey, const string& messageId, u_int64_t contentSize)
+    Message* createMessage(const string& exchange, const string& routingKey, const string& messageId, uint64_t contentSize)
     {
         BasicMessage* msg = new BasicMessage(
             0, exchange, routingKey, false, false,

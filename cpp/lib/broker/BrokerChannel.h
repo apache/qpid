@@ -78,14 +78,14 @@ class Channel : public framing::ChannelAdapter,
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
     Connection& connection;
-    u_int64_t currentDeliveryTag;
+    uint64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
     bool transactional;
     ConsumerImplMap consumers;
-    u_int32_t prefetchSize;    
-    u_int16_t prefetchCount;    
+    uint32_t prefetchSize;    
+    uint16_t prefetchCount;    
     Prefetch outstanding;
-    u_int32_t framesize;
+    uint32_t framesize;
     NameGenerator tagGenerator;
     std::list<DeliveryRecord> unacked;
     sys::Mutex deliveryLock;
@@ -106,9 +106,9 @@ class Channel : public framing::ChannelAdapter,
   public:
     Channel(Connection& parent,
             framing::ChannelId id,
-            u_int32_t framesize, 
+            uint32_t framesize, 
             MessageStore* const _store = 0,
-            u_int64_t stagingThreshold = 0);
+            uint64_t stagingThreshold = 0);
     
     ~Channel();
 
@@ -118,8 +118,8 @@ class Channel : public framing::ChannelAdapter,
     void open() { opened = true; }
     void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
     Queue::shared_ptr getDefaultQueue() const { return defaultQueue; }
-    u_int32_t setPrefetchSize(u_int32_t size){ return prefetchSize = size; }
-    u_int16_t setPrefetchCount(u_int16_t n){ return prefetchCount = n; }
+    uint32_t setPrefetchSize(uint32_t size){ return prefetchSize = size; }
+    uint16_t setPrefetchCount(uint16_t n){ return prefetchCount = n; }
 
     bool exists(const string& consumerTag);
 
@@ -136,10 +136,10 @@ class Channel : public framing::ChannelAdapter,
     void commit();
     void rollback();
     void ack();
-    void ack(u_int64_t deliveryTag, bool multiple);
-    void ack(u_int64_t deliveryTag, u_int64_t endTag);
+    void ack(uint64_t deliveryTag, bool multiple);
+    void ack(uint64_t deliveryTag, uint64_t endTag);
     void recover(bool requeue);
-    void deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag);            
+    void deliver(Message::shared_ptr& msg, const string& consumerTag, uint64_t deliveryTag);            
     void handlePublish(Message* msg);
     void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<framing::AMQContentBody>);

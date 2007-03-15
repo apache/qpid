@@ -42,13 +42,13 @@ class AMQFrame : public AMQDataBlock
 {
   public:
     AMQFrame(ProtocolVersion _version = highestProtocolVersion);
-    AMQFrame(ProtocolVersion _version, u_int16_t channel, AMQBody* body);
-    AMQFrame(ProtocolVersion _version, u_int16_t channel, const AMQBody::shared_ptr& body);    
+    AMQFrame(ProtocolVersion _version, uint16_t channel, AMQBody* body);
+    AMQFrame(ProtocolVersion _version, uint16_t channel, const AMQBody::shared_ptr& body);    
     virtual ~AMQFrame();
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
-    virtual u_int32_t size() const;
-    u_int16_t getChannel();
+    virtual uint32_t size() const;
+    uint16_t getChannel();
     AMQBody::shared_ptr getBody();
 
     /** Convenience template to cast the body to an expected type */
@@ -57,15 +57,15 @@ class AMQFrame : public AMQDataBlock
         boost::static_pointer_cast<T>(getBody());
     }
 
-    u_int32_t decodeHead(Buffer& buffer); 
+    uint32_t decodeHead(Buffer& buffer); 
     void decodeBody(Buffer& buffer, uint32_t size); 
 
   private:
         static AMQP_MethodVersionMap versionMap;
     ProtocolVersion version;
             
-    u_int16_t channel;
-    u_int8_t type;
+    uint16_t channel;
+    uint8_t type;
     AMQBody::shared_ptr body;
             
 

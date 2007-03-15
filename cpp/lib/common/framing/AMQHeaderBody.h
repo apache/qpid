@@ -32,8 +32,8 @@ namespace framing {
 class AMQHeaderBody :  public AMQBody
 {
     HeaderProperties* properties;
-    u_int16_t weight;
-    u_int64_t contentSize;
+    uint16_t weight;
+    uint64_t contentSize;
 
     void createProperties(int classId);
 public:
@@ -41,15 +41,15 @@ public:
 
     AMQHeaderBody(int classId);
     AMQHeaderBody();
-    inline u_int8_t type() const { return HEADER_BODY; }
+    inline uint8_t type() const { return HEADER_BODY; }
     HeaderProperties* getProperties(){ return properties; }
     const HeaderProperties* getProperties() const { return properties; }
-    inline u_int64_t getContentSize() const { return contentSize; }
-    inline void setContentSize(u_int64_t _size) { contentSize = _size; }
+    inline uint64_t getContentSize() const { return contentSize; }
+    inline void setContentSize(uint64_t _size) { contentSize = _size; }
     virtual ~AMQHeaderBody();
-    virtual u_int32_t size() const;
+    virtual uint32_t size() const;
     virtual void encode(Buffer& buffer) const;
-    virtual void decode(Buffer& buffer, u_int32_t size);
+    virtual void decode(Buffer& buffer, uint32_t size);
     virtual void print(std::ostream& out) const;
 };
 

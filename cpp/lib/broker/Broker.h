@@ -80,8 +80,8 @@ class Broker : public sys::Runnable,
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
-    u_int32_t getTimeout() { return timeout; }
-    u_int64_t getStagingThreshold() { return stagingThreshold; }
+    uint32_t getTimeout() { return timeout; }
+    uint64_t getStagingThreshold() { return stagingThreshold; }
     AutoDelete& getCleaner() { return cleaner; }
     
   private:
@@ -93,8 +93,8 @@ class Broker : public sys::Runnable,
     std::auto_ptr<MessageStore> store;
     QueueRegistry queues;
     ExchangeRegistry exchanges;
-    u_int32_t timeout;
-    u_int64_t stagingThreshold;
+    uint32_t timeout;
+    uint64_t stagingThreshold;
     AutoDelete cleaner;
     ConnectionFactory factory;
 };

@@ -52,7 +52,7 @@ void AMQMethodBody::ClassMethodId::decode(Buffer& buffer) {
     methodId = buffer.getShort();
 }
 
-void AMQMethodBody::decode(Buffer& buffer, u_int32_t /*size*/) {
+void AMQMethodBody::decode(Buffer& buffer, uint32_t /*size*/) {
     decodeContent(buffer);
 }
 

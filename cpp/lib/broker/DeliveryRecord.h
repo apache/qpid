@@ -39,16 +39,16 @@ namespace qpid {
             mutable Message::shared_ptr msg;
             mutable Queue::shared_ptr queue;
             std::string consumerTag;
-            u_int64_t deliveryTag;
+            uint64_t deliveryTag;
             bool pull;
 
         public:
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const u_int64_t deliveryTag);
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const u_int64_t deliveryTag);
+            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const uint64_t deliveryTag);
+            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const uint64_t deliveryTag);
             
             void discard() const;
             void discard(TransactionContext* ctxt, const std::string* const xid) const;
-            bool matches(u_int64_t tag) const;
+            bool matches(uint64_t tag) const;
             bool coveredBy(const AccumulatedAck* const range) const;
             void requeue() const;
             void redeliver(Channel* const) const;

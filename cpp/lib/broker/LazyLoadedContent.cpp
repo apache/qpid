@@ -30,7 +30,7 @@ LazyLoadedContent::~LazyLoadedContent()
     store->destroy(msg);
 }
 
-LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const _msg, u_int64_t _expectedSize) : 
+LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const _msg, uint64_t _expectedSize) : 
     store(_store), msg(_msg), expectedSize(_expectedSize) {}
 
 void LazyLoadedContent::add(AMQContentBody::shared_ptr data)
@@ -38,17 +38,17 @@ void LazyLoadedContent::add(AMQContentBody::shared_ptr data)
     store->appendContent(msg, data->getData());
 }
 
-u_int32_t LazyLoadedContent::size()
+uint32_t LazyLoadedContent::size()
 {
     return 0;//all content is written as soon as it is added
 }
 
-void LazyLoadedContent::send(ChannelAdapter& channel, u_int32_t framesize)
+void LazyLoadedContent::send(ChannelAdapter& channel, uint32_t framesize)
 {
     if (expectedSize > framesize) {        
-        for (u_int64_t offset = 0; offset < expectedSize; offset += framesize)
+        for (uint64_t offset = 0; offset < expectedSize; offset += framesize)
         {            
-            u_int64_t remaining = expectedSize - offset;
+            uint64_t remaining = expectedSize - offset;
             string data;
             store->loadContent(msg, data, offset,
                                remaining > framesize ? framesize : remaining);

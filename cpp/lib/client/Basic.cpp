@@ -123,17 +123,17 @@ void Basic::publish(
     //break msg up into header frame and content frame(s) and send these
     channel.send(msg.getHeader());
     string data = msg.getData();
-    u_int64_t data_length = data.length();
+    uint64_t data_length = data.length();
     if(data_length > 0){
         //frame itself uses 8 bytes
-        u_int32_t frag_size = channel.connection->getMaxFrameSize() - 8;
+        uint32_t frag_size = channel.connection->getMaxFrameSize() - 8;
         if(data_length < frag_size){
             channel.send(new AMQContentBody(data));
         }else{
-            u_int32_t offset = 0;
-            u_int32_t remaining = data_length - offset;
+            uint32_t offset = 0;
+            uint32_t remaining = data_length - offset;
             while (remaining > 0) {
-                u_int32_t length = remaining > frag_size ? frag_size : remaining;
+                uint32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(data.substr(offset, length));
                 channel.send(new AMQContentBody(frag));                          
                 

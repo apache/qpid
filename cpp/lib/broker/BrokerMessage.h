@@ -54,9 +54,9 @@ class BasicMessage : public Message {
     boost::shared_ptr<framing::AMQHeaderBody> header;
     std::auto_ptr<Content> content;
     sys::Mutex contentLock;
-    u_int64_t size;
+    uint64_t size;
 
-    void sendContent(framing::ChannelAdapter&, u_int32_t framesize);
+    void sendContent(framing::ChannelAdapter&, uint32_t framesize);
 
   public:
     typedef boost::shared_ptr<BasicMessage> shared_ptr;
@@ -73,24 +73,24 @@ class BasicMessage : public Message {
 
     void deliver(framing::ChannelAdapter&, 
                  const string& consumerTag, 
-                 u_int64_t deliveryTag, 
-                 u_int32_t framesize);
+                 uint64_t deliveryTag, 
+                 uint32_t framesize);
     
     void sendGetOk(const framing::MethodContext&, 
 				   const std::string& destination,
-                   u_int32_t messageCount,
-                   u_int64_t deliveryTag, 
-                   u_int32_t framesize);
+                   uint32_t messageCount,
+                   uint64_t deliveryTag, 
+                   uint32_t framesize);
 
     framing::BasicHeaderProperties* getHeaderProperties();
     const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
-    u_int64_t contentSize() const { return size; }
+    uint64_t contentSize() const { return size; }
 
     void decode(framing::Buffer& buffer, bool headersOnly = false,
-                u_int32_t contentChunkSize = 0);
+                uint32_t contentChunkSize = 0);
     void decodeHeader(framing::Buffer& buffer);
-    void decodeContent(framing::Buffer& buffer, u_int32_t contentChunkSize = 0);
+    void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
 
     void encode(framing::Buffer& buffer);
     void encodeHeader(framing::Buffer& buffer);
@@ -99,18 +99,18 @@ class BasicMessage : public Message {
      * @returns the size of the buffer needed to encode this
      * message in its entirety
      */
-    u_int32_t encodedSize();
+    uint32_t encodedSize();
     /**
      * @returns the size of the buffer needed to encode the
      * 'header' of this message (not just the header frame,
      * but other meta data e.g.routing key and exchange)
      */
-    u_int32_t encodedHeaderSize();
+    uint32_t encodedHeaderSize();
     /**
      * @returns the size of the buffer needed to encode the
      * (possibly partial) content held by this message
      */
-    u_int32_t encodedContentSize();
+    uint32_t encodedContentSize();
     /**
      * Releases the in-memory content data held by this
      * message. Must pass in a store from which the data can
@@ -121,7 +121,7 @@ class BasicMessage : public Message {
      * If headers have been received, returns the expected
      * content size else returns 0.
      */
-    u_int64_t expectedContentSize();
+    uint64_t expectedContentSize();
     /**
      * Sets the 'content' implementation of this message (the
      * message controls the lifecycle of the content instance

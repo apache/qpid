@@ -34,8 +34,8 @@ namespace qpid {
             content_list content;
         public:
             void add(qpid::framing::AMQContentBody::shared_ptr data);
-            u_int32_t size();
-            void send(framing::ChannelAdapter&, u_int32_t framesize);
+            uint32_t size();
+            void send(framing::ChannelAdapter&, uint32_t framesize);
             void encode(qpid::framing::Buffer& buffer);
         };
     }
