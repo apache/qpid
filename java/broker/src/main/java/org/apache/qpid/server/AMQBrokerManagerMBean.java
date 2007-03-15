@@ -36,6 +36,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.commons.configuration.Configuration;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -157,6 +160,12 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);
+            }
+
+            Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
+            if (virtualHostDefaultQueueConfiguration != null)
+            {
+                Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
             }
             _queueRegistry.registerQueue(queue);
         }
