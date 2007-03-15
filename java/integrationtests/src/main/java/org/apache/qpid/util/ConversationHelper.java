@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.util;
 
-import java.util.Collection;
+import java.util.*;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.Message;
-import javax.jms.MessageListener;
+import javax.jms.*;
 
 /**
  * A conversation helper, uses a message correlation id pattern to match up sent and received messages as a conversation
@@ -89,7 +89,8 @@ import javax.jms.MessageListener;
  *       transactional mode, commits must happen before receiving, or no replies will come in. (unless there were some
  *       pending on the queue?). Also, having received on a particular session, must ensure that session is used for all
  *       subsequent sends and receive at least until the transaction is committed. So a message selector must be used
- *       to restrict receives on that session to prevent it picking up messages bound for other conversations.
+ *       to restrict receives on that session to prevent it picking up messages bound for other conversations. Or use
+ *       a temporary response queue, with only that session listening to it.
  *
  * @todo Want something convenient that hides many details. Write out some example use cases to get the best feel for
  *       it. Pass in connection, send destination, receive destination. Provide endConvo, send, receive
@@ -101,6 +102,32 @@ import javax.jms.MessageListener;
  */
 public class ConversationHelper
 {
+    /** Holds a map from correlation id's to queues. */
+    private Map<Long, BlockingQueue<Message>> idsToQueues = new HashMap<Long, BlockingQueue<Message>>();
+
+    private Session session;
+    private MessageProducer producer;
+    private MessageConsumer consumer;
+
+    Class<? extends BlockingQueue<Message>> queueClass;
+
+    BlockingQueue<Message> deadLetterBox = new LinkedBlockingQueue<Message>();
+
+    ThreadLocal<PerThreadSettings> threadLocals =
+        new ThreadLocal<PerThreadSettings>()
+        {
+            protected PerThreadSettings initialValue()
+            {
+                PerThreadSettings settings = new PerThreadSettings();
+                settings.conversationId = conversationIdGenerator.getAndIncrement();
+
+                return settings;
+            }
+        };
+
+    /** Generates new coversation id's as needed. */
+    AtomicLong conversationIdGenerator = new AtomicLong();
+
     /**
      * Creates a conversation helper on the specified connection with the default sending destination, and listening
      * to the specified receiving destination.
@@ -109,19 +136,53 @@ public class ConversationHelper
      * @param sendDestination    The default sending destiation for all messages.
      * @param receiveDestination The destination to listen to for incoming messages.
      * @param queueClass         The queue implementation class.
+     *
+     * @throws JMSException All undelying JMSExceptions are allowed to fall through.
      */
     public ConversationHelper(Connection connection, Destination sendDestination, Destination receiveDestination,
-                              Class<? extends Queue> queueClass)
-    { }
+                              Class<? extends BlockingQueue<Message>> queueClass) throws JMSException
+    {
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        producer = session.createProducer(sendDestination);
+        consumer = session.createConsumer(receiveDestination);
+
+        consumer.setMessageListener(new Receiver());
+
+        this.queueClass = queueClass;
+    }
 
     /**
      * Sends a message to the default sending location. The correlation id of the message will be assigned by this
      * method, overriding any previously set value.
      *
      * @param message The message to send.
+     *
+     * @throws JMSException All undelying JMSExceptions are allowed to fall through.
      */
-    public void send(Message message)
-    { }
+    public void send(Message message) throws JMSException
+    {
+        PerThreadSettings settings = threadLocals.get();
+        long conversationId = settings.conversationId;
+        message.setJMSCorrelationID(Long.toString(conversationId));
+
+        // Ensure that the reply queue for this conversation exists.
+        initQueueForId(conversationId);
+
+        producer.send(message);
+    }
+
+    /**
+     * Ensures that the reply queue for a conversation exists.
+     *
+     * @param conversationId The conversation correlation id.
+     */
+    private void initQueueForId(long conversationId)
+    {
+        if (!idsToQueues.containsKey(conversationId))
+        {
+            idsToQueues.put(conversationId, ReflectionUtils.<BlockingQueue<Message>>newInstance(queueClass));
+        }
+    }
 
     /**
      * Gets the next message in an ongoing conversation. This method may block until such a message is received.
@@ -130,7 +191,22 @@ public class ConversationHelper
      */
     public Message receive()
     {
-        return null;
+        PerThreadSettings settings = threadLocals.get();
+        long conversationId = settings.conversationId;
+
+        // Ensure that the reply queue for this conversation exists.
+        initQueueForId(conversationId);
+
+        BlockingQueue<Message> queue = idsToQueues.get(conversationId);
+
+        try
+        {
+            return queue.take();
+        }
+        catch (InterruptedException e)
+        {
+            return null;
+        }
     }
 
     /**
@@ -138,7 +214,18 @@ public class ConversationHelper
      * conversation are no longer valid, and any incoming messages using them will go to the dead letter box.
      */
     public void end()
-    { }
+    {
+        // Ensure that the thread local for the current thread is cleaned up.
+        PerThreadSettings settings = threadLocals.get();
+        long conversationId = settings.conversationId;
+        threadLocals.remove();
+
+        // Ensure that its queue is removed from the queue map.
+        BlockingQueue<Message> queue = idsToQueues.remove(conversationId);
+
+        // Move any outstanding messages on the threads conversation id into the dead letter box.
+        queue.drainTo(deadLetterBox);
+    }
 
     /**
      * Clears the dead letter box, returning all messages that were in it.
@@ -147,7 +234,10 @@ public class ConversationHelper
      */
     public Collection<Message> emptyDeadLetterBox()
     {
-        return null;
+        Collection<Message> result = new LinkedList<Message>();
+        deadLetterBox.drainTo(result);
+
+        return result;
     }
 
     /**
@@ -162,6 +252,32 @@ public class ConversationHelper
          * @param message The incoming message.
          */
         public void onMessage(Message message)
-        { }
+        {
+            try
+            {
+                Long conversationId = Long.parseLong(message.getJMSCorrelationID());
+
+                // Find the converstaion queue to place the message on. If there is no conversation for the message id,
+                // the the dead letter box queue is used.
+                BlockingQueue<Message> queue = idsToQueues.get(conversationId);
+                queue = (queue == null) ? deadLetterBox : queue;
+
+                queue.put(message);
+            }
+            catch (JMSException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    protected class PerThreadSettings
+    {
+        /** Holds the correlation id for the current threads conversation. */
+        long conversationId;
     }
 }
