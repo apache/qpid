@@ -39,6 +39,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.jms.MessageProducer;
 import org.apache.qpid.jms.Session;
@@ -559,11 +560,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         boolean transacted = config.isTransacted();
         boolean persistent = config.usePersistentMessages();
         int messageSize = (config.getPayload() != 0) ? config.getPayload() : DEFAULT_MESSAGE_SIZE;
-        //int messageCount = config.getMessages();
+        int messageCount = config.getMessages();
         int destCount = (config.getDestinationsCount() != 0) ? config.getDestinationsCount() : DEFAULT_DESTINATION_COUNT;
         int batchSize = (config.getBatchSize() != 0) ? config.getBatchSize() : DEFAULT_TX_BATCH_SIZE;
         int rate = (config.getRate() != 0) ? config.getRate() : DEFAULT_RATE;
         boolean pubsub = config.isPubSub();
+        long timeout = (config.getTimeout() != 0) ? config.getTimeout() : DEFAULT_TIMEOUT;
 
         String destName = config.getDestination();
         if (destName == null)
@@ -623,10 +625,19 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
         pingProducer.getConnection().setExceptionListener(pingProducer);
 
-        // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
-        Thread pingThread = new Thread(pingProducer);
-        pingThread.run();
-        pingThread.join();
+        // If messageount is 0, then continue sending
+        if (messageCount == 0)
+        {
+            // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
+            Thread pingThread = new Thread(pingProducer);
+            pingThread.start();
+            pingThread.join();
+        }
+        else
+        {
+            pingProducer.ping(messageCount, timeout);
+        }
+        pingProducer.close();
     }
 
     /**
@@ -785,8 +796,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                     if ((remainingCount % _txBatchSize) == 0)
                     {
                         commitTx(_consumerSession);
+                        if (!_consumerSession.getTransacted() &&
+                            _consumerSession.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+                        {
+                            ((AMQSession)_consumerSession).acknowledge();
+                        }
                     }
-
+                    
                     // Forward the message and remaining count to any interested chained message listener.
                     if (_chainedMessageListener != null)
                     {
@@ -1017,9 +1033,9 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     }
 
     /**
-     * The ping loop implementation. This sends out pings waits for replies and inserts short pauses in between each.
+     * The ping implementation. This sends out pings waits for replies and inserts short pauses in between each.
      */
-    public void pingLoop()
+    public void ping(int pingCount, long timeout)
     {
         try
         {
@@ -1028,7 +1044,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             msg.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Send the message and wait for a reply.
-            pingAndWaitForReply(msg, DEFAULT_TX_BATCH_SIZE, DEFAULT_TIMEOUT);
+            pingAndWaitForReply(msg, pingCount, timeout);
 
             // Introduce a short pause if desired.
             pause(DEFAULT_SLEEP_TIME);
@@ -1043,6 +1059,11 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             _publish = false;
             _logger.debug("There was an interruption: " + e.getMessage(), e);
         }
+    }
+
+    public void ping()
+    {
+        ping(DEFAULT_TX_BATCH_SIZE, DEFAULT_TIMEOUT);
     }
 
     public Destination getReplyDestination()
@@ -1105,7 +1126,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         // Keep running until the publish flag is cleared.
         while (_publish)
         {
-            pingLoop();
+            ping();
         }
     }
 

@@ -51,6 +51,7 @@ public class Config extends AbstractConfig implements ConnectorConfig
     private int batchSize;
     private int rate;
     private boolean ispubsub;
+    private long timeout;
 
     public Config()
     {
@@ -159,6 +160,16 @@ public class Config extends AbstractConfig implements ConnectorConfig
     public void setDelay(long delay)
     {
         this.delay = delay;
+    }
+
+    public long getTimeout()
+    {
+        return timeout;
+    }
+
+    public void setTimeout(long time)
+    {
+        this.timeout = time;
     }
 
     public String getClientId()
@@ -284,6 +295,10 @@ public class Config extends AbstractConfig implements ConnectorConfig
         else if("-destinationname".equalsIgnoreCase(key))
         {
             destinationName = value;
+        }
+        else if("-timeout".equalsIgnoreCase(key))
+        {
+            setTimeout(parseLong("Bad timeout data", value));
         }
         else
         {
