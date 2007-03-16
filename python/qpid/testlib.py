@@ -80,7 +80,7 @@ Options:
     def __init__(self):
         # Defaults
         self.setBroker("localhost")
-        self.spec = "../specs/amqp.0-8.xml"
+        self.specfile = "../specs/amqp.0-8.xml"
         self.verbose = 1
         self.ignore = []
 
@@ -96,14 +96,22 @@ Options:
             self._die(str(e))
         for opt, value in opts:
             if opt in ("-?", "-h", "--help"): self._die()
-            if opt in ("-s", "--spec"): self.spec = value
+            if opt in ("-s", "--spec"): self.specfile = value
             if opt in ("-b", "--broker"): self.setBroker(value)
             if opt in ("-v", "--verbose"): self.verbose = 2
             if opt in ("-d", "--debug"): logging.basicConfig(level=logging.DEBUG)
             if opt in ("-i", "--ignore"): self.ignore.append(value)
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
 
-        if len(self.tests) == 0: self.tests=findmodules("tests")
+        self.spec = qpid.spec.load(self.specfile)
+        if len(self.tests) == 0:
+            # NB: not a typo but a quirk of AMQP history.
+            # AMQP 0-8 identifies itself as 8-0.
+            if self.spec.major==8 and self.spec.minor==0:
+                testdir="tests_0-8"
+            else:
+                testdir="tests"
+            self.tests=findmodules(testdir)
 
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
@@ -135,7 +143,7 @@ Options:
         spec = spec or self.spec
         user = user or self.user
         password = password or self.password
-        client = qpid.client.Client(host, port, qpid.spec.load(spec))
+        client = qpid.client.Client(host, port, spec)
         client.start({"LOGIN": user, "PASSWORD": password})
         return client
 
