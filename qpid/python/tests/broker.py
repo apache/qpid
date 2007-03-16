@@ -24,7 +24,7 @@ from qpid.testlib import testrunner, TestBase
 class BrokerTests(TestBase):
     """Tests for basic Broker functionality"""
 
-    def test_amqp_basic_13(self):
+    def test_ack_and_no_ack(self):
         """
         First, this test tries to receive a message with a no-ack
         consumer. Second, this test tries to explicitely receive and
@@ -34,41 +34,44 @@ class BrokerTests(TestBase):
         self.queue_declare(ch, queue = "myqueue")
 
         # No ack consumer
-        ctag = ch.basic_consume(queue = "myqueue", no_ack = True).consumer_tag
+        ctag = "tag1"
+        ch.message_consume(queue = "myqueue", destination = ctag, no_ack = True)
         body = "test no-ack"
-        ch.basic_publish(routing_key = "myqueue", content = Content(body))
+        ch.message_transfer(routing_key = "myqueue", body = body)
         msg = self.client.queue(ctag).get(timeout = 5)
-        self.assert_(msg.content.body == body)
+        self.assert_(msg.body == body)
 
-        # Acknowleding consumer
+        # Acknowledging consumer
         self.queue_declare(ch, queue = "otherqueue")
-        ctag = ch.basic_consume(queue = "otherqueue", no_ack = False).consumer_tag
+        ctag = "tag2"
+        ch.message_consume(queue = "otherqueue", destination = ctag, no_ack = False)
         body = "test ack"
-        ch.basic_publish(routing_key = "otherqueue", content = Content(body))
+        ch.message_transfer(routing_key = "otherqueue", body = body)
         msg = self.client.queue(ctag).get(timeout = 5)
-        ch.basic_ack(delivery_tag = msg.delivery_tag)
-        self.assert_(msg.content.body == body)
+        msg.ok()
+        self.assert_(msg.body == body)
         
-    def test_basic_delivery_immediate(self):
+    def test_simple_delivery_immediate(self):
         """
-        Test basic message delivery where consume is issued before publish
+        Test simple message delivery where consume is issued before publish
         """
         channel = self.channel
         self.exchange_declare(channel, exchange="test-exchange", type="direct")
         self.queue_declare(channel, queue="test-queue") 
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
-        reply = channel.basic_consume(queue="test-queue", no_ack=True)
-        queue = self.client.queue(reply.consumer_tag)
+        consumer_tag = "tag1"
+        channel.message_consume(queue="test-queue", destination=consumer_tag, no_ack=True)
+        queue = self.client.queue(consumer_tag)
 
         body = "Immediate Delivery"
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content(body), immediate=True)
+        channel.message_transfer(destination="test-exchange", routing_key="key", body=body, immediate=True)
         msg = queue.get(timeout=5)
-        self.assert_(msg.content.body == body)
+        self.assert_(msg.body == body)
 
         # TODO: Ensure we fail if immediate=True and there's no consumer.
 
 
-    def test_basic_delivery_queued(self):
+    def test_simple_delivery_queued(self):
         """
         Test basic message delivery where publish is issued before consume
         (i.e. requires queueing of the message)
@@ -78,11 +81,13 @@ class BrokerTests(TestBase):
         self.queue_declare(channel, queue="test-queue")
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
         body = "Queued Delivery"
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content(body))
-        reply = channel.basic_consume(queue="test-queue", no_ack=True)
-        queue = self.client.queue(reply.consumer_tag)
+        channel.message_transfer(destination="test-exchange", routing_key="key", body=body)
+
+        consumer_tag = "tag1"
+        channel.message_consume(queue="test-queue", destination=consumer_tag, no_ack=True)
+        queue = self.client.queue(consumer_tag)
         msg = queue.get(timeout=5)
-        self.assert_(msg.content.body == body)
+        self.assert_(msg.body == body)
 
     def test_invalid_channel(self):
         channel = self.client.channel(200)

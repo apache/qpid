@@ -33,9 +33,9 @@ class QueueTests(TestBase):
         channel.exchange_declare(exchange="test-exchange", type="direct")
         channel.queue_declare(queue="test-queue", exclusive=True)
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content("one"))
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content("two"))
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content("three"))
+        channel.message_transfer(destination="test-exchange", routing_key="key", body="one")
+        channel.message_transfer(destination="test-exchange", routing_key="key", body="two")
+        channel.message_transfer(destination="test-exchange", routing_key="key", body="three")
 
         #check that the queue now reports 3 messages:
         reply = channel.queue_declare(queue="test-queue")
@@ -48,9 +48,9 @@ class QueueTests(TestBase):
         self.assertEqual(0, reply.message_count)
 
         #send a further message and consume it, ensuring that the other messages are really gone
-        channel.basic_publish(exchange="test-exchange", routing_key="key", content=Content("four"))
-        reply = channel.basic_consume(queue="test-queue", no_ack=True)
-        queue = self.client.queue(reply.consumer_tag)
+        channel.message_transfer(destination="test-exchange", routing_key="key", content=Content("four"))
+        channel.message_consume(queue="test-queue", destination="tag", no_ack=True)
+        queue = self.client.queue("tag")
         msg = queue.get(timeout=1)
         self.assertEqual("four", msg.content.body)
 
@@ -153,15 +153,15 @@ class QueueTests(TestBase):
 
     def test_delete_simple(self):
         """
-        Test basic queue deletion
+        Test core queue deletion behaviour
         """
         channel = self.channel
 
         #straight-forward case:
         channel.queue_declare(queue="delete-me")
-        channel.basic_publish(routing_key="delete-me", content=Content("a"))
-        channel.basic_publish(routing_key="delete-me", content=Content("b"))
-        channel.basic_publish(routing_key="delete-me", content=Content("c"))        
+        channel.message_transfer(routing_key="delete-me", body="a")
+        channel.message_transfer(routing_key="delete-me", body="b")
+        channel.message_transfer(routing_key="delete-me", body="c")        
         reply = channel.queue_delete(queue="delete-me")
         self.assertEqual(3, reply.message_count)
         #check that it has gone be declaring passively
@@ -191,7 +191,7 @@ class QueueTests(TestBase):
         #create a queue and add a message to it (use default binding):
         channel.queue_declare(queue="delete-me-2")
         channel.queue_declare(queue="delete-me-2", passive="True")
-        channel.basic_publish(routing_key="delete-me-2", content=Content("message"))
+        channel.message_transfer(routing_key="delete-me-2", body="message")
 
         #try to delete, but only if empty:
         try:
@@ -205,11 +205,11 @@ class QueueTests(TestBase):
         channel.channel_open()
 
         #empty queue:
-        reply = channel.basic_consume(queue="delete-me-2", no_ack=True)
-        queue = self.client.queue(reply.consumer_tag)
+        channel.message_consume(destination="consumer_tag", queue="delete-me-2", no_ack=True)
+        queue = self.client.queue("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.content.body)
-        channel.basic_cancel(consumer_tag=reply.consumer_tag)
+        channel.message_cancel(destination="consumer_tag")
 
         #retry deletion on empty queue:
         channel.queue_delete(queue="delete-me-2", if_empty="True")
@@ -230,7 +230,7 @@ class QueueTests(TestBase):
         #create a queue and register a consumer:
         channel.queue_declare(queue="delete-me-3")
         channel.queue_declare(queue="delete-me-3", passive="True")
-        reply = channel.basic_consume(queue="delete-me-3", no_ack=True)
+        channel.message_consume(destination="consumer_tag", queue="delete-me-3", no_ack=True)
 
         #need new channel now:    
         channel2 = self.client.channel(2)
@@ -243,7 +243,7 @@ class QueueTests(TestBase):
             self.assertChannelException(406, e.args[0])
 
 
-        channel.basic_cancel(consumer_tag=reply.consumer_tag)    
+        channel.message_cancel(destination="consumer_tag")    
         channel.queue_delete(queue="delete-me-3", if_unused="True")
         #check that it has gone by declaring passively:
         try:
