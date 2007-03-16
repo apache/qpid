@@ -48,7 +48,7 @@ public class LatencyTest implements MessageListener
 
     LatencyTest(String broker, int count, int delay, int length) throws Exception
     {
-        this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"), count, delay, length);
+        this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test"), count, delay, length);
     }
 
     LatencyTest(AMQConnection connection, int count, int delay, int length) throws Exception

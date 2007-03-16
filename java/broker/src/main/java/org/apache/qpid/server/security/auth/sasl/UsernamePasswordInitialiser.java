@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth;
+package org.apache.qpid.server.security.auth.sasl;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -33,9 +33,15 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 public abstract class UsernamePasswordInitialiser implements AuthenticationProviderInitialiser
 {
+    protected static final Logger _logger = Logger.getLogger(UsernamePasswordInitialiser.class);    
+
     private ServerCallbackHandler _callbackHandler;
 
     private class ServerCallbackHandler implements CallbackHandler
@@ -54,7 +60,7 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
             {
                 if (callback instanceof NameCallback)
                 {
-                    username = new UsernamePrincipal(((NameCallback)callback).getDefaultName());
+                    username = new UsernamePrincipal(((NameCallback) callback).getDefaultName());
                 }
                 else if (callback instanceof PasswordCallback)
                 {
@@ -71,7 +77,7 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
                 }
                 else if (callback instanceof AuthorizeCallback)
                 {
-                    ((AuthorizeCallback)callback).setAuthorized(true);
+                    ((AuthorizeCallback) callback).setAuthorized(true);
                 }
                 else
                 {
@@ -79,17 +85,22 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
                 }
             }
         }
-    }    
+    }
 
     public void initialise(String baseConfigPath, Configuration configuration,
                            Map<String, PrincipalDatabase> principalDatabases) throws Exception
     {
         String principalDatabaseName = configuration.getString(baseConfigPath + ".principal-database");
         PrincipalDatabase db = principalDatabases.get(principalDatabaseName);
+
+        initialise(db);
+    }
+
+    public void initialise(PrincipalDatabase db)
+    {
         if (db == null)
         {
-            throw new Exception("Principal database " + principalDatabaseName + " not found. Ensure the name matches " +
-                                "an entry in the configuration file");
+            throw new NullPointerException("Cannot initialise with a null Principal database.");
         }
         _callbackHandler = new ServerCallbackHandler(db);
     }

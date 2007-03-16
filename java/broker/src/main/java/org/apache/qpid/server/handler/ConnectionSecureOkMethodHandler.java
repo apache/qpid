@@ -35,7 +35,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.HeartbeatConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -61,7 +61,10 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         AMQProtocolSession session = stateManager.getProtocolSession();
         ConnectionSecureOkBody body = evt.getMethod();
 
+        //fixme Vhost not defined yet
+        //session.getVirtualHost().getAuthenticationManager();
         AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
+
         SaslServer ss = session.getSaslServer();
         if (ss == null)
         {
@@ -103,6 +106,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                     ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
                     HeartbeatConfig.getInstance().getDelay());	// heartbeat
                 session.writeFrame(tune);
+                session.setAuthorizedID(ss.getAuthorizationID());                
                 disposeSaslServer(session);
                 break;
             case CONTINUE:

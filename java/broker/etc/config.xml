@@ -49,73 +49,108 @@
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
     </advanced>
-    <security>
-        <principal-databases>
-            <principal-database>
-                <name>passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.PasswordFilePrincipalDatabase</class>
-                <attributes>
-                    <attribute>
-                        <name>passwordFile</name>
-                        <value>${conf}/passwd</value>
-                    </attribute>
-                </attributes>
-            </principal-database>
-        </principal-databases>
-        <sasl>
-            <mechanisms>
-                <mechanism>
-                    <initialiser>
-                        <class>org.apache.qpid.server.security.auth.CRAMMD5Initialiser</class>
-                        <principal-database>passwordfile</principal-database>
-                    </initialiser>
-                </mechanism>
-                <mechanism>
-                    <initialiser>
-                        <class>org.apache.qpid.server.security.auth.amqplain.AmqPlainInitialiser</class>
-                        <principal-database>passwordfile</principal-database>
-                    </initialiser>
-                </mechanism>
-                <mechanism>
-                    <initialiser>
-                        <class>org.apache.qpid.server.security.auth.plain.PlainInitialiser</class>
-                        <principal-database>passwordfile</principal-database>
-                    </initialiser>
-                </mechanism>
-            </mechanisms>
-        </sasl>
-    </security>
-	<virtualhosts>
-		<virtualhost>
-			<name>localhost</name>
-			<localhost>
-			    <store>
-					<!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>  -->
-					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
-					<environment-path>localhost-store</environment-path>
-			    </store>		
-			</localhost>
-		</virtualhost>
-		
-		<virtualhost>
-			<name>development</name>
-			<development>
-			    <store>
-					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
-			    </store>			
-			</development>
-		</virtualhost>
-		
-		<virtualhost>
-			<name>test</name>
-			<test>
-			    <store>
-					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
-			    </store>			
-			</test>
-		</virtualhost>
-		
-	</virtualhosts>
+
+    <principal-databases>
+        <principal-database>
+            <name>passwordfile</name>
+            <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
+            <attributes>
+                <attribute>
+                    <name>passwordFile</name>
+                    <value>${conf}/passwdVhost</value>
+                </attribute>
+            </attributes>
+        </principal-database>
+
+        <principal-database>
+            <name>md5passwordfile</name>
+            <class>org.apache.qpid.server.security.auth.database.MD5PasswordFilePrincipalDatabase</class>
+            <attributes>
+                <attribute>
+                    <name>passwordFile</name>
+                    <value>${conf}/md5passwd</value>
+                </attribute>
+            </attributes>
+        </principal-database>
+    </principal-databases>
+
+    <access>
+        <class>org.apache.qpid.server.security.access.AllowAll</class>
+    </access>
+
+    <virtualhosts>
+        <virtualhost>
+            <name>localhost</name>
+            <localhost>
+                <store>
+                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>  -->
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <environment-path>localhost-store</environment-path>
+                </store>
+
+                <security>
+                    <!-- Need protocol changes to allow this-->                    
+                    <authentication>
+                        <name>passwordfile</name>
+                        <!-- Currently this can't be used as Vhost isn't specified at connection start only connection open -->
+                        <mechanism>PLAIN</mechanism>
+                    </authentication>
+                    <access>
+                        <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
+                        <attributes>
+                            <attribute>
+                                <name>principalDatabase</name>
+                                <value>passwordfile</value>
+                            </attribute>
+                            <attribute>
+                                <name>defaultAccessManager</name>
+                                <value>DenyAll</value>
+                            </attribute>
+                        </attributes>
+                    </access>
+                </security>
+            </localhost>
+        </virtualhost>
+
+        <virtualhost>
+            <name>development</name>
+            <development>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
+                <security>
+                    <name>passwordfile-notusedyet</name>
+                    <mechanism>PLAIN</mechanism>
+                    <mechanism>CRAM-MD5</mechanism>
+                </security>
+            </development>
+        </virtualhost>
+
+        <virtualhost>
+            <name>test</name>
+            <test>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
+                <security>
+                    <name>passwordfile-notusedyet</name>
+                    <mechanism>PLAIN</mechanism>
+                    <mechanism>CRAM-MD5</mechanism>
+                </security>
+                <access>
+                    <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
+                    <attributes>
+                        <attribute>
+                            <name>principalDatabase</name>
+                            <value>rubbish-to-cause-default</value>
+                        </attribute>
+                    </attributes>
+                </access>
+
+            </test>
+        </virtualhost>
+
+    </virtualhosts>
     <heartbeat>
         <delay>0</delay>
         <timeoutFactor>2.0</timeoutFactor>

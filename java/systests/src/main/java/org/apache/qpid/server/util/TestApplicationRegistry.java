@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.server.util;
 
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
-import org.apache.qpid.server.security.auth.NullAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
+import org.apache.qpid.server.security.access.AccessManager;
+import org.apache.qpid.server.security.access.AllowAll;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -41,6 +41,7 @@ import org.apache.commons.configuration.MapConfiguration;
 
 import java.util.HashMap;
 import java.util.Collection;
+import java.util.Properties;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
@@ -51,6 +52,10 @@ public class TestApplicationRegistry extends ApplicationRegistry
     private ExchangeFactory _exchangeFactory;
 
     private ManagedObjectRegistry _managedObjectRegistry;
+
+    private AccessManager _accessManager;
+
+    private PrincipalDatabaseManager _databaseManager;
 
     private AuthenticationManager _authenticationManager;
 
@@ -64,13 +69,23 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        Properties users = new Properties();
+
+        users.put("guest", "guest");
+
+        _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
+
+        _accessManager = new AllowAll();
+
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
+
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         _managedObjectRegistry = appRegistry.getManagedObjectRegistry();
         _vHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _queueRegistry = _vHost.getQueueRegistry();
         _exchangeFactory = _vHost.getExchangeFactory();
         _exchangeRegistry = _vHost.getExchangeRegistry();
-        _authenticationManager = new NullAuthenticationManager();
+
         _messageStore = new TestableMemoryMessageStore();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
@@ -101,6 +116,11 @@ public class TestApplicationRegistry extends ApplicationRegistry
         return _managedObjectRegistry;
     }
 
+    public PrincipalDatabaseManager getDatabaseManager()
+    {
+        return _databaseManager;
+    }
+
     public AuthenticationManager getAuthenticationManager()
     {
         return _authenticationManager;
@@ -114,6 +134,11 @@ public class TestApplicationRegistry extends ApplicationRegistry
     public VirtualHostRegistry getVirtualHostRegistry()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public AccessManager getAccessManager()
+    {
+        return _accessManager;
     }
 
     public MessageStore getMessageStore()

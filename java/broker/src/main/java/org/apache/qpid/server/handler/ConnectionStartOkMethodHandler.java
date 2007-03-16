@@ -31,10 +31,11 @@ import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.HeartbeatConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -65,12 +66,18 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         _logger.info("SASL Mechanism selected: " + body.mechanism);
         _logger.info("Locale selected: " + body.locale);
 
-        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
+        AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();//session.getVirtualHost().getAuthenticationManager();
 
         SaslServer ss = null;
         try
         {
             ss = authMgr.createSaslServer(String.valueOf(body.mechanism), session.getLocalFQDN());
+
+            if (ss == null)
+            {
+                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server");
+            }
+            
             session.setSaslServer(ss);
 
             AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
@@ -87,16 +94,17 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     throw new AMQException("Authentication failed");
                 case SUCCESS:
                     _logger.info("Connected as: " + ss.getAuthorizationID());
+                    session.setAuthorizedID(ss.getAuthorizationID());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        Integer.MAX_VALUE,	// channelMax
-                        getConfiguredFrameSize(),	// frameMax
-                        HeartbeatConfig.getInstance().getDelay());	// heartbeat
+                                                                      (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                      Integer.MAX_VALUE,    // channelMax
+                                                                      getConfiguredFrameSize(),    // frameMax
+                                                                      HeartbeatConfig.getInstance().getDelay());    // heartbeat
                     session.writeFrame(tune);
                     break;
                 case CONTINUE:
@@ -105,8 +113,8 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        authResult.challenge);	// challenge
+                                                                             (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                             authResult.challenge);    // challenge
                     session.writeFrame(challenge);
             }
         }
