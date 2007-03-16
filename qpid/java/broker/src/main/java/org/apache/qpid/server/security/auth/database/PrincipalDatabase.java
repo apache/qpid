@@ -18,29 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth;
+package org.apache.qpid.server.security.auth.database;
+
+import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Map;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
 
-/**
- * Represents a "user database" which is really a way of storing principals (i.e. usernames) and
- * passwords.
- */
+/** Represents a "user database" which is really a way of storing principals (i.e. usernames) and passwords. */
 public interface PrincipalDatabase
 {
     /**
-     * Set the password for a given principal in the specified callback. This is used for certain
-     * SASL providers. The user database implementation should look up the password in any way it
-     * chooses and set it in the callback by calling its setPassword method.
+     * Set the password for a given principal in the specified callback. This is used for certain SASL providers. The
+     * user database implementation should look up the password in any way it chooses and set it in the callback by
+     * calling its setPassword method.
+     *
      * @param principal the principal
-     * @param callback the password callback that wants to receive the password
+     * @param callback  the password callback that wants to receive the password
+     *
      * @throws AccountNotFoundException if the account for specified principal could not be found
-     * @throws IOException if there was an error looking up the principal
+     * @throws IOException              if there was an error looking up the principal
      */
     void setPassword(Principal principal, PasswordCallback callback)
             throws IOException, AccountNotFoundException;
+
+    public Map<String, AuthenticationProviderInitialiser> getMechanisms();
 }

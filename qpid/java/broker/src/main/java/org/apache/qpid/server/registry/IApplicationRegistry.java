@@ -24,7 +24,9 @@ import java.util.Collection;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public interface IApplicationRegistry
@@ -57,9 +59,13 @@ public interface IApplicationRegistry
 
     ManagedObjectRegistry getManagedObjectRegistry();
 
+    PrincipalDatabaseManager getDatabaseManager();
+
     AuthenticationManager getAuthenticationManager();
 
     Collection<String> getVirtualHostNames();
 
     VirtualHostRegistry getVirtualHostRegistry();
+
+    AccessManager getAccessManager();
 }

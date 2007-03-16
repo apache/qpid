@@ -84,7 +84,7 @@ public class VMTestCase extends TestCase
             _brokerlist = "vm://:1";
         }
 
-        env.put("connectionfactory.connection", "amqp://client:client@" +
+        env.put("connectionfactory.connection", "amqp://guest:guest@" +
                                                 _clientID + _virtualhost + "?brokerlist='" + _brokerlist + "'");
 
         for (Map.Entry<String, String> c : _connections.entrySet())

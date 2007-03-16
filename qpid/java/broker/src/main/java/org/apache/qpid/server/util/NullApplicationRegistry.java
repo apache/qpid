@@ -23,14 +23,19 @@ package org.apache.qpid.server.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Properties;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
-import org.apache.qpid.server.security.auth.NullAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
+import org.apache.qpid.server.security.access.AccessManager;
+import org.apache.qpid.server.security.access.AllowAll;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -42,6 +47,10 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     private VirtualHostRegistry _virtualHostRegistry;
 
+    private AccessManager _accessManager;
+
+    private PrincipalDatabaseManager _databaseManager;
+
 
     public NullApplicationRegistry()
     {
@@ -50,14 +59,23 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
-        _configuration.addProperty("store.class","org.apache.qpid.server.store.MemoryMessageStore");
+        _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");
+
+        Properties users = new Properties();
+
+        users.put("guest", "guest");
+
+        _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
+
+        _accessManager = new AllowAll();
+
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry();
-        VirtualHost dummyHost = new VirtualHost("test",getConfiguration());
+        VirtualHost dummyHost = new VirtualHost("test", getConfiguration());
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
-        _authenticationManager = new NullAuthenticationManager();
 
         _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
 
@@ -74,6 +92,11 @@ public class NullApplicationRegistry extends ApplicationRegistry
         return _managedObjectRegistry;
     }
 
+    public PrincipalDatabaseManager getDatabaseManager()
+    {
+        return _databaseManager;
+    }
+
     public AuthenticationManager getAuthenticationManager()
     {
         return _authenticationManager;
@@ -81,13 +104,18 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
     public Collection<String> getVirtualHostNames()
     {
-        String[] hosts = {"test"}; 
-        return Arrays.asList( hosts );
+        String[] hosts = {"test"};
+        return Arrays.asList(hosts);
     }
 
     public VirtualHostRegistry getVirtualHostRegistry()
     {
         return _virtualHostRegistry;
+    }
+
+    public AccessManager getAccessManager()
+    {
+        return _accessManager;
     }
 }
 

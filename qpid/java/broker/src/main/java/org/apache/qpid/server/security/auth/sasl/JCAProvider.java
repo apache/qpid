@@ -18,21 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.amqplain;
+package org.apache.qpid.server.security.auth.sasl;
+
+import java.security.Provider;
+import java.security.Security;
+import java.util.Map;
 
 import javax.security.sasl.SaslServerFactory;
 
-import org.apache.qpid.server.security.auth.UsernamePasswordInitialiser;
-
-public class AmqPlainInitialiser extends UsernamePasswordInitialiser
+public final class JCAProvider extends Provider
 {
-    public String getMechanismName()
+    public JCAProvider(Map<String, Class<? extends SaslServerFactory>> providerMap)
     {
-        return "AMQPLAIN";
+        super("AMQSASLProvider", 1.0, "A JCA provider that registers all " +
+              "AMQ SASL providers that want to be registered");
+        register(providerMap);
+        Security.addProvider(this);
     }
 
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
+    private void register(Map<String, Class<? extends SaslServerFactory>> providerMap)
     {
-        return AmqPlainSaslServerFactory.class;
+        for (Map.Entry<String, Class<? extends SaslServerFactory>> me :
+             providerMap.entrySet())
+        {
+            put("SaslServerFactory." + me.getKey(), me.getValue().getName());
+        }
     }
 }

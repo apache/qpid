@@ -73,7 +73,7 @@ public class ConnectionTest extends TestCase
     {
         try
         {
-            AMQConnection conn = new AMQConnection("amqp://guest:guestd@clientid/test?brokerlist='"
+            AMQConnection conn = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='"
                                                    + _broker
                                                    + "?retries='1''&defaultQueueExchange='test.direct'"
                                                    + "&defaultTopicExchange='test.topic'"
@@ -115,13 +115,12 @@ public class ConnectionTest extends TestCase
         }
     }
 
-
-    // FIXME The inVM broker currently has no authentication .. Needs added QPID-70
-    public void passwordFailureConnection() throws Exception
+     //fixme AMQAuthenticationException is not propogaged
+    public void PasswordFailureConnection() throws Exception
     {
         try
         {
-            new AMQConnection("amqp://guest:rubbishpassword@clientid/testpath?brokerlist='" + _broker + "?retries='1''");
+            new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + _broker + "?retries='1''");
             fail("Connection should not be established password is wrong.");
         }
         catch (AMQException amqe)

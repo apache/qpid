@@ -25,6 +25,11 @@ import javax.management.NotCompliantMBeanException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.security.access.AccessManager;
+import org.apache.qpid.server.security.access.AccessManagerImpl;
+import org.apache.qpid.server.security.access.Accessable;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
@@ -37,7 +42,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 
-public class VirtualHost
+public class VirtualHost implements Accessable
 {
     private static final Logger _logger = Logger.getLogger(VirtualHost.class);
 
@@ -50,84 +55,103 @@ public class VirtualHost
 
     private ExchangeFactory _exchangeFactory;
 
-   private MessageStore _messageStore;
+    private MessageStore _messageStore;
 
     protected VirtualHostMBean _virtualHostMBean;
 
     private AMQBrokerManagerMBean _brokerMBean;
 
+    private AuthenticationManager _authenticationManager;
+
+    private AccessManager _accessManager;
+
+
+    public void setAccessableName(String name)
+    {
+        _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
+                     + name + ") ignored remains :" + getAccessableName());
+    }
+
+    public String getAccessableName()
+    {
+        return _name;
+    }
+
 
     /**
-         * Abstract MBean class. This has some of the methods implemented from
-         * management intrerface for exchanges. Any implementaion of an
-         * Exchange MBean should extend this class.
-         */
-        public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
+     * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
+     * implementaion of an Exchange MBean should extend this class.
+     */
+    public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost
+    {
+        public VirtualHostMBean() throws NotCompliantMBeanException
         {
-            public VirtualHostMBean() throws NotCompliantMBeanException
-            {
-                super(ManagedVirtualHost.class, "VirtualHost");
-            }
+            super(ManagedVirtualHost.class, "VirtualHost");
+        }
+
+        public String getObjectInstanceName()
+        {
+            return _name.toString();
+        }
+
+        public String getName()
+        {
+            return _name.toString();
+        }
+
+        public VirtualHost getVirtualHost()
+        {
+            return VirtualHost.this;
+        }
 
 
-            public String getObjectInstanceName()
-            {
-                return _name.toString();
-            }
-
-            public String getName()
-            {
-                return _name.toString();
-            }
-
-            public VirtualHost getVirtualHost()
-            {
-                return VirtualHost.this;
-            }
-
-
-        } // End of MBean class
+    } // End of MBean class
 
 
     public VirtualHost(String name, MessageStore store) throws Exception
     {
-        _name = name;
-
-        _virtualHostMBean = new VirtualHostMBean();
-        // This isn't needed to be registered
-        //_virtualHostMBean.register();
-
-        _queueRegistry = new DefaultQueueRegistry(this);
-        _exchangeFactory = new DefaultExchangeFactory(this);
-        _exchangeRegistry = new DefaultExchangeRegistry(this);
-
-        _messageStore = store;
-        
-        _exchangeRegistry.initialise();
-
-        _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
-        _brokerMBean.register();
-
+        this(name, null, store);
     }
+
     public VirtualHost(String name, Configuration hostConfig) throws Exception
+    {
+        this(name, hostConfig, null);
+    }
+
+    private VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
         _name = name;
 
         _virtualHostMBean = new VirtualHostMBean();
         // This isn't needed to be registered
         //_virtualHostMBean.register();
-        
+
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
-        initialiseMessageStore(hostConfig);
+        if (store != null)
+        {
+            _messageStore = store;
+        }
+        else
+        {
+            if (hostConfig == null)
+            {
+                throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
+            }
+            initialiseMessageStore(hostConfig);
+        }
 
         _exchangeRegistry.initialise();
 
+        _logger.warn("VirtualHost authentication Managers require spec change to be operational.");
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
+
+        _accessManager = new AccessManagerImpl(name, hostConfig);
+
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
-
     }
 
     private void initialiseMessageStore(Configuration config) throws Exception
@@ -140,13 +164,11 @@ public class VirtualHost
         if (!(o instanceof MessageStore))
         {
             throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                " does not.");
+                                         " does not.");
         }
         _messageStore = (MessageStore) o;
         _messageStore.configure(this, "store", config);
     }
-
-
 
 
     public <T> T getConfiguredObject(Class<T> instanceType, Configuration config)
@@ -171,7 +193,7 @@ public class VirtualHost
     {
         return _name;
     }
-    
+
     public QueueRegistry getQueueRegistry()
     {
         return _queueRegistry;
@@ -189,7 +211,7 @@ public class VirtualHost
 
     public ApplicationRegistry getApplicationRegistry()
     {
-        throw new UnsupportedOperationException();        
+        throw new UnsupportedOperationException();
     }
 
     public MessageStore getMessageStore()
@@ -197,9 +219,19 @@ public class VirtualHost
         return _messageStore;
     }
 
+    public AuthenticationManager getAuthenticationManager()
+    {
+        return _authenticationManager;
+    }
+
+    public AccessManager getAccessManager()
+    {
+        return _accessManager;
+    }
+
     public void close() throws Exception
     {
-        if(_messageStore != null)
+        if (_messageStore != null)
         {
             _messageStore.close();
         }
@@ -209,8 +241,6 @@ public class VirtualHost
     {
         return _brokerMBean;
     }
-
-
 
     public ManagedObject getManagedObject()
     {

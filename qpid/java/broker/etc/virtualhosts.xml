@@ -23,7 +23,7 @@
     <default>test</default>
     <virtualhost>
         <name>localhost</name>
-        <localhost>
+        <localhost>            
             <exchanges>
                 <exchange>
                     <type>direct</type>

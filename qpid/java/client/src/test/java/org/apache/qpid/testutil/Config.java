@@ -136,7 +136,7 @@ public class Config
     public Connection getConnection() throws Exception
     {
         System.out.println("Connecting to " + host + " on " + port + "...");
-        return new AMQConnection(host, port, "guest", "guest", "Client" + System.currentTimeMillis(), "/test_path");
+        return new AMQConnection(host, port, "guest", "guest", "Client" + System.currentTimeMillis(), "/test");
     }
 
     public boolean setOptions(String[] argv)
