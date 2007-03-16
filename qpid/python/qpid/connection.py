@@ -204,6 +204,9 @@ class Request(Frame):
     method = Method.decode(spec, dec, size - 20)
     return Request(id, mark, method)
 
+  def __str__(self):
+    return "[%s] Request(%s) %s" % (self.channel, self.id, self.method)
+
 class Response(Frame):
 
   type = "frame_response"
