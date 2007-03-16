@@ -185,6 +185,24 @@ class Codec:
       result[key] = value
     return result
 
+  def encode_timestamp(self, t):
+    # XXX
+    self.encode_longlong(t)
+
+  def decode_timestamp(self):
+    # XXX
+    return self.decode_longlong()
+
+  def encode_content(self, s):
+    # XXX
+    self.encode_octet(0)
+    self.encode_longstr(s)
+
+  def decode_content(self):
+    # XXX
+    self.decode_octet()
+    return self.decode_longstr()
+
 def test(type, value):
   if isinstance(value, (list, tuple)):
     values = value
