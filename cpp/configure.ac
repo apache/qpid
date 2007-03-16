@@ -127,7 +127,7 @@ AC_ARG_ENABLE(valgrind,
      yes|no) enable_VALGRIND=$enableval;;
      *) AC_MSG_ERROR([invalid valgrind enable/disable value: $enableval]);;
     esac],
-  [enable_VALGRIND=no]  # no option given, default
+  [enable_VALGRIND=yes]  # no option given, default
   )
 
 # We use valgrind for the tests.  See if it's available.

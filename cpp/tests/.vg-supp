@@ -2479,3 +2479,2227 @@
    fun:start_thread
    fun:clone
 }
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.8
+   fun:_ZNSsC1EPKcRKSaIcE
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_error
+   fun:__libc_dlopen_mode
+   fun:pthread_cancel_init
+   fun:_Unwind_ForcedUnwind
+   fun:__pthread_unwind
+   fun:pthread_exit
+   fun:pthread_exit
+   obj:*
+   obj:*
+   obj:*
+   fun:start_thread
+   fun:clone
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_malloc
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_realloc
+   fun:add_to_global
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_realloc
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.8
+   fun:_ZNSsC1EPKcRKSaIcE
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:call_init
+   fun:_dl_init
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@GLIBC_2.0
+   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
+   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
+   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_vgrZU_libstdcZpZpZa__Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
