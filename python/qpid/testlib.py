@@ -80,7 +80,7 @@ Options:
     def __init__(self):
         # Defaults
         self.setBroker("localhost")
-        self.specfile = "../specs/amqp.0-8.xml"
+        self.spec = "../specs/amqp.0-8.xml"
         self.verbose = 1
         self.ignore = []
 
@@ -203,8 +203,11 @@ class TestBase(unittest.TestCase):
         
     def consume(self, queueName):
         """Consume from named queue returns the Queue object."""
-        reply = self.channel.basic_consume(queue=queueName, no_ack=True)
-        return self.client.queue(reply.consumer_tag)
+        if not "uniqueTag" in dir(self): self.uniqueTag = 1
+        else: self.uniqueTag += 1
+        consumer_tag = "tag" + str(self.uniqueTag)
+        self.channel.message_consume(queue=queueName, destination=consumer_tag, no_ack=True)
+        return self.client.queue(consumer_tag)
 
     def assertEmpty(self, queue):
         """Assert that the queue is empty"""
@@ -218,12 +221,12 @@ class TestBase(unittest.TestCase):
         Publish to exchange and assert queue.get() returns the same message.
         """
         body = self.uniqueString()
-        self.channel.basic_publish(exchange=exchange,
-                                   content=Content(body, properties=properties),
-                                   routing_key=routing_key)
+        self.channel.message_transfer(destination=exchange,
+                                      body=body, application_headers=properties,
+                                      routing_key=routing_key)
         msg = queue.get(timeout=1)    
-        self.assertEqual(body, msg.content.body)
-        if (properties): self.assertEqual(properties, msg.content.properties)
+        self.assertEqual(body, msg.body)
+        if (properties): self.assertEqual(properties, msg.application_headers)
         
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
