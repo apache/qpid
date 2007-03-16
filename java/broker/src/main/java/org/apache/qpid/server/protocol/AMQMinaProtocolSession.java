@@ -106,6 +106,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
     private List<Integer> _closingChannelsList = new ArrayList<Integer>();
     private ProtocolOutputConverter _protocolOutputConverter;
+    private String _authorizedID;
 
 
     public ManagedObject getManagedObject()
@@ -205,22 +206,22 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
-        if(_logger.isDebugEnabled())
+        if (_logger.isDebugEnabled())
         {
             _logger.debug("Frame Received: " + frame);
         }
 
         if (body instanceof AMQMethodBody)
         {
-            methodFrameReceived(channelId, (AMQMethodBody)body);
+            methodFrameReceived(channelId, (AMQMethodBody) body);
         }
         else if (body instanceof ContentHeaderBody)
         {
-            contentHeaderReceived(channelId, (ContentHeaderBody)body);
+            contentHeaderReceived(channelId, (ContentHeaderBody) body);
         }
         else if (body instanceof ContentBody)
         {
-            contentBodyReceived(channelId, (ContentBody)body);
+            contentBodyReceived(channelId, (ContentBody) body);
         }
         else if (body instanceof HeartbeatBody)
         {
@@ -674,7 +675,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private void setProtocolVersion(byte major, byte minor)
     {
-        _protocolVersion = new ProtocolVersion(major,minor);
+        _protocolVersion = new ProtocolVersion(major, minor);
 
         _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
 
@@ -735,5 +736,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _protocolOutputConverter;
     }
 
+    public void setAuthorizedID(String authorizedID)
+    {
+        _authorizedID = authorizedID;
+    }
+
+    public String getAuthorizedID()
+    {
+        return _authorizedID;
+    }
 
 }

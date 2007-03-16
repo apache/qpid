@@ -165,4 +165,9 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 
+    void setAuthorizedID(String authorizedID);
+
+    /** @return a username string that was used to authorized this session */    
+    String getAuthorizedID();
+
 }

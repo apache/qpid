@@ -18,21 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.plain;
+package org.apache.qpid.server.security.auth.manager;
 
-import javax.security.sasl.SaslServerFactory;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
 
-import org.apache.qpid.server.security.auth.UsernamePasswordInitialiser;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
-public class PlainInitialiser extends UsernamePasswordInitialiser
+public interface AuthenticationManager
 {
-    public String getMechanismName()
-    {
-        return "PLAIN";
-    }
+    String getMechanisms();
 
-    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
-    {
-        return PlainSaslServerFactory.class;
-    }
+    SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException;
+
+    AuthenticationResult authenticate(SaslServer server, byte[] response);
+
 }

@@ -18,16 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth;
+package org.apache.qpid.server.security.auth.sasl;
 
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
+import java.security.Principal;
 
-public interface AuthenticationManager
+/**
+ * A principal that is just a wrapper for a simple username.
+ *
+ */
+public class UsernamePrincipal implements Principal
 {
-    String getMechanisms();
+    private String _name;
 
-    SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException;
+    public UsernamePrincipal(String name)
+    {
+        _name = name;
+    }
 
-    AuthenticationResult authenticate(SaslServer server, byte[] response);
+    public String getName()
+    {
+        return _name;
+    }
 }
