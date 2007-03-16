@@ -22,33 +22,25 @@ Delegate implementation intended for use with the peer module.
 """
 
 import threading, inspect
-from spec import pythonize
+from connection import Method, Request, Response
 
 class Delegate:
 
   def __init__(self):
     self.handlers = {}
     self.invokers = {}
-    # initialize all the mixins
-    self.invoke_all("init")
 
-  def invoke_all(self, meth, *args, **kwargs):
-    for cls in inspect.getmro(self.__class__):
-      if hasattr(cls, meth):
-        getattr(cls, meth)(self, *args, **kwargs)
-
-  def dispatch(self, channel, message):
-    method = message.method
+  def __call__(self, channel, frame):
+    method = frame.method
 
     try:
       handler = self.handlers[method]
     except KeyError:
-      name = "%s_%s" % (pythonize(method.klass.name),
-                        pythonize(method.name))
+      name = "%s_%s" % (method.klass.name, method.name)
       handler = getattr(self, name)
       self.handlers[method] = handler
 
-    return handler(channel, message)
+    return handler(channel, frame)
 
   def close(self, reason):
-    self.invoke_all("close", reason)
+    print "Connection closed: %s" % reason
