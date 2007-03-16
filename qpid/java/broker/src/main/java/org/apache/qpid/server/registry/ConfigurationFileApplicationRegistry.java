@@ -34,8 +34,12 @@ import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagementConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.apache.qpid.server.security.auth.AuthenticationManager;
-import org.apache.qpid.server.security.auth.SASLAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.access.AccessManager;
+import org.apache.qpid.server.security.access.AccessManagerImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -45,6 +49,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     private ManagedObjectRegistry _managedObjectRegistry;
 
     private AuthenticationManager _authenticationManager;
+
+    private AccessManager _accessManager;
+
+    private PrincipalDatabaseManager _databaseManager;
 
     private VirtualHostRegistry _virtualHostRegistry;
 
@@ -59,26 +67,33 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     // Our configuration class needs to make the interpolate method
     // public so it can be called below from the config method.
-    private static class MyConfiguration extends CompositeConfiguration {
-        public String interpolate(String obj) {
+    private static class MyConfiguration extends CompositeConfiguration
+    {
+        public String interpolate(String obj)
+        {
             return super.interpolate(obj);
         }
     }
 
-    private static final Configuration config(File url) throws ConfigurationException {
+    private static final Configuration config(File url) throws ConfigurationException
+    {
         // We have to override the interpolate methods so that
         // interpolation takes place accross the entirety of the
         // composite configuration. Without doing this each
         // configuration object only interpolates variables defined
         // inside itself.
         final MyConfiguration conf = new MyConfiguration();
-        conf.addConfiguration(new SystemConfiguration() {
-            protected String interpolate(String o) {
+        conf.addConfiguration(new SystemConfiguration()
+        {
+            protected String interpolate(String o)
+            {
                 return conf.interpolate(o);
             }
         });
-        conf.addConfiguration(new XMLConfiguration(url) {
-            protected String interpolate(String o) {
+        conf.addConfiguration(new XMLConfiguration(url)
+        {
+            protected String interpolate(String o)
+            {
                 return conf.interpolate(o);
             }
         });
@@ -89,17 +104,22 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         initialiseManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry();
-        _authenticationManager = new SASLAuthenticationManager();
+
+        _accessManager = new AccessManagerImpl("default", _configuration);
+
+        _databaseManager = new ConfigurationFilePrincipalDatabaseManager();
+
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
         initialiseVirtualHosts();
     }
 
     private void initialiseVirtualHosts() throws Exception
     {
-        for(String name : getVirtualHostNames())
+        for (String name : getVirtualHostNames())
         {
-           
-            _virtualHostRegistry.registerVirtualHost(new VirtualHost(name,getConfiguration().subset("virtualhosts.virtualhost."+name)));
+
+            _virtualHostRegistry.registerVirtualHost(new VirtualHost(name, getConfiguration().subset("virtualhosts.virtualhost." + name)));
         }
     }
 
@@ -122,9 +142,19 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         return _virtualHostRegistry;
     }
 
+    public AccessManager getAccessManager()
+    {
+        return _accessManager;
+    }
+
     public ManagedObjectRegistry getManagedObjectRegistry()
     {
         return _managedObjectRegistry;
+    }
+
+    public PrincipalDatabaseManager getDatabaseManager()
+    {
+        return _databaseManager;
     }
 
     public AuthenticationManager getAuthenticationManager()
@@ -134,6 +164,6 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public Collection<String> getVirtualHostNames()
     {
-        return  getConfiguration().getList("virtualhosts.virtualhost.name");
+        return getConfiguration().getList("virtualhosts.virtualhost.name");
     }
 }

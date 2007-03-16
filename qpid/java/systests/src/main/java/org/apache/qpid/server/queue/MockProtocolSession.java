@@ -177,6 +177,16 @@ public class MockProtocolSession implements AMQProtocolSession
         return ProtocolOutputConverterRegistry.getConverter(this);
     }
 
+    public void setAuthorizedID(String authorizedID)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public String getAuthorizedID()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public byte getProtocolMajorVersion()
     {
         return 8;  //To change body of implemented methods use File | Settings | File Templates.

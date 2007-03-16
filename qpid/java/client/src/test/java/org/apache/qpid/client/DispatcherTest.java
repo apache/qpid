@@ -82,7 +82,7 @@ public class DispatcherTest extends TestCase
 
         Hashtable<String, String> env = new Hashtable<String, String>();
 
-        env.put("connectionfactory.connection", "amqp://client:client@MLT_ID/test?brokerlist='vm://:1'");
+        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
         env.put("queue.queue", "MessageListenerTest");
 
         _context = factory.getInitialContext(env);

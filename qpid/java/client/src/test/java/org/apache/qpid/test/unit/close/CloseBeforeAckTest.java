@@ -41,10 +41,8 @@ import uk.co.thebadgerset.junit.concurrency.ThreadTestCoordinator;
  * Running in AUTO_ACK mode, the close call ought to wait until the onMessage method completes, and the ack is sent
  * before closing the connection.
  *
- * <p><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Check that closing a connection whilst handling a message, blocks till completion of the handler.
- * </table>
+ * <p><table id="crc"><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations <tr><td> Check that
+ * closing a connection whilst handling a message, blocks till completion of the handler. </table>
  */
 public class CloseBeforeAckTest extends TestCase
 {
@@ -53,6 +51,7 @@ public class CloseBeforeAckTest extends TestCase
     Connection connection;
     Session session;
     public static final String TEST_QUEUE_NAME = "TestQueue";
+    private int TEST_COUNT = 25;
 
     class TestThread1 extends TestRunnable implements MessageListener
     {
@@ -65,34 +64,34 @@ public class CloseBeforeAckTest extends TestCase
         public void onMessage(Message message)
         {
             // Give thread 2 permission to close the session.
-            allow(new int[] { 1 });
+            allow(new int[]{1});
 
             // Wait until thread 2 has closed the connection, or is blocked waiting for this to complete.
-            waitFor(new int[] { 1 }, true);
+            waitFor(new int[]{1}, true);
         }
     }
 
     TestThread1 testThread1 = new TestThread1();
 
     TestRunnable testThread2 =
-        new TestRunnable()
-        {
-            public void runWithExceptions() throws Exception
+            new TestRunnable()
             {
-                // Send a message to be picked up by thread 1.
-                session.createProducer(null).send(session.createQueue(TEST_QUEUE_NAME),
-                                                  session.createTextMessage("Hi there thread 1!"));
+                public void runWithExceptions() throws Exception
+                {
+                    // Send a message to be picked up by thread 1.
+                    session.createProducer(null).send(session.createQueue(TEST_QUEUE_NAME),
+                                                      session.createTextMessage("Hi there thread 1!"));
 
-                // Wait for thread 1 to pick up the message and give permission to continue.
-                waitFor(new int[] { 0 }, false);
+                    // Wait for thread 1 to pick up the message and give permission to continue.
+                    waitFor(new int[]{0}, false);
 
-                // Close the connection.
-                session.close();
+                    // Close the connection.
+                    session.close();
 
-                // Allow thread 1 to continue to completion, if it is erronously still waiting.
-                allow(new int[] { 1 });
-            }
-        };
+                    // Allow thread 1 to continue to completion, if it is erronously still waiting.
+                    allow(new int[]{1});
+                }
+            };
 
     public void testCloseBeforeAutoAck_QPID_397() throws Exception
     {
@@ -123,9 +122,9 @@ public class CloseBeforeAckTest extends TestCase
         Assert.assertTrue(errorMessage, "".equals(errorMessage));
     }
 
-    public void testCloseBeforeAutoAckManyTimes() throws Exception
+    public void closeBeforeAutoAckManyTimes() throws Exception
     {
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; i < TEST_COUNT; i++)
         {
             testCloseBeforeAutoAck_QPID_397();
         }

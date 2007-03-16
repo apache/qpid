@@ -38,7 +38,7 @@ public class ChannelFlowTest implements MessageListener
 
     ChannelFlowTest(String broker) throws Exception
     {
-        this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test_path"));
+        this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "/test"));
     }
 
     ChannelFlowTest(AMQConnection connection) throws Exception
