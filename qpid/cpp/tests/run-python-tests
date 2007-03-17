@@ -18,7 +18,7 @@ sleep 4
 
 # Run the tests.
 ( cd $abs_srcdir/../../python \
-    && python ./run-tests -v -I cpp_failing.txt || fail=1 )
+    && python ./run-tests -v -I cpp_failing.txt ) || fail=1 
 
 kill $pid || { echo FAIL: process already died; cat log; fail=1; }
 
