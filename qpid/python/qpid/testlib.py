@@ -80,7 +80,7 @@ Options:
     def __init__(self):
         # Defaults
         self.setBroker("localhost")
-        self.spec = "../specs/amqp.0-8.xml"
+        self.specfile = "../specs/amqp.0-8.xml"
         self.verbose = 1
         self.ignore = []
 
@@ -89,6 +89,11 @@ Options:
         for line in f.readlines(): self.ignore.append(line.strip())
         f.close()
 
+    def use08spec(self):
+        "True if we are running with the old 0-8 spec."
+        # NB: AMQP 0-8 identifies itself as 8-0 for historical reasons.
+        return self.spec.major==8 and self.spec.minor==0
+            
     def _parseargs(self, args):
         try:
             opts, self.tests = getopt(args, "s:b:h?dvi:I:", ["help", "spec", "server", "verbose", "ignore", "ignore-file"])
@@ -105,9 +110,7 @@ Options:
 
         self.spec = qpid.spec.load(self.specfile)
         if len(self.tests) == 0:
-            # NB: not a typo but a quirk of AMQP history.
-            # AMQP 0-8 identifies itself as 8-0.
-            if self.spec.major==8 and self.spec.minor==0:
+            if self.use08spec():
                 testdir="tests_0-8"
             else:
                 testdir="tests"
@@ -203,11 +206,15 @@ class TestBase(unittest.TestCase):
         
     def consume(self, queueName):
         """Consume from named queue returns the Queue object."""
-        if not "uniqueTag" in dir(self): self.uniqueTag = 1
-        else: self.uniqueTag += 1
-        consumer_tag = "tag" + str(self.uniqueTag)
-        self.channel.message_consume(queue=queueName, destination=consumer_tag, no_ack=True)
-        return self.client.queue(consumer_tag)
+        if testrunner.use08spec():
+            reply = self.channel.basic_consume(queue=queueName, no_ack=True)
+            return self.client.queue(reply.consumer_tag)
+        else:
+            if not "uniqueTag" in dir(self): self.uniqueTag = 1
+            else: self.uniqueTag += 1
+            consumer_tag = "tag" + str(self.uniqueTag)
+            self.channel.message_consume(queue=queueName, destination=consumer_tag, no_ack=True)
+            return self.client.queue(consumer_tag)
 
     def assertEmpty(self, queue):
         """Assert that the queue is empty"""
@@ -221,12 +228,25 @@ class TestBase(unittest.TestCase):
         Publish to exchange and assert queue.get() returns the same message.
         """
         body = self.uniqueString()
-        self.channel.message_transfer(destination=exchange,
-                                      body=body, application_headers=properties,
-                                      routing_key=routing_key)
-        msg = queue.get(timeout=1)    
-        self.assertEqual(body, msg.body)
-        if (properties): self.assertEqual(properties, msg.application_headers)
+        if testrunner.use08spec():
+            self.channel.basic_publish(
+                exchange=exchange,
+                content=Content(body, properties=properties),
+                routing_key=routing_key)
+        else:
+            self.channel.message_transfer(
+                destination=exchange, body=body,
+                application_headers=properties,
+                routing_key=routing_key)
+        msg = queue.get(timeout=1)
+        if testrunner.use08spec():
+            self.assertEqual(body, msg.content.body)
+            if (properties):
+                self.assertEqual(properties, msg.content.properties)
+        else:
+            self.assertEqual(body, msg.body)
+            if (properties):
+                self.assertEqual(properties, msg.application_headers)
         
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
