@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.database;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
@@ -49,11 +50,11 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
 {
     private static final Logger _logger = Logger.getLogger(PlainPasswordFilePrincipalDatabase.class);
 
-    private File _passwordFile;
+    protected File _passwordFile;
 
-    private Pattern _regexp = Pattern.compile(":");
+    protected Pattern _regexp = Pattern.compile(":");
 
-    private Map<String, AuthenticationProviderInitialiser> _saslServers;
+    protected Map<String, AuthenticationProviderInitialiser> _saslServers;
 
     public PlainPasswordFilePrincipalDatabase()
     {
@@ -63,6 +64,10 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
          *  Create Authenticators for Plain Password file.
          */
 
+        // Accept AMQPlain incomming and compare it to the file.
+        AmqPlainInitialiser amqplain = new AmqPlainInitialiser();
+        amqplain.initialise(this);
+
         // Accept Plain incomming and compare it to the file.
         PlainInitialiser plain = new PlainInitialiser();
         plain.initialise(this);
@@ -71,6 +76,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         CRAMMD5Initialiser cram = new CRAMMD5Initialiser();
         cram.initialise(this);
 
+        _saslServers.put(amqplain.getMechanismName(), amqplain);
         _saslServers.put(plain.getMechanismName(), plain);
         _saslServers.put(cram.getMechanismName(), cram);
     }

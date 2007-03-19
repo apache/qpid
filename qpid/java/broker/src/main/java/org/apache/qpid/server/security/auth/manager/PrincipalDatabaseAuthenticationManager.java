@@ -62,7 +62,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     public PrincipalDatabaseAuthenticationManager(String name, Configuration hostConfig) throws Exception
     {
-        _logger.info("Initialising " + (name == null ? " Default" : "'" + name + "'")
+        _logger.info("Initialising " + (name == null ? "Default" : "'" + name + "'")
                      + " PrincipleDatabase authentication manager.");
 
         // Fixme This should be done per Vhost but allowing global hack isn't right but ...
