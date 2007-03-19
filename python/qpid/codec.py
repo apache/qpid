@@ -26,6 +26,7 @@ fields.
 
 from cStringIO import StringIO
 from struct import *
+from reference import ReferenceId
 
 class EOF(Exception):
   pass
@@ -195,14 +196,24 @@ class Codec:
     return self.decode_longlong()
 
   def encode_content(self, s):
-    # XXX
-    self.encode_octet(0)
-    self.encode_longstr(s)
+    # content can be passed as a string in which case it is assumed to
+    # be inline data, or as an instance of ReferenceId indicating it is
+    # a reference id    
+    if isinstance(s, ReferenceId):
+      self.encode_octet(1)
+      self.encode_longstr(s.id)
+    else:      
+      self.encode_octet(0)
+      self.encode_longstr(s)
 
-  def decode_content(self):
-    # XXX
-    self.decode_octet()
-    return self.decode_longstr()
+  def decode_content(self):    
+    # return a string for inline data and a ReferenceId instance for
+    # references
+    type = self.decode_octet()
+    if type == 0:
+      return self.decode_longstr()
+    else:
+      return ReferenceId(self.decode_longstr())
 
 def test(type, value):
   if isinstance(value, (list, tuple)):
