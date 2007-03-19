@@ -163,7 +163,8 @@ class TxTests(TestBase):
         for i in range(1, 5):
             msg = queue_a.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msg.ok()
+
+        msg.ok(batchoffset=-3)
 
         channel.message_consume(queue=name_b, destination="sub_b", no_ack=False)
         queue_b = self.client.queue("sub_b")

@@ -97,9 +97,12 @@ class Peer:
       self.fatal()
 
   def close(self, reason):
+    # We must close the delegate first because closing channels
+    # may wake up waiting threads and we don't want them to see
+    # the delegate as open.
+    self.delegate.close(reason)
     for ch in self.channels.values():
       ch.close(reason)
-    self.delegate.close(reason)
 
   def writer(self):
     try:
@@ -144,7 +147,7 @@ class Requester:
     self.write(frame, content)
 
   def receive(self, channel, frame):
-    listener = self.outstanding.pop(frame.id)
+    listener = self.outstanding.pop(frame.request_id)
     listener(channel, frame)
 
 class Responder:
@@ -178,8 +181,8 @@ class Channel:
     self.requester = Requester(self.write)
     self.responder = Responder(self.write)
 
-    # XXX: better switch
-    self.reliable = False
+    # Use reliable framing if version == 0-9.
+    self.reliable = (spec.major == 0 and spec.minor == 9)
     self.synchronous = True
 
   def close(self, reason):

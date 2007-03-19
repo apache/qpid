@@ -76,7 +76,8 @@ class Client:
     self.locale = locale
     self.tune_params = tune_params
 
-    self.conn = Connection(connect(self.host, self.port), self.spec)
+    self.socket = connect(self.host, self.port)
+    self.conn = Connection(self.socket, self.spec)
     self.peer = Peer(self.conn, ClientDelegate(self), self.opened)
 
     self.conn.init()
@@ -89,6 +90,9 @@ class Client:
 
   def opened(self, ch):
     ch.references = References()
+
+  def close(self):
+    self.socket.close()
 
 class ClientDelegate(Delegate):
 
@@ -112,9 +116,8 @@ class ClientDelegate(Delegate):
 
   def message_transfer(self, ch, msg):
     if isinstance(msg.body, ReferenceId):
-      self.client.queue(msg.destination).put(ch.references.get(msg.body.id))
-    else:
-      self.client.queue(msg.destination).put(msg)
+      msg.reference = ch.references.get(msg.body.id)
+    self.client.queue(msg.destination).put(msg)
 
   def message_open(self, ch, msg):
     ch.references.open(msg.reference)
