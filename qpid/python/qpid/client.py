@@ -28,6 +28,7 @@ from delegate import Delegate
 from connection import Connection, Frame, connect
 from spec import load
 from queue import Queue
+from reference import ReferenceId, References
 
 
 class Client:
@@ -69,13 +70,14 @@ class Client:
       self.lock.release()
     return q
 
-  def start(self, response, mechanism="AMQPLAIN", locale="en_US"):
+  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None):
     self.mechanism = mechanism
     self.response = response
     self.locale = locale
+    self.tune_params = tune_params
 
     self.conn = Connection(connect(self.host, self.port), self.spec)
-    self.peer = Peer(self.conn, ClientDelegate(self))
+    self.peer = Peer(self.conn, ClientDelegate(self), self.opened)
 
     self.conn.init()
     self.peer.start()
@@ -84,6 +86,9 @@ class Client:
 
   def channel(self, id):
     return self.peer.channel(id)
+
+  def opened(self, ch):
+    ch.references = References()
 
 class ClientDelegate(Delegate):
 
@@ -97,8 +102,28 @@ class ClientDelegate(Delegate):
                  locale=self.client.locale)
 
   def connection_tune(self, ch, msg):
-    msg.tune_ok(*msg.frame.args)
+    if self.client.tune_params:
+      #todo: just override the params, i.e. don't require them
+      #      all to be included in tune_params
+      msg.tune_ok(**self.client.tune_params)
+    else:  
+      msg.tune_ok(*msg.frame.args)
     self.client.started.set()
+
+  def message_transfer(self, ch, msg):
+    if isinstance(msg.body, ReferenceId):
+      self.client.queue(msg.destination).put(ch.references.get(msg.body.id))
+    else:
+      self.client.queue(msg.destination).put(msg)
+
+  def message_open(self, ch, msg):
+    ch.references.open(msg.reference)
+
+  def message_close(self, ch, msg):
+    ch.references.close(msg.reference)
+
+  def message_append(self, ch, msg):
+    ch.references.get(msg.reference).append(msg.bytes)
 
   def basic_deliver(self, ch, msg):
     self.client.queue(msg.consumer_tag).put(msg)
