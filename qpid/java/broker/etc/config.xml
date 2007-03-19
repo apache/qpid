@@ -50,33 +50,35 @@
         <compressBufferOnQueue>false</compressBufferOnQueue>
     </advanced>
 
-    <principal-databases>
-        <principal-database>
-            <name>passwordfile</name>
-            <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
-            <attributes>
-                <attribute>
-                    <name>passwordFile</name>
-                    <value>${conf}/passwdVhost</value>
-                </attribute>
-            </attributes>
-        </principal-database>
+    <security>
+        <principal-databases>
+            <principal-database>
+                <name>passwordfile</name>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
+                <attributes>
+                    <attribute>
+                        <name>passwordFile</name>
+                        <value>${conf}/passwdVhost</value>
+                    </attribute>
+                </attributes>
+            </principal-database>
 
-        <principal-database>
-            <name>md5passwordfile</name>
-            <class>org.apache.qpid.server.security.auth.database.MD5PasswordFilePrincipalDatabase</class>
-            <attributes>
-                <attribute>
-                    <name>passwordFile</name>
-                    <value>${conf}/md5passwd</value>
-                </attribute>
-            </attributes>
-        </principal-database>
-    </principal-databases>
+            <!--principal-database>
+                <name>md5passwordfile</name>
+                <class>org.apache.qpid.server.security.auth.database.MD5PasswordFilePrincipalDatabase</class>
+                <attributes>
+                    <attribute>
+                        <name>passwordFile</name>
+                        <value>${conf}/md5passwd</value>
+                    </attribute>
+                </attributes>
+            </principal-database-->
+        </principal-databases>
 
-    <access>
-        <class>org.apache.qpid.server.security.access.AllowAll</class>
-    </access>
+        <access>
+            <class>org.apache.qpid.server.security.access.AllowAll</class>
+        </access>
+    </security>
 
     <virtualhosts>
         <virtualhost>
@@ -89,7 +91,7 @@
                 </store>
 
                 <security>
-                    <!-- Need protocol changes to allow this-->                    
+                    <!-- Need protocol changes to allow this-->
                     <authentication>
                         <name>passwordfile</name>
                         <!-- Currently this can't be used as Vhost isn't specified at connection start only connection open -->
@@ -161,3 +163,5 @@
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
+
+
