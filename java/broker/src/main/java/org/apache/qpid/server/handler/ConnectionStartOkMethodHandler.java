@@ -75,9 +75,10 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             if (ss == null)
             {
-                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server");
+                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + body.mechanism
+                );
             }
-            
+
             session.setSaslServer(ss);
 
             AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
@@ -150,5 +151,6 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         return framesize;
     }
 }
+
 
 

@@ -33,7 +33,7 @@ public class PrincipalDatabaseAccessManager implements AccessManager
 
     public PrincipalDatabaseAccessManager()
     {
-            _default = ApplicationRegistry.getInstance().getAccessManager();
+        _default = null;
     }
 
     public void setDefaultAccessManager(String defaultAM)
@@ -64,7 +64,14 @@ public class PrincipalDatabaseAccessManager implements AccessManager
 
         if (_database == null)
         {
-            result = _default.isAuthorized(accessObject, username);
+            if (_default != null)
+            {
+                result = _default.isAuthorized(accessObject, username);
+            }
+            else
+            {
+                throw new RuntimeException("Principal Database and default Access Manager are both null unable to perform Access Control");
+            }
         }
         else
         {

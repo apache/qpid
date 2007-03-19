@@ -38,7 +38,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 {
     private static final Logger _logger = Logger.getLogger(ConfigurationFilePrincipalDatabaseManager.class);
 
-    private static final String _base = "principal-databases.principal-database";
+    private static final String _base = "security.principal-databases.principal-database";
 
     Map<String, PrincipalDatabase> _databases;
 
