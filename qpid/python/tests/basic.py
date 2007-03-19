@@ -147,7 +147,7 @@ class BasicTests(TestBase):
         Test basic ack/recover behaviour
         """
         channel = self.channel
-        channel.queue_declare(queue="test-ack-queue", exclusive=True)
+        self.queue_declare(queue="test-ack-queue", exclusive=True)
         
         reply = channel.basic_consume(queue="test-ack-queue", no_ack=False)
         queue = self.client.queue(reply.consumer_tag)
