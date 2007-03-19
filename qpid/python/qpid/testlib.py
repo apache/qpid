@@ -26,6 +26,7 @@ import qpid.client, qpid.spec
 import Queue
 from getopt import getopt, GetoptError
 from qpid.content import Content
+from qpid.message import Message
 
 def findmodules(root):
     """Find potential python modules under directory root"""
@@ -56,15 +57,16 @@ class TestRunner:
 run-tests [options] [test*]
 The name of a test is package.module.ClassName.testMethod
 Options:
-  -?/-h/--help         : this message
+  -?/-h/--help             : this message
   -s/--spec <spec.xml> : URL of AMQP XML specification or one of these abbreviations:
                            0-8 - use the default 0-8 specification.
                            0-9 - use the default 0-9 specification.
+  -e/--errata <errata.xml> : file containing amqp XML errata
   -b/--broker [<user>[/<password>]@]<host>[:<port>] : broker to connect to
-  -v/--verbose         : verbose - lists tests as they are run.
-  -d/--debug           : enable debug logging.
-  -i/--ignore <test>   : ignore the named test.
-  -I/--ignore-file     : file containing patterns to ignore.
+  -v/--verbose             : verbose - lists tests as they are run.
+  -d/--debug               : enable debug logging.
+  -i/--ignore <test>       : ignore the named test.
+  -I/--ignore-file         : file containing patterns to ignore.
   """
         sys.exit(1)
 
@@ -103,24 +105,27 @@ Options:
         for opt, value in opts:
             if opt in ("-?", "-h", "--help"): self._die()
             if opt in ("-s", "--spec"): self.specfile = value
+            if opt in ("-e", "--errata"): self.errata.append(value)
             if opt in ("-b", "--broker"): self.setBroker(value)
             if opt in ("-v", "--verbose"): self.verbose = 2
             if opt in ("-d", "--debug"): logging.basicConfig(level=logging.DEBUG)
             if opt in ("-i", "--ignore"): self.ignore.append(value)
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
+	# Abbreviations for default settings.
         if (self.specfile == "0-8"):
-          self.specfile = "../specs/amqp.0-8.xml"
+       	    self.specfile = "../specs/amqp.0-8.xml"
         if (self.specfile == "0-9"):
-          self.specfile = "../specs/amqp.0-9.xml"
-          self.errata = ["../specs/amqp-errata.0-9.xml"]
+            self.specfile = "../specs/amqp.0-9.xml"
+            self.errata.append("../specs/amqp-errata.0-9.xml")
+	if (self.specfile == None):
+	    self._die("No XML specification provided")
         print "Using specification from:", self.specfile
         self.spec = qpid.spec.load(self.specfile, *self.errata)
         if len(self.tests) == 0:
             if self.use08spec():
-                testdir="tests_0-8"
+                self.tests=findmodules("tests_0-8")
             else:
-                testdir="tests"
-            self.tests=findmodules(testdir)
+                self.tests=findmodules("tests")
 
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
@@ -137,7 +142,11 @@ Options:
         self._parseargs(args)
         runner = unittest.TextTestRunner(descriptions=False,
                                          verbosity=self.verbose)
-        result = runner.run(self.testSuite())
+        try:
+            result = runner.run(self.testSuite())
+        except:
+            print "Unhandled error in test:", sys.exc_info()
+            
         if (self.ignore):
             print "======================================="
             print "NOTE: the following tests were ignored:"
@@ -181,10 +190,18 @@ class TestBase(unittest.TestCase):
         self.channel.channel_open()
 
     def tearDown(self):
-        for ch, q in self.queues:
-            ch.queue_delete(queue=q)
-        for ch, ex in self.exchanges:
-            ch.exchange_delete(exchange=ex)
+        try:
+            for ch, q in self.queues:
+                ch.queue_delete(queue=q)
+            for ch, ex in self.exchanges:
+                ch.exchange_delete(exchange=ex)
+        except:
+            print "Error on tearDown:", sys.exc_info()
+
+        if not self.client.closed:    
+            self.client.channel(0).connection_close(reply_code=200)
+        else:    
+            self.client.close()
 
     def connect(self, *args, **keys):
         """Create a new connction, return the Client object"""
@@ -261,13 +278,15 @@ class TestBase(unittest.TestCase):
         """
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
-    def assertChannelException(self, expectedCode, message): 
+    def assertChannelException(self, expectedCode, message):
+        if not isinstance(message, Message): self.fail("expected channel_close method")
         self.assertEqual("channel", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
 
 
     def assertConnectionException(self, expectedCode, message): 
+        if not isinstance(message, Message): self.fail("expected connection_close method")
         self.assertEqual("connection", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)

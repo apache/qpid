@@ -79,12 +79,11 @@ class Spec(Metadata):
 
   PRINT=["major", "minor", "file"]
 
-  def __init__(self, major, minor, file, errata):
+  def __init__(self, major, minor, file):
     Metadata.__init__(self)
     self.major = major
     self.minor = minor
     self.file = file
-    self.errata = errata
     self.constants = SpecContainer()
     self.classes = SpecContainer()
     # methods indexed by classname_methname
@@ -275,7 +274,7 @@ def load_fields(nd, l, domains):
 def load(specfile, *errata):
   doc = xmlutil.parse(specfile)
   spec_root = doc["amqp"][0]
-  spec = Spec(int(spec_root["@major"]), int(spec_root["@minor"]), specfile, errata)
+  spec = Spec(int(spec_root["@major"]), int(spec_root["@minor"]), specfile)
 
   for root in [spec_root] + map(lambda x: xmlutil.parse(x)["amqp"][0], errata):
     # constants
