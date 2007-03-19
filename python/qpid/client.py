@@ -43,7 +43,7 @@ class Client:
 
     self.vhost = vhost
     if self.vhost == None:
-      self.vhost = self.host
+      self.vhost = "/"
 
     self.queues = {}
     self.lock = threading.Lock()
