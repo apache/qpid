@@ -1,4 +1,4 @@
-tests.basic.BasicTests.test_qos_prefetch_count 
+ntests.basic.BasicTests.test_qos_prefetch_count 
 tests.basic.BasicTests.test_ack
 tests.basic.BasicTests.test_cancel
 tests.basic.BasicTests.test_consume_exclusive
@@ -8,11 +8,11 @@ tests.basic.BasicTests.test_consume_unique_consumers
 tests.basic.BasicTests.test_get
 tests.basic.BasicTests.test_qos_prefetch_size
 tests.basic.BasicTests.test_recover_requeue
+
 tests.exchange.RecommendedTypesRuleTests.testTopic
 tests.exchange.RequiredInstancesRuleTests.testAmqTopic
 
-tests.message.MessageTests.test_qos_prefetch_count 
-tests.message.MessageTests.test_ack
-tests.message.MessageTests.test_get
-tests.message.MessageTests.test_qos_prefetch_size
-tests.message.MessageTests.test_recover_requeue
+tests.message.MessageTests.test_checkpoint
+tests.message.MessageTests.test_reject
+
+tests.broker.BrokerTests.test_ping_pong
