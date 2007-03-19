@@ -208,6 +208,10 @@ class Method(Metadata):
       if f.docs:
         s += "\n\n" + "\n\n".join([fill(f.docs[0], 4, f.name)] +
                                   [fill(d, 4) for d in f.docs[1:]])
+    if self.responses:    
+      s += "\n\nValid responses: "    
+      for r in self.responses:
+        s += r.name + " "
     return s
 
   METHOD = "__method__"
