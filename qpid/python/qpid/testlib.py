@@ -57,7 +57,9 @@ run-tests [options] [test*]
 The name of a test is package.module.ClassName.testMethod
 Options:
   -?/-h/--help         : this message
-  -s/--spec <spec.xml> : file containing amqp XML spec 
+  -s/--spec <spec.xml> : URL of AMQP XML specification or one of these abbreviations:
+                           0-8 - use the default 0-8 specification.
+                           0-9 - use the default 0-9 specification.
   -b/--broker [<user>[/<password>]@]<host>[:<port>] : broker to connect to
   -v/--verbose         : verbose - lists tests as they are run.
   -d/--debug           : enable debug logging.
@@ -77,13 +79,6 @@ Options:
         self.user = default(self.user, "guest")
         self.password = default(self.password, "guest")
 
-    def __init__(self):
-        # Defaults
-        self.setBroker("localhost")
-        self.specfile = "../specs/amqp.0-8.xml"
-        self.verbose = 1
-        self.ignore = []
-
     def ignoreFile(self, filename):
         f = file(filename)
         for line in f.readlines(): self.ignore.append(line.strip())
@@ -95,6 +90,12 @@ Options:
         return self.spec.major==8 and self.spec.minor==0
             
     def _parseargs(self, args):
+        # Defaults
+        self.setBroker("localhost")
+        self.verbose = 1
+        self.ignore = []
+        self.specfile = "0-8"
+        self.errata = []
         try:
             opts, self.tests = getopt(args, "s:b:h?dvi:I:", ["help", "spec", "server", "verbose", "ignore", "ignore-file"])
         except GetoptError, e:
@@ -107,8 +108,13 @@ Options:
             if opt in ("-d", "--debug"): logging.basicConfig(level=logging.DEBUG)
             if opt in ("-i", "--ignore"): self.ignore.append(value)
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
-
-        self.spec = qpid.spec.load(self.specfile)
+        if (self.specfile == "0-8"):
+          self.specfile = "../specs/amqp.0-8.xml"
+        if (self.specfile == "0-9"):
+          self.specfile = "../specs/amqp.0-9.xml"
+          self.errata = ["../specs/amqp-errata.0-9.xml"]
+        print "Using specification from:", self.specfile
+        self.spec = qpid.spec.load(self.specfile, *self.errata)
         if len(self.tests) == 0:
             if self.use08spec():
                 testdir="tests_0-8"
