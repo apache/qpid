@@ -74,7 +74,7 @@ public class AccessManagerImpl implements AccessManager
     private void initialiseAccessControl(AccessManager accessManager, Configuration config)
             throws ConfigurationException
     {
-        String baseName = "access.attributes.attribute.";
+        String baseName = "security.access.attributes.attribute.";
         List<String> argumentNames = config.getList(baseName + "name");
         List<String> argumentValues = config.getList(baseName + "value");
         for (int i = 0; i < argumentNames.size(); i++)
