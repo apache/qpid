@@ -111,7 +111,7 @@ class References:
         self.get(id).close()
         self.lock.acquire()
         try:
-            del map[id]
+            self.map.pop(id)
         finally:
             self.lock.release()
         
