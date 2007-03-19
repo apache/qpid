@@ -1,2 +1,2 @@
-tests.exchange.RecommendedTypesRuleTests.testTopic
-tests.exchange.RequiredInstancesRuleTests.testAmqTopic
+tests_0-8.exchange.RecommendedTypesRuleTests.testTopic
+tests_0-8.exchange.RequiredInstancesRuleTests.testAmqTopic
