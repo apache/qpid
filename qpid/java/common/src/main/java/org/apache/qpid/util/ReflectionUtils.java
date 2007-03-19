@@ -119,15 +119,15 @@ public class ReflectionUtils
         }
         catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("NoSuchMethodException.", e);
         }
         catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("IllegalAccessException.", e);
         }
         catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("InvocationTargetException", e);
         }
     }
 
@@ -163,15 +163,15 @@ public class ReflectionUtils
         }
         catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("NoSuchMethodException.", e);
         }
         catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("IllegalAccessException", e);
         }
         catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("InvocationTargetException", e);
         }
     }
 
@@ -192,15 +192,15 @@ public class ReflectionUtils
         }
         catch (InstantiationException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("InstantiationException", e);
         }
         catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("IllegalAccessException", e);
         }
         catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("InvocationTargetException", e);
         }
     }
 
@@ -222,7 +222,7 @@ public class ReflectionUtils
         }
         catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectionUtilsException("NoSuchMethodException", e);
         }
     }
 }
