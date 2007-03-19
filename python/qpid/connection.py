@@ -232,6 +232,9 @@ class Response(Frame):
     method = Method.decode(spec, dec, size - 20)
     return Response(id, request_id, batch_offset, method)
 
+  def __str__(self):
+    return "[%s] Response(%s,%s,%s) %s" % (self.channel, self.id, self.request_id, self.batch_offset, self.method)
+
 class Header(Frame):
 
   type = "frame_header"
