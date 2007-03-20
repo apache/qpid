@@ -75,13 +75,16 @@ public class TestClient implements MessageListener
     public static final String CONNECTION_PROPERTY = "connectionfactory.broker";
     public static final String CONNECTION_NAME = "broker";
     public static final String CLIENT_NAME = "java";
-    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/client/connection.properties";
+    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/connection.properties";
 
     private MessageProducer producer;
     private Session session;
 
     public TestClient(String brokerUrl, String virtualHost)
     {
+        log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
+                  + "): called");
+
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
         this.virtualHost = virtualHost;
@@ -104,7 +107,7 @@ public class TestClient implements MessageListener
         CommandLineParser commandLine =
             new CommandLineParser(new String[][]
                                   {
-                                      { "b", "The broker URL.", "broker", "true" },
+                                      { "b", "The broker URL.", "broker", "false" },
                                       { "h", "The virtual host to use.", "virtual host", "false" }
                                   });
 
@@ -146,6 +149,8 @@ public class TestClient implements MessageListener
 
     private void start() throws JMSException
     {
+        log.debug("private void start(): called");
+
         // Use a class path scanner to find all the interop test case implementations.
         Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
             ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
@@ -201,17 +206,23 @@ public class TestClient implements MessageListener
      *
      * @return A JMS conneciton.
      */
-    private static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
+    public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
     {
+        log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
+                  + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
+
         try
         {
             Properties connectionProps =
                 PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
                                                   connectionPropsResource));
 
-            String connectionString =
-                "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
-            connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
+            if (brokerUrl != null)
+            {
+                String connectionString =
+                    "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
+                connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
+            }
 
             Context ctx = new InitialContext(connectionProps);
 
@@ -241,6 +252,8 @@ public class TestClient implements MessageListener
      */
     public void onMessage(Message message)
     {
+        log.debug("public void onMessage(Message message = " + message + "): called");
+
         try
         {
             String controlType = message.getStringProperty("CONTROL_TYPE");
