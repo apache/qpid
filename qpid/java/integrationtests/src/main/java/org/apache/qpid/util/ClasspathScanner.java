@@ -63,11 +63,16 @@ public class ClasspathScanner
     public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass, String matchingRegexp,
                                                                 boolean beanOnly)
     {
+        log.debug("public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass = " + matchingClass
+                  + ", String matchingRegexp = " + matchingRegexp + ", boolean beanOnly = " + beanOnly + "): called");
+
         // Build a compiled regular expression from the pattern to match.
         Pattern matchPattern = Pattern.compile(matchingRegexp);
 
         String classPath = System.getProperty("java.class.path");
         Map<String, Class<? extends T>> result = new HashMap<String, Class<? extends T>>();
+
+        log.debug("classPath = " + classPath);
 
         // Find matching classes starting from all roots in the classpath.
         for (String path : splitClassPath(classPath))
@@ -92,15 +97,19 @@ public class ClasspathScanner
     private static <T> void gatherFiles(File classRoot, String classFileName, Map<String, Class<? extends T>> result,
                                         Pattern matchPattern, Class<? extends T> matchClass)
     {
+        log.debug("private static <T> void gatherFiles(File classRoot = " + classRoot + ", String classFileName = "
+                  + classFileName + ", Map<String, Class<? extends T>> result, Pattern matchPattern = " + matchPattern
+                  + ", Class<? extends T> matchClass = " + matchClass + "): called");
+
         File thisRoot = new File(classRoot, classFileName);
 
         // If the current location is a file, check if it is a matching class.
         if (thisRoot.isFile())
         {
             // Check that the file has a matching name.
-            if (matchesName(classFileName, matchPattern))
+            if (matchesName(thisRoot.getName(), matchPattern))
             {
-                String className = classNameFromFile(classFileName);
+                String className = classNameFromFile(thisRoot.getName());
 
                 // Check that the class has matching type.
                 try
@@ -206,6 +215,8 @@ public class ClasspathScanner
      */
     private static String classNameFromFile(String classFileName)
     {
+        log.debug("private static String classNameFromFile(String classFileName = " + classFileName + "): called");
+
         // Remove the .class ending.
         String s = classFileName.substring(0, classFileName.length() - ".class".length());
 

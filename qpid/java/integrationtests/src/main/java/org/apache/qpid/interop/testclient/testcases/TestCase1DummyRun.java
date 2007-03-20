@@ -24,6 +24,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
 
 /**
@@ -41,29 +43,41 @@ import org.apache.qpid.interop.testclient.InteropClientTestCase;
  */
 public class TestCase1DummyRun implements InteropClientTestCase
 {
+    private static final Logger log = Logger.getLogger(TestCase1DummyRun.class);
+
     public String getName()
     {
+        log.debug("public String getName(): called");
+
         return "TC1_DummyRun";
     }
 
     public boolean acceptInvite(Message inviteMessage) throws JMSException
     {
+        log.debug("public boolean acceptInvite(Message inviteMessage): called");
+
         // Test parameters don't matter, accept all invites.
         return true;
     }
 
     public void assignRole(Roles role, Message assignRoleMessage) throws JMSException
     {
+        log.debug("public void assignRole(Roles role, Message assignRoleMessage): called");
+
         // Do nothing, both roles are the same.
     }
 
     public void start()
     {
+        log.debug("public void start(): called");
+
         // Do nothing.
     }
 
     public Message getReport(Session session) throws JMSException
     {
+        log.debug("public Message getReport(Session session): called");
+
         // Generate a dummy report, the coordinator expects a report but doesn't care what it is.
         return session.createTextMessage("Dummy Run, Ok.");
     }

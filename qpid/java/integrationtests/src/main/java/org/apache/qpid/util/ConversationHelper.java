@@ -21,7 +21,6 @@
 package org.apache.qpid.util;
 
 import java.util.*;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -109,7 +108,7 @@ public class ConversationHelper
     private MessageProducer producer;
     private MessageConsumer consumer;
 
-    Class<? extends BlockingQueue<Message>> queueClass;
+    Class<? extends BlockingQueue> queueClass;
 
     BlockingQueue<Message> deadLetterBox = new LinkedBlockingQueue<Message>();
 
@@ -140,7 +139,7 @@ public class ConversationHelper
      * @throws JMSException All undelying JMSExceptions are allowed to fall through.
      */
     public ConversationHelper(Connection connection, Destination sendDestination, Destination receiveDestination,
-                              Class<? extends BlockingQueue<Message>> queueClass) throws JMSException
+                              Class<? extends BlockingQueue> queueClass) throws JMSException
     {
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         producer = session.createProducer(sendDestination);
@@ -180,7 +179,7 @@ public class ConversationHelper
     {
         if (!idsToQueues.containsKey(conversationId))
         {
-            idsToQueues.put(conversationId, ReflectionUtils.<BlockingQueue<Message>>newInstance(queueClass));
+            idsToQueues.put(conversationId, ReflectionUtils.<BlockingQueue>newInstance(queueClass));
         }
     }
 
@@ -210,6 +209,28 @@ public class ConversationHelper
     }
 
     /**
+     * Gets many messages in an ongoing conversation. If a limit is specified, then once that many messages are
+     * received they will be returned. If a timeout is specified, then all messages up to the limit, received within
+     * that timespan will be returned.
+     *
+     * @param num     The number of messages to receive, or all if this is less than 1.
+     * @param timeout The timeout in milliseconds to receive the messages in, or forever if this is less than 1.
+     *
+     * @return All messages received within the count limit and the timeout.
+     */
+    public Collection<Message> receiveAll(int num, long timeout)
+    {
+        Collection<Message> result = new ArrayList<Message>();
+
+        for (int i = 0; i < num; i++)
+        {
+            result.add(receive());
+        }
+
+        return result;
+    }
+
+    /**
      * Completes the conversation. Any open transactions are committed. Any correlation id's pertaining to the
      * conversation are no longer valid, and any incoming messages using them will go to the dead letter box.
      */
@@ -234,7 +255,7 @@ public class ConversationHelper
      */
     public Collection<Message> emptyDeadLetterBox()
     {
-        Collection<Message> result = new LinkedList<Message>();
+        Collection<Message> result = new ArrayList<Message>();
         deadLetterBox.drainTo(result);
 
         return result;
@@ -279,5 +300,10 @@ public class ConversationHelper
     {
         /** Holds the correlation id for the current threads conversation. */
         long conversationId;
+    }
+
+    public Session getSession()
+    {
+        return session;
     }
 }
