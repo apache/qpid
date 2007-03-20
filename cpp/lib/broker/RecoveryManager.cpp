@@ -29,9 +29,13 @@ RecoveryManager::~RecoveryManager() {}
 Queue::shared_ptr RecoveryManager::recoverQueue(const string& name)
 {
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    Exchange::shared_ptr exchange = exchanges.getDefault();
-    if (exchange) {
-        exchange->bind(result.first, result.first->getName(), 0);
+    try {
+        Exchange::shared_ptr exchange = exchanges.getDefault();
+        if (exchange) {
+            exchange->bind(result.first, result.first->getName(), 0);
+        }
+    } catch (ChannelException& e) {
+        //assume no default exchange has been declared
     }
     return result.first;
 }
