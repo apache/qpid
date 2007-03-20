@@ -107,6 +107,15 @@
         </plugins>
 
         <resources>
+            <!-- Ensure all resources defined in the resources directory are copied into the build jar. -->
+            <resource>
+                <targetPath></targetPath>
+                <filtering>false</filtering>
+                <directory>src/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
         </resources>
 
     </build>

@@ -30,8 +30,58 @@ public class TestClientDetails
     /** The test clients name. */
     public String clientName;
 
-    /* The test clients unqiue sequence number. Not currently used. */
+    /* The test clients unique sequence number. Not currently used. */
 
     /** The routing key of the test clients control topic. */
     public String privateControlKey;
+
+    /**
+     * Two TestClientDetails are considered to be equal, iff they have the same client name.
+     *
+     * @param o The object to compare to.
+     *
+     * @return <tt>If the object to compare to is a TestClientDetails equal to this one, <tt>false</tt> otherwise.
+     */
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (!(o instanceof TestClientDetails))
+        {
+            return false;
+        }
+
+        final TestClientDetails testClientDetails = (TestClientDetails) o;
+
+        if ((clientName != null) ? (!clientName.equals(testClientDetails.clientName))
+                                 : (testClientDetails.clientName != null))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Computes a hash code compatible with the equals method; based on the client name alone.
+     *
+     * @return A hash code for this.
+     */
+    public int hashCode()
+    {
+        return ((clientName != null) ? clientName.hashCode() : 0);
+    }
+
+    /**
+     * Outputs the client name and address details. Mostly used for debugging purposes.
+     *
+     * @return The client name and address.
+     */
+    public String toString()
+    {
+        return "clientName = " + clientName + ", privateControlKey = " + privateControlKey;
+    }
 }
