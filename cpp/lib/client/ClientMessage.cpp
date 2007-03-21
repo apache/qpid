@@ -42,11 +42,11 @@ BasicHeaderProperties* Message::getHeaderProperties() const {
     return dynamic_cast<BasicHeaderProperties*>(header->getProperties());
 }
 
-const std::string& Message::getContentType() const { 
+std::string Message::getContentType() const { 
     return getHeaderProperties()->getContentType(); 
 }
 
-const std::string& Message::getContentEncoding() const { 
+std::string Message::getContentEncoding() const { 
     return getHeaderProperties()->getContentEncoding(); 
 }
 
@@ -62,19 +62,19 @@ uint8_t Message::getPriority() const {
     return getHeaderProperties()->getPriority(); 
 }
 
-const std::string& Message::getCorrelationId() const {
+std::string Message::getCorrelationId() const {
     return getHeaderProperties()->getCorrelationId(); 
 }
 
-const std::string& Message::getReplyTo() const { 
+std::string Message::getReplyTo() const { 
     return getHeaderProperties()->getReplyTo(); 
 }
 
-const std::string& Message::getExpiration() const { 
+std::string Message::getExpiration() const { 
     return getHeaderProperties()->getExpiration(); 
 }
 
-const std::string& Message::getMessageId() const {
+std::string Message::getMessageId() const {
     return getHeaderProperties()->getMessageId(); 
 }
 
@@ -82,19 +82,19 @@ uint64_t Message::getTimestamp() const {
     return getHeaderProperties()->getTimestamp(); 
 }
 
-const std::string& Message::getType() const { 
+std::string Message::getType() const { 
     return getHeaderProperties()->getType(); 
 }
 
-const std::string& Message::getUserId() const { 
+std::string Message::getUserId() const { 
     return getHeaderProperties()->getUserId(); 
 }
 
-const std::string& Message::getAppId() const { 
+std::string Message::getAppId() const { 
     return getHeaderProperties()->getAppId(); 
 }
 
-const std::string& Message::getClusterId() const { 
+std::string Message::getClusterId() const { 
     return getHeaderProperties()->getClusterId(); 
 }
 
@@ -110,7 +110,7 @@ void Message::setHeaders(const FieldTable& headers){
     getHeaderProperties()->setHeaders(headers); 
 }
 
-void Message::setDeliveryMode(uint8_t mode){ 
+void Message::setDeliveryMode(DeliveryMode mode){ 
     getHeaderProperties()->setDeliveryMode(mode); 
 }
 
