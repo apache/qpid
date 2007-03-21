@@ -47,9 +47,12 @@ class Message:
     else:
       for r in self.method.responses:
         if attr == r.name:
-          result = lambda *args, **kwargs: \
-                   self.channel.respond(Method(r, r.arguments(*args, **kwargs)),
-                                        self.frame)
+          def respond(*args, **kwargs):
+            batch=0
+            if kwargs.has_key("batchoffset"):
+              batch=kwargs.pop("batchoffset")
+            self.channel.respond(Method(r, r.arguments(*args, **kwargs)), batch, self.frame)
+          result = respond
           break
       else:
         raise AttributeError(attr)
