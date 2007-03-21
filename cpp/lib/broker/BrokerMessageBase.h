@@ -121,22 +121,18 @@ class Message {
         return publisher;
     }
 
-    virtual void encode(framing::Buffer& /*buffer*/) {}; // XXXX: Only used in tests?
-    virtual void encodeHeader(framing::Buffer& /*buffer*/) {}; // XXXX: Only used in tests?
+    virtual void encode(framing::Buffer& buffer) = 0;
+    virtual void encodeHeader(framing::Buffer& buffer) = 0;
 
     /**
      * @returns the size of the buffer needed to encode this
      * message in its entirety
-     * 
-     * XXXX: Only used in tests?
      */
     virtual uint32_t encodedSize() = 0;
     /**
      * @returns the size of the buffer needed to encode the
      * 'header' of this message (not just the header frame,
      * but other meta data e.g.routing key and exchange)
-     * 
-     * XXXX: Only used in tests?
      */
     virtual uint32_t encodedHeaderSize() = 0;
     /**
@@ -149,6 +145,10 @@ class Message {
      * content size else returns 0.
      */
     virtual uint64_t expectedContentSize() = 0;
+
+    virtual void decodeHeader(framing::Buffer& buffer) = 0;
+    virtual void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0) = 0;
+
             
     // TODO: AMS 29/1/2007 Don't think these are really part of base class
             
