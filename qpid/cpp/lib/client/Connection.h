@@ -23,25 +23,12 @@
  */
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
-
-#include "amqp_types.h"
-#include <QpidError.h>
-#include <Connector.h>
-#include <sys/ShutdownHandler.h>
-#include <sys/TimeoutHandler.h>
-
-
-#include "framing/amqp_types.h"
-#include <framing/amqp_framing.h>
-#include <ClientExchange.h>
-#include <IncomingMessage.h>
-#include <ClientMessage.h>
-#include <MessageListener.h>
-#include <ClientQueue.h>
-#include <ResponseHandler.h>
-#include <AMQP_HighestVersion.h>
+#include "QpidError.h"
 #include "ClientChannel.h"
+#include "Connector.h"
+#include "sys/ShutdownHandler.h"
+#include "sys/TimeoutHandler.h"
+
 
 namespace qpid {
 
@@ -52,8 +39,6 @@ namespace qpid {
  * Connection and Channel.
  */
 namespace client {
-
-class Channel;
 
 /**
  * \internal provide access to selected private channel functions
