@@ -46,56 +46,34 @@ class Message {
     Message(qpid::framing::AMQHeaderBody::shared_ptr& header);
         
   public:
+    enum DeliveryMode { DURABLE=1, NON_DURABLE=2 };
     Message(const std::string& data=std::string());
     ~Message();
-	
-    /**
-     * Allows the application to access the content of messages
-     * received.
-     * 
-     * @return a string representing the data of the message
-     */
+
     std::string getData() const { return data; }
-
-    /**
-     * Allows the application to set the content of messages to be
-     * sent.
-     * 
-     * @param data a string representing the data of the message
-     */
-    void setData(const std::string& _data);
-
-    /**
-     * @return true if this message was delivered previously (to
-     * any consumer) but was not acknowledged.
-     */
-    bool isRedelivered(){ return redelivered; }
-    void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
-
+    bool isRedelivered() const { return redelivered; }
     uint64_t getDeliveryTag() const;
-
-    const std::string& getContentType() const;
-    const std::string& getContentEncoding() const;
+    std::string getContentType() const;
+    std::string getContentEncoding() const;
     qpid::framing::FieldTable& getHeaders() const;
     uint8_t getDeliveryMode() const;
     uint8_t getPriority() const;
-    const std::string& getCorrelationId() const;
-    const std::string& getReplyTo() const;
-    const std::string& getExpiration() const;
-    const std::string& getMessageId() const;
+    std::string getCorrelationId() const;
+    std::string getReplyTo() const;
+    std::string getExpiration() const;
+    std::string getMessageId() const;
     uint64_t getTimestamp() const;
-    const std::string& getType() const;
-    const std::string& getUserId() const;
-    const std::string& getAppId() const;
-    const std::string& getClusterId() const;
+    std::string getType() const;
+    std::string getUserId() const;
+    std::string getAppId() const;
+    std::string getClusterId() const;
 
+    void setData(const std::string& _data);
+    void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
     void setContentType(const std::string& type);
     void setContentEncoding(const std::string& encoding);
     void setHeaders(const qpid::framing::FieldTable& headers);
-    /**
-     * Sets the delivery mode. 1 = non-durable, 2 = durable.
-     */
-    void setDeliveryMode(uint8_t mode);
+    void setDeliveryMode(DeliveryMode mode);
     void setPriority(uint8_t priority);
     void setCorrelationId(const std::string& correlationId);
     void setReplyTo(const std::string& replyTo);
