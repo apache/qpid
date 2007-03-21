@@ -41,6 +41,15 @@ public interface ManagedConnection
 {
     static final String TYPE = "Connection";
 
+    @MBeanAttribute(name = "ClientId", description = "Client Id")
+    String getClientId();
+
+    @MBeanAttribute(name = "AuthorizedId", description = "User Name")
+    String getAuthorizedId();
+
+    @MBeanAttribute(name = "Version", description = "Client Version")
+    String getVersion();
+
     /**
      * Tells the remote address of this connection.
      * @return  remote address
