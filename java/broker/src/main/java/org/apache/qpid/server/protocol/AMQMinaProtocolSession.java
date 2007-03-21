@@ -74,6 +74,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private AMQShortString _contextKey;
 
+    private AMQShortString _clientVersion = null;
+
     private VirtualHost _virtualHost;
 
     private final Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
@@ -667,9 +669,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public void setClientProperties(FieldTable clientProperties)
     {
         _clientProperties = clientProperties;
-        if ((_clientProperties != null) && (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null))
+        if (_clientProperties != null)
         {
-            setContextKey(new AMQShortString(_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE)));
+            if (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null)
+            {
+                setContextKey(new AMQShortString(_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE)));
+            }
+            if (_clientProperties.getString(ClientProperties.version.toString()) != null)
+            {
+                _clientVersion = new AMQShortString(_clientProperties.getString(ClientProperties.version.toString()));
+            }
         }
     }
 
@@ -745,5 +754,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         return _authorizedID;
     }
-
+    public String getClientVersion()
+    {
+        return _clientVersion == null ? null : _clientVersion.toString();    
+    }
 }
