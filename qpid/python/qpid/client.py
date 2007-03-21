@@ -131,6 +131,9 @@ class ClientDelegate(Delegate):
   def basic_deliver(self, ch, msg):
     self.client.queue(msg.consumer_tag).put(msg)
 
+  def channel_pong(self, ch, msg):
+    msg.ok()
+
   def channel_close(self, ch, msg):
     ch.close(msg)
 
