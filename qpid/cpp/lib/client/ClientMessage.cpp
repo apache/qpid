@@ -30,7 +30,6 @@ Message::Message(const std::string& d)
 
 void Message::setData(const std::string& d) {
     data = d;
-    header->setContentSize(d.size());
 }
 
 Message::Message(AMQHeaderBody::shared_ptr& _header) : header(_header){

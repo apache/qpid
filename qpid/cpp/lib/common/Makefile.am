@@ -117,6 +117,7 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/amqp_framing.h			\
   $(framing)/amqp_types.h			\
   $(framing)/Proxy.h				\
+  shared_ptr.h					\
   Exception.h					\
   ExceptionHolder.h				\
   QpidError.h					\

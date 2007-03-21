@@ -14,7 +14,7 @@ libqpidclient_la_SOURCES =			\
   ClientExchange.cpp				\
   ClientMessage.cpp				\
   ClientQueue.cpp				\
-  Basic.cpp					\
+  BasicMessageChannel.cpp			\
   Connection.cpp				\
   Connector.cpp					\
   IncomingMessage.cpp				\
@@ -22,14 +22,16 @@ libqpidclient_la_SOURCES =			\
   ResponseHandler.cpp				\
   ReturnedMessageHandler.cpp
 pkginclude_HEADERS =				\
+  AckMode.h					\
   ClientChannel.h				\
   ClientExchange.h				\
   ClientMessage.h				\
   ClientQueue.h					\
-  Basic.h					\
   Connection.h					\
   Connector.h					\
   IncomingMessage.h				\
+  MessageChannel.h				\
+  BasicMessageChannel.h				\
   MessageListener.h				\
   MethodBodyInstances.h				\
   ResponseHandler.h				\

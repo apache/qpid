@@ -116,7 +116,7 @@ int main(int argc, char** argv){
             //Consume from the response queue, logging all echoed message to console:
             LoggingListener listener;
             std::string tag;
-            channel.getBasic().consume(response, tag, &listener);
+            channel.consume(response, tag, &listener);
 
             //Process incoming requests on a new thread
             channel.start();
@@ -129,7 +129,7 @@ int main(int argc, char** argv){
                 Message msg;
                 msg.getHeaders().setString("RESPONSE_QUEUE", response.getName());
                 msg.setData(text);
-                channel.getBasic().publish(msg, Exchange::STANDARD_DIRECT_EXCHANGE, echo_service);
+                channel.publish(msg, Exchange::STANDARD_DIRECT_EXCHANGE, echo_service);
                 
                 std::cout << "Enter text to send:" << std::endl;
             }
@@ -158,10 +158,10 @@ int main(int argc, char** argv){
             //Consume from the request queue, echoing back all messages received to the client that sent them
             EchoServer server(&channel);
             std::string tag = "server_tag";
-            channel.getBasic().consume(request, tag, &server);
+            channel.consume(request, tag, &server);
 
             //Process incoming requests on the main thread
-            channel.getBasic().run();
+            channel.run();
             
             connection.close();
         } catch(qpid::QpidError error) {
@@ -184,7 +184,7 @@ void EchoServer::received(Message& message)
         std::cout << "Echoing " << message.getData() << " back to " << name << std::endl;
         
         //'echo' the message back:
-        channel->getBasic().publish(message, Exchange::STANDARD_DIRECT_EXCHANGE, name);
+        channel->publish(message, Exchange::STANDARD_DIRECT_EXCHANGE, name);
     }
 }
 

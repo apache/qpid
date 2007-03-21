@@ -119,9 +119,9 @@ int main(int argc, char** argv){
             //set up listener
             Listener listener(&channel, response.getName(), args.getTransactional());
             string tag;
-            channel.getBasic().consume(control, tag, &listener, args.getAckMode());
+            channel.consume(control, tag, &listener, args.getAckMode());
             cout << "topic_listener: Consuming." << endl;
-            channel.getBasic().run();
+            channel.run();
             connection.close();
             cout << "topic_listener: normal exit" << endl;
             return 0;
@@ -166,7 +166,7 @@ void Listener::report(){
               << time/TIME_MSEC << " ms.";
     Message msg(reportstr.str());
     msg.getHeaders().setString("TYPE", "REPORT");
-    channel->getBasic().publish(msg, string(), responseQueue);
+    channel->publish(msg, string(), responseQueue);
     if(transactional){
         channel->commit();
     }

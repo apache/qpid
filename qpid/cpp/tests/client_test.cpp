@@ -102,7 +102,7 @@ int main(int argc, char**)
 	Monitor monitor;
 	SimpleListener listener(&monitor);
 	string tag("MyTag");
-	channel.getBasic().consume(queue, tag, &listener);
+	channel.consume(queue, tag, &listener);
 	if (verbose) std::cout << "Registered consumer." << std::endl;
 
         //we need to enable the message dispatching for this channel
@@ -115,7 +115,7 @@ int main(int argc, char**)
 	Message msg;
 	string data("MyMessage");
 	msg.setData(data);
-	channel.getBasic().publish(msg, exchange, "MyTopic");
+	channel.publish(msg, exchange, "MyTopic");
 	if (verbose) std::cout << "Published message: " << data << std::endl;
 
 	{

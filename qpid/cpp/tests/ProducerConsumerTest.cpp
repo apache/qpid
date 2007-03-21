@@ -30,8 +30,9 @@
 #include "AMQP_HighestVersion.h"
 #include "sys/AtomicCount.h"
 
-using namespace qpid::sys;
-using namespace qpid::framing;
+using namespace qpid;
+using namespace sys;
+using namespace framing;
 using namespace boost;
 using namespace std;
 
@@ -99,7 +100,7 @@ class ProducerConsumerTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE_END();
 
   public:
-    InProcessBrokerClient client;
+    client::InProcessBrokerClient client;
     ProducerConsumer pc;
 
     WatchedCounter stopped;
@@ -166,7 +167,7 @@ class ProducerConsumerTest : public CppUnit::TestCase
     }
 
 public:
-    ProducerConsumerTest() : client(highestProtocolVersion) {}
+    ProducerConsumerTest() : client() {}
 
     void testProduceConsume() {
         ConsumeRunnable runMe(*this);
