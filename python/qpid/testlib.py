@@ -125,7 +125,7 @@ Options:
             if self.use08spec():
                 self.tests=findmodules("tests_0-8")
             else:
-                self.tests=findmodules("tests")
+                self.tests=findmodules("tests_0-9")
 
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
@@ -142,16 +142,14 @@ Options:
         self._parseargs(args)
         runner = unittest.TextTestRunner(descriptions=False,
                                          verbosity=self.verbose)
-        try:
-            result = runner.run(self.testSuite())
-        except:
-            print "Unhandled error in test:", sys.exc_info()
+        result = runner.run(self.testSuite())
             
         if (self.ignore):
             print "======================================="
             print "NOTE: the following tests were ignored:"
             for t in self.ignore: print t
             print "======================================="
+
         return result.wasSuccessful()
 
     def connect(self, host=None, port=None, spec=None, user=None, password=None, tune_params=None):

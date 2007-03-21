@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# qpidd        Startup script for the Qpid messaging daemon.
+#
+# chkconfig: - 85 15
+# description: Qpidd is an AMQP broker. It receives, stores, routes and forwards messages using the AMQP protcol.
+# processname: qpidd
+# 
+
+prog=qpidd
+lockfile=/var/lock/subsys/$prog
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+RETVAL=0
+
+start() {
+        echo -n $"Starting Qpid AMQP daemon: "
+        daemon $prog --daemon
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch ${lockfile}
+        return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping Qpid AMQP daemon: "
+	killproc $prog
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+
+restart() {
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status $prog
+	RETVAL=$?
+	;;
+  restart|reload)
+	restart
+	;;
+  condrestart)
+	if [ -e $lockfile ] ; then restart ; fi
+	;;
+  reload)
+        reload
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|reload|status}"
+	exit 1
+esac
+
+exit $RETVAL
