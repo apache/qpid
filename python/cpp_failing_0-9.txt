@@ -1,4 +1,4 @@
 tests.message.MessageTests.test_checkpoint
-tests.message.MessageTests.test_reference_large
 tests.message.MessageTests.test_reject
 tests.basic.BasicTests.test_get
+
