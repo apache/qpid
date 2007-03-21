@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             //set up listener
             Publisher publisher(&channel, "topic_control", args.getTransactional());
             std::string tag("mytag");
-            channel.getBasic().consume(response, tag, &publisher, args.getAckMode());
+            channel.consume(response, tag, &publisher, args.getAckMode());
             channel.start();
 
             int batchSize(args.getBatches());
@@ -187,12 +187,13 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
-            channel->getBasic().publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+            channel->publish(
+                msg, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         }
         //send report request
         Message reportRequest;
         reportRequest.getHeaders().setString("TYPE", "REPORT_REQUEST");
-        channel->getBasic().publish(reportRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+        channel->publish(reportRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
         if(transactional){
             channel->commit();
         }
@@ -216,7 +217,7 @@ void Publisher::terminate(){
     //send termination request
     Message terminationRequest;
     terminationRequest.getHeaders().setString("TYPE", "TERMINATION_REQUEST");
-    channel->getBasic().publish(terminationRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
+    channel->publish(terminationRequest, Exchange::STANDARD_TOPIC_EXCHANGE, controlTopic);
     if(transactional){
         channel->commit();
     }

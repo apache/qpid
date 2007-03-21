@@ -43,6 +43,7 @@ namespace client {
  * 
  * Broker initiated messages (basic.return, basic.deliver) are
  * queued for handling by the user dispatch thread.
+ * 
  */
 class IncomingMessage {
   public:

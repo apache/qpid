@@ -145,25 +145,30 @@ std::ostream& operator<<(
     return out;
 }
 
+} // namespace broker
 
-}} // namespace qpid::broker
-
+namespace client {
 /** An in-process client+broker all in one. */
-class InProcessBrokerClient : public qpid::client::Connection {
+class InProcessBrokerClient : public client::Connection {
   public:
-    qpid::broker::InProcessBroker broker;
-    qpid::broker::InProcessBroker::Conversation& conversation;
+    broker::InProcessBroker broker;
+    broker::InProcessBroker::Conversation& conversation;
     
     /** Constructor creates broker and opens client connection. */
-    InProcessBrokerClient(qpid::framing::ProtocolVersion version=
-                          qpid::framing::highestProtocolVersion
-    ) : broker(version), conversation(broker.conversation)
+    InProcessBrokerClient(
+        u_int32_t max_frame_size=65536,
+        framing::ProtocolVersion version= framing::highestProtocolVersion
+    ) : client::Connection(false, max_frame_size, version),
+        broker(version),
+        conversation(broker.conversation)
     {
         setConnector(broker);
         open("");
     }
-
-    ~InProcessBrokerClient() {}
 };
+
+
+}} // namespace qpid::client
+
 
 #endif // _tests_InProcessBroker_h
