@@ -25,6 +25,7 @@
 #include "ClientMessage.h"
 #include "ClientQueue.h"
 #include "ClientExchange.h"
+#include "client/MessageListener.h"
 
 using namespace std;
 using namespace boost;
