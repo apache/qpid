@@ -90,13 +90,15 @@ class Broker : public sys::Runnable,
 
     Configuration config;
     sys::Acceptor::shared_ptr acceptor;
-    std::auto_ptr<MessageStore> store;
+    const std::auto_ptr<MessageStore> store;
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     uint32_t timeout;
     uint64_t stagingThreshold;
     AutoDelete cleaner;
     ConnectionFactory factory;
+
+    static MessageStore* createStore(const Configuration& config);
 };
 
 }}

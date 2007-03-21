@@ -63,8 +63,8 @@ class AMQRequestBody : public AMQMethodBody
     void setResponseMark(ResponseId mark) { data.responseMark=mark; }
 
     bool isRequest()const { return true; }
-  protected:
     static const uint32_t baseSize() { return AMQMethodBody::baseSize()+20; }
+  protected:
     void printPrefix(std::ostream& out) const;
     
   private:
