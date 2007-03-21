@@ -1,0 +1,54 @@
+/*
+ *
+ * Copyright (c) 2006 The Apache Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include <boost/bind.hpp>
+#include "Reference.h"
+#include "BrokerMessageMessage.h"
+#include "QpidError.h"
+#include "MessageAppendBody.h"
+#include "CompletionHandler.h"
+
+namespace qpid {
+namespace broker {
+
+Reference::shared_ptr  ReferenceRegistry::open(const Reference::Id& id) {
+    ReferenceMap::iterator i = references.find(id);
+    // TODO aconway 2007-02-05: should we throw Channel or Connection
+    // exceptions here?
+    if (i != references.end())
+        throw ConnectionException(503, "Attempt to re-open reference " +id);
+    return references[id] = Reference::shared_ptr(new Reference(id, this));
+}
+
+Reference::shared_ptr  ReferenceRegistry::get(const Reference::Id& id) {
+    ReferenceMap::iterator i = references.find(id);
+    if (i == references.end()) 
+        throw ConnectionException(503, "Attempt to use non-existent reference "+id);
+    return i->second;
+}
+
+void Reference::append(AppendPtr ptr) {
+	 appends.push_back(ptr);
+	 size += ptr->getBytes().length();
+}
+
+void Reference::close() {
+    registry->references.erase(getId());
+}
+
+}} // namespace qpid::broker

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. $srcdir/setup
+
+fail=0
+$vg DllPlugInTester -c -b $pwd/.libs/*.so 2> out || fail=1
+vg_check out || fail=1
+
+exit $fail

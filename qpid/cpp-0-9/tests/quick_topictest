@@ -1,0 +1,7 @@
+#!/bin/sh
+# Quick and quiet topic test for make check.
+./topictest -s2 -m2 -b1 > topictest.log 2>&1 || {
+    echo See topictest.log.
+    exit 1
+}
+rm topictest.log
