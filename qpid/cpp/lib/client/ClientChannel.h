@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "sys/types.h"
+#include <boost/scoped_ptr.hpp>
 #include <framing/amqp_framing.h>
 #include <ClientExchange.h>
 #include <ClientMessage.h>
@@ -29,7 +29,7 @@
 #include <ResponseHandler.h>
 #include "ChannelAdapter.h"
 #include "Thread.h"
-#include "Basic.h"
+#include "AckMode.h"
 
 namespace qpid {
 
@@ -41,7 +41,9 @@ class AMQMethodBody;
 namespace client {
 
 class Connection;
-
+class MessageChannel;
+class MessageListener;
+class ReturnedMessageHandler;
 
 /**
  * Represents an AMQP channel, i.e. loosely a session of work. It
@@ -53,16 +55,12 @@ class Connection;
 class Channel : public framing::ChannelAdapter
 {
   private:
-    // TODO aconway 2007-02-22: Remove friendship.
-  friend class Basic;
-    // FIXME aconway 2007-02-22: friend class Message;
-    
     struct UnknownMethod {};
         
     sys::Mutex lock;
-    Basic basic;
+    boost::scoped_ptr<MessageChannel> messaging;
     Connection* connection;
-    sys::Thread basicDispatcher;
+    sys::Thread dispatcher;
     ResponseHandler responses;
 
     uint16_t prefetch;
@@ -107,7 +105,10 @@ class Channel : public framing::ChannelAdapter
     void closeInternal();
     void peerClose(boost::shared_ptr<framing::ChannelCloseBody>);
     
+    // FIXME aconway 2007-02-23: Get rid of friendships.
   friend class Connection;
+  friend class BasicMessageChannel; // for sendAndReceive.
+  friend class MessageMessageChannel; // for sendAndReceive.
         
   public:
 
@@ -121,8 +122,15 @@ class Channel : public framing::ChannelAdapter
      * @param prefetch specifies the number of unacknowledged
      * messages the channel is willing to have sent to it
      * asynchronously
+     *
+     * @param messageImpl Alternate messaging implementation class to
+     * allow alternate protocol implementations of messaging
+     * operations. Takes ownership.
      */
-    Channel(bool transactional = false, uint16_t prefetch = 500);
+    Channel(
+        bool transactional = false, u_int16_t prefetch = 500,
+        MessageChannel* messageImpl = 0);
+     
     ~Channel();
 
     /**
@@ -190,13 +198,6 @@ class Channel : public framing::ChannelAdapter
               bool synch = true);
 
     /**
-     * Get a Basic object which provides functions to send and
-     * receive messages using the AMQP 0-8 Basic class methods.
-     *@see Basic
-     */
-    Basic& getBasic() { return basic; }
-
-    /**
      * For a transactional channel this will commit all
      * publications and acknowledgements since the last commit (or
      * the channel was opened if there has been no previous
@@ -243,6 +244,106 @@ class Channel : public framing::ChannelAdapter
     
     /** True if the channel is open */
     bool isOpen() const;
+
+    /** Get the connection associated with this channel */
+    Connection& getConnection() { return *connection; }
+
+    /** Return the protocol version */
+    framing::ProtocolVersion getVersion() const { return version ; }
+    
+    /**
+     * Creates a 'consumer' for a queue. Messages in (or arriving
+     * at) that queue will be delivered to consumers
+     * asynchronously.
+     * 
+     * @param queue a Queue instance representing the queue to
+     * consume from
+     * 
+     * @param tag an identifier to associate with the consumer
+     * that can be used to cancel its subscription (if empty, this
+     * will be assigned by the broker)
+     * 
+     * @param listener a pointer to an instance of an
+     * implementation of the MessageListener interface. Messages
+     * received from this queue for this consumer will result in
+     * invocation of the received() method on the listener, with
+     * the message itself passed in.
+     * 
+     * @param ackMode the mode of acknowledgement that the broker
+     * should assume for this consumer. @see AckMode
+     * 
+     * @param noLocal if true, this consumer will not be sent any
+     * message published by this connection
+     * 
+     * @param synch if true this call will block until a response
+     * is received from the broker
+     */
+    void consume(
+        Queue& queue, std::string& tag, MessageListener* listener, 
+        AckMode ackMode = NO_ACK, bool noLocal = false, bool synch = true,
+        const framing::FieldTable* fields = 0);
+        
+    /**
+     * Cancels a subscription previously set up through a call to consume().
+     *
+     * @param tag the identifier used (or assigned) in the consume
+     * request that set up the subscription to be cancelled.
+     * 
+     * @param synch if true this call will block until a response
+     * is received from the broker
+     */
+    void cancel(const std::string& tag, bool synch = true);
+    /**
+     * Synchronous pull of a message from a queue.
+     * 
+     * @param msg a message object that will contain the message
+     * headers and content if the call completes.
+     * 
+     * @param queue the queue to consume from
+     * 
+     * @param ackMode the acknowledgement mode to use (@see
+     * AckMode)
+     * 
+     * @return true if a message was succcessfully dequeued from
+     * the queue, false if the queue was empty.
+     */
+    bool get(Message& msg, const Queue& queue, AckMode ackMode = NO_ACK);
+
+    /**
+     * Publishes (i.e. sends a message to the broker).
+     * 
+     * @param msg the message to publish
+     * 
+     * @param exchange the exchange to publish the message to
+     * 
+     * @param routingKey the routing key to publish with
+     * 
+     * @param mandatory if true and the exchange to which this
+     * publish is directed has no matching bindings, the message
+     * will be returned (see setReturnedMessageHandler()).
+     * 
+     * @param immediate if true and there is no consumer to
+     * receive this message on publication, the message will be
+     * returned (see setReturnedMessageHandler()).
+     */
+    void publish(const Message& msg, const Exchange& exchange,
+                 const std::string& routingKey, 
+                 bool mandatory = false, bool immediate = false);
+
+    /**
+     * Set a handler for this channel that will process any
+     * returned messages
+     * 
+     * @see publish()
+     */
+    void setReturnedMessageHandler(ReturnedMessageHandler* handler);
+
+    /**
+     * Deliver messages from the broker to the appropriate MessageListener. 
+     */
+    void run();
+
+
 };
 
 }}

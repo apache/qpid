@@ -30,6 +30,7 @@ class Content
     bool isInline() const { return discriminator == INLINE; }
     bool isReference() const { return discriminator == REFERENCE; }
     const string& getValue() const { return value; }
+    void setValue(const string& newValue) { value = newValue; }
 
     friend std::ostream& operator<<(std::ostream&, const Content&);
 };    
