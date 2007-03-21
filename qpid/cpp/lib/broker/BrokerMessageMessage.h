@@ -45,6 +45,7 @@ class MessageMessage: public Message{
 
     MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer);
     MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer, ReferencePtr reference);
+    MessageMessage();
             
     // Default destructor okay
 
@@ -70,15 +71,22 @@ class MessageMessage: public Message{
     const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
             
+    void encode(framing::Buffer& buffer);
+    void encodeHeader(framing::Buffer& buffer);
     uint32_t encodedSize();
     uint32_t encodedHeaderSize();
     uint32_t encodedContentSize();
     uint64_t expectedContentSize();
+    void decodeHeader(framing::Buffer& buffer);
+    void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
 
   private:
-  	void transferMessage(framing::ChannelAdapter& channel, 
-    					 const std::string& consumerTag, 
-    					 uint32_t framesize);
+    void transferMessage(framing::ChannelAdapter& channel, 
+                         const std::string& consumerTag, 
+                         uint32_t framesize);
+    framing::MessageTransferBody* copyTransfer(const framing::ProtocolVersion& version,
+                                               const std::string& destination, 
+                                               const framing::Content& body);
   
     framing::RequestId requestId;
     const TransferPtr transfer;

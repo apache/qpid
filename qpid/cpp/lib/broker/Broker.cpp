@@ -47,17 +47,13 @@ const std::string amq_match("amq.match");
 
 Broker::Broker(const Configuration& conf) :
     config(conf),
+    store(createStore(conf)),
     queues(store.get()),
     timeout(30000),
     stagingThreshold(0),
     cleaner(&queues, timeout/10),
     factory(*this)
 {
-    if (config.getStore().empty())
-        store.reset(new NullMessageStore(config.isTrace()));
-    else
-        store.reset(new MessageStoreModule(config.getStore()));
-
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);
     exchanges.declare(amq_topic, TopicExchange::typeName);
@@ -84,6 +80,13 @@ Broker::shared_ptr Broker::create(int16_t port)
 Broker::shared_ptr Broker::create(const Configuration& config) {
     return Broker::shared_ptr(new Broker(config));
 }    
+
+MessageStore* Broker::createStore(const Configuration& config) {
+    if (config.getStore().empty())
+        return new NullMessageStore(config.isTrace());
+    else
+        return new MessageStoreModule(config.getStore());
+}
         
 void Broker::run() {
     getAcceptor().run(&factory);
