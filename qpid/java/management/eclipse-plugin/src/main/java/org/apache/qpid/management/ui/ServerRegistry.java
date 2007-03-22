@@ -34,6 +34,9 @@ import org.apache.qpid.management.ui.model.OperationDataModel;
 public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
+    
+    // list of virtual hosts for this server
+    private List<String> _virtualHosts = new ArrayList<String>();
     // map of all Connection mbeans
     private ConcurrentMap<String,List<ManagedBean>> _connections = new ConcurrentHashMap<String,List<ManagedBean>>();
     // map of all exchange mbeans
@@ -110,6 +113,19 @@ public abstract class ServerRegistry
     public List<ManagedBean> getQueues(String virtualHost)
     {
         return _queues.get(virtualHost);
+    }
+    
+    public void addVirtualHost(String name)
+    {
+        if (!_virtualHosts.contains(name))
+        {
+            _virtualHosts.add(name);
+        }
+    }
+    
+    public List<String> getVirtualHosts()
+    {
+        return _virtualHosts;
     }
     
     public abstract void addManagedObject(ManagedBean key);
