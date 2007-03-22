@@ -28,6 +28,8 @@ package org.apache.qpid.management.ui;
 public class Constants
 {
     public final static String APPLICATION_NAME = "Qpid Management Console";
+    
+    public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
     public final static String VALUE = "value";
     public final static String TYPE  = "type";
     public final static String NODE_TYPE_SERVER    = "server";
@@ -58,12 +60,12 @@ public class Constants
     public final static String DESCRIPTION = " Description";
     
     public final static String QUEUE  = "Queue";
+    public final static String CONNECTION ="Connection";
     public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
-    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};
-    public final static String CONNECTION ="Connection";
+    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};    
     
     public final static String ACTION_ADDSERVER = "New Connection";
     
