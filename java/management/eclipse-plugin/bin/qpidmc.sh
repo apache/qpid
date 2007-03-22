@@ -28,6 +28,16 @@ if [ "$QPIDMC_HOME" == "" ]; then
     exit 0;
 fi
 
+# Test if we're running on cygwin.
+cygwin=false
+if [[ "$(uname -a | fgrep Cygwin)" != "" ]]; then
+  cygwin=true
+fi
+
+if $cygwin; then
+  QPIDMC_HOME=$(cygpath -w $QPIDMC_HOME)
+fi
+
 os=win32
 ws=win32
 arch=x86
